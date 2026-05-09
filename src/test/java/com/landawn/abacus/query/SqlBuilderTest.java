@@ -2676,7 +2676,7 @@ class SqlBuilder11Test extends TestBase {
         public void testParseCondition() {
             Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000));
 
-            SqlBuilder sb = SCSB.render(cond, Account.class);
+            SqlBuilder sb = SCSB.fromCondition(cond, Account.class);
             Assertions.assertNotNull(sb);
 
             String sql = sb.build().query();
@@ -2687,7 +2687,7 @@ class SqlBuilder11Test extends TestBase {
 
         @Test
         public void testParseNullCondition() {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> SCSB.render(null, Account.class));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> SCSB.fromCondition(null, Account.class));
         }
 
         @Test
@@ -3236,7 +3236,7 @@ class SqlBuilder11Test extends TestBase {
         public void testParseCondition() {
             Condition cond = Filters.or(Filters.eq("status", "'ACTIVE'"), Filters.eq("status", "'PENDING'"));
 
-            SqlBuilder sb = ACSB.render(cond, User.class);
+            SqlBuilder sb = ACSB.fromCondition(cond, User.class);
             Assertions.assertNotNull(sb);
 
             String sql = sb.build().query();
@@ -3246,7 +3246,7 @@ class SqlBuilder11Test extends TestBase {
 
         @Test
         public void testParseNullCondition() {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> ACSB.render(null, User.class));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> ACSB.fromCondition(null, User.class));
         }
 
         @Test
@@ -3758,7 +3758,7 @@ class SqlBuilder11Test extends TestBase {
         public void testParseCondition() {
             Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.between("registrationDate", "2020-01-01", "2023-12-31"));
 
-            SqlBuilder sb = LCSB.render(cond, Customer.class);
+            SqlBuilder sb = LCSB.fromCondition(cond, Customer.class);
             Assertions.assertNotNull(sb);
 
             String sql = sb.build().query();
@@ -3772,7 +3772,7 @@ class SqlBuilder11Test extends TestBase {
             Condition cond = Filters.or(Filters.and(Filters.eq("status", "'PREMIUM'"), Filters.gt("totalPurchases", 5000)),
                     Filters.and(Filters.eq("status", "'GOLD'"), Filters.gt("totalPurchases", 3000)));
 
-            SqlBuilder sb = LCSB.render(cond, Customer.class);
+            SqlBuilder sb = LCSB.fromCondition(cond, Customer.class);
             Assertions.assertNotNull(sb);
 
             String sql = sb.build().query();
@@ -3783,7 +3783,7 @@ class SqlBuilder11Test extends TestBase {
 
         @Test
         public void testParseNullCondition() {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> LCSB.render(null, Customer.class));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> LCSB.fromCondition(null, Customer.class));
         }
 
         @Test
@@ -4522,15 +4522,15 @@ class SqlBuilder12Test extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.eq("firstName", "John");
-            SqlBuilder builder = PSB.render(cond, User.class);
+            SqlBuilder builder = PSB.fromCondition(cond, User.class);
             assertNotNull(builder);
 
             // Test with null condition
-            assertThrows(IllegalArgumentException.class, () -> PSB.render(null, User.class));
+            assertThrows(IllegalArgumentException.class, () -> PSB.fromCondition(null, User.class));
 
             // Test with complex condition
             Condition complexCond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("id", 1));
-            SqlBuilder complexBuilder = PSB.render(complexCond, User.class);
+            SqlBuilder complexBuilder = PSB.fromCondition(complexCond, User.class);
             assertNotNull(complexBuilder);
         }
 
@@ -5000,7 +5000,7 @@ class SqlBuilder12Test extends TestBase {
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.like("email", "%@example.com"));
 
-            SqlBuilder builder = PSC.render(cond, Account.class);
+            SqlBuilder builder = PSC.fromCondition(cond, Account.class);
             assertNotNull(builder);
 
             String sql = builder.build().query();
@@ -5369,7 +5369,7 @@ class SqlBuilder12Test extends TestBase {
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("id", 1));
 
-            SqlBuilder builder = PAC.render(cond, UserAccount.class);
+            SqlBuilder builder = PAC.fromCondition(cond, UserAccount.class);
             assertNotNull(builder);
 
             String sql = builder.build().query();
@@ -5440,7 +5440,7 @@ class SqlBuilder12Test extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> PAC.selectFrom((List<Selection>) null));
             assertThrows(IllegalArgumentException.class, () -> PAC.count((String) null));
             assertThrows(IllegalArgumentException.class, () -> PAC.count((Class<?>) null));
-            assertThrows(IllegalArgumentException.class, () -> PAC.render(null, UserAccount.class));
+            assertThrows(IllegalArgumentException.class, () -> PAC.fromCondition(null, UserAccount.class));
         }
     }
 
@@ -5797,7 +5797,7 @@ class SqlBuilder12Test extends TestBase {
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.eq("isActive", true));
 
-            SqlBuilder builder = PLC.render(cond, UserProfile.class);
+            SqlBuilder builder = PLC.fromCondition(cond, UserProfile.class);
             assertNotNull(builder);
 
             String sql = builder.build().query();
@@ -6439,7 +6439,7 @@ class SqlBuilder13Test extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18));
-            String sql = NSB.render(cond, User.class).build().query();
+            String sql = NSB.fromCondition(cond, User.class).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("status"));
             Assertions.assertTrue(sql.contains(":status"));
@@ -6462,7 +6462,7 @@ class SqlBuilder13Test extends TestBase {
         @Test
         public void testNullArgumentsThrow() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                NSB.render(null, User.class);
+                NSB.fromCondition(null, User.class);
             });
 
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
@@ -7333,7 +7333,7 @@ class SqlBuilder13Test extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("age", 18), Filters.like("email", "%@example.com"));
-            String sql = NSC.render(cond, User.class).build().query();
+            String sql = NSC.fromCondition(cond, User.class).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name = :firstName"));
             Assertions.assertTrue(sql.contains("age > :age"));
@@ -7462,7 +7462,7 @@ class SqlBuilder13Test extends TestBase {
         @Test
         public void testNullConditionThrows() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                NSC.render(null, User.class);
+                NSC.fromCondition(null, User.class);
             });
         }
 
@@ -8037,7 +8037,7 @@ class SqlBuilder13Test extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("status", "ACTIVE"), Filters.gt("balance", 1000));
-            String sql = NAC.render(cond, Account.class).build().query();
+            String sql = NAC.fromCondition(cond, Account.class).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("STATUS = :status"));
             Assertions.assertTrue(sql.contains("BALANCE > :balance"));
@@ -8163,7 +8163,7 @@ class SqlBuilder13Test extends TestBase {
         @Test
         public void testNullConditionThrows() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                NAC.render(null, Account.class);
+                NAC.fromCondition(null, Account.class);
             });
         }
 
@@ -8822,7 +8822,7 @@ class SqlBuilder13Test extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("status", "active"), Filters.gt("balance", 1000));
-            String sql = NLC.render(cond, Account.class).build().query();
+            String sql = NLC.fromCondition(cond, Account.class).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("status = :status"));
             Assertions.assertTrue(sql.contains("balance > :balance"));
@@ -8949,7 +8949,7 @@ class SqlBuilder13Test extends TestBase {
         @Test
         public void testNullConditionThrows() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                NLC.render(null, Account.class);
+                NLC.fromCondition(null, Account.class);
             });
         }
 
@@ -9761,7 +9761,7 @@ class SqlBuilder13Test extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18));
-            String sql = PSC.render(cond, User.class).build().query();
+            String sql = PSC.fromCondition(cond, User.class).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("status = ?"));
             Assertions.assertTrue(sql.contains("age > ?"));
@@ -9897,7 +9897,7 @@ class SqlBuilder13Test extends TestBase {
         @Test
         public void testNullConditionThrows() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                PSC.render(null, User.class);
+                PSC.fromCondition(null, User.class);
             });
         }
 
@@ -10341,7 +10341,7 @@ class SqlBuilder14Test extends TestBase {
         @Test
         public void testParseCondition() {
             com.landawn.abacus.query.condition.Condition cond = Filters.and(Filters.eq("active", true), Filters.gt("age", 18));
-            String sql = MSB.render(cond, Account.class).build().query();
+            String sql = MSB.fromCondition(cond, Account.class).build().query();
             Assertions.assertTrue(sql.contains("active = #{active}"));
             Assertions.assertTrue(sql.contains("AND"));
             Assertions.assertTrue(sql.contains("age > #{age}"));
@@ -10771,7 +10771,7 @@ class SqlBuilder14Test extends TestBase {
         @Test
         public void testParseCondition() {
             com.landawn.abacus.query.condition.Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("age", 18));
-            String sql = MSC.render(cond, User.class).build().query();
+            String sql = MSC.fromCondition(cond, User.class).build().query();
             Assertions.assertTrue(sql.contains("first_name = #{firstName}"));
             Assertions.assertTrue(sql.contains("AND"));
             Assertions.assertTrue(sql.contains("age > #{age}"));
@@ -11234,7 +11234,7 @@ class SqlBuilder14Test extends TestBase {
         @Test
         public void testParseCondition() {
             com.landawn.abacus.query.condition.Condition cond = Filters.and(Filters.eq("status", "ACTIVE"), Filters.gt("balance", 1000));
-            String sql = MAC.render(cond, Account.class).build().query();
+            String sql = MAC.fromCondition(cond, Account.class).build().query();
             Assertions.assertTrue(sql.contains("STATUS = #{status}"));
             Assertions.assertTrue(sql.contains("AND"));
             Assertions.assertTrue(sql.contains("BALANCE > #{balance}"));
@@ -11783,7 +11783,7 @@ class SqlBuilder14Test extends TestBase {
         @Test
         public void testParseCondition() {
             com.landawn.abacus.query.condition.Condition cond = Filters.and(Filters.eq("status", "ACTIVE"), Filters.gt("balance", 1000));
-            String sql = MLC.render(cond, Account.class).build().query();
+            String sql = MLC.fromCondition(cond, Account.class).build().query();
             Assertions.assertTrue(sql.contains("status = #{status}"));
             Assertions.assertTrue(sql.contains("AND"));
             Assertions.assertTrue(sql.contains("balance > #{balance}"));

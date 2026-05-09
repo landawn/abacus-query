@@ -87,4 +87,8 @@ public class Some extends ComposableCell {
     public Some(final SubQuery subQuery) {
         super(Operator.SOME, subQuery);
     }
+
+    public SubQuery getSubQuery() {
+        return (SubQuery) condition;
+    }
 }

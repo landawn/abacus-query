@@ -97,4 +97,8 @@ public class Any extends ComposableCell {
     public Any(final SubQuery subQuery) {
         super(Operator.ANY, subQuery);
     }
+
+    public SubQuery getSubQuery() {
+        return (SubQuery) condition;
+    }
 }

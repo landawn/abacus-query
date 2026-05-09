@@ -34,13 +34,14 @@ import com.landawn.abacus.util.SK;
  */
 public abstract class ComposableCell extends ComposableCondition {
 
-    private Condition condition;
+    protected final Condition condition;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
      * Creates an uninitialized ComposableCell instance; not for direct application use.
      */
     ComposableCell() {
+        this.condition = null;
     }
 
     /**

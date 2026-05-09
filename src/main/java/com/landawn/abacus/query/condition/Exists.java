@@ -91,4 +91,8 @@ public class Exists extends ComposableCell {
     public Exists(final SubQuery subQuery) {
         super(Operator.EXISTS, subQuery);
     }
+
+    public SubQuery getSubQuery() {
+        return (SubQuery) condition;
+    }
 }

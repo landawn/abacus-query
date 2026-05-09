@@ -1751,7 +1751,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.equal("status", "ACTIVE"),
          *     Filters.greaterThan("balance", 1000)
          * );
-         * String sql = SCSB.render(cond, Account.class).build().query();
+         * String sql = SCSB.fromCondition(cond, Account.class).build().query();
          * // Output: ((status = 'ACTIVE') AND (balance > 1000))
          * }</pre>
          *
@@ -1760,7 +1760,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return a new SqlBuilder instance containing the rendered condition SQL
          * @throws IllegalArgumentException if {@code cond} is {@code null}
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -3039,7 +3039,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Condition cond = Filters.and(Filters.equal("firstName", "John"), Filters.greaterThan("age", 18));
-         * String sql = ACSB.render(cond, User.class).build().query();
+         * String sql = ACSB.fromCondition(cond, User.class).build().query();
          * // Output: FIRST_NAME = 'John' AND AGE > 18
          * }</pre>
          *
@@ -3048,7 +3048,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return a new SqlBuilder instance containing the parsed condition
          * @throws IllegalArgumentException if cond is null
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -4355,7 +4355,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.greaterThan("age", 18)
          * );
          * 
-         * String sql = LCSB.render(cond, User.class).build().query();
+         * String sql = LCSB.fromCondition(cond, User.class).build().query();
          * // Output: active = true AND age > 18
          * }</pre>
          * 
@@ -4366,7 +4366,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @see Filters
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -5558,7 +5558,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.equal("status", "active"),
          *     Filters.greaterThan("age", 18)
          * );
-         * String sql = PSB.render(cond, User.class).build().query();
+         * String sql = PSB.fromCondition(cond, User.class).build().query();
          * // Result: "status = ? AND age > ?"
          * }</pre>
          * 
@@ -5567,7 +5567,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return a new SqlBuilder instance containing the parsed condition
          * @throws IllegalArgumentException if cond is null
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -6920,7 +6920,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.like("email", "%@example.com")
          * );
          * 
-         * String sql = PSC.render(cond, Account.class).build().query();
+         * String sql = PSC.fromCondition(cond, Account.class).build().query();
          * // Output: first_name = ? AND email LIKE ?
          * }</pre>
          * 
@@ -6929,7 +6929,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return a new SqlBuilder instance containing just the condition SQL
          * @throws IllegalArgumentException if cond is null
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -8148,7 +8148,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Condition cond = Filters.and(Filters.equal("firstName", "John"), Filters.greaterThan("age", 21));
-         * String sql = PAC.render(cond, User.class).build().query();
+         * String sql = PAC.fromCondition(cond, User.class).build().query();
          * // Output: FIRST_NAME = ? AND AGE > ?
          * }</pre>
          * 
@@ -8157,7 +8157,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return a new SqlBuilder instance containing the parsed condition
          * @throws IllegalArgumentException if cond is null
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -9750,7 +9750,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.like("emailAddress", "%@example.com")
          * );
          * 
-         * String sql = PLC.render(cond, Account.class).build().query();
+         * String sql = PLC.fromCondition(cond, Account.class).build().query();
          * // Output: firstName = ? AND emailAddress LIKE ?
          * }</pre>
          * 
@@ -9759,7 +9759,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return a new SqlBuilder instance containing just the condition SQL
          * @throws IllegalArgumentException if cond is null
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -11019,7 +11019,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.equal("status", "active"),
          *     Filters.greaterThan("age", 18)
          * );
-         * String sql = NSB.render(cond, User.class).build().query();
+         * String sql = NSB.fromCondition(cond, User.class).build().query();
          * // status = :status AND age > :age
          * }</pre>
          *
@@ -11028,7 +11028,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return a new SqlBuilder containing only the condition SQL
          * @throws IllegalArgumentException if cond is null
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -12198,7 +12198,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.greaterThan("age", 18),
          *     Filters.like("email", "%@example.com")
          * );
-         * String sql = NSC.render(cond, User.class).build().query();
+         * String sql = NSC.fromCondition(cond, User.class).build().query();
          * // Output: first_name = :firstName AND age > :age AND email LIKE :email
          * }</pre>
          * 
@@ -12207,7 +12207,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return a new SqlBuilder instance containing only the parsed condition
          * @throws IllegalArgumentException if cond is null
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -13393,7 +13393,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.greaterThan("balance", 1000),
          *     Filters.like("lastName", "Smith%")
          * );
-         * String sql = NAC.render(cond, Account.class).build().query();
+         * String sql = NAC.fromCondition(cond, Account.class).build().query();
          * // Output: STATUS = :status AND BALANCE > :balance AND LAST_NAME LIKE :lastName
          * }</pre>
          * 
@@ -13402,7 +13402,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return an SqlBuilder containing the parsed condition
          * @throws IllegalArgumentException if cond is null
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -14730,7 +14730,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.greaterThan("balance", 1000),
          *     Filters.like("lastName", "Smith%")
          * );
-         * String sql = NLC.render(cond, Account.class).build().query();
+         * String sql = NLC.fromCondition(cond, Account.class).build().query();
          * // Output: status = :status AND balance > :balance AND lastName LIKE :lastName
          * }</pre>
          * 
@@ -14739,7 +14739,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return an SqlBuilder containing the parsed condition
          * @throws IllegalArgumentException if cond is null
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -15981,7 +15981,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.equal("active", true),
          *     Filters.greaterThan("age", 18)
          * );
-         * String sql = MSB.render(cond, User.class).build().query();
+         * String sql = MSB.fromCondition(cond, User.class).build().query();
          * // Output: active = #{active} AND age > #{age}
          * }</pre>
          * 
@@ -15990,7 +15990,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return a new SqlBuilder instance containing the parsed condition
          * @throws IllegalArgumentException if cond is null
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -17214,7 +17214,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.equal("firstName", "John"),
          *     Filters.greaterThan("age", 18)
          * );
-         * String sql = MSC.render(cond, User.class).build().query();
+         * String sql = MSC.fromCondition(cond, User.class).build().query();
          * // Output: first_name = #{firstName} AND age > #{age}
          * }</pre>
          * 
@@ -17222,7 +17222,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param entityClass the entity class for property mapping
          * @return a new SqlBuilder instance containing only the condition SQL
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -18377,7 +18377,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.like("emailAddress", "%@company.com"),
          *     Filters.greaterThan("accountBalance", 0)
          * );
-         * String sql = MAC.render(cond, Account.class).build().query();
+         * String sql = MAC.fromCondition(cond, Account.class).build().query();
          * // Output: IS_ACTIVE = #{isActive} AND EMAIL_ADDRESS LIKE #{emailAddress} AND ACCOUNT_BALANCE > #{accountBalance}
          * }</pre>
          *
@@ -18386,7 +18386,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return a new SqlBuilder instance containing the parsed condition
          * @throws IllegalArgumentException if cond is null
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();
@@ -19569,7 +19569,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.equal("status", "ACTIVE"),
          *     Filters.greaterThan("balance", 1000)
          * );
-         * String sql = MLC.render(cond, Account.class).build().query();
+         * String sql = MLC.fromCondition(cond, Account.class).build().query();
          * // Output: status = #{status} AND balance > #{balance}
          * }</pre>
          *
@@ -19578,7 +19578,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @return a new SqlBuilder instance containing the parsed condition
          * @throws IllegalArgumentException if cond is null
          */
-        public static SqlBuilder render(final Condition cond, final Class<?> entityClass) {
+        public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createInstance();

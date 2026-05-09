@@ -88,4 +88,8 @@ public class NotExists extends ComposableCell {
     public NotExists(final SubQuery subQuery) {
         super(Operator.NOT_EXISTS, subQuery);
     }
+
+    public SubQuery getSubQuery() {
+        return (SubQuery) condition;
+    }
 }
