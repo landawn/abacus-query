@@ -109,37 +109,58 @@ public final class ParsedSql {
                         paramCount++;
                         type |= QUESTION_MARK_TYPE;
                     } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)) {
-                        final StringBuilder ibatisTokenBuilder = new StringBuilder(word);
+                        // Bug fix: a single tokenized word may contain multiple iBatis markers
+                        // (e.g. "#{a}#{b}") because none of '#', '{', '}' are token separators
+                        // when preceded/followed by the right context. The previous code extracted
+                        // only the leading "#{...}" marker and silently embedded any subsequent
+                        // "#{...}" markers into the parameterized SQL as literal text, losing
+                        // those parameter bindings entirely. We now process the leading marker and
+                        // then iteratively extract any further "#{...}" markers from the suffix.
+                        final StringBuilder rebuilt = new StringBuilder(word.length() + 4);
 
-                        while (ibatisTokenBuilder.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER) < 0 && i < size - 1) {
-                            ibatisTokenBuilder.append(words.get(++i));
-                        }
+                        while (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)) {
+                            final StringBuilder ibatisTokenBuilder = new StringBuilder(word);
 
-                        final String ibatisToken = ibatisTokenBuilder.toString();
-                        final int rightBracketIndex = ibatisToken.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER);
-
-                        if (rightBracketIndex < 0) {
-                            throw new IllegalArgumentException(
-                                    "Malformed iBatis/MyBatis parameter: missing closing '}' for token starting with '#{' in SQL: " + sql);
-                        }
-
-                        if (rightBracketIndex > 2) {
-                            final String namedParameter = extractIbatisNamedParameter(ibatisToken.substring(2, rightBracketIndex));
-
-                            if (Strings.isNotEmpty(namedParameter)) {
-                                namedParameterList.add(namedParameter);
-                                final String suffix = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1)
-                                        : Strings.EMPTY;
-
-                                word = SK.QUESTION_MARK + suffix;
-                                paramCount++;
-                                type |= IBATIS_PARAMETER_TYPE;
-                            } else {
-                                word = ibatisToken;
+                            while (ibatisTokenBuilder.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER) < 0 && i < size - 1) {
+                                ibatisTokenBuilder.append(words.get(++i));
                             }
-                        } else {
-                            word = ibatisToken;
+
+                            final String ibatisToken = ibatisTokenBuilder.toString();
+                            final int rightBracketIndex = ibatisToken.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER);
+
+                            if (rightBracketIndex < 0) {
+                                throw new IllegalArgumentException(
+                                        "Malformed iBatis/MyBatis parameter: missing closing '}' for token starting with '#{' in SQL: " + sql);
+                            }
+
+                            if (rightBracketIndex > 2) {
+                                final String namedParameter = extractIbatisNamedParameter(ibatisToken.substring(2, rightBracketIndex));
+
+                                if (Strings.isNotEmpty(namedParameter)) {
+                                    namedParameterList.add(namedParameter);
+                                    rebuilt.append(SK.QUESTION_MARK);
+                                    word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1)
+                                            : Strings.EMPTY;
+                                    paramCount++;
+                                    type |= IBATIS_PARAMETER_TYPE;
+                                } else {
+                                    // empty/blank #{...} content — keep verbatim, no parameter
+                                    rebuilt.append(ibatisToken, 0, rightBracketIndex + 1);
+                                    word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1)
+                                            : Strings.EMPTY;
+                                    break; // empty token — don't loop to avoid infinite recursion on malformed input
+                                }
+                            } else {
+                                // rightBracketIndex == 2 means literal "#{}" — keep verbatim
+                                rebuilt.append(ibatisToken, 0, rightBracketIndex + 1);
+                                word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1)
+                                        : Strings.EMPTY;
+                                break;
+                            }
                         }
+
+                        rebuilt.append(word);
+                        word = rebuilt.toString();
                     } else if (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))) {
                         final int parameterEndIndex = findNamedParameterEndIndex(word, 1);
                         namedParameterList.add(word.substring(1, parameterEndIndex));

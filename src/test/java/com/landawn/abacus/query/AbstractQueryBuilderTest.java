@@ -1033,4 +1033,99 @@ class AbstractQueryBuilder2026BatchTest extends TestBase {
         assertTrue(sql.contains("my_name"), "my_name should be included: " + sql);
         assertTrue(sql.contains("my_key"), "Fractional BigDecimal ids must not be removed as all-zero: " + sql);
     }
+
+    // Bug fix: set(Object entity), insert(entity), and batchInsert(entities) used HashMap internally,
+    // which made the resulting SET / INSERT column order depend on hash codes rather than the
+    // declared property order. The fix swaps to LinkedHashMap so column order is deterministic.
+
+    @Test
+    public void testFix_setEntity_preservesPropertyOrder() {
+        Account a = new Account();
+        a.setGUI("g");
+        a.setEmailAddress("e@e.com");
+        a.setFirstName("F");
+        a.setMiddleName("M");
+        a.setLastName("L");
+        a.setStatus(1);
+
+        String sql = SqlBuilder.PSC.update("account").set(a).where(Filters.eq("id", 1)).build().query();
+
+        // Property order in Account.java is: gui, emailAddress, firstName, middleName, lastName, status, ...
+        // The SET clause must therefore list those columns in that order.
+        int gui = sql.indexOf("gui = ?");
+        int email = sql.indexOf("email_address = ?");
+        int first = sql.indexOf("first_name = ?");
+        int middle = sql.indexOf("middle_name = ?");
+        int last = sql.indexOf("last_name = ?");
+        int status = sql.indexOf("status = ?");
+
+        assertTrue(gui > 0 && email > 0 && first > 0 && middle > 0 && last > 0 && status > 0, "all columns must be present: " + sql);
+        assertTrue(gui < email, "gui before email_address in: " + sql);
+        assertTrue(email < first, "email_address before first_name in: " + sql);
+        assertTrue(first < middle, "first_name before middle_name in: " + sql);
+        assertTrue(middle < last, "middle_name before last_name in: " + sql);
+        assertTrue(last < status, "last_name before status in: " + sql);
+    }
+
+    @Test
+    public void testFix_insertEntity_preservesPropertyOrder() {
+        Account a = new Account();
+        a.setGUI("g");
+        a.setEmailAddress("e@e.com");
+        a.setFirstName("F");
+        a.setMiddleName("M");
+        a.setLastName("L");
+        a.setStatus(1);
+
+        String sql = SqlBuilder.PSC.insert(a).into("account").build().query();
+
+        int gui = sql.indexOf("gui");
+        int email = sql.indexOf("email_address");
+        int first = sql.indexOf("first_name");
+        int middle = sql.indexOf("middle_name");
+        int last = sql.indexOf("last_name");
+        int status = sql.indexOf("status");
+
+        assertTrue(gui > 0 && email > 0 && first > 0 && middle > 0 && last > 0 && status > 0, "all columns must be present: " + sql);
+        assertTrue(gui < email, "gui before email_address in: " + sql);
+        assertTrue(email < first, "email_address before first_name in: " + sql);
+        assertTrue(first < middle, "first_name before middle_name in: " + sql);
+        assertTrue(middle < last, "middle_name before last_name in: " + sql);
+        assertTrue(last < status, "last_name before status in: " + sql);
+    }
+
+    @Test
+    public void testFix_batchInsertEntities_preservesPropertyOrder() {
+        Account a1 = new Account();
+        a1.setGUI("g1");
+        a1.setEmailAddress("e1@e.com");
+        a1.setFirstName("F1");
+        a1.setMiddleName("M1");
+        a1.setLastName("L1");
+        a1.setStatus(1);
+
+        Account a2 = new Account();
+        a2.setGUI("g2");
+        a2.setEmailAddress("e2@e.com");
+        a2.setFirstName("F2");
+        a2.setMiddleName("M2");
+        a2.setLastName("L2");
+        a2.setStatus(2);
+
+        String sql = SqlBuilder.PSC.batchInsert(java.util.Arrays.asList(a1, a2)).into("account").build().query();
+
+        int gui = sql.indexOf("gui");
+        int email = sql.indexOf("email_address");
+        int first = sql.indexOf("first_name");
+        int middle = sql.indexOf("middle_name");
+        int last = sql.indexOf("last_name");
+        int status = sql.indexOf("status");
+
+        assertTrue(gui > 0 && email > 0 && first > 0 && middle > 0 && last > 0 && status > 0, "all columns must be present: " + sql);
+        assertTrue(gui < email, "gui before email_address in: " + sql);
+        assertTrue(email < first, "email_address before first_name in: " + sql);
+        assertTrue(first < middle, "first_name before middle_name in: " + sql);
+        assertTrue(middle < last, "middle_name before last_name in: " + sql);
+        assertTrue(last < status, "last_name before status in: " + sql);
+    }
 }

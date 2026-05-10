@@ -4360,7 +4360,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final Class<?> entityClass = entity.getClass();
         setEntityClass(entityClass);
         final Collection<String> propNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
-        final Map<String, Object> localProps = N.newHashMap(propNames.size());
+        final Map<String, Object> localProps = N.newLinkedHashMap(propNames.size());
 
         for (final String propName : propNames) {
             localProps.put(propName, _entityInfo.getPropValue(entity, propName));
@@ -5684,7 +5684,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
         } else {
             final Collection<String> propNames = QueryUtil.getInsertPropNames(entity, excludedPropNames);
-            final Map<String, Object> map = N.newHashMap(propNames.size());
+            final Map<String, Object> map = N.newLinkedHashMap(propNames.size());
             final BeanInfo beanInfo = ParserUtil.getBeanInfo(entity.getClass());
             final ImmutableList<String> idPropNameList = beanInfo.idPropNameList;
             Object propValue;
@@ -5749,7 +5749,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                             + ", current entity class: " + currentEntityClass.getName());
 
             final BeanInfo beanInfo = ParserUtil.getBeanInfo(currentEntityClass);
-            final Map<String, Object> props = N.newHashMap(propNames.size());
+            final Map<String, Object> props = N.newLinkedHashMap(propNames.size());
 
             for (final String propName : propNames) {
                 props.put(propName, beanInfo.getPropValue(entity, propName));

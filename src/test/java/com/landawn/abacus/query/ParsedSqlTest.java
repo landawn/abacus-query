@@ -1041,6 +1041,38 @@ class ParsedSql2026BatchTest extends TestBase {
 
     // --- Bug fix: parameterCount must be safely published via the static cache (now final field) ---
 
+    // Bug fix: when SqlParser produces a single token containing multiple "#{...}" iBatis
+    // markers (e.g. "#{a}#{b}" with no separator between), the previous code extracted only
+    // the first marker and silently embedded later "#{...}" markers into the parameterized
+    // SQL as literal text, losing those parameter bindings entirely.
+    @Test
+    public void testParse_AdjacentIbatisTokens_extractsAllParameters() {
+        ParsedSql parsed = ParsedSql.parse("SELECT #{a}#{b} FROM dual");
+        Assertions.assertEquals("SELECT ?? FROM dual", parsed.parameterizedSql());
+        Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertEquals("a", parsed.namedParameters().get(0));
+        Assertions.assertEquals("b", parsed.namedParameters().get(1));
+    }
+
+    @Test
+    public void testParse_ThreeAdjacentIbatisTokens_extractsAllParameters() {
+        ParsedSql parsed = ParsedSql.parse("SELECT #{a}#{b}#{c} FROM dual");
+        Assertions.assertEquals("SELECT ??? FROM dual", parsed.parameterizedSql());
+        Assertions.assertEquals(3, parsed.parameterCount());
+        Assertions.assertEquals("a", parsed.namedParameters().get(0));
+        Assertions.assertEquals("b", parsed.namedParameters().get(1));
+        Assertions.assertEquals("c", parsed.namedParameters().get(2));
+    }
+
+    @Test
+    public void testParse_AdjacentIbatisTokenAfterValid_doesNotInfiniteLoop() {
+        // Make sure the empty / literal "#{}" doesn't cause an infinite loop after a valid one.
+        ParsedSql parsed = ParsedSql.parse("SELECT #{a}#{} FROM dual");
+        Assertions.assertEquals("SELECT ?#{} FROM dual", parsed.parameterizedSql());
+        Assertions.assertEquals(1, parsed.parameterCount());
+        Assertions.assertEquals("a", parsed.namedParameters().get(0));
+    }
+
     @Test
     public void testParse_CachedInstance_ReturnsCorrectParameterCount() {
         // First parse populates the cache; second parse hits the unsynchronized fast path.
@@ -1052,4 +1084,5 @@ class ParsedSql2026BatchTest extends TestBase {
         Assertions.assertEquals(3, first.parameterCount());
         Assertions.assertEquals(3, second.parameterCount());
     }
+
 }
