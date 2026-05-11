@@ -8,6 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -136,5 +137,14 @@ public class AbstractInTest extends TestBase {
 
         assertTrue(sql.contains("userId IN"));
         assertTrue(sql.contains("(SELECT id FROM users)"));
+    }
+
+    @Test
+    public void testDefaultConstructorToString() {
+        final EmptyAbstractIn condition = new EmptyAbstractIn();
+
+        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+
+        assertNotNull(sql);
     }
 }

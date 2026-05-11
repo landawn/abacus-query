@@ -17,10 +17,11 @@ package com.landawn.abacus.query.condition;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.SK;
+import com.landawn.abacus.util.Strings;
 
 /**
  * Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
@@ -161,9 +162,11 @@ public abstract class AbstractBetween extends ComposableCondition {
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
+        final Operator op = operator();
+        final String opStr = op == null ? Strings.NULL : op.toString();
 
-        return effectiveNamingPolicy.convert(propName) + SK._SPACE + operator().toString() + SK._SPACE + formatParameter(minValue, effectiveNamingPolicy)
-                + SK._SPACE + SK.AND + SK._SPACE + formatParameter(maxValue, effectiveNamingPolicy);
+        return effectiveNamingPolicy.convert(propName == null ? null : propName) + SK._SPACE + opStr + SK._SPACE
+                + formatParameter(minValue, effectiveNamingPolicy) + SK._SPACE + SK.AND + SK._SPACE + formatParameter(maxValue, effectiveNamingPolicy);
     }
 
     /**

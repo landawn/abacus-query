@@ -694,6 +694,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 for (final String subEntityPropName : subEntityPropNames) {
                     final PropInfo propInfo = entityInfo.getPropInfo(subEntityPropName);
+
+                    if (propInfo == null) {
+                        continue;
+                    }
+
                     subEntityClass = (propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type).javaType();
 
                     subEntityPropNameList = N.newLinkedHashSet(Beans.getPropNameList(subEntityClass));

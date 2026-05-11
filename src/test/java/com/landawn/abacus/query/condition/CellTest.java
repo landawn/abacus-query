@@ -7,6 +7,7 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CellTest extends TestBase {
@@ -72,5 +73,20 @@ public class CellTest extends TestBase {
         final TestCell right = new TestCell(Operator.WHERE, Filters.eq("status", "INACTIVE"));
 
         assertNotEquals(left, right);
+    }
+
+    private static final class EmptyTestCell extends Cell {
+        EmptyTestCell() {
+            super();
+        }
+    }
+
+    @Test
+    public void testDefaultConstructorToString() {
+        final EmptyTestCell cell = new EmptyTestCell();
+
+        assertNotNull(cell.toString(NamingPolicy.NO_CHANGE));
+        assertNotNull(cell.toString());
+        assertNotNull(cell.toString(null));
     }
 }

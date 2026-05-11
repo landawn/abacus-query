@@ -168,7 +168,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
                 setParameter("min" + Strings.capitalize(propName), minValue);
             } else {
-                setParameter(propName, minValue);
+                setParameter("min" + Strings.capitalize(propName), minValue);
             }
 
             _sb.append(_SPACE);
@@ -179,7 +179,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
                 setParameter("max" + Strings.capitalize(propName), maxValue);
             } else {
-                setParameter(propName, maxValue);
+                setParameter("max" + Strings.capitalize(propName), maxValue);
             }
         } else if (cond instanceof final NotBetween nbt) {
             final String propName = nbt.getPropName();
@@ -194,7 +194,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
                 setParameter("min" + Strings.capitalize(propName), minValue);
             } else {
-                setParameter(propName, minValue);
+                setParameter("min" + Strings.capitalize(propName), minValue);
             }
 
             _sb.append(_SPACE);
@@ -205,7 +205,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
                 setParameter("max" + Strings.capitalize(propName), maxValue);
             } else {
-                setParameter(propName, maxValue);
+                setParameter("max" + Strings.capitalize(propName), maxValue);
             }
         } else if (cond instanceof final In in) {
             final String propName = in.getPropName();

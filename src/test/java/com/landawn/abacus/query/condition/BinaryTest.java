@@ -506,4 +506,32 @@ public class BinaryTest extends TestBase {
         assertEquals(1, parameters.size());
         assertEquals("ACTIVE", parameters.get(0));
     }
+
+    @Test
+    public void testDefaultConstructorToString() {
+        Binary binary = new Binary();
+
+        Assertions.assertNotNull(binary.toString());
+        Assertions.assertNotNull(binary.toString(NamingPolicy.NO_CHANGE));
+        Assertions.assertNotNull(binary.toString(null));
+    }
+
+    @Test
+    public void testDefaultConstructorGetParameters() {
+        Binary binary = new Binary();
+
+        Assertions.assertNotNull(binary.getParameters());
+        Assertions.assertTrue(binary.getParameters().isEmpty());
+    }
+
+    @Test
+    public void testToStringWithNullValueAndNonNullOperator() {
+        Binary binary = new Binary("col", Operator.GREATER_THAN, null);
+
+        String result = binary.toString(NamingPolicy.NO_CHANGE);
+
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.contains("col"));
+        Assertions.assertTrue(result.contains(">"));
+    }
 }

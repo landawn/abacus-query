@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.landawn.abacus.util.ImmutableList;
-import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
@@ -212,19 +212,20 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final String subQueryString = subQuery == null ? Strings.EMPTY : subQuery.toString(effectiveNamingPolicy);
+        final Operator op = operator();
+        final String opStr = op == null ? Strings.NULL : op.toString();
 
         if (N.notEmpty(propNames)) {
             if (propNames.size() == 1) {
-                return effectiveNamingPolicy.convert(propNames.iterator().next()) + SK._SPACE + operator().toString() + SK.SPACE_PARENTHESIS_L + subQueryString
+                return effectiveNamingPolicy.convert(propNames.iterator().next()) + SK._SPACE + opStr + SK.SPACE_PARENTHESIS_L + subQueryString
                         + SK.PARENTHESIS_R;
             }
 
             final Function<String, String> converter = effectiveNamingPolicy::convert;
 
-            return "(" + Strings.join(N.map(propNames, converter), ", ") + ") " + operator().toString() + SK.SPACE_PARENTHESIS_L + subQueryString
-                    + SK.PARENTHESIS_R;
+            return "(" + Strings.join(N.map(propNames, converter), ", ") + ") " + opStr + SK.SPACE_PARENTHESIS_L + subQueryString + SK.PARENTHESIS_R;
         }
 
-        return operator().toString() + SK.SPACE_PARENTHESIS_L + subQueryString + SK.PARENTHESIS_R;
+        return opStr + SK.SPACE_PARENTHESIS_L + subQueryString + SK.PARENTHESIS_R;
     }
 }

@@ -139,22 +139,19 @@ public final class ParsedSql {
                                 if (Strings.isNotEmpty(namedParameter)) {
                                     namedParameterList.add(namedParameter);
                                     rebuilt.append(SK.QUESTION_MARK);
-                                    word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1)
-                                            : Strings.EMPTY;
+                                    word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1) : Strings.EMPTY;
                                     paramCount++;
                                     type |= IBATIS_PARAMETER_TYPE;
                                 } else {
                                     // empty/blank #{...} content — keep verbatim, no parameter
                                     rebuilt.append(ibatisToken, 0, rightBracketIndex + 1);
-                                    word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1)
-                                            : Strings.EMPTY;
+                                    word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1) : Strings.EMPTY;
                                     break; // empty token — don't loop to avoid infinite recursion on malformed input
                                 }
                             } else {
                                 // rightBracketIndex == 2 means literal "#{}" — keep verbatim
                                 rebuilt.append(ibatisToken, 0, rightBracketIndex + 1);
-                                word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1)
-                                        : Strings.EMPTY;
+                                word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1) : Strings.EMPTY;
                                 break;
                             }
                         }

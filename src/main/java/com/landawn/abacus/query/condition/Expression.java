@@ -62,15 +62,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.QueryUtil;
-import com.landawn.abacus.util.SK;
 import com.landawn.abacus.query.SqlParser;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Objectory;
+import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
@@ -109,7 +109,7 @@ import com.landawn.abacus.util.Strings;
  */
 public class Expression extends ComposableCondition {
 
-    static final String NULL_STRING = "null";
+    static final String NULL_STRING = Strings.NULL;
 
     static final char[] NULL_CHAR_ARRAY = NULL_STRING.toCharArray();
 

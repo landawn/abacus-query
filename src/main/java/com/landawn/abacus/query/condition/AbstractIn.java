@@ -19,10 +19,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.SK;
+import com.landawn.abacus.util.Strings;
 
 /**
  * Abstract base class for IN and NOT IN conditions in SQL queries.
@@ -135,8 +136,11 @@ public abstract class AbstractIn extends ComposableCondition {
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
+        final Operator op = operator();
+        final String opStr = op == null ? Strings.NULL : op.toString();
+
         final StringBuilder sb = new StringBuilder();
-        sb.append(effectiveNamingPolicy.convert(propName)).append(SK._SPACE).append(operator().toString()).append(SK.SPACE_PARENTHESIS_L);
+        sb.append(effectiveNamingPolicy.convert(propName)).append(SK._SPACE).append(opStr).append(SK.SPACE_PARENTHESIS_L);
 
         if (values != null) {
             for (int i = 0; i < values.size(); i++) {

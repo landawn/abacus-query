@@ -8,6 +8,7 @@ import java.util.Collection;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -144,5 +145,14 @@ public class AbstractInSubQueryTest extends TestBase {
         final SubQuery subQuery = Filters.subQuery("pairs", Arrays.asList("left_id"), Filters.eq("status", "ACTIVE"));
 
         assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"), subQuery));
+    }
+
+    @Test
+    public void testDefaultConstructorToString() {
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery();
+
+        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+
+        assertNotNull(sql);
     }
 }

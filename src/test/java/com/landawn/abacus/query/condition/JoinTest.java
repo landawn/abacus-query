@@ -356,4 +356,13 @@ class Join2026Batch2Test extends TestBase {
         Assertions.assertEquals(join, same);
         Assertions.assertEquals(join.hashCode(), same.hashCode());
     }
+
+    @Test
+    public void testDefaultConstructorToString() {
+        Join join = new Join();
+
+        Assertions.assertNotNull(join.toString(NamingPolicy.NO_CHANGE));
+        Assertions.assertNotNull(join.toString());
+        Assertions.assertNotNull(join.toString(null));
+    }
 }

@@ -8,6 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -143,5 +144,14 @@ public class AbstractBetweenTest extends TestBase {
         assertTrue(sql.contains("score BETWEEN"));
         assertTrue(sql.contains("(SELECT MIN(score) FROM results)"));
         assertTrue(sql.contains("(SELECT MAX(score) FROM results)"));
+    }
+
+    @Test
+    public void testDefaultConstructorToString() {
+        final EmptyAbstractBetween condition = new EmptyAbstractBetween();
+
+        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+
+        assertNotNull(sql);
     }
 }

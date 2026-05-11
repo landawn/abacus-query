@@ -313,6 +313,28 @@ class Junction2025Test extends TestBase {
         assertNotNull(sql);
         assertTrue(sql.contains("userName") || sql.contains("user_name"));
     }
+
+    @Test
+    public void testToString_AllNullConditions() {
+        Junction junction = new Junction(Operator.AND);
+        junction.conditions.add(null);
+        junction.conditions.add(null);
+
+        String result = junction.toString(NamingPolicy.NO_CHANGE);
+
+        assertNotNull(result);
+        assertEquals("", result);
+    }
+
+    @Test
+    public void testDefaultConstructorToString() {
+        Junction junction = new Junction();
+
+        assertNotNull(junction.toString(NamingPolicy.NO_CHANGE));
+        assertNotNull(junction.toString());
+        assertNotNull(junction.toString(null));
+        assertEquals("", junction.toString(NamingPolicy.NO_CHANGE));
+    }
 }
 
 public class JunctionTest extends TestBase {
