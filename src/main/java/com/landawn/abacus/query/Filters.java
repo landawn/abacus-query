@@ -35,7 +35,6 @@ import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Except;
 import com.landawn.abacus.query.condition.Exists;
 import com.landawn.abacus.query.condition.Expression;
-import com.landawn.abacus.query.condition.Expression.Expr;
 import com.landawn.abacus.query.condition.FullJoin;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.GreaterThanOrEqual;
@@ -142,7 +141,7 @@ public class Filters {
      * Equal condition = Filters.equal("age");   // Uses QME internally
      * }</pre>
      */
-    public static final Expression QME = Expr.of(SK.QUESTION_MARK);
+    public static final Expression QME = Expression.of(SK.QUESTION_MARK);
 
     /** Expression representing {@code "1 < 2"} which always evaluates to {@code true}. */
     private static final Expression ALWAYS_TRUE = Expression.of("1 < 2");

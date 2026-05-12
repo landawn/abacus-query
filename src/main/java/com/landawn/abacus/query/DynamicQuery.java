@@ -564,7 +564,13 @@ public final class DynamicQuery {
                     selectClause.sb.append(moreParts);
                 }
 
-                return selectClause.sb.toString();
+                final String sql = selectClause.sb.toString();
+
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Built dynamic SQL: {}", sql);
+                }
+
+                return sql;
             } finally {
                 if (fromClause != null) {
                     Objectory.recycle(fromClause.sb);

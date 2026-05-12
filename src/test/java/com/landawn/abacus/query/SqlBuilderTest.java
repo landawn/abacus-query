@@ -299,13 +299,13 @@ class SqlBuilder10Test extends TestBase {
 
     @Test
     public void testNamed() {
-        Map<String, Expression> result = AbstractQueryBuilder.named("firstName", "lastName");
+        Map<String, Expression> result = AbstractQueryBuilder.namedPlaceholders("firstName", "lastName");
         assertEquals(2, result.size());
         assertEquals(Filters.QME, result.get("firstName"));
         assertEquals(Filters.QME, result.get("lastName"));
 
         List<String> propList = Arrays.asList("email", "status");
-        result = AbstractQueryBuilder.named(propList);
+        result = AbstractQueryBuilder.namedPlaceholders(propList);
         assertEquals(2, result.size());
         assertEquals(Filters.QME, result.get("email"));
         assertEquals(Filters.QME, result.get("status"));

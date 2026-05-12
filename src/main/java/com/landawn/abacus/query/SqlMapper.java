@@ -38,6 +38,8 @@ import org.xml.sax.SAXException;
 import com.landawn.abacus.annotation.SuppressFBWarnings;
 import com.landawn.abacus.exception.ParsingException;
 import com.landawn.abacus.exception.UncheckedIOException;
+import com.landawn.abacus.logging.Logger;
+import com.landawn.abacus.logging.LoggerFactory;
 import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.PropertiesUtil;
@@ -88,6 +90,8 @@ import com.landawn.abacus.util.XmlUtil;
  * }</pre>
  */
 public final class SqlMapper {
+
+    static final Logger logger = LoggerFactory.getLogger(SqlMapper.class);
 
     /**
      * XML element name for the root sqlMapper element.
@@ -189,6 +193,10 @@ public final class SqlMapper {
         for (final String subFilePath : filePaths) {
             final File file = PropertiesUtil.formatPath(PropertiesUtil.findFile(subFilePath));
 
+            if (logger.isInfoEnabled()) {
+                logger.info("Loading SQL mapper from file: {}", file.getAbsolutePath());
+            }
+
             try (InputStream is = new FileInputStream(file)) {
 
                 final Document doc = XmlUtil.createDOMParser(true, true).parse(is);
@@ -205,9 +213,15 @@ public final class SqlMapper {
 
                     sqlMapper.add(attrMap.remove(ID), XmlUtil.getTextContent(sqlElement), attrMap);
                 }
+
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Loaded {} SQL statements from file: {}", sqlElementList.size(), file.getAbsolutePath());
+                }
             } catch (final IOException e) {
+                logger.error("Failed to load SQL mapper due to I/O error: {}", file.getAbsolutePath());
                 throw new UncheckedIOException(e);
             } catch (final SAXException e) {
+                logger.error("Failed to load SQL mapper due to XML parsing error: {}", file.getAbsolutePath());
                 throw new ParsingException(e);
             }
         }
@@ -317,6 +331,10 @@ public final class SqlMapper {
 
         sqlMap.put(id, sql);
         attrsMap.put(id, ImmutableMap.empty());
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Added SQL mapping: id='{}'", id);
+        }
     }
 
     /**
@@ -344,6 +362,10 @@ public final class SqlMapper {
         final ParsedSql parsedSql = ParsedSql.parse(sql);
         sqlMap.put(id, parsedSql);
         attrsMap.put(id, attrs == null || attrs.isEmpty() ? ImmutableMap.empty() : ImmutableMap.copyOf(attrs));
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Added SQL mapping: id='{}'", id);
+        }
     }
 
     /**
@@ -393,6 +415,10 @@ public final class SqlMapper {
 
         sqlMap.remove(id);
         attrsMap.remove(id);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Removed SQL mapping: id='{}'", id);
+        }
     }
 
     /**

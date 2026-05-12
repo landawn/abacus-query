@@ -471,8 +471,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlPolicy the SQL generation policy, defaults to RAW_SQL if null
      */
     protected AbstractQueryBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
-        if (activeStringBuilderCounter.incrementAndGet() > 1024) {
-            logger.error("Too many(" + activeStringBuilderCounter.get() + ") StringBuilder instances are created in AbstractQueryBuilder. The method build()"
+        final int activeBuilderCount = activeStringBuilderCounter.incrementAndGet();
+
+        if (activeBuilderCount > 512 && logger.isWarnEnabled()) {
+            logger.warn("{} active StringBuilder instances in AbstractQueryBuilder. The method build() must be called to release resources",
+                    activeBuilderCount);
+        } else if (activeBuilderCount > 1024) {
+            logger.error("Too many(" + activeBuilderCount + ") StringBuilder instances are created in AbstractQueryBuilder. The method build()"
                     + " must be called to release resources and close the builder");
         }
 
@@ -482,6 +487,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sqlPolicy = sqlPolicy == null ? SQLPolicy.RAW_SQL : sqlPolicy;
 
         _handlerForNamedParameter = handlerForNamedParameter_TL.get();
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("SqlBuilder created. Active builders: {}", activeBuilderCount);
+        }
     }
 
     /**
@@ -914,14 +923,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Map<String, Expression> params = AbstractQueryBuilder.named("firstName", "lastName");
+     * Map<String, Expression> params = AbstractQueryBuilder.namedPlaceholders("firstName", "lastName");
      * }</pre>
      *
      * @param propNames the property names
      * @return a map with property names mapped to {@code Filters.QME}
      */
     @Beta
-    protected static Map<String, Expression> named(final String... propNames) {
+    protected static Map<String, Expression> namedPlaceholders(final String... propNames) {
         final Map<String, Expression> m = N.newLinkedHashMap(propNames.length);
 
         for (final String propName : propNames) {
@@ -938,14 +947,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Map<String, Expression> params = AbstractQueryBuilder.named(Arrays.asList("firstName", "lastName"));
+     * Map<String, Expression> params = AbstractQueryBuilder.namedPlaceholders(Arrays.asList("firstName", "lastName"));
      * }</pre>
      *
      * @param propNames the collection of property names
      * @return a map with property names mapped to {@code Filters.QME}
      */
     @Beta
-    protected static Map<String, Expression> named(final Collection<String> propNames) {
+    protected static Map<String, Expression> namedPlaceholders(final Collection<String> propNames) {
         final Map<String, Expression> m = N.newLinkedHashMap(propNames.size());
 
         for (final String propName : propNames) {
@@ -4477,6 +4486,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             _sb = null;
 
             activeStringBuilderCounter.decrementAndGet();
+        }
+
+        if (logger.isDebugEnabled()) {
+            if (N.isEmpty(_parameters)) {
+                logger.debug("Built SQL: {}", sql);
+            } else {
+                logger.debug("Built SQL: {} Parameters: {}", sql, _parameters);
+            }
         }
 
         return new SP(sql, ImmutableList.wrap(_parameters));

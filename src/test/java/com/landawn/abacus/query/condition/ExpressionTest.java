@@ -1,13 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -15,6 +7,16 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
 
 /**
  * Comprehensive test class for Expression.
@@ -753,13 +755,13 @@ class Expression2025Test extends TestBase {
         assertNotEquals(expr1, expr2);
     }
 
-    @Test
-    public void testExprAlias() {
-        Expression.Expr expr = new Expression.Expr("test");
-
-        assertNotNull(expr);
-        assertEquals("test", expr.getLiteral());
-    }
+    //    @Test
+    //    public void testExprAlias() {
+    //        Expression.Expr expr = new Expression.Expr("test");
+    //
+    //        assertNotNull(expr);
+    //        assertEquals("test", expr.getLiteral());
+    //    }
 
     // Removed: testBt() - bt() method has been removed. Use between() instead.
 
@@ -1402,12 +1404,12 @@ public class ExpressionTest extends TestBase {
         Assertions.assertNotEquals(expr1, "string");
     }
 
-    @Test
-    public void testExprClass() {
-        Expression.Expr expr = new Expression.Expr("test expression");
-        Assertions.assertEquals("test expression", expr.getLiteral());
-        Assertions.assertTrue(expr instanceof Expression);
-    }
+    //    @Test
+    //    public void testExprClass() {
+    //        Expression.Expr expr = new Expression.Expr("test expression");
+    //        Assertions.assertEquals("test expression", expr.getLiteral());
+    //        Assertions.assertTrue(expr instanceof Expression);
+    //    }
 
     @Test
     public void testDefaultConstructor_EmptyState_Batch2() {

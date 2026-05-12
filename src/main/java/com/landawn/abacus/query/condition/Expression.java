@@ -1696,27 +1696,27 @@ public class Expression extends ComposableCondition {
         return (this == obj) || (obj instanceof Expression && N.equals(literal, ((Expression) obj).literal));
     }
 
-    /**
-     * A concise alias for {@link Expression}, useful as a shorter qualifier when invoking
-     * the inherited static factory and helper methods (e.g., {@code Expr.of("...")}).
-     *
-     * <p>The package-private constructor exists only to allow this subclass to be loaded;
-     * application code should obtain instances through {@link Expression#of(String)}
-     * (or {@code Expr.of(String)}, which inherits the same factory) rather than constructing
-     * {@code Expr} directly.</p>
-     *
-     * @see Expression
-     */
-    public static class Expr extends Expression {
-        /**
-         * Constructs a new {@code Expr} with the specified SQL literal.
-         * Passes the provided literal directly to the {@link Expression#Expression(String)} constructor.
-         *
-         * @param literal the SQL expression as a string
-         * @see Expression#Expression(String)
-         */
-        Expr(final String literal) {
-            super(literal);
-        }
-    }
+    //    /**
+    //     * A concise alias for {@link Expression}, useful as a shorter qualifier when invoking
+    //     * the inherited static factory and helper methods (e.g., {@code Expr.of("...")}).
+    //     *
+    //     * <p>The package-private constructor exists only to allow this subclass to be loaded;
+    //     * application code should obtain instances through {@link Expression#of(String)}
+    //     * (or {@code Expr.of(String)}, which inherits the same factory) rather than constructing
+    //     * {@code Expr} directly.</p>
+    //     *
+    //     * @see Expression
+    //     */
+    //    public static class Expr extends Expression {
+    //        /**
+    //         * Constructs a new {@code Expr} with the specified SQL literal.
+    //         * Passes the provided literal directly to the {@link Expression#Expression(String)} constructor.
+    //         *
+    //         * @param literal the SQL expression as a string
+    //         * @see Expression#Expression(String)
+    //         */
+    //        Expr(final String literal) {
+    //            super(literal);
+    //        }
+    //    }
 }
