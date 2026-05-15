@@ -164,23 +164,19 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             _sb.append(bt.operator().toString());
             _sb.append(_SPACE);
 
+            // Strip any table-alias prefix (e.g. "ord.orderDate" -> "orderDate") so the
+            // synthesized "minX"/"maxX" parameter names remain valid identifiers.
+            final String paramBase = sanitizeNamedParameterName(propName);
+
             final Object minValue = bt.getMinValue();
-            if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
-                setParameter("min" + Strings.capitalize(propName), minValue);
-            } else {
-                setParameter("min" + Strings.capitalize(propName), minValue);
-            }
+            setParameter("min" + Strings.capitalize(paramBase), minValue);
 
             _sb.append(_SPACE);
             _sb.append(SK.AND);
             _sb.append(_SPACE);
 
             final Object maxValue = bt.getMaxValue();
-            if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
-                setParameter("max" + Strings.capitalize(propName), maxValue);
-            } else {
-                setParameter("max" + Strings.capitalize(propName), maxValue);
-            }
+            setParameter("max" + Strings.capitalize(paramBase), maxValue);
         } else if (cond instanceof final NotBetween nbt) {
             final String propName = nbt.getPropName();
 
@@ -190,23 +186,18 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             _sb.append(nbt.operator().toString());
             _sb.append(_SPACE);
 
+            // Strip any table-alias prefix to keep "minX"/"maxX" parameter names valid.
+            final String paramBase = sanitizeNamedParameterName(propName);
+
             final Object minValue = nbt.getMinValue();
-            if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
-                setParameter("min" + Strings.capitalize(propName), minValue);
-            } else {
-                setParameter("min" + Strings.capitalize(propName), minValue);
-            }
+            setParameter("min" + Strings.capitalize(paramBase), minValue);
 
             _sb.append(_SPACE);
             _sb.append(SK.AND);
             _sb.append(_SPACE);
 
             final Object maxValue = nbt.getMaxValue();
-            if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
-                setParameter("max" + Strings.capitalize(propName), maxValue);
-            } else {
-                setParameter("max" + Strings.capitalize(propName), maxValue);
-            }
+            setParameter("max" + Strings.capitalize(paramBase), maxValue);
         } else if (cond instanceof final In in) {
             final String propName = in.getPropName();
             final List<Object> params = in.getParameters();

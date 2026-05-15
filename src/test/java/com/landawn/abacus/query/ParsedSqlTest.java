@@ -1006,8 +1006,7 @@ class ParsedSql2026BatchTest extends TestBase {
     public void testParse_IbatisParameterTokenAssemblyStopsAtFirstClosingBrace() {
         // Verifies the loop stops at the FIRST '}', not the last character being '}'
         ParsedSql parsed = ParsedSql.parse("INSERT INTO t VALUES (#{a},#{b})");
-        Assertions.assertEquals(2, parsed.parameterCount(),
-                "Two iBatis parameters should be detected");
+        Assertions.assertEquals(2, parsed.parameterCount(), "Two iBatis parameters should be detected");
         Assertions.assertEquals("a", parsed.namedParameters().get(0));
         Assertions.assertEquals("b", parsed.namedParameters().get(1));
     }
@@ -1028,8 +1027,7 @@ class ParsedSql2026BatchTest extends TestBase {
         // into the parameterized SQL after the ';' is removed.
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users   ;");
         Assertions.assertEquals("SELECT * FROM users", parsed.parameterizedSql());
-        Assertions.assertFalse(parsed.parameterizedSql().endsWith(" "),
-                "parameterizedSql must not end with whitespace after ';' removal");
+        Assertions.assertFalse(parsed.parameterizedSql().endsWith(" "), "parameterizedSql must not end with whitespace after ';' removal");
     }
 
     @Test

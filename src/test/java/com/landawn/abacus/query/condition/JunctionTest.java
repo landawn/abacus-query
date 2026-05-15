@@ -335,6 +335,23 @@ class Junction2025Test extends TestBase {
         assertNotNull(junction.toString(null));
         assertEquals("", junction.toString(NamingPolicy.NO_CHANGE));
     }
+
+    @Test
+    public void testDefaultConstructorToString_NullOperatorWithConditions() {
+        // Simulate Kryo-deserialized state: default-constructed Junction (operator=null)
+        // populated with non-null conditions afterwards. Must not NPE.
+        Junction junction = new Junction();
+        junction.conditions.add(Filters.eq("a", 1));
+        junction.conditions.add(Filters.eq("b", 2));
+
+        String result = junction.toString(NamingPolicy.NO_CHANGE);
+        assertNotNull(result);
+        // The rendering should include both conditions and a "null" placeholder for the operator
+        assertTrue(result.contains("a"));
+        assertTrue(result.contains("b"));
+        assertTrue(result.contains("null"));
+    }
+
 }
 
 public class JunctionTest extends TestBase {

@@ -7,6 +7,7 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ComposableCellTest extends TestBase {
@@ -89,5 +90,22 @@ public class ComposableCellTest extends TestBase {
         assertTrue(left.getParameters().isEmpty());
         assertEquals(left, right);
         assertEquals(left.hashCode(), right.hashCode());
+    }
+
+    @Test
+    public void testDefaultConstructorToString_NullOperator() {
+        // A ComposableCell created via the package-private default constructor has a
+        // null operator (mirrors Kryo deserialization of partially-populated state).
+        // Calling toString() must not NPE.
+        final EmptyComposableCell cell = new EmptyComposableCell();
+
+        final String result = cell.toString(NamingPolicy.NO_CHANGE);
+        assertNotNull(result);
+        // The operator should render as the literal "null" placeholder.
+        assertTrue(result.contains("null"));
+
+        // Also verify the no-arg toString() variant and a null NamingPolicy both work.
+        assertNotNull(cell.toString());
+        assertNotNull(cell.toString(null));
     }
 }

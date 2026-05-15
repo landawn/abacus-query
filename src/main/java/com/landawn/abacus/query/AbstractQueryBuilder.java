@@ -4364,6 +4364,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This set(final Object entity, final Set<String> excludedPropNames) {
+        N.checkArgNotNull(entity, "entity");
+
         if (entity instanceof String) {
             return set(N.asArray((String) entity));
         }
@@ -5117,15 +5119,40 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Generates the next unique named parameter name for the given property name.
-     * On the first occurrence, returns the property name as-is. On subsequent occurrences,
-     * appends a numeric suffix (e.g., "propName_2", "propName_3").
+     * Any table-alias prefix (text up to and including the last {@code '.'}) is stripped
+     * so that names like {@code "u.id"} or {@code "ord.orderDate"} produce SQL-compatible
+     * placeholders (e.g. {@code :id}, {@code :orderDate}) rather than placeholders with
+     * embedded dots which most named-parameter parsers (Spring, MyBatis, etc.) reject.
+     * On the first occurrence of a simple name, returns it as-is. On subsequent occurrences,
+     * appends a numeric suffix (e.g., {@code "propName_2"}, {@code "propName_3"}).
      *
      * @param propName the property name to generate a parameter name for
      * @return the unique named parameter name
      */
     protected String nextNamedParameterName(final String propName) {
-        final int occurrence = _namedParameterNameOccurrences.compute(propName, (k, v) -> v == null ? 1 : v + 1);
-        return occurrence == 1 ? propName : propName + "_" + occurrence;
+        final String sanitized = sanitizeNamedParameterName(propName);
+        final int occurrence = _namedParameterNameOccurrences.compute(sanitized, (k, v) -> v == null ? 1 : v + 1);
+        return occurrence == 1 ? sanitized : sanitized + "_" + occurrence;
+    }
+
+    /**
+     * Strips any table-alias prefix from {@code propName} so the remaining text is a valid
+     * named-parameter identifier. {@code "u.id"} becomes {@code "id"}, {@code "a.b.c"} becomes
+     * {@code "c"}, and a name without a dot is returned unchanged. {@code null} or blank
+     * input is returned unchanged.
+     *
+     * @param propName the property name (may include table-alias prefix)
+     * @return the sanitized identifier suitable for use after {@code :} or inside {@code #{}}
+     */
+    protected static String sanitizeNamedParameterName(final String propName) {
+        if (propName == null || propName.isEmpty()) {
+            return propName;
+        }
+        final int dotIdx = propName.lastIndexOf('.');
+        if (dotIdx < 0 || dotIdx == propName.length() - 1) {
+            return propName;
+        }
+        return propName.substring(dotIdx + 1);
     }
 
     /**

@@ -250,6 +250,8 @@ public class Junction extends ComposableCondition {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
+            final Operator op = operator();
+            final String opStr = op == null ? Strings.NULL : op.toString();
             boolean isFirst = true;
             for (final Condition condition : conditions) {
                 if (condition == null) {
@@ -258,7 +260,7 @@ public class Junction extends ComposableCondition {
 
                 if (!isFirst) {
                     sb.append(_SPACE);
-                    sb.append(operator().toString());
+                    sb.append(opStr);
                     sb.append(_SPACE);
                 } else {
                     sb.append(_PARENTHESIS_L);

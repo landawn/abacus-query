@@ -365,4 +365,45 @@ class Join2026Batch2Test extends TestBase {
         Assertions.assertNotNull(join.toString());
         Assertions.assertNotNull(join.toString(null));
     }
+
+    @Test
+    public void testDefaultConstructorToStringHasNoTrailingSpace() {
+        // Bug fix: previously rendered "null " (literal null + trailing space) when both operator
+        // and join entities were null. The trailing space combined with the "null" placeholder
+        // produced invalid SQL fragments. Now should render as plain "null" with no trailing space.
+        Join join = new Join();
+
+        String rendered = join.toString(NamingPolicy.NO_CHANGE);
+        Assertions.assertEquals("null", rendered);
+        Assertions.assertFalse(rendered.endsWith(" "), "toString() must not end with a trailing space");
+    }
+
+    @Test
+    public void testToStringOperatorOnlyHasNoTrailingSpace() throws Exception {
+        // Bug fix: when joinEntities is null/empty but operator is set, the output should not have
+        // a trailing space (which would yield "INNER JOIN " instead of "INNER JOIN").
+        Join join = new Join();
+        java.lang.reflect.Field operatorField = AbstractCondition.class.getDeclaredField("operator");
+        operatorField.setAccessible(true);
+        operatorField.set(join, Operator.INNER_JOIN);
+
+        String rendered = join.toString(NamingPolicy.NO_CHANGE);
+        Assertions.assertEquals("INNER JOIN", rendered);
+        Assertions.assertFalse(rendered.endsWith(" "), "toString() must not end with a trailing space");
+    }
+
+    @Test
+    public void testRegularJoinsUnaffectedByFix() {
+        // Sanity check that the fix does not regress normal join rendering.
+        Join j1 = new Join("orders");
+        Assertions.assertEquals("JOIN orders", j1.toString(NamingPolicy.NO_CHANGE));
+
+        Join j2 = new Join("orders o", new Equal("c.id", "o.cid"));
+        String r2 = j2.toString(NamingPolicy.NO_CHANGE);
+        Assertions.assertTrue(r2.startsWith("JOIN orders o"));
+        Assertions.assertTrue(r2.contains("c.id"));
+
+        InnerJoin ij = new InnerJoin("orders o");
+        Assertions.assertEquals("INNER JOIN orders o", ij.toString(NamingPolicy.NO_CHANGE));
+    }
 }

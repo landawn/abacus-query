@@ -355,9 +355,18 @@ public class Join extends AbstractCondition {
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final Operator op = operator();
+        final String entities = (joinEntities == null || joinEntities.isEmpty()) ? Strings.EMPTY : concatPropNames(joinEntities);
 
-        return (op == null ? Strings.NULL : op.toString()) + _SPACE + concatPropNames(joinEntities)
-                + ((condition == null) ? Strings.EMPTY : (_SPACE + condition.toString(namingPolicy)));
+        if (op == null && entities.isEmpty()) {
+            // Default (Kryo) state: avoid emitting "null " with a trailing space.
+            return condition == null ? Strings.NULL : Strings.NULL + _SPACE + condition.toString(namingPolicy);
+        }
+
+        final String opStr = (op == null) ? Strings.NULL : op.toString();
+        final String entityPart = entities.isEmpty() ? Strings.EMPTY : _SPACE + entities;
+        final String condPart = (condition == null) ? Strings.EMPTY : (_SPACE + condition.toString(namingPolicy));
+
+        return opStr + entityPart + condPart;
     }
 
     /**

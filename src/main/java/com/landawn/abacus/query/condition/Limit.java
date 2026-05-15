@@ -264,21 +264,28 @@ public class Limit extends Clause {
      * Converts this LIMIT clause to its string representation according to the specified naming policy.
      * The output format depends on how the Limit was constructed:
      * <ul>
-     *   <li>Custom expression: returns the expression as-is</li>
-     *   <li>Count only: returns "LIMIT count"</li>
-     *   <li>Count with offset: returns "LIMIT count OFFSET offset"</li>
+     *   <li>Custom expression: returns the normalized expression (which may have {@code "LIMIT "} prepended,
+     *       per {@link #Limit(String)})</li>
+     *   <li>Count only (offset {@code == 0}): returns {@code "LIMIT count"}</li>
+     *   <li>Count with offset ({@code > 0}): returns {@code "LIMIT count OFFSET offset"}</li>
      * </ul>
      *
-     * @param namingPolicy the naming policy to apply (though LIMIT typically doesn't need name conversion)
+     * @param namingPolicy the naming policy parameter is currently ignored — LIMIT operates on numeric values, not property names
      * @return the string representation of this LIMIT clause
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         if (Strings.isNotEmpty(expr)) {
             return expr;
-        } else {
-            return offset > 0 ? SK.LIMIT + _SPACE + count + _SPACE + SK.OFFSET + _SPACE + offset : SK.LIMIT + _SPACE + count;
         }
+
+        // Uninitialized instance (e.g., from Kryo default constructor): render the operator
+        // consistently with Cell.toString instead of pretending to be "LIMIT 0".
+        if (operator() == null) {
+            return Strings.NULL;
+        }
+
+        return offset > 0 ? SK.LIMIT + _SPACE + count + _SPACE + SK.OFFSET + _SPACE + offset : SK.LIMIT + _SPACE + count;
     }
 
     /**

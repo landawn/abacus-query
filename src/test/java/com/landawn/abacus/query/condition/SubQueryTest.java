@@ -715,4 +715,26 @@ class SubQuery2026Test extends TestBase {
         Assertions.assertNull(subQuery.sql());
         Assertions.assertTrue(subQuery.getParameters().isEmpty());
     }
+
+    @Test
+    public void testDefaultConstructorToStringDoesNotEmitFromNull() {
+        // Bug fix: previously rendered "SELECT * FROM null" when the default Kryo constructor
+        // left entityName/entityClass null. That is invalid SQL containing the literal "null"
+        // for the table name. The FROM clause should be omitted entirely in that case.
+        SubQuery subQuery = new SubQuery();
+
+        String rendered = subQuery.toString(NamingPolicy.NO_CHANGE);
+        Assertions.assertFalse(rendered.contains("FROM null"), "toString() must not include 'FROM null'; got: " + rendered);
+        Assertions.assertFalse(rendered.contains("from null"), "toString() must not include 'from null'; got: " + rendered);
+        // The rendered string should look like a benign placeholder, e.g. just "SELECT *".
+        Assertions.assertTrue(rendered.startsWith("SELECT"), "Should still start with SELECT");
+    }
+
+    @Test
+    public void testStructuredSubQueryUnaffectedByFix() {
+        // Sanity check: well-formed structured subqueries still render their FROM clause.
+        SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "name"), null);
+        String rendered = subQuery.toString(NamingPolicy.NO_CHANGE);
+        Assertions.assertTrue(rendered.contains("FROM users"), "Structured subquery must still emit FROM users; got: " + rendered);
+    }
 }

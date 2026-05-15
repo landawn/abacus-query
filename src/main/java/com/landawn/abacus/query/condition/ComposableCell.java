@@ -18,6 +18,7 @@ import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.SK;
+import com.landawn.abacus.util.Strings;
 
 /**
  * A composable variant of {@link Cell} that supports logical composition via AND/OR/NOT operations.
@@ -92,18 +93,21 @@ public abstract class ComposableCell extends ComposableCondition {
      * Converts this {@code ComposableCell} to its string representation using the specified naming policy.
      * The output format is: {@code OPERATOR (condition_string)}
      * (the inner condition is always enclosed in parentheses).
+     * If the operator is {@code null} (only possible for an uninitialized instance), the literal
+     * {@code "null"} is rendered in place of the operator.
      *
      * @param namingPolicy the naming policy to apply to property names within the wrapped condition;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a string representation of this ComposableCell
-     * @throws NullPointerException if this instance has a {@code null} operator (only possible for an uninitialized instance created via the package-private default constructor)
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Condition condition = getCondition();
         final String conditionString = condition == null ? "" : condition.toString(effectiveNamingPolicy);
-        return operator().toString() + SK._SPACE + SK._PARENTHESIS_L + conditionString + SK._PARENTHESIS_R;
+        final Operator op = operator();
+        final String opStr = op == null ? Strings.NULL : op.toString();
+        return opStr + SK._SPACE + SK._PARENTHESIS_L + conditionString + SK._PARENTHESIS_R;
     }
 
     /**

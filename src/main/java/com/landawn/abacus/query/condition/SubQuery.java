@@ -477,14 +477,18 @@ public class SubQuery extends AbstractCondition {
                     sb.append("*");
                 }
 
-                sb.append(_SPACE);
-                sb.append(SK.FROM);
-
-                sb.append(_SPACE);
-                if (entityClass == null) {
-                    sb.append(effectiveNamingPolicy.convert(entityName));
-                } else {
+                // Guard against default (Kryo) state where entityName/entityClass are null:
+                // skip the FROM clause entirely instead of rendering "FROM null".
+                if (entityClass != null) {
+                    sb.append(_SPACE);
+                    sb.append(SK.FROM);
+                    sb.append(_SPACE);
                     sb.append(QueryUtil.getTableNameAndAlias(entityClass, effectiveNamingPolicy));
+                } else if (!Strings.isEmpty(entityName)) {
+                    sb.append(_SPACE);
+                    sb.append(SK.FROM);
+                    sb.append(_SPACE);
+                    sb.append(effectiveNamingPolicy.convert(entityName));
                 }
 
                 if (condition != null) {

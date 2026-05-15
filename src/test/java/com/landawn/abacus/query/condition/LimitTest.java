@@ -494,4 +494,21 @@ class Limit2026Batch2Test extends TestBase {
         Assertions.assertEquals("LIMIT #{limit} OFFSET #{offset}", limit.getExpression());
         Assertions.assertEquals("#{limit} OFFSET #{offset}", limit.getCondition().toString());
     }
+
+    @Test
+    public void testDefaultConstructor_ToStringDoesNotPretendToBeLimitZero() {
+        // Regression: previously toString() on a default-constructed (Kryo) Limit returned
+        // "LIMIT 0", which falsely implies a fully-formed "limit zero rows" clause despite the
+        // operator being null. It should now render the "null" marker, consistent with Cell.toString.
+        Limit limit = new Limit();
+
+        Assertions.assertNull(limit.operator());
+        String rendered = limit.toString(NamingPolicy.NO_CHANGE);
+        Assertions.assertFalse(rendered.contains("LIMIT"), "Default-constructed Limit toString must not advertise a LIMIT clause; was: " + rendered);
+        Assertions.assertEquals("null", rendered);
+
+        // A properly initialised LIMIT 0 still renders correctly.
+        Limit zeroRows = new Limit(0);
+        Assertions.assertEquals("LIMIT 0", zeroRows.toString(NamingPolicy.NO_CHANGE));
+    }
 }

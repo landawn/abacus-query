@@ -439,10 +439,10 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testFetchNextRowsAndFetchFirstRowsAreMutuallyExclusive() {
-        assertThrows(IllegalStateException.class, () ->
-            SqlBuilder.PSC.select("*").from("users").orderBy("id").fetchNextRows(10).fetchFirstRows(5).build().query());
-        assertThrows(IllegalStateException.class, () ->
-            SqlBuilder.PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).fetchNextRows(5).build().query());
+        assertThrows(IllegalStateException.class,
+                () -> SqlBuilder.PSC.select("*").from("users").orderBy("id").fetchNextRows(10).fetchFirstRows(5).build().query());
+        assertThrows(IllegalStateException.class,
+                () -> SqlBuilder.PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).fetchNextRows(5).build().query());
     }
 
     @Test
@@ -478,17 +478,14 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertFalse(AbstractQueryBuilder.isDefaultIdPropValue(new java.math.BigDecimal("0.9")),
                 "BigDecimal 0.9 has longValue()=0 but must not be treated as default ID");
         assertFalse(AbstractQueryBuilder.isDefaultIdPropValue(new java.math.BigDecimal("0.1")));
-        assertFalse(AbstractQueryBuilder.isDefaultIdPropValue(0.5),
-                "double 0.5 must not be treated as default ID");
-        assertFalse(AbstractQueryBuilder.isDefaultIdPropValue(0.1f),
-                "float 0.1 must not be treated as default ID");
+        assertFalse(AbstractQueryBuilder.isDefaultIdPropValue(0.5), "double 0.5 must not be treated as default ID");
+        assertFalse(AbstractQueryBuilder.isDefaultIdPropValue(0.1f), "float 0.1 must not be treated as default ID");
     }
 
     @Test
     public void testDoubleHashNotTreatedAsSqlCommentInExpressions() {
         // ## is a whitelisted two-char token; the second # must not be re-examined as lone #
-        String sql = SqlBuilder.PSC.select("*").from("users")
-                .where(Filters.expr("status = '##ACTIVE##'")).build().query();
+        String sql = SqlBuilder.PSC.select("*").from("users").where(Filters.expr("status = '##ACTIVE##'")).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("##ACTIVE##"), "## inside value must not be rejected as SQL comment");
     }
@@ -1127,5 +1124,38 @@ class AbstractQueryBuilder2026BatchTest extends TestBase {
         assertTrue(first < middle, "first_name before middle_name in: " + sql);
         assertTrue(middle < last, "middle_name before last_name in: " + sql);
         assertTrue(last < status, "last_name before status in: " + sql);
+    }
+
+    /**
+     * Regression test: calling {@code set(Object, Set)} with a {@code null} entity must
+     * fail fast with a descriptive {@link IllegalArgumentException} rather than throwing
+     * a raw {@link NullPointerException} from {@code entity.getClass()}.
+     */
+    @Test
+    public void testSetEntityNull_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.update("account").set((Object) null));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.update("account").set((Object) null, null));
+    }
+
+    /**
+     * Regression test: {@link AbstractQueryBuilder#sanitizeNamedParameterName(String)}
+     * strips a table-alias prefix so the returned identifier can be used as a named
+     * parameter in JDBC / MyBatis / Spring named SQL.
+     */
+    @Test
+    public void testSanitizeNamedParameterName_stripsTableAliasPrefix() {
+        // Simple names are unchanged.
+        assertEquals("id", AbstractQueryBuilder.sanitizeNamedParameterName("id"));
+        assertEquals("firstName", AbstractQueryBuilder.sanitizeNamedParameterName("firstName"));
+        // Aliased names are stripped to the suffix.
+        assertEquals("id", AbstractQueryBuilder.sanitizeNamedParameterName("u.id"));
+        assertEquals("orderDate", AbstractQueryBuilder.sanitizeNamedParameterName("ord.orderDate"));
+        // Multi-level prefixes collapse to the last segment.
+        assertEquals("c", AbstractQueryBuilder.sanitizeNamedParameterName("a.b.c"));
+        // Edge cases.
+        assertEquals("", AbstractQueryBuilder.sanitizeNamedParameterName(""));
+        assertEquals(null, AbstractQueryBuilder.sanitizeNamedParameterName(null));
+        // Trailing dot is treated as no usable suffix (returned unchanged).
+        assertEquals("ord.", AbstractQueryBuilder.sanitizeNamedParameterName("ord."));
     }
 }
