@@ -126,10 +126,9 @@ public class UnionAll extends Clause {
      * // Combines with current transactions, preserving all records
      *
      * // Combine data from partitioned tables
-     * SubQuery q1Data = Filters.subQuery("SELECT * FROM sales_q1");
      * SubQuery q2Data = Filters.subQuery("SELECT * FROM sales_q2");
      * UnionAll allSales = new UnionAll(q2Data);
-     * // Efficiently combines quarterly data without duplicate check
+     * // When combined with a "SELECT * FROM sales_q1" query, efficiently combines quarterly data without duplicate check
      * }</pre>
      *
      * @param subQuery the subquery to perform the UNION ALL operation with (must not be {@code null}). The subquery

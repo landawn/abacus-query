@@ -127,7 +127,9 @@ public abstract class AbstractIn extends ComposableCondition {
     /**
      * Converts this condition to its string representation.
      * The format is: {@code propName IN (value1, value2, ...)}
-     * (or {@code NOT IN} for {@link NotIn}).
+     * (or {@code NOT IN} for {@link NotIn}). If the operator is {@code null}
+     * (only possible for an uninitialized instance), the literal {@code "null"} is rendered
+     * in place of the operator.
      *
      * @param namingPolicy the naming policy to apply to the property name;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used

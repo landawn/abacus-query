@@ -133,6 +133,7 @@ public class On extends Cell {
      *
      * @param cond the join condition. Any non-{@code null} condition is allowed, including
      *            {@link Expression}, {@link Equal}, {@link And}, {@link Or}, or {@link Between}.
+     *            Must not be {@code null}.
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public On(final Condition cond) {

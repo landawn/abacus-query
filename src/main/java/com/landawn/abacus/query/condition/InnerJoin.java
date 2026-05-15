@@ -96,10 +96,10 @@ public class InnerJoin extends Join {
     }
 
     /**
-     * Creates an INNER JOIN clause for the specified table or entity.
-     * This creates a join without an ON condition, which may need to be
-     * specified separately or will use implicit join conditions based on
-     * foreign key relationships (if supported by the database).
+     * Creates an INNER JOIN clause for the specified table or entity without a join condition.
+     * Most databases require an {@code ON} or {@code USING} clause for an INNER JOIN; supply
+     * the condition separately (for example by combining this with another clause) or use
+     * {@link #InnerJoin(String, Condition)} instead.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

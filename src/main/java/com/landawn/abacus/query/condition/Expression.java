@@ -204,9 +204,9 @@ public class Expression extends ComposableCondition {
      * // Reuse the same expression in multiple places
      * }</pre>
      *
-     * @param literal the SQL expression string
-     * @return a cached or new Expression instance
-     * @throws IllegalArgumentException if literal is null
+     * @param literal the SQL expression string (must not be {@code null})
+     * @return a cached or newly created Expression instance for the given literal
+     * @throws IllegalArgumentException if {@code literal} is {@code null}
      */
     public static Expression of(final String literal) {
         if (literal == null) {

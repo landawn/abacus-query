@@ -152,9 +152,11 @@ public class Binary extends ComposableCondition {
      * Gets the parameters for this condition.
      *
      * <ul>
-     *   <li>If the value is {@code null} and the operator is {@code =}, {@code !=}, {@code IS}, or {@code IS NOT},
-     *       an empty list is returned because the SQL is rendered as {@code IS NULL} / {@code IS NOT NULL}
-     *       with no bind parameter.</li>
+     *   <li>If the value is {@code null} and the operator is {@code =}, {@code !=}, {@code <>}, {@code IS}, or
+     *       {@code IS NOT}, an empty list is returned because the SQL is rendered as {@code IS NULL} /
+     *       {@code IS NOT NULL} with no bind parameter.</li>
+     *   <li>If the operator is {@code null} (only possible for an uninitialized instance), an empty list
+     *       is returned.</li>
      *   <li>If the value is a {@link Condition} (e.g., a subquery), the subquery's own parameters are returned.</li>
      *   <li>Otherwise, a single-element list containing the value is returned.</li>
      * </ul>

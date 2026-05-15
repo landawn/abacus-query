@@ -136,6 +136,7 @@ public class Join extends AbstractCondition {
      *
      * @param operator the join operator (INNER_JOIN, LEFT_JOIN, etc.)
      * @param joinEntity the table or entity to join with
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
     protected Join(final Operator operator, final String joinEntity) {
         this(operator, joinEntity, null);
@@ -197,6 +198,7 @@ public class Join extends AbstractCondition {
      * @param joinEntity the table or entity to join with
      * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
      *            include those keywords. Any {@link Condition} is allowed and can be {@code null}.
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
     protected Join(final Operator operator, final String joinEntity, final Condition cond) {
         this(operator, Collections.singletonList(joinEntity), cond);
@@ -256,6 +258,8 @@ public class Join extends AbstractCondition {
      * @param joinEntities the collection of tables or entities to join with
      * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
      *            include those keywords. Any {@link Condition} is allowed and can be {@code null}.
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains
+     *                                  {@code null} or empty elements
      */
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition cond) {
         super(operator);
@@ -340,11 +344,12 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Converts this JOIN clause to its string representation according to the specified naming policy.
-     * The output format includes the join operator, tables, and optional join condition.
-     * The condition's string representation depends on its type (On, Using, Expression, etc.).
+     * Converts this JOIN clause to its string representation, propagating the specified naming policy
+     * to the join condition. The output format includes the join operator, the joined entities, and
+     * the optional join condition; the join operator keyword and entity strings themselves are emitted
+     * verbatim. The condition's string representation depends on its type (On, Using, Expression, etc.).
      *
-     * @param namingPolicy the naming policy to apply
+     * @param namingPolicy the naming policy passed through to the join condition's {@code toString}
      * @return the string representation, e.g., "JOIN orders o ON customers.id = o.customer_id"
      */
     @Override

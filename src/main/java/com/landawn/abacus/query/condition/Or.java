@@ -128,8 +128,8 @@ public class Or extends Junction {
      * Or or = new Or(conditions);
      * // Results in: ((name LIKE '%name1%') OR (name LIKE '%name2%') OR ...)
      *
-     * // Combining existing conditions
-     * Set<Condition> statusConditions = new HashSet<>();
+     * // Combining existing conditions (use an ordered collection to preserve iteration order)
+     * List<Condition> statusConditions = new ArrayList<>();
      * statusConditions.add(Filters.equal("status", "active"));
      * statusConditions.add(Filters.equal("status", "pending"));
      * Or statusOr = new Or(statusConditions);

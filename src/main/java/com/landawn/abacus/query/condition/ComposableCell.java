@@ -50,8 +50,9 @@ public abstract class ComposableCell extends ComposableCondition {
      * <p>This constructor is typically invoked by subclass constructors such as
      * {@link Not}, {@link Exists}, {@link NotExists}, {@link All}, {@link Any}, and {@link Some}.</p>
      *
-     * @param operator the operator to apply to the condition
+     * @param operator the operator to apply to the condition (must not be {@code null})
      * @param cond the condition to wrap (must not be {@code null})
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public ComposableCell(final Operator operator, final Condition cond) {

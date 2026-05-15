@@ -74,8 +74,9 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Creates a new Criteria instance with the specified select modifier and condition list.
+     * This constructor is package-private; use {@link #builder()} to construct instances.
      *
-     * @param selectModifier the SELECT modifier (e.g., DISTINCT), or {@code null} for none
+     * @param selectModifier the SELECT modifier (e.g., {@code DISTINCT}), or {@code null} for none
      * @param conditions the list of conditions representing the query clauses
      */
     Criteria(String selectModifier, List<Condition> conditions) {
@@ -1520,8 +1521,9 @@ public class Criteria extends AbstractCondition {
          *     .limit(customLimit);
          * }</pre>
          * 
-         * @param condition the LIMIT condition
+         * @param condition the LIMIT condition (must not be {@code null})
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code condition} is {@code null}
          */
         public Builder limit(final Limit condition) {
             add(condition);

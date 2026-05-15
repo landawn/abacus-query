@@ -214,8 +214,9 @@ public class Filters {
      * ));
      * }</pre>
      * 
-     * @param cond the condition to negate
+     * @param cond the condition to negate (must not be {@code null} and must be a composable condition)
      * @return a {@link Not} condition that wraps and negates the provided condition
+     * @throws IllegalArgumentException if {@code cond} is {@code null} or is a clause/join condition (e.g., {@code ON}/{@code USING}) that cannot be composed
      * @see Not
      * @see Condition
      */
@@ -1951,7 +1952,8 @@ public class Filters {
 
     /**
      * Creates a {@link GroupBy} clause with the specified property names.
-     * Groups results by the given columns. The default sort direction {@code ASC} is applied.
+     * Groups results by the given columns. No explicit sort direction is appended
+     * to the columns; the database default is used.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

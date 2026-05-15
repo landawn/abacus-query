@@ -24,7 +24,7 @@ package com.landawn.abacus.query.condition;
  * 
  * <p>Key characteristics:</p>
  * <ul>
- *   <li>Returns true if subquery returns any rows, {@code false} if no rows</li>
+ *   <li>Returns {@code true} if subquery returns any rows, {@code false} if no rows</li>
  *   <li>More efficient than IN for large datasets - stops at first match</li>
  *   <li>The SELECT clause in the subquery doesn't matter (SELECT 1, SELECT *, etc.)</li>
  *   <li>Commonly used with correlated subqueries</li>
@@ -92,6 +92,11 @@ public class Exists extends ComposableCell {
         super(Operator.EXISTS, subQuery);
     }
 
+    /**
+     * Gets the subquery used by this EXISTS condition.
+     *
+     * @return the {@link SubQuery} supplied at construction time
+     */
     public SubQuery getSubQuery() {
         return (SubQuery) condition;
     }

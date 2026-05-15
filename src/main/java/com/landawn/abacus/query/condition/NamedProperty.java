@@ -211,7 +211,9 @@ public sealed class NamedProperty permits NP {
      * }</pre>
      *
      * @param values array of values to check equality against. Each value will be tested with OR logic.
+     *               Must not be {@code null} or empty.
      * @return an Or condition containing multiple Equal conditions
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see Or
      * @see Equal
      */
@@ -237,8 +239,9 @@ public sealed class NamedProperty permits NP {
      * // Results in: priority = 1 OR priority = 2 OR priority = 3
      * }</pre>
      *
-     * @param values primitive int values to check. Must not be null or empty.
+     * @param values primitive int values to check. Must not be {@code null} or empty.
      * @return an Or condition containing multiple Equal conditions
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see Or
      * @see Equal
      */
@@ -264,8 +267,9 @@ public sealed class NamedProperty permits NP {
      * // Results in: user_id = 1001 OR user_id = 1002 OR user_id = 1003
      * }</pre>
      *
-     * @param values primitive long values to check. Must not be null or empty.
+     * @param values primitive long values to check. Must not be {@code null} or empty.
      * @return an Or condition containing multiple Equal conditions
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see Or
      * @see Equal
      */
@@ -291,8 +295,9 @@ public sealed class NamedProperty permits NP {
      * // Results in: rate = 1.5 OR rate = 2.0 OR rate = 2.5
      * }</pre>
      *
-     * @param values primitive double values to check. Must not be null or empty.
+     * @param values primitive double values to check. Must not be {@code null} or empty.
      * @return an Or condition containing multiple Equal conditions
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see Or
      * @see Equal
      */
@@ -325,7 +330,9 @@ public sealed class NamedProperty permits NP {
      * }</pre>
      *
      * @param values collection of values to check equality against. Each value will be tested with OR logic.
+     *               Must not be {@code null} or empty.
      * @return an Or condition containing multiple Equal conditions
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see Or
      * @see Equal
      */
@@ -1013,7 +1020,9 @@ public sealed class NamedProperty permits NP {
         /**
          * Creates an {@code NP} instance for the specified property name.
          *
-         * @param propName the property name
+         * @param propName the property name; must not be {@code null} or empty
+         * @throws NullPointerException if {@code propName} is {@code null}
+         * @throws IllegalArgumentException if {@code propName} is empty
          */
         public NP(final String propName) {
             super(propName);

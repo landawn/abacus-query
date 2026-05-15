@@ -154,6 +154,8 @@ public abstract class AbstractBetween extends ComposableCondition {
      * Converts this condition to its string representation.
      * The format is: {@code propertyName BETWEEN minValue AND maxValue}
      * (or {@code NOT BETWEEN} for {@link NotBetween}).
+     * If the operator is {@code null} (only possible for an uninitialized instance), the literal
+     * {@code "null"} is rendered in place of the operator.
      *
      * @param namingPolicy the naming policy to apply to the property name;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used

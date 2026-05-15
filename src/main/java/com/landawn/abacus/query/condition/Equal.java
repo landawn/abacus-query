@@ -26,9 +26,9 @@ package com.landawn.abacus.query.condition;
  * <p>Key features:</p>
  * <ul>
  *   <li>Exact value matching</li>
- *   <li>NULL comparison support (though IsNull is preferred for clarity)</li>
+ *   <li>NULL comparison support ({@link IsNull} is preferred for clarity)</li>
  *   <li>Support for subquery comparisons</li>
- *   <li>Case-sensitive for string comparisons (database-dependent)</li>
+ *   <li>Case sensitivity for string comparisons is database-dependent</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>

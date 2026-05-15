@@ -44,7 +44,8 @@ public abstract class ComposableCondition extends AbstractCondition {
     /**
      * Creates a new ComposableCondition with the specified operator.
      *
-     * @param operator the logical operator for this condition
+     * @param operator the logical operator for this condition (must not be {@code null})
+     * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected ComposableCondition(final Operator operator) {
         super(operator);

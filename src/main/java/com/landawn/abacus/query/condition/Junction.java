@@ -35,9 +35,10 @@ import com.landawn.abacus.util.Strings;
  * It provides the foundation for creating complex query conditions by combining simpler ones.
  * Junctions can be nested to create arbitrarily complex composable expressions.
  * 
- * <p>Important: Junction must not contain clause conditions (WHERE, ORDER BY, etc.) - 
- * those are handled by {@link Criteria}. This class is specifically for composable
- * combinations of conditional expressions.
+ * <p>Important: Junction is intended for composable boolean conditions. It is not meant to
+ * contain clause conditions (WHERE, ORDER BY, etc.); those are handled by {@link Criteria}.
+ * The class itself does not reject clause conditions at construction time — callers are
+ * responsible for honouring this contract.
  * 
  * <p>This class serves as the parent for specific junction types:
  * <ul>
@@ -120,9 +121,8 @@ public class Junction extends ComposableCondition {
      * );
      * }</pre>
      *
-     * @param operator the composable operator to use (AND, OR, etc.). Must not be {@code null}.
+     * @param operator the composable operator to use (AND, OR, etc.)
      * @param conditions the conditions to combine; may be {@code null} or empty (treated as no conditions)
-     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}
      */
     public Junction(final Operator operator, final Condition... conditions) {
@@ -148,9 +148,8 @@ public class Junction extends ComposableCondition {
      * Junction junction = new Junction(Operator.AND, conditions);
      * }</pre>
      *
-     * @param operator the composable operator to use (AND, OR, etc.). Must not be {@code null}.
+     * @param operator the composable operator to use (AND, OR, etc.)
      * @param conditions the collection of conditions to combine; may be {@code null} or empty (treated as no conditions)
-     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {

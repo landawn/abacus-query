@@ -98,7 +98,7 @@ public abstract class AbstractCondition implements Condition {
 
     /**
      * Creates a new {@code AbstractCondition} with the specified operator.
-     * The operator is immutable once set and defines the behaviour of this condition.
+     * The operator is immutable once set and defines the behavior of this condition.
      * Subclass constructors must supply a non-{@code null} operator.
      *
      * @param operator the operator for this condition (must not be {@code null})
@@ -208,7 +208,8 @@ public abstract class AbstractCondition implements Condition {
      * <p>Formatting rules:</p>
      * <ul>
      *   <li>{@code null} returns {@code null}</li>
-     *   <li>Strings are wrapped in single quotes with embedded quotes escaped (e.g., {@code "John" -> 'John'})</li>
+     *   <li>Strings are wrapped in single quotes with embedded single quotes escaped
+     *       (e.g., {@code John} -&gt; {@code 'John'}; {@code O'Brien} -&gt; {@code 'O''Brien'})</li>
      *   <li>{@link Condition} values use the recursive {@code toString(namingPolicy)}; a {@link SubQuery} is additionally
      *       wrapped in parentheses, and the {@link IsNull#NULL}, {@link IsNaN#NAN}, and {@link IsInfinite#INFINITE}
      *       sentinels use their plain {@code toString()}</li>
@@ -224,7 +225,9 @@ public abstract class AbstractCondition implements Condition {
      * }</pre>
      *
      * @param parameter the parameter value to convert; may be {@code null}
-     * @param namingPolicy the naming policy to apply to property names within nested {@link Condition}s
+     * @param namingPolicy the naming policy to apply to property names within nested {@link Condition}s.
+     *                     Passing {@code null} may cause a {@link NullPointerException} when a nested
+     *                     {@code Condition} is encountered.
      * @return the string representation of the parameter, or {@code null} if {@code parameter} is {@code null}
      */
     protected static String formatParameter(final Object parameter, final NamingPolicy namingPolicy) {

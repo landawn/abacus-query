@@ -93,17 +93,17 @@ public class LeftJoin extends Join {
     }
 
     /**
-     * Creates a LEFT JOIN clause for the specified table or entity.
-     * This creates a join without an ON condition, which may need to be
-     * specified separately or will use implicit join conditions based on
-     * foreign key relationships (if supported by the database).
-     * 
+     * Creates a LEFT JOIN clause for the specified table or entity without a join condition.
+     * The rendered SQL is {@code LEFT JOIN <joinEntity>} with no {@code ON} / {@code USING} clause; most
+     * databases require a join predicate, so this form is typically used to build the join fragment
+     * incrementally and combine it with a separately specified condition.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple left join without condition
      * LeftJoin join = new LeftJoin("departments");
      * // Generates: LEFT JOIN departments
-     * 
+     *
      * // Left join with table alias
      * LeftJoin aliasJoin = new LeftJoin("employee_departments ed");
      * // Generates: LEFT JOIN employee_departments ed

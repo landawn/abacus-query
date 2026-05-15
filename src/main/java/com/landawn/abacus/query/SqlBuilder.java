@@ -1790,7 +1790,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * ACSB.select("firstName", "lastName").from("account").where(Filters.equal("id", 1)).build().query();
-     * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM ACCOUNT WHERE ID = 1
+     * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM account WHERE ID = 1
      * }</pre>
      *
      * @deprecated {@code PAC or NAC} is preferred for better security and performance. 
@@ -6963,7 +6963,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      *                 .from("account")
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
-     * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM ACCOUNT WHERE ID = ?
+     * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM account WHERE ID = ?
      * }</pre>
      */
     public static class PAC extends SqlBuilder {
@@ -12230,8 +12230,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * <pre>{@code
      * // Simple SELECT with named parameters
      * N.println(NAC.select("firstName", "lastName").from("account").where(Filters.equal("id", 1)).build().query());
-     * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM ACCOUNT WHERE ID = :id
-     * 
+     * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM account WHERE ID = :id
+     *
      * // INSERT with entity
      * Account account = new Account();
      * account.setFirstName("John");
@@ -17250,7 +17250,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      *                 .from("account")
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
-     * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM ACCOUNT WHERE ID = #{id}
+     * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM account WHERE ID = #{id}
      * 
      * // Generate INSERT with entity
      * Account account = new Account();

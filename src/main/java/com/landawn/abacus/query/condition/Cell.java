@@ -96,7 +96,8 @@ public abstract class Cell extends AbstractCondition {
      * Converts this {@code Cell} condition to its string representation using the specified naming policy.
      * The output format is {@code OPERATOR condition_string} (separated by a single space), or just
      * {@code OPERATOR} if the wrapped condition is {@code null}. Unlike {@link ComposableCell#toString(NamingPolicy)},
-     * the inner condition is <em>not</em> enclosed in parentheses.
+     * the inner condition is <em>not</em> enclosed in parentheses. If the operator is {@code null}
+     * (only possible for an uninitialized instance), the literal {@code "null"} is rendered in place of the operator.
      *
      * @param namingPolicy the naming policy to apply to property names within the wrapped condition
      * @return a string representation of this Cell

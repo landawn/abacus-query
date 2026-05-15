@@ -72,13 +72,13 @@ public enum Operator {
     NOT_EQUAL(SK.NOT_EQUAL),
 
     /**
-     * Alternative not equal operator (&lt;&gt;).
-     * Some databases prefer this syntax over !=.
+     * ANSI standard not equal operator (&lt;&gt;).
+     * This is the SQL standard form; most databases also accept the non-standard {@code !=}.
      */
     NOT_EQUAL_ANSI(SK.NOT_EQUAL_ANSI),
 
     /**
-     * NOT composable operator.
+     * NOT operator.
      * Used to negate conditions.
      */
     NOT(SK.NOT),
@@ -108,7 +108,7 @@ public enum Operator {
     NOT_LIKE(NOT + " " + SK.LIKE),
 
     /**
-     * AND composable operator.
+     * AND operator.
      * All conditions must be true.
      */
     AND(SK.AND),
@@ -120,7 +120,7 @@ public enum Operator {
     AND_OP(SK.AND_OP),
 
     /**
-     * OR composable operator.
+     * OR operator.
      * At least one condition must be true.
      */
     OR(SK.OR),
@@ -411,9 +411,9 @@ public enum Operator {
      * Operator unknown = Operator.of("UNKNOWN");   // null
      * }</pre>
      *
-     * @param name the string representation of the operator. Must not be null.
+     * @param name the string representation of the operator. Must not be {@code null}.
      * @return the corresponding Operator enum value, or {@code null} if not found
-     * @throws IllegalArgumentException if name is null
+     * @throws IllegalArgumentException if {@code name} is {@code null}
      */
     public static Operator of(final String name) {
         if (name == null) {
