@@ -500,4 +500,18 @@ public class JunctionTest extends TestBase {
         Assertions.assertTrue(result.contains("c"));
         Assertions.assertTrue(result.contains("d"));
     }
+
+    /**
+     * Second-pass locking test: getParameters() must recursively collect parameters from
+     * nested junctions in left-to-right (depth-first) order.
+     */
+    @Test
+    public void testGetParametersRecursesIntoNestedJunctions() {
+        Junction inner = new Junction(Operator.AND, Filters.eq("a", 1), Filters.eq("b", 2));
+        Junction outer = new Junction(Operator.OR, Filters.eq("c", 3), inner, Filters.eq("d", 4));
+
+        List<Object> params = outer.getParameters();
+
+        Assertions.assertEquals(Arrays.asList(3, 1, 2, 4), params);
+    }
 }

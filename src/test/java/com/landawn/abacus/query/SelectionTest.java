@@ -685,4 +685,35 @@ class SelectionJavadocExamples extends TestBase {
         assertTrue(selections.get(0).includeSubEntityProperties());
         assertTrue(selections.get(0).excludedPropNames().contains("password"));
     }
+
+    @Test
+    public void testBuilder_DefensivelyCopiesSelectPropNames() {
+        // Verify that mutating the input collection after add() does not affect the built Selection.
+        List<String> propNames = new ArrayList<>(Arrays.asList("id", "name"));
+        List<Selection> selections = Selection.builder().add(Object.class, "u", "user", propNames).build();
+        propNames.add("mutated");
+        assertEquals(2, selections.get(0).selectPropNames().size(),
+                "Builder must defensively copy selectPropNames so caller mutations after add() are isolated");
+        assertFalse(selections.get(0).selectPropNames().contains("mutated"));
+    }
+
+    @Test
+    public void testBuilder_DefensivelyCopiesExcludedPropNames() {
+        Set<String> excluded = new HashSet<>(Set.of("a", "b"));
+        List<Selection> selections = Selection.builder().add(Object.class, "u", "user", false, excluded).build();
+        excluded.add("c");
+        assertEquals(2, selections.get(0).excludedPropNames().size(),
+                "Builder must defensively copy excludedPropNames so caller mutations after add() are isolated");
+        assertFalse(selections.get(0).excludedPropNames().contains("c"));
+    }
+
+    @Test
+    public void testBuilder_BuildReturnsIndependentSnapshot() {
+        // Verify build() returns a list that is independent of subsequent builder mutations.
+        Selection.MultiSelectionBuilder builder = Selection.builder();
+        builder.add(Object.class, "u", "user");
+        List<Selection> first = builder.build();
+        builder.add(Object.class, "o", "order");
+        assertEquals(1, first.size(), "First build() snapshot must not see entries added afterward");
+    }
 }

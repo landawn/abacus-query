@@ -534,4 +534,35 @@ public class BinaryTest extends TestBase {
         Assertions.assertTrue(result.contains("col"));
         Assertions.assertTrue(result.contains(">"));
     }
+
+    /**
+     * Second-pass locking test: when propValue is a SubQuery, getParameters() must delegate
+     * to the SubQuery's getParameters() (not return the SubQuery as a single parameter).
+     */
+    @Test
+    public void testGetParametersDelegatesToSubQueryPropValue() {
+        SubQuery sub = new SubQuery("users", java.util.Arrays.asList("id"), Filters.eq("active", true));
+        Binary binary = new Binary("userId", Operator.EQUAL, sub);
+
+        List<Object> params = binary.getParameters();
+
+        // SubQuery's condition has one parameter (true). Binary must surface that, not the SubQuery itself.
+        assertEquals(1, params.size());
+        assertEquals(true, params.get(0));
+    }
+
+    /**
+     * Second-pass locking test: when propValue is a SubQuery, toString() must wrap the
+     * subquery in parentheses so the rendered SQL is valid.
+     */
+    @Test
+    public void testToStringWrapsSubQueryPropValueInParens() {
+        SubQuery sub = new SubQuery("users", java.util.Arrays.asList("id"), Filters.eq("active", true));
+        Binary binary = new Binary("userId", Operator.EQUAL, sub);
+
+        String result = binary.toString(NamingPolicy.NO_CHANGE);
+
+        Assertions.assertTrue(result.contains("(SELECT"), "subquery must be wrapped in parens: " + result);
+        Assertions.assertTrue(result.endsWith(")"), "subquery should end with closing paren: " + result);
+    }
 }

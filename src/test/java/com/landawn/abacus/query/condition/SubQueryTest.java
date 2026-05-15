@@ -737,4 +737,18 @@ class SubQuery2026Test extends TestBase {
         String rendered = subQuery.toString(NamingPolicy.NO_CHANGE);
         Assertions.assertTrue(rendered.contains("FROM users"), "Structured subquery must still emit FROM users; got: " + rendered);
     }
+
+    /**
+     * Second-pass locking test: getSelectPropNames returns an unmodifiable view of the
+     * underlying list (callers cannot mutate the SubQuery's internal state).
+     */
+    @Test
+    public void testGetSelectPropNamesIsUnmodifiable() {
+        SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "name"), null);
+
+        java.util.Collection<String> props = subQuery.getSelectPropNames();
+
+        Assertions.assertEquals(2, props.size());
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> props.add("extra"));
+    }
 }

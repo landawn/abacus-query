@@ -473,12 +473,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected AbstractQueryBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
         final int activeBuilderCount = activeStringBuilderCounter.incrementAndGet();
 
-        if (activeBuilderCount > 512 && logger.isWarnEnabled()) {
-            logger.warn("{} active StringBuilder instances in AbstractQueryBuilder. The method build() must be called to release resources",
-                    activeBuilderCount);
-        } else if (activeBuilderCount > 1024) {
+        if (activeBuilderCount > 1024) {
             logger.error("Too many(" + activeBuilderCount + ") StringBuilder instances are created in AbstractQueryBuilder. The method build()"
                     + " must be called to release resources and close the builder");
+        } else if (activeBuilderCount > 512 && logger.isWarnEnabled()) {
+            logger.warn("{} active StringBuilder instances in AbstractQueryBuilder. The method build() must be called to release resources",
+                    activeBuilderCount);
         }
 
         _sb = Objectory.createStringBuilder();
@@ -832,6 +832,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             propInfo = entityInfo.getPropInfo(subEntityPropName);
+
+            if (propInfo == null) {
+                continue;
+            }
+
             subEntityClass = (propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type).javaType();
             tableAlias = getTableAlias(subEntityClass);
 
@@ -5904,6 +5909,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         }
 
                         propInfo = entityInfo.getPropInfo(subEntityPropName);
+
+                        if (propInfo == null) {
+                            continue;
+                        }
+
                         subEntityClass = (propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type).javaType();
 
                         sb.append(_COMMA_SPACE).append(getTableName(subEntityClass, namingPolicy));

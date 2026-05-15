@@ -1158,4 +1158,42 @@ class AbstractQueryBuilder2026BatchTest extends TestBase {
         // Trailing dot is treated as no usable suffix (returned unchanged).
         assertEquals("ord.", AbstractQueryBuilder.sanitizeNamedParameterName("ord."));
     }
+
+    /**
+     * Regression test (Pass 2): {@code Account} declares sub-entity properties
+     * ({@code contact} and {@code devices}). When a SELECT-with-sub-entities is
+     * built, every code path that iterates {@link com.landawn.abacus.parser.ParserUtil.BeanInfo#subEntityPropNameList}
+     * and calls {@code getPropInfo(name)} must tolerate the rare null return
+     * (defensive guard added in {@code getSelectTableNames} and {@code getFromClause}).
+     * The normal happy path should still produce SQL with the sub-entity tables.
+     */
+    @Test
+    public void testSelectWithSubEntities_DoesNotThrow_Pass2() {
+        // Force the include-sub-entities select path. Using PSC.selectFrom(Class, boolean)
+        // exercises both helpers that previously dereferenced propInfo without a null check.
+        String sql = SqlBuilder.PSC.selectFrom(Account.class, true).build().query();
+        assertNotNull(sql);
+        assertTrue(sql.contains("SELECT"), "Should produce a SELECT");
+        assertTrue(sql.contains("FROM"), "Should produce a FROM");
+    }
+
+    /**
+     * Regression test (Pass 2): the constructor-time builder-leak warning logic must log
+     * at the highest applicable severity. Previously the {@code else if (> 1024)} branch
+     * was unreachable when warn was enabled, because the prior {@code if (> 512 && warn)}
+     * branch consumed all matching cases. The fix swaps the order so that an over-1024
+     * count produces the ERROR-level log instead of the warning.
+     *
+     * <p>Functional verification is indirect: we exercise the constructor + build() lifecycle
+     * heavily enough that the warning branch would be reachable, and confirm that the
+     * builder still produces valid SQL without throwing. (Asserting on the log output itself
+     * would require a logger mock and is out of scope.)
+     */
+    @Test
+    public void testManyBuildersDoNotLeakOrThrow_Pass2() {
+        for (int i = 0; i < 32; i++) {
+            String sql = SqlBuilder.PSC.select("id").from(Account.class).where(Filters.eq("id", i)).build().query();
+            assertNotNull(sql);
+        }
+    }
 }

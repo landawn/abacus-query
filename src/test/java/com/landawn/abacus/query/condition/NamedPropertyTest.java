@@ -1036,4 +1036,112 @@ public class NamedPropertyTest extends TestBase {
         Assertions.assertEquals(3, complexCondition.getConditions().size());
         Assertions.assertEquals(2, statusCondition.getValues().size());
     }
+
+    // --- 2nd-pass review verification tests ---
+
+    @Test
+    public void test2ndPass_eachComparatorMapsToCorrectOperator() {
+        // Verify NO copy/paste bug in operator mapping for any comparator method.
+        NamedProperty p = NamedProperty.of("col");
+        assertEquals(Operator.EQUAL, p.equal(1).operator());
+        assertEquals(Operator.EQUAL, p.eq(1).operator());
+        assertEquals(Operator.NOT_EQUAL, p.notEqual(1).operator());
+        assertEquals(Operator.NOT_EQUAL, p.ne(1).operator());
+        assertEquals(Operator.GREATER_THAN, p.greaterThan(1).operator());
+        assertEquals(Operator.GREATER_THAN, p.gt(1).operator());
+        assertEquals(Operator.GREATER_THAN_OR_EQUAL, p.greaterThanOrEqual(1).operator());
+        assertEquals(Operator.GREATER_THAN_OR_EQUAL, p.ge(1).operator());
+        assertEquals(Operator.LESS_THAN, p.lessThan(1).operator());
+        assertEquals(Operator.LESS_THAN, p.lt(1).operator());
+        assertEquals(Operator.LESS_THAN_OR_EQUAL, p.lessThanOrEqual(1).operator());
+        assertEquals(Operator.LESS_THAN_OR_EQUAL, p.le(1).operator());
+    }
+
+    @Test
+    public void test2ndPass_likeWildcardsAreCorrectlyPlaced() {
+        NamedProperty p = NamedProperty.of("col");
+        assertEquals("foo%", p.startsWith("foo").getPropValue());
+        assertEquals("%foo", p.endsWith("foo").getPropValue());
+        assertEquals("%foo%", p.contains("foo").getPropValue());
+        assertEquals("foo%", p.notStartsWith("foo").getPropValue());
+        assertEquals("%foo", p.notEndsWith("foo").getPropValue());
+        assertEquals("%foo%", p.notContains("foo").getPropValue());
+    }
+
+    @Test
+    public void test2ndPass_equalWithNull_rendersIsNull() {
+        // CRITICAL: equal(null) MUST render as "col IS NULL" not "col = NULL"
+        NamedProperty p = NamedProperty.of("col");
+        Equal eq = p.equal(null);
+        Assertions.assertTrue(eq.toString().contains("IS NULL"));
+        Assertions.assertFalse(eq.toString().contains("= NULL"));
+    }
+
+    @Test
+    public void test2ndPass_returnedConditionsAreFresh_notCached() {
+        // After np.equal("x"), the returned Equal must be a fresh instance,
+        // not a shared/cached one (otherwise a caller mutating it would break others).
+        NamedProperty p = NamedProperty.of("col");
+        Equal e1 = p.equal("x");
+        Equal e2 = p.equal("x");
+        assertNotSame(e1, e2, "Each equal() call must return a fresh Equal instance");
+        // But they should be value-equal:
+        assertEquals(e1, e2);
+    }
+
+    @Test
+    public void test2ndPass_equalsAnyArrayWithNullValues_throwsIAE_orHandlesGracefully() {
+        // equalsAny(null) - explicit null array
+        NamedProperty p = NamedProperty.of("col");
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((Object[]) null));
+    }
+
+    @Test
+    public void test2ndPass_inEmptyArrayThrowsViaAbstractInCheck() {
+        // Filters.in -> new In which checks notEmpty
+        NamedProperty p = NamedProperty.of("col");
+        assertThrows(IllegalArgumentException.class, () -> p.in(new int[] {}));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new long[] {}));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new double[] {}));
+        assertThrows(IllegalArgumentException.class, () -> p.in(java.util.Collections.emptyList()));
+    }
+
+    @Test
+    public void test2ndPass_betweenRangeOrderPreserved() {
+        // NamedProperty.between(min, max) must forward min and max in that order.
+        NamedProperty p = NamedProperty.of("age");
+        Between b = p.between(18, 65);
+        assertEquals(Integer.valueOf(18), b.getMinValue());
+        assertEquals(Integer.valueOf(65), b.getMaxValue());
+    }
+
+    @Test
+    public void test2ndPass_constructorBypassesCache_butEqualityHolds() {
+        // public constructor bypasses cache; pool only used through of().
+        NamedProperty viaCtor = new NamedProperty("uncached_prop_xyz");
+        NamedProperty viaOf = NamedProperty.of("uncached_prop_xyz");
+        // Not necessarily same instance (one constructed directly)
+        // But should still be equal (value-equality).
+        assertEquals(viaCtor, viaOf);
+        assertEquals(viaCtor.hashCode(), viaOf.hashCode());
+    }
+
+    @Test
+    public void test2ndPass_cacheKeysCaseSensitive() {
+        // Cache MUST treat property names case-sensitively (avoid wrong matching).
+        NamedProperty lower = NamedProperty.of("CaseTest_zzz");
+        NamedProperty upper = NamedProperty.of("casetest_zzz");
+        // They should be distinct instances and not equal.
+        assertNotSame(lower, upper);
+        Assertions.assertNotEquals(lower, upper);
+    }
+
+    @Test
+    public void test2ndPass_cacheKeysWhitespaceSensitive() {
+        // " foo" vs "foo" must NOT match in the cache.
+        NamedProperty noSpace = NamedProperty.of("zzz_uniq");
+        NamedProperty leadSpace = NamedProperty.of(" zzz_uniq");
+        assertNotSame(noSpace, leadSpace);
+        Assertions.assertNotEquals(noSpace, leadSpace);
+    }
 }

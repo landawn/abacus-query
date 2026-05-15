@@ -1445,4 +1445,30 @@ public class ExpressionTest extends TestBase {
         Assertions.assertEquals("SUM(total_amount)", expr.toString(NamingPolicy.SNAKE_CASE));
         Assertions.assertEquals("SUM(totalAmount)", expr.toString(null));
     }
+
+    /**
+     * Regression (Pass 2): operator-to-comparison method mapping is one-to-one and
+     * uses the SQL token that matches the method name. Catches potential copy/paste
+     * defects where {@code greaterThanOrEqual} could accidentally emit {@code <=}, etc.
+     */
+    @Test
+    public void testComparisonOperatorTokensAreCorrect_Pass2() {
+        Assertions.assertEquals("age = 18", Expression.equal("age", 18));
+        Assertions.assertEquals("age != 18", Expression.notEqual("age", 18));
+        Assertions.assertEquals("age > 18", Expression.greaterThan("age", 18));
+        Assertions.assertEquals("age >= 18", Expression.greaterThanOrEqual("age", 18));
+        Assertions.assertEquals("age < 18", Expression.lessThan("age", 18));
+        Assertions.assertEquals("age <= 18", Expression.lessThanOrEqual("age", 18));
+    }
+
+    /**
+     * Regression (Pass 2): {@code Expression.between(prop, min, max)} must emit
+     * {@code prop BETWEEN min AND max} in that exact order regardless of value type,
+     * not {@code prop BETWEEN max AND min}.
+     */
+    @Test
+    public void testBetweenArgumentOrder_Pass2() {
+        Assertions.assertEquals("age BETWEEN 18 AND 65", Expression.between("age", 18, 65));
+        Assertions.assertEquals("created BETWEEN '2024-01-01' AND '2024-12-31'", Expression.between("created", "2024-01-01", "2024-12-31"));
+    }
 }

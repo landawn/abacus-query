@@ -1418,6 +1418,104 @@ class Criteria2026Test extends TestBase {
         assertTrue(rebuilt.toString(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
         assertTrue(rebuilt.toString(NamingPolicy.NO_CHANGE).contains("status"));
     }
+
+    /**
+     * Second-pass locking test: {@code toBuilder()} round-trip must preserve every
+     * clause kind (selectModifier, joins, where, groupBy, having, set ops, orderBy, limit)
+     * and parameter ordering.
+     */
+    @Test
+    public void testToBuilderPreservesAllClauseKinds() {
+        final SubQuery sub = new SubQuery("u2", Arrays.asList("id"), Filters.eq("isAdmin", true));
+        final Criteria original = Criteria.builder()
+                .distinct()
+                .leftJoin("orders", Filters.eq("o.x", 1))
+                .innerJoin("items", Filters.eq("i.x", 2))
+                .where(Filters.eq("w", 3))
+                .groupBy("g")
+                .having(Filters.gt("c", 4))
+                .union(sub)
+                .orderBy("ord")
+                .limit(10)
+                .build();
+
+        final Criteria rebuilt = original.toBuilder().build();
+
+        // Same selectModifier, same toString, same parameter list and order.
+        assertEquals(original.getSelectModifier(), rebuilt.getSelectModifier());
+        assertEquals(original.toString(NamingPolicy.NO_CHANGE), rebuilt.toString(NamingPolicy.NO_CHANGE));
+        assertEquals(original.getParameters(), rebuilt.getParameters());
+        assertEquals(original, rebuilt);
+        assertEquals(original.hashCode(), rebuilt.hashCode());
+    }
+
+    /**
+     * Second-pass locking test: {@code getParameters()} must collect parameters from every
+     * clause (joins, where, groupBy, having, set ops, orderBy, limit) in SQL emission order.
+     */
+    @Test
+    public void testGetParametersOrderingAcrossAllClauses() {
+        final SubQuery sub = new SubQuery("u2", Arrays.asList("id"), Filters.eq("subParam", 100));
+        final Criteria criteria = Criteria.builder()
+                .leftJoin("orders", Filters.eq("joinP", 1))
+                .where(Filters.eq("whereP", 2))
+                .having(Filters.gt("havingP", 3))
+                .union(sub)
+                .build();
+
+        final List<Object> params = criteria.getParameters();
+        // Expected order per SQL emission: join, where, groupBy, having, setOps, orderBy, limit
+        assertEquals(Arrays.asList(1, 2, 3, 100), params);
+    }
+
+    /**
+     * Second-pass locking test: addCondition's dedup logic must replace an existing WHERE/ORDER_BY/etc.,
+     * but only those (joins and set ops accumulate).
+     */
+    @Test
+    public void testBuilderDedupesSingletonClausesButAccumulatesJoinsAndSetOps() {
+        final SubQuery sub1 = new SubQuery("a", Arrays.asList("id"), null);
+        final SubQuery sub2 = new SubQuery("b", Arrays.asList("id"), null);
+        final Criteria c = Criteria.builder()
+                .where(Filters.eq("a", 1))
+                .where(Filters.eq("b", 2)) // replaces first WHERE
+                .leftJoin("t1")
+                .leftJoin("t2") // accumulates
+                .union(sub1)
+                .union(sub2) // accumulates
+                .orderBy("x")
+                .orderBy("y") // replaces first ORDER BY
+                .build();
+
+        // Only the last WHERE should survive
+        final String str = c.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(str.contains("b ="), "should contain second where: " + str);
+        assertFalse(str.contains("a ="), "should not contain replaced where: " + str);
+        // Both joins should be present
+        assertEquals(2, c.getJoins().size());
+        // Both unions should be present
+        assertEquals(2, c.getSetOperations().size());
+        // Only one ORDER BY (the last)
+        assertTrue(str.contains("ORDER BY y"));
+        assertFalse(str.contains("ORDER BY x"));
+    }
+
+    /**
+     * Second-pass locking test: getSetOperations() returns set-op clauses in insertion order.
+     */
+    @Test
+    public void testGetSetOperationsOrderedAndTyped() {
+        final SubQuery a = new SubQuery("a", Arrays.asList("id"), null);
+        final SubQuery b = new SubQuery("b", Arrays.asList("id"), null);
+        final SubQuery c = new SubQuery("c", Arrays.asList("id"), null);
+        final Criteria crit = Criteria.builder().intersect(a).union(b).except(c).build();
+
+        final List<Clause> ops = crit.getSetOperations();
+        assertEquals(3, ops.size());
+        assertEquals(Operator.INTERSECT, ops.get(0).operator());
+        assertEquals(Operator.UNION, ops.get(1).operator());
+        assertEquals(Operator.EXCEPT, ops.get(2).operator());
+    }
 }
 
 class CriteriaFromFiltersTest extends TestBase {

@@ -431,4 +431,33 @@ public class OperatorTest extends TestBase {
             }
         }
     }
+
+    /**
+     * Second-pass locking test: of() must accept both the sqlToken form and the enum name
+     * form, and both must be case-insensitive. Multi-word tokens like "NOT LIKE" and
+     * "GROUP BY" must work too.
+     */
+    @Test
+    public void testOfHandlesAllExpectedAliasFormsCaseInsensitive() {
+        // sqlToken form
+        Assertions.assertEquals(Operator.EQUAL, Operator.of("="));
+        Assertions.assertEquals(Operator.NOT_EQUAL, Operator.of("!="));
+        Assertions.assertEquals(Operator.NOT_EQUAL_ANSI, Operator.of("<>"));
+        Assertions.assertEquals(Operator.LIKE, Operator.of("LIKE"));
+        Assertions.assertEquals(Operator.LIKE, Operator.of("like"));
+        Assertions.assertEquals(Operator.LIKE, Operator.of("LiKe"));
+        // multi-word sqlToken
+        Assertions.assertEquals(Operator.NOT_LIKE, Operator.of("NOT LIKE"));
+        Assertions.assertEquals(Operator.NOT_LIKE, Operator.of("not like"));
+        Assertions.assertEquals(Operator.GROUP_BY, Operator.of("GROUP BY"));
+        Assertions.assertEquals(Operator.GROUP_BY, Operator.of("group by"));
+        Assertions.assertEquals(Operator.UNION_ALL, Operator.of("UNION ALL"));
+        Assertions.assertEquals(Operator.UNION_ALL, Operator.of("union all"));
+        // enum-name form
+        Assertions.assertEquals(Operator.NOT_LIKE, Operator.of("NOT_LIKE"));
+        Assertions.assertEquals(Operator.NOT_LIKE, Operator.of("not_like"));
+        Assertions.assertEquals(Operator.GROUP_BY, Operator.of("GROUP_BY"));
+        // unknown returns null (not exception)
+        Assertions.assertNull(Operator.of("UNKNOWN_OP_XYZ"));
+    }
 }

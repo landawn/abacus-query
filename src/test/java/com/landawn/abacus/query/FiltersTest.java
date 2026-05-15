@@ -2994,4 +2994,157 @@ class Filters2026BatchTest extends TestBase {
         assertNotNull(h);
         assertTrue(h.toString().contains("SUM(amount) > 1000"));
     }
+
+    // --- 2nd-pass review verification tests ---
+    // These confirm that operator-pair factory methods do NOT have copy/paste inversions,
+    // that LIKE wildcards are placed on the correct side, and that null-value handling is correct.
+
+    @Test
+    public void test2ndPass_gtAndLt_usesGtAndLt() {
+        And c = Filters.gtAndLt("age", 18, 65);
+        assertEquals(2, c.getConditions().size());
+        assertEquals(Operator.GREATER_THAN, c.getConditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN, c.getConditions().get(1).operator());
+    }
+
+    @Test
+    public void test2ndPass_geAndLt_usesGeAndLt() {
+        And c = Filters.geAndLt("price", 100, 500);
+        assertEquals(2, c.getConditions().size());
+        assertEquals(Operator.GREATER_THAN_OR_EQUAL, c.getConditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN, c.getConditions().get(1).operator());
+    }
+
+    @Test
+    public void test2ndPass_geAndLe_usesGeAndLe() {
+        And c = Filters.geAndLe("score", 0, 100);
+        assertEquals(2, c.getConditions().size());
+        assertEquals(Operator.GREATER_THAN_OR_EQUAL, c.getConditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN_OR_EQUAL, c.getConditions().get(1).operator());
+    }
+
+    @Test
+    public void test2ndPass_gtAndLe_usesGtAndLe() {
+        And c = Filters.gtAndLe("temp", -10, 40);
+        assertEquals(2, c.getConditions().size());
+        assertEquals(Operator.GREATER_THAN, c.getConditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN_OR_EQUAL, c.getConditions().get(1).operator());
+    }
+
+    @Test
+    public void test2ndPass_parameterized_gtAndLt_geAndLt_geAndLe_gtAndLe_useCorrectOperators() {
+        assertEquals(Operator.GREATER_THAN, Filters.gtAndLt("c").getConditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN, Filters.gtAndLt("c").getConditions().get(1).operator());
+
+        assertEquals(Operator.GREATER_THAN_OR_EQUAL, Filters.geAndLt("c").getConditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN, Filters.geAndLt("c").getConditions().get(1).operator());
+
+        assertEquals(Operator.GREATER_THAN_OR_EQUAL, Filters.geAndLe("c").getConditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN_OR_EQUAL, Filters.geAndLe("c").getConditions().get(1).operator());
+
+        assertEquals(Operator.GREATER_THAN, Filters.gtAndLe("c").getConditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN_OR_EQUAL, Filters.gtAndLe("c").getConditions().get(1).operator());
+    }
+
+    @Test
+    public void test2ndPass_likeWildcards_placement() {
+        // contains: %v% on both sides
+        assertEquals("%foo%", Filters.contains("c", "foo").getPropValue());
+        // notContains: %v% on both sides
+        assertEquals("%foo%", Filters.notContains("c", "foo").getPropValue());
+        // startsWith: v%
+        assertEquals("foo%", Filters.startsWith("c", "foo").getPropValue());
+        // notStartsWith: v%
+        assertEquals("foo%", Filters.notStartsWith("c", "foo").getPropValue());
+        // endsWith: %v
+        assertEquals("%foo", Filters.endsWith("c", "foo").getPropValue());
+        // notEndsWith: %v
+        assertEquals("%foo", Filters.notEndsWith("c", "foo").getPropValue());
+    }
+
+    @Test
+    public void test2ndPass_equalWithNull_rendersIsNull() {
+        // CRITICAL: equal(prop, null) MUST render as "prop IS NULL", not "prop = NULL"
+        // (otherwise the condition is never true in SQL three-valued logic)
+        Equal eq = Filters.equal("col", null);
+        assertTrue(eq.toString().contains("IS NULL"), "equal(c, null) should render as IS NULL but was: " + eq.toString());
+        assertFalse(eq.toString().contains("= NULL"));
+    }
+
+    @Test
+    public void test2ndPass_notEqualWithNull_rendersIsNotNull() {
+        // CRITICAL: notEqual(prop, null) MUST render as "prop IS NOT NULL"
+        NotEqual ne = Filters.notEqual("col", null);
+        assertTrue(ne.toString().contains("IS NOT NULL"), "notEqual(c, null) should render as IS NOT NULL but was: " + ne.toString());
+    }
+
+    @Test
+    public void test2ndPass_inPrimitiveArrays_correctBoxing() {
+        // int[]
+        In intIn = Filters.in("col", new int[] { 1, 2, 3 });
+        assertEquals(3, intIn.getValues().size());
+        assertEquals(Integer.valueOf(1), intIn.getValues().iterator().next());
+
+        // long[]
+        In longIn = Filters.in("col", new long[] { 10L, 20L });
+        assertEquals(2, longIn.getValues().size());
+        assertEquals(Long.valueOf(10L), longIn.getValues().iterator().next());
+
+        // double[]
+        In dblIn = Filters.in("col", new double[] { 1.5, 2.5 });
+        assertEquals(2, dblIn.getValues().size());
+        assertEquals(Double.valueOf(1.5), dblIn.getValues().iterator().next());
+    }
+
+    @Test
+    public void test2ndPass_notInPrimitiveArrays_correctBoxing() {
+        NotIn intNi = Filters.notIn("col", new int[] { 1, 2 });
+        assertEquals(2, intNi.getValues().size());
+
+        NotIn longNi = Filters.notIn("col", new long[] { 1L, 2L });
+        assertEquals(2, longNi.getValues().size());
+
+        NotIn dblNi = Filters.notIn("col", new double[] { 1.0, 2.0 });
+        assertEquals(2, dblNi.getValues().size());
+    }
+
+    @Test
+    public void test2ndPass_orEmptyArray_buildsEmptyOrJunction() {
+        // Verify or() with empty array doesn't NPE; the resulting toString is empty.
+        Or empty = Filters.or(new Condition[0]);
+        assertNotNull(empty);
+        assertEquals("", empty.toString());
+    }
+
+    @Test
+    public void test2ndPass_andEmptyArray_buildsEmptyAndJunction() {
+        And empty = Filters.and(new Condition[0]);
+        assertNotNull(empty);
+        assertEquals("", empty.toString());
+    }
+
+    @Test
+    public void test2ndPass_notWithNull_throwsIAE() {
+        // Not(null) should throw because Junction rejects null conditions.
+        assertThrows(IllegalArgumentException.class, () -> Filters.not(null));
+    }
+
+    @Test
+    public void test2ndPass_betweenWithMinGreaterThanMax_rendersAsIs() {
+        // No swapping; documented behavior: rendered as-is, even when min > max.
+        Between b = Filters.between("col", 100, 1);
+        String s = b.toString();
+        assertTrue(s.contains("100"));
+        assertTrue(s.contains("1"));
+        // min is rendered before max regardless of value order
+        assertTrue(s.indexOf("100") < s.indexOf(" AND "));
+    }
+
+    @Test
+    public void test2ndPass_betweenParameterized_renderedWithTwoPlaceholders() {
+        Between b = Filters.between("col");
+        // Should produce "col BETWEEN ? AND ?" (both placeholders are QME Expressions)
+        String s = b.toString();
+        assertTrue(s.contains("BETWEEN ? AND ?"), "Expected 'BETWEEN ? AND ?' but got: " + s);
+    }
 }

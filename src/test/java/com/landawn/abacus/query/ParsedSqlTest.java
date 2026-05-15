@@ -339,6 +339,41 @@ class ParsedSql2025Test extends TestBase {
         assertEquals(1, parsed.parameterCount());
         assertEquals("id", parsed.namedParameters().get(0));
     }
+
+    @Test
+    public void testParse_MultipleTrailingSemicolons() {
+        // Bug: previously only a single trailing ';' was stripped.
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM users;;");
+        assertEquals("SELECT * FROM users", parsed.parameterizedSql());
+        assertFalse(parsed.parameterizedSql().endsWith(";"));
+    }
+
+    @Test
+    public void testParse_TrailingSemicolonsWithWhitespace() {
+        // Mixed semicolons and whitespace at the end should all be stripped.
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM users ;  ;  ");
+        assertEquals("SELECT * FROM users", parsed.parameterizedSql());
+        assertFalse(parsed.parameterizedSql().endsWith(";"));
+        assertFalse(parsed.parameterizedSql().endsWith(" "));
+    }
+
+    @Test
+    public void testParse_TrailingSemicolonsPreservedInsideSql() {
+        // Semicolons inside string literals must NOT be stripped — only trailing ones.
+        ParsedSql parsed = ParsedSql.parse("SELECT ';' AS sep FROM dual;;");
+        assertEquals("SELECT ';' AS sep FROM dual", parsed.parameterizedSql());
+    }
+
+    @Test
+    public void testParse_ParameterOrderingWithRepeats() {
+        // Repeated named parameters preserve order and duplicates.
+        ParsedSql parsed = ParsedSql.parse("SELECT :b, :a, :b FROM x");
+        assertEquals(3, parsed.parameterCount());
+        assertEquals(3, parsed.namedParameters().size());
+        assertEquals("b", parsed.namedParameters().get(0));
+        assertEquals("a", parsed.namedParameters().get(1));
+        assertEquals("b", parsed.namedParameters().get(2));
+    }
 }
 
 public class ParsedSqlTest extends TestBase {

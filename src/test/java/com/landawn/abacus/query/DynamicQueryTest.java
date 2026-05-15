@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -1165,4 +1166,147 @@ class DynamicQuery2026BatchTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> builder.orderBy().appendIfOrElse(false, "id ASC", "   "));
     }
 
+    // --- 2nd-pass review verification tests ---
+
+    @Test
+    public void test2ndPass_buildClauseOrder_isSelectFromWhereGroupByHavingOrderByLimit() {
+        // Order must be: SELECT -> FROM -> WHERE -> GROUP BY -> HAVING -> ORDER BY -> LIMIT
+        // Even if the builder methods are called in a different order.
+        Builder b = DynamicQuery.builder();
+        b.limit(5); // LIMIT first (in user code order)
+        b.orderBy().append("name"); // ORDER BY second
+        b.having().append("COUNT(*) > 0");
+        b.groupBy().append("dept");
+        b.where().append("active = true");
+        b.from().append("users");
+        b.select().append("*");
+
+        String sql = b.build();
+
+        int selectIdx = sql.indexOf("SELECT");
+        int fromIdx = sql.indexOf("FROM");
+        int whereIdx = sql.indexOf("WHERE");
+        int groupIdx = sql.indexOf("GROUP BY");
+        int havingIdx = sql.indexOf("HAVING");
+        int orderIdx = sql.indexOf("ORDER BY");
+        int limitIdx = sql.indexOf("LIMIT");
+
+        assertTrue(selectIdx >= 0 && selectIdx < fromIdx, "SELECT must come before FROM");
+        assertTrue(fromIdx < whereIdx, "FROM must come before WHERE");
+        assertTrue(whereIdx < groupIdx, "WHERE must come before GROUP BY");
+        assertTrue(groupIdx < havingIdx, "GROUP BY must come before HAVING");
+        assertTrue(havingIdx < orderIdx, "HAVING must come before ORDER BY");
+        assertTrue(orderIdx < limitIdx, "ORDER BY must come before LIMIT");
+    }
+
+    @Test
+    public void test2ndPass_whereCalledTwice_returnsSameInstance_andAppends() {
+        // Repeated .where() should return the same WhereClause, and successive .append() calls accumulate.
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("t");
+
+        var w1 = b.where();
+        var w2 = b.where();
+        assertSame(w1, w2, "where() must return same instance on repeated calls");
+
+        b.where().append("a = 1");
+        b.where().append("AND b = 2"); // .append uses space, not AND/OR
+        String sql = b.build();
+        assertTrue(sql.contains("WHERE a = 1 AND b = 2"), "Successive appends should accumulate: " + sql);
+    }
+
+    @Test
+    public void test2ndPass_orderByCalledTwice_returnsSameInstance() {
+        Builder b = DynamicQuery.builder();
+        var o1 = b.orderBy();
+        var o2 = b.orderBy();
+        assertSame(o1, o2);
+    }
+
+    @Test
+    public void test2ndPass_placeholders_nZero_emitsNothing() {
+        // placeholders(0) should write nothing to the buffer.
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("t");
+        b.where().append("id IN (").placeholders(0); // adds nothing after "("
+        // Then we'd usually close with ")" via raw append
+        b.where().append(")");
+        String sql = b.build();
+        assertTrue(sql.contains("id IN ( )"), "0 placeholders should add nothing between '(' and ')' but got: " + sql);
+    }
+
+    @Test
+    public void test2ndPass_placeholders_nOne_emitsSingleQuestionMark_noTrailingComma() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("t");
+        b.where().append("id IN ").placeholders(1, "(", ")");
+        String sql = b.build();
+        assertEquals("SELECT * FROM t WHERE id IN (?)", sql);
+    }
+
+    @Test
+    public void test2ndPass_placeholders_nThree_emitsCorrectSeparators() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("t");
+        b.where().append("id IN ").placeholders(3, "(", ")");
+        String sql = b.build();
+        assertEquals("SELECT * FROM t WHERE id IN (?, ?, ?)", sql);
+    }
+
+    @Test
+    public void test2ndPass_placeholdersWithPrefixPostfix_nZero_emitsNeitherPrefixNorPostfix() {
+        // Documented: "If placeholderCount is 0, neither prefix nor postfix is appended."
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("t");
+        b.where().append("x").placeholders(0, "(", ")");
+        String sql = b.build();
+        assertEquals("SELECT * FROM t WHERE x", sql);
+    }
+
+    @Test
+    public void test2ndPass_buildTwice_secondCallThrowsISE() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("t");
+        b.build();
+        assertThrows(IllegalStateException.class, b::build);
+    }
+
+    @Test
+    public void test2ndPass_placeholdersNegative_throwsIAE() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("t");
+        var w = b.where().append("x");
+        assertThrows(IllegalArgumentException.class, () -> w.placeholders(-1));
+        assertThrows(IllegalArgumentException.class, () -> w.placeholders(-1, "(", ")"));
+    }
+
+    @Test
+    public void test2ndPass_placeholdersNullPrefixOrPostfix_throws() {
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("t");
+        var w = b.where().append("x");
+        assertThrows(IllegalArgumentException.class, () -> w.placeholders(3, null, ")"));
+        assertThrows(IllegalArgumentException.class, () -> w.placeholders(3, "(", null));
+    }
+
+    @Test
+    public void test2ndPass_joinBeforeFromAppend_throwsIllegalState() {
+        // requireFromInitialized: join methods must be preceded by from().append(...)
+        Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        var f = b.from();
+        assertThrows(IllegalStateException.class, () -> f.leftJoin("orders o", "u.id = o.uid"));
+        assertThrows(IllegalStateException.class, () -> f.innerJoin("orders o", "u.id = o.uid"));
+        assertThrows(IllegalStateException.class, () -> f.rightJoin("orders o", "u.id = o.uid"));
+        assertThrows(IllegalStateException.class, () -> f.fullJoin("orders o", "u.id = o.uid"));
+        assertThrows(IllegalStateException.class, () -> f.join("orders o", "u.id = o.uid"));
+    }
 }

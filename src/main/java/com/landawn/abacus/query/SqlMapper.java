@@ -485,15 +485,22 @@ public final class SqlMapper {
 
             for (final Map.Entry<String, ParsedSql> sqlEntry : sqlMap.entrySet()) {
                 final Element sqlNode = doc.createElement(SQL);
-                sqlNode.setAttribute(ID, sqlEntry.getKey());
 
                 final Map<String, String> attrs = attrsMap.get(sqlEntry.getKey());
-                if (!N.isEmpty(attrs)) {
 
+                if (!N.isEmpty(attrs)) {
                     for (final Map.Entry<String, String> entry : attrs.entrySet()) {
+                        // Skip any stray "id" attribute in the attrs map so it cannot
+                        // overwrite the canonical id we are about to set below.
+                        if (ID.equals(entry.getKey())) {
+                            continue;
+                        }
                         sqlNode.setAttribute(entry.getKey(), entry.getValue());
                     }
                 }
+
+                // Set the id last to guarantee the entry key wins regardless of attrs contents.
+                sqlNode.setAttribute(ID, sqlEntry.getKey());
 
                 final Text sqlToken = doc.createTextNode(sqlEntry.getValue().originalSql());
                 sqlNode.appendChild(sqlToken);

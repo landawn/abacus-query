@@ -1160,4 +1160,30 @@ class SqlParserJavadocExamples extends TestBase {
         int idx = SqlParser.indexOfWord(sql, "ORDER BY", 0, false);
         assertTrue(idx >= 0, "indexOfWord should find ORDER BY even with a block comment between the keywords");
     }
+
+    @Test
+    public void testParseBackslashEscapedQuote() {
+        // Backslash-escaped single quote (MySQL style) should keep the string intact.
+        String sql = "SELECT * FROM t WHERE x = 'O\\'Brien'";
+        List<String> words = SqlParser.parse(sql);
+        assertTrue(words.stream().anyMatch(w -> w.equals("'O\\'Brien'")),
+                "Expected the backslash-escaped quote to keep the literal as a single token, got: " + words);
+    }
+
+    @Test
+    public void testParseDoubledQuoteEscape() {
+        // SQL-standard doubled-quote escape.
+        String sql = "SELECT 'O''Brien' FROM dual";
+        List<String> words = SqlParser.parse(sql);
+        assertTrue(words.contains("'O''Brien'"));
+    }
+
+    @Test
+    public void testIndexOfWordIsNotMatchingSubstring() {
+        // indexOfWord must respect word boundaries: searching for "JOIN" must NOT match inside RIGHTJOIN.
+        String sql = "SELECT * FROM t1 RIGHTJOIN t2 ON ...";
+        int idx = SqlParser.indexOfWord(sql, "JOIN", 0, false);
+        // The only token in this SQL containing JOIN is "RIGHTJOIN" itself, which is not a separate word.
+        assertEquals(-1, idx, "indexOfWord('JOIN') must not match the substring inside identifier RIGHTJOIN");
+    }
 }

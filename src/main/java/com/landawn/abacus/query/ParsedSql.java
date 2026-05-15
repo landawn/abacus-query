@@ -176,8 +176,18 @@ public final class ParsedSql {
             }
 
             final String tmpSql = Strings.stripToEmpty(isOpSqlPrefix ? sb.toString() : this.sql);
-            final String withoutTrailingSemicolon = tmpSql.endsWith(";") ? tmpSql.substring(0, tmpSql.length() - 1) : tmpSql;
-            parameterizedSql = withoutTrailingSemicolon.stripTrailing();
+            // Strip ALL trailing semicolons (and any whitespace between them) so SQL like
+            // "SELECT * FROM x;;" or "SELECT * FROM x ; ;" both produce a clean parameterized form.
+            int endIdx = tmpSql.length();
+            while (endIdx > 0) {
+                final char ch = tmpSql.charAt(endIdx - 1);
+                if (ch == ';' || Character.isWhitespace(ch)) {
+                    endIdx--;
+                } else {
+                    break;
+                }
+            }
+            parameterizedSql = endIdx == tmpSql.length() ? tmpSql : tmpSql.substring(0, endIdx);
             parameterCount = paramCount;
             namedParameters = isOpSqlPrefix ? ImmutableList.wrap(namedParameterList) : ImmutableList.empty();
         } finally {

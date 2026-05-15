@@ -1045,4 +1045,36 @@ class SqlMapper2026Test extends TestBase {
             output.delete();
         }
     }
+
+    @Test
+    public void testSaveTo_AttrsIdEntryDoesNotOverrideCanonicalId() throws IOException {
+        // Bug fix: a stray "id" entry in the attrs map must never overwrite
+        // the canonical mapping id during XML serialization.
+        SqlMapper mapper = new SqlMapper();
+        Map<String, String> attrs = new HashMap<>();
+        attrs.put("id", "evil"); // pretend the user passed a conflicting id
+        attrs.put("batchSize", "50");
+        mapper.add("realId", "SELECT 1", attrs);
+
+        File output = new File(tempDir, "attrs-id-roundtrip.xml");
+        mapper.saveTo(output);
+
+        SqlMapper reloaded = SqlMapper.load(output.getAbsolutePath());
+        assertNotNull(reloaded.get("realId"));
+        assertNull(reloaded.get("evil"));
+        assertEquals("50", reloaded.getAttributes("realId").get("batchSize"));
+    }
+
+    @Test
+    public void testSaveTo_RoundTripSpecialXmlCharacters() throws IOException {
+        // SQL containing <, >, & must round-trip correctly through XML escaping.
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("findGreater", "SELECT * FROM t WHERE a < 10 AND b > 5 AND c = 'a&b'", null);
+
+        File output = new File(tempDir, "special-chars-roundtrip.xml");
+        mapper.saveTo(output);
+
+        SqlMapper reloaded = SqlMapper.load(output.getAbsolutePath());
+        assertEquals("SELECT * FROM t WHERE a < 10 AND b > 5 AND c = 'a&b'", reloaded.get("findGreater").originalSql());
+    }
 }

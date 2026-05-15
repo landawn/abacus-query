@@ -977,4 +977,28 @@ class QueryUtil2026Batch2Test extends TestBase {
 
         assertEquals("aliasless_table", tableName);
     }
+
+    @Test
+    public void testGetProp2ColumnNameMap_NullEntityClassReturnsEmpty() {
+        // Documented contract: null entityClass returns an empty map (does not throw).
+        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(null, NamingPolicy.SNAKE_CASE);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testGetProp2ColumnNameMap_NullEntityClassAndNullPolicyReturnsEmpty() {
+        // Both null: still returns empty map.
+        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(null, null);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testGetProp2ColumnNameMap_MapEntityClassReturnsEmpty() {
+        // Map-assignable classes get an empty map (documented behavior).
+        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(HashMap.class, NamingPolicy.SNAKE_CASE);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
 }
