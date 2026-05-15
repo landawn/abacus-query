@@ -988,8 +988,9 @@ public class Expression extends ComposableCondition {
         }
 
         if (value instanceof String) {
-            return (_SINGLE_QUOTE + Strings.quoteEscaped((String) value) + _SINGLE_QUOTE);
+            return (_SINGLE_QUOTE + AbstractCondition.escapeStringLiteral((String) value) + _SINGLE_QUOTE);
         } else if (value instanceof Number || value instanceof Boolean) {
+            AbstractCondition.checkFiniteNumber(value);
             return value.toString();
         } else if (value instanceof Expression) {
             final String exprLiteral = ((Expression) value).getLiteral();
@@ -1003,7 +1004,7 @@ public class Expression extends ComposableCondition {
 
             return conditionStr;
         } else {
-            return (_SINGLE_QUOTE + Strings.quoteEscaped(N.stringOf(value)) + _SINGLE_QUOTE);
+            return (_SINGLE_QUOTE + AbstractCondition.escapeStringLiteral(N.stringOf(value)) + _SINGLE_QUOTE);
         }
     }
 

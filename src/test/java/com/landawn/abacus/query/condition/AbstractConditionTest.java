@@ -517,4 +517,81 @@ class AbstractCondition2026BatchTest extends TestBase {
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(orders));
     }
+
+    // ---------------------------------------------------------------------
+    // Third-pass review: SQL-escaping / injection-vector regression tests.
+    // ---------------------------------------------------------------------
+
+    @Test
+    public void testFormatParameter_DateProducesQuotedISOLiteral() {
+        // BUG: Previously java.util.Date fell through to Date.toString(),
+        // emitting an unquoted "Mon Jan 01 ... 1970" sequence that is not valid SQL.
+        // After the fix, Date is rendered via N.stringOf and wrapped in single quotes.
+        String result = AbstractCondition.formatParameter(new java.util.Date(0L), NamingPolicy.NO_CHANGE);
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.startsWith("'") && result.endsWith("'"), "Date literal must be single-quoted, got: " + result);
+        Assertions.assertFalse(result.contains("PST") || result.contains("PDT") || result.contains("UTC ") || result.contains("GMT "),
+                "Date literal must not use Java's Date.toString() form, got: " + result);
+    }
+
+    @Test
+    public void testFormatParameter_LocalDateTimeProducesQuotedLiteral() {
+        java.time.LocalDateTime ldt = java.time.LocalDateTime.of(2024, 1, 2, 3, 4, 5);
+        String result = AbstractCondition.formatParameter(ldt, NamingPolicy.NO_CHANGE);
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.startsWith("'") && result.endsWith("'"), "LocalDateTime literal must be single-quoted, got: " + result);
+        Assertions.assertTrue(result.contains("2024"), "LocalDateTime literal must include the date, got: " + result);
+    }
+
+    @Test
+    public void testFormatParameter_CharacterIsQuoted() {
+        // BUG: Previously a Character was rendered via Character.toString(),
+        // producing an unquoted bare letter. Worse, a single-quote character would
+        // produce a bare "'" that breaks the surrounding SQL.
+        String resultLetter = AbstractCondition.formatParameter('X', NamingPolicy.NO_CHANGE);
+        Assertions.assertEquals("'X'", resultLetter);
+
+        String resultQuote = AbstractCondition.formatParameter('\'', NamingPolicy.NO_CHANGE);
+        Assertions.assertNotNull(resultQuote);
+        Assertions.assertTrue(resultQuote.startsWith("'") && resultQuote.endsWith("'"));
+        // The escaped quote inside must be present so the literal stays balanced.
+        Assertions.assertTrue(resultQuote.contains("\\'") || resultQuote.contains("''"), "Embedded single-quote must be escaped, got: " + resultQuote);
+    }
+
+    @Test
+    public void testFormatParameter_NaNAndInfinityRejected() {
+        // BUG: Previously NaN / Infinity were emitted as bare "NaN" / "Infinity",
+        // which most SQL dialects reject. Callers must use IsNaN / IsInfinite instead.
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.formatParameter(Double.NaN, NamingPolicy.NO_CHANGE));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.formatParameter(Double.POSITIVE_INFINITY, NamingPolicy.NO_CHANGE));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.formatParameter(Double.NEGATIVE_INFINITY, NamingPolicy.NO_CHANGE));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.formatParameter(Float.NaN, NamingPolicy.NO_CHANGE));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.formatParameter(Float.POSITIVE_INFINITY, NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testFormatParameter_TrailingBackslashClosesLiteralSafely() {
+        // BUG: Strings ending in a single backslash, when emitted as 'x\' inside MySQL-style
+        // parsing, would have the closing quote consumed as an escape, breaking the SQL or
+        // enabling injection. The escape helper must double the trailing backslash.
+        String backslashAtEnd = "x" + (char) 92;
+        String result = AbstractCondition.formatParameter(backslashAtEnd, NamingPolicy.NO_CHANGE);
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.startsWith("'") && result.endsWith("'"), "Output must be quoted, got: " + result);
+        // Body between the quotes must end in an even number of backslashes.
+        String body = result.substring(1, result.length() - 1);
+        int trailing = 0;
+        for (int i = body.length() - 1; i >= 0 && body.charAt(i) == '\\'; i--) {
+            trailing++;
+        }
+        Assertions.assertEquals(0, trailing % 2, "Trailing backslash count must be even so the closing quote is not escaped, got body: " + body);
+    }
+
+    @Test
+    public void testFormatParameter_NumberStillUnchanged() {
+        // Regression guard: ordinary numeric values must keep their bare numeric form.
+        Assertions.assertEquals("123", AbstractCondition.formatParameter(123, NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("123.45", AbstractCondition.formatParameter(123.45, NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("true", AbstractCondition.formatParameter(Boolean.TRUE, NamingPolicy.NO_CHANGE));
+    }
 }

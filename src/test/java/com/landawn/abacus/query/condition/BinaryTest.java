@@ -565,4 +565,74 @@ public class BinaryTest extends TestBase {
         Assertions.assertTrue(result.contains("(SELECT"), "subquery must be wrapped in parens: " + result);
         Assertions.assertTrue(result.endsWith(")"), "subquery should end with closing paren: " + result);
     }
+
+    // ---------------------------------------------------------------------
+    // Third-pass review (SQL-escaping): Binary.toString() must produce safe SQL.
+    // ---------------------------------------------------------------------
+
+    /**
+     * Pass-3 regression: a {@link java.util.Date} value used in a Binary condition must render
+     * as a quoted SQL date literal, not Java's {@code Date.toString()} form.
+     */
+    @Test
+    public void testToString_DateValueIsQuotedISOLiteral_Pass3() {
+        Binary binary = new Binary("orderDate", Operator.EQUAL, new java.util.Date(0L));
+        String result = binary.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(result.contains("'"), "Date value must be wrapped in quotes, got: " + result);
+        assertTrue(!result.contains("Wed Dec") && !result.contains("Thu Jan") && !result.contains("PST") && !result.contains("PDT"),
+                "Output must not contain Java's Date.toString() form, got: " + result);
+    }
+
+    /**
+     * Pass-3 regression: NaN / Infinity must not be silently emitted as a bare {@code NaN} /
+     * {@code Infinity} token; callers should use {@link IsNaN} / {@link IsInfinite} instead.
+     */
+    @Test
+    public void testToString_NaNValueIsRejected_Pass3() {
+        Binary binary = new Binary("v", Operator.EQUAL, Double.NaN);
+        assertThrows(IllegalArgumentException.class, () -> binary.toString(NamingPolicy.NO_CHANGE));
+
+        Binary binary2 = new Binary("v", Operator.EQUAL, Double.POSITIVE_INFINITY);
+        assertThrows(IllegalArgumentException.class, () -> binary2.toString(NamingPolicy.NO_CHANGE));
+    }
+
+    /**
+     * Pass-3 regression: a String value that ends in a single backslash must not produce
+     * {@code WHERE name = 'x\'} (where MySQL-style parsing would consume the closing quote
+     * as an escape, breaking the SQL or enabling injection).
+     */
+    @Test
+    public void testToString_TrailingBackslashKeepsLiteralBalanced_Pass3() {
+        Binary binary = new Binary("name", Operator.EQUAL, "x" + (char) 92);
+        String result = binary.toString(NamingPolicy.NO_CHANGE);
+
+        // Locate the closing quote of the literal: count quotes to ensure exactly two
+        // (the opening and closing of the string literal). A broken literal would have an
+        // unbalanced backslash before the closing quote.
+        int openQuote = result.indexOf('\'');
+        int closeQuote = result.lastIndexOf('\'');
+        assertTrue(openQuote >= 0 && closeQuote > openQuote, "Expected a literal pair in: " + result);
+
+        // The body between the quotes must end in an even number of backslashes so the
+        // closing quote is not consumed as an escape.
+        String body = result.substring(openQuote + 1, closeQuote);
+        int trailing = 0;
+        for (int i = body.length() - 1; i >= 0 && body.charAt(i) == '\\'; i--) {
+            trailing++;
+        }
+        assertEquals(0, trailing % 2, "Trailing backslash count must be even, got body: " + body);
+    }
+
+    /**
+     * Pass-3 regression: a {@link Character} value must be quoted; in particular a single-quote
+     * character must be escaped, otherwise it would terminate the surrounding literal.
+     */
+    @Test
+    public void testToString_CharacterValueIsQuoted_Pass3() {
+        Binary binary = new Binary("c", Operator.EQUAL, '\'');
+        String result = binary.toString(NamingPolicy.NO_CHANGE);
+
+        // Body of the literal must contain an escaped quote (either \' or '').
+        assertTrue(result.contains("\\'") || result.contains("''"), "Single-quote Character must be escaped, got: " + result);
+    }
 }

@@ -154,4 +154,27 @@ public class AbstractBetweenTest extends TestBase {
 
         assertNotNull(sql);
     }
+
+    /**
+     * Pass-3 regression: BETWEEN with {@link java.util.Date} bounds must render them as
+     * quoted SQL date literals, not Java's {@code Date.toString()} form.
+     */
+    @Test
+    public void testToString_DateBoundsAreQuoted_Pass3() {
+        final TestAbstractBetween condition = new TestAbstractBetween("orderDate", new java.util.Date(0L), new java.util.Date(86400000L));
+        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(sql.contains("'"), "Date bounds must be quoted, got: " + sql);
+        assertTrue(!sql.contains("Wed Dec") && !sql.contains("Thu Jan") && !sql.contains("PST"),
+                "Output must not contain Java's Date.toString() form, got: " + sql);
+    }
+
+    /**
+     * Pass-3 regression: NaN / Infinity must be rejected from BETWEEN bounds rather than
+     * silently emitted as bare {@code NaN} / {@code Infinity} tokens.
+     */
+    @Test
+    public void testToString_NaNBoundIsRejected_Pass3() {
+        final TestAbstractBetween condition = new TestAbstractBetween("v", Double.NaN, 100.0);
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> condition.toString(NamingPolicy.NO_CHANGE));
+    }
 }

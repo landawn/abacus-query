@@ -200,7 +200,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             setParameter("max" + Strings.capitalize(paramBase), maxValue);
         } else if (cond instanceof final In in) {
             final String propName = in.getPropName();
-            final List<Object> params = in.getParameters();
+            final List<?> values = in.getValues();
 
             appendColumnName(propName);
 
@@ -208,15 +208,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             _sb.append(in.operator().toString());
             _sb.append(SK.SPACE_PARENTHESIS_L);
 
-            for (int i = 0, len = params.size(); i < len; i++) {
-                if (i > 0) {
-                    _sb.append(SK.COMMA_SPACE);
-                }
+            if (values != null) {
+                for (int i = 0, len = values.size(); i < len; i++) {
+                    if (i > 0) {
+                        _sb.append(SK.COMMA_SPACE);
+                    }
 
-                if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
-                    setParameter(propName + (i + 1), params.get(i));
-                } else {
-                    setParameter(propName, params.get(i));
+                    if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
+                        setParameter(propName + (i + 1), values.get(i));
+                    } else {
+                        setParameter(propName, values.get(i));
+                    }
                 }
             }
 
@@ -252,7 +254,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             _sb.append(SK._PARENTHESIS_R);
         } else if (cond instanceof final NotIn notIn) {
             final String propName = notIn.getPropName();
-            final List<Object> params = notIn.getParameters();
+            final List<?> values = notIn.getValues();
 
             appendColumnName(propName);
 
@@ -260,15 +262,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             _sb.append(notIn.operator().toString());
             _sb.append(SK.SPACE_PARENTHESIS_L);
 
-            for (int i = 0, len = params.size(); i < len; i++) {
-                if (i > 0) {
-                    _sb.append(SK.COMMA_SPACE);
-                }
+            if (values != null) {
+                for (int i = 0, len = values.size(); i < len; i++) {
+                    if (i > 0) {
+                        _sb.append(SK.COMMA_SPACE);
+                    }
 
-                if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
-                    setParameter(propName + (i + 1), params.get(i));
-                } else {
-                    setParameter(propName, params.get(i));
+                    if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
+                        setParameter(propName + (i + 1), values.get(i));
+                    } else {
+                        setParameter(propName, values.get(i));
+                    }
                 }
             }
 

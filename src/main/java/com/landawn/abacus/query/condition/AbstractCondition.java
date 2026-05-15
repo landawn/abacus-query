@@ -208,12 +208,16 @@ public abstract class AbstractCondition implements Condition {
      * <p>Formatting rules:</p>
      * <ul>
      *   <li>{@code null} returns {@code null}</li>
-     *   <li>Strings are wrapped in single quotes with embedded single quotes escaped
-     *       (e.g., {@code John} -&gt; {@code 'John'}; {@code O'Brien} -&gt; {@code 'O''Brien'})</li>
+     *   <li>Strings are wrapped in single quotes with embedded single/double quotes escaped via {@link #escapeStringLiteral(String)}
+     *       (e.g., {@code John} -&gt; {@code 'John'}; {@code O'Brien} -&gt; {@code 'O\'Brien'})</li>
      *   <li>{@link Condition} values use the recursive {@code toString(namingPolicy)}; a {@link SubQuery} is additionally
      *       wrapped in parentheses, and the {@link IsNull#NULL}, {@link IsNaN#NAN}, and {@link IsInfinite#INFINITE}
      *       sentinels use their plain {@code toString()}</li>
-     *   <li>Any other object (numbers, booleans, dates, etc.) uses its {@code toString()} representation</li>
+     *   <li>{@link Number} and {@link Boolean} values use their {@code toString()} unchanged (no quoting).
+     *       {@link Float#NaN}/{@link Double#NaN}/infinity values cause an {@link IllegalArgumentException} because
+     *       they have no portable SQL literal form; use {@link IsNaN}/{@link IsInfinite} instead.</li>
+     *   <li>Any other object (dates, characters, byte[], etc.) is converted via {@link N#stringOf(Object)} and
+     *       then wrapped in single quotes with escaping applied, yielding a valid SQL string literal.</li>
      * </ul>
      *
      * <p><b>Usage Examples:</b></p>
@@ -222,6 +226,7 @@ public abstract class AbstractCondition implements Condition {
      * formatParameter(123, NamingPolicy.NO_CHANGE);            // Returns: 123
      * formatParameter(null, NamingPolicy.NO_CHANGE);           // Returns: null (Java null)
      * formatParameter(subCondition, NamingPolicy.NO_CHANGE);   // Returns: subCondition.toString(policy)
+     * formatParameter(new java.util.Date(0), NamingPolicy.NO_CHANGE); // Returns: '1970-01-01T00:00:00Z'
      * }</pre>
      *
      * @param parameter the parameter value to convert; may be {@code null}
@@ -229,6 +234,7 @@ public abstract class AbstractCondition implements Condition {
      *                     Passing {@code null} may cause a {@link NullPointerException} when a nested
      *                     {@code Condition} is encountered.
      * @return the string representation of the parameter, or {@code null} if {@code parameter} is {@code null}
+     * @throws IllegalArgumentException if {@code parameter} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     protected static String formatParameter(final Object parameter, final NamingPolicy namingPolicy) {
         if (parameter == null) {
@@ -236,7 +242,7 @@ public abstract class AbstractCondition implements Condition {
         }
 
         if (parameter instanceof String) {
-            return SK._SINGLE_QUOTE + Strings.quoteEscaped(parameter.toString()) + SK._SINGLE_QUOTE;
+            return SK._SINGLE_QUOTE + escapeStringLiteral((String) parameter) + SK._SINGLE_QUOTE;
         }
 
         if (parameter instanceof Condition) {
@@ -253,7 +259,73 @@ public abstract class AbstractCondition implements Condition {
             }
         }
 
-        return parameter.toString();
+        if (parameter instanceof Number || parameter instanceof Boolean) {
+            checkFiniteNumber(parameter);
+            return parameter.toString();
+        }
+
+        // Date, LocalDateTime, Character, byte[], custom types, etc.: emit a quoted, escaped string literal.
+        return SK._SINGLE_QUOTE + escapeStringLiteral(N.stringOf(parameter)) + SK._SINGLE_QUOTE;
+    }
+
+    /**
+     * Escapes a string for safe inclusion as the body of a single-quoted SQL string literal.
+     * Single quotes, double quotes, and any trailing backslash are escaped (or doubled) so that
+     * the surrounding quote characters cannot be terminated prematurely by the input. This is a
+     * defense-in-depth helper used by {@link #formatParameter(Object, NamingPolicy)} and by
+     * {@link Expression#normalize(Object)}; callers must still emit the surrounding {@code '} quotes.
+     *
+     * <p>Note: this is dialect-tolerant escaping (backslash-style, with an extra trailing-backslash
+     * guard) rather than strict SQL-standard quote doubling; the resulting literal is safe to embed
+     * even when {@code standard_conforming_strings} is off (MySQL default) and remains a valid
+     * literal under most dialects, but for fully portable SQL prefer parameterized builders.</p>
+     *
+     * @param str the raw string contents (must not be {@code null}); an empty string is returned unchanged
+     * @return the escaped string body, suitable for inclusion between two single quotes
+     */
+    static String escapeStringLiteral(final String str) {
+        if (str == null || str.isEmpty()) {
+            return str == null ? Strings.EMPTY : str;
+        }
+
+        final String escaped = Strings.quoteEscaped(str);
+
+        // Defensive guard: if the original ends in an unescaped backslash, the trailing closing
+        // quote would be consumed as an escape in MySQL-style parsing. Count trailing backslashes
+        // in the ESCAPED form and append one more if the count is odd.
+        int trailingBackslashes = 0;
+        for (int i = escaped.length() - 1; i >= 0 && escaped.charAt(i) == '\\'; i--) {
+            trailingBackslashes++;
+        }
+
+        if ((trailingBackslashes & 1) == 1) {
+            return escaped + '\\';
+        }
+
+        return escaped;
+    }
+
+    /**
+     * Throws {@link IllegalArgumentException} if {@code value} is a {@link Float} or {@link Double}
+     * that is {@code NaN} or infinite. {@code NaN} and infinity have no portable SQL literal form;
+     * callers should use {@link IsNaN}/{@link IsInfinite} conditions instead. This guard is applied
+     * inside {@link #formatParameter(Object, NamingPolicy)} so a misuse fails fast at SQL-render
+     * time rather than silently producing invalid SQL such as {@code WHERE x = NaN}.
+     *
+     * @param value the value to check; non-numeric or finite values are ignored
+     */
+    static void checkFiniteNumber(final Object value) {
+        if (value instanceof Double) {
+            final double d = (Double) value;
+            if (Double.isNaN(d) || Double.isInfinite(d)) {
+                throw new IllegalArgumentException("NaN/Infinity has no portable SQL literal; use IsNaN / IsInfinite condition instead. Got: " + d);
+            }
+        } else if (value instanceof Float) {
+            final float f = (Float) value;
+            if (Float.isNaN(f) || Float.isInfinite(f)) {
+                throw new IllegalArgumentException("NaN/Infinity has no portable SQL literal; use IsNaN / IsInfinite condition instead. Got: " + f);
+            }
+        }
     }
 
     /**

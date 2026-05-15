@@ -147,4 +147,27 @@ public class AbstractInTest extends TestBase {
 
         assertNotNull(sql);
     }
+
+    /**
+     * Pass-3 regression: IN with {@link java.util.Date} values must render them as quoted
+     * SQL date literals, not Java's {@code Date.toString()} form.
+     */
+    @Test
+    public void testToString_DateValuesAreQuoted_Pass3() {
+        final TestAbstractIn condition = new TestAbstractIn("orderDate", Arrays.asList(new java.util.Date(0L), new java.util.Date(86400000L)));
+        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(sql.contains("'"), "Date values must be quoted, got: " + sql);
+        assertTrue(!sql.contains("Wed Dec") && !sql.contains("Thu Jan") && !sql.contains("PST"),
+                "Output must not contain Java's Date.toString() form, got: " + sql);
+    }
+
+    /**
+     * Pass-3 regression: NaN must be rejected from IN values rather than silently emitted as
+     * bare {@code NaN} tokens.
+     */
+    @Test
+    public void testToString_NaNValueIsRejected_Pass3() {
+        final TestAbstractIn condition = new TestAbstractIn("v", Arrays.asList(1.0, Double.NaN, 2.0));
+        assertThrows(IllegalArgumentException.class, () -> condition.toString(NamingPolicy.NO_CHANGE));
+    }
 }

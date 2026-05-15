@@ -1471,4 +1471,58 @@ public class ExpressionTest extends TestBase {
         Assertions.assertEquals("age BETWEEN 18 AND 65", Expression.between("age", 18, 65));
         Assertions.assertEquals("created BETWEEN '2024-01-01' AND '2024-12-31'", Expression.between("created", "2024-01-01", "2024-12-31"));
     }
+
+    // ---------------------------------------------------------------------
+    // Third-pass review: SQL-escaping / injection-vector regression tests.
+    // ---------------------------------------------------------------------
+
+    /**
+     * Regression (Pass 3): {@link Expression#normalize(Object)} must reject NaN / Infinity
+     * because they have no portable SQL literal form (the previous behavior emitted a bare
+     * {@code NaN} or {@code Infinity} token that most dialects reject).
+     */
+    @Test
+    public void testNormalize_RejectsNaNAndInfinity_Pass3() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.normalize(Double.NaN));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.normalize(Double.POSITIVE_INFINITY));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.normalize(Double.NEGATIVE_INFINITY));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.normalize(Float.NaN));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.normalize(Float.POSITIVE_INFINITY));
+    }
+
+    /**
+     * Regression (Pass 3): a string ending in a single backslash must not produce
+     * {@code 'x\'} (where the closing quote is consumed as an escape under MySQL-style
+     * parsing). The escape helper must keep the literal balanced.
+     */
+    @Test
+    public void testNormalize_TrailingBackslashStaysBalanced_Pass3() {
+        String input = "x" + (char) 92; // x followed by one backslash
+        String result = Expression.normalize(input);
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.startsWith("'") && result.endsWith("'"), "Output must be quoted, got: " + result);
+        String body = result.substring(1, result.length() - 1);
+        int trailing = 0;
+        for (int i = body.length() - 1; i >= 0 && body.charAt(i) == '\\'; i--) {
+            trailing++;
+        }
+        Assertions.assertEquals(0, trailing % 2, "Trailing backslash count must be even so closing quote is not escaped, got body: " + body);
+    }
+
+    /**
+     * Regression (Pass 3): non-numeric, non-string objects (Date, LocalDateTime, etc.) must be
+     * wrapped in single quotes after going through {@code N.stringOf}, not concatenated bare
+     * via {@code Object.toString()}.
+     */
+    @Test
+    public void testNormalize_DateLikeValuesAreQuoted_Pass3() {
+        String dateResult = Expression.normalize(new java.util.Date(0L));
+        Assertions.assertNotNull(dateResult);
+        Assertions.assertTrue(dateResult.startsWith("'") && dateResult.endsWith("'"), "Date literal must be quoted, got: " + dateResult);
+
+        String ldtResult = Expression.normalize(java.time.LocalDateTime.of(2024, 1, 1, 0, 0));
+        Assertions.assertNotNull(ldtResult);
+        Assertions.assertTrue(ldtResult.startsWith("'") && ldtResult.endsWith("'"), "LocalDateTime literal must be quoted, got: " + ldtResult);
+        Assertions.assertTrue(ldtResult.contains("2024"));
+    }
 }

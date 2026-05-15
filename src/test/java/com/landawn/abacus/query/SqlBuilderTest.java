@@ -12981,4 +12981,39 @@ class SqlBuilder16Test extends TestBase {
             assertTrue(sql.contains("o1"));
         }
     }
+
+    @Test
+    public void testInWithExpressionValueIsEmbeddedNotDropped_Pass3() {
+        SP sp = PSC.select("id").from("test_account").where(Filters.in("status", Arrays.asList(Expression.of("'ACTIVE'"), "PENDING"))).build();
+        assertTrue(sp.query().contains("'ACTIVE'"), "Expression literal must be embedded in IN list: " + sp.query());
+        assertTrue(sp.query().contains("?"), "Non-Expression value must still be parameterized: " + sp.query());
+        assertEquals(1, sp.parameters().size(), "Only the non-Expression value should be bound; got: " + sp.parameters());
+        assertEquals("PENDING", sp.parameters().get(0));
+    }
+
+    @Test
+    public void testNotInWithExpressionValueIsEmbeddedNotDropped_Pass3() {
+        SP sp = PSC.select("id").from("test_account").where(Filters.notIn("status", Arrays.asList(Expression.of("'DELETED'"), "ARCHIVED"))).build();
+        assertTrue(sp.query().contains("'DELETED'"), "Expression literal must be embedded in NOT IN list: " + sp.query());
+        assertTrue(sp.query().contains("NOT IN"));
+        assertEquals(1, sp.parameters().size());
+        assertEquals("ARCHIVED", sp.parameters().get(0));
+    }
+
+    @Test
+    public void testInWithAllSimpleValues_BackwardCompatPass3() {
+        SP sp = PSC.select("id").from("test_account").where(Filters.in("status", Arrays.asList("A", "B", "C"))).build();
+        assertTrue(sp.query().endsWith("IN (?, ?, ?)"), "Simple IN should produce three placeholders: " + sp.query());
+        assertEquals(3, sp.parameters().size());
+        assertEquals(Arrays.asList("A", "B", "C"), sp.parameters());
+    }
+
+    @Test
+    public void testNamedInWithExpressionValue_Pass3() {
+        SP sp = NSC.select("id").from("test_account").where(Filters.in("status", Arrays.asList(Expression.of("'ACTIVE'"), "PENDING"))).build();
+        assertTrue(sp.query().contains("'ACTIVE'"), "Expression must be embedded in named IN list: " + sp.query());
+        assertTrue(sp.query().contains(":"), "Non-Expression value must use named placeholder: " + sp.query());
+        assertEquals(1, sp.parameters().size());
+        assertEquals("PENDING", sp.parameters().get(0));
+    }
 }
