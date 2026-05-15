@@ -704,7 +704,8 @@ public final class DynamicQuery {
          * // Generates: SELECT id, name, email
          * }</pre>
          *
-         * @param columns collection of column names to select (must not be {@code null}; individual elements must not be blank)
+         * @param columns collection of column names to select (may be {@code null} or empty;
+         *                individual elements must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
          * @throws IllegalArgumentException if any element in {@code columns} is {@code null}, empty, or blank
          */
@@ -739,8 +740,8 @@ public final class DynamicQuery {
          * // Generates: SELECT first_name AS fname, last_name AS lname
          * }</pre>
          *
-         * @param columnsAndAliasMap map where keys are column names and values are aliases (must not be {@code null};
-         *        individual keys and values must not be blank)
+         * @param columnsAndAliasMap map where keys are column names and values are aliases (may be {@code null} or empty;
+         *        individual keys and values must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
          * @throws IllegalArgumentException if any key or value in the map is {@code null}, empty, or blank
          */
@@ -773,8 +774,9 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param textToAppend the string to append if condition is true
+         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this {@link SelectClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public SelectClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -804,9 +806,10 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param textToAppendWhenTrue the string to append if condition is true
-         * @param textToAppendWhenFalse the string to append if condition is false
+         * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
+         * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public SelectClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
@@ -1050,8 +1053,9 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param textToAppend the string to append if condition is true
+         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public FromClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1079,9 +1083,10 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param textToAppendWhenTrue the string to append if condition is true
-         * @param textToAppendWhenFalse the string to append if condition is false
+         * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
+         * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public FromClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
@@ -1295,8 +1300,9 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param textToAppend the string to append if condition is true
+         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public WhereClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1326,9 +1332,10 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param textToAppendWhenTrue the string to append if condition is true
-         * @param textToAppendWhenFalse the string to append if condition is false
+         * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
+         * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public WhereClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
@@ -1413,7 +1420,8 @@ public final class DynamicQuery {
          * // Generates: GROUP BY year, quarter, region
          * }</pre>
          *
-         * @param columns collection of column names to group by (must not be {@code null}; individual elements must not be blank)
+         * @param columns collection of column names to group by (may be {@code null} or empty;
+         *                individual elements must not be {@code null}, empty, or blank)
          * @return this {@link GroupByClause} instance for method chaining
          * @throws IllegalArgumentException if any element in {@code columns} is {@code null}, empty, or blank
          */
@@ -1446,8 +1454,9 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param textToAppend the string to append if condition is true
+         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this {@link GroupByClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public GroupByClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1477,9 +1486,10 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param textToAppendWhenTrue the string to append if condition is true
-         * @param textToAppendWhenFalse the string to append if condition is false
+         * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
+         * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link GroupByClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public GroupByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
@@ -1618,8 +1628,9 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param textToAppend the string to append if condition is true
+         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this {@link HavingClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public HavingClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1649,9 +1660,10 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param textToAppendWhenTrue the string to append if condition is true
-         * @param textToAppendWhenFalse the string to append if condition is false
+         * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
+         * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public HavingClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
@@ -1737,7 +1749,8 @@ public final class DynamicQuery {
          * // Generates: ORDER BY year DESC, month DESC, day DESC
          * }</pre>
          *
-         * @param columns collection of column names with optional sort directions (must not be {@code null}; individual elements must not be blank)
+         * @param columns collection of column names with optional sort directions (may be {@code null} or empty;
+         *                individual elements must not be {@code null}, empty, or blank)
          * @return this {@link OrderByClause} instance for method chaining
          * @throws IllegalArgumentException if any element in {@code columns} is {@code null}, empty, or blank
          */
@@ -1770,8 +1783,9 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param textToAppend the string to append if condition is true
+         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this {@link OrderByClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public OrderByClause appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
@@ -1801,9 +1815,10 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param textToAppendWhenTrue the string to append if condition is true
-         * @param textToAppendWhenFalse the string to append if condition is false
+         * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
+         * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link OrderByClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public OrderByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");

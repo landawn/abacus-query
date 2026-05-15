@@ -1369,21 +1369,22 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Creates a CONCAT function expression to concatenate two strings.
-     * CONCAT joins two or more strings into one.
+     * Creates a CONCAT function expression that concatenates two operands.
+     * The two arguments are emitted verbatim inside {@code CONCAT(...)}; use {@link #of(String)}
+     * or a literal SQL string to provide the operands.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String expr = Expression.concat("firstName", "' '");
      * // Returns: "CONCAT(firstName, ' ')"
-     * 
+     *
      * String expr2 = Expression.concat("city", "', '");
      * // Returns: "CONCAT(city, ', ')"
      * }</pre>
      *
-     * @param str1 the first string
-     * @param str2 the second string
-     * @return a CONCAT function string
+     * @param str1 the first operand (column reference or quoted literal)
+     * @param str2 the second operand (column reference or quoted literal)
+     * @return a CONCAT function string of the form {@code CONCAT(str1, str2)}
      */
     public static String concat(final String str1, final String str2) {
         return function(CONCAT, str1, str2);

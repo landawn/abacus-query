@@ -409,7 +409,7 @@ public final class ParsedSql {
 
     /**
      * Returns the hash code value for this {@code ParsedSql}.
-     * The hash code is based on the original SQL string.
+     * The hash code is based on the trimmed original SQL string returned by {@link #originalSql()}.
      *
      * @return the hash code value
      */
@@ -420,7 +420,8 @@ public final class ParsedSql {
 
     /**
      * Indicates whether some other object is "equal to" this one.
-     * Two {@code ParsedSql} objects are equal if they have the same original SQL string.
+     * Two {@code ParsedSql} objects are equal if their trimmed original SQL strings
+     * (as returned by {@link #originalSql()}) are equal.
      *
      * @param obj the reference object with which to compare
      * @return {@code true} if this object equals the obj argument; {@code false} otherwise

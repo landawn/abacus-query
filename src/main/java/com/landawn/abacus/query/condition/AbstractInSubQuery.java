@@ -203,6 +203,9 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      *
      * <p>For a single property: {@code propName IN (subQuery)}</p>
      * <p>For multiple properties: {@code (prop1, prop2, ...) IN (subQuery)}</p>
+     * <p>If {@code propNames} is empty (only possible for an uninitialized instance), only
+     * {@code OPERATOR (subQuery)} is rendered, and the operator falls back to the literal
+     * {@code "null"} when {@code operator} is also {@code null}.</p>
      *
      * @param namingPolicy the naming policy to apply to property names;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used

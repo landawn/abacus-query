@@ -69,10 +69,10 @@ import com.landawn.abacus.util.u.Optional;
  *   <caption>Concrete SqlBuilder subclasses</caption>
  *   <tr><th>Class</th><th>Parameters</th><th>Naming</th><th>Example</th></tr>
  *   <tr><td>{@link PSC}</td><td>{@code ?}</td><td>snake_case</td><td>{@code SELECT first_name FROM users WHERE id = ?}</td></tr>
- *   <tr><td>{@link PAC}</td><td>{@code ?}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM USERS WHERE ID = ?}</td></tr>
- *   <tr><td>{@link PLC}</td><td>{@code ?}</td><td>camelCase</td><td>{@code SELECT firstName FROM users WHERE id = ?}</td></tr>
- *   <tr><td>{@link NSC}</td><td>{@code :name}</td><td>snake_case</td><td>{@code SELECT first_name FROM users WHERE id = :id}</td></tr>
- *   <tr><td>{@link NAC}</td><td>{@code :name}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM USERS WHERE ID = :ID}</td></tr>
+ *   <tr><td>{@link PAC}</td><td>{@code ?}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM USER WHERE ID = ?}</td></tr>
+ *   <tr><td>{@link PLC}</td><td>{@code ?}</td><td>camelCase</td><td>{@code SELECT firstName FROM user WHERE id = ?}</td></tr>
+ *   <tr><td>{@link NSC}</td><td>{@code :name}</td><td>snake_case</td><td>{@code SELECT first_name FROM user WHERE id = :id}</td></tr>
+ *   <tr><td>{@link NAC}</td><td>{@code :name}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM USER WHERE ID = :id}</td></tr>
  *   <tr><td>{@link NLC}</td><td>{@code :name}</td><td>camelCase</td><td>{@code SELECT firstName FROM users WHERE id = :id}</td></tr>
  * </table>
  *
@@ -1164,7 +1164,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     "lastName", "lname"
          * );
          * String sql = SCSB.select(aliases).from("account").build().query();
-         * // Output: SELECT first_name AS fname, last_name AS lname FROM account
+         * // Output: SELECT first_name AS "fname", last_name AS "lname" FROM account
          * }</pre>
          *
          * @param propOrColumnNameAliases map of column names to their aliases
@@ -1833,7 +1833,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.insert("firstName")
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME) VALUES (?)
+         * // Output: INSERT INTO users (FIRST_NAME) VALUES (?)
          * }</pre>
          *
          * @param expr the column name or expression to insert
@@ -1858,7 +1858,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.insert("firstName", "lastName", "email")
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param propOrColumnNames the property or column names to insert, in order
@@ -1889,7 +1889,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.insert(columns)
          *                  .into("users")
          *                  .build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param propOrColumnNames the collection of column names to insert
@@ -1919,7 +1919,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * data.put("firstName", "John");
          * data.put("age", 30);
          * String sql = ACSB.insert(data).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, AGE) VALUES ('John', 30)
+         * // Output: INSERT INTO users (FIRST_NAME, AGE) VALUES ('John', 30)
          * }</pre>
          *
          * @param props map of column names to their corresponding values
@@ -1948,7 +1948,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * User user = new User("John", 30, "john@example.com");
          * String sql = ACSB.insert(user).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, AGE, EMAIL) VALUES ('John', 30, 'john@example.com')
+         * // Output: INSERT INTO users (FIRST_NAME, AGE, EMAIL) VALUES ('John', 30, 'john@example.com')
          * }</pre>
          *
          * @param entity the entity object containing data to insert
@@ -1970,7 +1970,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * User user = new User("John", 30, "john@example.com");
          * Set<String> excluded = new HashSet<>(Arrays.asList("createdDate", "modifiedDate"));
          * String sql = ACSB.insert(user, excluded).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, AGE, EMAIL) VALUES ('John', 30, 'john@example.com')
+         * // Output: INSERT INTO users (FIRST_NAME, AGE, EMAIL) VALUES ('John', 30, 'john@example.com')
          * }</pre>
          *
          * @param entity the entity object containing data to insert
@@ -2001,7 +2001,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = ACSB.insert(User.class).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, AGE, EMAIL)
+         * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME, AGE, EMAIL) VALUES (?, ?, ?, ?)
          * }</pre>
          *
          * @param entityClass the entity class to use as template
@@ -2023,7 +2023,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("id", "createdDate"));
          * String sql = ACSB.insert(User.class, excluded).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, AGE, EMAIL)
+         * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME, AGE, EMAIL) VALUES (?, ?, ?, ?)
          * }</pre>
          *
          * @param entityClass the entity class to use as template
@@ -2104,7 +2104,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     new User("Jane", 25, "jane@example.com")
          * );
          * String sql = ACSB.batchInsert(users).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, AGE, EMAIL) VALUES 
+         * // Output: INSERT INTO users (FIRST_NAME, AGE, EMAIL) VALUES
          * //         ('John', 30, 'john@example.com'), 
          * //         ('Jane', 25, 'jane@example.com')
          * }</pre>
@@ -2184,7 +2184,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                  .set("age")
          *                  .where(Filters.equal("firstName", "John"))
          *                  .build().query();
-         * // Output: UPDATE USERS SET AGE = ? WHERE FIRST_NAME = 'John'
+         * // Output: UPDATE users SET AGE = ? WHERE FIRST_NAME = 'John'
          * }</pre>
          *
          * @param tableName the name of the table to update
@@ -2273,7 +2273,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.deleteFrom("users")
          *                  .where(Filters.lessThan("AGE", 18))
          *                  .build().query();
-         * // Output: DELETE FROM USERS WHERE AGE < 18
+         * // Output: DELETE FROM users WHERE AGE < 18
          * }</pre>
          *
          * @param tableName the table name to delete from
@@ -2302,7 +2302,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.deleteFrom("users", User.class)
          *                  .where(Filters.equal("age", 18))  // "age" is mapped to "AGE" column
          *                  .build().query();
-         * // Output: DELETE FROM USERS WHERE AGE = 18
+         * // Output: DELETE FROM users WHERE AGE = 18
          * }</pre>
          *
          * @param tableName the table name to delete from
@@ -2393,8 +2393,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                  .from("users")
          *                  .where(Filters.ge("age", 18))
          *                  .build().query();
-         * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age" 
-         * //         FROM USERS WHERE AGE >= 18
+         * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age"
+         * //         FROM users WHERE AGE >= 18
          * }</pre>
          *
          * @param propOrColumnNames the property or column names to select
@@ -2424,7 +2424,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.select(columns)
          *                  .from("users")
          *                  .build().query();
-         * // Output: SELECT FIRST_NAME AS "firstName", EMAIL AS "email" FROM USERS
+         * // Output: SELECT FIRST_NAME AS "firstName", EMAIL AS "email" FROM users
          * }</pre>
          *
          * @param propOrColumnNames collection of property or column names to select
@@ -2454,7 +2454,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * aliases.put("firstName", "fname");
          * aliases.put("lastName", "lname");
          * String sql = ACSB.select(aliases).from("users").build().query();
-         * // Output: SELECT FIRST_NAME AS "fname", LAST_NAME AS "lname" FROM USERS
+         * // Output: SELECT FIRST_NAME AS "fname", LAST_NAME AS "lname" FROM users
          * }</pre>
          *
          * @param propOrColumnNameAliases map of column names to their aliases
@@ -2483,7 +2483,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.select(User.class)
          *                  .from("users")
          *                  .build().query();
-         * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age", EMAIL AS "email" FROM USERS
+         * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age", EMAIL AS "email" FROM users
          * }</pre>
          *
          * @param entityClass the entity class whose properties to select
@@ -2529,7 +2529,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.select(User.class, excluded)
          *                  .from("users")
          *                  .build().query();
-         * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age", EMAIL AS "email" FROM USERS
+         * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", AGE AS "age", EMAIL AS "email" FROM users
          * }</pre>
          *
          * @param entityClass the entity class whose properties to select
@@ -2993,7 +2993,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.count("users")
          *                  .where(Filters.equal("ACTIVE", true))
          *                  .build().query();
-         * // Output: SELECT count(*) FROM USERS WHERE ACTIVE = true
+         * // Output: SELECT count(*) FROM users WHERE ACTIVE = true
          * }</pre>
          *
          * @param tableName the table to count rows from
@@ -6964,6 +6964,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM account WHERE ID = ?
+     *
+     * // Note: table names passed to from()/into()/update()/deleteFrom() as String literals are kept verbatim;
+     * // only column/property names are converted per the SCREAMING_SNAKE_CASE naming policy.
      * }</pre>
      */
     public static class PAC extends SqlBuilder {
@@ -6999,7 +7002,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.insert("name").into("users").build().query();
-         * // Output: INSERT INTO USERS (NAME) VALUES (?)
+         * // Output: INSERT INTO users (NAME) VALUES (?)
          * }</pre>
          * 
          * @param expr the expression or column name to insert
@@ -7023,7 +7026,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = PAC.insert("firstName", "lastName", "email")
          *                 .into("users")
          *                 .build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param propOrColumnNames the property or column names to include in the INSERT
@@ -7051,7 +7054,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * List<String> columns = Arrays.asList("firstName", "lastName", "email");
          * String sql = PAC.insert(columns).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param propOrColumnNames collection of property or column names to include
@@ -7081,7 +7084,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * data.put("firstName", "John");
          * data.put("lastName", "Doe");
          * String sql = PAC.insert(data).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME) VALUES (?, ?)
+         * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME) VALUES (?, ?)
          * }</pre>
          * 
          * @param props map of property names to their values
@@ -7110,7 +7113,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * User user = new User("John", "Doe", "john@example.com");
          * String sql = PAC.insert(user).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param entity the entity object to insert
@@ -7132,7 +7135,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * User user = new User("John", "Doe", "john@example.com");
          * Set<String> exclude = new HashSet<>(Arrays.asList("createdDate", "modifiedDate"));
          * String sql = PAC.insert(user, exclude).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param entity the entity object to insert
@@ -7162,7 +7165,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.insert(User.class).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param entityClass the entity class to generate INSERT for
@@ -7183,7 +7186,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("id", "version"));
          * String sql = PAC.insert(User.class, exclude).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
+         * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param entityClass the entity class to generate INSERT for
@@ -7212,9 +7215,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.insertInto(User.class).build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
+         * // Output: INSERT INTO USER (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to insert into
          * @return a new SqlBuilder instance configured for INSERT operation
          * @throws IllegalArgumentException if entityClass is null
@@ -7232,7 +7235,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("id"));
          * String sql = PAC.insertInto(User.class, exclude).build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
+         * // Output: INSERT INTO USER (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param entityClass the entity class to insert into
@@ -7260,7 +7263,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     new User("Jane", "Smith")
          * );
          * String sql = PAC.batchInsert(users).into("users").build().query();
-         * // Output: INSERT INTO USERS (FIRST_NAME, LAST_NAME) VALUES (?, ?), (?, ?)
+         * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME) VALUES (?, ?), (?, ?)
          * }</pre>
          * 
          * @param propsList collection of entities or property maps to batch insert
@@ -7297,9 +7300,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                 .set("firstName", "lastName")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
+         * // Output: UPDATE users SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
          * }</pre>
-         * 
+         *
          * @param tableName the name of the table to update
          * @return a new SqlBuilder instance configured for UPDATE operation
          * @throws IllegalArgumentException if tableName is null or empty
@@ -7327,7 +7330,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                 .set("firstName", "lastName")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
+         * // Output: UPDATE users SET FIRST_NAME = ?, LAST_NAME = ? WHERE ID = ?
          * }</pre>
          * 
          * @param tableName the name of the table to update
@@ -7361,7 +7364,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = PAC.update(User.class)
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ?, EMAIL = ?, ... WHERE ID = ?
+         * // Output: UPDATE USER SET FIRST_NAME = ?, LAST_NAME = ?, EMAIL = ?, ... WHERE ID = ?
          * }</pre>
          *
          * @param entityClass the entity class to update
@@ -7387,7 +7390,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = PAC.update(User.class, exclude)
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: UPDATE USERS SET FIRST_NAME = ?, LAST_NAME = ?, EMAIL = ?, ... WHERE ID = ?
+         * // Output: UPDATE USER SET FIRST_NAME = ?, LAST_NAME = ?, EMAIL = ?, ... WHERE ID = ?
          * }</pre>
          *
          * @param entityClass the entity class to update
@@ -7419,7 +7422,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = PAC.deleteFrom("users")
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: DELETE FROM USERS WHERE ID = ?
+         * // Output: DELETE FROM users WHERE ID = ?
          * }</pre>
          * 
          * @param tableName the name of the table to delete from
@@ -7448,7 +7451,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = PAC.deleteFrom("users", User.class)
          *                 .where(Filters.equal("email", "john@example.com"))
          *                 .build().query();
-         * // Output: DELETE FROM USERS WHERE EMAIL = ?
+         * // Output: DELETE FROM users WHERE EMAIL = ?
          * }</pre>
          * 
          * @param tableName the name of the table to delete from
@@ -7479,7 +7482,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = PAC.deleteFrom(User.class)
          *                 .where(Filters.equal("id", 1))
          *                 .build().query();
-         * // Output: DELETE FROM USERS WHERE ID = ?
+         * // Output: DELETE FROM USER WHERE ID = ?
          * }</pre>
          * 
          * @param entityClass the entity class to delete from
@@ -7507,10 +7510,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.select("COUNT(*)").from("users").build().query();
-         * // Output: SELECT count(*) FROM USERS
-         * 
+         * // Output: SELECT count(*) FROM users
+         *
          * String sql2 = PAC.select("MAX(age)").from("users").build().query();
-         * // Output: SELECT MAX(AGE) FROM USERS
+         * // Output: SELECT MAX(age) FROM users
          * }</pre>
          * 
          * @param selectPart the SELECT expression (e.g., "COUNT(*)", "MAX(age)", "firstName")
@@ -7538,7 +7541,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = PAC.select("firstName", "lastName", "email")
          *                 .from("users")
          *                 .build().query();
-         * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", EMAIL AS "email" FROM USERS
+         * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", EMAIL AS "email" FROM users
          * }</pre>
          * 
          * @param propOrColumnNames the property or column names to select
@@ -7566,7 +7569,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * List<String> columns = Arrays.asList("firstName", "lastName", "email");
          * String sql = PAC.select(columns).from("users").build().query();
-         * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", EMAIL AS "email" FROM USERS
+         * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", EMAIL AS "email" FROM users
          * }</pre>
          * 
          * @param propOrColumnNames collection of property or column names to select
@@ -7596,7 +7599,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * aliases.put("firstName", "fname");
          * aliases.put("lastName", "lname");
          * String sql = PAC.select(aliases).from("users").build().query();
-         * // Output: SELECT FIRST_NAME AS "fname", LAST_NAME AS "lname" FROM USERS
+         * // Output: SELECT FIRST_NAME AS "fname", LAST_NAME AS "lname" FROM users
          * }</pre>
          * 
          * @param propOrColumnNameAliases map of column names to their aliases
@@ -7623,7 +7626,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.select(User.class).from("users").build().query();
-         * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", EMAIL AS "email" FROM USERS
+         * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", LAST_NAME AS "lastName", EMAIL AS "email" FROM users
          * }</pre>
          * 
          * @param entityClass the entity class to select from
@@ -7719,7 +7722,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.selectFrom(User.class).where(Filters.equal("active", true)).build().query();
-         * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", ... FROM USERS WHERE ACTIVE = ?
+         * // Output: SELECT ID AS "id", FIRST_NAME AS "firstName", ... FROM USER WHERE ACTIVE = ?
          * }</pre>
          * 
          * @param entityClass the entity class to select from
@@ -7741,7 +7744,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = PAC.selectFrom(User.class, "u")
          *                 .where(Filters.equal("u.active", true))
          *                 .build().query();
-         * // Output: SELECT u.ID AS "id", u.FIRST_NAME AS "firstName", ... FROM USERS u WHERE u.ACTIVE = ?
+         * // Output: SELECT u.ID AS "id", u.FIRST_NAME AS "firstName", ... FROM USER u WHERE u.ACTIVE = ?
          * }</pre>
          * 
          * @param entityClass the entity class to select from
@@ -7786,7 +7789,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = PAC.selectFrom(User.class, "u", true)
          *                 .where(Filters.equal("u.active", true))
          *                 .build().query();
-         * // Output: SELECT u.ID AS "id", ... FROM USERS u WHERE u.ACTIVE = ?
+         * // Output: SELECT u.ID AS "id", ... FROM USER u WHERE u.ACTIVE = ?
          * }</pre>
          * 
          * @param entityClass the entity class to select from
@@ -7830,7 +7833,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> exclude = new HashSet<>(Arrays.asList("password"));
          * String sql = PAC.selectFrom(User.class, "u", exclude).build().query();
-         * // Output: SELECT u.ID AS "id", ... FROM USERS u (excluding password)
+         * // Output: SELECT u.ID AS "id", ... FROM USER u (excluding password)
          * }</pre>
          * 
          * @param entityClass the entity class to select from
@@ -8103,7 +8106,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.count("users").where(Filters.equal("active", true)).build().query();
-         * // Output: SELECT count(*) FROM USERS WHERE ACTIVE = ?
+         * // Output: SELECT count(*) FROM users WHERE ACTIVE = ?
          * }</pre>
          * 
          * @param tableName the table to count rows from
@@ -8126,7 +8129,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = PAC.count(User.class)
          *                 .where(Filters.greaterThan("age", 18))
          *                 .build().query();
-         * // Output: SELECT count(*) FROM USERS WHERE AGE > ?
+         * // Output: SELECT count(*) FROM USER WHERE AGE > ?
          * }</pre>
          * 
          * @param entityClass the entity class to count
@@ -12558,7 +12561,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                 .set("STATUS", "LAST_MODIFIED")
          *                 .where(Filters.equal("ID", 1))
          *                 .build().query();
-         * // Output: UPDATE ACCOUNT SET STATUS = :STATUS, LAST_MODIFIED = :LAST_MODIFIED WHERE ID = :id
+         * // Output: UPDATE ACCOUNT SET STATUS = :STATUS, LAST_MODIFIED = :LAST_MODIFIED WHERE ID = :ID
          * }</pre>
          *
          * @param tableName the name of the table to update
@@ -12849,7 +12852,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     "accountBalance", "balance"
          * );
          * String sql = NAC.select(aliases).from("ACCOUNT").build().query();
-         * // Output: SELECT FIRST_NAME AS fname, LAST_NAME AS lname, ACCOUNT_BALANCE AS balance FROM ACCOUNT
+         * // Output: SELECT FIRST_NAME AS "fname", LAST_NAME AS "lname", ACCOUNT_BALANCE AS "balance" FROM ACCOUNT
          * }</pre>
          * 
          * @param propOrColumnNameAliases map of property/column names to their aliases

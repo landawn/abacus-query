@@ -1108,8 +1108,9 @@ public class Criteria extends AbstractCondition {
          * // Results in: GROUP BY region, product_type
          * }</pre>
          * 
-         * @param propNames the collection of property names to group by
+         * @param propNames the collection of property names to group by (must not be {@code null} or empty)
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty
          */
         public Builder groupBy(final Collection<String> propNames) {
             N.checkArgNotEmpty(propNames, "propNames");
@@ -1451,8 +1452,9 @@ public class Criteria extends AbstractCondition {
          * // Results in: ORDER BY country, state, city
          * }</pre>
          * 
-         * @param propNames the collection of property names to order by
+         * @param propNames the collection of property names to order by (must not be {@code null} or empty)
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty
          */
         public Builder orderBy(final Collection<String> propNames) {
             N.checkArgNotEmpty(propNames, "propNames");

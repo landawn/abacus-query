@@ -124,8 +124,10 @@ public abstract class Cell extends AbstractCondition {
 
     /**
      * Checks if this Cell is equal to another object.
-     * Two Cells are equal if they have the same operator and wrapped condition.
-     * 
+     * Two Cells are equal if they are of the same runtime class and have the same operator
+     * and wrapped condition. Different concrete subclasses of {@code Cell} are never equal,
+     * even when their operator and wrapped condition are equal.
+     *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
      */

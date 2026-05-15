@@ -96,6 +96,7 @@ public abstract class ComposableCell extends ComposableCondition {
      * @param namingPolicy the naming policy to apply to property names within the wrapped condition;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a string representation of this ComposableCell
+     * @throws NullPointerException if this instance has a {@code null} operator (only possible for an uninitialized instance created via the package-private default constructor)
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
@@ -119,7 +120,9 @@ public abstract class ComposableCell extends ComposableCondition {
 
     /**
      * Checks if this ComposableCell is equal to another object.
-     * Two ComposableCells are equal if they have the same operator and wrapped condition.
+     * Two ComposableCells are equal if they are of the same runtime class and have the same
+     * operator and wrapped condition. Different concrete subclasses of {@code ComposableCell}
+     * are never equal, even when their operator and wrapped condition are equal.
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

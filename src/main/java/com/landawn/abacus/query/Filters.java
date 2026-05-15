@@ -1484,8 +1484,9 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param propValue the value to search for
+     * @param propValue the value to search for (must not be {@code null})
      * @return a {@link Like} condition
+     * @throws IllegalArgumentException if {@code propValue} is {@code null}
      */
     public static Like contains(final String propName, final String propValue) {
         N.checkArgNotNull(propValue, "propValue");
@@ -1503,8 +1504,9 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param propValue the value to exclude
+     * @param propValue the value to exclude (must not be {@code null})
      * @return a {@link NotLike} condition
+     * @throws IllegalArgumentException if {@code propValue} is {@code null}
      */
     public static NotLike notContains(final String propName, final String propValue) {
         N.checkArgNotNull(propValue, "propValue");
@@ -1522,8 +1524,9 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param propValue the prefix to search for
+     * @param propValue the prefix to search for (must not be {@code null})
      * @return a {@link Like} condition
+     * @throws IllegalArgumentException if {@code propValue} is {@code null}
      */
     public static Like startsWith(final String propName, final String propValue) {
         N.checkArgNotNull(propValue, "propValue");
@@ -1541,8 +1544,9 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param propValue the prefix to exclude
+     * @param propValue the prefix to exclude (must not be {@code null})
      * @return a {@link NotLike} condition
+     * @throws IllegalArgumentException if {@code propValue} is {@code null}
      */
     public static NotLike notStartsWith(final String propName, final String propValue) {
         N.checkArgNotNull(propValue, "propValue");
@@ -1560,8 +1564,9 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param propValue the suffix to search for
+     * @param propValue the suffix to search for (must not be {@code null})
      * @return a {@link Like} condition
+     * @throws IllegalArgumentException if {@code propValue} is {@code null}
      */
     public static Like endsWith(final String propName, final String propValue) {
         N.checkArgNotNull(propValue, "propValue");
@@ -1579,8 +1584,9 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param propValue the suffix to exclude
+     * @param propValue the suffix to exclude (must not be {@code null})
      * @return a {@link NotLike} condition
+     * @throws IllegalArgumentException if {@code propValue} is {@code null}
      */
     public static NotLike notEndsWith(final String propName, final String propValue) {
         N.checkArgNotNull(propValue, "propValue");

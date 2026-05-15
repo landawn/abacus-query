@@ -38,7 +38,7 @@ import com.landawn.abacus.util.Strings;
  * <p>Important: Junction is intended for composable boolean conditions. It is not meant to
  * contain clause conditions (WHERE, ORDER BY, etc.); those are handled by {@link Criteria}.
  * The class itself does not reject clause conditions at construction time — callers are
- * responsible for honouring this contract.
+ * responsible for honoring this contract.
  * 
  * <p>This class serves as the parent for specific junction types:
  * <ul>
@@ -234,10 +234,12 @@ public class Junction extends ComposableCondition {
      * Each contained condition is wrapped in parentheses, joined by the junction operator, and the
      * entire result is itself wrapped in an outer pair of parentheses (e.g.
      * {@code "((cond1) AND (cond2) AND (cond3))"}). This ensures proper precedence in nested
-     * composable expressions. Returns an empty string if the junction has no conditions.
+     * composable expressions. Any {@code null} entries in the conditions list are skipped, and an
+     * empty string is returned if the junction has no conditions or every condition is {@code null}.
      *
      * @param namingPolicy the naming policy to apply to property names within each condition
-     * @return the string representation with proper parentheses and spacing, or empty string if no conditions
+     * @return the string representation with proper parentheses and spacing, or an empty string if
+     *         no non-{@code null} conditions are present
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {

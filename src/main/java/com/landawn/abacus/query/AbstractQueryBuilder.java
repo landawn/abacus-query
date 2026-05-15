@@ -3412,8 +3412,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
      *
-     * @param sqlBuilder the SQL builder containing the query to union
+     * @param sqlBuilder the SQL builder containing the query to union (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
      */
     public This union(final This sqlBuilder) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
@@ -3541,8 +3542,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
      *
-     * @param sqlBuilder the SQL builder containing the query to union all
+     * @param sqlBuilder the SQL builder containing the query to union all (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
      */
     public This unionAll(final This sqlBuilder) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
@@ -3671,8 +3673,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM customers
      * }</pre>
      *
-     * @param sqlBuilder the SQL builder containing the query to intersect
+     * @param sqlBuilder the SQL builder containing the query to intersect (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
      */
     public This intersect(final This sqlBuilder) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
@@ -3801,8 +3804,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM customers
      * }</pre>
      *
-     * @param sqlBuilder the SQL builder containing the query to except
+     * @param sqlBuilder the SQL builder containing the query to except (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
      */
     public This except(final This sqlBuilder) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
@@ -3932,8 +3936,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * @param sqlBuilder the SQL builder containing the query to minus
+     * @param sqlBuilder the SQL builder containing the query to minus (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
      */
     public This minus(final This sqlBuilder) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
