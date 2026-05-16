@@ -98,6 +98,11 @@ public class All extends ComposableCell {
         super(Operator.ALL, subQuery);
     }
 
+    /**
+     * Gets the subquery wrapped by this ALL condition.
+     *
+     * @return the {@link SubQuery} supplied to this condition
+     */
     public SubQuery getSubQuery() {
         return (SubQuery) condition;
     }

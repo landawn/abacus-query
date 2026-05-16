@@ -183,7 +183,7 @@ public class Expression extends ComposableCondition {
      * String literal3 = empty.getLiteral();   // Returns null
      * }</pre>
      *
-     * @return the SQL expression string
+     * @return the SQL expression string; may be {@code null} if this expression was constructed with a {@code null} literal
      */
     public String getLiteral() {
         return literal;
@@ -236,6 +236,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side of the equality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NULL})
      * @return a string representation of the equality expression
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String equal(final String literal, final Object value) { //NOSONAR
         return link(Operator.EQUAL, literal, value);
@@ -279,6 +280,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side of the inequality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NOT NULL})
      * @return a string representation of the not-equal expression
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String notEqual(final String literal, final Object value) {
         return link(Operator.NOT_EQUAL, literal, value);
@@ -318,6 +320,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the greater-than expression
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String greaterThan(final String literal, final Object value) {
         return link(Operator.GREATER_THAN, literal, value);
@@ -354,6 +357,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the greater-than-or-equal expression
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String greaterThanOrEqual(final String literal, final Object value) {
         return link(Operator.GREATER_THAN_OR_EQUAL, literal, value);
@@ -390,6 +394,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the less-than expression
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String lessThan(final String literal, final Object value) {
         return link(Operator.LESS_THAN, literal, value);
@@ -426,6 +431,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the less-than-or-equal expression
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String lessThanOrEqual(final String literal, final Object value) {
         return link(Operator.LESS_THAN_OR_EQUAL, literal, value);
@@ -467,6 +473,7 @@ public class Expression extends ComposableCondition {
      * @param min the minimum value (inclusive)
      * @param max the maximum value (inclusive)
      * @return a string representation of the BETWEEN expression
+     * @throws IllegalArgumentException if {@code min} or {@code max} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String between(final String literal, final Object min, final Object max) {
         return link(Operator.BETWEEN, literal, min, max);
@@ -622,6 +629,7 @@ public class Expression extends ComposableCondition {
      *
      * @param objects the values to add
      * @return a string representation of the addition expression
+     * @throws IllegalArgumentException if any value is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String plus(final Object... objects) {
         return link(PLUS, objects);
@@ -643,6 +651,7 @@ public class Expression extends ComposableCondition {
      *
      * @param objects the values to subtract
      * @return a string representation of the subtraction expression
+     * @throws IllegalArgumentException if any value is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String subtract(final Object... objects) {
         return link(MINUS, objects);
@@ -676,6 +685,7 @@ public class Expression extends ComposableCondition {
      *
      * @param objects the values to multiply
      * @return a string representation of the multiplication expression
+     * @throws IllegalArgumentException if any value is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String multiply(final Object... objects) {
         return link(ASTERISK, objects);
@@ -697,6 +707,7 @@ public class Expression extends ComposableCondition {
      *
      * @param objects the values to divide
      * @return a string representation of the division expression
+     * @throws IllegalArgumentException if any value is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String divide(final Object... objects) {
         return link(SLASH, objects);
@@ -718,6 +729,7 @@ public class Expression extends ComposableCondition {
      *
      * @param objects the values for modulus operation
      * @return a string representation of the modulus expression
+     * @throws IllegalArgumentException if any value is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String modulus(final Object... objects) {
         return link(PERCENT, objects);
@@ -736,6 +748,7 @@ public class Expression extends ComposableCondition {
      *
      * @param objects the values for left shift operation
      * @return a string representation of the left shift expression
+     * @throws IllegalArgumentException if any value is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String leftShift(final Object... objects) {
         return link(LEFT_SHIFT, objects);
@@ -754,6 +767,7 @@ public class Expression extends ComposableCondition {
      *
      * @param objects the values for right shift operation
      * @return a string representation of the right shift expression
+     * @throws IllegalArgumentException if any value is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String rightShift(final Object... objects) {
         return link(RIGHT_SHIFT, objects);
@@ -774,6 +788,7 @@ public class Expression extends ComposableCondition {
      *
      * @param objects the values for bitwise AND operation
      * @return a string representation of the bitwise AND expression
+     * @throws IllegalArgumentException if any value is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String bitwiseAnd(final Object... objects) {
         return link(AMPERSAND, objects);
@@ -791,6 +806,7 @@ public class Expression extends ComposableCondition {
      *
      * @param objects the values for bitwise OR operation
      * @return a string representation of the bitwise OR expression
+     * @throws IllegalArgumentException if any value is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String bitwiseOr(final Object... objects) {
         return link(VERTICAL_BAR, objects);
@@ -808,6 +824,7 @@ public class Expression extends ComposableCondition {
      *
      * @param objects the values for bitwise XOR operation
      * @return a string representation of the bitwise XOR expression
+     * @throws IllegalArgumentException if any value is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     public static String bitwiseXor(final Object... objects) {
         return link(CIRCUMFLEX, objects);
@@ -816,9 +833,15 @@ public class Expression extends ComposableCondition {
     /**
      * Links a literal with a value using the specified operator.
      *
+     * <p>If {@code value} is {@code null}, this method substitutes a null-aware form:
+     * {@link Operator#EQUAL} renders as {@code "literal IS NULL"}, while
+     * {@link Operator#NOT_EQUAL} and {@link Operator#NOT_EQUAL_ANSI} render as
+     * {@code "literal IS NOT NULL"}. For all other operators (or non-null values)
+     * the value is normalized via {@link #normalize(Object)}.</p>
+     *
      * @param operator the operator to use
      * @param literal the left-hand side literal
-     * @param value the right-hand side value
+     * @param value the right-hand side value; may be {@code null}
      * @return a string representation of the linked expression
      */
     static String link(final Operator operator, final String literal, final Object value) {

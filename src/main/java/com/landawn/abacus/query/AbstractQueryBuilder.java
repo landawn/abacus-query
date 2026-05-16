@@ -93,7 +93,8 @@ import com.landawn.abacus.util.stream.Stream;
  *
  * <p>Instances are <b>not thread-safe</b>; build one per thread or per query and always call
  * {@link #build()} to obtain the {@link SP} pair and release pooled resources. After {@code build()}
- * the builder is closed and any further use throws {@link IllegalStateException}.</p>
+ * the builder is closed and must not be reused; calling {@code build()} again throws
+ * {@link IllegalStateException}.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -3102,7 +3103,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p>A {@link Criteria} is expanded into its JOIN/WHERE/GROUP&nbsp;BY/HAVING/set-operation/ORDER&nbsp;BY/LIMIT
      * parts. A clause condition ({@code Where}, {@code GroupBy}, {@code Having}, {@code OrderBy}, {@code Limit})
      * is rendered with its own keyword. Any other condition is appended with a leading {@code WHERE} keyword
-     * (unless this builder is condition-only). A multi-element {@link Junction} is rendered with each member
+     * (unless this builder is condition-only). A multi-element {@link com.landawn.abacus.query.condition.Junction}
+     * is rendered with each member
      * parenthesized individually and joined by the junction operator, with no surrounding parentheses.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -4088,7 +4090,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets a single column or raw assignment expression for an UPDATE operation.
      *
-     * <p>If {@code expr} contains an {@code =} sign, it is appended verbatim as a raw assignment.
+     * <p>If {@code expr} contains an {@code =} sign, it is treated as a complete assignment and no
+     * placeholder is generated (identifiers are still normalized according to the naming policy).
      * Otherwise, it is treated as a column name and a parameter placeholder
      * ({@code = ?}, {@code = :name}, or {@code = #{name}}) is appended based on the SQL policy.</p>
      *
@@ -5668,7 +5671,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Normalizes a column name according to the specified naming policy.
-     * SQL keywords are returned unchanged. For {@code CAMEL_CASE} policy, the name is normalized as a bean property name.
+     * SQL keywords (and any name when the policy is {@code NO_CHANGE}) are returned unchanged.
+     * For the {@code CAMEL_CASE} policy, the name is normalized as a bean property name;
+     * otherwise it is converted using the naming policy.
      *
      * @param word the column name to normalize
      * @param namingPolicy the naming policy to apply

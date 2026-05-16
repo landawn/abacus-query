@@ -231,8 +231,8 @@ public abstract class AbstractCondition implements Condition {
      *
      * @param parameter the parameter value to convert; may be {@code null}
      * @param namingPolicy the naming policy to apply to property names within nested {@link Condition}s.
-     *                     Passing {@code null} may cause a {@link NullPointerException} when a nested
-     *                     {@code Condition} is encountered.
+     *                     May be {@code null}; nested {@code Condition} implementations treat a
+     *                     {@code null} policy as {@link NamingPolicy#NO_CHANGE}.
      * @return the string representation of the parameter, or {@code null} if {@code parameter} is {@code null}
      * @throws IllegalArgumentException if {@code parameter} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */

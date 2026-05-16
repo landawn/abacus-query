@@ -386,6 +386,7 @@ public final class DynamicQuery {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.union("SELECT id, name FROM archived_users");
+         * // Appends: UNION SELECT id, name FROM archived_users
          * }</pre>
          *
          * @param query the complete SQL query to union with (must not be {@code null}, empty, or blank)
@@ -407,6 +408,7 @@ public final class DynamicQuery {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.unionAll("SELECT id, name FROM temp_users");
+         * // Appends: UNION ALL SELECT id, name FROM temp_users
          * }</pre>
          *
          * @param query the complete SQL query to union with (must not be {@code null}, empty, or blank)
@@ -428,6 +430,7 @@ public final class DynamicQuery {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.intersect("SELECT user_id FROM premium_users");
+         * // Appends: INTERSECT SELECT user_id FROM premium_users
          * }</pre>
          *
          * @param query the complete SQL query to intersect with (must not be {@code null}, empty, or blank)
@@ -449,6 +452,7 @@ public final class DynamicQuery {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.except("SELECT user_id FROM blocked_users");
+         * // Appends: EXCEPT SELECT user_id FROM blocked_users
          * }</pre>
          *
          * @param query the complete SQL query to exclude results from (must not be {@code null}, empty, or blank)
@@ -470,6 +474,7 @@ public final class DynamicQuery {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.minus("SELECT user_id FROM inactive_users");
+         * // Appends: MINUS SELECT user_id FROM inactive_users
          * }</pre>
          *
          * @param query the complete SQL query to exclude results from (must not be {@code null}, empty, or blank)

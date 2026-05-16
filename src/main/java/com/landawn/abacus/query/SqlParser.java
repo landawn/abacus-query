@@ -229,6 +229,7 @@ public final class SqlParser {
      *
      * @param sql the SQL statement to parse (must not be {@code null})
      * @return a list of tokens representing the parsed SQL statement
+     * @throws NullPointerException if {@code sql} is {@code null}
      */
     public static List<String> parse(final String sql) {
         final int sqlLength = sql.length();
@@ -431,11 +432,12 @@ public final class SqlParser {
      * // Returns: 20 (the position where "WHERE" starts)
      * }</pre>
      * 
-     * @param sql the SQL statement to search within
-     * @param word the word or composite keyword to find
-     * @param fromIndex the starting position for the search (0-based)
+     * @param sql the SQL statement to search within (must not be {@code null})
+     * @param word the word or composite keyword to find (must not be {@code null})
+     * @param fromIndex the starting position for the search (0-based); negative values are treated as {@code 0}
      * @param caseSensitive whether the search should be case-sensitive
-     * @return the index of the word if found, or -1 if not found
+     * @return the index of the word if found, or {@code -1} if not found
+     * @throws NullPointerException if {@code sql} or {@code word} is {@code null}
      */
     public static int indexOfWord(final String sql, final String word, final int fromIndex, final boolean caseSensitive) {
         String[] subWords = compositeWords.get(word);
@@ -650,9 +652,10 @@ public final class SqlParser {
      * String word3 = SqlParser.nextWord(sql, 14);   // Returns: "age" (skips spaces after comma)
      * }</pre>
      * 
-     * @param sql the SQL statement to extract the word from
-     * @param fromIndex the starting position for extraction (0-based)
+     * @param sql the SQL statement to extract the word from (must not be {@code null})
+     * @param fromIndex the starting position for extraction (0-based); negative values are treated as {@code 0}
      * @return the next word or token found, or an empty string if no more tokens exist
+     * @throws NullPointerException if {@code sql} is {@code null}
      */
     public static String nextWord(final String sql, final int fromIndex) {
         final int sqlLength = sql.length();

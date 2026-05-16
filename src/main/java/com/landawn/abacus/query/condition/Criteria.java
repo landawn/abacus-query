@@ -409,7 +409,8 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria criteria = Criteria.builder()
          *     .distinct()
-         *     .where(Filters.equal("status", "active"));
+         *     .where(Filters.equal("status", "active"))
+         *     .build();
          * // Results in: SELECT DISTINCT ... WHERE status = 'active'
          * }</pre>
          * 
@@ -427,12 +428,12 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .distinctBy("department, location");
          * // Results in: SELECT DISTINCT(department, location) ...
-         * 
-         * // Or with column list
-         * criteria.distinctBy("city");
+         *
+         * // Or with a single column
+         * builder.distinctBy("city");
          * // Results in: SELECT DISTINCT(city) ...
          * }</pre>
          * 
@@ -453,7 +454,8 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria criteria = Criteria.builder()
          *     .distinctRow()
-         *     .where(Filters.equal("active", true));
+         *     .where(Filters.equal("active", true))
+         *     .build();
          * // Results in: SELECT DISTINCTROW ... WHERE active = true
          * }</pre>
          * 
@@ -470,7 +472,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .distinctRowBy("category, subcategory");
          * // Results in: SELECT DISTINCTROW(category, subcategory) ...
          * }</pre>
@@ -490,13 +492,13 @@ public class Criteria extends AbstractCondition {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .selectModifier("SQL_CALC_FOUND_ROWS")
          *     .where(Filters.equal("active", true));
          * // Results in: SELECT SQL_CALC_FOUND_ROWS ... WHERE active = true
          *
          * // MySQL-specific modifier
-         * criteria.selectModifier("SQL_NO_CACHE");
+         * builder.selectModifier("SQL_NO_CACHE");
          * }</pre>
          *
          * @param selectModifier the custom SELECT modifier
@@ -514,7 +516,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .join(
          *         new LeftJoin("orders", new On("users.id", "orders.user_id")),
          *         new InnerJoin("products", new On("orders.product_id", "products.id"))
@@ -539,7 +541,7 @@ public class Criteria extends AbstractCondition {
          *     new LeftJoin("orders", condition1),
          *     new RightJoin("payments", condition2)
          * );
-         * criteria.join(joins);
+         * Criteria.Builder builder = Criteria.builder().join(joins);
          * }</pre>
          * 
          * @param joins the collection of JOIN clauses to add
@@ -559,7 +561,8 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria criteria = Criteria.builder()
          *     .join("orders")
-         *     .where(Filters.expr("users.id = orders.user_id"));
+         *     .where(Filters.expr("users.id = orders.user_id"))
+         *     .build();
          * // Results in: JOIN orders WHERE users.id = orders.user_id
          * }</pre>
          *
@@ -580,7 +583,8 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria criteria = Criteria.builder()
          *     .join("orders", new On("users.id", "orders.user_id"))
-         *     .where(Filters.equal("users.status", "active"));
+         *     .where(Filters.equal("users.status", "active"))
+         *     .build();
          * // Results in: JOIN orders ON users.id = orders.user_id WHERE users.status = 'active'
          * }</pre>
          * 
@@ -600,7 +604,7 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Collection<String> tables = Arrays.asList("orders", "order_items");
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .join(tables, new On("id", "order_id"));
          * }</pre>
          * 
@@ -620,7 +624,8 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria criteria = Criteria.builder()
          *     .innerJoin("orders")
-         *     .where(Filters.expr("users.id = orders.user_id"));
+         *     .where(Filters.expr("users.id = orders.user_id"))
+         *     .build();
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -636,7 +641,7 @@ public class Criteria extends AbstractCondition {
          * Adds an INNER JOIN with a condition to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .innerJoin("orders", Filters.on("users.id", "orders.user_id"));
          * }</pre>
          *
@@ -654,7 +659,7 @@ public class Criteria extends AbstractCondition {
          * Adds an INNER JOIN with multiple entities and a condition.
          *
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .innerJoin(Arrays.asList("orders", "order_items"), Filters.on("id", "order_id"));
          * }</pre>
          *
@@ -672,7 +677,7 @@ public class Criteria extends AbstractCondition {
          * Adds a LEFT JOIN to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .leftJoin("orders");
          * }</pre>
          *
@@ -689,7 +694,7 @@ public class Criteria extends AbstractCondition {
          * Adds a LEFT JOIN with a condition to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .leftJoin("orders", Filters.on("users.id", "orders.user_id"));
          * }</pre>
          *
@@ -720,7 +725,7 @@ public class Criteria extends AbstractCondition {
          * Adds a RIGHT JOIN to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .rightJoin("orders");
          * }</pre>
          *
@@ -737,7 +742,7 @@ public class Criteria extends AbstractCondition {
          * Adds a RIGHT JOIN with a condition to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .rightJoin("orders", Filters.on("users.id", "orders.user_id"));
          * }</pre>
          *
@@ -768,7 +773,7 @@ public class Criteria extends AbstractCondition {
          * Adds a FULL JOIN to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .fullJoin("orders");
          * }</pre>
          *
@@ -785,7 +790,7 @@ public class Criteria extends AbstractCondition {
          * Adds a FULL JOIN with a condition to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .fullJoin("orders", Filters.on("users.id", "orders.user_id"));
          * }</pre>
          *
@@ -816,7 +821,7 @@ public class Criteria extends AbstractCondition {
          * Adds a CROSS JOIN to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .crossJoin("colors");
          * }</pre>
          *
@@ -833,7 +838,7 @@ public class Criteria extends AbstractCondition {
          * Adds a CROSS JOIN with a condition to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .crossJoin("colors", Filters.eq("active", true));
          * }</pre>
          *
@@ -864,7 +869,7 @@ public class Criteria extends AbstractCondition {
          * Adds a NATURAL JOIN to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .naturalJoin("employees");
          * }</pre>
          *
@@ -881,7 +886,7 @@ public class Criteria extends AbstractCondition {
          * Adds a NATURAL JOIN with a condition to this criteria.
          *
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .naturalJoin("employees", Filters.eq("status", "active"));
          * }</pre>
          *
@@ -914,7 +919,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .where(Filters.and(
          *         Filters.equal("status", "active"),
          *         Filters.greaterThan("age", 18),
@@ -952,11 +957,11 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .where("age > 18 AND status = 'active'");
-         * 
+         *
          * // Complex expression
-         * criteria.where("YEAR(created_date) = 2024 OR special_flag = true");
+         * builder.where("YEAR(created_date) = 2024 OR special_flag = true");
          * }</pre>
          * 
          * @param expr the WHERE condition as a string (must not be {@code null} or empty)
@@ -977,7 +982,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .groupBy(Filters.expr("YEAR(order_date), MONTH(order_date)"));
          * }</pre>
          * 
@@ -1011,7 +1016,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("department", "location", "role");
          * // Results in: GROUP BY department, location, role
          * }</pre>
@@ -1031,7 +1036,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("total_sales", SortDirection.DESC);
          * // Results in: GROUP BY total_sales DESC
          * }</pre>
@@ -1052,7 +1057,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
          * // Results in: GROUP BY year DESC, month ASC
          * }</pre>
@@ -1075,7 +1080,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
          * // Results in: GROUP BY country ASC, state ASC, city DESC
          * }</pre>
@@ -1103,7 +1108,7 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> groupCols = Arrays.asList("region", "product_type");
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .groupBy(groupCols);
          * // Results in: GROUP BY region, product_type
          * }</pre>
@@ -1127,7 +1132,7 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> groupCols = Arrays.asList("category", "brand");
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .groupBy(groupCols, SortDirection.DESC);
          * // Results in: GROUP BY category DESC, brand DESC
          * }</pre>
@@ -1155,7 +1160,7 @@ public class Criteria extends AbstractCondition {
          * grouping.put("department", SortDirection.ASC);
          * grouping.put("salary_range", SortDirection.DESC);
          * grouping.put("years_experience", SortDirection.DESC);
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .groupBy(grouping);
          * }</pre>
          * 
@@ -1175,7 +1180,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("department")
          *     .having(Filters.and(
          *         Filters.greaterThan("COUNT(*)", 10),
@@ -1213,7 +1218,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("product_category")
          *     .having("SUM(revenue) > 10000 AND COUNT(*) > 5");
          * }</pre>
@@ -1237,7 +1242,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .orderByAsc("lastName", "firstName", "middleName");
          * // Results in: ORDER BY lastName ASC, firstName ASC, middleName ASC
          * }</pre>
@@ -1258,7 +1263,7 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> sortCols = Arrays.asList("country", "state", "city");
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .orderByAsc(sortCols);
          * }</pre>
          * 
@@ -1278,7 +1283,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .orderByDesc("score", "createdDate");
          * // Results in: ORDER BY score DESC, createdDate DESC
          * }</pre>
@@ -1299,7 +1304,7 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> sortCols = Arrays.asList("revenue", "profit");
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .orderByDesc(sortCols);
          * }</pre>
          *
@@ -1321,7 +1326,7 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * // Complex ordering expression
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .orderBy(Filters.expr("CASE WHEN priority = 'HIGH' THEN 1 ELSE 2 END, created_date DESC"));
          * }</pre>
          * 
@@ -1355,7 +1360,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .orderBy("department", "lastName", "firstName");
          * // Results in: ORDER BY department, lastName, firstName
          * }</pre>
@@ -1375,7 +1380,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .orderBy("createdDate", SortDirection.DESC);
          * // Results in: ORDER BY createdDate DESC
          * }</pre>
@@ -1396,7 +1401,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .orderBy("priority", SortDirection.DESC, "createdDate", SortDirection.ASC);
          * // Results in: ORDER BY priority DESC, createdDate ASC
          * }</pre>
@@ -1419,7 +1424,7 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .orderBy("category", SortDirection.ASC, "price", SortDirection.DESC, "name", SortDirection.ASC);
          * // Results in: ORDER BY category ASC, price DESC, name ASC
          * }</pre>
@@ -1447,7 +1452,7 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> sortCols = Arrays.asList("country", "state", "city");
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .orderBy(sortCols);
          * // Results in: ORDER BY country, state, city
          * }</pre>
@@ -1471,7 +1476,7 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> sortCols = Arrays.asList("score", "rating");
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .orderBy(sortCols, SortDirection.DESC);
          * // Results in: ORDER BY score DESC, rating DESC
          * }</pre>
@@ -1499,7 +1504,7 @@ public class Criteria extends AbstractCondition {
          * ordering.put("priority", SortDirection.DESC);
          * ordering.put("createdDate", SortDirection.DESC);
          * ordering.put("name", SortDirection.ASC);
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .orderBy(ordering);
          * }</pre>
          * 
@@ -1519,7 +1524,7 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Limit customLimit = Filters.limit(100);
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .limit(customLimit);
          * }</pre>
          * 
@@ -1542,7 +1547,8 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria criteria = Criteria.builder()
          *     .where(Filters.equal("status", "active"))
-         *     .limit(10);
+         *     .limit(10)
+         *     .build();
          * // Results in: WHERE status = 'active' LIMIT 10
          * }</pre>
          * 
@@ -1565,7 +1571,8 @@ public class Criteria extends AbstractCondition {
          * // Page 3 with 20 items per page (take 20, skip 40)
          * Criteria criteria = Criteria.builder()
          *     .orderBy("id")
-         *     .limit(20, 40);
+         *     .limit(20, 40)
+         *     .build();
          * // Results in: ORDER BY id LIMIT 20 OFFSET 40
          * }</pre>
          *
@@ -1586,11 +1593,11 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria.Builder builder = Criteria.builder()
          *     .limit("10 OFFSET 20");
-         * 
+         *
          * // Or with parameters
-         * criteria.limit("? OFFSET ?");
+         * builder.limit("? OFFSET ?");
          * }</pre>
          * 
          * @param expr the LIMIT expression as a string
@@ -1611,7 +1618,8 @@ public class Criteria extends AbstractCondition {
          * SubQuery archivedUsers = Filters.subQuery("SELECT * FROM archived_users WHERE active = true");
          * Criteria criteria = Criteria.builder()
          *     .where(Filters.equal("status", "active"))
-         *     .union(archivedUsers);
+         *     .union(archivedUsers)
+         *     .build();
          * // Returns active users from both current and archived tables
          * }</pre>
          * 
@@ -1633,7 +1641,8 @@ public class Criteria extends AbstractCondition {
          * SubQuery pendingOrders = Filters.subQuery("SELECT * FROM pending_orders");
          * Criteria criteria = Criteria.builder()
          *     .where(Filters.equal("status", "completed"))
-         *     .unionAll(pendingOrders);
+         *     .unionAll(pendingOrders)
+         *     .build();
          * // Returns all orders, including duplicates if any exist
          * }</pre>
          * 
@@ -1655,7 +1664,8 @@ public class Criteria extends AbstractCondition {
          * SubQuery premiumUsers = Filters.subQuery("SELECT user_id FROM premium_members");
          * Criteria criteria = Criteria.builder()
          *     .where(Filters.equal("active", true))
-         *     .intersect(premiumUsers);
+         *     .intersect(premiumUsers)
+         *     .build();
          * // Returns only active users who are also premium members
          * }</pre>
          * 
@@ -1677,7 +1687,8 @@ public class Criteria extends AbstractCondition {
          * SubQuery excludedUsers = Filters.subQuery("SELECT user_id FROM blacklist");
          * Criteria criteria = Criteria.builder()
          *     .where(Filters.equal("status", "active"))
-         *     .except(excludedUsers);
+         *     .except(excludedUsers)
+         *     .build();
          * // Returns active users who are not in the blacklist
          * }</pre>
          * 
@@ -1699,7 +1710,8 @@ public class Criteria extends AbstractCondition {
          * SubQuery inactiveUsers = Filters.subQuery("SELECT user_id FROM inactive_users");
          * Criteria criteria = Criteria.builder()
          *     .where(Filters.equal("registered", true))
-         *     .minus(inactiveUsers);
+         *     .minus(inactiveUsers)
+         *     .build();
          * // Returns registered users minus inactive ones
          * }</pre>
          * 

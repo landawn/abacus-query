@@ -242,7 +242,9 @@ public final class ParsedSql {
      *
      * @param sql the SQL string to parse (must not be {@code null} or empty)
      * @return a {@code ParsedSql} instance containing the parsed information
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or mixes different parameter styles
+     * @throws IllegalArgumentException if {@code sql} is {@code null} or empty, if it mixes different
+     *         parameter styles ({@code ?}, {@code :propName}, {@code #{propName}}), or if it contains
+     *         a malformed iBatis/MyBatis parameter with no closing {@code '}'}
      */
     public static ParsedSql parse(final String sql) {
         N.checkArgNotEmpty(sql, "sql");

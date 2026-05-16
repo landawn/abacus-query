@@ -1982,6 +1982,7 @@ public class Filters {
      * <pre>{@code
      * List<String> columns = Arrays.asList("country", "city");
      * GroupBy groupBy = Filters.groupBy(columns);
+     * // Results in SQL like: GROUP BY country ASC, city ASC
      * }</pre>
      *
      * @param propNames collection of property/column names to group by
@@ -2224,8 +2225,9 @@ public class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Set<String> columns = new HashSet<>(Arrays.asList("name", "age"));
+     * List<String> columns = Arrays.asList("name", "age");
      * OrderBy orderBy = Filters.orderBy(columns);
+     * // Results in SQL like: ORDER BY name ASC, age ASC
      * }</pre>
      *
      * @param propNames collection of property/column names to order by
@@ -3341,7 +3343,8 @@ public class Filters {
      * @param sql the complete SQL for the subquery
      * @return a SubQuery
      * @see #subQuery(String)
-     * @deprecated replaced by {@link #subQuery(String)}
+     * @deprecated when the full SQL is supplied, {@code entityName} is not used to build the
+     *             subquery; use {@link #subQuery(String)} instead.
      */
     @Deprecated
     public static SubQuery subQuery(final String entityName, final String sql) {

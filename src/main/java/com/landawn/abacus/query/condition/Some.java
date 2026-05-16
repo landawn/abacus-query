@@ -88,6 +88,11 @@ public class Some extends ComposableCell {
         super(Operator.SOME, subQuery);
     }
 
+    /**
+     * Gets the subquery wrapped by this SOME condition.
+     *
+     * @return the {@link SubQuery} supplied to this condition
+     */
     public SubQuery getSubQuery() {
         return (SubQuery) condition;
     }

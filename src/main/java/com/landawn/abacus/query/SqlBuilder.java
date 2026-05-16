@@ -141,6 +141,24 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         super(namingPolicy, sqlPolicy);
     }
 
+    /**
+     * Renders the given condition into the SQL being built and appends it to the internal buffer.
+     *
+     * <p>This is the concrete condition-rendering implementation for the SQL family of builders.
+     * It dispatches on the runtime type of {@code cond} and handles {@link Binary}, {@link Between},
+     * {@link NotBetween}, {@link In}, {@link InSubQuery}, {@link NotIn}, {@link NotInSubQuery},
+     * {@link Where}, {@link Having}, {@link Cell}, {@link ComposableCell}, {@link Junction},
+     * {@link SubQuery} and {@link Expression}. Binary conditions with a {@code null} value and an
+     * {@code EQUAL}/{@code IS} (or {@code NOT_EQUAL}/{@code IS_NOT}) operator are rendered as
+     * {@code IS NULL}/{@code IS NOT NULL} respectively. Nested conditions and sub-queries are
+     * rendered recursively, with sub-query parameters merged into this builder's parameter list.</p>
+     *
+     * @param cond the condition to render; must be one of the supported condition types
+     * @throws IllegalArgumentException if {@code cond} is an unsupported condition type, or if a
+     *         {@link Junction} contains no sub-conditions
+     * @throws UnsupportedOperationException if a {@link SubQuery} is encountered but the concrete
+     *         builder type does not support sub-query rendering
+     */
     @Override
     protected void appendCondition(final Condition cond) {
         //    if (sb.charAt(sb.length() - 1) != _SPACE) {

@@ -89,6 +89,11 @@ public class NotExists extends ComposableCell {
         super(Operator.NOT_EXISTS, subQuery);
     }
 
+    /**
+     * Gets the subquery used by this NOT EXISTS condition.
+     *
+     * @return the {@link SubQuery} supplied at construction time
+     */
     public SubQuery getSubQuery() {
         return (SubQuery) condition;
     }

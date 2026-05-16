@@ -579,6 +579,7 @@ public final class QueryUtil {
      * @param nonColumnFields set of field names explicitly excluded as columns (from {@code @Table} annotation, can be {@code null} or empty)
      * @param propInfo the property information to check (must not be {@code null})
      * @return {@code true} if the property should not be mapped to a database column
+     * @throws NullPointerException if {@code propInfo} is {@code null}
      */
     public static boolean isNonColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
         return propInfo.isTransient || propInfo.isAnnotationPresent(NonColumn.class) || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))
