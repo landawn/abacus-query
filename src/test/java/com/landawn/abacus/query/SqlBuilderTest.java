@@ -13016,4 +13016,310 @@ class SqlBuilder16Test extends TestBase {
         assertEquals(1, sp.parameters().size());
         assertEquals("PENDING", sp.parameters().get(0));
     }
+
+    // ===== Pass-4: parameter ordering across JOINs, subqueries, nested conditions =====
+
+    private static int countQmarks(String s) {
+        return s.length() - s.replace("?", "").length();
+    }
+
+    /**
+     * Scenario 1 — JOIN with parameter + WHERE with parameter via Criteria.
+     * Verifies join-ON parameters appear before WHERE parameters in the final list,
+     * matching the left-to-right order of {@code ?} placeholders in the SQL.
+     */
+    @Test
+    public void testParamOrder_JoinOnWithParamThenWhere_Pass4() {
+        com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin("orders o",
+                Filters.expr("u.id = o.user_id").and(Filters.eq("o.status", "active")));
+        Criteria crit = Criteria.builder().join(innerJoin).where(Filters.gt("u.age", 18)).build();
+        SP sp = PSC.select("u.id").from("users u").append(crit).build();
+
+        assertEquals(countQmarks(sp.query()), sp.parameters().size(),
+                "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
+        assertEquals(Arrays.asList("active", 18), sp.parameters(), "Expected [active, 18] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    /**
+     * Scenario 2 — WHERE with subquery containing parameter + outer WHERE parameter.
+     */
+    @Test
+    public void testParamOrder_InSubQueryThenAndBinary_Pass4() {
+        SubQuery innerSubQuery = Filters.subQuery("departments", Arrays.asList("id"), Filters.eq("region", "EU"));
+        SP sp = PSC.select("id").from("users").where(Filters.in("department_id", innerSubQuery).and(Filters.gt("age", 21))).build();
+
+        assertEquals(countQmarks(sp.query()), sp.parameters().size(),
+                "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
+        assertEquals(Arrays.asList("EU", 21), sp.parameters(), "Expected [EU, 21] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    /**
+     * Scenario 4 — Multiple JOINs with parameters, then WHERE with parameter.
+     */
+    @Test
+    public void testParamOrder_MultipleJoinsWithParams_Pass4() {
+        com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin("orders o",
+                Filters.expr("u.id = o.user_id").and(Filters.gt("o.amount", 100)));
+        com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin("payments p",
+                Filters.expr("p.order_id = o.id").and(Filters.eq("p.method", "CC")));
+        Criteria crit = Criteria.builder().join(innerJoin, leftJoin).where(Filters.eq("u.country", "US")).build();
+        SP sp = PSC.select("u.id").from("users u").append(crit).build();
+
+        assertEquals(countQmarks(sp.query()), sp.parameters().size(),
+                "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
+        assertEquals(Arrays.asList(100, "CC", "US"), sp.parameters(), "Expected [100, CC, US] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    /**
+     * Scenario 5 — HAVING with parameter after GROUP BY and WHERE with parameter.
+     */
+    @Test
+    public void testParamOrder_WhereGroupByHaving_Pass4() {
+        Criteria crit = Criteria.builder().where(Filters.gt("salary", 50000)).groupBy("department").having(Filters.gt("COUNT(*)", 5)).build();
+        SP sp = PSC.select("department", "COUNT(*)").from("employees").append(crit).build();
+
+        assertEquals(countQmarks(sp.query()), sp.parameters().size(),
+                "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
+        assertEquals(Arrays.asList(50000, 5), sp.parameters(), "Expected [50000, 5] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    /**
+     * Scenario 6 — Nested subqueries (subquery inside subquery).
+     * Verifies parameters flatten in left-to-right SQL order.
+     */
+    @Test
+    public void testParamOrder_NestedSubQueries_Pass4() {
+        SubQuery innerInnerSQ = Filters.subQuery("regions", Arrays.asList("id"), Filters.eq("continent", "EU"));
+        SubQuery middleSQ = Filters.subQuery("countries", Arrays.asList("id"), Filters.in("region_id", innerInnerSQ).and(Filters.eq("active", true)));
+        SP sp = PSC.select("id").from("users").where(Filters.in("country_id", middleSQ).and(Filters.gt("age", 30))).build();
+
+        assertEquals(countQmarks(sp.query()), sp.parameters().size(),
+                "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
+        assertEquals(Arrays.asList("EU", true, 30), sp.parameters(), "Expected [EU, true, 30] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    /**
+     * Scenario 7 — InSubQuery + AND + Binary.
+     */
+    @Test
+    public void testParamOrder_InSubQueryThenAndStatus_Pass4() {
+        SubQuery adminSQ = Filters.subQuery("admins", Arrays.asList("id"), Filters.gt("level", 3));
+        SP sp = PSC.select("id").from("test_account").where(Filters.in("user_id", adminSQ).and(Filters.eq("status", "active"))).build();
+
+        assertEquals(countQmarks(sp.query()), sp.parameters().size(),
+                "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
+        assertEquals(Arrays.asList(3, "active"), sp.parameters(), "Expected [3, active] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    /**
+     * Scenario 3 — Subquery in WHERE plus outer WHERE parameter, then ensure the structured
+     * subquery's WHERE condition's parameters precede the outer condition's parameter.
+     * (The library does not support correlated SELECT subqueries directly; we exercise the
+     *  equivalent ordering risk through WHERE-with-subquery + AND-with-binary.)
+     */
+    @Test
+    public void testParamOrder_StructuredSubQueryConditionBeforeOuter_Pass4() {
+        SubQuery sq = Filters.subQuery("orders", Arrays.asList("user_id"), Filters.eq("status", "active").and(Filters.gt("amount", 50)));
+        SP sp = PSC.select("id").from("users").where(Filters.in("id", sq).and(Filters.gt("age", 18))).build();
+
+        assertEquals(countQmarks(sp.query()), sp.parameters().size(),
+                "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
+        assertEquals(Arrays.asList("active", 50, 18), sp.parameters(), "Expected [active, 50, 18] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    /**
+     * Scenario 8 — Criteria with WHERE containing subquery + ORDER BY + LIMIT.
+     */
+    @Test
+    public void testParamOrder_WhereSubQueryOrderByLimit_Pass4() {
+        SubQuery vipSQ = Filters.subQuery("vip_users", Arrays.asList("id"), Filters.eq("tier", "GOLD"));
+        Criteria crit = Criteria.builder().where(Filters.in("user_id", vipSQ).and(Filters.gt("score", 90))).orderBy("score DESC").limit(10).build();
+        SP sp = PSC.select("id").from("test_account").append(crit).build();
+
+        assertEquals(countQmarks(sp.query()), sp.parameters().size(),
+                "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
+        assertEquals(Arrays.asList("GOLD", 90), sp.parameters(), "Expected [GOLD, 90] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    /**
+     * Extra: OR junction with subquery on left, binary on right — verifies the OR path
+     * (different from AND) keeps parameter order matching SQL left-to-right.
+     */
+    @Test
+    public void testParamOrder_OrJunctionWithSubQueryAndBinary_Pass4() {
+        SubQuery sq = Filters.subQuery("admins", Arrays.asList("id"), Filters.eq("rank", "S"));
+        SP sp = PSC.select("id").from("users").where(Filters.in("id", sq).or(Filters.eq("vip", true))).build();
+
+        assertEquals(countQmarks(sp.query()), sp.parameters().size(),
+                "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
+        assertEquals(Arrays.asList("S", true), sp.parameters(), "Expected [S, true] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    /**
+     * Extra: Subquery used inside HAVING after WHERE with parameter. Verifies parameters
+     * from the outer WHERE precede parameters originating from HAVING's nested subquery.
+     */
+    @Test
+    public void testParamOrder_WhereThenHavingWithSubQuery_Pass4() {
+        SubQuery sq = Filters.subQuery("eligible_depts", Arrays.asList("dept_id"), Filters.eq("active", true));
+        Criteria crit = Criteria.builder()
+                .where(Filters.eq("status", "ACTIVE"))
+                .groupBy("dept_id")
+                .having(Filters.in("dept_id", sq).and(Filters.gt("COUNT(*)", 3)))
+                .build();
+        SP sp = PSC.select("dept_id", "COUNT(*)").from("employees").append(crit).build();
+
+        assertEquals(countQmarks(sp.query()), sp.parameters().size(),
+                "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
+        assertEquals(Arrays.asList("ACTIVE", true, 3), sp.parameters(), "Expected [ACTIVE, true, 3] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    /**
+     * Extra: Three-branch AND junction interleaving Binary/SubQuery/Binary — verifies that
+     * Junction iteration preserves parameter ordering when subqueries sit between binary
+     * branches.
+     */
+    @Test
+    public void testParamOrder_ThreeWayAndInterleaved_Pass4() {
+        SubQuery sq = Filters.subQuery("flagged", Arrays.asList("user_id"), Filters.eq("severity", "HIGH").and(Filters.gt("count", 2)));
+        SP sp = PSC.select("id").from("users").where(Filters.and(Filters.eq("status", "ACTIVE"), Filters.in("id", sq), Filters.gt("age", 21))).build();
+
+        assertEquals(countQmarks(sp.query()), sp.parameters().size(),
+                "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
+        assertEquals(Arrays.asList("ACTIVE", "HIGH", 2, 21), sp.parameters(),
+                "Expected [ACTIVE, HIGH, 2, 21] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    /**
+     * Extra: BETWEEN combined with subquery, exercising Between's two parameters mixed
+     * with subquery parameters.
+     */
+    @Test
+    public void testParamOrder_BetweenMixedWithSubQuery_Pass4() {
+        SubQuery sq = Filters.subQuery("blacklist", Arrays.asList("user_id"), Filters.eq("region", "EU"));
+        SP sp = PSC.select("id").from("users").where(Filters.notIn("id", sq).and(Filters.between("age", 18, 65))).build();
+
+        assertEquals(countQmarks(sp.query()), sp.parameters().size(),
+                "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
+        assertEquals(Arrays.asList("EU", 18, 65), sp.parameters(), "Expected [EU, 18, 65] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    // ===== Pass-4: DML schema validation =====
+
+    /**
+     * Bug: batchInsert(List&lt;Map&gt;) with rows that have different key sets silently produced
+     * wrong SQL. The column list was taken from the first Map; for subsequent rows, missing
+     * columns were filled with null and extra columns were silently dropped, causing data loss
+     * and stray NULL parameters. Now an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void testBatchInsert_MapsWithMismatchedKeysThrows_Pass4() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("firstName", "Jane");
+        row2.put("email", "jane@example.com"); // wrong key — would silently lose lastName + email
+
+        List<Map<String, Object>> rows = Arrays.asList(row1, row2);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> PSC.batchInsert(rows));
+        assertTrue(ex.getMessage().contains("same key set"), "Exception should mention key set mismatch but was: " + ex.getMessage());
+    }
+
+    /**
+     * Bug: batchInsert with extra columns in a later row silently dropped them.
+     */
+    @Test
+    public void testBatchInsert_MapsWithExtraKeyInLaterRowThrows_Pass4() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("firstName", "Jane");
+        row2.put("lastName", "Smith");
+        row2.put("email", "jane@example.com"); // extra key
+
+        List<Map<String, Object>> rows = Arrays.asList(row1, row2);
+
+        assertThrows(IllegalArgumentException.class, () -> PSC.batchInsert(rows));
+    }
+
+    /**
+     * Bug: batchInsert with a missing column in a later row silently inserted NULL for that column.
+     */
+    @Test
+    public void testBatchInsert_MapsWithMissingKeyInLaterRowThrows_Pass4() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("firstName", "Jane");
+        // missing lastName
+
+        List<Map<String, Object>> rows = Arrays.asList(row1, row2);
+
+        assertThrows(IllegalArgumentException.class, () -> PSC.batchInsert(rows));
+    }
+
+    /**
+     * Bug: batchInsert with all-empty Maps would produce malformed SQL: {@code INSERT INTO t () VALUES ()}.
+     */
+    @Test
+    public void testBatchInsert_EmptyMapThrows_Pass4() {
+        List<Map<String, Object>> rows = Arrays.asList(new LinkedHashMap<>(), new LinkedHashMap<>());
+
+        assertThrows(IllegalArgumentException.class, () -> PSC.batchInsert(rows));
+    }
+
+    /**
+     * Regression: batchInsert with identical key sets still works correctly across multiple rows.
+     */
+    @Test
+    public void testBatchInsert_MapsWithMatchingKeysProducesCorrectSql_Pass4() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("firstName", "Jane");
+        row2.put("lastName", "Smith");
+
+        Map<String, Object> row3 = new LinkedHashMap<>();
+        row3.put("firstName", "Bob");
+        row3.put("lastName", "Johnson");
+
+        SP sp = PSC.batchInsert(Arrays.asList(row1, row2, row3)).into("account").build();
+
+        assertEquals("INSERT INTO account (first_name, last_name) VALUES (?, ?), (?, ?), (?, ?)", sp.query());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith", "Bob", "Johnson"), sp.parameters());
+    }
+
+    /**
+     * Regression: batchInsert with one null element followed by valid maps continues to work
+     * (null elements are skipped).
+     */
+    @Test
+    public void testBatchInsert_NullElementsSkippedThenValidated_Pass4() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("firstName", "Jane");
+        row2.put("lastName", "Smith");
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(null);
+        rows.add(row1);
+        rows.add(null);
+        rows.add(row2);
+
+        SP sp = PSC.batchInsert(rows).into("account").build();
+        assertEquals("INSERT INTO account (first_name, last_name) VALUES (?, ?), (?, ?)", sp.query());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
+    }
 }

@@ -3098,9 +3098,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Appends a {@code Criteria} or {@code Where} condition to the SQL statement.
-     * Automatically adds WHERE clause if not already present.
-     * 
+     * Appends a condition to the SQL statement.
+     * <p>A {@link Criteria} is expanded into its JOIN/WHERE/GROUP&nbsp;BY/HAVING/set-operation/ORDER&nbsp;BY/LIMIT
+     * parts. A clause condition ({@code Where}, {@code GroupBy}, {@code Having}, {@code OrderBy}, {@code Limit})
+     * is rendered with its own keyword. Any other condition is appended with a leading {@code WHERE} keyword
+     * (unless this builder is condition-only). A multi-element {@link Junction} is rendered with each member
+     * parenthesized individually and joined by the junction operator, with no surrounding parentheses.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -3109,7 +3113,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users WHERE (age > ?) AND (age < ?)
      * }</pre>
-     * 
+     *
      * @param cond the condition to append
      * @return this SqlBuilder instance for method chaining
      * @see Filters
@@ -4345,6 +4349,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code entity} is {@code null}
      */
     public This set(final Object entity) {
         return set(entity, null);
@@ -4367,6 +4372,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
      * @param excludedPropNames property names to exclude from the update (may be {@code null})
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code entity} is {@code null}
      */
     public This set(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, "entity");
@@ -5143,8 +5149,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Strips any table-alias prefix from {@code propName} so the remaining text is a valid
      * named-parameter identifier. {@code "u.id"} becomes {@code "id"}, {@code "a.b.c"} becomes
-     * {@code "c"}, and a name without a dot is returned unchanged. {@code null} or blank
-     * input is returned unchanged.
+     * {@code "c"}, and a name without a dot is returned unchanged. {@code null}, an empty
+     * string, or a name whose only dot is the trailing character is returned unchanged.
      *
      * @param propName the property name (may include table-alias prefix)
      * @return the sanitized identifier suitable for use after {@code :} or inside {@code #{}}
@@ -5764,10 +5770,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Converts a collection of entities (Maps or beans) into a list of property-value maps for batch INSERT operations.
-     * Properties that are {@code null} or zero-valued IDs across all entities are removed.
+     * {@code null} elements are skipped. The element type is determined by the first non-null element:
+     * <ul>
+     *   <li>If it is a {@link Map}, every other non-null element must also be a {@code Map} with the
+     *       exact same key set; the maps are used as-is (no property is removed).</li>
+     *   <li>If it is a bean, every other non-null element must have the same insertable property set;
+     *       a property is removed from every row only when it is {@code null} (or a zero/default ID
+     *       value) across <i>all</i> entities.</li>
+     * </ul>
      *
      * @param propsList the collection of entities to convert
      * @return a list of property-value maps suitable for batch insert
+     * @throws IllegalArgumentException if every element is {@code null}, if the first non-null element
+     *         is an empty {@code Map}, if elements have mixed types (some {@code Map}, some bean), or if
+     *         the non-null elements do not all share the same key set / insertable property set
      */
     protected static List<Map<String, Object>> toInsertPropsList(final Collection<?> propsList) {
         final Optional<?> first = N.firstNonNull(propsList);
@@ -5775,13 +5791,28 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (first.isPresent() && first.get() instanceof Map) {
             final List<Map<String, Object>> newPropsList = new ArrayList<>(propsList.size());
 
+            Set<String> expectedKeys = null;
+
             for (final Object props : propsList) {
                 if (props == null) {
                     continue;
                 }
 
                 N.checkArgument(props instanceof Map, "All elements in propsList must be Map when the first non-null element is Map");
-                newPropsList.add((Map<String, Object>) props);
+                final Map<String, Object> propsMap = (Map<String, Object>) props;
+
+                if (expectedKeys == null) {
+                    N.checkArgument(!propsMap.isEmpty(), "Map at first non-null position in propsList must not be empty");
+                    expectedKeys = propsMap.keySet();
+                } else {
+                    // All rows in a batch INSERT must share the same column set; otherwise extra keys are silently
+                    // dropped and missing keys produce stray NULL parameters, leading to data loss / corruption.
+                    N.checkArgument(propsMap.keySet().equals(expectedKeys),
+                            "All non-null Maps in propsList must have the same key set for batch INSERT. Expected: " + expectedKeys + ", current: "
+                                    + propsMap.keySet());
+                }
+
+                newPropsList.add(propsMap);
             }
 
             N.checkArgument(N.notEmpty(newPropsList), "All elements in propsList are null");

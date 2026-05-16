@@ -26,7 +26,7 @@ import com.landawn.abacus.util.SK;
 
 /**
  * Enumeration representing SQL operation types.
- * This enum provides a comprehensive list of SQL operations including DML, DDL, DCL, and TCL commands.
+ * This enum provides a list of SQL operations including DML, DDL, and TCL commands.
  * It's primarily used internally for SQL parsing and operation identification.
  * 
  * <p>Supported operations include:</p>

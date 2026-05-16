@@ -99,7 +99,7 @@ public class Not extends ComposableCell {
      * // Negating BETWEEN
      * Between ageRange = new Between("age", 18, 65);
      * Not outsideRange = new Not(ageRange);
-     * // Results in: NOT (age BETWEEN (18, 65))
+     * // Results in: NOT (age BETWEEN 18 AND 65)
      *
      * // Negating OR condition
      * Or multiStatus = new Or(

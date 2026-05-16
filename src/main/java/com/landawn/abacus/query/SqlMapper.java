@@ -453,6 +453,10 @@ public final class SqlMapper {
      * The output format matches the expected input format for {@link #load(String)}.
      * If the file already exists, it will be overwritten.
      *
+     * <p>The canonical SQL identifier (the registered map key) is always written as the
+     * {@code id} attribute and is protected from being overridden: any stray {@code id}
+     * entry in a SQL's attributes map is ignored when emitting attributes.</p>
+     *
      * <p>Example output:</p>
      * <pre>{@code
      * <sqlMapper>

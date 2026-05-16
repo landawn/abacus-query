@@ -226,7 +226,7 @@ public abstract class AbstractCondition implements Condition {
      * formatParameter(123, NamingPolicy.NO_CHANGE);            // Returns: 123
      * formatParameter(null, NamingPolicy.NO_CHANGE);           // Returns: null (Java null)
      * formatParameter(subCondition, NamingPolicy.NO_CHANGE);   // Returns: subCondition.toString(policy)
-     * formatParameter(new java.util.Date(0), NamingPolicy.NO_CHANGE); // Returns: '1970-01-01T00:00:00Z'
+     * formatParameter(new java.util.Date(0), NamingPolicy.NO_CHANGE); // Returns the date as a quoted, escaped string literal
      * }</pre>
      *
      * @param parameter the parameter value to convert; may be {@code null}
@@ -280,8 +280,9 @@ public abstract class AbstractCondition implements Condition {
      * even when {@code standard_conforming_strings} is off (MySQL default) and remains a valid
      * literal under most dialects, but for fully portable SQL prefer parameterized builders.</p>
      *
-     * @param str the raw string contents (must not be {@code null}); an empty string is returned unchanged
-     * @return the escaped string body, suitable for inclusion between two single quotes
+     * @param str the raw string contents; {@code null} yields an empty string and an empty string
+     *            is returned unchanged
+     * @return the escaped string body, suitable for inclusion between two single quotes; never {@code null}
      */
     static String escapeStringLiteral(final String str) {
         if (str == null || str.isEmpty()) {

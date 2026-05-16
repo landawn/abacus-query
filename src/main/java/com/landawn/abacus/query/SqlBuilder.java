@@ -64,16 +64,29 @@ import com.landawn.abacus.util.u.Optional;
  * <p>Instances are not thread-safe; create a new builder per thread or per query.
  * Always call {@code build()} to finalize construction and release internal resources.
  *
- * <p>Use one of the concrete inner classes based on the desired parameter style and naming convention:
+ * <p>Use one of the concrete inner classes based on the desired parameter style and naming convention.
+ * The class-name prefix encodes the parameter style ({@code S}=raw inlined values, {@code P}=positional
+ * {@code ?}, {@code N}=named {@code :name}, {@code M}=MyBatis/iBATIS {@code #{name}}) and the suffix encodes
+ * the identifier naming policy ({@code SB}=no change, {@code SC}=snake_case, {@code AC}=UPPER_CASE_WITH_UNDERSCORE,
+ * {@code LC}=camelCase). The raw-SQL ({@code *CSB}) family is deprecated due to SQL-injection risk.
  * <table border="1">
  *   <caption>Concrete SqlBuilder subclasses</caption>
  *   <tr><th>Class</th><th>Parameters</th><th>Naming</th><th>Example</th></tr>
- *   <tr><td>{@link PSC}</td><td>{@code ?}</td><td>snake_case</td><td>{@code SELECT first_name FROM users WHERE id = ?}</td></tr>
- *   <tr><td>{@link PAC}</td><td>{@code ?}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM USER WHERE ID = ?}</td></tr>
- *   <tr><td>{@link PLC}</td><td>{@code ?}</td><td>camelCase</td><td>{@code SELECT firstName FROM user WHERE id = ?}</td></tr>
- *   <tr><td>{@link NSC}</td><td>{@code :name}</td><td>snake_case</td><td>{@code SELECT first_name FROM user WHERE id = :id}</td></tr>
- *   <tr><td>{@link NAC}</td><td>{@code :name}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM USER WHERE ID = :id}</td></tr>
- *   <tr><td>{@link NLC}</td><td>{@code :name}</td><td>camelCase</td><td>{@code SELECT firstName FROM users WHERE id = :id}</td></tr>
+ *   <tr><td>{@link SCSB}</td><td>inlined values (deprecated)</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = 1}</td></tr>
+ *   <tr><td>{@link ACSB}</td><td>inlined values (deprecated)</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = 1}</td></tr>
+ *   <tr><td>{@link LCSB}</td><td>inlined values (deprecated)</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = 1}</td></tr>
+ *   <tr><td>{@link PSB}</td><td>{@code ?}</td><td>no change</td><td>{@code SELECT firstName FROM account WHERE id = ?}</td></tr>
+ *   <tr><td>{@link PSC}</td><td>{@code ?}</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = ?}</td></tr>
+ *   <tr><td>{@link PAC}</td><td>{@code ?}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = ?}</td></tr>
+ *   <tr><td>{@link PLC}</td><td>{@code ?}</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = ?}</td></tr>
+ *   <tr><td>{@link NSB}</td><td>{@code :name}</td><td>no change</td><td>{@code SELECT firstName FROM account WHERE id = :id}</td></tr>
+ *   <tr><td>{@link NSC}</td><td>{@code :name}</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = :id}</td></tr>
+ *   <tr><td>{@link NAC}</td><td>{@code :name}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = :id}</td></tr>
+ *   <tr><td>{@link NLC}</td><td>{@code :name}</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = :id}</td></tr>
+ *   <tr><td>{@link MSB}</td><td>{@code #{name}}</td><td>no change</td><td>{@code SELECT firstName FROM account WHERE id = #{id}}</td></tr>
+ *   <tr><td>{@link MSC}</td><td>{@code #{name}}</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = #{id}}</td></tr>
+ *   <tr><td>{@link MAC}</td><td>{@code #{name}}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = #{id}}</td></tr>
+ *   <tr><td>{@link MLC}</td><td>{@code #{name}}</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = #{id}}</td></tr>
  * </table>
  *
  * <p><b>Usage examples:</b>
@@ -796,7 +809,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Creates a batch INSERT SQL builder for multiple entities or property maps.
          * 
          * <p>This method generates MySQL-style batch insert SQL for efficient bulk inserts.
-         * All entities or maps in the collection must have the same structure (same properties).</p>
+         * All non-null entities or maps in the collection must have an identical structure: maps must
+         * have the exact same key set and beans must have the same insertable property set. A mismatch
+         * (or an empty first map) throws {@link IllegalArgumentException} rather than silently dropping
+         * or NULL-padding columns. {@code null} elements are skipped.</p>
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -810,7 +826,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param propsList list of entities or property maps to insert
          * @return a new SqlBuilder instance for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -1037,7 +1056,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                      Filters.lessThan("lastLogin", "2022-01-01")
          *                  ))
          *                  .build().query();
-         * // Output: DELETE FROM account WHERE status = 'INACTIVE' AND last_login < '2022-01-01'
+         * // Output: DELETE FROM account WHERE (status = 'INACTIVE') AND (last_login < '2022-01-01')
          * }</pre>
          *
          * @param entityClass the entity class
@@ -2090,7 +2109,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Creates a batch INSERT SQL builder for multiple entities or property maps.
          * 
          * <p>This method generates MySQL-style batch insert SQL for efficient bulk inserts.
-         * All entities or maps in the collection must have the same structure (same properties).</p>
+         * All non-null entities or maps in the collection must have an identical structure: maps must
+         * have the exact same key set and beans must have the same insertable property set. A mismatch
+         * (or an empty first map) throws {@link IllegalArgumentException} rather than silently dropping
+         * or NULL-padding columns. {@code null} elements are skipped.</p>
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -2106,7 +2128,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param propsList list of entities or property maps to insert
          * @return a new SqlBuilder instance configured for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -3035,7 +3060,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Condition cond = Filters.and(Filters.equal("firstName", "John"), Filters.greaterThan("age", 18));
          * String sql = ACSB.fromCondition(cond, User.class).build().query();
-         * // Output: FIRST_NAME = 'John' AND AGE > 18
+         * // Output: (FIRST_NAME = 'John') AND (AGE > 18)
          * }</pre>
          *
          * @param cond the condition to parse into SQL
@@ -3388,7 +3413,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * <p>This method generates MySQL-style batch insert SQL for inserting multiple
          * rows in a single statement. The input collection can contain either entity
-         * objects or Map instances. All items must have the same structure.</p>
+         * objects or Map instances (but not a mix). All non-null items must have an identical
+         * structure: maps must share the exact same key set and beans the same insertable
+         * property set; otherwise {@link IllegalArgumentException} is thrown. {@code null}
+         * elements are skipped.</p>
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -3402,7 +3430,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param propsList collection of entities or property maps to batch insert
          * @return a new SqlBuilder instance configured for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -4351,7 +4382,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * );
          * 
          * String sql = LCSB.fromCondition(cond, User.class).build().query();
-         * // Output: active = true AND age > 18
+         * // Output: (active = true) AND (age > 18)
          * }</pre>
          * 
          * @param cond the condition to parse into SQL
@@ -4682,7 +4713,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param propsList collection of entities or property maps to insert
          * @return a new SqlBuilder instance configured for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -5960,7 +5994,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param propsList list of entities or property maps to insert
          * @return a new SqlBuilder instance for method chaining
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -6916,7 +6953,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * );
          * 
          * String sql = PSC.fromCondition(cond, Account.class).build().query();
-         * // Output: first_name = ? AND email LIKE ?
+         * // Output: (first_name = ?) AND (email LIKE ?)
          * }</pre>
          * 
          * @param cond the condition to parse
@@ -7263,7 +7300,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param propsList collection of entities or property maps to batch insert
          * @return a new SqlBuilder instance configured for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -8147,7 +8187,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Condition cond = Filters.and(Filters.equal("firstName", "John"), Filters.greaterThan("age", 21));
          * String sql = PAC.fromCondition(cond, User.class).build().query();
-         * // Output: FIRST_NAME = ? AND AGE > ?
+         * // Output: (FIRST_NAME = ?) AND (AGE > ?)
          * }</pre>
          * 
          * @param cond the condition to parse
@@ -8610,7 +8650,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param propsList list of entities or property maps to insert
          * @return a new SqlBuilder instance for method chaining
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -9749,7 +9792,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * );
          * 
          * String sql = PLC.fromCondition(cond, Account.class).build().query();
-         * // Output: firstName = ? AND emailAddress LIKE ?
+         * // Output: (firstName = ?) AND (emailAddress LIKE ?)
          * }</pre>
          * 
          * @param cond the condition to parse
@@ -10098,7 +10141,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param propsList collection of entities or property maps to insert
          * @return a new SqlBuilder instance configured for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -11362,7 +11408,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param propsList list of entities or property maps to insert
          * @return a new SqlBuilder instance configured for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -12171,7 +12220,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                     Filters.greaterThan("age", 18)
          *                 ))
          *                 .build().query();
-         * // Output: SELECT count(*) FROM users WHERE first_name = :firstName AND age > :age
+         * // Output: SELECT count(*) FROM users WHERE (first_name = :firstName) AND (age > :age)
          * }</pre>
          * 
          * @param entityClass the entity class to count rows from
@@ -12197,7 +12246,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.like("email", "%@example.com")
          * );
          * String sql = NSC.fromCondition(cond, User.class).build().query();
-         * // Output: first_name = :firstName AND age > :age AND email LIKE :email
+         * // Output: (first_name = :firstName) AND (age > :age) AND (email LIKE :email)
          * }</pre>
          * 
          * @param cond the condition to parse into SQL
@@ -12524,7 +12573,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param propsList collection of entities or property maps to insert
          * @return an SqlBuilder configured for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -12730,7 +12782,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = NAC.deleteFrom(Account.class)
          *                 .where(Filters.and(Filters.equal("status", "INACTIVE"), Filters.lessThan("lastLogin", yesterday)))
          *                 .build().query();
-         * // Output: DELETE FROM ACCOUNT WHERE STATUS = :status AND LAST_LOGIN < :lastLogin
+         * // Output: DELETE FROM ACCOUNT WHERE (STATUS = :status) AND (LAST_LOGIN < :lastLogin)
          * }</pre>
          * 
          * @param entityClass the entity class
@@ -13367,7 +13419,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                     Filters.greaterThan("balance", 0)
          *                 ))
          *                 .build().query();
-         * // Output: SELECT count(*) FROM ACCOUNT WHERE STATUS = :status AND BALANCE > :balance
+         * // Output: SELECT count(*) FROM ACCOUNT WHERE (STATUS = :status) AND (BALANCE > :balance)
          * }</pre>
          * 
          * @param entityClass the entity class
@@ -13392,7 +13444,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.like("lastName", "Smith%")
          * );
          * String sql = NAC.fromCondition(cond, Account.class).build().query();
-         * // Output: STATUS = :status AND BALANCE > :balance AND LAST_NAME LIKE :lastName
+         * // Output: (STATUS = :status) AND (BALANCE > :balance) AND (LAST_NAME LIKE :lastName)
          * }</pre>
          * 
          * @param cond the condition to parse
@@ -13750,7 +13802,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param propsList collection of entities or property maps to insert
          * @return an SqlBuilder configured for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -13933,7 +13988,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                     Filters.lessThan("lastLoginTime", oneYearAgo)
          *                 ))
          *                 .build().query();
-         * // Output: DELETE FROM account WHERE status = :status AND lastLoginTime < :lastLoginTime
+         * // Output: DELETE FROM account WHERE (status = :status) AND (lastLoginTime < :lastLoginTime)
          * }</pre>
          * 
          * @param tableName the name of the table to delete from
@@ -14705,7 +14760,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                      Filters.between("orderDate", startDate, endDate)
          *                  ))
          *                  .build().query();
-         * // Output: SELECT count(*) FROM orders WHERE amount > :amount AND orderDate BETWEEN :minOrderDate AND :maxOrderDate
+         * // Output: SELECT count(*) FROM orders WHERE (amount > :amount) AND (orderDate BETWEEN :minOrderDate AND :maxOrderDate)
          * }</pre>
          * 
          * @param entityClass the entity class
@@ -14729,7 +14784,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.like("lastName", "Smith%")
          * );
          * String sql = NLC.fromCondition(cond, Account.class).build().query();
-         * // Output: status = :status AND balance > :balance AND lastName LIKE :lastName
+         * // Output: (status = :status) AND (balance > :balance) AND (lastName LIKE :lastName)
          * }</pre>
          * 
          * @param cond the condition to parse
@@ -15061,8 +15116,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p>This generates a single INSERT statement with multiple value sets,
          * which is more efficient than multiple individual INSERT statements.</p>
          * 
-         * <p>The method accepts a collection of entities or maps. All items must have
-         * the same structure (same properties/keys).</p>
+         * <p>The method accepts a collection of entities or maps (but not a mix). All non-null
+         * items must have an identical structure: maps must share the exact same key set and
+         * beans the same insertable property set; otherwise {@link IllegalArgumentException}
+         * is thrown. {@code null} elements are skipped.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -15078,7 +15135,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param propsList collection of entities or property maps to insert
          * @return a new SqlBuilder instance for method chaining
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -15980,7 +16040,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.greaterThan("age", 18)
          * );
          * String sql = MSB.fromCondition(cond, User.class).build().query();
-         * // Output: active = #{active} AND age > #{age}
+         * // Output: (active = #{active}) AND (age > #{age})
          * }</pre>
          * 
          * @param cond the condition to parse
@@ -16328,7 +16388,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param propsList collection of entities or property maps to insert
          * @return a new SqlBuilder instance for method chaining
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -17213,7 +17276,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.greaterThan("age", 18)
          * );
          * String sql = MSC.fromCondition(cond, User.class).build().query();
-         * // Output: first_name = #{firstName} AND age > #{age}
+         * // Output: (first_name = #{firstName}) AND (age > #{age})
          * }</pre>
          * 
          * @param cond the condition to generate SQL for
@@ -17538,7 +17601,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param propsList collection of entities or property maps to batch insert
          * @return a new SqlBuilder instance configured for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -17721,7 +17787,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                     Filters.lessThan("lastLoginDate", lastYear)
          *                 ))
          *                 .build().query();
-         * // Output: DELETE FROM ACCOUNT WHERE IS_ACTIVE = #{isActive} AND LAST_LOGIN_DATE < #{lastLoginDate}
+         * // Output: DELETE FROM ACCOUNT WHERE (IS_ACTIVE = #{isActive}) AND (LAST_LOGIN_DATE < #{lastLoginDate})
          * }</pre>
          *
          * @param tableName the name of the table to delete from
@@ -18351,7 +18417,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                     Filters.equal("emailVerified", false)
          *                 ))
          *                 .build().query();
-         * // Output: SELECT count(*) FROM ACCOUNT WHERE EMAIL_ADDRESS IS NULL OR EMAIL_VERIFIED = #{emailVerified}
+         * // Output: SELECT count(*) FROM ACCOUNT WHERE (EMAIL_ADDRESS IS NULL) OR (EMAIL_VERIFIED = #{emailVerified})
          * }</pre>
          *
          * @param entityClass the entity class to count rows from
@@ -18376,7 +18442,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.greaterThan("accountBalance", 0)
          * );
          * String sql = MAC.fromCondition(cond, Account.class).build().query();
-         * // Output: IS_ACTIVE = #{isActive} AND EMAIL_ADDRESS LIKE #{emailAddress} AND ACCOUNT_BALANCE > #{accountBalance}
+         * // Output: (IS_ACTIVE = #{isActive}) AND (EMAIL_ADDRESS LIKE #{emailAddress}) AND (ACCOUNT_BALANCE > #{accountBalance})
          * }</pre>
          *
          * @param cond the condition to parse
@@ -18706,7 +18772,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param propsList list of entities or property maps to batch insert
          * @return a new SqlBuilder instance configured for batch INSERT operation
-         * @throws IllegalArgumentException if propsList is null or empty
+         * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+         *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
+         *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
+         *         the same key set / insertable property set
          */
         @Beta
         public static SqlBuilder batchInsert(final Collection<?> propsList) {
@@ -19568,7 +19637,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.greaterThan("balance", 1000)
          * );
          * String sql = MLC.fromCondition(cond, Account.class).build().query();
-         * // Output: status = #{status} AND balance > #{balance}
+         * // Output: (status = #{status}) AND (balance > #{balance})
          * }</pre>
          *
          * @param cond the condition to parse into SQL

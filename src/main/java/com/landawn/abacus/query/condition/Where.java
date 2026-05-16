@@ -42,7 +42,7 @@ package com.landawn.abacus.query.condition;
  * // Complex condition
  * Condition and = Filters.and(Filters.equal("age", 25), Filters.greaterThan("salary", 50000));
  * Where where2 = new Where(and);
- * // SQL: WHERE age = 25 AND salary > 50000
+ * // SQL: WHERE ((age = 25) AND (salary > 50000))
  * }</pre>
  * 
  * @see Clause

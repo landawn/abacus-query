@@ -36,12 +36,24 @@ import com.landawn.abacus.util.Strings;
  * This class handles SQL parsing to extract named parameters (e.g., {@code :userId}, {@code #{userId}}) and converts
  * them to standard JDBC parameter placeholders ({@code ?}).
  *
- * <p>The class maintains an internal cache of parsed SQL statements for performance optimization.
- * Supported parameter formats include:</p>
+ * <p>The class maintains an internal cache (a keyed object pool) of parsed SQL statements for
+ * performance optimization, so repeated calls to {@link #parse(String)} with the same SQL string
+ * return the same cached instance. Supported parameter formats include:</p>
  * <ul>
  *   <li>Named parameters: {@code :paramName}</li>
  *   <li>iBatis/MyBatis style: {@code #{paramName}}</li>
+ *   <li>Standard JDBC placeholders: {@code ?}</li>
  * </ul>
+ *
+ * <p>Parameter detection and conversion is only performed when the SQL is recognized as a
+ * data operation statement (one starting with {@code SELECT}, {@code INSERT}, {@code UPDATE},
+ * {@code DELETE}, {@code WITH}, {@code MERGE}, {@code CALL}, {@code VALUES}, {@code EXPLAIN}
+ * or {@code REPLACE}). For any other SQL, the parameterized SQL is the original SQL unchanged
+ * and {@link #namedParameters()} is empty.</p>
+ *
+ * <p>Any trailing semicolons (and any surrounding whitespace) are stripped from the
+ * parameterized SQL, so {@code "SELECT * FROM x;"}, {@code "SELECT * FROM x;;"} and
+ * {@code "SELECT * FROM x ; ;"} all produce {@code "SELECT * FROM x"}.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -209,6 +221,10 @@ public final class ParsedSql {
      *
      * <p>Note: Mixing different parameter styles in the same SQL statement will result in an {@code IllegalArgumentException}.</p>
      *
+     * <p>Parameter conversion is only applied when the SQL is a recognized data operation statement
+     * (see the class-level documentation). All trailing semicolons and surrounding whitespace are
+     * stripped from the resulting {@link #parameterizedSql()}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Using named parameters
@@ -320,6 +336,8 @@ public final class ParsedSql {
     /**
      * Gets the total number of parameters (named or positional) in the SQL.
      * This count includes all occurrences of {@code ?}, {@code :paramName}, or {@code #{paramName}}.
+     * Parameters are only counted for recognized data operation statements (see the class-level
+     * documentation); for other SQL this returns {@code 0}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

@@ -32,14 +32,31 @@ import com.landawn.abacus.util.Strings;
  * A utility class for parsing SQL statements into individual words and tokens.
  * This parser recognizes SQL keywords, operators, identifiers, and various SQL-specific
  * separators while preserving the structure and meaning of the SQL statement.
- * 
+ *
+ * <p>Tokenization details:</p>
+ * <ul>
+ *   <li>Single-quoted and double-quoted strings/identifiers are kept as a single token.
+ *       Both doubled-quote ({@code ''}, {@code ""}) and backslash escaping are recognized
+ *       as in-string escapes.</li>
+ *   <li>Comments are stripped: line comments ({@code -- ...}), MySQL hash comments
+ *       ({@code # ...}), and block comments ({@code /* ... *}{@code /}). Nested block
+ *       comments and PostgreSQL dollar-quoting ({@code $$...$$}) are NOT supported.</li>
+ *   <li>Block comments are normally discarded; they are retained as tokens only when the
+ *       SQL begins with the literal marker {@code "-- Keep comments"}.</li>
+ *   <li>Runs of whitespace are collapsed into a single space token ({@code " "}).</li>
+ *   <li>Multi-character operators (e.g. {@code >=}, {@code <>}, {@code ->>}) are emitted
+ *       as single tokens; additional separators can be registered via
+ *       {@link #registerSeparator(String)} / {@link #registerSeparator(char)}.</li>
+ *   <li>iBatis/MyBatis {@code #{...}} markers are not split on {@code #}.</li>
+ * </ul>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * String sql = "SELECT * FROM users WHERE age > 25 ORDER BY name";
  * List<String> words = SqlParser.parse(sql);
  * // Result: ["SELECT", " ", "*", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">", " ", "25", " ", "ORDER", " ", "BY", " ", "name"]
  * }</pre>
- * 
+ *
  */
 public final class SqlParser {
 
@@ -198,14 +215,19 @@ public final class SqlParser {
      * Parses a SQL statement into a list of individual words and tokens.
      * This method tokenizes the SQL string while preserving the semantic meaning
      * of SQL constructs such as keywords, operators, identifiers, and literals.
-     * 
+     *
+     * <p>Comments are stripped and runs of whitespace are collapsed into a single
+     * space token (see the class-level documentation for full tokenization rules).
+     * Composite keywords are <em>not</em> merged: e.g. {@code "ORDER BY"} is returned
+     * as the separate tokens {@code "ORDER"}, {@code " "}, {@code "BY"}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> words = SqlParser.parse("SELECT name, age FROM users WHERE age >= 18");
      * // Result: ["SELECT", " ", "name", ",", " ", "age", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">=", " ", "18"]
      * }</pre>
-     * 
-     * @param sql the SQL statement to parse
+     *
+     * @param sql the SQL statement to parse (must not be {@code null})
      * @return a list of tokens representing the parsed SQL statement
      */
     public static List<String> parse(final String sql) {
@@ -791,8 +813,11 @@ public final class SqlParser {
      *
      * <p>Special handling:</p>
      * <ul>
-     *   <li># followed by { is not considered a separator (MyBatis/iBatis syntax)</li>
-     *   <li>All registered separators are checked</li>
+     *   <li>{@code #} followed by <code>{</code> is not considered a separator (MyBatis/iBatis {@code #{...}} syntax)</li>
+     *   <li>{@code #} that starts a hash-prefixed identifier (e.g. a temp table name appearing
+     *       right after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE})
+     *       is not considered a separator</li>
+     *   <li>All registered single-character and multi-character separators are checked</li>
      * </ul>
      *
      * <p><b>Usage Examples:</b></p>

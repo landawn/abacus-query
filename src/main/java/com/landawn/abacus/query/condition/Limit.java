@@ -264,14 +264,18 @@ public class Limit extends Clause {
      * Converts this LIMIT clause to its string representation according to the specified naming policy.
      * The output format depends on how the Limit was constructed:
      * <ul>
-     *   <li>Custom expression: returns the normalized expression (which may have {@code "LIMIT "} prepended,
-     *       per {@link #Limit(String)})</li>
+     *   <li>Custom expression (non-empty {@code expr}): returns the normalized expression as-is (which may
+     *       have {@code "LIMIT "} prepended, per {@link #Limit(String)})</li>
+     *   <li>Uninitialized instance (no expression and {@code null} operator, e.g. produced by the
+     *       package-private default constructor during Kryo deserialization): returns the literal
+     *       {@code "null"} (consistent with {@link Cell#toString(NamingPolicy)}), not {@code "LIMIT 0"}</li>
      *   <li>Count only (offset {@code == 0}): returns {@code "LIMIT count"}</li>
-     *   <li>Count with offset ({@code > 0}): returns {@code "LIMIT count OFFSET offset"}</li>
+     *   <li>Count with offset ({@code offset > 0}): returns {@code "LIMIT count OFFSET offset"}</li>
      * </ul>
      *
-     * @param namingPolicy the naming policy parameter is currently ignored — LIMIT operates on numeric values, not property names
-     * @return the string representation of this LIMIT clause
+     * @param namingPolicy the naming policy parameter is currently ignored — LIMIT operates on numeric
+     *                      values or a raw expression, not property names
+     * @return the string representation of this LIMIT clause; {@code "null"} for an uninitialized instance
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {

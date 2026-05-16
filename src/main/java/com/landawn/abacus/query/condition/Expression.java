@@ -959,8 +959,10 @@ public class Expression extends ComposableCondition {
      * This method performs SQL escaping and formatting:
      * <ul>
      *   <li>{@code null} values become the string {@code "null"}</li>
-     *   <li>Strings are quoted with single quotes and special characters are escaped</li>
-     *   <li>Numbers and booleans are converted to their string representation</li>
+     *   <li>Strings are wrapped in single quotes with single/double quotes and any trailing
+     *       backslash escaped via {@link AbstractCondition#escapeStringLiteral(String)}</li>
+     *   <li>{@link Number} and {@link Boolean} values are converted via {@code toString()} (no quoting);
+     *       {@code NaN}/infinite {@link Float}/{@link Double} values are rejected</li>
      *   <li>{@link Expression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null})</li>
      *   <li>{@link SubQuery} instances are wrapped in parentheses; other {@link Condition}s use their {@code toString()}</li>
      *   <li>Other objects are converted via {@link N#stringOf(Object)}, then quoted and escaped</li>
@@ -981,6 +983,8 @@ public class Expression extends ComposableCondition {
      *
      * @param value the value to normalize
      * @return the SQL representation of the value
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
+     *             (these have no portable SQL literal form; use {@link IsNaN}/{@link IsInfinite} instead)
      */
     public static String normalize(final Object value) {
         if (value == null) {
