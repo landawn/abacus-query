@@ -45,6 +45,17 @@ public abstract class AbstractBetween extends ComposableCondition {
 
     private Object maxValue;
 
+    /** Lazily memoized parameters (performance only). */
+    private transient ImmutableList<Object> cachedParameters;
+
+    /** Lazily memoized hashCode (0 == not computed). */
+    private transient int cachedHashCode;
+
+    /** Single-slot toString cache: last naming policy and its rendered string (performance only). */
+    private transient NamingPolicy cachedTostringNamingPolicy;
+
+    private transient String cachedTostring;
+
     /**
      * Default constructor for serialization frameworks like Kryo.
      */
@@ -133,7 +144,18 @@ public abstract class AbstractBetween extends ComposableCondition {
      */
     @Override
     public ImmutableList<Object> getParameters() {
-        final List<Object> parameters = new ArrayList<>();
+        ImmutableList<Object> result = cachedParameters;
+
+        if (result == null) {
+            result = computeParameters();
+            cachedParameters = result;
+        }
+
+        return result;
+    }
+
+    private ImmutableList<Object> computeParameters() {
+        final List<Object> parameters = new ArrayList<>(2);
 
         if (minValue instanceof Condition) {
             parameters.addAll(((Condition) minValue).getParameters());
@@ -163,12 +185,31 @@ public abstract class AbstractBetween extends ComposableCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        if (cachedTostring != null && cachedTostringNamingPolicy == namingPolicy) {
+            return cachedTostring;
+        }
+
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Operator op = operator();
         final String opStr = op == null ? Strings.NULL : op.toString();
 
-        return effectiveNamingPolicy.convert(propName == null ? null : propName) + SK._SPACE + opStr + SK._SPACE
-                + formatParameter(minValue, effectiveNamingPolicy) + SK._SPACE + SK.AND + SK._SPACE + formatParameter(maxValue, effectiveNamingPolicy);
+        final StringBuilder sb = new StringBuilder();
+        sb.append(effectiveNamingPolicy.convert(propName))
+                .append(SK._SPACE)
+                .append(opStr)
+                .append(SK._SPACE)
+                .append(formatParameter(minValue, effectiveNamingPolicy))
+                .append(SK._SPACE)
+                .append(SK.AND)
+                .append(SK._SPACE)
+                .append(formatParameter(maxValue, effectiveNamingPolicy));
+
+        final String result = sb.toString();
+
+        cachedTostring = result;
+        cachedTostringNamingPolicy = namingPolicy;
+
+        return result;
     }
 
     /**
@@ -178,11 +219,23 @@ public abstract class AbstractBetween extends ComposableCondition {
      */
     @Override
     public int hashCode() {
-        int h = 17;
-        h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
-        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        h = (h * 31) + ((minValue == null) ? 0 : minValue.hashCode());
-        return (h * 31) + ((maxValue == null) ? 0 : maxValue.hashCode());
+        int h = cachedHashCode;
+
+        if (h == 0) {
+            h = 17;
+            h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
+            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+            h = (h * 31) + ((minValue == null) ? 0 : minValue.hashCode());
+            h = (h * 31) + ((maxValue == null) ? 0 : maxValue.hashCode());
+
+            if (h == 0) {
+                h = 1;
+            }
+
+            cachedHashCode = h;
+        }
+
+        return h;
     }
 
     /**

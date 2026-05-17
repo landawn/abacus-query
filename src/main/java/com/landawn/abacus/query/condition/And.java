@@ -136,6 +136,18 @@ public class And extends Junction {
     }
 
     /**
+     * Trusted private constructor used by fluent chaining ({@link #and(Condition)}) to avoid
+     * re-validating already-validated conditions. Behavior is identical to the public
+     * collection constructor; only the redundant per-element null check is skipped.
+     *
+     * @param validatedConditions an already-validated list of conditions
+     * @param marker disambiguation marker (ignored)
+     */
+    private And(final List<? extends Condition> validatedConditions, final boolean marker) {
+        super(Operator.AND, validatedConditions, marker);
+    }
+
+    /**
      * Creates a new AND condition by adding another condition to this AND.
      * This method returns a new AND instance containing all existing conditions plus the new one.
      *
@@ -172,6 +184,6 @@ public class And extends Junction {
 
         conditionList.add(cond);
 
-        return new And(conditionList);
+        return new And(conditionList, true);
     }
 }

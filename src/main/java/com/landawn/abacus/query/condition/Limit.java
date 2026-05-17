@@ -157,9 +157,13 @@ public class Limit extends Clause {
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public Limit(final String expr) {
-        super(Operator.LIMIT, Expression.of(normalizeConditionExpr(expr)));
+        this(normalizeExpression(expr), true);
+    }
 
-        this.expr = normalizeExpression(expr);
+    private Limit(final String normalizedExpr, @SuppressWarnings("unused") final boolean normalized) {
+        super(Operator.LIMIT, Expression.of(conditionExprFromNormalized(normalizedExpr)));
+
+        this.expr = normalizedExpr;
         this.count = Integer.MAX_VALUE;
         this.offset = 0;
     }
@@ -353,9 +357,7 @@ public class Limit extends Clause {
         return shouldPrefixLimit(trimmed) ? SK.LIMIT + _SPACE + trimmed : trimmed;
     }
 
-    private static String normalizeConditionExpr(final String expr) {
-        final String normalizedExpr = normalizeExpression(expr);
-
+    private static String conditionExprFromNormalized(final String normalizedExpr) {
         if (Strings.startsWithIgnoreCase(normalizedExpr, SK.LIMIT + _SPACE)) {
             return normalizedExpr.substring(SK.LIMIT.length() + 1).trim();
         }

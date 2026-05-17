@@ -97,9 +97,23 @@ public class Join extends AbstractCondition {
 
     private Condition condition;
 
+    /** Lazily memoized parameters (performance only). */
+    private transient ImmutableList<Object> cachedParameters;
+
+    /** Lazily memoized hashCode (0 == not computed). */
+    private transient int cachedHashCode;
+
+    /** Single-slot toString cache: last naming policy and its rendered string (performance only). */
+    private transient NamingPolicy cachedTostringNamingPolicy;
+
+    private transient String cachedTostring;
+
+    /** Lazily memoized unmodifiable view of {@link #joinEntities} (performance only). */
+    private transient List<String> cachedJoinEntitiesView;
+
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor creates an uninitialized Join instance and should not be used 
+     * This constructor creates an uninitialized Join instance and should not be used
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     Join() {
@@ -302,7 +316,18 @@ public class Join extends AbstractCondition {
      * @return an unmodifiable view of the list of join entities
      */
     public List<String> getJoinEntities() {
-        return joinEntities == null ? N.emptyList() : Collections.unmodifiableList(joinEntities);
+        if (joinEntities == null) {
+            return N.emptyList();
+        }
+
+        List<String> view = cachedJoinEntitiesView;
+
+        if (view == null) {
+            view = Collections.unmodifiableList(joinEntities);
+            cachedJoinEntitiesView = view;
+        }
+
+        return view;
     }
 
     /**
@@ -340,7 +365,14 @@ public class Join extends AbstractCondition {
      */
     @Override
     public ImmutableList<Object> getParameters() {
-        return (condition == null) ? ImmutableList.empty() : condition.getParameters();
+        ImmutableList<Object> result = cachedParameters;
+
+        if (result == null) {
+            result = (condition == null) ? ImmutableList.empty() : condition.getParameters();
+            cachedParameters = result;
+        }
+
+        return result;
     }
 
     /**
@@ -354,6 +386,19 @@ public class Join extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        if (cachedTostring != null && cachedTostringNamingPolicy == namingPolicy) {
+            return cachedTostring;
+        }
+
+        final String result = doToString(namingPolicy);
+
+        cachedTostring = result;
+        cachedTostringNamingPolicy = namingPolicy;
+
+        return result;
+    }
+
+    private String doToString(final NamingPolicy namingPolicy) {
         final Operator op = operator();
         final String entities = (joinEntities == null || joinEntities.isEmpty()) ? Strings.EMPTY : concatPropNames(joinEntities);
 
@@ -378,10 +423,20 @@ public class Join extends AbstractCondition {
      */
     @Override
     public int hashCode() {
-        int h = 17;
-        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        h = (h * 31) + ((joinEntities == null) ? 0 : joinEntities.hashCode());
-        h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
+        int h = cachedHashCode;
+
+        if (h == 0) {
+            h = 17;
+            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+            h = (h * 31) + ((joinEntities == null) ? 0 : joinEntities.hashCode());
+            h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
+
+            if (h == 0) {
+                h = 1;
+            }
+
+            cachedHashCode = h;
+        }
 
         return h;
     }

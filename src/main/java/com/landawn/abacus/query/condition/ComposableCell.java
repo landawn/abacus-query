@@ -37,6 +37,17 @@ public abstract class ComposableCell extends ComposableCondition {
 
     protected final Condition condition;
 
+    /** Lazily memoized parameters (performance only). */
+    private transient ImmutableList<Object> cachedParameters;
+
+    /** Lazily memoized hashCode (0 == not computed). */
+    private transient int cachedHashCode;
+
+    /** Single-slot toString cache: last naming policy and its rendered string (performance only). */
+    private transient NamingPolicy cachedTostringNamingPolicy;
+
+    private transient String cachedTostring;
+
     /**
      * Default constructor for serialization frameworks like Kryo.
      * Creates an uninitialized ComposableCell instance; not for direct application use.
@@ -86,7 +97,14 @@ public abstract class ComposableCell extends ComposableCondition {
      */
     @Override
     public ImmutableList<Object> getParameters() {
-        return (condition == null) ? ImmutableList.empty() : condition.getParameters();
+        ImmutableList<Object> result = cachedParameters;
+
+        if (result == null) {
+            result = (condition == null) ? ImmutableList.empty() : condition.getParameters();
+            cachedParameters = result;
+        }
+
+        return result;
     }
 
     /**
@@ -102,6 +120,19 @@ public abstract class ComposableCell extends ComposableCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        if (cachedTostring != null && cachedTostringNamingPolicy == namingPolicy) {
+            return cachedTostring;
+        }
+
+        final String result = doToString(namingPolicy);
+
+        cachedTostring = result;
+        cachedTostringNamingPolicy = namingPolicy;
+
+        return result;
+    }
+
+    private String doToString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Condition condition = getCondition();
         final String conditionString = condition == null ? "" : condition.toString(effectiveNamingPolicy);
@@ -117,9 +148,21 @@ public abstract class ComposableCell extends ComposableCondition {
      */
     @Override
     public int hashCode() {
-        int h = 17;
-        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        return (h * 31) + ((condition == null) ? 0 : condition.hashCode());
+        int h = cachedHashCode;
+
+        if (h == 0) {
+            h = 17;
+            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+            h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
+
+            if (h == 0) {
+                h = 1;
+            }
+
+            cachedHashCode = h;
+        }
+
+        return h;
     }
 
     /**

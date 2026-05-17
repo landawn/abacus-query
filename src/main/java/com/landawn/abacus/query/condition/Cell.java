@@ -40,6 +40,17 @@ public abstract class Cell extends AbstractCondition {
 
     private Condition condition;
 
+    /** Lazily memoized parameters (performance only). */
+    private transient ImmutableList<Object> cachedParameters;
+
+    /** Lazily memoized hashCode (0 == not computed). */
+    private transient int cachedHashCode;
+
+    /** Single-slot toString cache: last naming policy and its rendered string (performance only). */
+    private transient NamingPolicy cachedTostringNamingPolicy;
+
+    private transient String cachedTostring;
+
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized Cell instance and should not be used
@@ -89,7 +100,14 @@ public abstract class Cell extends AbstractCondition {
      */
     @Override
     public ImmutableList<Object> getParameters() {
-        return (condition == null) ? ImmutableList.empty() : condition.getParameters();
+        ImmutableList<Object> result = cachedParameters;
+
+        if (result == null) {
+            result = (condition == null) ? ImmutableList.empty() : condition.getParameters();
+            cachedParameters = result;
+        }
+
+        return result;
     }
 
     /**
@@ -104,9 +122,19 @@ public abstract class Cell extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        if (cachedTostring != null && cachedTostringNamingPolicy == namingPolicy) {
+            return cachedTostring;
+        }
+
         final Operator op = operator();
 
-        return (op == null ? Strings.NULL : op.toString()) + ((condition == null) ? Strings.EMPTY : SK._SPACE + condition.toString(namingPolicy));
+        final String result = (op == null ? Strings.NULL : op.toString())
+                + ((condition == null) ? Strings.EMPTY : SK._SPACE + condition.toString(namingPolicy));
+
+        cachedTostring = result;
+        cachedTostringNamingPolicy = namingPolicy;
+
+        return result;
     }
 
     /**
@@ -117,9 +145,21 @@ public abstract class Cell extends AbstractCondition {
      */
     @Override
     public int hashCode() {
-        int h = 17;
-        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        return (h * 31) + ((condition == null) ? 0 : condition.hashCode());
+        int h = cachedHashCode;
+
+        if (h == 0) {
+            h = 17;
+            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+            h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
+
+            if (h == 0) {
+                h = 1;
+            }
+
+            cachedHashCode = h;
+        }
+
+        return h;
     }
 
     /**

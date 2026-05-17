@@ -90,6 +90,20 @@ public class Junction extends ComposableCondition {
 
     final List<Condition> conditions;
 
+    /** Lazily memoized parameters (performance only). */
+    private transient ImmutableList<Object> cachedParameters;
+
+    /** Lazily memoized hashCode (0 == not computed). */
+    private transient int cachedHashCode;
+
+    /** Single-slot toString cache: last naming policy and its rendered string (performance only). */
+    private transient NamingPolicy cachedTostringNamingPolicy;
+
+    private transient String cachedTostring;
+
+    /** Lazily memoized unmodifiable view of {@link #conditions} (performance only). */
+    private transient List<Condition> cachedConditionsView;
+
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized Junction instance and should not be used
@@ -97,6 +111,25 @@ public class Junction extends ComposableCondition {
      */
     Junction() {
         conditions = new ArrayList<>();
+    }
+
+    /**
+     * Trusted private constructor that adopts an already-validated, freshly-allocated and
+     * non-leaked condition list without re-running per-element null checks. Used by fluent
+     * {@code and()}/{@code or()} chaining to keep chaining O(n) overall. The {@code marker}
+     * parameter only serves to distinguish this constructor's signature.
+     *
+     * <p>The supplied list is taken over directly (not copied); callers must pass a private,
+     * freshly created list that they will not retain or mutate afterwards.</p>
+     *
+     * @param operator the composable operator
+     * @param ownedValidatedConditions a freshly created list whose elements have already been null-validated
+     * @param marker disambiguation marker (ignored)
+     */
+    @SuppressWarnings({ "unchecked", "unused" })
+    Junction(final Operator operator, final List<? extends Condition> ownedValidatedConditions, final boolean marker) {
+        super(operator);
+        this.conditions = (List<Condition>) ownedValidatedConditions;
     }
 
     /**
@@ -177,7 +210,14 @@ public class Junction extends ComposableCondition {
      * @return an unmodifiable view of the list of conditions in this junction
      */
     public List<Condition> getConditions() {
-        return Collections.unmodifiableList(conditions);
+        List<Condition> view = cachedConditionsView;
+
+        if (view == null) {
+            view = Collections.unmodifiableList(conditions);
+            cachedConditionsView = view;
+        }
+
+        return view;
     }
 
     private void appendConditions(final Condition... conditions) {
@@ -218,15 +258,22 @@ public class Junction extends ComposableCondition {
      */
     @Override
     public ImmutableList<Object> getParameters() {
-        final List<Object> parameters = new ArrayList<>();
+        ImmutableList<Object> result = cachedParameters;
 
-        for (final Condition condition : conditions) {
-            if (condition != null) {
-                parameters.addAll(condition.getParameters());
+        if (result == null) {
+            final List<Object> parameters = new ArrayList<>(conditions.size());
+
+            for (final Condition condition : conditions) {
+                if (condition != null) {
+                    parameters.addAll(condition.getParameters());
+                }
             }
+
+            result = ImmutableList.wrap(parameters);
+            cachedParameters = result;
         }
 
-        return ImmutableList.wrap(parameters);
+        return result;
     }
 
     /**
@@ -243,6 +290,19 @@ public class Junction extends ComposableCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        if (cachedTostring != null && cachedTostringNamingPolicy == namingPolicy) {
+            return cachedTostring;
+        }
+
+        final String result = doToString(namingPolicy);
+
+        cachedTostring = result;
+        cachedTostringNamingPolicy = namingPolicy;
+
+        return result;
+    }
+
+    private String doToString(final NamingPolicy namingPolicy) {
         if (N.isEmpty(conditions)) {
             return Strings.EMPTY;
         }
@@ -294,9 +354,21 @@ public class Junction extends ComposableCondition {
      */
     @Override
     public int hashCode() {
-        int h = 17;
-        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        return (h * 31) + conditions.hashCode();
+        int h = cachedHashCode;
+
+        if (h == 0) {
+            h = 17;
+            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+            h = (h * 31) + conditions.hashCode();
+
+            if (h == 0) {
+                h = 1;
+            }
+
+            cachedHashCode = h;
+        }
+
+        return h;
     }
 
     /**

@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -46,6 +45,17 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     final Collection<String> propNames;
 
     private SubQuery subQuery;
+
+    /** Lazily memoized parameters (performance only). */
+    private transient ImmutableList<Object> cachedParameters;
+
+    /** Lazily memoized hashCode (0 == not computed). */
+    private transient int cachedHashCode;
+
+    /** Single-slot toString cache: last naming policy and its rendered string (performance only). */
+    private transient NamingPolicy cachedTostringNamingPolicy;
+
+    private transient String cachedTostring;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -164,7 +174,14 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      */
     @Override
     public ImmutableList<Object> getParameters() {
-        return subQuery == null ? ImmutableList.empty() : subQuery.getParameters();
+        ImmutableList<Object> result = cachedParameters;
+
+        if (result == null) {
+            result = subQuery == null ? ImmutableList.empty() : subQuery.getParameters();
+            cachedParameters = result;
+        }
+
+        return result;
     }
 
     /**
@@ -174,10 +191,22 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      */
     @Override
     public int hashCode() {
-        int h = 17;
-        h = (h * 31) + N.hashCode(propNames);
-        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        return (h * 31) + ((subQuery == null) ? 0 : subQuery.hashCode());
+        int h = cachedHashCode;
+
+        if (h == 0) {
+            h = 17;
+            h = (h * 31) + N.hashCode(propNames);
+            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+            h = (h * 31) + ((subQuery == null) ? 0 : subQuery.hashCode());
+
+            if (h == 0) {
+                h = 1;
+            }
+
+            cachedHashCode = h;
+        }
+
+        return h;
     }
 
     /**
@@ -214,20 +243,48 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        if (cachedTostring != null && cachedTostringNamingPolicy == namingPolicy) {
+            return cachedTostring;
+        }
+
+        final String result = doToString(namingPolicy);
+
+        cachedTostring = result;
+        cachedTostringNamingPolicy = namingPolicy;
+
+        return result;
+    }
+
+    private String doToString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final String subQueryString = subQuery == null ? Strings.EMPTY : subQuery.toString(effectiveNamingPolicy);
         final Operator op = operator();
         final String opStr = op == null ? Strings.NULL : op.toString();
 
         if (N.notEmpty(propNames)) {
-            if (propNames.size() == 1) {
-                return effectiveNamingPolicy.convert(propNames.iterator().next()) + SK._SPACE + opStr + SK.SPACE_PARENTHESIS_L + subQueryString
-                        + SK.PARENTHESIS_R;
+            final int size = propNames.size();
+
+            if (size == 1) {
+                final String singleProp = (propNames instanceof List) ? ((List<String>) propNames).get(0) : propNames.iterator().next();
+
+                return effectiveNamingPolicy.convert(singleProp) + SK._SPACE + opStr + SK.SPACE_PARENTHESIS_L + subQueryString + SK.PARENTHESIS_R;
             }
 
-            final Function<String, String> converter = effectiveNamingPolicy::convert;
+            final StringBuilder sb = new StringBuilder(16 + (size << 4) + subQueryString.length());
+            sb.append('(');
 
-            return "(" + Strings.join(N.map(propNames, converter), ", ") + ") " + opStr + SK.SPACE_PARENTHESIS_L + subQueryString + SK.PARENTHESIS_R;
+            int i = 0;
+            for (final String propName : propNames) {
+                if (i++ > 0) {
+                    sb.append(", ");
+                }
+
+                sb.append(effectiveNamingPolicy.convert(propName));
+            }
+
+            sb.append(") ").append(opStr).append(SK.SPACE_PARENTHESIS_L).append(subQueryString).append(SK.PARENTHESIS_R);
+
+            return sb.toString();
         }
 
         return opStr + SK.SPACE_PARENTHESIS_L + subQueryString + SK.PARENTHESIS_R;

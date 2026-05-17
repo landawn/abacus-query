@@ -16,7 +16,6 @@ package com.landawn.abacus.query;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -96,12 +95,16 @@ public final class ParsedSql {
 
     private final int parameterCount;
 
+    /** Cached hash code. This object is immutable, so {@code Objects.hash(sql)} is computed once. */
+    private final int hashCode;
+
     private ParsedSql(final String sql) {
         this.sql = sql.trim();
+        hashCode = Objects.hash(this.sql);
 
         final List<String> words = SqlParser.parse(this.sql);
         final String firstOpWord = resolveFirstOpWord(words);
-        final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && opSqlPrefixSet.contains(firstOpWord.toUpperCase(Locale.ROOT));
+        final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && isOpSqlPrefixWord(firstOpWord);
 
         final List<String> namedParameterList = new ArrayList<>();
         int paramCount = 0;
@@ -129,9 +132,11 @@ public final class ParsedSql {
                         // those parameter bindings entirely. We now process the leading marker and
                         // then iteratively extract any further "#{...}" markers from the suffix.
                         final StringBuilder rebuilt = new StringBuilder(word.length() + 4);
+                        final StringBuilder ibatisTokenBuilder = new StringBuilder();
 
                         while (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)) {
-                            final StringBuilder ibatisTokenBuilder = new StringBuilder(word);
+                            ibatisTokenBuilder.setLength(0);
+                            ibatisTokenBuilder.append(word);
 
                             while (ibatisTokenBuilder.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER) < 0 && i < size - 1) {
                                 ibatisTokenBuilder.append(words.get(++i));
@@ -363,6 +368,21 @@ public final class ParsedSql {
         return parameterCount;
     }
 
+    /**
+     * Equivalent to {@code opSqlPrefixSet.contains(word.toUpperCase(Locale.ROOT))} but without
+     * allocating a temporary upper-cased String. All entries of {@code opSqlPrefixSet} are
+     * uppercase ASCII keywords, so a case-insensitive scan yields the identical result.
+     */
+    private static boolean isOpSqlPrefixWord(final String word) {
+        for (final String prefix : opSqlPrefixSet) {
+            if (prefix.equalsIgnoreCase(word)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static String resolveFirstOpWord(final List<String> words) {
         final int firstIndex = nextNonCommentWord(words, 0);
 
@@ -390,8 +410,7 @@ public final class ParsedSql {
             while (explainedIndex >= 0) {
                 final String explainedOpWord = words.get(explainedIndex);
 
-                if (Strings.isNotEmpty(explainedOpWord) && opSqlPrefixSet.contains(explainedOpWord.toUpperCase(Locale.ROOT))
-                        && !"EXPLAIN".equalsIgnoreCase(explainedOpWord)) {
+                if (Strings.isNotEmpty(explainedOpWord) && isOpSqlPrefixWord(explainedOpWord) && !"EXPLAIN".equalsIgnoreCase(explainedOpWord)) {
                     return explainedOpWord;
                 }
 
@@ -450,7 +469,7 @@ public final class ParsedSql {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(sql);
+        return hashCode;
     }
 
     /**

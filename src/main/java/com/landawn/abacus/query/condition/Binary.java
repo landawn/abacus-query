@@ -63,6 +63,17 @@ public class Binary extends ComposableCondition {
 
     private Object propValue;
 
+    /** Lazily memoized parameters (performance only). */
+    private transient ImmutableList<Object> cachedParameters;
+
+    /** Lazily memoized hashCode (0 == not computed). */
+    private transient int cachedHashCode;
+
+    /** Single-slot toString cache: last naming policy and its rendered string (performance only). */
+    private transient NamingPolicy cachedTostringNamingPolicy;
+
+    private transient String cachedTostring;
+
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized Binary instance and should not be used
@@ -165,6 +176,17 @@ public class Binary extends ComposableCondition {
      */
     @Override
     public ImmutableList<Object> getParameters() {
+        ImmutableList<Object> result = cachedParameters;
+
+        if (result == null) {
+            result = computeParameters();
+            cachedParameters = result;
+        }
+
+        return result;
+    }
+
+    private ImmutableList<Object> computeParameters() {
         final Operator op = operator();
 
         if (propValue == null
@@ -197,6 +219,19 @@ public class Binary extends ComposableCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        if (cachedTostring != null && cachedTostringNamingPolicy == namingPolicy) {
+            return cachedTostring;
+        }
+
+        final String result = doToString(namingPolicy);
+
+        cachedTostring = result;
+        cachedTostringNamingPolicy = namingPolicy;
+
+        return result;
+    }
+
+    private String doToString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Operator op = operator();
 
@@ -220,10 +255,22 @@ public class Binary extends ComposableCondition {
      */
     @Override
     public int hashCode() {
-        int h = 17;
-        h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
-        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        return (h * 31) + ((propValue == null) ? 0 : propValue.hashCode());
+        int h = cachedHashCode;
+
+        if (h == 0) {
+            h = 17;
+            h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
+            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+            h = (h * 31) + ((propValue == null) ? 0 : propValue.hashCode());
+
+            if (h == 0) {
+                h = 1;
+            }
+
+            cachedHashCode = h;
+        }
+
+        return h;
     }
 
     /**

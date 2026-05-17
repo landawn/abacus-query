@@ -72,6 +72,23 @@ public class Criteria extends AbstractCondition {
 
     private final List<Condition> conditions;
 
+    /** Lazily memoized parameters (performance only). */
+    private transient ImmutableList<Object> cachedParameters;
+
+    /** Lazily memoized hashCode (0 == not computed). */
+    private transient int cachedHashCode;
+
+    /** Single-slot toString cache: last naming policy and its rendered string (performance only). */
+    private transient NamingPolicy cachedTostringNamingPolicy;
+
+    private transient String cachedTostring;
+
+    /** Lazily memoized unmodifiable JOIN view (performance only). */
+    private transient List<Join> cachedJoinsView;
+
+    /** Lazily memoized unmodifiable set-operations view (performance only). */
+    private transient List<Clause> cachedSetOperationsView;
+
     /**
      * Creates a new Criteria instance with the specified select modifier and condition list.
      * This constructor is package-private; use {@link #builder()} to construct instances.
@@ -102,15 +119,26 @@ public class Criteria extends AbstractCondition {
      * @return an unmodifiable list of {@link Join} conditions; empty if none exist
      */
     public List<Join> getJoins() {
-        final List<Join> joins = new ArrayList<>();
+        List<Join> view = cachedJoinsView;
 
-        for (final Condition cond : this.conditions) {
-            if (cond instanceof Join) {
-                joins.add((Join) cond);
+        if (view == null) {
+            List<Join> joins = null;
+
+            for (final Condition cond : this.conditions) {
+                if (cond instanceof Join) {
+                    if (joins == null) {
+                        joins = new ArrayList<>();
+                    }
+
+                    joins.add((Join) cond);
+                }
             }
+
+            view = joins == null ? N.emptyList() : Collections.unmodifiableList(joins);
+            cachedJoinsView = view;
         }
 
-        return Collections.unmodifiableList(joins);
+        return view;
     }
 
     /**
@@ -146,19 +174,26 @@ public class Criteria extends AbstractCondition {
      * @return an unmodifiable list of set operation clauses; empty if none exist
      */
     public List<Clause> getSetOperations() {
-        List<Clause> result = null;
+        List<Clause> view = cachedSetOperationsView;
 
-        for (final Condition cond : this.conditions) {
-            if (SET_OPERATORS.contains(cond.operator())) {
-                if (result == null) {
-                    result = new ArrayList<>();
+        if (view == null) {
+            List<Clause> result = null;
+
+            for (final Condition cond : this.conditions) {
+                if (SET_OPERATORS.contains(cond.operator())) {
+                    if (result == null) {
+                        result = new ArrayList<>();
+                    }
+
+                    result.add((Clause) cond);
                 }
-
-                result.add((Clause) cond);
             }
+
+            view = result == null ? N.emptyList() : Collections.unmodifiableList(result);
+            cachedSetOperationsView = view;
         }
 
-        return result == null ? N.emptyList() : Collections.unmodifiableList(result);
+        return view;
     }
 
     /**
@@ -215,53 +250,103 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public ImmutableList<Object> getParameters() {
-        if (this.conditions.size() > 0) {
-            final List<Object> parameters = new ArrayList<>();
-            final Collection<Join> joins = getJoins();
+        ImmutableList<Object> result = cachedParameters;
 
+        if (result == null) {
+            result = computeParameters();
+            cachedParameters = result;
+        }
+
+        return result;
+    }
+
+    private ImmutableList<Object> computeParameters() {
+        if (this.conditions.isEmpty()) {
+            return ImmutableList.empty();
+        }
+
+        // Single pass: bucket conditions by clause while preserving the exact ordering used by
+        // the previous 7 independent scans (JOINs in order, then first WHERE, first GROUP BY,
+        // first HAVING, set operations in order, first ORDER BY, first LIMIT).
+        List<Join> joins = null;
+        Condition where = null;
+        Condition groupBy = null;
+        Condition having = null;
+        List<Condition> setOperations = null;
+        Condition orderBy = null;
+        Condition limit = null;
+
+        for (final Condition cond : this.conditions) {
+            final Operator op = cond.operator();
+
+            if (cond instanceof Join) {
+                if (joins == null) {
+                    joins = new ArrayList<>();
+                }
+                joins.add((Join) cond);
+            } else if (op == Operator.WHERE) {
+                if (where == null) {
+                    where = cond;
+                }
+            } else if (op == Operator.GROUP_BY) {
+                if (groupBy == null) {
+                    groupBy = cond;
+                }
+            } else if (op == Operator.HAVING) {
+                if (having == null) {
+                    having = cond;
+                }
+            } else if (op == Operator.ORDER_BY) {
+                if (orderBy == null) {
+                    orderBy = cond;
+                }
+            } else if (op == Operator.LIMIT) {
+                if (limit == null) {
+                    limit = cond;
+                }
+            } else if (SET_OPERATORS.contains(op)) {
+                if (setOperations == null) {
+                    setOperations = new ArrayList<>();
+                }
+                setOperations.add(cond);
+            }
+        }
+
+        final List<Object> parameters = new ArrayList<>();
+
+        if (joins != null) {
             for (final Join join : joins) {
                 parameters.addAll(join.getParameters());
             }
+        }
 
-            final Clause where = getWhere();
+        if (where != null) {
+            parameters.addAll(where.getParameters());
+        }
 
-            if (where != null) {
-                parameters.addAll(where.getParameters());
-            }
+        if (groupBy != null) {
+            parameters.addAll(groupBy.getParameters());
+        }
 
-            final Clause groupBy = getGroupBy();
+        if (having != null) {
+            parameters.addAll(having.getParameters());
+        }
 
-            if (groupBy != null) {
-                parameters.addAll(groupBy.getParameters());
-            }
-            final Clause having = getHaving();
-
-            if (having != null) {
-                parameters.addAll(having.getParameters());
-            }
-
-            final List<Clause> setOperations = getSetOperations();
-
+        if (setOperations != null) {
             for (final Condition cond : setOperations) {
                 parameters.addAll(cond.getParameters());
             }
-
-            final Clause orderBy = getOrderBy();
-
-            if (orderBy != null) {
-                parameters.addAll(orderBy.getParameters());
-            }
-
-            final Clause limit = getLimit();
-
-            if (limit != null) {
-                parameters.addAll(limit.getParameters());
-            }
-
-            return ImmutableList.wrap(parameters);
-        } else {
-            return ImmutableList.empty();
         }
+
+        if (orderBy != null) {
+            parameters.addAll(orderBy.getParameters());
+        }
+
+        if (limit != null) {
+            parameters.addAll(limit.getParameters());
+        }
+
+        return ImmutableList.wrap(parameters);
     }
 
     /**
@@ -272,37 +357,66 @@ public class Criteria extends AbstractCondition {
      * @param namingPolicy the naming policy to apply to property names within each clause
      * @return a string representation of this Criteria
      */
-    @SuppressWarnings("StringConcatenationInLoop")
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        final String selectModifier = Strings.isEmpty(this.selectModifier) ? Strings.EMPTY : SK.SPACE + this.selectModifier; //NOSONAR
-        String join = Strings.EMPTY;
-        String where = Strings.EMPTY;
-        String groupBy = Strings.EMPTY;
-        String having = Strings.EMPTY;
-        String orderBy = Strings.EMPTY;
-        String limit = Strings.EMPTY;
-        String setOps = Strings.EMPTY;
-
-        for (final Condition cond : this.conditions) {
-            if (cond.operator() == Operator.WHERE) {
-                where += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (cond.operator() == Operator.ORDER_BY) {
-                orderBy += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (cond.operator() == Operator.GROUP_BY) {
-                groupBy += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (cond.operator() == Operator.HAVING) {
-                having += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (cond.operator() == Operator.LIMIT) {
-                limit += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else if (cond instanceof Join) {
-                join += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            } else {
-                setOps += (SK._SPACE + cond.toString(namingPolicy)); //NOSONAR
-            }
+        if (cachedTostring != null && cachedTostringNamingPolicy == namingPolicy) {
+            return cachedTostring;
         }
 
-        return selectModifier + join + where + groupBy + having + setOps + orderBy + limit;
+        final String result = doToString(namingPolicy);
+
+        cachedTostring = result;
+        cachedTostringNamingPolicy = namingPolicy;
+
+        return result;
+    }
+
+    private String doToString(final NamingPolicy namingPolicy) {
+        // Single pass into per-clause buffers, then assembled in SQL order
+        // (selectModifier + join + where + groupBy + having + setOps + orderBy + limit).
+        // Output is byte-identical to the previous O(n^2) string-concatenation version.
+        final StringBuilder join = new StringBuilder();
+        final StringBuilder where = new StringBuilder();
+        final StringBuilder groupBy = new StringBuilder();
+        final StringBuilder having = new StringBuilder();
+        final StringBuilder orderBy = new StringBuilder();
+        final StringBuilder limit = new StringBuilder();
+        final StringBuilder setOps = new StringBuilder();
+
+        for (final Condition cond : this.conditions) {
+            final StringBuilder target;
+            final Operator op = cond.operator();
+
+            if (op == Operator.WHERE) {
+                target = where;
+            } else if (op == Operator.ORDER_BY) {
+                target = orderBy;
+            } else if (op == Operator.GROUP_BY) {
+                target = groupBy;
+            } else if (op == Operator.HAVING) {
+                target = having;
+            } else if (op == Operator.LIMIT) {
+                target = limit;
+            } else if (cond instanceof Join) {
+                target = join;
+            } else {
+                target = setOps;
+            }
+
+            target.append(SK._SPACE).append(cond.toString(namingPolicy));
+        }
+
+        final int modifierLen = Strings.isEmpty(this.selectModifier) ? 0 : 1 + this.selectModifier.length();
+        final StringBuilder sb = new StringBuilder(
+                modifierLen + join.length() + where.length() + groupBy.length() + having.length() + setOps.length() + orderBy.length() + limit.length());
+
+        if (modifierLen > 0) {
+            sb.append(SK.SPACE).append(this.selectModifier);
+        }
+
+        sb.append(join).append(where).append(groupBy).append(having).append(setOps).append(orderBy).append(limit);
+
+        return sb.toString();
     }
 
     /**
@@ -312,9 +426,21 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public int hashCode() {
-        int h = 17;
-        h = (h * 31) + (Strings.isEmpty(selectModifier) ? 0 : selectModifier.hashCode());
-        return (h * 31) + conditions.hashCode();
+        int h = cachedHashCode;
+
+        if (h == 0) {
+            h = 17;
+            h = (h * 31) + (Strings.isEmpty(selectModifier) ? 0 : selectModifier.hashCode());
+            h = (h * 31) + conditions.hashCode();
+
+            if (h == 0) {
+                h = 1;
+            }
+
+            cachedHashCode = h;
+        }
+
+        return h;
     }
 
     /**

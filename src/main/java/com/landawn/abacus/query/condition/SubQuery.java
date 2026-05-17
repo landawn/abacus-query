@@ -94,6 +94,20 @@ public class SubQuery extends AbstractCondition {
      *  structured subqueries created without a condition. */
     private Condition condition;
 
+    /** Lazily memoized parameters (performance only). */
+    private transient ImmutableList<Object> cachedParameters;
+
+    /** Lazily memoized hashCode (0 == not computed). */
+    private transient int cachedHashCode;
+
+    /** Single-slot toString cache: last naming policy and its rendered string (performance only). */
+    private transient NamingPolicy cachedTostringNamingPolicy;
+
+    private transient String cachedTostring;
+
+    /** Lazily memoized unmodifiable view of {@link #propNames} (performance only). */
+    private transient List<String> cachedPropNamesView;
+
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized SubQuery instance and should not be used
@@ -357,7 +371,18 @@ public class SubQuery extends AbstractCondition {
      * @return unmodifiable collection of property names to select, or {@code null} for raw SQL subqueries
      */
     public Collection<String> getSelectPropNames() {
-        return propNames == null ? null : Collections.unmodifiableList(propNames);
+        if (propNames == null) {
+            return null;
+        }
+
+        List<String> view = cachedPropNamesView;
+
+        if (view == null) {
+            view = Collections.unmodifiableList(propNames);
+            cachedPropNamesView = view;
+        }
+
+        return view;
     }
 
     private static List<String> copyAndValidatePropNames(final Collection<String> propNames) {
@@ -432,7 +457,14 @@ public class SubQuery extends AbstractCondition {
      */
     @Override
     public ImmutableList<Object> getParameters() {
-        return condition == null ? ImmutableList.empty() : condition.getParameters();
+        ImmutableList<Object> result = cachedParameters;
+
+        if (result == null) {
+            result = condition == null ? ImmutableList.empty() : condition.getParameters();
+            cachedParameters = result;
+        }
+
+        return result;
     }
 
     /**
@@ -449,6 +481,19 @@ public class SubQuery extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        if (cachedTostring != null && cachedTostringNamingPolicy == namingPolicy) {
+            return cachedTostring;
+        }
+
+        final String result = doToString(namingPolicy);
+
+        cachedTostring = result;
+        cachedTostringNamingPolicy = namingPolicy;
+
+        return result;
+    }
+
+    private String doToString(final NamingPolicy namingPolicy) {
         if (sql == null) {
             final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
             final java.util.Map<String, String> prop2ColumnNameMap = entityClass == null ? null
@@ -517,12 +562,24 @@ public class SubQuery extends AbstractCondition {
      */
     @Override
     public int hashCode() {
-        int h = 17;
-        h = (h * 31) + ((sql == null) ? 0 : sql.hashCode());
-        h = (h * 31) + ((entityName == null) ? 0 : entityName.hashCode());
-        h = (h * 31) + ((entityClass == null) ? 0 : entityClass.hashCode());
-        h = (h * 31) + ((propNames == null) ? 0 : propNames.hashCode());
-        return (h * 31) + ((condition == null) ? 0 : condition.hashCode());
+        int h = cachedHashCode;
+
+        if (h == 0) {
+            h = 17;
+            h = (h * 31) + ((sql == null) ? 0 : sql.hashCode());
+            h = (h * 31) + ((entityName == null) ? 0 : entityName.hashCode());
+            h = (h * 31) + ((entityClass == null) ? 0 : entityClass.hashCode());
+            h = (h * 31) + ((propNames == null) ? 0 : propNames.hashCode());
+            h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
+
+            if (h == 0) {
+                h = 1;
+            }
+
+            cachedHashCode = h;
+        }
+
+        return h;
     }
 
     /**

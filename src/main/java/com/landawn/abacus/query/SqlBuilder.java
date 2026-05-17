@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.annotation.NonUpdatable;
@@ -198,16 +199,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             // Strip any table-alias prefix (e.g. "ord.orderDate" -> "orderDate") so the
             // synthesized "minX"/"maxX" parameter names remain valid identifiers.
             final String paramBase = sanitizeNamedParameterName(propName);
+            final String cap = Strings.capitalize(paramBase);
 
             final Object minValue = bt.getMinValue();
-            setParameter("min" + Strings.capitalize(paramBase), minValue);
+            setParameter("min" + cap, minValue);
 
             _sb.append(_SPACE);
             _sb.append(SK.AND);
             _sb.append(_SPACE);
 
             final Object maxValue = bt.getMaxValue();
-            setParameter("max" + Strings.capitalize(paramBase), maxValue);
+            setParameter("max" + cap, maxValue);
         } else if (cond instanceof final NotBetween nbt) {
             final String propName = nbt.getPropName();
 
@@ -219,16 +221,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
             // Strip any table-alias prefix to keep "minX"/"maxX" parameter names valid.
             final String paramBase = sanitizeNamedParameterName(propName);
+            final String cap = Strings.capitalize(paramBase);
 
             final Object minValue = nbt.getMinValue();
-            setParameter("min" + Strings.capitalize(paramBase), minValue);
+            setParameter("min" + cap, minValue);
 
             _sb.append(_SPACE);
             _sb.append(SK.AND);
             _sb.append(_SPACE);
 
             final Object maxValue = nbt.getMaxValue();
-            setParameter("max" + Strings.capitalize(paramBase), maxValue);
+            setParameter("max" + cap, maxValue);
         } else if (cond instanceof final In in) {
             final String propName = in.getPropName();
             final List<?> values = in.getValues();
@@ -240,12 +243,14 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             _sb.append(SK.SPACE_PARENTHESIS_L);
 
             if (values != null) {
+                final boolean indexedParamName = _sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL;
+
                 for (int i = 0, len = values.size(); i < len; i++) {
                     if (i > 0) {
-                        _sb.append(SK.COMMA_SPACE);
+                        _sb.append(_COMMA_SPACE);
                     }
 
-                    if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
+                    if (indexedParamName) {
                         setParameter(propName + (i + 1), values.get(i));
                     } else {
                         setParameter(propName, values.get(i));
@@ -294,12 +299,14 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             _sb.append(SK.SPACE_PARENTHESIS_L);
 
             if (values != null) {
+                final boolean indexedParamName = _sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL;
+
                 for (int i = 0, len = values.size(); i < len; i++) {
                     if (i > 0) {
-                        _sb.append(SK.COMMA_SPACE);
+                        _sb.append(_COMMA_SPACE);
                     }
 
-                    if (_sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL) {
+                    if (indexedParamName) {
                         setParameter(propName + (i + 1), values.get(i));
                     } else {
                         setParameter(propName, values.get(i));
@@ -396,75 +403,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             if (Strings.isNotEmpty(subQuery.sql())) {
                 _sb.append(subQuery.sql());
             } else {
-                final SqlBuilder subBuilder;
-
-                if (subQuery.getEntityClass() != null) {
-                    if (this instanceof SCSB) {
-                        subBuilder = SCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof PSC) {
-                        subBuilder = PSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof MSC) {
-                        subBuilder = MSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof NSC) {
-                        subBuilder = NSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof ACSB) {
-                        subBuilder = ACSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof PAC) {
-                        subBuilder = PAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof MAC) {
-                        subBuilder = MAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof NAC) {
-                        subBuilder = NAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof LCSB) {
-                        subBuilder = LCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof PLC) {
-                        subBuilder = PLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof MLC) {
-                        subBuilder = MLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof NLC) {
-                        subBuilder = NLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof PSB) {
-                        subBuilder = PSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof NSB) {
-                        subBuilder = NSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else if (this instanceof MSB) {
-                        subBuilder = MSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityClass());
-                    } else {
-                        throw new UnsupportedOperationException("SubQuery condition not supported for this builder type: " + cond);
-                    }
-                } else if (this instanceof SCSB) {
-                    subBuilder = SCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof PSC) {
-                    subBuilder = PSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof MSC) {
-                    subBuilder = MSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof NSC) {
-                    subBuilder = NSC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof ACSB) {
-                    subBuilder = ACSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof PAC) {
-                    subBuilder = PAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof MAC) {
-                    subBuilder = MAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof NAC) {
-                    subBuilder = NAC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof LCSB) {
-                    subBuilder = LCSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof PLC) {
-                    subBuilder = PLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof MLC) {
-                    subBuilder = MLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof NLC) {
-                    subBuilder = NLC.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof PSB) {
-                    subBuilder = PSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof NSB) {
-                    subBuilder = NSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else if (this instanceof MSB) {
-                    subBuilder = MSB.select(subQuery.getSelectPropNames()).from(subQuery.getEntityName());
-                } else {
-                    throw new UnsupportedOperationException("SubQuery condition not supported for this builder type: " + cond);
-                }
+                final SqlBuilder subBuilder = newSubQueryBuilder(subQuery, cond);
 
                 if (subCond != null) {
                     subBuilder.append(subCond);
@@ -506,6 +445,67 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         } else {
             throw new IllegalArgumentException("Unsupported condition type: " + cond);
         }
+    }
+
+    /**
+     * Maps each concrete {@link SqlBuilder} subclass to a factory that produces a fresh instance of
+     * the same concrete type. Used to allocate the correct sub-query builder for {@link SubQuery}
+     * rendering without an {@code instanceof} ladder. Each supplier delegates to the corresponding
+     * subclass {@code createInstance()}, so the produced builder type is identical to what the
+     * previous {@code if (this instanceof XxxBuilder) ...} chain produced.
+     */
+    private static final Map<Class<?>, Supplier<SqlBuilder>> SUB_QUERY_BUILDER_FACTORIES = new java.util.HashMap<>();
+
+    static {
+        SUB_QUERY_BUILDER_FACTORIES.put(SCSB.class, SCSB::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(PSC.class, PSC::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(MSC.class, MSC::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(NSC.class, NSC::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(ACSB.class, ACSB::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(PAC.class, PAC::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(MAC.class, MAC::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(NAC.class, NAC::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(LCSB.class, LCSB::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(PLC.class, PLC::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(MLC.class, MLC::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(NLC.class, NLC::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(PSB.class, PSB::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(NSB.class, NSB::createInstance);
+        SUB_QUERY_BUILDER_FACTORIES.put(MSB.class, MSB::createInstance);
+    }
+
+    /**
+     * Allocates the sub-query builder for a {@link SubQuery} condition using the concrete type of
+     * {@code this}. This is a performance/maintainability refactor of the former duplicated
+     * ~15-deep {@code instanceof} chains and is behaviorally identical: it produces a builder of the
+     * same concrete subclass type, applies the same {@code select(...)} semantics (including the
+     * {@code SELECTION_PART_MSG} empty-check), and binds the same {@code from(...)} target
+     * (entity class when present, otherwise entity name).
+     *
+     * @param subQuery the sub-query condition being rendered
+     * @param cond     the original condition (used verbatim in the unsupported-type message)
+     * @return a fresh sub-query builder of the same concrete type as {@code this}
+     * @throws UnsupportedOperationException if the concrete builder type does not support sub-queries
+     */
+    private SqlBuilder newSubQueryBuilder(final SubQuery subQuery, final Condition cond) {
+        final Supplier<SqlBuilder> factory = SUB_QUERY_BUILDER_FACTORIES.get(getClass());
+
+        if (factory == null) {
+            throw new UnsupportedOperationException("SubQuery condition not supported for this builder type: " + cond);
+        }
+
+        final Collection<String> selectPropNames = subQuery.getSelectPropNames();
+        N.checkArgNotEmpty(selectPropNames, SELECTION_PART_MSG);
+
+        final SqlBuilder subBuilder = factory.get();
+        subBuilder._op = OperationType.QUERY;
+        subBuilder._propOrColumnNames = selectPropNames;
+
+        if (subQuery.getEntityClass() != null) {
+            return subBuilder.from(subQuery.getEntityClass());
+        }
+
+        return subBuilder.from(subQuery.getEntityName());
     }
 
     /**

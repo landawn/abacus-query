@@ -144,6 +144,18 @@ public class Or extends Junction {
     }
 
     /**
+     * Trusted private constructor used by fluent chaining ({@link #or(Condition)}) to avoid
+     * re-validating already-validated conditions. Behavior is identical to the public
+     * collection constructor; only the redundant per-element null check is skipped.
+     *
+     * @param validatedConditions an already-validated, freshly created list of conditions
+     * @param marker disambiguation marker (ignored)
+     */
+    private Or(final List<? extends Condition> validatedConditions, final boolean marker) {
+        super(Operator.OR, validatedConditions, marker);
+    }
+
+    /**
      * Creates a new Or condition by adding another condition to this OR.
      * This method returns a new Or instance containing all existing conditions plus the new one.
      *
@@ -187,6 +199,6 @@ public class Or extends Junction {
 
         conditionList.add(cond);
 
-        return new Or(conditionList);
+        return new Or(conditionList, true);
     }
 }

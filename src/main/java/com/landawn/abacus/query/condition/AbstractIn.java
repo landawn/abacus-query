@@ -45,6 +45,20 @@ public abstract class AbstractIn extends ComposableCondition {
 
     private List<?> values;
 
+    /** Lazily memoized parameters (performance only). */
+    private transient ImmutableList<Object> cachedParameters;
+
+    /** Lazily memoized hashCode (0 == not computed). */
+    private transient int cachedHashCode;
+
+    /** Single-slot toString cache: last naming policy and its rendered string (performance only). */
+    private transient NamingPolicy cachedTostringNamingPolicy;
+
+    private transient String cachedTostring;
+
+    /** Lazily memoized unmodifiable view of {@link #values} (performance only). */
+    private transient List<?> cachedValuesView;
+
     /**
      * Default constructor for serialization frameworks like Kryo.
      */
@@ -97,7 +111,18 @@ public abstract class AbstractIn extends ComposableCondition {
      * @return an unmodifiable view of the values list, or {@code null} for an uninitialized instance
      */
     public List<?> getValues() { //NOSONAR
-        return values == null ? null : Collections.unmodifiableList(values);
+        if (values == null) {
+            return null;
+        }
+
+        List<?> view = cachedValuesView;
+
+        if (view == null) {
+            view = Collections.unmodifiableList(values);
+            cachedValuesView = view;
+        }
+
+        return view;
     }
 
     /**
@@ -107,6 +132,17 @@ public abstract class AbstractIn extends ComposableCondition {
      */
     @Override
     public ImmutableList<Object> getParameters() {
+        ImmutableList<Object> result = cachedParameters;
+
+        if (result == null) {
+            result = computeParameters();
+            cachedParameters = result;
+        }
+
+        return result;
+    }
+
+    private ImmutableList<Object> computeParameters() {
         if (values == null) {
             return ImmutableList.empty();
         }
@@ -137,15 +173,29 @@ public abstract class AbstractIn extends ComposableCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        if (cachedTostring != null && cachedTostringNamingPolicy == namingPolicy) {
+            return cachedTostring;
+        }
+
+        final String result = doToString(namingPolicy);
+
+        cachedTostring = result;
+        cachedTostringNamingPolicy = namingPolicy;
+
+        return result;
+    }
+
+    private String doToString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Operator op = operator();
         final String opStr = op == null ? Strings.NULL : op.toString();
 
-        final StringBuilder sb = new StringBuilder();
+        final int size = values == null ? 0 : values.size();
+        final StringBuilder sb = new StringBuilder(16 + (size << 3));
         sb.append(effectiveNamingPolicy.convert(propName)).append(SK._SPACE).append(opStr).append(SK.SPACE_PARENTHESIS_L);
 
         if (values != null) {
-            for (int i = 0; i < values.size(); i++) {
+            for (int i = 0; i < size; i++) {
                 if (i > 0) {
                     sb.append(SK.COMMA_SPACE);
                 }
@@ -164,10 +214,22 @@ public abstract class AbstractIn extends ComposableCondition {
      */
     @Override
     public int hashCode() {
-        int h = 17;
-        h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
-        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        return (h * 31) + ((values == null) ? 0 : values.hashCode());
+        int h = cachedHashCode;
+
+        if (h == 0) {
+            h = 17;
+            h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
+            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+            h = (h * 31) + ((values == null) ? 0 : values.hashCode());
+
+            if (h == 0) {
+                h = 1;
+            }
+
+            cachedHashCode = h;
+        }
+
+        return h;
     }
 
     /**

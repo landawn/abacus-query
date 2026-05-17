@@ -13,7 +13,6 @@
  */
 package com.landawn.abacus.query;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -85,6 +84,15 @@ public final class QueryUtil {
 
     private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, Tuple2<String, Boolean>>>> entityTablePropColumnNameMap2 = new ObjectPool<>(
             POOL_SIZE);
+
+    /**
+     * Caches, per entity class, the {@link PropInfo} objects resolved for that class's ID
+     * property names (in {@link #getIdPropNames} order). This avoids repeating the
+     * reflective {@code BeanInfo.getPropInfo(name)} lookups on every insert-prop-name call.
+     * A cached entry may contain {@code null} elements, mirroring the original per-call
+     * behavior when an id name does not resolve to a {@link PropInfo}.
+     */
+    private static final Map<Class<?>, PropInfo[]> idPropInfosPool = new ConcurrentHashMap<>();
 
     /**
      * Returns a mapping of property names to their corresponding column names and a flag indicating if it's a simple property.
@@ -174,10 +182,10 @@ public final class QueryUtil {
     public static ImmutableMap<String, String> getColumn2PropNameMap(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
-        ImmutableMap<String, String> result = column2PropNameNameMapPool.get(entityClass);
-
-        if (result == null) {
-            final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
+        // Backing map is a ConcurrentHashMap, so computeIfAbsent runs the (expensive)
+        // metadata build at most once per class even under concurrent first-touch.
+        return column2PropNameNameMapPool.computeIfAbsent(entityClass, cls -> {
+            final BeanInfo entityInfo = ParserUtil.getBeanInfo(cls);
             final Map<String, String> map = N.newHashMap(entityInfo.propInfoList.size() * 3);
 
             for (final PropInfo propInfo : entityInfo.propInfoList) {
@@ -189,12 +197,8 @@ public final class QueryUtil {
                 }
             }
 
-            result = ImmutableMap.copyOf(map);
-
-            column2PropNameNameMapPool.put(entityClass, result);
-        }
-
-        return result;
+            return ImmutableMap.copyOf(map);
+        });
     }
 
     /**
@@ -354,18 +358,31 @@ public final class QueryUtil {
 
         final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
 
-        final Collection<String> idPropNames = getIdPropNames(entityClass);
+        // Resolve the ID PropInfo array once per class (cached); on subsequent calls this
+        // is just a value read instead of repeated reflective BeanInfo.getPropInfo lookups.
+        // The array mirrors getIdPropNames(entityClass) order and may contain null
+        // elements where an id name does not resolve, exactly as the original per-call code.
+        final PropInfo[] idPropInfos = idPropInfosPool.computeIfAbsent(entityClass, cls -> {
+            final Collection<String> idPropNames = getIdPropNames(cls);
+            final BeanInfo entityInfo = ParserUtil.getBeanInfo(cls);
+            final PropInfo[] resolved = new PropInfo[idPropNames.size()];
+            int i = 0;
+
+            for (final String idPropName : idPropNames) {
+                resolved[i++] = entityInfo.getPropInfo(idPropName);
+            }
+
+            return resolved;
+        });
 
         // Determine the base property names based on whether ID fields have default values.
         // val[2] includes ID fields, val[3] excludes them.
         Collection<String> basePropNames = val[2];
 
-        if (!N.isEmpty(idPropNames)) {
-            final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
+        if (idPropInfos.length > 0) {
             boolean allDefault = true;
 
-            for (final String idPropName : idPropNames) {
-                final PropInfo propInfo = entityInfo.getPropInfo(idPropName);
+            for (final PropInfo propInfo : idPropInfos) {
                 if (propInfo != null) {
                     final Object propValue = propInfo.getPropValue(entity);
                     if (!SqlBuilder.isDefaultIdPropValue(propValue)) {
@@ -381,9 +398,7 @@ public final class QueryUtil {
         }
 
         if (!N.isEmpty(excludedPropNames)) {
-            final List<String> tmp = new ArrayList<>(basePropNames);
-            tmp.removeAll(excludedPropNames);
-            return tmp;
+            return N.excludeAll(basePropNames, excludedPropNames);
         }
 
         return basePropNames;
@@ -423,9 +438,8 @@ public final class QueryUtil {
         if (N.isEmpty(excludedPropNames)) {
             return propNames;
         }
-        final List<String> tmp = new ArrayList<>(propNames);
-        tmp.removeAll(excludedPropNames);
-        return tmp;
+
+        return N.excludeAll(propNames, excludedPropNames);
     }
 
     /**
@@ -513,9 +527,8 @@ public final class QueryUtil {
         if (N.isEmpty(excludedPropNames)) {
             return propNames;
         }
-        final List<String> tmp = new ArrayList<>(propNames);
-        tmp.removeAll(excludedPropNames);
-        return tmp;
+
+        return N.excludeAll(propNames, excludedPropNames);
     }
 
     /**
@@ -586,18 +599,26 @@ public final class QueryUtil {
                 || (N.notEmpty(nonColumnFields) && nonColumnFields.contains(propInfo.name));
     }
 
-    private static final Map<Integer, String> QM_CACHE = new HashMap<>();
+    // Built once in the static initializer then only read at runtime; wrapped as an
+    // immutable map to document/enforce read-only access. Cached values and the
+    // out-of-range fallback in placeholders(int) are unchanged (get(...) still
+    // returns null for keys that were never populated).
+    private static final Map<Integer, String> QM_CACHE;
 
     static {
+        final Map<Integer, String> qmCache = new HashMap<>();
+
         for (int i = 0; i <= 30; i++) {
-            QM_CACHE.put(i, Strings.repeat("?", i, ", "));
+            qmCache.put(i, Strings.repeat("?", i, ", "));
         }
 
-        QM_CACHE.put(100, Strings.repeat("?", 100, ", "));
-        QM_CACHE.put(200, Strings.repeat("?", 200, ", "));
-        QM_CACHE.put(300, Strings.repeat("?", 300, ", "));
-        QM_CACHE.put(500, Strings.repeat("?", 500, ", "));
-        QM_CACHE.put(1000, Strings.repeat("?", 1000, ", "));
+        qmCache.put(100, Strings.repeat("?", 100, ", "));
+        qmCache.put(200, Strings.repeat("?", 200, ", "));
+        qmCache.put(300, Strings.repeat("?", 300, ", "));
+        qmCache.put(500, Strings.repeat("?", 500, ", "));
+        qmCache.put(1000, Strings.repeat("?", 1000, ", "));
+
+        QM_CACHE = ImmutableMap.wrap(qmCache);
     }
 
     /**

@@ -74,6 +74,26 @@ public final class SqlParser {
 
     private static final Set<Object> separators = ConcurrentHashMap.newKeySet();
 
+    /**
+     * Primitive lookup for single-character ASCII separators, derived from the single-character
+     * entries of {@link #separators} to avoid Character autoboxing + Set lookup on the per-char
+     * hot path. Rebuilt whenever a single-character separator is registered so it can't drift.
+     * Non-ASCII / multi-char entries still fall back to {@link #separators}.
+     */
+    private static volatile boolean[] ASCII_SEPARATOR = new boolean[128];
+
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+
+    /**
+     * Multi-character separators grouped by length: {@code multiCharSeparatorsByLen[L]} holds all
+     * registered separators of length {@code L} (index 0 and 1 are unused/empty). Derived from the
+     * {@code String} entries of {@link #separators} so it cannot drift. Used by
+     * {@link #matchMultiCharSeparator} to compare characters directly against candidates instead of
+     * allocating a {@code substring} per probe. The returned separator instance and chosen length
+     * are identical to a {@code separators}-backed substring lookup (longest match first).
+     */
+    private static volatile String[][] multiCharSeparatorsByLen = new String[1][0];
+
     static {
         separators.add(TAB);
         separators.add(ENTER);
@@ -162,9 +182,64 @@ public final class SqlParser {
                 maxSeparatorLength.set(separatorStr.length());
             }
         }
+
+        rebuildAsciiSeparatorTable();
+        rebuildMultiCharSeparatorTable();
+    }
+
+    private static void rebuildAsciiSeparatorTable() {
+        final boolean[] table = new boolean[128];
+
+        for (final Object separator : separators) {
+            if (separator instanceof final Character ch) {
+                final char c = ch;
+
+                if (c < 128) {
+                    table[c] = true;
+                }
+            }
+        }
+
+        ASCII_SEPARATOR = table;
+    }
+
+    private static void rebuildMultiCharSeparatorTable() {
+        int maxLen = 1;
+
+        for (final Object separator : separators) {
+            if (separator instanceof final String s && s.length() > maxLen) {
+                maxLen = s.length();
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        final List<String>[] buckets = new List[maxLen + 1];
+
+        for (final Object separator : separators) {
+            if (separator instanceof final String s && s.length() > 1) {
+                final int l = s.length();
+
+                if (buckets[l] == null) {
+                    buckets[l] = new ArrayList<>();
+                }
+
+                buckets[l].add(s);
+            }
+        }
+
+        final String[][] table = new String[maxLen + 1][];
+
+        for (int l = 0; l <= maxLen; l++) {
+            table[l] = buckets[l] == null ? EMPTY_STRING_ARRAY : buckets[l].toArray(new String[0]);
+        }
+
+        multiCharSeparatorsByLen = table;
     }
 
     private static final Map<String, String[]> compositeWords = new ConcurrentHashMap<>(64);
+
+    /** Reused space-splitter (immutable config) instead of constructing one per split call. */
+    private static final Splitter WORD_SPLITTER = Splitter.with(SK.SPACE).trimResults();
 
     static {
         compositeWords.put(SK.LEFT_JOIN, new String[] { "LEFT", "JOIN" });
@@ -198,13 +273,13 @@ public final class SqlParser {
             e = e.toLowerCase(Locale.ROOT);
 
             if (!compositeWords.containsKey(e)) {
-                compositeWords.put(e, Splitter.with(SK.SPACE).trimResults().splitToArray(e));
+                compositeWords.put(e, WORD_SPLITTER.splitToArray(e));
             }
 
             e = e.toUpperCase(Locale.ROOT);
 
             if (!compositeWords.containsKey(e)) {
-                compositeWords.put(e, Splitter.with(SK.SPACE).trimResults().splitToArray(e));
+                compositeWords.put(e, WORD_SPLITTER.splitToArray(e));
             }
         }
     }
@@ -237,11 +312,16 @@ public final class SqlParser {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
-            final List<String> words = new ArrayList<>();
+            final List<String> words = new ArrayList<>(Math.max(16, sqlLength / 4));
 
             String temp = "";
             char quoteChar = 0;
             int keepComments = -1;
+            // Forward-running backslash parity: true iff the char at the current `index` is
+            // immediately preceded by an ODD number of consecutive backslashes. Maintained while
+            // consuming a quoted region so the closing-quote escape decision is identical to the
+            // previous O(n) backward backslash scan, without the O(n^2) worst case.
+            boolean bsEscaped = false;
 
             for (int index = 0; index < sqlLength; index++) {
                 // TODO [performance improvement]. will it improve performance if
@@ -257,22 +337,24 @@ public final class SqlParser {
                     if (c == quoteChar) {
                         if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
                             sb.append(sql.charAt(++index));
+                            // Two quote chars consumed (non-backslash) -> run parity is even.
+                            bsEscaped = false;
+                        } else if (!bsEscaped) {
+                            // Even count (including 0) of preceding backslashes -> quote NOT escaped.
+                            words.add(sb.toString());
+                            sb.setLength(0);
+
+                            quoteChar = 0;
+                            bsEscaped = false;
                         } else {
-                            // Count consecutive backslashes before this quote.
-                            // Even count (including 0) means the quote is NOT escaped.
-                            int backslashCount = 0;
-
-                            for (int k = index - 1; k >= 0 && sql.charAt(k) == '\\'; k--) {
-                                backslashCount++;
-                            }
-
-                            if (backslashCount % 2 == 0) {
-                                words.add(sb.toString());
-                                sb.setLength(0);
-
-                                quoteChar = 0;
-                            }
+                            // Escaped closing quote: stays in the string. The quote char itself
+                            // is not a backslash, so the run parity resets to even.
+                            bsEscaped = false;
                         }
+                    } else if (c == '\\') {
+                        bsEscaped = !bsEscaped;
+                    } else {
+                        bsEscaped = false;
                     }
                 } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
                     if (!sb.isEmpty()) {
@@ -394,6 +476,8 @@ public final class SqlParser {
 
                     if ((c == SK._SINGLE_QUOTE) || (c == SK._DOUBLE_QUOTE)) {
                         quoteChar = c;
+                        // Opening quote char is non-backslash -> first content char has even parity.
+                        bsEscaped = false;
                     }
                 }
             }
@@ -444,12 +528,17 @@ public final class SqlParser {
         String[] subWords = compositeWords.get(word);
 
         if (subWords == null) {
-            subWords = Splitter.with(SK.SPACE).trimResults().splitToArray(word);
-            compositeWords.put(word, subWords);
+            subWords = WORD_SPLITTER.splitToArray(word);
+
+            // Only cache genuinely composite words (>1 sub-token). Caching every distinct single
+            // word ever queried grew the map unboundedly; single-token splits are cheap to redo.
+            if (subWords.length > 1) {
+                compositeWords.put(word, subWords);
+            }
         }
 
         //noinspection IfStatementWithIdenticalBranches
-        if ((subWords == null) || (subWords.length <= 1)) {
+        if (N.len(subWords) <= 1) {
             final StringBuilder sb = Objectory.createStringBuilder();
 
             try {
@@ -457,6 +546,9 @@ public final class SqlParser {
                 final int sqlLength = sql.length();
                 String temp = "";
                 char quoteChar = 0;
+                // Forward-running backslash parity (see parse()): true iff the char at the current
+                // `index` is preceded by an ODD number of consecutive backslashes.
+                boolean bsEscaped = false;
 
                 for (int index = Math.max(0, fromIndex); index < sqlLength; index++) {
                     final char c = sql.charAt(index);
@@ -469,28 +561,28 @@ public final class SqlParser {
                         if (c == quoteChar) {
                             if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
                                 sb.append(sql.charAt(++index));
+                                bsEscaped = false;
+                            } else if (!bsEscaped) {
+                                // Even count (including 0) of preceding backslashes -> NOT escaped.
+                                temp = sb.toString();
+
+                                if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                                    result = index - word.length() + 1;
+
+                                    break;
+                                }
+
+                                sb.setLength(0);
+                                quoteChar = 0;
+                                bsEscaped = false;
                             } else {
-                                // Count consecutive backslashes before this quote.
-                                // Even count (including 0) means the quote is NOT escaped.
-                                int backslashCount = 0;
-
-                                for (int k = index - 1; k >= 0 && sql.charAt(k) == '\\'; k--) {
-                                    backslashCount++;
-                                }
-
-                                if (backslashCount % 2 == 0) {
-                                    temp = sb.toString();
-
-                                    if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                                        result = index - word.length() + 1;
-
-                                        break;
-                                    }
-
-                                    sb.setLength(0);
-                                    quoteChar = 0;
-                                }
+                                // Escaped closing quote: stays in the string.
+                                bsEscaped = false;
                             }
+                        } else if (c == '\\') {
+                            bsEscaped = !bsEscaped;
+                        } else {
+                            bsEscaped = false;
                         }
                     } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
                         // Skip single-line comment (-- ...)
@@ -577,6 +669,7 @@ public final class SqlParser {
 
                         if ((c == SK._SINGLE_QUOTE) || (c == SK._DOUBLE_QUOTE)) {
                             quoteChar = c;
+                            bsEscaped = false;
                         }
                     }
                 }
@@ -665,6 +758,9 @@ public final class SqlParser {
         try {
             String temp = "";
             char quoteChar = 0;
+            // Forward-running backslash parity (see parse()): true iff the char at the current
+            // `index` is preceded by an ODD number of consecutive backslashes.
+            boolean bsEscaped = false;
 
             for (int index = Math.max(0, fromIndex); index < sqlLength; index++) {
                 final char c = sql.charAt(index);
@@ -677,19 +773,18 @@ public final class SqlParser {
                     if (c == quoteChar) {
                         if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
                             sb.append(sql.charAt(++index));
+                            bsEscaped = false;
+                        } else if (!bsEscaped) {
+                            // Even count (including 0) of preceding backslashes -> NOT escaped.
+                            break;
                         } else {
-                            // Count consecutive backslashes before this quote.
-                            // Even count (including 0) means the quote is NOT escaped.
-                            int backslashCount = 0;
-
-                            for (int k = index - 1; k >= 0 && sql.charAt(k) == '\\'; k--) {
-                                backslashCount++;
-                            }
-
-                            if (backslashCount % 2 == 0) {
-                                break;
-                            }
+                            // Escaped closing quote: stays in the string.
+                            bsEscaped = false;
                         }
+                    } else if (c == '\\') {
+                        bsEscaped = !bsEscaped;
+                    } else {
+                        bsEscaped = false;
                     }
                 } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
                     // Skip single-line comment (-- ...)
@@ -747,6 +842,7 @@ public final class SqlParser {
 
                     if ((c == SK._SINGLE_QUOTE) || (c == SK._DOUBLE_QUOTE)) {
                         quoteChar = c;
+                        bsEscaped = false;
                     }
                 }
             }
@@ -773,6 +869,10 @@ public final class SqlParser {
      */
     public static void registerSeparator(final char separator) {
         separators.add(separator);
+
+        if (separator < 128) {
+            rebuildAsciiSeparatorTable();
+        }
     }
 
     /**
@@ -799,6 +899,12 @@ public final class SqlParser {
 
         if (separator.length() == 1) {
             separators.add(separator.charAt(0));
+
+            if (separator.charAt(0) < 128) {
+                rebuildAsciiSeparatorTable();
+            }
+        } else {
+            rebuildMultiCharSeparatorTable();
         }
 
         if (separator.length() > maxSeparatorLength.get()) {
@@ -847,7 +953,7 @@ public final class SqlParser {
             return false;
         }
 
-        if (separators.contains(ch)) {
+        if (ch < 128 ? ASCII_SEPARATOR[ch] : separators.contains(ch)) {
             return true;
         }
 
@@ -912,13 +1018,29 @@ public final class SqlParser {
     }
 
     private static String matchMultiCharSeparator(final String str, final int len, final int index) {
-        final int maxLen = Math.min(maxSeparatorLength.get(), len - index);
+        final String[][] byLen = multiCharSeparatorsByLen;
+        // Same cap as before: longest registered separator vs. remaining input length.
+        int maxLen = Math.min(maxSeparatorLength.get(), len - index);
 
+        if (maxLen > byLen.length - 1) {
+            maxLen = byLen.length - 1;
+        }
+
+        // Longest match first, identical to the previous substring + Set.contains probe order,
+        // but compares characters directly so no String is allocated per probe.
         for (int sepLen = maxLen; sepLen > 1; sepLen--) {
-            final String separator = str.substring(index, index + sepLen);
+            final String[] candidates = byLen[sepLen];
 
-            if (separators.contains(separator)) {
-                return separator;
+            outer: for (int ci = 0, cn = candidates.length; ci < cn; ci++) {
+                final String candidate = candidates[ci];
+
+                for (int k = 0; k < sepLen; k++) {
+                    if (str.charAt(index + k) != candidate.charAt(k)) {
+                        continue outer;
+                    }
+                }
+
+                return candidate;
             }
         }
 

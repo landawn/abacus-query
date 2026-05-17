@@ -134,6 +134,14 @@ public class Expression extends ComposableCondition {
     // For Kryo
     final String literal;
 
+    /** Single-slot toString cache: last naming policy and its rendered string (performance only). */
+    private transient NamingPolicy cachedTostringNamingPolicy;
+
+    private transient String cachedTostring;
+
+    /** Lazily memoized {@link SqlParser#parse(String)} result for {@link #literal} (performance only). */
+    private transient List<String> cachedParsedLiteral;
+
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized Expression instance and should not be used
@@ -1671,6 +1679,19 @@ public class Expression extends ComposableCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        if (cachedTostring != null && cachedTostringNamingPolicy == namingPolicy) {
+            return cachedTostring;
+        }
+
+        final String result = doToString(namingPolicy);
+
+        cachedTostring = result;
+        cachedTostringNamingPolicy = namingPolicy;
+
+        return result;
+    }
+
+    private String doToString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
 
         if (literal == null) {
@@ -1683,7 +1704,13 @@ public class Expression extends ComposableCondition {
             return effectiveNamingPolicy.convert(literal);
         }
 
-        final List<String> words = SqlParser.parse(literal);
+        List<String> words = cachedParsedLiteral;
+
+        if (words == null) {
+            words = SqlParser.parse(literal);
+            cachedParsedLiteral = words;
+        }
+
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
