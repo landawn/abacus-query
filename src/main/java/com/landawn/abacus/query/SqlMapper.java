@@ -218,10 +218,10 @@ public final class SqlMapper {
                     logger.debug("Loaded {} SQL statements from file: {}", sqlElementList.size(), file.getAbsolutePath());
                 }
             } catch (final IOException e) {
-                logger.error("Failed to load SQL mapper due to I/O error: {}", file.getAbsolutePath());
+                logger.error(e, "Failed to load SQL mapper due to I/O error: {}", file.getAbsolutePath());
                 throw new UncheckedIOException(e);
             } catch (final SAXException e) {
-                logger.error("Failed to load SQL mapper due to XML parsing error: {}", file.getAbsolutePath());
+                logger.error(e, "Failed to load SQL mapper due to XML parsing error: {}", file.getAbsolutePath());
                 throw new ParsingException(e);
             }
         }

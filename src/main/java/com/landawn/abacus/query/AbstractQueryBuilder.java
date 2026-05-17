@@ -475,8 +475,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final int activeBuilderCount = activeStringBuilderCounter.incrementAndGet();
 
         if (activeBuilderCount > 1024) {
-            logger.error("Too many(" + activeBuilderCount + ") StringBuilder instances are created in AbstractQueryBuilder. The method build()"
-                    + " must be called to release resources and close the builder");
+            logger.error("Too many ({}) StringBuilder instances are created in AbstractQueryBuilder. "
+                    + "The method build() must be called to release resources and close the builder", activeBuilderCount);
         } else if (activeBuilderCount > 512 && logger.isWarnEnabled()) {
             logger.warn("{} active StringBuilder instances in AbstractQueryBuilder. The method build() must be called to release resources",
                     activeBuilderCount);
