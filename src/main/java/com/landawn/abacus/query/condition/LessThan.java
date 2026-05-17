@@ -20,7 +20,7 @@ package com.landawn.abacus.query.condition;
  * a specified value. The less-than operator is fundamental for implementing exclusive
  * upper bounds, range queries, and various filtering scenarios.
  *
- * <p>Common use cases include:
+ * <p>Common use cases include:</p>
  * <ul>
  *   <li>Setting exclusive upper bounds on numeric values</li>
  *   <li>Date comparisons (before a certain date)</li>
@@ -29,7 +29,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Age restrictions, expiration checks, and limit validations</li>
  * </ul>
  *
- * <p>The operator works with various data types:
+ * <p>The operator works with various data types:</p>
  * <ul>
  *   <li>Numbers: Natural numeric comparison</li>
  *   <li>Dates/Times: Chronological comparison</li>

@@ -21,8 +21,6 @@ import java.util.Set;
 import java.util.function.Function;
 
 import com.landawn.abacus.annotation.Beta;
-import com.landawn.abacus.query.SqlBuilder.NSC;
-import com.landawn.abacus.query.SqlBuilder.PSC;
 import com.landawn.abacus.util.N;
 
 import lombok.AllArgsConstructor;
@@ -300,10 +298,10 @@ public final class Selection {
          * @param func the function to apply the built selections to (e.g., {@code PSC::select}, {@code NSC::selectFrom}); must not be {@code null}
          * @return the SqlBuilder instance returned by the function
          * @throws IllegalArgumentException if {@code func} is {@code null}
-         * @see PSC#select(List)
-         * @see PSC#selectFrom(List)
-         * @see NSC#select(List)
-         * @see NSC#selectFrom(List)
+         * @see SqlBuilder.PSC#select(List)
+         * @see SqlBuilder.PSC#selectFrom(List)
+         * @see SqlBuilder.NSC#select(List)
+         * @see SqlBuilder.NSC#selectFrom(List)
          */
         @Beta
         public SqlBuilder apply(final Function<? super List<Selection>, SqlBuilder> func) {

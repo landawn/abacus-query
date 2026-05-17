@@ -21,13 +21,13 @@ package com.landawn.abacus.query.condition;
  * capabilities that go beyond simple equality checks, making it essential for search
  * functionality and text filtering.
  *
- * <p>The LIKE operator supports two standard SQL wildcards:
+ * <p>The LIKE operator supports two standard SQL wildcards:</p>
  * <ul>
  *   <li>% (percent sign): Matches any sequence of zero or more characters</li>
  *   <li>_ (underscore): Matches any single character</li>
  * </ul>
  * 
- * <p>Common use cases include:
+ * <p>Common use cases include:</p>
  * <ul>
  *   <li>Searching for partial matches in text fields</li>
  *   <li>Finding records that start with, end with, or contain specific patterns</li>
@@ -36,7 +36,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Autocomplete and type-ahead features</li>
  * </ul>
  * 
- * <p>Performance considerations:
+ * <p>Performance considerations:</p>
  * <ul>
  *   <li>Patterns starting with % prevent index usage (full table scan)</li>
  *   <li>Patterns starting with literal characters can use indexes efficiently</li>

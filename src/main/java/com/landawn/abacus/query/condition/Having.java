@@ -21,7 +21,7 @@ package com.landawn.abacus.query.condition;
  * Unlike WHERE, which filters individual rows before grouping, HAVING filters entire groups after
  * aggregation has been performed.
  *
- * <p>Key differences between WHERE and HAVING:
+ * <p>Key differences between WHERE and HAVING:</p>
  * <ul>
  *   <li>WHERE filters rows before grouping; HAVING filters groups after aggregation</li>
  *   <li>WHERE cannot use aggregate functions; HAVING is designed for aggregate function conditions</li>
@@ -29,7 +29,7 @@ package com.landawn.abacus.query.condition;
  *   <li>WHERE is more efficient for filtering individual rows; HAVING for filtering aggregated results</li>
  * </ul>
  *
- * <p>Common use cases for HAVING:
+ * <p>Common use cases for HAVING:</p>
  * <ul>
  *   <li>Finding groups with counts above/below a threshold</li>
  *   <li>Filtering based on sum, average, min, or max values</li>

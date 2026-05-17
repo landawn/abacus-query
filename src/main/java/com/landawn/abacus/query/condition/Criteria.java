@@ -96,7 +96,8 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Returns all JOIN clauses (INNER, LEFT, RIGHT, FULL, CROSS, NATURAL) in the order they were added.
+     * Returns all JOIN clauses (JOIN, INNER JOIN, LEFT JOIN, RIGHT JOIN, FULL JOIN, CROSS JOIN, NATURAL JOIN)
+     * in the order they were added.
      *
      * @return an unmodifiable list of {@link Join} conditions; empty if none exist
      */
@@ -209,7 +210,8 @@ public class Criteria extends AbstractCondition {
      * Collects parameters from all conditions in SQL clause order:
      * JOIN, WHERE, GROUP BY, HAVING, set operations, ORDER BY, LIMIT.
      *
-     * @return an immutable list of all parameters; empty if this criteria has no conditions
+     * @return an immutable list of all parameters collected from the constituent clauses;
+     *         empty if this criteria has no conditions or if none of the conditions carry parameters
      */
     @Override
     public ImmutableList<Object> getParameters() {
@@ -558,8 +560,7 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Adds a simple INNER JOIN to this criteria.
-         * This creates a join without an explicit condition.
+         * Adds a plain JOIN (no explicit type keyword) to this criteria, without an explicit condition.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -580,9 +581,8 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Adds an INNER JOIN with a condition to this criteria.
-         * This is the most common form of join.
-         * 
+         * Adds a plain JOIN (no explicit type keyword) with a condition to this criteria.
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria criteria = Criteria.builder()
@@ -591,7 +591,7 @@ public class Criteria extends AbstractCondition {
          *     .build();
          * // Results in: JOIN orders ON users.id = orders.user_id WHERE users.status = 'active'
          * }</pre>
-         * 
+         *
          * @param joinEntity the table or entity to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
@@ -603,15 +603,15 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Adds an INNER JOIN with multiple entities and a condition.
-         * 
+         * Adds a plain JOIN (no explicit type keyword) with multiple entities and a condition to this criteria.
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Collection<String> tables = Arrays.asList("orders", "order_items");
          * Criteria.Builder builder = Criteria.builder()
          *     .join(tables, new On("id", "order_id"));
          * }</pre>
-         * 
+         *
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
          * @return this Builder instance for method chaining

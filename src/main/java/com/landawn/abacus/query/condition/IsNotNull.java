@@ -76,9 +76,10 @@ public class IsNotNull extends IsNot {
      * This is essential for data validation and ensuring required fields are populated.
      *
      * <p>The generated SQL uses the {@code IS NOT NULL} operator (not {@code != NULL}) because
-     * {@code NULL} comparisons have special semantics in SQL: {@code NULL != NULL} evaluates to
-     * UNKNOWN (which behaves as {@code false} in WHERE clauses), whereas {@code NULL IS NOT NULL}
-     * correctly evaluates to {@code false}, unambiguously indicating that the value is absent.
+     * {@code NULL} comparisons have special semantics in SQL: {@code expr != NULL} always evaluates to
+     * UNKNOWN regardless of {@code expr}'s value (which behaves as {@code false} in WHERE clauses,
+     * so no rows would ever match). {@code IS NOT NULL} returns {@code true} for non-null values
+     * and {@code false} for null values, giving the correct and predictable filtering behavior.
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

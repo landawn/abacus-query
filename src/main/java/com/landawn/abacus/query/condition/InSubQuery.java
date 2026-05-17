@@ -22,7 +22,7 @@ import java.util.Collection;
  * in the result set of a subquery. It's commonly used for filtering records based on
  * values from another table or complex query result.
  *
- * <p>The IN subquery condition is particularly useful when:
+ * <p>The IN subquery condition is particularly useful when:</p>
  * <ul>
  *   <li>Filtering based on dynamic result sets from other tables</li>
  *   <li>Avoiding joins when only checking existence</li>
@@ -30,7 +30,7 @@ import java.util.Collection;
  *   <li>Checking multiple column combinations against subquery results</li>
  * </ul>
  *
- * <p>This condition supports two forms:
+ * <p>This condition supports two forms:</p>
  * <ul>
  *   <li>Single column: {@code column IN (SELECT ... FROM ...)}</li>
  *   <li>Multiple columns: {@code (column1, column2) IN (SELECT col1, col2 FROM ...)}</li>

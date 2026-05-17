@@ -24,7 +24,7 @@ import com.landawn.abacus.query.Filters;
  * distinct from empty string, zero, or false.
  * 
  * <p>NULL represents the absence of a value and is different from empty string or zero.
- * In SQL, NULL has special properties:
+ * In SQL, NULL has special properties:</p>
  * <ul>
  *   <li>NULL is not equal to anything, including itself (NULL = NULL evaluates to UNKNOWN, not true or false)</li>
  *   <li>Any arithmetic operation with NULL results in NULL</li>
@@ -32,7 +32,7 @@ import com.landawn.abacus.query.Filters;
  *   <li>NULL values require special IS NULL/IS NOT NULL operators for comparison</li>
  * </ul>
  * 
- * <p>This condition is essential for:
+ * <p>This condition is essential for:</p>
  * <ul>
  *   <li>Finding missing or unset data</li>
  *   <li>Data quality checks and validation</li>
@@ -93,7 +93,7 @@ public class IsNull extends Is {
      * <p>The generated SQL uses the {@code IS NULL} operator (not {@code = NULL}) because
      * {@code NULL} comparisons have special semantics in SQL: {@code NULL = NULL} evaluates to
      * UNKNOWN (which behaves as {@code false} in WHERE clauses), whereas {@code NULL IS NULL}
-     * correctly evaluates to {@code true}.
+     * correctly evaluates to {@code true}.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

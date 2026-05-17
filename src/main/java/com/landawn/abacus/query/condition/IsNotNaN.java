@@ -30,7 +30,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Statistical analyses require valid numeric data</li>
  * </ul>
  * 
- * <p>This condition is useful for:
+ * <p>This condition is useful for:</p>
  * <ul>
  *   <li>Filtering out invalid numeric values before calculations</li>
  *   <li>Ensuring data quality in numeric columns</li>

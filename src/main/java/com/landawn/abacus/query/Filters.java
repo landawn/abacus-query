@@ -101,7 +101,7 @@ import com.landawn.abacus.util.SK;
  *   <li><b>Pattern Matching:</b> {@code like}, {@code notLike}, {@code contains}, {@code startsWith}, {@code endsWith}</li>
  *   <li><b>Null Checks:</b> {@code isNull}, {@code isNotNull}</li>
  *   <li><b>Logical:</b> {@code and}, {@code or}, {@code not}</li>
- *   <li><b>Subquery:</b> {@code exists}, {@code notExists}, {@code inSubQuery}, {@code notInSubQuery}</li>
+ *   <li><b>Subquery:</b> {@code exists}, {@code notExists}, {@code in(String, SubQuery)}, {@code notIn(String, SubQuery)}</li>
  *   <li><b>Joins:</b> {@code join}, {@code leftJoin}, {@code rightJoin}, {@code innerJoin}, {@code fullJoin}</li>
  * </ul>
  *
@@ -155,16 +155,16 @@ public class Filters {
 
     /**
      * Returns a condition that always evaluates to true.
-     * Useful for building dynamic queries where a condition might be conditionally included.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Condition condition = includeFilter ? Filters.equal("status", "active") 
+     * Condition condition = includeFilter ? Filters.equal("status", "active")
      *                                    : Filters.alwaysTrue();
      * }</pre>
      *
      * @return an {@link Expression} that always evaluates to true (1 &lt; 2)
      * @deprecated dangerous; could silently bypass all filtering, returning all rows.
+     *             Avoid using this method; restructure the conditional logic instead.
      */
     @Deprecated
     public static Expression alwaysTrue() {
@@ -182,6 +182,7 @@ public class Filters {
      *
      * @return an {@link Expression} that always evaluates to false (1 &gt; 2)
      * @deprecated dangerous; could silently return zero rows.
+     *             Avoid using this method; restructure the conditional logic instead.
      */
     @Deprecated
     public static Expression alwaysFalse() {
@@ -3273,19 +3274,21 @@ public class Filters {
 
     /**
      * Creates a SubQuery from an entity class with selected properties and condition.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = Filters.subQuery(User.class, 
+     * SubQuery subQuery = Filters.subQuery(User.class,
      *     Arrays.asList("id", "name"),
      *     Filters.equal("active", true));
      * // Generates subquery based on User entity
      * }</pre>
      *
-     * @param entityClass the entity class representing the table
-     * @param propNames collection of property names to select
-     * @param cond the WHERE condition for the subquery
+     * @param entityClass the entity class representing the table (must not be {@code null})
+     * @param propNames collection of property names to select (must not be {@code null} or empty)
+     * @param cond the WHERE condition for the subquery; may be {@code null} for no WHERE clause
      * @return a SubQuery
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, or if {@code propNames} is
+     *         {@code null} or empty, or if {@code cond} uses an {@code ON}/{@code USING} operator
      */
     public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition cond) {
         return new SubQuery(entityClass, propNames, cond);
@@ -3293,7 +3296,7 @@ public class Filters {
 
     /**
      * Creates a SubQuery from an entity name with selected properties and condition.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("users",
@@ -3301,18 +3304,21 @@ public class Filters {
      *     Filters.like("email", "%@company.com"));
      * }</pre>
      *
-     * @param entityName the entity/table name
-     * @param propNames collection of property names to select
-     * @param cond the WHERE condition for the subquery
+     * @param entityName the entity/table name (must not be {@code null} or empty)
+     * @param propNames collection of property names to select (must not be {@code null} or empty)
+     * @param cond the WHERE condition for the subquery; may be {@code null} for no WHERE clause
      * @return a SubQuery
+     * @throws IllegalArgumentException if {@code entityName} is {@code null} or empty, or if
+     *         {@code propNames} is {@code null} or empty, or if {@code cond} uses an
+     *         {@code ON}/{@code USING} operator
      */
     public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final Condition cond) {
         return new SubQuery(entityName, propNames, cond);
     }
 
     /**
-     * Creates a SubQuery from an entity name with selected properties and string condition.
-     * 
+     * Creates a SubQuery from an entity name with selected properties and a raw SQL condition string.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("products",
@@ -3320,10 +3326,12 @@ public class Filters {
      *     "category = 'electronics' AND in_stock = true");
      * }</pre>
      *
-     * @param entityName the entity/table name
-     * @param propNames collection of property names to select
-     * @param expr the WHERE condition as a string
+     * @param entityName the entity/table name (must not be {@code null} or empty)
+     * @param propNames collection of property names to select (must not be {@code null} or empty)
+     * @param expr the WHERE condition as a raw SQL string
      * @return a SubQuery
+     * @throws IllegalArgumentException if {@code entityName} is {@code null} or empty,
+     *         or if {@code propNames} is {@code null} or empty
      */
     public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final String expr) {
         return new SubQuery(entityName, propNames, expr(expr));

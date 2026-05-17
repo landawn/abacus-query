@@ -22,12 +22,12 @@ package com.landawn.abacus.query.condition;
  * the value does not match the specified pattern. This is particularly useful for
  * excluding records based on pattern matching.</p>
  *
- * <p>The NOT LIKE operator supports two standard SQL wildcards:
+ * <p>The NOT LIKE operator supports two standard SQL wildcards:</p>
  * <ul>
  *   <li>% (percent sign): Matches any sequence of zero or more characters</li>
  *   <li>_ (underscore): Matches any single character</li>
  * </ul>
- * 
+ *
  * <p>Common use cases:</p>
  * <ul>
  *   <li>Exclude records with specific prefixes or suffixes</li>

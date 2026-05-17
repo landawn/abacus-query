@@ -155,9 +155,11 @@ public class And extends Junction {
      * // extended is a new instance with all conditions
      * }</pre>
      *
-     * @param cond the condition to add to this AND (must not be {@code null})
+     * @param cond the condition to add to this AND. Must not be {@code null} and must not
+     *             be a clause or join condition (ON/USING) that cannot be composed.
      * @return a new {@link And} condition containing all existing conditions plus the new one
-     * @throws IllegalArgumentException if {@code cond} is {@code null} or has a non-composable operator
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond}
+     *             is a clause or join condition (ON/USING) that cannot be composed
      */
     @Override
     public And and(final Condition cond) {

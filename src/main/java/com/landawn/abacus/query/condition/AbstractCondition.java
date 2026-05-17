@@ -211,7 +211,7 @@ public abstract class AbstractCondition implements Condition {
      *   <li>Strings are wrapped in single quotes with embedded single/double quotes escaped via {@link #escapeStringLiteral(String)}
      *       (e.g., {@code John} -&gt; {@code 'John'}; {@code O'Brien} -&gt; {@code 'O\'Brien'})</li>
      *   <li>{@link Condition} values use the recursive {@code toString(namingPolicy)}; a {@link SubQuery} is additionally
-     *       wrapped in parentheses, and the {@link IsNull#NULL}, {@link IsNaN#NAN}, and {@link IsInfinite#INFINITE}
+     *       wrapped in parentheses, and the {@code IsNull.NULL}, {@code IsNaN.NAN}, and {@code IsInfinite.INFINITE}
      *       sentinels use their plain {@code toString()}</li>
      *   <li>{@link Number} and {@link Boolean} values use their {@code toString()} unchanged (no quoting).
      *       {@link Float#NaN}/{@link Double#NaN}/infinity values cause an {@link IllegalArgumentException} because

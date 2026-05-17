@@ -14842,7 +14842,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // Output: SELECT first_Name, last_NaMe FROM account WHERE last_NaMe = #{last_NaMe}
      * }</pre>
      * 
-     * @deprecated Use {@link NSB} or other non-deprecated builders instead
+     * @deprecated Use {@link NSB} or other non-deprecated builders instead.
+     * Note: Switching from MSB to NSB changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
     public static class MSB extends SqlBuilder {
@@ -16105,7 +16106,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // Output: INSERT INTO account (first_name, last_name) VALUES (#{firstName}, #{lastName})
      * }</pre>
      * 
-     * @deprecated Use {@link NSC} or other non-deprecated builders instead
+     * @deprecated Use {@link NSC} or other non-deprecated builders instead.
+     * Note: Switching from MSC to NSC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
     public static class MSC extends SqlBuilder {

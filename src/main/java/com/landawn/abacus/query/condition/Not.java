@@ -15,11 +15,11 @@
 package com.landawn.abacus.query.condition;
 
 /**
- * Represents a NOT composable operator in SQL conditions.
+ * Represents a logical NOT condition in SQL queries.
  * This class negates the result of any given condition, reversing its boolean logic.
- * It's a fundamental composable operator used to invert query conditions.
+ * It is a fundamental composable condition used to invert query conditions.
  * 
- * <p>The NOT operator is particularly useful for:
+ * <p>The NOT operator is particularly useful for:</p>
  * <ul>
  *   <li>Negating complex conditions without rewriting them</li>
  *   <li>Creating more readable queries by expressing what you don't want</li>
@@ -27,7 +27,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Building flexible query builders that can toggle conditions</li>
  * </ul>
  * 
- * <p>Truth table:
+ * <p>Truth table:</p>
  * <ul>
  *   <li>{@code NOT TRUE = FALSE}</li>
  *   <li>{@code NOT FALSE = TRUE}</li>

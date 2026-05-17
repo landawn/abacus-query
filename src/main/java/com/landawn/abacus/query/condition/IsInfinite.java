@@ -23,7 +23,7 @@ import com.landawn.abacus.query.Filters;
  * This condition is useful for identifying numeric overflow conditions and special
  * calculation results.
  * 
- * <p>In floating-point arithmetic, infinity can result from various operations:
+ * <p>In floating-point arithmetic, infinity can result from various operations:</p>
  * <ul>
  *   <li>Division by zero with non-zero numerator (e.g., 1.0/0.0 = Infinity, -1.0/0.0 = -Infinity)</li>
  *   <li>Operations that exceed the maximum representable value (overflow)</li>
@@ -31,7 +31,7 @@ import com.landawn.abacus.query.Filters;
  *   <li>Accumulation in iterative calculations that grow without bound</li>
  * </ul>
  * 
- * <p>Common scenarios where checking for infinity is important:
+ * <p>Common scenarios where checking for infinity is important:</p>
  * <ul>
  *   <li>Data quality validation after calculations</li>
  *   <li>Identifying division by zero errors</li>
@@ -95,7 +95,7 @@ public class IsInfinite extends Is {
      * are not a portable way to test for infinity: there is no standard SQL literal that
      * matches "either positive or negative infinity", and infinity participates in special
      * arithmetic (for example, {@code infinity - infinity} is NaN), so {@code IS INFINITE}
-     * is the reliable way to identify such values.
+     * is the reliable way to identify such values.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

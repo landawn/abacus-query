@@ -23,7 +23,7 @@ import com.landawn.abacus.query.Filters;
  * undefined or unrepresentable mathematical results.
  * 
  * <p>NaN (Not a Number) is a special floating-point value that represents an undefined
- * or unrepresentable value, typically resulting from invalid mathematical operations:
+ * or unrepresentable value, typically resulting from invalid mathematical operations:</p>
  * <ul>
  *   <li>0/0 (zero divided by zero)</li>
  *   <li>∞/∞ (infinity divided by infinity)</li>

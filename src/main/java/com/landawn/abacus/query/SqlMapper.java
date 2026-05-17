@@ -370,10 +370,12 @@ public final class SqlMapper {
 
     /**
      * Validates the SQL identifier according to the following rules:
-     * - Must not be empty
-     * - Must not contain whitespace
-     * - Must not exceed MAX_ID_LENGTH (128) characters
-     * - Must not already exist in the mapper
+     * <ul>
+     *   <li>Must not be empty</li>
+     *   <li>Must not contain whitespace</li>
+     *   <li>Must not exceed {@link #MAX_ID_LENGTH} (128) characters</li>
+     *   <li>Must not already exist in the mapper</li>
+     * </ul>
      *
      * @param id the identifier to validate
      * @throws IllegalArgumentException if any validation rule is violated

@@ -236,17 +236,18 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends a custom {@code LIMIT} clause to the SQL query.
-         * This method allows for database-specific limit syntax.
+         * Appends a custom pagination expression verbatim to the end of the SQL query.
+         * This method is intended for database-specific pagination syntax that cannot be
+         * expressed through the typed overloads.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.limit("LIMIT 10 OFFSET 20");
-         * // Or for custom database syntax
-         * builder.limit("TOP 10");
+         * // Or for Oracle-style row-limiting
+         * builder.limit("FETCH FIRST 10 ROWS ONLY");
          * }</pre>
          *
-         * @param limitCond the complete limit/pagination expression (e.g., {@code "LIMIT 10 OFFSET 20"} or {@code "TOP 10"}) (must not be {@code null}, empty, or blank)
+         * @param limitCond the complete limit/pagination expression (e.g., {@code "LIMIT 10 OFFSET 20"}) (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code limitCond} is {@code null}, empty, or blank
          */
@@ -1019,7 +1020,8 @@ public final class DynamicQuery {
 
         /**
          * Adds a {@code FULL JOIN} clause with the specified table and join condition.
-         * Returns all rows when there is a match in either table.
+         * Returns all rows from both tables, with {@code NULL}s on either side where there
+         * is no matching row in the other table.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code

@@ -20,7 +20,7 @@ package com.landawn.abacus.query.condition;
  * or equal to a specified value. The less-than-or-equal operator is fundamental for
  * implementing inclusive upper bounds, inclusive ranges, and various filtering scenarios.
  *
- * <p>Common use cases include:
+ * <p>Common use cases include:</p>
  * <ul>
  *   <li>Setting inclusive upper bounds on numeric values (maximum limits)</li>
  *   <li>Date comparisons (on or before a certain date)</li>
@@ -29,7 +29,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Price caps, age limits, and deadline checks</li>
  * </ul>
  *
- * <p>The operator works with various data types:
+ * <p>The operator works with various data types:</p>
  * <ul>
  *   <li>Numbers: Natural numeric comparison</li>
  *   <li>Dates/Times: Chronological comparison</li>
