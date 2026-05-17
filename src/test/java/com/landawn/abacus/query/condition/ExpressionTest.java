@@ -1525,4 +1525,28 @@ public class ExpressionTest extends TestBase {
         Assertions.assertTrue(ldtResult.startsWith("'") && ldtResult.endsWith("'"), "LocalDateTime literal must be quoted, got: " + ldtResult);
         Assertions.assertTrue(ldtResult.contains("2024"));
     }
+
+    /**
+     * Regression: the short-literal fast path in {@code doToString} must use a full-string
+     * (anchored) match and not {@code Matcher.find()}. With {@code find()}, a short literal
+     * containing a trailing line terminator such as {@code "col\n"} spuriously satisfies the
+     * anchored pattern {@code ^[a-zA-Z0-9_-]+$} (because {@code $} matches before the final
+     * {@code \n}), so the entire literal is wrongly treated as a single column identifier and
+     * returned verbatim instead of being routed through the SQL parser (which collapses
+     * whitespace runs into a single space token). With the correct {@code matches()} check the
+     * literal goes through the parser path, so the newline is normalized to a space and the
+     * output must not contain any line terminator.
+     */
+    @Test
+    public void testToString_ShortLiteralWithNewlineGoesThroughParser() {
+        Expression expr = Expression.of("col\n");
+
+        String result = expr.toString(NamingPolicy.NO_CHANGE);
+
+        // Buggy (find()) path returned "col\n" verbatim; correct (matches()) path parses it
+        // and collapses the whitespace run, so no line terminator may survive.
+        Assertions.assertFalse(result.contains("\n"),
+                "Short literal with trailing newline must be parsed (whitespace collapsed), got: " + result.replace("\n", "\\n"));
+        Assertions.assertTrue(result.startsWith("col"), "Column token must be preserved, got: " + result);
+    }
 }

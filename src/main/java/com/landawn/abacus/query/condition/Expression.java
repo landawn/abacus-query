@@ -1700,7 +1700,7 @@ public class Expression extends ComposableCondition {
             return Strings.EMPTY;
         }
 
-        if (literal.length() < 16 && QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(literal).find()) {
+        if (literal.length() < 16 && QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(literal).matches()) {
             return effectiveNamingPolicy.convert(literal);
         }
 
