@@ -41,9 +41,9 @@ import com.landawn.abacus.util.Strings;
  *   <li>Instance caching for memory efficiency (using {@link #of(String)})</li>
  *   <li>Fluent API for creating various SQL conditions</li>
  *   <li>Support for comparison operators (equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual)</li>
- *   <li>Support for pattern matching (like, notLike, startsWith, endsWith, contains)</li>
+ *   <li>Support for pattern matching (like, notLike, startsWith, notStartsWith, endsWith, notEndsWith, contains, notContains)</li>
  *   <li>Support for null checks (isNull, isNotNull)</li>
- *   <li>Support for range and set operations (between, in)</li>
+ *   <li>Support for range and set operations (between, notBetween, in, notIn)</li>
  *   <li>Convenience methods for OR combinations (equalsAny)</li>
  * </ul>
  *

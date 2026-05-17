@@ -32,7 +32,7 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>The only difference between {@link In} and {@link NotIn} is the operator
  * ({@code IN} vs {@code NOT IN}). All fields, getters, and methods
- * for parameters, copying, string rendering, hashing, and equality are identical.</p>
+ * for parameters, string rendering, hashing, and equality are identical.</p>
  *
  * @see In
  * @see NotIn

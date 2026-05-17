@@ -33,7 +33,7 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>The only difference between {@link InSubQuery} and {@link NotInSubQuery} is the operator
  * ({@code IN} vs {@code NOT IN}). All fields, getters, and methods
- * for parameters, copying, string rendering, hashing, and equality are identical.</p>
+ * for parameters, string rendering, hashing, and equality are identical.</p>
  *
  * @see InSubQuery
  * @see NotInSubQuery
@@ -159,7 +159,8 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     /**
      * Gets the list of parameters from the subquery.
      *
-     * @return an immutable list of parameter values from the subquery
+     * @return an immutable list of parameter values from the subquery; an empty immutable list
+     *         if the subquery is {@code null} (only possible for an uninitialized instance)
      */
     @Override
     public ImmutableList<Object> getParameters() {

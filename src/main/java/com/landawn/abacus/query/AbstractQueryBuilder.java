@@ -5207,7 +5207,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Appends the column names and values for an INSERT operation.
+     * Appends the values for an INSERT operation, in the iteration order of the map's key set.
      *
      * @param props a map of property names to values to be inserted
      */

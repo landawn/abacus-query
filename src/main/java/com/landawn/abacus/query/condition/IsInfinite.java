@@ -90,10 +90,12 @@ public class IsInfinite extends Is {
      * This is particularly useful for identifying numeric overflow conditions,
      * division by zero results, and other exceptional calculation outcomes.
      *
-     * <p>The generated SQL uses the IS INFINITE operator to properly detect both
-     * positive and negative infinity values. Standard comparison operators cannot
-     * reliably test for infinity because infinity has special arithmetic properties
-     * (e.g., infinity == infinity is true, but infinity - infinity is NaN).
+     * <p>The generated SQL uses the {@code IS INFINITE} operator to properly detect both
+     * positive and negative infinity values in a single check. Plain comparison operators
+     * are not a portable way to test for infinity: there is no standard SQL literal that
+     * matches "either positive or negative infinity", and infinity participates in special
+     * arithmetic (for example, {@code infinity - infinity} is NaN), so {@code IS INFINITE}
+     * is the reliable way to identify such values.
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

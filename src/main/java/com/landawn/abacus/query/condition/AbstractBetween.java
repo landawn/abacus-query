@@ -30,7 +30,7 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>The only difference between {@link Between} and {@link NotBetween} is the operator
  * ({@code BETWEEN} vs {@code NOT BETWEEN}). All fields, getters, and methods
- * for parameters, copying, string rendering, hashing, and equality are identical.</p>
+ * for parameters, string rendering, hashing, and equality are identical.</p>
  *
  * @see Between
  * @see NotBetween

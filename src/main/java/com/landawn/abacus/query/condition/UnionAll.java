@@ -25,7 +25,7 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>Preserves all rows from all queries, including duplicates</li>
  *   <li>Faster performance than UNION (no duplicate elimination)</li>
- *   <li>Maintains the order of rows from each query</li>
+ *   <li>Does not impose an ordering on the combined result (use ORDER BY if a specific order is needed)</li>
  *   <li>Requires same number of columns with compatible types</li>
  *   <li>Column names from the first query are used in the result</li>
  * </ul>
@@ -42,7 +42,7 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>UNION ALL is significantly faster than UNION as it skips duplicate elimination</li>
  *   <li>No sorting or hashing required, making it ideal for large result sets</li>
- *   <li>Preserves all rows in their original order from each query</li>
+ *   <li>Preserves all rows (including duplicates) without ordering guarantees</li>
  *   <li>Use UNION ALL whenever duplicates are acceptable or known to be impossible</li>
  *   <li>Consider UNION ALL when combining partitioned or non-overlapping data</li>
  * </ul>

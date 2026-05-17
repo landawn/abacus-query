@@ -24,9 +24,9 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Common usage patterns:</p>
  * <ul>
- *   <li>salary > ALL (subquery) - true if salary is greater than every value (greater than maximum)</li>
+ *   <li>salary &gt; ALL (subquery) - true if salary is greater than every value (greater than maximum)</li>
  *   <li>price &lt; ALL (subquery) - true if price is less than every value (less than minimum)</li>
- *   <li>score >= ALL (subquery) - true if score is greater than or equal to all values</li>
+ *   <li>score &gt;= ALL (subquery) - true if score is greater than or equal to all values</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -48,11 +48,11 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Behavior with different operators:</p>
  * <ul>
- *   <li>> ALL: true if greater than the maximum value in subquery</li>
+ *   <li>&gt; ALL: true if greater than the maximum value in subquery</li>
  *   <li>&lt; ALL: true if less than the minimum value in subquery</li>
  *   <li>= ALL: true if equal to all values (only possible if all values are the same)</li>
  *   <li>!= ALL: true if different from all values (equivalent to NOT IN)</li>
- *   <li>>= ALL: true if greater than or equal to the maximum value</li>
+ *   <li>&gt;= ALL: true if greater than or equal to the maximum value</li>
  *   <li>&lt;= ALL: true if less than or equal to the minimum value</li>
  * </ul>
  *

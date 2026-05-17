@@ -137,8 +137,8 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Create a parameterized condition
-     * Equal condition = Filters.equal("age");   // Uses QME internally
+     * // Create a parameterized condition; the parameterless equal(String) overload uses QME internally
+     * Equal condition = Filters.equal("age");
      * }</pre>
      */
     public static final Expression QME = Expression.of(SK.QUESTION_MARK);

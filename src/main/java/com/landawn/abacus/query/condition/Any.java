@@ -24,7 +24,7 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Common usage patterns:</p>
  * <ul>
- *   <li>salary > ANY (subquery) - true if salary is greater than at least one value from subquery</li>
+ *   <li>salary &gt; ANY (subquery) - true if salary is greater than at least one value from subquery</li>
  *   <li>price &lt;= ANY (subquery) - true if price is less than or equal to at least one value</li>
  *   <li>id = ANY (subquery) - equivalent to id IN (subquery)</li>
  * </ul>
@@ -49,7 +49,7 @@ package com.landawn.abacus.query.condition;
  * <p>Behavior with different operators:</p>
  * <ul>
  *   <li>= ANY: true if equal to any value in the subquery (equivalent to IN)</li>
- *   <li>> ANY: true if greater than at least one value (greater than the minimum)</li>
+ *   <li>&gt; ANY: true if greater than at least one value (greater than the minimum)</li>
  *   <li>&lt; ANY: true if less than at least one value (less than the maximum)</li>
  *   <li>!= ANY: true if different from at least one value</li>
  * </ul>

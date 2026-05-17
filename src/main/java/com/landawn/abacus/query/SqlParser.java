@@ -42,7 +42,8 @@ import com.landawn.abacus.util.Strings;
  *       ({@code # ...}), and block comments ({@code /* ... *}{@code /}). Nested block
  *       comments and PostgreSQL dollar-quoting ({@code $$...$$}) are NOT supported.</li>
  *   <li>Block comments are normally discarded; they are retained as tokens only when the
- *       SQL begins with the literal marker {@code "-- Keep comments"}.</li>
+ *       SQL begins (case-insensitively) with the marker {@code "-- Keep comments"}. Line and
+ *       hash comments are always discarded regardless of this marker.</li>
  *   <li>Runs of whitespace are collapsed into a single space token ({@code " "}).</li>
  *   <li>Multi-character operators (e.g. {@code >=}, {@code <>}, {@code ->>}) are emitted
  *       as single tokens; additional separators can be registered via
@@ -768,7 +769,7 @@ public final class SqlParser {
      * // Result: ["SELECT", "$", "FROM", "$", "users"]
      * }</pre>
      * 
-     * @param separator the character to register as a separator 
+     * @param separator the character to register as a separator
      */
     public static void registerSeparator(final char separator) {
         separators.add(separator);

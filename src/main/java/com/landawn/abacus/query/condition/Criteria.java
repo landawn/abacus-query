@@ -209,7 +209,7 @@ public class Criteria extends AbstractCondition {
      * Collects parameters from all conditions in SQL clause order:
      * JOIN, WHERE, GROUP BY, HAVING, set operations, ORDER BY, LIMIT.
      *
-     * @return an immutable list of all parameters
+     * @return an immutable list of all parameters; empty if this criteria has no conditions
      */
     @Override
     public ImmutableList<Object> getParameters() {
@@ -425,7 +425,9 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets the DISTINCT modifier with specific columns.
          * Only the specified columns are considered for duplicate removal.
-         * 
+         * If {@code columnNames} is {@code null} or empty, a plain {@code DISTINCT}
+         * modifier (without parentheses) is used.
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
@@ -436,8 +438,8 @@ public class Criteria extends AbstractCondition {
          * builder.distinctBy("city");
          * // Results in: SELECT DISTINCT(city) ...
          * }</pre>
-         * 
-         * @param columnNames the columns to apply DISTINCT to
+         *
+         * @param columnNames the columns to apply DISTINCT to; if {@code null} or empty, plain {@code DISTINCT} is used
          * @return this Builder instance for method chaining
          */
         public Builder distinctBy(final String columnNames) {
@@ -469,15 +471,17 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Sets the DISTINCTROW modifier with specific columns.
-         * 
+         * If {@code columnNames} is {@code null} or empty, a plain {@code DISTINCTROW}
+         * modifier (without parentheses) is used.
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .distinctRowBy("category, subcategory");
          * // Results in: SELECT DISTINCTROW(category, subcategory) ...
          * }</pre>
-         * 
-         * @param columnNames the columns to apply DISTINCTROW to
+         *
+         * @param columnNames the columns to apply DISTINCTROW to; if {@code null} or empty, plain {@code DISTINCTROW} is used
          * @return this Builder instance for method chaining
          */
         public Builder distinctRowBy(final String columnNames) {
