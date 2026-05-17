@@ -1107,6 +1107,30 @@ class ParsedSql2026BatchTest extends TestBase {
     }
 
     @Test
+    public void testParse_EmptyIbatisTokenBeforeValid_extractsTrailingParameter() {
+        // Bug fix: a literal "#{}" followed by a real "#{a}" marker inside the SAME token
+        // (e.g. "#{}#{a}") previously broke out of the marker loop and silently embedded
+        // "#{a}" as literal text, losing the parameter binding entirely.
+        ParsedSql parsed = ParsedSql.parse("SELECT #{}#{a} FROM dual");
+        Assertions.assertEquals("SELECT #{}? FROM dual", parsed.parameterizedSql());
+        Assertions.assertEquals(1, parsed.parameterCount());
+        Assertions.assertEquals(1, parsed.namedParameters().size());
+        Assertions.assertEquals("a", parsed.namedParameters().get(0));
+    }
+
+    @Test
+    public void testParse_BlankIbatisTokenBetweenValid_extractsAllParameters() {
+        // "#{a}#{ }#{b}" : the blank/empty marker in the middle must not abort extraction
+        // of the trailing "#{b}" parameter.
+        ParsedSql parsed = ParsedSql.parse("SELECT #{a}#{ }#{b} FROM dual");
+        Assertions.assertEquals("SELECT ?#{ }? FROM dual", parsed.parameterizedSql());
+        Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertEquals(2, parsed.namedParameters().size());
+        Assertions.assertEquals("a", parsed.namedParameters().get(0));
+        Assertions.assertEquals("b", parsed.namedParameters().get(1));
+    }
+
+    @Test
     public void testParse_CachedInstance_ReturnsCorrectParameterCount() {
         // First parse populates the cache; second parse hits the unsynchronized fast path.
         // Both observations of parameterCount must agree (regression guard for unsafe publication).

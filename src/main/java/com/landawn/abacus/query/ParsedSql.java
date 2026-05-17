@@ -155,16 +155,21 @@ public final class ParsedSql {
                                     paramCount++;
                                     type |= IBATIS_PARAMETER_TYPE;
                                 } else {
-                                    // empty/blank #{...} content — keep verbatim, no parameter
+                                    // empty/blank #{...} content — keep verbatim, no parameter.
+                                    // 'word' strictly shrinks (substring starts at rightBracketIndex + 1 >= 3),
+                                    // so continuing the loop cannot spin forever and lets us still extract
+                                    // any subsequent "#{...}" markers in the same token (e.g. "#{ }#{a}").
                                     rebuilt.append(ibatisToken, 0, rightBracketIndex + 1);
                                     word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1) : Strings.EMPTY;
-                                    break; // empty token — don't loop to avoid infinite recursion on malformed input
+                                    continue;
                                 }
                             } else {
-                                // rightBracketIndex == 2 means literal "#{}" — keep verbatim
+                                // rightBracketIndex == 2 means literal "#{}" — keep verbatim.
+                                // Continue (don't break) so a following "#{...}" marker in the same
+                                // token (e.g. "#{}#{a}") is still extracted instead of being lost.
                                 rebuilt.append(ibatisToken, 0, rightBracketIndex + 1);
                                 word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1) : Strings.EMPTY;
-                                break;
+                                continue;
                             }
                         }
 
