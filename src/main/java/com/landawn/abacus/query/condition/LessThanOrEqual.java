@@ -104,7 +104,7 @@ public class LessThanOrEqual extends Binary {
      *
      * @param propName the property/column name (must not be {@code null} or empty)
      * @param propValue the value to compare against (a literal value or a {@link SubQuery}; using
-     *                  {@code null} produces undefined behaviour for the {@code <=} operator)
+     *                  {@code null} produces undefined behavior for the {@code <=} operator)
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public LessThanOrEqual(final String propName, final Object propValue) {

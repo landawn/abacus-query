@@ -1391,6 +1391,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param expr the FROM clause expression
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
+     * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -1609,6 +1611,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * and that column names have been set.
      *
      * @param tableName the table name, optionally including an alias (e.g., "users u")
+     * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     protected void appendOperationBeforeFrom(final String tableName) {
         if (_op != OperationType.QUERY) {
@@ -2261,6 +2264,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param expr the column name(s) for the USING clause
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or contains a SQL comment token
      */
     public This using(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -4122,7 +4126,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets columns for UPDATE operation.
-     * 
+     * <p>Generates parameterized placeholders ({@code ?}, {@code :name}, or {@code #{name}}) based on the SQL policy.
+     * If a column name already contains an {@code =} sign, it is treated as a raw SET expression and no placeholder is appended.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.update("users")
@@ -4131,9 +4137,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?
      * }</pre>
-     * 
+     *
      * @param propOrColumnNames the columns to update
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
     public This set(final String... propOrColumnNames) {
         return set(Array.asList(propOrColumnNames));
@@ -4156,6 +4163,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns to update
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
     public This set(final Collection<String> propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -4249,6 +4257,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param props map of column names to values
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or contains a {@code null}, empty, or blank key
      */
     public This set(final Map<String, Object> props) {
         checkSqlFragmentKeysNotBlank(props, "props");

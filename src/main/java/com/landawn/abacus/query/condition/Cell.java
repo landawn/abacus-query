@@ -29,7 +29,7 @@ import com.landawn.abacus.util.Strings;
  * or to create clause conditions like WHERE, HAVING, etc. It acts as a decorator
  * that adds an operator context to an existing condition.</p>
  * 
- * <p>Concrete subclasses include {@link On}, {@link Using}, and {@link Clause} (and its subclasses).</p>
+ * <p>Direct subclasses include {@link On}, {@link Using}, and the abstract {@link Clause} (along with its concrete subclasses).</p>
  *
  * @see AbstractCondition
  * @see ComposableCell

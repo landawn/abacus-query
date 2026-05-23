@@ -181,12 +181,28 @@ public final class ParsedSql {
                         rebuilt.append(word);
                         word = rebuilt.toString();
                     } else if (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))) {
-                        final int parameterEndIndex = findNamedParameterEndIndex(word, 1);
-                        namedParameterList.add(word.substring(1, parameterEndIndex));
+                        // Bug fix: a single tokenized word may contain multiple ':named' markers
+                        // (e.g. ":a:b") because ':' is not a token separator. The previous code
+                        // extracted only the leading ":named" marker and silently embedded any
+                        // subsequent markers into the parameterized SQL as literal text, losing
+                        // those parameter bindings entirely. We now iteratively extract every
+                        // leading ":named" marker, mirroring the iBatis "#{...}" handling above.
+                        // This stays correct for PostgreSQL casts such as ":a::int": after
+                        // extracting "a", the remaining "::int" begins with ':' followed by ':'
+                        // (not a valid parameter char), so the loop stops and "::int" is preserved.
+                        final StringBuilder rebuilt = new StringBuilder(word.length() + 4);
 
-                        word = SK.QUESTION_MARK + word.substring(parameterEndIndex);
-                        paramCount++;
-                        type |= NAMED_PARAMETER_TYPE;
+                        while (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))) {
+                            final int parameterEndIndex = findNamedParameterEndIndex(word, 1);
+                            namedParameterList.add(word.substring(1, parameterEndIndex));
+                            rebuilt.append(SK.QUESTION_MARK);
+                            word = word.substring(parameterEndIndex);
+                            paramCount++;
+                            type |= NAMED_PARAMETER_TYPE;
+                        }
+
+                        rebuilt.append(word);
+                        word = rebuilt.toString();
                     }
 
                     if (Integer.bitCount(type) > 1) {
@@ -254,7 +270,7 @@ public final class ParsedSql {
      * @return a {@code ParsedSql} instance containing the parsed information
      * @throws IllegalArgumentException if {@code sql} is {@code null} or empty, if it mixes different
      *         parameter styles ({@code ?}, {@code :propName}, {@code #{propName}}), or if it contains
-     *         a malformed iBatis/MyBatis parameter with no closing {@code }}
+     *         a malformed iBatis/MyBatis parameter with no closing {@code "}"}
      */
     public static ParsedSql parse(final String sql) {
         N.checkArgNotEmpty(sql, "sql");

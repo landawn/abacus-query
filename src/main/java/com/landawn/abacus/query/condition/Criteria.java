@@ -144,7 +144,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns the WHERE clause, or {@code null} if none was set.
      *
-     * @return the {@link Where} clause, or {@code null}
+     * @return the {@link Where} clause as a {@link Clause}, or {@code null}
      */
     public Clause getWhere() {
         return (Clause) find(Operator.WHERE);
@@ -153,7 +153,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns the GROUP BY clause, or {@code null} if none was set.
      *
-     * @return the {@link GroupBy} clause, or {@code null}
+     * @return the {@link GroupBy} clause as a {@link Clause}, or {@code null}
      */
     public Clause getGroupBy() {
         return (Clause) find(Operator.GROUP_BY);
@@ -162,7 +162,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns the HAVING clause, or {@code null} if none was set.
      *
-     * @return the {@link Having} clause, or {@code null}
+     * @return the {@link Having} clause as a {@link Clause}, or {@code null}
      */
     public Clause getHaving() {
         return (Clause) find(Operator.HAVING);
@@ -199,7 +199,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns the ORDER BY clause, or {@code null} if none was set.
      *
-     * @return the {@link OrderBy} clause, or {@code null}
+     * @return the {@link OrderBy} clause as a {@link Clause}, or {@code null}
      */
     public Clause getOrderBy() {
         return (Clause) find(Operator.ORDER_BY);
@@ -1141,7 +1141,7 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Sets or replaces the GROUP BY clause with property names.
-         * Groups results by the specified columns in ascending order.
+         * Groups results by the specified columns (no explicit sort direction is emitted).
          * If a GROUP BY clause already exists, it will be replaced.
          * 
          * <p><b>Usage Examples:</b></p>
@@ -1485,7 +1485,8 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Sets or replaces the ORDER BY clause with property names.
-         * Orders by the specified columns in ascending order.
+         * Orders by the specified columns using the default (ascending) direction; no explicit
+         * {@code ASC} keyword is emitted.
          * If an ORDER BY clause already exists, it will be replaced.
          * 
          * <p><b>Usage Examples:</b></p>

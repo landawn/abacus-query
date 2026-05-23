@@ -14825,7 +14825,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
     }
 
     /**
-     * Named SQL builder with {@code NamingPolicy.NO_CHANGE} field/column naming strategy.
+     * MyBatis-style SQL builder with {@code NamingPolicy.NO_CHANGE} field/column naming strategy.
      * This class generates SQL with MyBatis-style named parameters (#{paramName}).
      * 
      * <p>This builder preserves the exact case of property and column names as they are provided,

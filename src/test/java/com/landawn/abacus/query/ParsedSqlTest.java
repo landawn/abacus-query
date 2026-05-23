@@ -1130,6 +1130,52 @@ class ParsedSql2026BatchTest extends TestBase {
         Assertions.assertEquals("b", parsed.namedParameters().get(1));
     }
 
+    // Bug fix: when SqlParser produces a single token containing multiple ":named"
+    // markers (e.g. ":a:b" with no separator between, since ':' is not a token separator),
+    // the previous code extracted only the leading marker and silently embedded later
+    // ":named" markers into the parameterized SQL as literal text, losing those parameter
+    // bindings entirely. This mirrors the analogous "#{a}#{b}" iBatis fix.
+    @Test
+    public void testParse_AdjacentNamedParameters_extractsAllParameters() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE a=:a:b");
+        Assertions.assertEquals("SELECT * FROM t WHERE a=??", parsed.parameterizedSql());
+        Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertEquals(2, parsed.namedParameters().size());
+        Assertions.assertEquals("a", parsed.namedParameters().get(0));
+        Assertions.assertEquals("b", parsed.namedParameters().get(1));
+    }
+
+    @Test
+    public void testParse_ThreeAdjacentNamedParameters_extractsAllParameters() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE a=:a:b:c");
+        Assertions.assertEquals("SELECT * FROM t WHERE a=???", parsed.parameterizedSql());
+        Assertions.assertEquals(3, parsed.parameterCount());
+        Assertions.assertEquals(3, parsed.namedParameters().size());
+        Assertions.assertEquals("a", parsed.namedParameters().get(0));
+        Assertions.assertEquals("b", parsed.namedParameters().get(1));
+        Assertions.assertEquals("c", parsed.namedParameters().get(2));
+    }
+
+    @Test
+    public void testParse_NamedParameterFollowedByPostgresCast_preservesCast() {
+        // Regression guard: the multi-marker loop must NOT mistake the "::" of a PostgreSQL
+        // cast for a second ":named" marker. ":id::int" -> extract "id", keep "::int" verbatim.
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE id = :id::int");
+        Assertions.assertEquals("SELECT * FROM t WHERE id = ?::int", parsed.parameterizedSql());
+        Assertions.assertEquals(1, parsed.parameterCount());
+        Assertions.assertEquals(1, parsed.namedParameters().size());
+        Assertions.assertEquals("id", parsed.namedParameters().get(0));
+    }
+
+    @Test
+    public void testParse_AdjacentNamedParametersWithCast_extractsBothAndPreservesCast() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE a=:a:b::int");
+        Assertions.assertEquals("SELECT * FROM t WHERE a=??::int", parsed.parameterizedSql());
+        Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertEquals("a", parsed.namedParameters().get(0));
+        Assertions.assertEquals("b", parsed.namedParameters().get(1));
+    }
+
     @Test
     public void testParse_CachedInstance_ReturnsCorrectParameterCount() {
         // First parse populates the cache; second parse hits the unsynchronized fast path.
