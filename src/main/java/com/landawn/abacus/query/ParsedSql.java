@@ -57,8 +57,8 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
- * String parameterized = parsed.parameterizedSql();   // "SELECT * FROM users WHERE id = ? AND status = ?"
- * List<String> params = parsed.namedParameters();   // ["userId", "status"]
+ * String parameterized = parsed.parameterizedSql();           // "SELECT * FROM users WHERE id = ? AND status = ?"
+ * ImmutableList<String> params = parsed.namedParameters();    // ["userId", "status"]
  * }</pre>
  *
  * @see SqlParser

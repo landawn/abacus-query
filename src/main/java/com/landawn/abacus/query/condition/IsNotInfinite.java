@@ -20,15 +20,15 @@ package com.landawn.abacus.query.condition;
  * floating-point values are finite (not positive or negative infinity). This condition
  * is essential for data validation and ensuring numeric calculations remain within bounds.
  * 
- * <p>In floating-point arithmetic, infinity values can result from various operations:
+ * <p>In floating-point arithmetic, infinity values can result from various operations:</p>
  * <ul>
  *   <li>Division by zero with non-zero numerator (e.g., 1.0/0.0 = Infinity, -1.0/0.0 = -Infinity)</li>
  *   <li>Operations that exceed the maximum representable value (overflow)</li>
  *   <li>Mathematical operations like log(0) or tan(π/2)</li>
  *   <li>Accumulation of rounding errors in iterative calculations</li>
  * </ul>
- * 
- * <p>This condition helps filter out such infinite values to:
+ *
+ * <p>This condition helps filter out such infinite values to:</p>
  * <ul>
  *   <li>Ensure data quality and validity</li>
  *   <li>Prevent propagation of infinity in calculations</li>
@@ -86,10 +86,10 @@ public class IsNotInfinite extends IsNot {
      * This ensures that values are within the finite range of floating-point numbers
      * and is essential for data validation before performing calculations or analysis.
      *
-     * <p>The generated SQL uses the IS NOT INFINITE operator to properly verify finite
+     * <p>The generated SQL uses the {@code IS NOT INFINITE} operator to properly verify finite
      * values. Standard comparison operators cannot reliably test for the absence of
-     * infinity because infinity has special arithmetic properties. IS NOT INFINITE is
-     * the correct way to filter for finite numeric values.
+     * infinity because infinity has special arithmetic properties. {@code IS NOT INFINITE} is
+     * the correct way to filter for finite numeric values.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

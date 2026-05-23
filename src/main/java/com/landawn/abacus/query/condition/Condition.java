@@ -64,6 +64,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * 
  * @see Filters
  * @see AbstractCondition
+ * @see ComposableCondition
  */
 public interface Condition {
     /**
@@ -106,7 +107,8 @@ public interface Condition {
      * ImmutableList<Object> allParams = combined.getParameters();   // ["John", 18, 65]
      * }</pre>
      *
-     * @return an immutable list of parameter values, never null
+     * @return an immutable list of parameter values; never {@code null} (an empty list is returned
+     *         when there are no parameters)
      */
     ImmutableList<Object> getParameters();
 
@@ -128,7 +130,8 @@ public interface Condition {
      * String upper = eq.toString(NamingPolicy.SCREAMING_SNAKE_CASE);   // "FIRST_NAME = 'John'"
      * }</pre>
      *
-     * @param namingPolicy the policy for formatting property names
+     * @param namingPolicy the policy for formatting property names; implementations typically treat
+     *                     {@code null} as {@link NamingPolicy#NO_CHANGE}
      * @return a string representation of this condition
      */
     String toString(NamingPolicy namingPolicy);

@@ -72,7 +72,7 @@ public enum Operator {
     NOT_EQUAL(SK.NOT_EQUAL),
 
     /**
-     * ANSI standard not equal operator (&lt;&gt;).
+     * ANSI standard not equal operator ({@code <>}).
      * This is the SQL standard form; most databases also accept the non-standard {@code !=}.
      */
     NOT_EQUAL_ANSI(SK.NOT_EQUAL_ANSI),
@@ -132,25 +132,25 @@ public enum Operator {
     OR_OP(SK.OR_OP),
 
     /**
-     * Greater than operator (>).
+     * Greater than operator ({@code >}).
      * Used for "greater than" comparisons.
      */
     GREATER_THAN(SK.GREATER_THAN),
 
     /**
-     * Greater than or equal operator (>=).
+     * Greater than or equal operator ({@code >=}).
      * Used for "greater than or equal" comparisons.
      */
     GREATER_THAN_OR_EQUAL(SK.GREATER_THAN_OR_EQUAL),
 
     /**
-     * Less than operator (&lt;).
+     * Less than operator ({@code <}).
      * Used for "less than" comparisons.
      */
     LESS_THAN(SK.LESS_THAN),
 
     /**
-     * Less than or equal operator (&lt;=).
+     * Less than or equal operator ({@code <=}).
      * Used for "less than or equal" comparisons.
      */
     LESS_THAN_OR_EQUAL(SK.LESS_THAN_OR_EQUAL),
@@ -240,20 +240,22 @@ public enum Operator {
     JOIN(SK.JOIN),
 
     /**
-     * LEFT JOIN operator.
-     * Returns all rows from left table.
+     * LEFT JOIN operator (LEFT OUTER JOIN).
+     * Returns all rows from the left table and matching rows from the right table;
+     * unmatched right-side columns are {@code NULL}.
      */
     LEFT_JOIN(SK.LEFT_JOIN),
 
     /**
-     * RIGHT JOIN operator.
-     * Returns all rows from right table.
+     * RIGHT JOIN operator (RIGHT OUTER JOIN).
+     * Returns all rows from the right table and matching rows from the left table;
+     * unmatched left-side columns are {@code NULL}.
      */
     RIGHT_JOIN(SK.RIGHT_JOIN),
 
     /**
-     * FULL JOIN operator.
-     * Returns all rows from both tables.
+     * FULL JOIN operator (FULL OUTER JOIN).
+     * Returns all rows from both tables, with {@code NULL} on either side where no match exists.
      */
     FULL_JOIN(SK.FULL_JOIN),
 
@@ -351,8 +353,9 @@ public enum Operator {
     MINUS(SK.EXCEPT_MINUS),
 
     /**
-     * Empty operator.
-     * Special operator representing no operation.
+     * Empty operator (renders as an empty string).
+     * Used as a placeholder by conditions that have no SQL operator token of their own,
+     * such as {@link Expression} (raw SQL fragments).
      */
     EMPTY(Strings.EMPTY);
 

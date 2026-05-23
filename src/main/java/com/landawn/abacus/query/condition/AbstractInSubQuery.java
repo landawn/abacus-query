@@ -151,7 +151,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * SubQuery sq = inSub.getSubQuery();   // the subquery instance
      * }</pre>
      *
-     * @return the subquery
+     * @return the subquery, or {@code null} for an uninitialized instance
      */
     public SubQuery getSubQuery() {
         return subQuery;
@@ -211,6 +211,8 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
 
     /**
      * Checks if this condition is equal to another object.
+     * Two conditions are equal if they have the same property names,
+     * operator, and subquery.
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

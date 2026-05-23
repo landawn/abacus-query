@@ -66,11 +66,13 @@ import com.landawn.abacus.util.XmlUtil;
  * 
  * <p>Supported attributes for SQL elements:</p>
  * <ul>
- *   <li>id - unique identifier for the SQL (required, max 128 characters)</li>
- *   <li>batchSize - default batch size for batch operations</li>
- *   <li>fetchSize - JDBC fetch size</li>
- *   <li>resultSetType - one of FORWARD_ONLY, SCROLL_INSENSITIVE, SCROLL_SENSITIVE</li>
- *   <li>timeout - query timeout in seconds</li>
+ *   <li>{@code id} - unique identifier for the SQL (required, max {@value #MAX_ID_LENGTH} characters,
+ *       must not contain whitespace)</li>
+ *   <li>{@code batchSize} - default batch size for batch operations</li>
+ *   <li>{@code fetchSize} - JDBC fetch size</li>
+ *   <li>{@code resultSetType} - one of {@code FORWARD_ONLY}, {@code SCROLL_INSENSITIVE},
+ *       {@code SCROLL_SENSITIVE} (see {@link #RESULT_SET_TYPE_MAP})</li>
+ *   <li>{@code timeout} - query timeout in seconds</li>
  * </ul>
  * 
  * <p><b>Usage Examples:</b></p>
@@ -136,7 +138,7 @@ public final class SqlMapper {
     public static final String TIMEOUT = "timeout";
 
     /**
-     * Maximum allowed length for SQL identifiers.
+     * Maximum allowed length for SQL identifiers ({@value}).
      */
     public static final int MAX_ID_LENGTH = 128;
 

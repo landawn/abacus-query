@@ -114,10 +114,10 @@ public class Junction extends ComposableCondition {
     }
 
     /**
-     * Trusted private constructor that adopts an already-validated, freshly-allocated and
+     * Trusted package-private constructor that adopts an already-validated, freshly-allocated and
      * non-leaked condition list without re-running per-element null checks. Used by fluent
-     * {@code and()}/{@code or()} chaining to keep chaining O(n) overall. The {@code marker}
-     * parameter only serves to distinguish this constructor's signature.
+     * {@code and()}/{@code or()} chaining in subclasses to keep chaining O(n) overall. The
+     * {@code marker} parameter only serves to distinguish this constructor's signature.
      *
      * <p>The supplied list is taken over directly (not copied); callers must pass a private,
      * freshly created list that they will not retain or mutate afterwards.</p>

@@ -244,7 +244,11 @@ public class Filters {
     /**
      * Creates an {@link Expression} from a string literal.
      * This allows for custom SQL expressions to be included in queries.
-     * 
+     *
+     * <p><b>Warning:</b> The literal is appended verbatim into the generated SQL. Do not pass
+     * unsanitized user input — use parameterized condition factories (e.g. {@link #equal(String, Object)})
+     * instead to avoid SQL injection.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression expr = Filters.expr("UPPER(name) = 'JOHN'");

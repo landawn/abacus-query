@@ -126,7 +126,9 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     /**
-     * Gets the parameter values for this condition.
+     * Gets the parameter values for this condition. Any element of {@link #getValues()} that is
+     * itself a {@link Condition} has its parameters spliced into the result in place of the
+     * element; non-{@code Condition} elements are included as-is.
      *
      * @return an immutable list of parameter values, or an empty immutable list if no values are set
      */

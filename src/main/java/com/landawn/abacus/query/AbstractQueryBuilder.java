@@ -1064,8 +1064,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: INSERT INTO account_backup (first_name) SELECT first_name AS "firstName" FROM account
      * }</pre>
      *
-     * @param tableName the name of the target table
+     * @param tableName the name of the target table (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank
      * @throws IllegalStateException if the current operation is neither {@code ADD} nor {@code QUERY}, or if columns/values have not been set
      */
     public This into(final String tableName) {
@@ -1263,17 +1264,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a pre-select modifier to the SELECT statement.
-     * <p>For better performance, this method should be called before {@code from}.</p>
-     * 
+     * <p>For better performance, this method should be called before {@code from}.
+     * A {@code null} or empty value is silently ignored; a non-empty but blank value is rejected.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*").selectModifier("TOP 10").from("account").build().query();
      * // Output: SELECT TOP 10 * FROM account
      * }</pre>
-     * 
-     * @param selectModifier modifiers like ALL, DISTINCT, DISTINCTROW, TOP, etc.
+     *
+     * @param selectModifier modifiers like {@code ALL}, {@code DISTINCT}, {@code DISTINCTROW},
+     *                       {@code TOP}, etc.; may be {@code null} or empty (no-op)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if selectModifier has already been set
+     * @throws IllegalStateException if a select modifier has already been set
+     * @throws IllegalArgumentException if {@code selectModifier} is non-empty but blank (whitespace only)
      */
     public This selectModifier(final String selectModifier) {
         if (Strings.isNotEmpty(_selectModifier)) {
@@ -1422,15 +1426,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets the FROM clause with an expression and associates it with an entity class.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*").from("users u", User.class).build().query();
      * // Associates the User class for property mapping
      * }</pre>
-     * 
+     *
      * @param expr the FROM clause expression
-     * @param entityClass the entity class for property mapping
+     * @param entityClass the entity class for property mapping (may be {@code null}, in which case no entity-class association is performed)
      * @return this SqlBuilder instance for method chaining
      */
     public This from(final String expr, final Class<?> entityClass) {
@@ -3047,7 +3051,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a FETCH NEXT N ROWS ONLY clause (SQL:2008 standard syntax).
-     * 
+     * Calling either {@link #fetchNextRows(int)} or {@link #fetchFirstRows(int)} consumes both
+     * slots; you may not also call the other after this method.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -3058,9 +3064,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
      * }</pre>
-     * 
+     *
      * @param rowCount the number of rows to fetch
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if {@code FETCH NEXT} or {@code FETCH FIRST} has already been set
      */
     public This fetchNextRows(final int rowCount) {
         checkIfAlreadyCalled(SK.FETCH_NEXT);
@@ -3073,7 +3080,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a FETCH FIRST N ROWS ONLY clause (SQL standard syntax).
-     * 
+     * Calling either {@link #fetchFirstRows(int)} or {@link #fetchNextRows(int)} consumes both
+     * slots; you may not also call the other after this method.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -3083,9 +3092,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users ORDER BY id FETCH FIRST 10 ROWS ONLY
      * }</pre>
-     * 
+     *
      * @param rowCount the number of rows to fetch
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if {@code FETCH FIRST} or {@code FETCH NEXT} has already been set
      */
     public This fetchFirstRows(final int rowCount) {
         checkIfAlreadyCalled(SK.FETCH_FIRST);
@@ -3096,6 +3106,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return (This) this;
     }
 
+    /**
+     * Records that the given clause keyword has been emitted, and throws if it was already recorded.
+     * Used by clause methods (e.g. {@code WHERE}, {@code GROUP BY}, {@code HAVING}, {@code ORDER BY},
+     * {@code LIMIT}, {@code OFFSET}) that may appear at most once per built statement.
+     *
+     * @param op the clause keyword that is being emitted (e.g. {@link SK#WHERE}, {@link SK#GROUP_BY})
+     * @throws IllegalStateException if {@code op} has already been recorded for this builder
+     */
     protected void checkIfAlreadyCalled(final String op) {
         if (!calledOpSet.add(op)) {
             throw new IllegalStateException("'" + op + "' has already been set and cannot be set again");
@@ -5015,6 +5033,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                     {@code _propOrColumnNames} are emitted as a {@code SET col = ?} list.
      *                     When {@code false}, the SET list is left to the caller (typically
      *                     {@link #set(Collection)}). Has no effect for non-UPDATE operations.
+     * @throws IllegalStateException if the operation is {@code QUERY} but {@code from(...)} has not
+     *         been called and this builder is not in condition-only mode
      */
     protected void init(final boolean setForUpdate) {
         // Note: any change, please take a look at: parse(final Class<?> entityClass, final Condition cond) first.

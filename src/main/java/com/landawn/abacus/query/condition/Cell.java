@@ -64,7 +64,7 @@ public abstract class Cell extends AbstractCondition {
      * The Cell wraps the given condition and applies the specified operator to it.
      *
      * <p>This constructor is typically invoked by subclass constructors such as
-     * {@link Clause} subclasses and {@link On}.</p>
+     * {@link Clause} subclasses, {@link On}, and {@link Using}.</p>
      *
      * @param operator the operator to apply to the condition (must not be {@code null})
      * @param cond the condition to wrap (must not be {@code null})

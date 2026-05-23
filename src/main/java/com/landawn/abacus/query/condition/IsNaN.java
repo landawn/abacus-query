@@ -93,9 +93,9 @@ public class IsNaN extends Is {
      * calculation errors in floating-point operations.
      *
      * <p>The generated SQL uses the {@code IS NAN} operator because NaN has special comparison
-     * semantics: in Java/IEEE 754, {@code NaN != NaN} evaluates to {@code true} and
-     * {@code NaN == NaN} evaluates to {@code false}, while in SQL any comparison with NaN
-     * evaluates to UNKNOWN. {@code IS NAN} is the only reliable way to test for NaN values.</p>
+     * semantics in SQL: any comparison with NaN (including {@code = NAN}) evaluates to UNKNOWN
+     * and therefore behaves as {@code false} in WHERE clauses. {@code IS NAN} is the only
+     * reliable way to test for NaN values.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

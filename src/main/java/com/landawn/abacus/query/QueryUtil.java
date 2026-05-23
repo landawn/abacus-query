@@ -207,7 +207,9 @@ public final class QueryUtil {
      *
      * <p>The naming policy determines how property names are converted to column names when no explicit
      * {@code @Column} annotation is present. For nested bean properties, the method recursively builds mappings
-     * with dot notation (e.g., {@code "address.street"} -> {@code "address.street"}).
+     * with dot notation: a nested property like {@code "address.street"} resolves to a value of the form
+     * {@code "<sub-table-alias-or-name>.<column>"} (e.g. {@code "addr.street"} when the {@code Address}
+     * entity declares an alias {@code "addr"}).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

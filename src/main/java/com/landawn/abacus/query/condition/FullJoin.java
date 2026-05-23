@@ -29,8 +29,8 @@ import java.util.Collection;
  * 
  * <p>When no match is found:</p>
  * <ul>
- *   <li>NULL values are returned for columns from the left table when there's no match</li>
- *   <li>NULL values are returned for columns from the right table when there's no match</li>
+ *   <li>Right-side columns are NULL for left-side rows with no matching right-side row</li>
+ *   <li>Left-side columns are NULL for right-side rows with no matching left-side row</li>
  *   <li>All rows from both tables are included in the result set</li>
  * </ul>
  * 

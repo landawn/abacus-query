@@ -83,9 +83,11 @@ import com.landawn.abacus.util.Strings;
  * will return the same Expression instance when created through {@link #of(String)}.
  * This helps reduce memory usage and improves performance for frequently used expressions.</p>
  *
- * <p>The class provides numerous static helper methods for creating common SQL expressions
- * and functions, including arithmetic operations, string functions, mathematical functions,
- * and comparison operations. These methods help build reusable SQL expressions.</p>
+ * <p>The class provides numerous static helper methods for creating common SQL expression
+ * strings, including arithmetic operations, string functions, mathematical functions, and
+ * comparison operations. Most of these helpers return raw SQL fragments as {@link String}
+ * (suitable for passing back into {@link #of(String)} or {@link Filters#expr(String)}),
+ * not {@code Expression} instances.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -995,7 +997,7 @@ public class Expression extends ComposableCondition {
      *   <li>{@link Number} and {@link Boolean} values are converted via {@code toString()} (no quoting);
      *       {@code NaN}/infinite {@link Float}/{@link Double} values are rejected</li>
      *   <li>{@link Expression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null})</li>
-     *   <li>{@link SubQuery} instances are wrapped in parentheses; other {@link Condition}s use their {@code toString()}</li>
+     *   <li>{@link SubQuery} instances render their {@code toString()} wrapped in parentheses; other {@link Condition}s use their {@code toString()} verbatim</li>
      *   <li>Other objects are converted via {@link N#stringOf(Object)}, then quoted and escaped</li>
      * </ul>
      *
@@ -1406,8 +1408,8 @@ public class Expression extends ComposableCondition {
 
     /**
      * Creates a CONCAT function expression that concatenates two operands.
-     * The two arguments are emitted verbatim inside {@code CONCAT(...)}; use {@link #of(String)}
-     * or a literal SQL string to provide the operands.
+     * The two arguments are emitted verbatim inside {@code CONCAT(...)}; pass a column
+     * reference as-is, and pre-quote any literal string values (e.g. {@code "' '"}).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1418,8 +1420,8 @@ public class Expression extends ComposableCondition {
      * // Returns: "CONCAT(city, ', ')"
      * }</pre>
      *
-     * @param str1 the first operand (column reference or quoted literal)
-     * @param str2 the second operand (column reference or quoted literal)
+     * @param str1 the first operand (column reference or pre-quoted literal)
+     * @param str2 the second operand (column reference or pre-quoted literal)
      * @return a CONCAT function string of the form {@code CONCAT(str1, str2)}
      */
     public static String concat(final String str1, final String str2) {
@@ -1742,7 +1744,7 @@ public class Expression extends ComposableCondition {
 
     /**
      * Checks if this expression equals another object.
-     * Two expressions are equal if they have the same literal string.
+     * Two expressions are equal if they are both {@code Expression} instances with the same literal string.
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal

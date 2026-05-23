@@ -473,7 +473,7 @@ public abstract class AbstractCondition implements Condition {
      * <p>This method is protected and not intended for direct use by application code.
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propNames array of property names. Must not be {@code null} or empty.
+     * @param propNames the array of property names (must not be {@code null} or empty)
      * @return a comma-separated string of property names suitable for use in a sort/grouping clause
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}/empty elements
      */

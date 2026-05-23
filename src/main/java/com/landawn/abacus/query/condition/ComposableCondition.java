@@ -28,7 +28,8 @@ import com.landawn.abacus.util.N;
  *
  * <p>Typical implementors include comparison conditions ({@link Binary} and subclasses),
  * range conditions ({@link AbstractBetween}), collection conditions ({@link AbstractIn}),
- * junction conditions ({@link Junction}, {@link And}, {@link Or}), and others.</p>
+ * junction conditions ({@link Junction}, {@link And}, {@link Or}), and composable-cell
+ * conditions ({@link ComposableCell} and its subclasses such as {@link Not}, {@link Exists}).</p>
  *
  * @see Condition
  * @see And
@@ -37,6 +38,10 @@ import com.landawn.abacus.util.N;
  */
 public abstract class ComposableCondition extends AbstractCondition {
 
+    /**
+     * Default constructor for serialization frameworks like Kryo.
+     * Creates an uninitialized ComposableCondition instance; not for direct application use.
+     */
     ComposableCondition() {
         super();
     }

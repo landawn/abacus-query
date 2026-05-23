@@ -145,8 +145,8 @@ public class SubQuery extends AbstractCondition {
      * );
      * }</pre>
      *
-     * @param sql the SQL SELECT statement
-     * @throws IllegalArgumentException if sql is null or empty
+     * @param sql the SQL SELECT statement (must not be {@code null} or empty)
+     * @throws IllegalArgumentException if {@code sql} is {@code null} or empty
      */
     public SubQuery(final String sql) {
         this(Strings.EMPTY, sql);
@@ -161,13 +161,14 @@ public class SubQuery extends AbstractCondition {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = Filters.subQuery("orders", 
+     * SubQuery subQuery = new SubQuery("orders",
      *     "SELECT order_id FROM orders WHERE total > 1000");
      * }</pre>
      *
-     * @param entityName the entity/table name (can be empty)
-     * @param sql the SQL SELECT statement
-     * @throws IllegalArgumentException if sql is null or empty
+     * @param entityName the entity/table name; may be {@code null} or empty, in which case it is
+     *            stored as the empty string
+     * @param sql the SQL SELECT statement (must not be {@code null} or empty)
+     * @throws IllegalArgumentException if {@code sql} is {@code null} or empty
      */
     public SubQuery(final String entityName, final String sql) {
         super(Operator.EMPTY);
@@ -202,13 +203,13 @@ public class SubQuery extends AbstractCondition {
      * // Generates: SELECT id, email FROM users WHERE ((active = true) AND (created > '2024-01-01'))
      * }</pre>
      *
-     * @param entityName the entity/table name
-     * @param propNames collection of property names to select
+     * @param entityName the entity/table name (must not be {@code null} or empty)
+     * @param propNames collection of property names to select (must not be {@code null} or empty)
      * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
      *             May be {@code null} to select without a WHERE clause.
-     * @throws IllegalArgumentException if entityName is null or empty, if propNames is null or empty,
-     *             if propNames contains null/empty names, or if cond uses an
-     *             {@link Operator#ON ON}/{@link Operator#USING USING} operator (which is not valid here)
+     * @throws IllegalArgumentException if {@code entityName} is {@code null} or empty, if {@code propNames} is
+     *             {@code null} or empty, if {@code propNames} contains {@code null}/empty names, or if {@code cond}
+     *             uses an {@link Operator#ON ON}/{@link Operator#USING USING} operator (which is not valid here)
      */
     public SubQuery(final String entityName, final Collection<String> propNames, final Condition cond) {
         super(Operator.EMPTY);
@@ -251,12 +252,12 @@ public class SubQuery extends AbstractCondition {
      * );
      * }</pre>
      *
-     * @param entityClass the entity class
-     * @param propNames collection of property names to select
+     * @param entityClass the entity class (must not be {@code null})
+     * @param propNames collection of property names to select (must not be {@code null} or empty)
      * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
      *             May be {@code null} to select without a WHERE clause.
-     * @throws IllegalArgumentException if entityClass is null, if propNames is null or empty,
-     *             if propNames contains null/empty names, or if cond uses an
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propNames} is {@code null}
+     *             or empty, if {@code propNames} contains {@code null}/empty names, or if {@code cond} uses an
      *             {@link Operator#ON ON}/{@link Operator#USING USING} operator (which is not valid here)
      */
     public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition cond) {

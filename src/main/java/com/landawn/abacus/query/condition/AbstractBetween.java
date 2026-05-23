@@ -137,10 +137,12 @@ public abstract class AbstractBetween extends ComposableCondition {
 
     /**
      * Gets the parameters for this condition.
-     * Returns a list containing the minimum and maximum values.
-     * If either value is a Condition (subquery), its parameters are included instead.
+     * Returns a list containing the minimum and maximum values in that order.
+     * If either bound is a {@link Condition} (typically a {@link SubQuery}), its parameters are
+     * spliced in place of the bound itself.
      *
-     * @return an immutable list containing [minValue, maxValue] or their parameters if they are Conditions
+     * @return an immutable list containing {@code [minValue, maxValue]}, or their respective
+     *         parameters spliced in where a bound is itself a {@link Condition}
      */
     @Override
     public ImmutableList<Object> getParameters() {

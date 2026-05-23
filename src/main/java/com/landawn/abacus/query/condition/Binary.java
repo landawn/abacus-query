@@ -98,11 +98,12 @@ public class Binary extends ComposableCondition {
      * }</pre>
      * 
      * @param propName the property name to compare (must not be {@code null} or empty)
-     * @param operator the comparison operator
+     * @param operator the comparison operator (must not be {@code null})
      * @param propValue the value to compare against; may be a literal value, {@code null}
      *                  (for equality operators, renders as {@code IS NULL} / {@code IS NOT NULL}),
      *                  or a {@link Condition} such as a {@link SubQuery}
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws NullPointerException if {@code operator} is {@code null}
      */
     public Binary(final String propName, final Operator operator, final Object propValue) {
         super(operator);
@@ -134,8 +135,10 @@ public class Binary extends ComposableCondition {
 
     /**
      * Gets the value being compared against.
-     * The value can be a literal value or a Condition (for subqueries).
-     * The returned value can be safely cast to its expected type.
+     * The value can be a literal (String, Number, Date, etc.) or a {@link Condition} (typically a
+     * {@link SubQuery}). The return type is inferred from the call site via an unchecked cast,
+     * so the caller is responsible for ensuring the requested type is compatible with the stored
+     * value.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

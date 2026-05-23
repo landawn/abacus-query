@@ -122,15 +122,16 @@ public class Join extends AbstractCondition {
     /**
      * Creates a simple JOIN clause for the specified table or entity.
      * Uses the default {@link Operator#JOIN} operator without any join condition. This form is rarely used
-     * directly; most databases treat a {@code JOIN} without {@code ON} as either a cross join or
-     * an inner join requiring an implicit condition.
-     * 
+     * directly; most databases require an explicit {@code ON} or {@code USING} clause for a plain
+     * {@code JOIN}, so this constructor is typically used to build a join fragment incrementally
+     * and combine it with a separately specified condition.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple join (rarely used directly)
      * Join join = new Join("products");
      * // Generates: JOIN products
-     * 
+     *
      * // With alias
      * Join aliasJoin = new Join("product_categories pc");
      * // Generates: JOIN product_categories pc
@@ -146,7 +147,7 @@ public class Join extends AbstractCondition {
     /**
      * Creates a JOIN clause with the specified operator and table or entity.
      * This protected constructor is used by subclasses to specify the join type
-     * (INNER, LEFT, RIGHT, FULL) while reusing the common join logic.
+     * (INNER, LEFT, RIGHT, FULL, CROSS, NATURAL) while reusing the common join logic.
      *
      * @param operator the join operator (INNER_JOIN, LEFT_JOIN, etc.)
      * @param joinEntity the table or entity to join with
@@ -201,8 +202,8 @@ public class Join extends AbstractCondition {
      * <p><b>Usage Example (subclass pattern):</b></p>
      * <pre>{@code
      * // Used internally by LeftJoin
-     * class LeftJoin extends Join {
-     *     LeftJoin(String joinEntity, Condition cond) {
+     * public class LeftJoin extends Join {
+     *     public LeftJoin(String joinEntity, Condition cond) {
      *         super(Operator.LEFT_JOIN, joinEntity, cond);
      *     }
      * }
@@ -228,11 +229,8 @@ public class Join extends AbstractCondition {
      * // Join multiple tables with ON condition
      * List<String> tables = Arrays.asList("orders o", "customers c");
      * Join multiJoin = new Join(tables,
-     *     new And(
-     *         new On("o.customer_id", "c.id"),
-     *         new On("c.address_id", "a.id")
-     *     ));
-     * // Generates: JOIN (orders o, customers c) ((ON o.customer_id = c.id) AND (ON c.address_id = a.id))
+     *     new On("o.customer_id", "c.id"));
+     * // Generates: JOIN (orders o, customers c) ON o.customer_id = c.id
      *
      * // Join multiple tables with Expression
      * Join exprMultiJoin = new Join(tables,
@@ -261,8 +259,8 @@ public class Join extends AbstractCondition {
      * <p><b>Usage Example (subclass pattern):</b></p>
      * <pre>{@code
      * // Used internally by subclasses
-     * class RightJoin extends Join {
-     *     RightJoin(Collection<String> joinEntities, Condition cond) {
+     * public class RightJoin extends Join {
+     *     public RightJoin(Collection<String> joinEntities, Condition cond) {
      *         super(Operator.RIGHT_JOIN, joinEntities, cond);
      *     }
      * }

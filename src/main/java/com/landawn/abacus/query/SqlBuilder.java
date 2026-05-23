@@ -150,9 +150,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * {@link NotBetween}, {@link In}, {@link InSubQuery}, {@link NotIn}, {@link NotInSubQuery},
      * {@link Where}, {@link Having}, {@link Cell}, {@link ComposableCell}, {@link Junction},
      * {@link SubQuery} and {@link Expression}. Binary conditions with a {@code null} value and an
-     * {@code EQUAL}/{@code IS} (or {@code NOT_EQUAL}/{@code IS_NOT}) operator are rendered as
-     * {@code IS NULL}/{@code IS NOT NULL} respectively. Nested conditions and sub-queries are
-     * rendered recursively, with sub-query parameters merged into this builder's parameter list.</p>
+     * {@code EQUAL}/{@code IS} (or {@code NOT_EQUAL}/{@code NOT_EQUAL_ANSI}/{@code IS_NOT}) operator
+     * are rendered as {@code IS NULL}/{@code IS NOT NULL} respectively. Nested conditions and sub-queries
+     * are rendered recursively, with sub-query parameters merged into this builder's parameter list.</p>
      *
      * @param cond the condition to render; must be one of the supported condition types
      * @throws IllegalArgumentException if {@code cond} is an unsupported condition type, or if a
@@ -486,6 +486,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * @param cond     the original condition (used verbatim in the unsupported-type message)
      * @return a fresh sub-query builder of the same concrete type as {@code this}
      * @throws UnsupportedOperationException if the concrete builder type does not support sub-queries
+     * @throws IllegalArgumentException if {@code subQuery} has no selected property/column names
      */
     private SqlBuilder newSubQueryBuilder(final SubQuery subQuery, final Condition cond) {
         final Supplier<SqlBuilder> factory = SUB_QUERY_BUILDER_FACTORIES.get(getClass());
@@ -547,7 +548,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Creates a new instance of SCSB.
          * 
          * <p>This factory method is used internally by the static methods to create new builder instances.
-         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
+         * Each SQL building operation starts with a fresh instance, because builder instances are
+         * single-use and not thread-safe.</p>
          * 
          * @return a new SCSB instance
          */
@@ -1784,7 +1786,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.greaterThan("balance", 1000)
          * );
          * String sql = SCSB.fromCondition(cond, Account.class).build().query();
-         * // Output: ((status = 'ACTIVE') AND (balance > 1000))
+         * // Output: (status = 'ACTIVE') AND (balance > 1000)
          * }</pre>
          *
          * @param cond the condition to render (must not be {@code null})
@@ -1845,7 +1847,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Creates a new instance of ACSB.
          * 
          * <p>This factory method is used internally by the static methods to create new builder instances.
-         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
+         * Each SQL building operation starts with a fresh instance, because builder instances are
+         * single-use and not thread-safe.</p>
          * 
          * @return a new ACSB instance
          */
@@ -3120,7 +3123,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // Output: SELECT firstName, lastName FROM userAccount WHERE userId = 1
      * }</pre>
      * 
-     * @deprecated Use other naming policy implementations like {@link PLC}, {@link NLC} instead.
+     * @deprecated {@code PLC} or {@code NLC} is preferred for better security and performance.
      *             Un-parameterized SQL is vulnerable to SQL injection attacks.
      */
     @Deprecated
@@ -3140,7 +3143,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Creates a new instance of LCSB.
          * 
          * <p>This factory method is used internally by the static methods to create new builder instances.
-         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
+         * Each SQL building operation starts with a fresh instance, because builder instances are
+         * single-use and not thread-safe.</p>
          * 
          * @return a new LCSB instance
          */
@@ -4426,10 +4430,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
     /**
      * Parameterized SQL builder with no naming policy transformation.
-     * 
+     *
      * <p>This builder generates parameterized SQL statements using '?' placeholders and preserves
      * the original casing of property and column names without any transformation.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Property names are preserved as-is
@@ -4439,6 +4443,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      *                 .build().query();
      * // Output: SELECT first_Name, last_NaMe FROM account WHERE last_NaMe = ?
      * }</pre>
+     *
+     * @see SqlBuilder
+     * @see NSB
      */
     public static class PSB extends SqlBuilder {
 
@@ -5606,7 +5613,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.greaterThan("age", 18)
          * );
          * String sql = PSB.fromCondition(cond, User.class).build().query();
-         * // Result: "status = ? AND age > ?"
+         * // Output: (status = ?) AND (age > ?)
          * }</pre>
          * 
          * @param cond the condition to parse into SQL
@@ -7035,7 +7042,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Creates a new instance of PAC.
          * 
          * <p>This factory method is used internally by the static methods to create new builder instances.
-         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
+         * Each SQL building operation starts with a fresh instance, because builder instances are
+         * single-use and not thread-safe.</p>
          * 
          * @return a new PAC instance
          */
@@ -8276,7 +8284,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      *                 .having(Filters.greaterThan("COUNT(o.id)", 5))
      *                 .build().query();
      * 
-     * // Using with MongoDB-style collections
+     * // Building a query with multiple predicates against a camelCase-named table
      * String sql = PLC.selectFrom(UserProfile.class)
      *                 .where(Filters.and(
      *                     Filters.equal("isActive", true),
@@ -8306,7 +8314,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Creates a new instance of PLC.
          * 
          * <p>This factory method is used internally by the static methods to create new builder instances.
-         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
+         * Each SQL building operation starts with a fresh instance, because builder instances are
+         * single-use and not thread-safe.</p>
          * 
          * @return a new PLC instance
          */
@@ -9834,7 +9843,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
     /**
      * Named SQL builder with {@code NamingPolicy.NO_CHANGE} field/column naming strategy.
-     * 
+     *
      * <p>This builder generates SQL with named parameters (e.g., :paramName) and preserves the original
      * naming convention of fields and columns without any transformation. It's particularly useful when
      * working with databases where column names match exactly with your Java field names.</p>
@@ -9844,12 +9853,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * N.println(NSB.select("first_Name", "last_NaMe").from("account").where(Filters.equal("last_NaMe", 1)).build().query());
      * // SELECT first_Name, last_NaMe FROM account WHERE last_NaMe = :last_NaMe
      * }</pre>
+     *
+     * @see SqlBuilder
+     * @see PSB
      */
     public static class NSB extends SqlBuilder {
 
         /**
          * Constructs a new NSB instance with NO_CHANGE naming policy and named SQL policy.
-         * This constructor is package-private and used internally by the builder pattern.
+         *
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         NSB() {
             super(NamingPolicy.NO_CHANGE, SQLPolicy.NAMED_SQL);
@@ -11082,7 +11096,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     Filters.greaterThan("age", 18)
          * );
          * String sql = NSB.fromCondition(cond, User.class).build().query();
-         * // status = :status AND age > :age
+         * // Output: (status = :status) AND (age > :age)
          * }</pre>
          *
          * @param cond the condition to parse
@@ -11160,7 +11174,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Creates a new instance of NSC.
          * 
          * <p>This factory method is used internally by the static methods to create new builder instances.
-         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
+         * Each SQL building operation starts with a fresh instance, because builder instances are
+         * single-use and not thread-safe.</p>
          * 
          * @return a new NSC instance
          */
@@ -12331,7 +12346,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Creates a new instance of NAC.
          * 
          * <p>This factory method is used internally by the static methods to create new builder instances.
-         * Each SQL building operation starts with a fresh instance to ensure thread safety.</p>
+         * Each SQL building operation starts with a fresh instance, because builder instances are
+         * single-use and not thread-safe.</p>
          * 
          * @return a new NAC instance
          */
@@ -14849,9 +14865,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
     public static class MSB extends SqlBuilder {
 
         /**
-         * Constructs a new MSB instance with NO_CHANGE naming policy and IBATIS_SQL format.
-         * This constructor is package-private and should not be called directly.
-         * Use the static factory methods instead.
+         * Constructs a new MSB instance with NO_CHANGE naming policy and iBATIS SQL policy.
+         *
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         MSB() {
             super(NamingPolicy.NO_CHANGE, SQLPolicy.IBATIS_SQL);
@@ -14859,7 +14876,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates a new instance of MSB.
-         * This is an internal factory method used by the static builder methods.
+         *
+         * <p>This factory method is used internally by the static methods to create new builder instances.
+         * Each SQL building operation starts with a fresh instance, because builder instances are
+         * single-use and not thread-safe.</p>
          *
          * @return a new MSB instance
          */
@@ -16113,17 +16133,23 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
     public static class MSC extends SqlBuilder {
 
         /**
-         * Package-private constructor for internal use only.
-         * Creates a new MSC instance with snake_case naming policy and MyBatis SQL format.
+         * Constructs a new MSC instance with snake_case naming policy and iBATIS SQL policy.
+         *
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         MSC() {
             super(NamingPolicy.SNAKE_CASE, SQLPolicy.IBATIS_SQL);
         }
 
         /**
-         * Factory method to create a new MSC instance.
-         * 
-         * @return a new MSC SqlBuilder instance
+         * Creates a new instance of MSC.
+         *
+         * <p>This factory method is used internally by the static methods to create new builder instances.
+         * Each SQL building operation starts with a fresh instance, because builder instances are
+         * single-use and not thread-safe.</p>
+         *
+         * @return a new MSC instance
          */
         protected static MSC createInstance() {
             return new MSC();
@@ -17319,9 +17345,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
     /**
      * MyBatis-style SQL builder with all capital case (upper case with underscore) field/column naming strategy.
-     * 
+     *
      * <p>This builder generates SQL with MyBatis-style parameter placeholders (#{paramName}) and converts
-     * property names to SCREAMING_SNAKE_CASE format. For example, a property named "firstName" 
+     * property names to SCREAMING_SNAKE_CASE format. For example, a property named "firstName"
      * will be converted to "FIRST_NAME" in the SQL.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -17332,7 +17358,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM account WHERE ID = #{id}
-     * 
+     *
      * // Generate INSERT with entity
      * Account account = new Account();
      * account.setFirstName("John");
@@ -17340,26 +17366,31 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * String sql = MAC.insert(account).into("ACCOUNT").build().query();
      * // Output: INSERT INTO ACCOUNT (FIRST_NAME, LAST_NAME) VALUES (#{firstName}, #{lastName})
      * }</pre>
-     * 
-     * @deprecated Use {@link NAC} (Named SQL with All Caps) instead for better clarity.
+     *
+     * @deprecated Use {@link NAC} (Named SQL with All Caps) instead.
      * Note: Switching from MAC to NAC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
     public static class MAC extends SqlBuilder {
 
         /**
-         * Creates a new instance of MAC SQL builder.
-         * Internal constructor - use static factory methods instead.
+         * Constructs a new MAC instance with SCREAMING_SNAKE_CASE naming policy and iBATIS SQL policy.
+         *
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         MAC() {
             super(NamingPolicy.SCREAMING_SNAKE_CASE, SQLPolicy.IBATIS_SQL);
         }
 
         /**
-         * Creates a new MAC instance.
-         * Internal factory method.
-         * 
-         * @return a new MAC SQL builder instance
+         * Creates a new instance of MAC.
+         *
+         * <p>This factory method is used internally by the static methods to create new builder instances.
+         * Each SQL building operation starts with a fresh instance, because builder instances are
+         * single-use and not thread-safe.</p>
+         *
+         * @return a new MAC instance
          */
         protected static MAC createInstance() {
             return new MAC();
@@ -18503,29 +18534,35 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // INSERT with camelCase columns
      * Account account = new Account();
      * account.setFirstName("John");
+     * account.setLastName("Doe");
      * String sql = MLC.insert(account).into("account").build().query();
      * // Output: INSERT INTO account (firstName, lastName) VALUES (#{firstName}, #{lastName})
      * }</pre>
-     * 
-     * @deprecated Use {@link NLC} (Named SQL with Lower Camel) instead for better clarity.
+     *
+     * @deprecated Use {@link NLC} (Named SQL with Lower Camel) instead.
      * Note: Switching from MLC to NLC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
     public static class MLC extends SqlBuilder {
 
         /**
-         * Creates a new instance of MLC SQL builder.
-         * Internal constructor - use static factory methods instead.
+         * Constructs a new MLC instance with CAMEL_CASE naming policy and iBATIS SQL policy.
+         *
+         * <p>This constructor is package-private and should not be called directly. Use the static
+         * factory methods like {@link #select(String...)}, {@link #insert(String...)}, etc. instead.</p>
          */
         MLC() {
             super(NamingPolicy.CAMEL_CASE, SQLPolicy.IBATIS_SQL);
         }
 
         /**
-         * Creates a new MLC instance.
-         * Internal factory method.
-         * 
-         * @return a new MLC SQL builder instance
+         * Creates a new instance of MLC.
+         *
+         * <p>This factory method is used internally by the static methods to create new builder instances.
+         * Each SQL building operation starts with a fresh instance, because builder instances are
+         * single-use and not thread-safe.</p>
+         *
+         * @return a new MLC instance
          */
         protected static MLC createInstance() {
             return new MLC();

@@ -736,10 +736,12 @@ public final class DynamicQuery {
         /**
          * Appends multiple columns with their aliases to the {@code SELECT} clause.
          * Each entry in the map represents a column-alias pair. If the map is empty, this method does nothing.
+         * Columns are emitted in the map's iteration order, so use a {@link java.util.LinkedHashMap}
+         * if a stable column order matters.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Map<String, String> cols = new HashMap<>();
+         * Map<String, String> cols = new LinkedHashMap<>();
          * cols.put("first_name", "fname");
          * cols.put("last_name", "lname");
          * select.append(cols);

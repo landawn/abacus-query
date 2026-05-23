@@ -35,6 +35,10 @@ import com.landawn.abacus.util.Strings;
  */
 public abstract class ComposableCell extends ComposableCondition {
 
+    /**
+     * The wrapped condition. This field is immutable once set in the constructor.
+     * Accessed by subclasses for direct rendering when they override {@code toString(NamingPolicy)}.
+     */
     protected final Condition condition;
 
     /** Lazily memoized parameters (performance only). */

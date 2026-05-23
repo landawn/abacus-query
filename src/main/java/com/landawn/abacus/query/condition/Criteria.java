@@ -92,9 +92,11 @@ public class Criteria extends AbstractCondition {
     /**
      * Creates a new Criteria instance with the specified select modifier and condition list.
      * This constructor is package-private; use {@link #builder()} to construct instances.
+     * The supplied {@code conditions} list is stored by reference (no defensive copy), so
+     * callers must pass a freshly created list that they will not retain or mutate afterwards.
      *
      * @param selectModifier the SELECT modifier (e.g., {@code DISTINCT}), or {@code null} for none
-     * @param conditions the list of conditions representing the query clauses
+     * @param conditions the list of conditions representing the query clauses; stored by reference
      */
     Criteria(String selectModifier, List<Condition> conditions) {
         super(Operator.EMPTY);
@@ -1232,9 +1234,9 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Sets or replaces the GROUP BY clause with multiple properties.
-         * All properties will be sorted in ascending order.
+         * Groups results by the specified columns (no explicit sort direction is emitted).
          * If a GROUP BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> groupCols = Arrays.asList("region", "product_type");
@@ -1242,8 +1244,10 @@ public class Criteria extends AbstractCondition {
          *     .groupBy(groupCols);
          * // Results in: GROUP BY region, product_type
          * }</pre>
-         * 
-         * @param propNames the collection of property names to group by (must not be {@code null} or empty)
+         *
+         * @param propNames the collection of property names to group by
+         *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
+         *                  to preserve the column order; must not be {@code null} or empty)
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty
          */
@@ -1577,9 +1581,10 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Sets or replaces the ORDER BY clause with multiple properties.
-         * All properties will be sorted in ascending order.
+         * Orders by the specified columns using the default (ascending) direction; no explicit
+         * {@code ASC} keyword is emitted.
          * If an ORDER BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> sortCols = Arrays.asList("country", "state", "city");
@@ -1587,8 +1592,10 @@ public class Criteria extends AbstractCondition {
          *     .orderBy(sortCols);
          * // Results in: ORDER BY country, state, city
          * }</pre>
-         * 
-         * @param propNames the collection of property names to order by (must not be {@code null} or empty)
+         *
+         * @param propNames the collection of property names to order by
+         *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
+         *                  to preserve the column order; must not be {@code null} or empty)
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty
          */

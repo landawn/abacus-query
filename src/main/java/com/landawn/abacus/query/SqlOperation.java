@@ -28,7 +28,7 @@ import com.landawn.abacus.util.SK;
  * Enumeration representing SQL operation types.
  * This enum provides a list of SQL operations including DML, DDL, and TCL commands.
  * It's primarily used internally for SQL parsing and operation identification.
- * 
+ *
  * <p>Supported operations include:</p>
  * <ul>
  *   <li>DML (Data Manipulation Language): SELECT, INSERT, UPDATE, DELETE, MERGE</li>
@@ -37,7 +37,7 @@ import com.landawn.abacus.util.SK;
  *   <li>TCL (Transaction Control Language): BEGIN_TRANSACTION, COMMIT, ROLLBACK</li>
  *   <li>Other: SHOW, DESCRIBE, CALL, UNKNOWN</li>
  * </ul>
- * 
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Get operation from SQL statement
@@ -49,8 +49,9 @@ import com.landawn.abacus.util.SK;
  *     // Handle SELECT query
  * }
  * }</pre>
- * 
+ *
  * @see SqlParser
+ * @see ParsedSql
  */
 @Internal
 public enum SqlOperation {

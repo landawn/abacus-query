@@ -24,9 +24,10 @@ import com.landawn.abacus.util.Strings;
 
 /**
  * Represents a LIMIT clause in SQL queries to restrict the number of rows returned.
- * This class supports both simple LIMIT (count only) and LIMIT with OFFSET for pagination.
- * The LIMIT clause is essential for controlling result set size and implementing efficient
- * data retrieval strategies, especially for large datasets.
+ * This class supports a simple LIMIT (count only), LIMIT with OFFSET for pagination,
+ * and a custom expression form for database-specific syntax. The LIMIT clause is essential
+ * for controlling result set size and implementing efficient data retrieval strategies,
+ * especially for large datasets.
  *
  * <p>This class provides three ways to create LIMIT clauses:
  * <ul>

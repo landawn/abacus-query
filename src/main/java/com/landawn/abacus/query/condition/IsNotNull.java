@@ -20,16 +20,16 @@ package com.landawn.abacus.query.condition;
  * which is one of the most common conditions in database queries. The IS NOT NULL condition
  * is essential for data quality checks, validation, and ensuring that required fields contain values.
  * 
- * <p>In SQL, NULL represents the absence of a value, and the IS NOT NULL condition is used to:
+ * <p>In SQL, NULL represents the absence of a value, and the IS NOT NULL condition is used to:</p>
  * <ul>
  *   <li>Filter out records with missing data</li>
  *   <li>Ensure data integrity by checking required fields</li>
  *   <li>Validate that joins will produce meaningful results</li>
  *   <li>Implement business rules that require certain fields to be populated</li>
  * </ul>
- * 
+ *
  * <p>This condition is crucial for data validation and ensuring that required fields
- * contain values before processing or joining with other data.
+ * contain values before processing or joining with other data.</p>
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
