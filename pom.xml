@@ -36,9 +36,9 @@
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.release>17</maven.compiler.release>
-		<junit.jupiter.version>6.0.1</junit.jupiter.version>
-		<junit.platform.version>6.0.1</junit.platform.version>
-		<mockito.version>5.18.0</mockito.version>
+		<junit.jupiter.version>6.1.0</junit.jupiter.version>
+		<junit.platform.version>6.1.0</junit.platform.version>
+		<mockito.version>5.23.0</mockito.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
@@ -54,7 +54,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.18.42</version>
+			<version>1.18.46</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -83,35 +83,11 @@
 			<version>${junit.platform.version}</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-params</artifactId>
-			<version>${junit.jupiter.version}</version>
-			<scope>test</scope>
-		</dependency>
 
 		<dependency>
 		    <groupId>org.mockito</groupId>
 		    <artifactId>mockito-core</artifactId>
 			<version>${mockito.version}</version>
-		    <scope>test</scope>
-		</dependency>
-		<dependency>
-		    <groupId>org.mockito</groupId>
-		    <artifactId>mockito-junit-jupiter</artifactId>
-			<version>${mockito.version}</version>
-		    <scope>test</scope>
-		</dependency>
-		<dependency>
-		  <groupId>com.squareup.okhttp3</groupId>
-		  <artifactId>mockwebserver</artifactId>
-			<version>5.3.2</version>
-		  <scope>test</scope>
-		</dependency>
-		<dependency>
-		    <groupId>org.assertj</groupId>
-		    <artifactId>assertj-core</artifactId>
-			<version>3.27.6</version>
 		    <scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -121,7 +97,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.14.1</version>
+				<version>3.15.0</version>
 				<configuration>
 					<source>${maven.compiler.source}</source>
 					<target>${maven.compiler.target}</target>
@@ -130,7 +106,7 @@
 			          <path>
 			            <groupId>org.projectlombok</groupId>
 			            <artifactId>lombok</artifactId>
-			            <version>1.18.42</version>
+			            <version>1.18.46</version>
 			          </path>
 			        </annotationProcessorPaths>
 				</configuration>
@@ -139,7 +115,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>3.3.1</version>
+				<version>3.4.0</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -176,7 +152,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.5.4</version>
+				<version>3.5.5</version>
 				<configuration>
 					<includes>
 						<include>**/AbacusQueryTestSuite.java</include>
@@ -223,7 +199,7 @@
 	        <plugin>
 	          <groupId>org.sonatype.central</groupId>
 	          <artifactId>central-publishing-maven-plugin</artifactId>
-	          <version>0.9.0</version>
+	          <version>0.10.0</version>
 	          <extensions>true</extensions>
 	          <configuration>
 	             <publishingServerId>central</publishingServerId>
