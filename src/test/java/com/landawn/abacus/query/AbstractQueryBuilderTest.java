@@ -1,6 +1,7 @@
 package com.landawn.abacus.query;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.entity.Account;
@@ -1195,5 +1196,24 @@ class AbstractQueryBuilder2026BatchTest extends TestBase {
             String sql = SqlBuilder.PSC.select("id").from(Account.class).where(Filters.eq("id", i)).build().query();
             assertNotNull(sql);
         }
+    }
+
+    /**
+     * Regression test: a {@code null} {@link Condition} passed to {@code where(Condition)},
+     * {@code having(Condition)}, {@code on(Condition)}, or {@code append(Condition)} must
+     * fail fast with {@link IllegalArgumentException}. Previously these methods silently
+     * fell through to {@code appendCondition(null)}, producing malformed SQL containing
+     * a bare {@code WHERE}/{@code HAVING}/{@code ON} keyword followed by no expression.
+     */
+    @Test
+    public void testWhereHavingOnAppendRejectNullCondition() {
+        assertThrows(IllegalArgumentException.class,
+                () -> SqlBuilder.PSC.select("*").from("users").where((Condition) null).build().query());
+        assertThrows(IllegalArgumentException.class,
+                () -> SqlBuilder.PSC.select("*").from("users").groupBy("id").having((Condition) null).build().query());
+        assertThrows(IllegalArgumentException.class,
+                () -> SqlBuilder.PSC.select("*").from("users u").join("orders o").on((Condition) null).build().query());
+        assertThrows(IllegalArgumentException.class,
+                () -> SqlBuilder.PSC.select("*").from("users").append((Condition) null).build().query());
     }
 }

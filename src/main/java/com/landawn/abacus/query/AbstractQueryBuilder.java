@@ -2246,6 +2246,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This on(final Condition cond) {
+        N.checkArgNotNull(cond, "cond");
+
         _sb.append(_SPACE_ON_SPACE);
 
         appendCondition(cond);
@@ -2338,6 +2340,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @see Filters
      */
     public This where(final Condition cond) {
+        N.checkArgNotNull(cond, "cond");
+
         checkIfAlreadyCalled(SK.WHERE);
 
         init(true);
@@ -2600,6 +2604,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @see Filters
      */
     public This having(final Condition cond) {
+        N.checkArgNotNull(cond, "cond");
+
         checkIfAlreadyCalled(SK.HAVING);
 
         _sb.append(_SPACE_HAVING_SPACE);
@@ -3144,6 +3150,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @Beta
     public This append(final Condition cond) {
+        N.checkArgNotNull(cond, "cond");
+
         init(true);
 
         if (cond instanceof final Criteria criteria) {
