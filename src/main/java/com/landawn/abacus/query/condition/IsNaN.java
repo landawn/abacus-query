@@ -40,6 +40,10 @@ import com.landawn.abacus.query.Filters;
  *   <li>NaN propagates through calculations (any arithmetic operation with NaN returns NaN)</li>
  *   <li>Must use {@code IS NAN} or {@code IS NOT NAN} to reliably test for NaN values</li>
  * </ul>
+ *
+ * <p><b>SQL portability note:</b> {@code IS NAN} is not standard ANSI SQL. Support for this
+ * predicate is vendor-specific. On databases that do not recognize it, use a vendor-specific
+ * check (for example PostgreSQL's {@code column = 'NaN'::float8}) or filter at the application layer.</p>
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code

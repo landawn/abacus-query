@@ -20,7 +20,7 @@ package com.landawn.abacus.query.condition;
  * a specified value. The greater-than operator is fundamental for implementing exclusive
  * lower bounds, range queries, and various filtering scenarios.
  *
- * <p>Common use cases include:
+ * <p>Common use cases include:</p>
  * <ul>
  *   <li>Setting exclusive lower bounds on numeric values</li>
  *   <li>Date comparisons (after a certain date)</li>
@@ -29,7 +29,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Age requirements, threshold checks, and minimum validations</li>
  * </ul>
  *
- * <p>The operator works with various data types:
+ * <p>The operator works with various data types:</p>
  * <ul>
  *   <li>Numbers: Natural numeric comparison</li>
  *   <li>Dates/Times: Chronological comparison</li>

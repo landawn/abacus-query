@@ -39,6 +39,11 @@ import com.landawn.abacus.query.Filters;
  *   <li>Debugging mathematical algorithms</li>
  *   <li>Ensuring data integrity before statistical analysis</li>
  * </ul>
+ *
+ * <p><b>SQL portability note:</b> {@code IS INFINITE} is not standard ANSI SQL. Support for this
+ * predicate is vendor-specific. On databases that do not recognize {@code IS INFINITE}, use a
+ * vendor-specific check (for example, comparison against the column's representation of infinity)
+ * or filter at the application layer.</p>
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code

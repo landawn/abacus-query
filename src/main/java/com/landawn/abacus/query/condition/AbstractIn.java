@@ -67,11 +67,15 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     /**
-     * Creates a new IN or NOT IN condition.
+     * Creates a new IN or NOT IN condition. The given values are copied into an internal
+     * {@link ArrayList}, so later mutations to the supplied collection do not affect this
+     * condition. Individual elements may be literal values or {@link Condition} instances; the
+     * latter have their parameters spliced into {@link #getParameters()}.
      *
      * @param propName the property/column name (must not be {@code null} or empty)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
-     * @param values the collection of values to check membership against (must not be {@code null} or empty)
+     * @param values the collection of values to check membership against (must not be {@code null} or empty);
+     *               elements may be {@code null}
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty or {@code values} is {@code null}/empty
      */
     protected AbstractIn(final String propName, final Operator operator, final Collection<?> values) {

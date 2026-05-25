@@ -35,18 +35,23 @@ import com.landawn.abacus.util.Strings;
  * This class provides common functionality for conditions including operator storage,
  * utility methods for string representation, and property name formatting.
  *
- * <p>AbstractCondition serves as the foundation for the condition hierarchy, implementing
- * the {@link Condition} interface. Composable operations (AND, OR, NOT) are provided by
- * the {@link ComposableCondition} subclass, not by this class directly.</p>
+ * <p>{@code AbstractCondition} serves as the foundation for the condition hierarchy, implementing
+ * the {@link Condition} interface. Logical-composition helpers ({@code and()}, {@code or()},
+ * {@code not()}, {@code xor()}) are provided by the {@link ComposableCondition} subclass, not by
+ * this class directly; instances of {@code AbstractCondition} that do not also extend
+ * {@code ComposableCondition} (e.g. clause types like {@link Where}, {@link OrderBy}) cannot be
+ * combined with logical operators.</p>
  *
  * <p>Key features:</p>
  * <ul>
  *   <li>Immutable operator storage after construction</li>
- *   <li>Utility methods for parameter and property name formatting</li>
- *   <li>Standard toString() implementation</li>
+ *   <li>Static utility helpers for parameter and property-name formatting (used by subclasses)</li>
+ *   <li>Default {@link #toString()} that delegates to {@link #toString(NamingPolicy)} with
+ *       {@link NamingPolicy#NO_CHANGE}</li>
  * </ul>
- * 
+ *
  * @see Condition
+ * @see ComposableCondition
  * @see Operator
  */
 public abstract class AbstractCondition implements Condition {

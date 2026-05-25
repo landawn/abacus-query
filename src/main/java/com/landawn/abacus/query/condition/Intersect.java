@@ -57,8 +57,8 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Database support:
  * <ul>
- *   <li>Supported by: PostgreSQL, Oracle, SQL Server, SQLite, DB2</li>
- *   <li>NOT supported by MySQL (use IN with subquery or INNER JOIN instead)</li>
+ *   <li>Supported by: PostgreSQL, Oracle, SQL Server, SQLite, DB2, MySQL 8.0.31+</li>
+ *   <li>Not supported by MySQL before 8.0.31 (use IN with subquery or INNER JOIN instead)</li>
  *   <li>Part of SQL standard but not universally implemented</li>
  *   <li>Performance and optimization strategies vary by database</li>
  * </ul>

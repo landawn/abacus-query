@@ -102,7 +102,11 @@ import com.landawn.abacus.util.SK;
  *   <li><b>Null Checks:</b> {@code isNull}, {@code isNotNull}</li>
  *   <li><b>Logical:</b> {@code and}, {@code or}, {@code not}</li>
  *   <li><b>Subquery:</b> {@code exists}, {@code notExists}, {@code in(String, SubQuery)}, {@code notIn(String, SubQuery)}</li>
- *   <li><b>Joins:</b> {@code join}, {@code leftJoin}, {@code rightJoin}, {@code innerJoin}, {@code fullJoin}</li>
+ *   <li><b>Joins:</b> {@code join}, {@code leftJoin}, {@code rightJoin}, {@code innerJoin},
+ *       {@code fullJoin}, {@code crossJoin}, {@code naturalJoin}</li>
+ *   <li><b>Clauses:</b> {@code where}, {@code having}, {@code groupBy}, {@code orderBy},
+ *       {@code limit}, {@code on}, {@code using}</li>
+ *   <li><b>Set operations:</b> {@code union}, {@code unionAll}, {@code intersect}, {@code except}, {@code minus}</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -226,16 +230,19 @@ public class Filters {
     }
 
     /**
-     * Creates a {@link NamedProperty} instance representing a property/column name.
-     * This is used to reference database columns through a dedicated value object.
-     * 
+     * Creates (or returns a cached) {@link NamedProperty} instance representing a property/column name.
+     * This is used to reference database columns through a dedicated value object that exposes a
+     * fluent condition-building API. Instances are pooled by {@link NamedProperty#of(String)} so
+     * repeated calls with the same name return the same instance.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty prop = Filters.namedProperty("user_name");
      * }</pre>
      *
-     * @param propName the name of the property/column
+     * @param propName the name of the property/column (must not be {@code null} or empty)
      * @return a {@link NamedProperty} instance
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public static NamedProperty namedProperty(final String propName) {
         return NamedProperty.of(propName);
@@ -254,8 +261,9 @@ public class Filters {
      * Expression expr = Filters.expr("UPPER(name) = 'JOHN'");
      * }</pre>
      *
-     * @param literal the SQL expression as a string
+     * @param literal the SQL expression as a string (must not be {@code null})
      * @return an {@link Expression} instance
+     * @throws IllegalArgumentException if {@code literal} is {@code null}
      */
     public static Expression expr(final String literal) {
         return Expression.of(literal);
@@ -263,17 +271,22 @@ public class Filters {
 
     /**
      * Creates a {@link Binary} condition with the specified property name, operator, and value.
-     * This is a general method for creating conditions with any binary operator.
-     * 
+     * This is a general factory for creating conditions with any binary {@link Operator}, useful
+     * when one of the convenience factories (e.g. {@link #equal(String, Object)},
+     * {@link #greaterThan(String, Object)}) does not cover the desired operator.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = Filters.binary("price", Operator.GREATER_THAN, 100);
      * }</pre>
      *
-     * @param propName the property/column name
-     * @param operator the binary operator to use
-     * @param propValue the value to compare against
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param operator the binary operator to use (must not be {@code null})
+     * @param propValue the value to compare against; may be a literal, {@code null}, or another
+     *                  {@link Condition} such as a {@link SubQuery}
      * @return a {@link Binary} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws NullPointerException if {@code operator} is {@code null}
      */
     public static Binary binary(final String propName, final Operator operator, final Object propValue) {
         return new Binary(propName, operator, propValue);
@@ -281,15 +294,17 @@ public class Filters {
 
     /**
      * Creates an equality condition ({@code =}) for the specified property and value.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Equal condition = Filters.equal("username", "john_doe");
      * }</pre>
      *
-     * @param propName the property/column name
-     * @param propValue the value to compare for equality
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propValue the value to compare for equality; may be a literal, {@code null}
+     *                  (renders as {@code IS NULL}), or another {@link Condition} such as a {@link SubQuery}
      * @return an {@link Equal} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public static Equal equal(final String propName, final Object propValue) { //NOSONAR
         return new Equal(propName, propValue);
@@ -953,7 +968,7 @@ public class Filters {
     /**
      * Converts a collection of {@link EntityId}s to an {@link Or} condition where each {@link EntityId} becomes an {@link And} condition.
      * Useful for querying multiple entities by their composite keys.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<EntityId> ids = Arrays.asList(
@@ -964,9 +979,10 @@ public class Filters {
      * // Results in: (userId=1 AND orderId=100) OR (userId=2 AND orderId=200)
      * }</pre>
      *
-     * @param entityIds collection of {@link EntityId}s (must not be empty)
+     * @param entityIds collection of {@link EntityId}s (must not be {@code null} or empty)
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entityIds} is empty
+     * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, or contains an
+     *         {@link EntityId} with no keys
      */
     public static Or id2Cond(final Collection<? extends EntityId> entityIds) {
         N.checkArgNotEmpty(entityIds, "entityIds");
@@ -983,16 +999,18 @@ public class Filters {
 
     /**
      * Creates a not-equal condition ({@code !=}) for the specified property and value.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotEqual condition = Filters.notEqual("status", "deleted");
      * // SQL fragment: status != 'deleted'
      * }</pre>
      *
-     * @param propName the property/column name
-     * @param propValue the value to compare for inequality
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propValue the value to compare for inequality; may be a literal, {@code null}
+     *                  (renders as {@code IS NOT NULL}), or another {@link Condition} such as a {@link SubQuery}
      * @return a {@link NotEqual} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public static NotEqual notEqual(final String propName, final Object propValue) {
         return new NotEqual(propName, propValue);
@@ -1769,36 +1787,52 @@ public class Filters {
     }
 
     /**
-     * Creates an {@link Is} condition for database-specific identity comparisons.
-     * Different from equals ({@code =}), {@code IS} is used for special SQL comparisons.
-     * 
+     * Creates an {@link Is} condition (SQL {@code IS} predicate) for the specified property and value.
+     * Unlike equality ({@code =}), {@code IS} is used for special SQL keywords like {@code NULL},
+     * {@code NAN}, {@code INFINITE}, or {@code UNKNOWN}. Prefer the dedicated factories
+     * ({@link #isNull(String)}, {@link #isNaN(String)}, {@link #isInfinite(String)}) for those well-known cases.
+     *
+     * <p>If {@code propValue} is Java {@code null}, the rendered SQL collapses to {@code propName IS NULL}.
+     * Otherwise {@code propValue} is typically an {@link Expression} representing the desired SQL keyword.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Is condition = Filters.is("is_active", true);
-     * // SQL fragment: is_active IS TRUE
+     * Is condition = Filters.is("status", Filters.expr("UNKNOWN"));
+     * // SQL fragment: status IS UNKNOWN
      * }</pre>
      *
-     * @param propName the property/column name
-     * @param propValue the value to compare
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propValue the right-hand value (typically an {@link Expression}); may be {@code null}
+     *                  (renders as {@code IS NULL})
      * @return an {@link Is} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public static Is is(final String propName, final Object propValue) {
         return new Is(propName, propValue);
     }
 
     /**
-     * Creates an {@link IsNot} condition for database-specific identity comparisons.
-     * Different from not equals ({@code !=}), {@code IS NOT} is used for special SQL comparisons.
-     * 
+     * Creates an {@link IsNot} condition (SQL {@code IS NOT} predicate) for the specified property and value.
+     * Unlike inequality ({@code !=}), {@code IS NOT} is used for special SQL keywords like {@code NULL},
+     * {@code NAN}, {@code INFINITE}, or {@code UNKNOWN}. Prefer the dedicated factories
+     * ({@link #isNotNull(String)}, {@link #isNotNaN(String)}, {@link #isNotInfinite(String)}) for those
+     * well-known cases.
+     *
+     * <p>If {@code propValue} is Java {@code null}, the rendered SQL collapses to
+     * {@code propName IS NOT NULL}. Otherwise {@code propValue} is typically an {@link Expression}
+     * representing the desired SQL keyword.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * IsNot condition = Filters.isNot("is_deleted", true);
-     * // SQL fragment: is_deleted IS NOT TRUE
+     * IsNot condition = Filters.isNot("status", Filters.expr("UNKNOWN"));
+     * // SQL fragment: status IS NOT UNKNOWN
      * }</pre>
      *
-     * @param propName the property/column name
-     * @param propValue the value to compare
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propValue the right-hand value (typically an {@link Expression}); may be {@code null}
+     *                  (renders as {@code IS NOT NULL})
      * @return an {@link IsNot} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public static IsNot isNot(final String propName, final Object propValue) {
         return new IsNot(propName, propValue);
@@ -1807,7 +1841,7 @@ public class Filters {
     /**
      * Creates an {@link Or} junction combining multiple conditions.
      * At least one condition must be true for the {@code OR} to be true.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Or condition = Filters.or(
@@ -1818,8 +1852,10 @@ public class Filters {
      * // Results in: ((status = 'active') OR (priority > 5) OR (deleted_at IS NULL))
      * }</pre>
      *
-     * @param conditions the array of conditions to combine with {@code OR}
+     * @param conditions the array of conditions to combine with {@code OR}; {@code null} or empty
+     *                   is permitted and yields an empty junction (which renders as an empty string)
      * @return an {@link Or} junction
+     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}
      */
     public static Or or(final Condition... conditions) {
         return new Or(conditions);
@@ -1838,8 +1874,10 @@ public class Filters {
      * Or condition = Filters.or(conditions);
      * }</pre>
      *
-     * @param conditions the collection of conditions to combine with {@code OR}
+     * @param conditions the collection of conditions to combine with {@code OR}; {@code null} or
+     *                   empty is permitted and yields an empty junction
      * @return an {@link Or} junction
+     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}
      */
     public static Or or(final Collection<? extends Condition> conditions) {
         return new Or(conditions);
@@ -1859,8 +1897,10 @@ public class Filters {
      * // Results in: ((status = 'active') AND (age >= 18) AND (email IS NOT NULL))
      * }</pre>
      *
-     * @param conditions the array of conditions to combine with {@code AND}
+     * @param conditions the array of conditions to combine with {@code AND}; {@code null} or
+     *                   empty is permitted and yields an empty junction (which renders as an empty string)
      * @return an {@link And} junction
+     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}
      */
     public static And and(final Condition... conditions) {
         return new And(conditions);
@@ -1879,8 +1919,10 @@ public class Filters {
      * And condition = Filters.and(conditions);
      * }</pre>
      *
-     * @param conditions the collection of conditions to combine with {@code AND}
+     * @param conditions the collection of conditions to combine with {@code AND}; {@code null} or
+     *                   empty is permitted and yields an empty junction
      * @return an {@link And} junction
+     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}
      */
     public static And and(final Collection<? extends Condition> conditions) {
         return new And(conditions);
@@ -1935,8 +1977,9 @@ public class Filters {
      * Where where = Filters.where(Filters.equal("active", true));
      * }</pre>
      *
-     * @param cond the condition for the {@code WHERE} clause
+     * @param cond the condition for the {@code WHERE} clause (must not be {@code null})
      * @return a {@link Where} clause
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public static Where where(final Condition cond) {
         return new Where(cond);
@@ -2101,8 +2144,9 @@ public class Filters {
      * );
      * }</pre>
      *
-     * @param cond the grouping condition
+     * @param cond the grouping condition (must not be {@code null})
      * @return a {@link GroupBy} clause
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public static GroupBy groupBy(final Condition cond) {
         return new GroupBy(cond);
@@ -2118,8 +2162,9 @@ public class Filters {
      * // Results in SQL like: HAVING COUNT(*) > 5
      * }</pre>
      *
-     * @param cond the condition for the {@code HAVING} clause
+     * @param cond the condition for the {@code HAVING} clause (must not be {@code null})
      * @return a {@link Having} clause
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public static Having having(final Condition cond) {
         return new Having(cond);
@@ -2347,8 +2392,9 @@ public class Filters {
      * );
      * }</pre>
      *
-     * @param cond the ordering condition
+     * @param cond the ordering condition (must not be {@code null})
      * @return an {@link OrderBy} clause
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public static OrderBy orderBy(final Condition cond) {
         return new OrderBy(cond);
@@ -2357,14 +2403,20 @@ public class Filters {
     /**
      * Creates an {@link On} clause for JOIN operations with the specified condition.
      *
+     * <p>Note: the example below passes literal column references to {@link #equal(String, Object)},
+     * which renders the right-hand side as a string literal ({@code 'orders.user_id'}), not as a
+     * column reference. To compare two columns, prefer {@link #on(String, String)} or
+     * {@link #expr(String)}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * On on = Filters.on(Filters.equal("users.id", "orders.user_id"));
+     * On on = Filters.on(Filters.expr("users.id = orders.user_id"));
      * // Results in SQL like: ON users.id = orders.user_id
      * }</pre>
      *
-     * @param cond the join condition
+     * @param cond the join condition (must not be {@code null})
      * @return an {@link On} clause
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public static On on(final Condition cond) {
         return new On(cond);
@@ -2373,13 +2425,17 @@ public class Filters {
     /**
      * Creates an {@link On} clause from a raw SQL expression string for JOIN operations.
      *
+     * <p><b>Warning:</b> the expression is appended verbatim to the generated SQL. Do not build
+     * it from untrusted input — use {@link #on(Condition)} with parameterized conditions instead.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * On on = Filters.on("users.department_id = departments.id AND users.active = true");
      * }</pre>
      *
-     * @param expr the join condition as a string
+     * @param expr the join condition as a string (must not be {@code null})
      * @return an {@link On} clause
+     * @throws IllegalArgumentException if {@code expr} is {@code null}
      */
     public static On on(final String expr) {
         return new On(expr(expr));
@@ -2404,18 +2460,23 @@ public class Filters {
 
     /**
      * Creates an {@link On} clause from a map of column pairs for JOIN operations.
-     * Each entry represents an equality join condition between two columns.
+     * Each entry represents an equality join condition between two columns; multiple entries
+     * are combined with {@code AND}. Use a {@link java.util.LinkedHashMap} to preserve the
+     * order of the equality conditions.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Map<String, String> joinPairs = new HashMap<>();
+     * Map<String, String> joinPairs = new LinkedHashMap<>();
      * joinPairs.put("orders.user_id", "users.id");
      * joinPairs.put("orders.product_id", "products.id");
      * On on = Filters.on(joinPairs);
+     * // Generates: ON ((orders.user_id = users.id) AND (orders.product_id = products.id))
      * }</pre>
      *
-     * @param propNamePair map of column name pairs for joining
+     * @param propNamePair map of column name pairs for joining (should be a
+     *                     {@link java.util.LinkedHashMap} to preserve order; must not be {@code null} or empty)
      * @return an {@link On} clause
+     * @throws IllegalArgumentException if {@code propNamePair} is {@code null} or empty
      */
     public static On on(final Map<String, String> propNamePair) {
         return new On(propNamePair);
@@ -3278,19 +3339,22 @@ public class Filters {
 
     /**
      * Creates a SubQuery from an entity class with selected properties and condition.
+     * If {@code cond} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria}
+     * or a clause (such as {@link Where}), it will be automatically wrapped in a {@code WHERE} clause
+     * when the subquery is rendered.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery(User.class,
      *     Arrays.asList("id", "name"),
      *     Filters.equal("active", true));
-     * // Generates subquery based on User entity
+     * // Generates: SELECT id, name FROM User WHERE active = true
      * }</pre>
      *
      * @param entityClass the entity class representing the table (must not be {@code null})
      * @param propNames collection of property names to select (must not be {@code null} or empty)
      * @param cond the WHERE condition for the subquery; may be {@code null} for no WHERE clause
-     * @return a SubQuery
+     * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, or if {@code propNames} is
      *         {@code null} or empty, or if {@code cond} uses an {@code ON}/{@code USING} operator
      */
@@ -3300,18 +3364,22 @@ public class Filters {
 
     /**
      * Creates a SubQuery from an entity name with selected properties and condition.
+     * If {@code cond} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria}
+     * or a clause (such as {@link Where}), it will be automatically wrapped in a {@code WHERE} clause
+     * when the subquery is rendered.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("users",
      *     Arrays.asList("id", "email"),
      *     Filters.like("email", "%@company.com"));
+     * // Generates: SELECT id, email FROM users WHERE email LIKE '%@company.com'
      * }</pre>
      *
      * @param entityName the entity/table name (must not be {@code null} or empty)
      * @param propNames collection of property names to select (must not be {@code null} or empty)
      * @param cond the WHERE condition for the subquery; may be {@code null} for no WHERE clause
-     * @return a SubQuery
+     * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityName} is {@code null} or empty, or if
      *         {@code propNames} is {@code null} or empty, or if {@code cond} uses an
      *         {@code ON}/{@code USING} operator
@@ -3323,6 +3391,10 @@ public class Filters {
     /**
      * Creates a SubQuery from an entity name with selected properties and a raw SQL condition string.
      *
+     * <p><b>Warning:</b> {@code expr} is appended verbatim to the generated SQL. Do not build it
+     * from untrusted input — use {@link #subQuery(String, Collection, Condition)} with parameterized
+     * conditions instead.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("products",
@@ -3332,10 +3404,10 @@ public class Filters {
      *
      * @param entityName the entity/table name (must not be {@code null} or empty)
      * @param propNames collection of property names to select (must not be {@code null} or empty)
-     * @param expr the WHERE condition as a raw SQL string
-     * @return a SubQuery
+     * @param expr the WHERE condition as a raw SQL string (must not be {@code null})
+     * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityName} is {@code null} or empty,
-     *         or if {@code propNames} is {@code null} or empty
+     *         if {@code propNames} is {@code null} or empty, or if {@code expr} is {@code null}
      */
     public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final String expr) {
         return new SubQuery(entityName, propNames, expr(expr));
@@ -3366,7 +3438,10 @@ public class Filters {
     /**
      * Creates a SubQuery from raw SQL.
      * This provides complete control over the subquery content.
-     * 
+     *
+     * <p><b>Warning:</b> {@code sql} is included verbatim in the generated query. Do not build it
+     * from untrusted input.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery(
@@ -3374,8 +3449,9 @@ public class Filters {
      * );
      * }</pre>
      *
-     * @param sql the complete SQL for the subquery
-     * @return a SubQuery
+     * @param sql the complete SQL for the subquery (must not be {@code null} or empty)
+     * @return a {@link SubQuery}
+     * @throws IllegalArgumentException if {@code sql} is {@code null} or empty
      */
     public static SubQuery subQuery(final String sql) {
         return new SubQuery(sql);
@@ -3390,8 +3466,9 @@ public class Filters {
      * // Results in SQL like: LIMIT 10
      * }</pre>
      *
-     * @param count the maximum number of rows to return
+     * @param count the maximum number of rows to return (must be non-negative)
      * @return a {@link Limit} clause
+     * @throws IllegalArgumentException if {@code count} is negative
      */
     public static Limit limit(final int count) {
         return new Limit(count);
@@ -3399,7 +3476,9 @@ public class Filters {
 
     /**
      * Creates a {@link Limit} clause with a count and offset.
-     * Used for pagination of results.
+     * Used for pagination of results. Note the parameter order is {@code (count, offset)} —
+     * the first argument is the maximum number of rows to return, and the second is the number
+     * of rows to skip. When {@code offset == 0}, the rendered SQL omits the {@code OFFSET} clause.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3407,9 +3486,10 @@ public class Filters {
      * // Results in SQL like: LIMIT 20 OFFSET 10 (skip 10, take 20)
      * }</pre>
      *
-     * @param count the maximum number of rows to return
-     * @param offset the number of rows to skip
+     * @param count the maximum number of rows to return (must be non-negative)
+     * @param offset the number of rows to skip (must be non-negative)
      * @return a {@link Limit} clause
+     * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
      */
     public static Limit limit(final int count, final int offset) {
         return new Limit(count, offset);
@@ -3417,15 +3497,22 @@ public class Filters {
 
     /**
      * Creates a LIMIT clause from a string expression.
-     * Allows for database-specific limit syntax.
-     * 
+     * Allows for database-specific limit syntax. If {@code expr} begins with a digit, {@code '?'},
+     * {@code ':'}, or <code>"#{"</code>, the literal {@code "LIMIT "} prefix is prepended automatically;
+     * otherwise the expression is used as-is. See {@link Limit#Limit(String)} for full details.
+     *
+     * <p><b>Warning:</b> {@code expr} is included verbatim in the generated SQL. Do not build it
+     * from untrusted input.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Limit limit = Filters.limit("10 OFFSET 20");
+     * // Renders as: LIMIT 10 OFFSET 20
      * }</pre>
      *
-     * @param expr the limit expression as a string
-     * @return a Limit clause
+     * @param expr the limit expression as a string (must not be {@code null}, empty, or blank)
+     * @return a {@link Limit} clause
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public static Limit limit(final String expr) {
         return new Limit(expr);

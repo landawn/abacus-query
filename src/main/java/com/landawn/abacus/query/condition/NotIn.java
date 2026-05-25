@@ -21,7 +21,7 @@ import java.util.Collection;
  * This condition checks if a property value is NOT contained in a specified collection of values.
  * It's the logical opposite of the IN operator and is useful for exclusion-based filtering.
  *
- * <p>The NOT IN operator is particularly useful for:
+ * <p>The NOT IN operator is particularly useful for:</p>
  * <ul>
  *   <li>Excluding records with specific status values</li>
  *   <li>Filtering out test or system data</li>
@@ -29,13 +29,13 @@ import java.util.Collection;
  *   <li>Finding records that don't match any value in a list</li>
  * </ul>
  *
- * <p>Important considerations:
+ * <p>Important considerations:</p>
  * <ul>
- *   <li>NULL handling: If the list contains NULL or the column has NULL values,
- *       NOT IN may return unexpected results. In SQL, comparing any value with NULL using NOT IN
- *       evaluates to UNKNOWN, which behaves as false in WHERE clauses</li>
- *   <li>Performance: For large lists, consider using NOT EXISTS or LEFT JOIN instead</li>
- *   <li>The values list is copied during construction to ensure immutability</li>
+ *   <li>NULL handling: if the list contains a NULL value, {@code col NOT IN (..., NULL, ...)}
+ *       evaluates to UNKNOWN for every row (behaves as false in WHERE clauses) and no rows match.
+ *       If the column itself is NULL, the comparison is also UNKNOWN and that row is excluded</li>
+ *   <li>Performance: for large lists, consider using NOT EXISTS or a LEFT JOIN / IS NULL pattern</li>
+ *   <li>The values collection is copied during construction to ensure immutability</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>

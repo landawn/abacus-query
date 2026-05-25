@@ -158,7 +158,9 @@ public final class QueryUtil {
     /**
      * Gets a mapping of column names to property names for the specified entity class.
      * The map includes variations of column names in lowercase and uppercase for case-insensitive lookups.
-     * Column names are derived from {@code @Column} annotations on the entity properties.
+     * Only properties whose column name is resolvable from a {@code @Column} annotation (i.e.
+     * {@link PropInfo#columnName} is present) are included; properties without a column annotation
+     * are not added to the returned map.
      *
      * <p>This method is useful when you need to map database result set columns back to entity properties,
      * especially when dealing with case-insensitive database systems or when column names don't match
@@ -176,7 +178,7 @@ public final class QueryUtil {
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
-     * @return an immutable map of column names (including case variations) to property names
+     * @return an immutable map of column names (including upper- and lower-case variations) to property names
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     public static ImmutableMap<String, String> getColumn2PropNameMap(final Class<?> entityClass) {
@@ -227,7 +229,7 @@ public final class QueryUtil {
      *
      * @param entityClass the entity class to analyze (may be {@code null})
      * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
-     * @return an immutable map of property names to column names, or an empty map if {@code entityClass} is {@code null} or assignable to {@link Map}
+     * @return an immutable map of property names to column names, or an empty immutable map if {@code entityClass} is {@code null} or assignable from {@link Map}
      */
     public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
@@ -326,9 +328,11 @@ public final class QueryUtil {
      *
      * <p>The method intelligently handles ID fields:</p>
      * <ul>
-     *   <li>If all ID fields have default values ({@code 0} for numbers, {@code null} for objects), they are excluded from the result</li>
-     *   <li>If any ID field has a non-default value, all insertable properties including IDs are returned</li>
-     *   <li>This allows both auto-generated IDs and manually-assigned IDs to work correctly</li>
+     *   <li>If all ID fields have default values (e.g. {@code 0} for primitive numeric types,
+     *       {@code null} for reference types) as determined by {@link SqlBuilder#isDefaultIdPropValue(Object)},
+     *       they are excluded from the result.</li>
+     *   <li>If any ID field has a non-default value, all insertable properties including IDs are returned.</li>
+     *   <li>This allows both auto-generated IDs and manually-assigned IDs to work correctly.</li>
      * </ul>
      *
      * <p><b>Usage Examples:</b></p>
@@ -336,7 +340,8 @@ public final class QueryUtil {
      * User user = new User();
      * user.setName("John");
      * user.setEmail("john@example.com");
-     * // user.id is 0 (default) so ID field will be excluded
+     * // user.id is at its default value (e.g. null for Long, 0 for long primitive)
+     * // so the "id" property will be excluded.
      *
      * Collection<String> insertProps = QueryUtil.getInsertPropNames(user, null);
      * // Returns: ["name", "email", ...] (excludes "id" since it has default value)
@@ -590,8 +595,10 @@ public final class QueryUtil {
      * // Returns true if "tempField" is in nonColumnFields
      * }</pre>
      *
-     * @param columnFields set of field names explicitly included as columns (from {@code @Table} annotation, can be {@code null} or empty)
-     * @param nonColumnFields set of field names explicitly excluded as columns (from {@code @Table} annotation, can be {@code null} or empty)
+     * @param columnFields set of field names explicitly included as columns (typically derived from
+     *                     {@link Table#columnFields()}; may be {@code null} or empty for no whitelist)
+     * @param nonColumnFields set of field names explicitly excluded as columns (typically derived from
+     *                        {@link Table#nonColumnFields()}; may be {@code null} or empty for no blacklist)
      * @param propInfo the property information to check (must not be {@code null})
      * @return {@code true} if the property should not be mapped to a database column
      * @throws NullPointerException if {@code propInfo} is {@code null}
@@ -724,7 +731,9 @@ public final class QueryUtil {
      * using the provided naming policy.
      *
      * <p>The naming policy is only used when no {@code @Table} annotation is present. If {@code @Table} is defined,
-     * its name and alias values are used directly without any transformation.</p>
+     * its {@link Table#name() name} and {@link Table#alias() alias} values are used directly without any
+     * transformation; the naming policy is ignored. If {@code @Table} is present but its {@code name} attribute
+     * is left at the default (empty string), the returned table portion will likewise be empty.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

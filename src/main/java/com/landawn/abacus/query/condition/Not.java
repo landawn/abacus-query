@@ -27,11 +27,11 @@ package com.landawn.abacus.query.condition;
  *   <li>Building flexible query builders that can toggle conditions</li>
  * </ul>
  * 
- * <p>Truth table:</p>
+ * <p>Truth table (SQL three-valued logic):</p>
  * <ul>
  *   <li>{@code NOT TRUE = FALSE}</li>
  *   <li>{@code NOT FALSE = TRUE}</li>
- *   <li>{@code NOT NULL = NULL} (in SQL three-valued logic)</li>
+ *   <li>{@code NOT UNKNOWN = UNKNOWN} (when the operand evaluates to {@code NULL}/{@code UNKNOWN})</li>
  * </ul>
  *
  * <p>Relationship to other composable operators:</p>

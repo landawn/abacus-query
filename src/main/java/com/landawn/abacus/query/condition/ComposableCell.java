@@ -87,7 +87,9 @@ public abstract class ComposableCell extends ComposableCondition {
      * Equal inner = (Equal) notCond.getCondition();
      * }</pre>
      *
-     * @return the wrapped condition
+     * @return the wrapped condition; never {@code null} for instances created via the public
+     *         constructor, but may be {@code null} for uninitialized instances produced by the
+     *         package-private default constructor (e.g., during Kryo deserialization)
      */
     public Condition getCondition() {
         return condition;

@@ -45,14 +45,16 @@ import com.landawn.abacus.util.Strings;
  * </ul>
  *
  * <p>Parameter detection and conversion is only performed when the SQL is recognized as a
- * data operation statement (one starting with {@code SELECT}, {@code INSERT}, {@code UPDATE},
- * {@code DELETE}, {@code WITH}, {@code MERGE}, {@code CALL}, {@code VALUES}, {@code EXPLAIN}
- * or {@code REPLACE}). For any other SQL, the parameterized SQL is the original SQL unchanged
- * and {@link #namedParameters()} is empty.</p>
+ * data operation statement (one whose first non-comment / non-parenthesis token is
+ * {@code SELECT}, {@code INSERT}, {@code UPDATE}, {@code DELETE}, {@code WITH}, {@code MERGE},
+ * {@code CALL}, {@code VALUES}, {@code EXPLAIN} or {@code REPLACE}; for {@code EXPLAIN ...}
+ * the following recognized keyword is used). For any other SQL, no parameter substitution is
+ * performed and {@link #namedParameters()} is empty.</p>
  *
- * <p>Any trailing semicolons (and any surrounding whitespace) are stripped from the
- * parameterized SQL, so {@code "SELECT * FROM x;"}, {@code "SELECT * FROM x;;"} and
- * {@code "SELECT * FROM x ; ;"} all produce {@code "SELECT * FROM x"}.</p>
+ * <p>Regardless of whether parameter substitution is applied, any trailing semicolons (and any
+ * surrounding whitespace) are stripped from the parameterized SQL, so
+ * {@code "SELECT * FROM x;"}, {@code "SELECT * FROM x;;"} and {@code "SELECT * FROM x ; ;"}
+ * all produce {@code "SELECT * FROM x"}.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -341,7 +343,9 @@ public final class ParsedSql {
 
     /**
      * Gets the list of named parameters extracted from the SQL in order of appearance.
-     * For SQL with no named parameters, returns an empty list.
+     * Returns an empty list if the SQL has no named parameters, or if the SQL is not a
+     * recognized data operation statement (see the class-level documentation), in which
+     * case no parameter extraction is performed.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

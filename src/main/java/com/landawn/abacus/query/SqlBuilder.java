@@ -69,7 +69,8 @@ import com.landawn.abacus.util.u.Optional;
  * The class-name prefix encodes the parameter style ({@code S}=raw inlined values, {@code P}=positional
  * {@code ?}, {@code N}=named {@code :name}, {@code M}=MyBatis/iBATIS {@code #{name}}) and the suffix encodes
  * the identifier naming policy ({@code SB}=no change, {@code SC}=snake_case, {@code AC}=UPPER_CASE_WITH_UNDERSCORE,
- * {@code LC}=camelCase). The raw-SQL ({@code *CSB}) family is deprecated due to SQL-injection risk.
+ * {@code LC}=camelCase). The raw-SQL ({@code *CSB}) family is deprecated due to SQL-injection risk; the
+ * MyBatis-style ({@code M*}) family is also deprecated &mdash; prefer the named ({@code N*}) family instead.
  * <table border="1">
  *   <caption>Concrete SqlBuilder subclasses</caption>
  *   <tr><th>Class</th><th>Parameters</th><th>Naming</th><th>Example</th></tr>
@@ -84,10 +85,10 @@ import com.landawn.abacus.util.u.Optional;
  *   <tr><td>{@link NSC}</td><td>{@code :name}</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = :id}</td></tr>
  *   <tr><td>{@link NAC}</td><td>{@code :name}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = :id}</td></tr>
  *   <tr><td>{@link NLC}</td><td>{@code :name}</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = :id}</td></tr>
- *   <tr><td>{@link MSB}</td><td>{@code #{name}}</td><td>no change</td><td>{@code SELECT firstName FROM account WHERE id = #{id}}</td></tr>
- *   <tr><td>{@link MSC}</td><td>{@code #{name}}</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = #{id}}</td></tr>
- *   <tr><td>{@link MAC}</td><td>{@code #{name}}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = #{id}}</td></tr>
- *   <tr><td>{@link MLC}</td><td>{@code #{name}}</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = #{id}}</td></tr>
+ *   <tr><td>{@link MSB}</td><td>{@code #{name}} (deprecated)</td><td>no change</td><td>{@code SELECT firstName FROM account WHERE id = #{id}}</td></tr>
+ *   <tr><td>{@link MSC}</td><td>{@code #{name}} (deprecated)</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = #{id}}</td></tr>
+ *   <tr><td>{@link MAC}</td><td>{@code #{name}} (deprecated)</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = #{id}}</td></tr>
+ *   <tr><td>{@link MLC}</td><td>{@code #{name}} (deprecated)</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = #{id}}</td></tr>
  * </table>
  *
  * <p><b>Usage examples:</b>
@@ -645,11 +646,12 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder with column-value mappings.
-         * 
+         *
          * <p>This method allows specifying both column names and their values together. The map keys
-         * represent column names (which will be converted to snake_case) and values are the data
-         * to insert.</p>
-         * 
+         * are property or column names (camelCase keys are converted to snake_case column names per
+         * the naming policy), and the map values are the literal values to insert (inlined directly
+         * since {@code SCSB} uses raw SQL).</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Map<String, Object> props = N.asMap("firstName", "John", "age", 25);
@@ -657,7 +659,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * // Output: INSERT INTO account (first_name, age) VALUES ('John', 25)
          * }</pre>
          *
-         * @param props map of column names to values
+         * @param props map of property/column names to literal values to insert
          * @return a new SqlBuilder instance for INSERT operation
          * @throws IllegalArgumentException if props is null or empty
          */
@@ -1187,10 +1189,12 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder with column aliases.
-         * 
+         *
          * <p>This method allows specifying custom aliases for each selected column. The map keys
-         * are column names (converted to snake_case) and values are the aliases to use.</p>
-         * 
+         * are property or column names (which are converted to snake_case column names when an entity
+         * class is in scope or the value matches the alphanumeric column pattern), and the values are
+         * the aliases to use in the SELECT clause.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Map<String, String> aliases = N.asMap(
@@ -1201,7 +1205,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * // Output: SELECT first_name AS "fname", last_name AS "lname" FROM account
          * }</pre>
          *
-         * @param propOrColumnNameAliases map of column names to their aliases
+         * @param propOrColumnNameAliases map of property/column names to their SELECT aliases
          * @return a new SqlBuilder instance for SELECT operation
          * @throws IllegalArgumentException if propOrColumnNameAliases is null or empty
          */
@@ -3801,7 +3805,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * aliases.put("firstName", "fname");
          * aliases.put("lastName", "lname");
          * String sql = LCSB.select(aliases).from("users").build().query();
-         * // Output: SELECT firstName AS fname, lastName AS lname FROM users
+         * // Output: SELECT firstName AS "fname", lastName AS "lname" FROM users
          * }</pre>
          * 
          * @param propOrColumnNameAliases map of column names to their aliases
@@ -5049,7 +5053,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * aliases.put("u.name", "userName");
          * aliases.put("u.email", "userEmail");
          * SqlBuilder builder = PSB.select(aliases).from("users u");
-         * // Generates: SELECT u.name AS userName, u.email AS userEmail FROM users u
+         * // Generates: SELECT u.name AS "userName", u.email AS "userEmail" FROM users u
          * }</pre>
          * 
          * @param propOrColumnNameAliases map where keys are column names and values are aliases
@@ -9117,7 +9121,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = PLC.select(columnAliases)
          *                 .from("account")
          *                 .build().query();
-         * // Output: SELECT firstName AS fname, lastName AS lname, emailAddress AS email FROM account
+         * // Output: SELECT firstName AS "fname", lastName AS "lname", emailAddress AS "email" FROM account
          * 
          * // For JSON output formatting
          * Map<String, String> jsonAliases = new HashMap<>();
@@ -10521,7 +10525,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                 .leftJoin("orders o").on("u.id = o.user_id")
          *                 .groupBy("u.id")
          *                 .build().query();
-         * // SELECT u.first_name AS firstName, u.last_name AS lastName, COUNT(o.id) AS orderCount
+         * // SELECT u.first_name AS "firstName", u.last_name AS "lastName", COUNT(o.id) AS "orderCount"
          * // FROM users u LEFT JOIN orders o ON u.id = o.user_id GROUP BY u.id
          * }</pre>
          *
@@ -11426,9 +11430,12 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates a batch INSERT SQL builder with named parameters in MySQL style.
-         * 
-         * <p>Note: Named parameters in batch inserts may have limited support depending on the database driver.</p>
-         * 
+         *
+         * <p>To keep each row's parameter names unique, each named parameter is suffixed with the
+         * zero-based row index (e.g. {@code :firstName_0}, {@code :firstName_1}, ...). Some JDBC
+         * drivers do not support named parameters in batch inserts; consult your driver's
+         * documentation before using this in production.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<User> users = Arrays.asList(
@@ -11436,9 +11443,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     new User("Jane", "Smith")
          * );
          * String sql = NSC.batchInsert(users).into("users").build().query();
-         * // Output format depends on the implementation
+         * // Output: INSERT INTO users (first_name, last_name) VALUES (:firstName_0, :lastName_0), (:firstName_1, :lastName_1)
          * }</pre>
-         * 
+         *
          * @param propsList list of entities or property maps to insert
          * @return a new SqlBuilder instance configured for batch INSERT operation
          * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
@@ -11755,7 +11762,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * aliases.put("firstName", "fname");
          * aliases.put("lastName", "lname");
          * String sql = NSC.select(aliases).from("users").build().query();
-         * // Output: SELECT first_name AS fname, last_name AS lname FROM users
+         * // Output: SELECT first_name AS "fname", last_name AS "lname" FROM users
          * }</pre>
          * 
          * @param propOrColumnNameAliases map of column names to their aliases
@@ -12601,8 +12608,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Account acc2 = new Account("Jane", "Smith");
          * List<Account> accounts = Arrays.asList(acc1, acc2);
          * String sql = NAC.batchInsert(accounts).into("ACCOUNT").build().query();
-         * // Output: INSERT INTO ACCOUNT (FIRST_NAME, LAST_NAME) VALUES 
-         * //         (:firstName_1, :lastName_1), (:firstName_2, :lastName_2)
+         * // Output: INSERT INTO ACCOUNT (FIRST_NAME, LAST_NAME) VALUES
+         * //         (:firstName_0, :lastName_0), (:firstName_1, :lastName_1)
          * }</pre>
          * 
          * @param propsList collection of entities or property maps to insert
@@ -13828,10 +13835,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * List<Account> accounts = Arrays.asList(account1, account2, account3);
          * 
          * String sql = NLC.batchInsert(accounts).into("account").build().query();
-         * // Output: INSERT INTO account (firstName, lastName) VALUES 
-         * //         (:firstName_1, :lastName_1), 
-         * //         (:firstName_2, :lastName_2), 
-         * //         (:firstName_3, :lastName_3)
+         * // Output: INSERT INTO account (firstName, lastName) VALUES
+         * //         (:firstName_0, :lastName_0),
+         * //         (:firstName_1, :lastName_1),
+         * //         (:firstName_2, :lastName_2)
          * }</pre>
          * 
          * @param propsList collection of entities or property maps to insert
@@ -14172,7 +14179,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = NLC.select(columnAliases)
          *                 .from("account")
          *                 .build().query();
-         * // Output: SELECT firstName AS fname, lastName AS lname, emailAddress AS email FROM account
+         * // Output: SELECT firstName AS "fname", lastName AS "lname", emailAddress AS "email" FROM account
          * }</pre>
          * 
          * @param propOrColumnNameAliases map of property/column names to their aliases
@@ -15167,9 +15174,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     new User("Jane", "Smith")
          * );
          * String sql = MSB.batchInsert(users).into("users").build().query();
-         * // Output: INSERT INTO users (firstName, lastName) 
-         * //         VALUES (#{firstName}, #{lastName}), 
-         * //                (#{firstName}, #{lastName})
+         * // Output: INSERT INTO users (firstName, lastName)
+         * //         VALUES (#{firstName_0}, #{lastName_0}),
+         * //                (#{firstName_1}, #{lastName_1})
          * }</pre>
          * 
          * @param propsList collection of entities or property maps to insert
@@ -15503,7 +15510,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * aliases.put("firstName", "fname");
          * aliases.put("lastName", "lname");
          * String sql = MSB.select(aliases).from("users").build().query();
-         * // Output: SELECT firstName AS fname, lastName AS lname FROM users
+         * // Output: SELECT firstName AS "fname", lastName AS "lname" FROM users
          * }</pre>
          * 
          * @param propOrColumnNameAliases map of column names/expressions to their aliases
@@ -16427,9 +16434,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *     new User("Jane", "Smith")
          * );
          * String sql = MSC.batchInsert(users).into("users").build().query();
-         * // Output: INSERT INTO users (first_name, last_name) 
-         * //         VALUES (#{firstName}, #{lastName}), 
-         * //                (#{firstName}, #{lastName})
+         * // Output: INSERT INTO users (first_name, last_name)
+         * //         VALUES (#{firstName_0}, #{lastName_0}),
+         * //                (#{firstName_1}, #{lastName_1})
          * }</pre>
          *
          * @param propsList collection of entities or property maps to insert
@@ -17975,7 +17982,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * aliases.put("lastName", "lname");
          * aliases.put("emailAddress", "email");
          * String sql = MAC.select(aliases).from("ACCOUNT").build().query();
-         * // Output: SELECT FIRST_NAME AS fname, LAST_NAME AS lname, EMAIL_ADDRESS AS email FROM ACCOUNT
+         * // Output: SELECT FIRST_NAME AS "fname", LAST_NAME AS "lname", EMAIL_ADDRESS AS "email" FROM ACCOUNT
          * }</pre>
          *
          * @param propOrColumnNameAliases map of property/column names to their aliases
@@ -19154,7 +19161,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = MLC.select(aliases)
          *                 .from("account")
          *                 .build().query();
-         * // Output: SELECT firstName AS fname, lastName AS lname FROM account
+         * // Output: SELECT firstName AS "fname", lastName AS "lname" FROM account
          * }</pre>
          *
          * @param propOrColumnNameAliases map of column names to their aliases

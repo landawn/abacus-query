@@ -279,7 +279,11 @@ public class Binary extends ComposableCondition {
     /**
      * Checks if this Binary condition is equal to another object.
      * Two Binary conditions are equal if they have the same property name, operator, and value.
-     * 
+     * Subclasses are compared by these three fields only — the runtime class is not part of the
+     * equality contract — so two instances of different concrete subclasses are considered equal
+     * when their property name, operator, and value all match (this is typically a no-op in practice
+     * because different subclasses use different operators).
+     *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
      */

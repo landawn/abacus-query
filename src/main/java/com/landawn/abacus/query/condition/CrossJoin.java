@@ -34,8 +34,11 @@ import java.util.Collection;
  * </ul>
  * 
  * <p>Note: While this implementation allows a join condition for flexibility,
- * traditional CROSS JOIN doesn't use one. Adding a condition makes it
- * functionally equivalent to an INNER JOIN.</p>
+ * standard SQL CROSS JOIN does not accept an {@code ON} clause. The supplied condition is
+ * appended verbatim after the joined table list, so the rendered SQL may not be valid in all
+ * dialects. For a filtered Cartesian product, prefer adding the predicate via a separate
+ * {@link Where} clause (which is semantically equivalent to {@link InnerJoin} with the same
+ * condition).</p>
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code

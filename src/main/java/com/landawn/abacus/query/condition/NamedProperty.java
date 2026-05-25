@@ -43,8 +43,8 @@ import com.landawn.abacus.util.Strings;
  *   <li>Support for comparison operators (equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual)</li>
  *   <li>Support for pattern matching (like, notLike, startsWith, notStartsWith, endsWith, notEndsWith, contains, notContains)</li>
  *   <li>Support for null checks (isNull, isNotNull)</li>
- *   <li>Support for range and set operations (between, notBetween, in, notIn)</li>
- *   <li>Convenience methods for OR combinations (equalsAny)</li>
+ *   <li>Support for range and set operations (between, notBetween, in, notIn) with overloads for {@code Object[]}, {@code int[]}, {@code long[]}, {@code double[]}, and {@link Collection}</li>
+ *   <li>Convenience methods for OR combinations (equalsAny) with overloads for {@code Object[]}, {@code int[]}, {@code long[]}, {@code double[]}, and {@link Collection}</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -71,9 +71,9 @@ import com.landawn.abacus.util.Strings;
  * // Chain conditions with OR
  * Or orCondition = age.equalsAny(25, 30, 35);   // age = 25 OR age = 30 OR age = 35
  *
- * // Combine with AND/OR for complex queries
+ * // Combine with AND/OR for complex queries (chained via ComposableCondition.and/or)
  * Condition complex = age.greaterThan(18).and(status.equal("active"));
- * // Results in: age > 18 AND status = 'active'
+ * // Results in: ((age > 18) AND (status = 'active'))
  *
  * // Use in query building
  * SqlBuilder builder = PSC.select("*")
@@ -609,8 +609,8 @@ public sealed class NamedProperty permits NP {
      * NamedProperty.of("price").notBetween(10.0, 100.0);   // price NOT BETWEEN 10.0 AND 100.0
      * }</pre>
      *
-     * @param minValue the minimum value of the excluded range (inclusive). Can be numeric, date, string, or any comparable type.
-     * @param maxValue the maximum value of the excluded range (inclusive). Can be numeric, date, string, or any comparable type.
+     * @param minValue the lower bound of the range to exclude (inclusive). Can be numeric, date, string, or any comparable type.
+     * @param maxValue the upper bound of the range to exclude (inclusive). Can be numeric, date, string, or any comparable type.
      * @return a NotBetween condition for this property
      * @see NotBetween
      * @see Filters#notBetween(String, Object, Object)

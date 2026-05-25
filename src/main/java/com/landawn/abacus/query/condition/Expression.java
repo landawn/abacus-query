@@ -107,7 +107,9 @@ import com.landawn.abacus.util.Strings;
  * }</pre>
  *
  * @see AbstractCondition
+ * @see ComposableCondition
  * @see Filters#expr(String)
+ * @see Operator#EMPTY
  */
 public class Expression extends ComposableCondition {
 
@@ -879,13 +881,18 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Links a literal with min and max values using the specified operator.
+     * Renders a range expression of the form {@code "literal <op> min AND max"}.
+     * Used by {@link #between(String, Object, Object)} (with {@link Operator#BETWEEN}); the
+     * connector between {@code min} and {@code max} is always the literal {@code AND}.
+     * Both {@code min} and {@code max} are normalized via {@link #normalize(Object)}.
      *
-     * @param operator the operator to use
-     * @param literal the literal
-     * @param min the minimum value
-     * @param max the maximum value
-     * @return a string representation of the linked expression
+     * @param operator the range operator (typically {@link Operator#BETWEEN})
+     * @param literal the left-hand side literal
+     * @param min the lower bound value
+     * @param max the upper bound value
+     * @return the rendered SQL fragment
+     * @throws IllegalArgumentException if {@code min} or {@code max} is a {@code NaN} or infinite
+     *             {@link Float}/{@link Double}
      */
     static String link(final Operator operator, final String literal, final Object min, final Object max) {
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -908,12 +915,15 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Links a literal with an operator postfix.
+     * Renders an expression of the form {@code "literal <op> postfix"} with the postfix
+     * appended verbatim (no quoting or escaping). Used to build {@code IS NULL},
+     * {@code IS NOT NULL}, {@code IS BLANK}, and {@code IS NOT BLANK} expressions where
+     * the right-hand side is a SQL keyword rather than a value.
      *
-     * @param operator the operator to use
-     * @param literal the literal
-     * @param operatorPostfix the postfix for the operator
-     * @return a string representation of the linked expression
+     * @param operator the operator whose {@link Operator#sqlToken() sqlToken} appears between the literal and the postfix
+     * @param literal the left-hand side literal
+     * @param operatorPostfix the literal keyword/token appended after the operator (emitted verbatim)
+     * @return the rendered SQL fragment
      */
     static String link2(final Operator operator, final String literal, final String operatorPostfix) {
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -932,11 +942,14 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Links multiple literals with the specified operator.
+     * Joins multiple literals using the specified operator's SQL token as the separator.
+     * Each separator is surrounded by spaces (e.g. {@code " AND " }). If {@code literals}
+     * contains a single element, that element is returned with no operator appended; an
+     * empty array yields an empty string.
      *
-     * @param operator the operator to use
-     * @param literals the literals to link
-     * @return a string representation of the linked expression
+     * @param operator the operator whose {@link Operator#sqlToken() sqlToken} is used as the separator
+     * @param literals the literals to join
+     * @return the joined string
      */
     static String link2(final Operator operator, final String... literals) {
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -959,11 +972,15 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Links multiple objects with the specified symbol.
+     * Joins the SQL representations of multiple objects using the given symbol.
+     * Each object is rendered through {@link #normalize(Object)}. The {@code linkedSymbol}
+     * is automatically padded with surrounding spaces unless it is already
+     * {@link com.landawn.abacus.util.SK#SPACE} or {@link com.landawn.abacus.util.SK#COMMA_SPACE}.
      *
-     * @param linkedSymbol the symbol to use for linking
+     * @param linkedSymbol the symbol to use for linking (e.g. {@code "+"}, {@code "*"}, {@code "&"})
      * @param objects the objects to link
-     * @return a string representation of the linked expression
+     * @return the joined SQL expression string
+     * @throws IllegalArgumentException if any object is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     static String link(String linkedSymbol, final Object... objects) {
         if (!(SPACE.equals(linkedSymbol) || COMMA_SPACE.equals(linkedSymbol))) {
@@ -1150,7 +1167,7 @@ public class Expression extends ComposableCondition {
 
     /**
      * Creates an ACOS (arc cosine) function expression.
-     * ACOS returns the arc cosine of a number in radians.
+     * ACOS returns the angle (in radians) whose cosine is the given number.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1167,7 +1184,7 @@ public class Expression extends ComposableCondition {
 
     /**
      * Creates an ASIN (arc sine) function expression.
-     * ASIN returns the arc sine of a number in radians.
+     * ASIN returns the angle (in radians) whose sine is the given number.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1184,7 +1201,7 @@ public class Expression extends ComposableCondition {
 
     /**
      * Creates an ATAN (arc tangent) function expression.
-     * ATAN returns the arc tangent of a number in radians.
+     * ATAN returns the angle (in radians) whose tangent is the given number.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1639,11 +1656,14 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Creates a function expression with the given name and arguments.
+     * Renders a SQL function call of the form {@code "FUNC(arg1, arg2, ...)"}.
+     * Each argument is converted via {@link N#stringOf(Object)} and emitted verbatim
+     * (i.e. without quoting or escaping). String arguments that represent literal
+     * values must therefore be pre-quoted by the caller (e.g. {@code "'foo'"}).
      *
-     * @param functionName the name of the function
-     * @param args the function arguments
-     * @return a function expression string
+     * @param functionName the function name (emitted in upper-case, as supplied)
+     * @param args the function arguments; emitted verbatim, comma-separated
+     * @return the rendered function call string
      */
     private static String function(final String functionName, final Object... args) {
         final StringBuilder sb = Objectory.createStringBuilder();

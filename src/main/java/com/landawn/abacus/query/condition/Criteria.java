@@ -31,13 +31,19 @@ import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
- * An immutable container representing a complete SQL query structure composed of multiple clauses
+ * A container representing a complete SQL query structure composed of multiple clauses
  * ({@link Join}, {@link Where}, {@link GroupBy}, {@link Having}, {@link OrderBy}, {@link Limit},
  * and set operations like {@link Union}/{@link Intersect}/{@link Except}).
+ *
+ * <p>Instances are effectively immutable once built: the constituent conditions list is final
+ * and never mutated post-construction, and all collection accessors ({@link #getConditions()},
+ * {@link #getJoins()}, {@link #getSetOperations()}, {@link #findConditions(Operator)}) return
+ * unmodifiable views.</p>
  *
  * <p>Instances are created via {@link #builder()}. Each clause is independent and should not
  * be nested inside another clause; compose multiple clauses within a single {@code Criteria}.</p>
  *
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * Criteria criteria = Criteria.builder()
  *     .join("orders", new On("users.id", "orders.user_id"))
@@ -55,6 +61,7 @@ import com.landawn.abacus.util.Strings;
  * @see Condition
  * @see Filters
  * @see Clause
+ * @see #builder()
  */
 public class Criteria extends AbstractCondition {
 
@@ -105,10 +112,16 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Returns the SELECT modifier (e.g., {@code DISTINCT}, {@code DISTINCTROW}),
-     * or {@code null} if none was set.
+     * Returns the SELECT modifier (e.g., {@code DISTINCT}, {@code DISTINCTROW},
+     * {@code DISTINCT(col1, col2)}, or any custom modifier set via
+     * {@link Builder#selectModifier(String)}), or {@code null} if none was set.
      *
      * @return the SELECT modifier, or {@code null} if not set
+     * @see Builder#distinct()
+     * @see Builder#distinctBy(String)
+     * @see Builder#distinctRow()
+     * @see Builder#distinctRowBy(String)
+     * @see Builder#selectModifier(String)
      */
     public String getSelectModifier() {
         return selectModifier;
@@ -226,9 +239,13 @@ public class Criteria extends AbstractCondition {
     }
 
     /**
-     * Returns all conditions whose {@link Condition#operator()} matches the given operator.
+     * Returns all conditions whose {@link Condition#operator()} equals the given operator,
+     * in the order they were added. This includes any duplicate clauses that were added directly
+     * (the Builder normally replaces single-instance clauses like WHERE/ORDER BY, but multiple
+     * JOINs and set operations such as UNION accumulate).
      *
-     * @param operator the operator to match
+     * @param operator the operator to match (may be {@code null}, in which case this returns an
+     *                 empty list since {@link AbstractCondition} disallows null operators)
      * @return an unmodifiable list of matching conditions; empty if none found
      */
     public List<Condition> findConditions(final Operator operator) {
@@ -533,18 +550,20 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Sets the DISTINCT modifier for the query.
-         * DISTINCT removes duplicate rows from the result set.
-         * 
+         * DISTINCT removes duplicate rows from the result set when the surrounding
+         * {@code SqlBuilder} renders the {@code SELECT} clause.
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria criteria = Criteria.builder()
          *     .distinct()
          *     .where(Filters.equal("status", "active"))
          *     .build();
-         * // Results in: SELECT DISTINCT ... WHERE status = 'active'
+         * // Combined with a SqlBuilder SELECT, renders: SELECT DISTINCT ... WHERE status = 'active'
          * }</pre>
-         * 
+         *
          * @return this Builder instance for method chaining
+         * @see #distinctBy(String)
          */
         public Builder distinct() {
             selectModifier = SK.DISTINCT;
@@ -1658,15 +1677,16 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets or replaces the LIMIT clause.
          * If a LIMIT clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Limit customLimit = Filters.limit(100);
          * Criteria.Builder builder = Criteria.builder()
          *     .limit(customLimit);
          * }</pre>
-         * 
-         * @param condition the LIMIT condition (must not be {@code null})
+         *
+         * @param condition the LIMIT condition (must not be {@code null}); its operator must be
+         *                  {@link Operator#LIMIT}, which is guaranteed for any {@link Limit} instance
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}
          */

@@ -44,11 +44,16 @@ import com.landawn.abacus.util.Strings;
  *   <li>Block comments are normally discarded; they are retained as tokens only when the
  *       SQL begins (case-insensitively) with the marker {@code "-- Keep comments"}. Line and
  *       hash comments are always discarded regardless of this marker.</li>
- *   <li>Runs of whitespace are collapsed into a single space token ({@code " "}).</li>
+ *   <li>Runs of whitespace between emitted tokens are collapsed into a single space token
+ *       ({@code " "}); leading whitespace before the very first emitted token is dropped.</li>
  *   <li>Multi-character operators (e.g. {@code >=}, {@code <>}, {@code ->>}) are emitted
  *       as single tokens; additional separators can be registered via
  *       {@link #registerSeparator(String)} / {@link #registerSeparator(char)}.</li>
  *   <li>iBatis/MyBatis {@code #{...}} markers are not split on {@code #}.</li>
+ *   <li>{@code #} that opens a hash-prefixed identifier (e.g. a temp table name appearing
+ *       immediately after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or
+ *       {@code TABLE}) is treated as part of the identifier, not as a hash comment or
+ *       separator.</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -292,10 +297,12 @@ public final class SqlParser {
      * This method tokenizes the SQL string while preserving the semantic meaning
      * of SQL constructs such as keywords, operators, identifiers, and literals.
      *
-     * <p>Comments are stripped and runs of whitespace are collapsed into a single
-     * space token (see the class-level documentation for full tokenization rules).
-     * Composite keywords are <em>not</em> merged: e.g. {@code "ORDER BY"} is returned
-     * as the separate tokens {@code "ORDER"}, {@code " "}, {@code "BY"}.</p>
+     * <p>Comments are stripped (line and hash comments are always stripped; block comments are
+     * stripped unless the SQL begins case-insensitively with {@code "-- Keep comments"}, in which
+     * case each block comment is emitted as its own token) and runs of whitespace are collapsed
+     * into a single space token (see the class-level documentation for full tokenization rules).
+     * Composite keywords are <em>not</em> merged: e.g. {@code "ORDER BY"} is returned as the
+     * separate tokens {@code "ORDER"}, {@code " "}, {@code "BY"}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -501,11 +508,17 @@ public final class SqlParser {
      * <p>The method handles:</p>
      * <ul>
      *   <li>Simple words and operators</li>
-     *   <li>Composite keywords (e.g., "GROUP BY", "LEFT JOIN")</li>
+     *   <li>Composite keywords (e.g., "GROUP BY", "LEFT JOIN"). Sub-words may be separated by
+     *       any amount of whitespace and/or comments in the source SQL.</li>
      *   <li>Case-sensitive and case-insensitive matching</li>
-     *   <li>Quoted identifiers (preserving exact matches within quotes)</li>
+     *   <li>Quoted identifiers (the entire quoted region is matched as a single token)</li>
      *   <li>Multi-character operators</li>
      * </ul>
+     *
+     * <p>Unlike {@link String#indexOf(String, int)}, this method only returns a position where
+     * {@code word} appears as a <em>complete</em> SQL token (or composite token), not where it
+     * occurs as a substring of another identifier; matches that fall inside line/hash/block
+     * comments are skipped.</p>
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -732,10 +745,13 @@ public final class SqlParser {
      * 
      * <p>The method handles:</p>
      * <ul>
-     *   <li>Whitespace skipping</li>
-     *   <li>Quoted identifiers (returns the entire quoted string)</li>
-     *   <li>Multi-character operators (e.g., >=, !=)</li>
-     *   <li>Single-character tokens</li>
+     *   <li>Whitespace skipping (only between tokens; once a token has begun accumulating,
+     *       a comment or whitespace ends it).</li>
+     *   <li>Comment skipping when encountered before any token character (line {@code -- ...},
+     *       MySQL hash {@code # ...}, and block {@code /* ... *}{@code /} comments are all skipped).</li>
+     *   <li>Quoted identifiers (the entire quoted string, including the quotes, is returned).</li>
+     *   <li>Multi-character operators (e.g., {@code >=}, {@code !=}).</li>
+     *   <li>Single-character tokens.</li>
      * </ul>
      * 
      * <p><b>Usage Examples:</b></p>
@@ -937,10 +953,14 @@ public final class SqlParser {
      * boolean isSpace = SqlParser.isSeparator(sql, sql.length(), 6, ' ');   // true (space is a separator)
      * }</pre>
      *
+     * <p>The method may inspect characters surrounding {@code index} (notably the next char to
+     * disambiguate {@code #{...}}, and previous characters to detect a hash-prefixed identifier
+     * context), in addition to checking {@code ch} against the registered separator set.</p>
+     *
      * @param str the SQL string being parsed
-     * @param len the length of the SQL string
-     * @param index the current position in the string
-     * @param ch the character to check (the character at {@code str.charAt(index)})
+     * @param len the length of the SQL string (must be {@code >= index + 1})
+     * @param index the current position in the string (0-based)
+     * @param ch the character to check; expected to equal {@code str.charAt(index)}
      * @return {@code true} if the character is a separator in this context, {@code false} otherwise
      */
     public static boolean isSeparator(final String str, final int len, final int index, final char ch) {
@@ -1061,10 +1081,12 @@ public final class SqlParser {
      * boolean notFunc = SqlParser.isFunctionName(words, words.size(), 0);  // false for "SELECT"
      * }</pre>
      *
-     * @param words the list of parsed SQL words/tokens
-     * @param len the total length of the words list
+     * @param words the list of parsed SQL words/tokens (typically the result of {@link #parse(String)})
+     * @param len the exclusive upper bound to search within {@code words} (usually {@code words.size()};
+     *            indices {@code >= len} are not examined)
      * @param index the index of the word to check
-     * @return {@code true} if the word at the specified index is a function name, {@code false} otherwise
+     * @return {@code true} if the word at {@code index} is followed (after zero or more space tokens)
+     *         by a token beginning with {@code '('}; {@code false} otherwise
      */
     public static boolean isFunctionName(final List<String> words, final int len, final int index) {
         //    return (i < len - 1 && words.get(i + 1).charAt(0) == SK._PARENTHESIS_L)

@@ -62,7 +62,10 @@ import com.landawn.abacus.util.Strings;
  * // Structured subquery with entity class
  * SubQuery subQuery3 = Filters.subQuery(User.class, Arrays.asList("id", "name"),
  *                                   Filters.greaterThan("age", 18));
- * // Generates: SELECT id, name FROM User WHERE age > 18
+ * // Generates: SELECT id, name FROM <User-table-name> WHERE age > 18
+ * // (the FROM target is resolved from the entity class via QueryUtil — for a class without
+ * //  table-mapping annotations it falls back to the class's simple name; column-name mapping
+ * //  for the selected properties is also applied when available)
  *
  * // Use in IN condition
  * Condition inCondition = Filters.in("userId", subQuery1);

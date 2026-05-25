@@ -22,7 +22,7 @@ import java.util.Collection;
  * It's equivalent to multiple OR conditions but more concise and often more efficient.
  * The IN operator is one of the most commonly used SQL operators for filtering data.
  *
- * <p>The IN condition is particularly useful for:
+ * <p>The IN condition is particularly useful for:</p>
  * <ul>
  *   <li>Checking membership in a list of values</li>
  *   <li>Filtering by multiple possible values efficiently</li>
@@ -31,7 +31,7 @@ import java.util.Collection;
  *   <li>Implementing dynamic filters based on user selections</li>
  * </ul>
  *
- * <p>Performance considerations:
+ * <p>Performance considerations:</p>
  * <ul>
  *   <li>Most databases optimize IN conditions well for small to medium lists</li>
  *   <li>For very large lists, consider using a temporary table and JOIN</li>

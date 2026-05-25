@@ -23,7 +23,7 @@ package com.landawn.abacus.query.condition;
  * The condition evaluates to true if the property value falls strictly outside the specified range
  * (i.e., less than minValue or greater than maxValue).</p>
  *
- * <p>Common use cases include:
+ * <p>Common use cases include:</p>
  * <ul>
  *   <li>Excluding values within a specific range</li>
  *   <li>Finding outliers or extreme values</li>
@@ -87,7 +87,7 @@ public class NotBetween extends AbstractBetween {
      * // Renders as: price NOT BETWEEN 10.0 AND 1000.0
      * // Matches: price < 10.0 OR price > 1000.0
      *
-     * // Find events outside regular working days
+     * // Find events outside regular working days (assuming Sunday = 1, Saturday = 7)
      * NotBetween workdays = new NotBetween("day_of_week", 2, 6);   // Monday = 2, Friday = 6
      * // Renders as: day_of_week NOT BETWEEN 2 AND 6
      * // Matches: Sunday (1) and Saturday (7)

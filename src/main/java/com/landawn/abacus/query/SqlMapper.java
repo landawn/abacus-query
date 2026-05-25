@@ -64,7 +64,9 @@ import com.landawn.abacus.util.XmlUtil;
  * </sqlMapper>
  * }</pre>
  * 
- * <p>Supported attributes for SQL elements:</p>
+ * <p>Recognized XML attributes on {@code <sql>} elements (this class only enforces the {@code id}
+ * contract; the remaining attributes are stored verbatim in the per-id attribute map and are
+ * interpreted by downstream callers, e.g. a JDBC executor):</p>
  * <ul>
  *   <li>{@code id} - unique identifier for the SQL (required, max {@value #MAX_ID_LENGTH} characters,
  *       must not contain whitespace)</li>
@@ -556,10 +558,12 @@ public final class SqlMapper {
 
     /**
      * Compares this {@code SqlMapper} to another object for equality.
-     * Two {@code SqlMapper} instances are considered equal if they contain the same SQL definitions and attributes.
+     * Two {@code SqlMapper} instances are considered equal if they contain the same id-to-SQL mappings
+     * and id-to-attributes mappings (order-independent, per {@link Map#equals(Object)}).
      *
      * @param obj the object to compare with
-     * @return {@code true} if the objects are equal, {@code false} otherwise
+     * @return {@code true} if {@code obj} is a {@code SqlMapper} whose internal SQL and attribute maps
+     *         are equal to this mapper's; {@code false} otherwise
      */
     @Override
     public boolean equals(final Object obj) {

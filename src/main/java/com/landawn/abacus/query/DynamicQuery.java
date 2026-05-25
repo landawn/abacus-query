@@ -1182,8 +1182,11 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * where.append("id IN (").placeholders(3); // continues at the open parenthesis - no separator added
-         * // sb contents so far: "WHERE id IN (?, ?, ?"
+         * where.append("id IN (").placeholders(3).append(")");
+         * // sb contents so far: "WHERE id IN ( ?, ?, ? )"
+         * // Note: append(String) inserts a single space between fragments, so a manual
+         * // close paren produces "( ... )" with surrounding spaces. Prefer placeholders(int, String, String)
+         * // when you want the parentheses tightly attached.
          * }</pre>
          *
          * @param placeholderCount the number of question marks to append (must not be negative)

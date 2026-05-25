@@ -23,12 +23,12 @@ package com.landawn.abacus.query.condition;
  * combinations, pattern matching, null checks, and subqueries. The WHERE clause is evaluated
  * for each row before any grouping occurs.</p>
  * 
- * <p>Key characteristics:</p>
+ * <p>Key characteristics (per SQL semantics; not enforced by this class):</p>
  * <ul>
  *   <li>Filters individual rows before grouping</li>
  *   <li>Can contain any valid SQL condition</li>
  *   <li>Supports nested conditions with AND/OR</li>
- *   <li>Cannot contain aggregate functions (use HAVING for those)</li>
+ *   <li>Aggregate functions are not valid in WHERE — use {@link Having} for those</li>
  *   <li>Evaluated before GROUP BY, HAVING, and ORDER BY</li>
  * </ul>
  * 

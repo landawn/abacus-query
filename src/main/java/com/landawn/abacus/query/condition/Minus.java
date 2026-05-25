@@ -24,8 +24,9 @@ package com.landawn.abacus.query.condition;
  *   <li>Removes duplicate rows automatically (returns DISTINCT results)</li>
  *   <li>Both queries must have the same number of columns</li>
  *   <li>Corresponding columns must have compatible data types</li>
- *   <li>Column names don't need to match, but order matters</li>
- *   <li>NULL values are considered equal when comparing rows</li>
+ *   <li>Column names don't need to match, but column position/order matters</li>
+ *   <li>For row comparison purposes, two {@code NULL} values in the same column position are
+ *       treated as equal (SQL set-operation semantics, unlike regular {@code =} comparisons)</li>
  * </ul>
  *
  * <p>Common use cases:</p>
@@ -57,8 +58,8 @@ package com.landawn.abacus.query.condition;
  * <p>Database support:
  * <ul>
  *   <li>Oracle, DB2: Use MINUS keyword</li>
- *   <li>PostgreSQL, SQL Server, SQLite: Use EXCEPT keyword</li>
- *   <li>MySQL: Does not support MINUS/EXCEPT directly (use NOT IN or LEFT JOIN)</li>
+ *   <li>PostgreSQL, SQL Server, SQLite, MySQL 8.0.31+: Use EXCEPT keyword</li>
+ *   <li>MySQL before 8.0.31: Does not support MINUS/EXCEPT (use NOT IN or LEFT JOIN with NULL check)</li>
  *   <li>Part of SQL standard as EXCEPT; MINUS is Oracle-specific but widely recognized</li>
  * </ul>
  *

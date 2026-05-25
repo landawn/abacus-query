@@ -35,6 +35,10 @@ package com.landawn.abacus.query.condition;
  *   <li>Maintain meaningful numeric ranges</li>
  *   <li>Support statistical analysis that requires finite values</li>
  * </ul>
+ *
+ * <p><b>SQL portability note:</b> {@code IS NOT INFINITE} is not standard ANSI SQL. Support for
+ * this predicate is vendor-specific. On databases that do not recognize it, use a vendor-specific
+ * check or filter at the application layer.</p>
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code

@@ -22,9 +22,8 @@ import com.landawn.abacus.query.Filters;
  * which is one of the most fundamental conditions in SQL queries. NULL checking
  * is essential for proper data handling as NULL represents the absence of a value,
  * distinct from empty string, zero, or false.
- * 
- * <p>NULL represents the absence of a value and is different from empty string or zero.
- * In SQL, NULL has special properties:</p>
+ *
+ * <p>In SQL, NULL has special properties:</p>
  * <ul>
  *   <li>NULL is not equal to anything, including itself (NULL = NULL evaluates to UNKNOWN, not true or false)</li>
  *   <li>Any arithmetic operation with NULL results in NULL</li>

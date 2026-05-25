@@ -1216,6 +1216,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class representing the target table
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if the current operation is neither {@code ADD} nor {@code QUERY}, or if columns/values have not been set
      */
     public This into(final Class<?> entityClass) {
         if (_entityClass == null) {
@@ -1234,9 +1235,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Inserts into specified table with Account class mapping
      * }</pre>
      *
-     * @param tableName the name of the target table
+     * @param tableName the name of the target table (must not be {@code null}, empty, or blank)
      * @param entityClass the entity class for property mapping (may be {@code null})
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank
+     * @throws IllegalStateException if the current operation is neither {@code ADD} nor {@code QUERY}, or if columns/values have not been set
      */
     public This into(final String tableName, final Class<?> entityClass) {
         if (entityClass != null) {
@@ -1314,15 +1317,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets the FROM clause with multiple table names.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*").from("users", "orders").build().query();
      * // Output: SELECT * FROM users, orders
      * }</pre>
-     * 
-     * @param tableNames the table names to use in the FROM clause
+     *
+     * @param tableNames the table names to use in the FROM clause (must not be {@code null} or empty, and no element may be {@code null} or empty)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code tableNames} is {@code null} or empty, or contains a {@code null} or empty element
+     * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final String... tableNames) {
         N.checkArgNotEmpty(tableNames, "tableNames");
@@ -1347,16 +1352,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets the FROM clause with a collection of table names.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> tables = Arrays.asList("users", "orders");
      * String sql = PSC.select("*").from(tables).build().query();
      * // Output: SELECT * FROM users, orders
      * }</pre>
-     * 
-     * @param tableNames the collection of table names to use in the FROM clause
+     *
+     * @param tableNames the collection of table names to use in the FROM clause (must not be {@code null} or empty, and no element may be {@code null} or empty)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code tableNames} is {@code null} or empty, or contains a {@code null} or empty element
+     * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final Collection<String> tableNames) {
         N.checkArgNotEmpty(tableNames, "tableNames");
@@ -1710,7 +1717,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a JOIN clause to the SQL statement.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -1719,9 +1726,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id
      * }</pre>
-     * 
-     * @param expr the join expression (e.g., "orders o ON u.id = o.user_id")
+     *
+     * @param expr the join expression, e.g. {@code "orders o ON u.id = o.user_id"} (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public This join(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -2206,7 +2214,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an ON clause for join conditions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2216,9 +2224,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id
      * }</pre>
-     * 
-     * @param expr the join condition expression
+     *
+     * @param expr the join condition expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public This on(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -2232,7 +2241,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an ON clause with a condition object for join conditions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2241,9 +2250,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .on(Filters.equal("u.id", "o.user_id"))
      *                 .build().query();
      * }</pre>
-     * 
-     * @param cond the join condition
+     *
+     * @param cond the join condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public This on(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
@@ -2296,7 +2306,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a WHERE clause with a string expression.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2305,9 +2315,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users WHERE age > 18
      * }</pre>
-     * 
-     * @param expr the WHERE condition expression
+     *
+     * @param expr the WHERE condition expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if {@code WHERE} has already been set on this builder
      */
     public This where(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -2325,7 +2337,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a WHERE clause with a condition object.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2334,9 +2346,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users WHERE age > ?
      * }</pre>
-     * 
-     * @param cond the WHERE condition
+     *
+     * @param cond the WHERE condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalStateException if {@code WHERE} has already been set on this builder
      * @see Filters
      */
     public This where(final Condition cond) {
@@ -2355,7 +2369,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a GROUP BY clause with a single column.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("category", "COUNT(*)")
@@ -2364,9 +2378,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT category, COUNT(*) FROM products GROUP BY category
      * }</pre>
-     * 
-     * @param expr the column to group by
+     *
+     * @param expr the column to group by (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     public This groupBy(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -2382,7 +2398,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a GROUP BY clause with multiple columns.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("category", "brand", "COUNT(*)")
@@ -2391,9 +2407,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category, brand
      * }</pre>
-     * 
-     * @param propOrColumnNames the columns to group by
+     *
+     * @param propOrColumnNames the columns to group by (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     public This groupBy(final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -2560,7 +2578,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a HAVING clause with a string expression.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("category", "COUNT(*) as count")
@@ -2570,9 +2588,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT category, COUNT(*) as count FROM products GROUP BY category HAVING COUNT(*) > 10
      * }</pre>
-     * 
-     * @param expr the HAVING condition expression
+     *
+     * @param expr the HAVING condition expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if {@code HAVING} has already been set on this builder
      */
     public This having(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -2588,7 +2608,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a HAVING clause with a condition object.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("category", "COUNT(*) as count")
@@ -2598,9 +2618,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT category, COUNT(*) as count FROM products GROUP BY category HAVING COUNT(*) > ?
      * }</pre>
-     * 
-     * @param cond the HAVING condition
+     *
+     * @param cond the HAVING condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalStateException if {@code HAVING} has already been set on this builder
      * @see Filters
      */
     public This having(final Condition cond) {
@@ -2617,7 +2639,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an ORDER BY clause with a single column.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2626,9 +2648,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users ORDER BY name
      * }</pre>
-     * 
-     * @param expr the column to order by
+     *
+     * @param expr the column to order by (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     public This orderBy(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -2644,7 +2668,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an ORDER BY clause with multiple columns.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2653,9 +2677,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users ORDER BY last_name, first_name
      * }</pre>
-     * 
-     * @param propOrColumnNames the columns to order by
+     *
+     * @param propOrColumnNames the columns to order by (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     public This orderBy(final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -2952,7 +2978,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a LIMIT clause to restrict the number of rows returned.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2961,9 +2987,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users LIMIT 10
      * }</pre>
-     * 
+     *
      * @param count the maximum number of rows to return
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if {@code LIMIT} has already been set on this builder
      */
     public This limit(final int count) {
         checkIfAlreadyCalled(SK.LIMIT);
@@ -2990,6 +3017,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param count the maximum number of rows to return (appears as LIMIT in SQL)
      * @param offset the number of rows to skip (appears as OFFSET in SQL)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if {@code LIMIT} or {@code OFFSET} has already been set on this builder
      */
     public This limit(final int count, final int offset) {
         checkIfAlreadyCalled(SK.LIMIT);
@@ -3008,7 +3036,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an OFFSET clause to skip a number of rows.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -3018,9 +3046,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users LIMIT 10 OFFSET 20
      * }</pre>
-     * 
+     *
      * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
      */
     public This offset(final int offset) {
         checkIfAlreadyCalled(SK.OFFSET);
@@ -3032,7 +3061,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an OFFSET ROWS clause (SQL:2008 standard syntax).
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -3043,9 +3072,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY
      * }</pre>
-     * 
+     *
      * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
      */
     public This offsetRows(final int offset) {
         checkIfAlreadyCalled(SK.OFFSET);
@@ -3485,8 +3515,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
      *
-     * @param query the SQL query to union
+     * @param query the SQL query to union (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
      */
     public This union(final String query) {
         checkSqlFragmentNotBlank(query, "query");
@@ -5359,9 +5390,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Appends a string expression to the SQL string builder, normalizing column names according to the current naming policy.
      * Simple alphanumeric column names are normalized directly; complex expressions are parsed and each identifier is normalized individually.
      *
-     * @param expr the string expression to append
+     * @param expr the string expression to append (must not be {@code null}, empty, or blank)
      * @param isFromAppendColumn {@code true} if the expression originates from an append-column call (applies stricter validation and naming policy conversion),
      *                           {@code false} otherwise
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code isFromAppendColumn} is {@code true} and {@code expr} contains a SQL comment token
      */
     protected void appendStringExpr(final String expr, final boolean isFromAppendColumn) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -5403,7 +5435,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Appends a single column name to the SQL string builder, using the current entity class and table alias context.
      *
-     * @param propName the property or column name to append
+     * @param propName the property or column name to append (must not be {@code null}, empty, or blank, and must not contain a SQL comment token)
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or contains a SQL comment token
      */
     protected void appendColumnName(final String propName) {
         checkSqlFragmentNotBlank(propName, "propName");

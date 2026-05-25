@@ -69,9 +69,11 @@ public abstract class AbstractBetween extends ComposableCondition {
      * @param propName the property/column name (must not be {@code null} or empty)
      * @param operator the operator ({@link Operator#BETWEEN} or {@link Operator#NOT_BETWEEN})
      * @param minValue the lower bound of the range (inclusive for {@code BETWEEN}); may be a
-     *                 literal value or a {@link SubQuery}
+     *                 literal value, a {@link SubQuery}, or any other {@link Condition} whose
+     *                 parameters will be spliced into {@link #getParameters()}; may be {@code null}
      * @param maxValue the upper bound of the range (inclusive for {@code BETWEEN}); may be a
-     *                 literal value or a {@link SubQuery}
+     *                 literal value, a {@link SubQuery}, or any other {@link Condition} whose
+     *                 parameters will be spliced into {@link #getParameters()}; may be {@code null}
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     protected AbstractBetween(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
@@ -109,8 +111,10 @@ public abstract class AbstractBetween extends ComposableCondition {
      * Integer min = between.getMinValue();   // 18
      * }</pre>
      *
-     * @param <T> the expected type of the minimum value
-     * @return the configured minimum value (literal or {@link SubQuery})
+     * @param <T> the expected type of the minimum value (caller-supplied; an unchecked cast is
+     *            performed internally and a {@link ClassCastException} may be thrown at the call site)
+     * @return the configured minimum value, which may be a literal, a {@link SubQuery}, any other
+     *         {@link Condition}, or {@code null}
      */
     @SuppressWarnings("unchecked")
     public <T> T getMinValue() {
@@ -127,8 +131,10 @@ public abstract class AbstractBetween extends ComposableCondition {
      * Integer max = between.getMaxValue();   // 65
      * }</pre>
      *
-     * @param <T> the expected type of the maximum value
-     * @return the configured maximum value (literal or {@link SubQuery})
+     * @param <T> the expected type of the maximum value (caller-supplied; an unchecked cast is
+     *            performed internally and a {@link ClassCastException} may be thrown at the call site)
+     * @return the configured maximum value, which may be a literal, a {@link SubQuery}, any other
+     *         {@link Condition}, or {@code null}
      */
     @SuppressWarnings("unchecked")
     public <T> T getMaxValue() {

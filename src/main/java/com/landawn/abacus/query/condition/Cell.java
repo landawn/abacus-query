@@ -25,11 +25,14 @@ import com.landawn.abacus.util.Strings;
  * This class serves as a container for a condition paired with a specific operator,
  * typically used for unary operations or clauses that modify other conditions.
  * 
- * <p>A Cell is commonly used to wrap conditions with operators like NOT, EXISTS,
- * or to create clause conditions like WHERE, HAVING, etc. It acts as a decorator
- * that adds an operator context to an existing condition.</p>
- * 
- * <p>Direct subclasses include {@link On}, {@link Using}, and the abstract {@link Clause} (along with its concrete subclasses).</p>
+ * <p>A Cell is commonly used to wrap conditions with operators like {@code ON} and
+ * {@code USING}, or to create clause conditions like {@code WHERE}, {@code HAVING}, etc.
+ * It acts as a decorator that adds an operator context to an existing condition.</p>
+ *
+ * <p>Direct subclasses include {@link On}, {@link Using}, and the abstract {@link Clause}
+ * (along with its concrete subclasses such as {@link Where} and {@link Having}). For
+ * composable wrappers like {@link Not}, {@link Exists}, and {@link NotExists}, see
+ * {@link ComposableCell}.</p>
  *
  * @see AbstractCondition
  * @see ComposableCell
@@ -86,7 +89,9 @@ public abstract class Cell extends AbstractCondition {
      * Equal inner = (Equal) onCond.getCondition();
      * }</pre>
      *
-     * @return the wrapped condition
+     * @return the wrapped condition; never {@code null} for instances created via the public
+     *         constructor, but may be {@code null} for uninitialized instances produced by the
+     *         package-private default constructor (e.g., during Kryo deserialization)
      */
     public Condition getCondition() {
         return condition;

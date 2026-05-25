@@ -142,7 +142,9 @@ public abstract class ComposableCondition extends AbstractCondition {
      * Condition b = Filters.equal("type", "B");
      * Or exclusive = ((ComposableCondition) a).xor(b);
      * // Logically: (a AND NOT b) OR (NOT a AND b)
-     * // Renders as: (((type = 'A') AND (NOT (type = 'B'))) OR ((NOT (type = 'A')) AND (type = 'B')))
+     * // Renders as: ((((type = 'A') AND (NOT (type = 'B')))) OR (((NOT (type = 'A')) AND (type = 'B'))))
+     * // (each junction wraps every child in parentheses and the whole expression in an outer pair,
+     * //  so the nested And inside the outer Or picks up an extra layer of parens)
      * }</pre>
      *
      * @param cond the condition to XOR with this condition (must not be {@code null})

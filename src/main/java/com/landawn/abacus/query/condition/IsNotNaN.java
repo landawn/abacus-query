@@ -39,6 +39,10 @@ package com.landawn.abacus.query.condition;
  *   <li>Validating calculation results</li>
  *   <li>Implementing business rules that require valid numbers</li>
  * </ul>
+ *
+ * <p><b>SQL portability note:</b> {@code IS NOT NAN} is not standard ANSI SQL. Support for this
+ * predicate is vendor-specific. On databases that do not recognize it, use a vendor-specific
+ * check or filter at the application layer.</p>
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code

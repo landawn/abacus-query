@@ -25,9 +25,12 @@ package com.landawn.abacus.query.condition;
  * 
  * <p>Important considerations:</p>
  * <ul>
- *   <li>NULL comparisons: In SQL, NULL != value returns NULL, not true. Use {@link IsNotNull} for null checks</li>
- *   <li>Type compatibility: Ensure the property and value types are compatible for comparison</li>
- *   <li>Case sensitivity: String comparisons may be case-sensitive depending on the database</li>
+ *   <li>Java {@code null}: passing {@code null} as the value is rewritten by {@link Binary#toString} to
+ *       {@code propName IS NOT NULL}. Prefer {@link IsNotNull} for clarity</li>
+ *   <li>SQL NULL semantics: {@code col != some_value} where {@code col} is NULL evaluates to UNKNOWN
+ *       (treated as false in WHERE clauses), so such rows are not returned</li>
+ *   <li>Type compatibility: ensure the property and value types are compatible for comparison</li>
+ *   <li>Case sensitivity: string comparisons may be case-sensitive depending on the database collation</li>
  * </ul>
  * 
  * <p><b>Usage Examples:</b></p>
@@ -47,6 +50,7 @@ package com.landawn.abacus.query.condition;
  * 
  * @see Binary
  * @see Equal
+ * @see IsNotNull
  * @see Condition
  */
 public class NotEqual extends Binary {
