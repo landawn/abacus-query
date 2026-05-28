@@ -538,6 +538,54 @@ public class QueryUtilTest extends TestBase {
         }
     }
 
+    static class DeepNestedRoot {
+        private DeepNestedMiddle middle;
+
+        public DeepNestedMiddle getMiddle() {
+            return middle;
+        }
+
+        public void setMiddle(DeepNestedMiddle middle) {
+            this.middle = middle;
+        }
+    }
+
+    static class DeepNestedMiddle {
+        private DeepNestedLeaf leaf;
+
+        public DeepNestedLeaf getLeaf() {
+            return leaf;
+        }
+
+        public void setLeaf(DeepNestedLeaf leaf) {
+            this.leaf = leaf;
+        }
+    }
+
+    static class DeepNestedLeaf {
+        private DeepNestedTail tail;
+
+        public DeepNestedTail getTail() {
+            return tail;
+        }
+
+        public void setTail(DeepNestedTail tail) {
+            this.tail = tail;
+        }
+    }
+
+    static class DeepNestedTail {
+        private String value;
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+    }
+
     static class SimpleEntity {
         @Id
         private Integer id;
@@ -698,6 +746,14 @@ public class QueryUtilTest extends TestBase {
 
         assertTrue(result.containsKey("branch.firstLeaf.value"));
         assertTrue(result.containsKey("branch.secondLeaf.value"));
+    }
+
+    @Test
+    public void testGetProp2ColumnNameMapCapsDeepNestedExpansion() {
+        final ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(DeepNestedRoot.class, NamingPolicy.SNAKE_CASE);
+
+        assertFalse(result.containsKey("middle.leaf.tail.value"));
+        assertFalse(result.containsKey("middle.leaf.tail"));
     }
 
     @Test

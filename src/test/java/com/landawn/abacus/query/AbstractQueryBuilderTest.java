@@ -1207,13 +1207,9 @@ class AbstractQueryBuilder2026BatchTest extends TestBase {
      */
     @Test
     public void testWhereHavingOnAppendRejectNullCondition() {
-        assertThrows(IllegalArgumentException.class,
-                () -> SqlBuilder.PSC.select("*").from("users").where((Condition) null).build().query());
-        assertThrows(IllegalArgumentException.class,
-                () -> SqlBuilder.PSC.select("*").from("users").groupBy("id").having((Condition) null).build().query());
-        assertThrows(IllegalArgumentException.class,
-                () -> SqlBuilder.PSC.select("*").from("users u").join("orders o").on((Condition) null).build().query());
-        assertThrows(IllegalArgumentException.class,
-                () -> SqlBuilder.PSC.select("*").from("users").append((Condition) null).build().query());
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").where((Condition) null).build().query());
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").groupBy("id").having((Condition) null).build().query());
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users u").join("orders o").on((Condition) null).build().query());
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").append((Condition) null).build().query());
     }
 }

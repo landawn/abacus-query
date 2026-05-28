@@ -76,6 +76,10 @@ public final class QueryUtil {
     @SuppressWarnings("deprecation")
     static final int POOL_SIZE = InternalUtil.POOL_SIZE;
 
+    private static final int DEFAULT_MAX_NESTED_PROP_DEPTH = 2;
+
+    private static final int MAX_NESTED_PROP_DEPTH = Math.max(0, Integer.getInteger("abacus.query.maxNestedPropDepth", DEFAULT_MAX_NESTED_PROP_DEPTH));
+
     private static final String ENTITY_CLASS = "entityClass";
 
     private static final Map<Class<?>, ImmutableMap<String, String>> column2PropNameNameMapPool = new ConcurrentHashMap<>();
@@ -209,9 +213,9 @@ public final class QueryUtil {
      *
      * <p>The naming policy determines how property names are converted to column names when no explicit
      * {@code @Column} annotation is present. For nested bean properties, the method recursively builds mappings
-     * with dot notation: a nested property like {@code "address.street"} resolves to a value of the form
-     * {@code "<sub-table-alias-or-name>.<column>"} (e.g. {@code "addr.street"} when the {@code Address}
-     * entity declares an alias {@code "addr"}).
+     * with dot notation up to {@code abacus.query.maxNestedPropDepth} bean hops (default: 2): a nested property
+     * like {@code "address.street"} resolves to a value of the form {@code "<sub-table-alias-or-name>.<column>"}
+     * (e.g. {@code "addr.street"} when the {@code Address} entity declares an alias {@code "addr"}).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -249,6 +253,11 @@ public final class QueryUtil {
 
     static ImmutableMap<String, String> registerEntityPropColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy,
             final Set<Class<?>> registeringClasses) {
+        return registerEntityPropColumnNameMap(entityClass, namingPolicy, registeringClasses, MAX_NESTED_PROP_DEPTH);
+    }
+
+    private static ImmutableMap<String, String> registerEntityPropColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy,
+            final Set<Class<?>> registeringClasses, final int remainingNestedPropDepth) {
         N.checkArgNotNull(entityClass, "entityClass");
 
         if (registeringClasses != null) {
@@ -275,15 +284,18 @@ public final class QueryUtil {
             if (propInfo.columnName.isPresent()) {
                 propColumnNameMap.put(propInfo.name, propInfo.columnName.get());
             } else {
-                propColumnNameMap.put(propInfo.name, SqlBuilder.normalizeColumnName(propInfo.name, namingPolicy));
-
                 final Type<?> propType = propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type;
 
-                if (propType.isBean() && (registeringClasses == null || !registeringClasses.contains(propType.javaType()))) {
+                if (propType.isBean()) {
+                    if (remainingNestedPropDepth <= 0 || (registeringClasses != null && registeringClasses.contains(propType.javaType()))) {
+                        continue;
+                    }
+
                     final Set<Class<?>> newRegisteringClasses = registeringClasses == null ? N.newLinkedHashSet() : new LinkedHashSet<>(registeringClasses);
                     newRegisteringClasses.add(entityClass);
 
-                    final Map<String, String> subPropColumnNameMap = registerEntityPropColumnNameMap(propType.javaType(), namingPolicy, newRegisteringClasses);
+                    final Map<String, String> subPropColumnNameMap = registerEntityPropColumnNameMap(propType.javaType(), namingPolicy, newRegisteringClasses,
+                            remainingNestedPropDepth - 1);
 
                     if (N.notEmpty(subPropColumnNameMap)) {
                         final String subTableAliasOrName = SqlBuilder.getTableAliasOrName(propType.javaType(), namingPolicy);
@@ -291,9 +303,9 @@ public final class QueryUtil {
                         for (final Map.Entry<String, String> entry : subPropColumnNameMap.entrySet()) {
                             propColumnNameMap.put(propInfo.name + SK.PERIOD + entry.getKey(), subTableAliasOrName + SK.PERIOD + entry.getValue());
                         }
-
-                        propColumnNameMap.remove(propInfo.name); // remove sub entity prop.
                     }
+                } else {
+                    propColumnNameMap.put(propInfo.name, SqlBuilder.normalizeColumnName(propInfo.name, namingPolicy));
                 }
             }
         }
@@ -309,6 +321,10 @@ public final class QueryUtil {
         }
 
         final ImmutableMap<String, String> result = ImmutableMap.wrap(propColumnNameMap);
+
+        if (registeringClasses != null) {
+            return result;
+        }
 
         Map<NamingPolicy, ImmutableMap<String, String>> namingPropColumnMap = entityTablePropColumnNameMap.get(entityClass);
 
