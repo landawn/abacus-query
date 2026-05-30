@@ -69,6 +69,7 @@ import com.landawn.abacus.query.SortDirection;
  * @see SortDirection
  * @see Having
  * @see OrderBy
+ * @see Filters#expr(String)
  */
 public class GroupBy extends Clause {
 

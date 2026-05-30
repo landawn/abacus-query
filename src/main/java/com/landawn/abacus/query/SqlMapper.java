@@ -172,7 +172,9 @@ public final class SqlMapper {
      *
      * @param filePath one or more file paths separated by ',' or ';' (must not be {@code null} or empty)
      * @return a new SqlMapper instance loaded with SQL definitions from the specified files
-     * @throws IllegalArgumentException if {@code filePath} is {@code null}, empty, or resolves to no non-empty paths after splitting
+     * @throws IllegalArgumentException if {@code filePath} is {@code null}, empty, or resolves to no non-empty paths
+     *         after splitting, or if a loaded {@code <sql>} element has an invalid id (empty, containing whitespace,
+     *         exceeding {@link #MAX_ID_LENGTH} characters, or duplicated)
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid
      * @throws RuntimeException if any of the loaded files does not contain a {@code <sqlMapper>} element
@@ -270,7 +272,7 @@ public final class SqlMapper {
      * }</pre>
      *
      * @param id the SQL identifier to look up
-     * @return the ParsedSql object, or {@code null} if the id is empty, exceeds {@link #MAX_ID_LENGTH}, or not found
+     * @return the {@link ParsedSql} object, or {@code null} if the id is {@code null}, empty, exceeds {@link #MAX_ID_LENGTH} characters, or is not found
      */
     public ParsedSql get(final String id) {
         if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
@@ -301,7 +303,7 @@ public final class SqlMapper {
      * }</pre>
      *
      * @param id the SQL identifier to look up
-     * @return an immutable map of attribute names to values, or {@code null} if the id is empty, exceeds {@link #MAX_ID_LENGTH}, or not found
+     * @return an immutable map of attribute names to values, or {@code null} if the id is {@code null}, empty, exceeds {@link #MAX_ID_LENGTH} characters, or is not found
      */
     public ImmutableMap<String, String> getAttributes(final String id) {
         if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
@@ -402,7 +404,7 @@ public final class SqlMapper {
 
     /**
      * Removes the SQL and its attributes associated with the specified identifier.
-     * If the id is empty, exceeds {@link #MAX_ID_LENGTH}, or not found, this method does nothing.
+     * If the id is {@code null}, empty, exceeds {@link #MAX_ID_LENGTH} characters, or is not found, this method does nothing.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

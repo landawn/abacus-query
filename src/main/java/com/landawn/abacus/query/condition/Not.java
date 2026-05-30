@@ -39,7 +39,7 @@ package com.landawn.abacus.query.condition;
  *   <li>NOT negates a condition (reverses its boolean value)</li>
  *   <li>AND requires all conditions to be true</li>
  *   <li>OR requires at least one condition to be true</li>
- *   <li>XOR is available via {@code ComposableCondition.xor()} method, requiring exactly one of two conditions to be true</li>
+ *   <li>XOR is available via the {@link ComposableCondition#xor(Condition)} method, requiring exactly one of two conditions to be true</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -63,7 +63,7 @@ package com.landawn.abacus.query.condition;
  * // Results in: NOT (((priority = 'HIGH') AND (status = 'URGENT')))
  *
  * // NOT with EXISTS subquery
- * SubQuery hasOrders = Filters.subQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
+ * SubQuery hasOrders = new SubQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
  * Exists existsCondition = new Exists(hasOrders);
  * Not noOrders = new Not(existsCondition);
  * // Results in: NOT (EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id))
@@ -112,10 +112,11 @@ public class Not extends ComposableCell {
      *
      * @param cond the condition to be negated. May be any composable condition,
      *             including simple comparisons, logical junctions ({@link And}, {@link Or}),
-     *             or subquery conditions. Must not be {@code null} and must not be a
-     *             clause condition (such as {@link Where} or {@link Having}).
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond}
-     *             is a clause or join condition (ON/USING) that cannot be composed
+     *             or subquery conditions. It should not be a clause condition (such as
+     *             {@link Where} or {@link Having}), since those are not meant to be composed.
+     * @throws IllegalArgumentException if {@code cond} is a {@link Clause} (for example
+     *             {@link Where}, {@link Having}, or {@link OrderBy}), which cannot be used
+     *             as an operand of {@code And}/{@code Or}/{@code Not}
      */
     public Not(final Condition cond) {
         super(Operator.NOT, validateComposableOperand(cond, "not"));

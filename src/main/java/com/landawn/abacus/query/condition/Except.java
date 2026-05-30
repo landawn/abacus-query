@@ -150,9 +150,8 @@ public class Except extends Clause {
      * // SELECT product_id FROM sales
      * }</pre>
      *
-     * @param subQuery the subquery to perform the EXCEPT operation with (must not be {@code null}). The subquery must
+     * @param subQuery the subquery to perform the EXCEPT operation with. The subquery should
      *            have the same number of columns with compatible types as the main query.
-     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      * @see Minus
      * @see Union
      * @see UnionAll

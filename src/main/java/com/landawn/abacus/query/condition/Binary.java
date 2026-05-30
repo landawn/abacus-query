@@ -20,10 +20,11 @@ import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.SK;
 
 /**
- * Abstract base class for binary conditions that compare a property with a value.
+ * Base class for binary conditions that compare a property with a value.
  * Binary conditions represent operations with two operands: a property name and a value.
  *
- * <p>This class serves as the foundation for all comparison operations in queries,
+ * <p>This class is concrete and can be instantiated directly, but it also serves as the
+ * foundation for all comparison operations in queries,
  * providing common functionality for storing the property name, operator, and value.
  * The value can be a literal (String, Number, Date, etc.) or another Condition (for subqueries).</p>
  *
@@ -279,10 +280,10 @@ public class Binary extends ComposableCondition {
     /**
      * Checks if this Binary condition is equal to another object.
      * Two Binary conditions are equal if they have the same property name, operator, and value.
-     * Subclasses are compared by these three fields only — the runtime class is not part of the
+     * Comparison is based on these three fields only — the runtime class is not part of the
      * equality contract — so two instances of different concrete subclasses are considered equal
-     * when their property name, operator, and value all match (this is typically a no-op in practice
-     * because different subclasses use different operators).
+     * when their property name, operator, and value all match. In practice this rarely happens,
+     * because different subclasses use different operators.
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

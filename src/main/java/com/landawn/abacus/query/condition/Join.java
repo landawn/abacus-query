@@ -149,7 +149,7 @@ public class Join extends AbstractCondition {
      * This protected constructor is used by subclasses to specify the join type
      * (INNER, LEFT, RIGHT, FULL, CROSS, NATURAL) while reusing the common join logic.
      *
-     * @param operator the join operator (INNER_JOIN, LEFT_JOIN, etc.)
+     * @param operator the join operator (e.g. {@code INNER_JOIN}, {@code LEFT_JOIN})
      * @param joinEntity the table or entity to join with
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */

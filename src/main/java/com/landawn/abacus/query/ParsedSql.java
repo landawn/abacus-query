@@ -47,9 +47,11 @@ import com.landawn.abacus.util.Strings;
  * <p>Parameter detection and conversion is only performed when the SQL is recognized as a
  * data operation statement (one whose first non-comment / non-parenthesis token is
  * {@code SELECT}, {@code INSERT}, {@code UPDATE}, {@code DELETE}, {@code WITH}, {@code MERGE},
- * {@code CALL}, {@code VALUES}, {@code EXPLAIN} or {@code REPLACE}; for {@code EXPLAIN ...}
- * the following recognized keyword is used). For any other SQL, no parameter substitution is
- * performed and {@link #namedParameters()} is empty.</p>
+ * {@code CALL}, {@code VALUES}, {@code EXPLAIN} or {@code REPLACE}). For an {@code EXPLAIN}
+ * statement, the first recognized keyword that follows is used to classify it (for example,
+ * {@code EXPLAIN SELECT ...} is treated as a {@code SELECT}); if no such keyword follows,
+ * {@code EXPLAIN} itself is used. For any other SQL, no parameter substitution is performed
+ * and {@link #namedParameters()} is empty.</p>
  *
  * <p>Regardless of whether parameter substitution is applied, any trailing semicolons (and any
  * surrounding whitespace) are stripped from the parameterized SQL, so

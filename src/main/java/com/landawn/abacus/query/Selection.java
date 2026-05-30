@@ -31,7 +31,7 @@ import lombok.experimental.Accessors;
  * Represents a selection specification for SQL queries, particularly useful for complex multi-table selections.
  * This class encapsulates information about which entity fields to select, table aliases, and property filtering.
  * 
- * <p>The Selection class is designed to work with SqlBuilder to generate SELECT clauses with support for:</p>
+ * <p>The {@code Selection} class is designed to work with {@link SqlBuilder} to generate SELECT clauses with support for:</p>
  * <ul>
  *   <li>Entity class mapping</li>
  *   <li>Table aliasing</li>
@@ -93,9 +93,9 @@ public final class Selection {
     private Set<String> excludedPropNames;
 
     /**
-     * Creates a new MultiSelectionBuilder for building complex multi-table selections.
-     * This builder provides a fluent API for constructing multiple Selection objects that can be
-     * used with SqlBuilder to create complex SELECT statements involving multiple tables.
+     * Creates a new {@link MultiSelectionBuilder} for building complex multi-table selections.
+     * This builder provides a fluent API for constructing multiple {@link Selection} objects that can be
+     * used with {@link SqlBuilder} to create complex SELECT statements involving multiple tables.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -119,11 +119,11 @@ public final class Selection {
     }
 
     /**
-     * Builder class for creating multiple Selection objects in a fluent manner.
+     * Builder class for creating multiple {@link Selection} objects in a fluent manner.
      * This builder is particularly useful when constructing complex queries involving multiple tables.
-     * 
-     * <p>The builder supports various overloaded add() methods for different selection scenarios
-     * and can be directly applied to SqlBuilder methods using the apply() method.</p>
+     *
+     * <p>The builder supports various overloaded {@code add()} methods for different selection scenarios
+     * and can be directly applied to {@link SqlBuilder} methods using the {@link #apply(Function)} method.</p>
      */
     public static final class MultiSelectionBuilder {
         private final List<Selection> selections = new ArrayList<>();
@@ -161,7 +161,7 @@ public final class Selection {
          * }</pre>
          *
          * @param entityClass the entity class to select from
-         * @param selectPropNames the property names to include in the selection
+         * @param selectPropNames the property names to include in the selection; {@code null} means all properties
          * @return this builder instance for method chaining
          */
         public MultiSelectionBuilder add(final Class<?> entityClass, final Collection<String> selectPropNames) {
@@ -181,8 +181,8 @@ public final class Selection {
          * }</pre>
          *
          * @param entityClass the entity class to select from
-         * @param tableAlias the alias to use for the table in SQL
-         * @param classAlias the alias to use for result mapping
+         * @param tableAlias the alias to use for the table in SQL (can be {@code null})
+         * @param classAlias the alias to use for result mapping (can be {@code null})
          * @return this builder instance for method chaining
          */
         public MultiSelectionBuilder add(final Class<?> entityClass, final String tableAlias, final String classAlias) {

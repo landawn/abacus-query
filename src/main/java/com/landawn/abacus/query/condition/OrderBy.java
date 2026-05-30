@@ -21,9 +21,8 @@ import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
 
 /**
- * Represents an ORDER BY clause in SQL queries.
- * This class is used to specify the sort order of query results.
- * 
+ * Represents an ORDER BY clause in SQL queries, used to specify the sort order of query results.
+ *
  * <p>The ORDER BY clause sorts the result set by one or more columns in ascending (ASC)
  * or descending (DESC) order. By default, sorting is in ascending order if not specified.
  * The order of columns in the ORDER BY clause determines the priority of sorting.</p>
@@ -97,6 +96,7 @@ public class OrderBy extends Clause {
      *
      * @param cond the ordering condition. Must not be {@code null}.
      * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @see Filters#expr(String)
      */
     public OrderBy(final Condition cond) {
         super(Operator.ORDER_BY, cond);
@@ -196,8 +196,9 @@ public class OrderBy extends Clause {
      * // SQL: ORDER BY isActive DESC, priority DESC, created ASC
      * }</pre>
      *
-     * @param orders should be a {@code LinkedHashMap} to preserve insertion order.
-     *               Maps property names to their respective sort directions. Must not be {@code null} or empty.
+     * @param orders a map of property names to their respective sort directions; should be a
+     *               {@code LinkedHashMap} (or another order-preserving map) so that the sort priority
+     *               matches insertion order. Must not be {@code null} or empty.
      * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, or contains {@code null} or empty keys
      *                                  or {@code null} values
      */

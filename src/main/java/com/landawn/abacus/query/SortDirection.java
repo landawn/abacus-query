@@ -18,9 +18,10 @@ package com.landawn.abacus.query;
  * Enumeration representing the sort direction for database queries and collections.
  * Provides two possible sort orders: ascending ({@link #ASC}) and descending ({@link #DESC}).
  *
- * <p>This enum is commonly used with {@link SqlBuilder} to specify the order of results in SQL queries.
- * The enum constant names ({@code "ASC"}, {@code "DESC"}) correspond to the standard SQL
- * {@code ORDER BY} clause keywords, so {@link #toString()} returns the correct SQL fragment.</p>
+ * <p>This enum is commonly used with the {@link SqlBuilder} family to specify the order of results in
+ * SQL queries. The enum constant names ({@code "ASC"}, {@code "DESC"}) correspond to the standard SQL
+ * {@code ORDER BY} clause keywords, so {@link #toString()} (the default {@link Enum#toString()}, which
+ * is not overridden here) returns the matching SQL fragment.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -33,10 +34,11 @@ package com.landawn.abacus.query;
  * // Use in SQL building (toString() yields "ASC" / "DESC")
  * String sql = "SELECT * FROM users ORDER BY name " + SortDirection.DESC;
  *
- * // Use with SqlBuilder (typical use case)
- * SqlBuilder builder = PSC.selectFrom(User.class)
+ * // Use with a SqlBuilder (typical use case)
+ * String built = PSC.selectFrom(User.class)
  *     .orderBy("lastName", SortDirection.ASC)
- *     .orderBy("firstName", SortDirection.ASC);
+ *     .orderBy("firstName", SortDirection.ASC)
+ *     .build().query();
  * }</pre>
  *
  * @see SqlBuilder

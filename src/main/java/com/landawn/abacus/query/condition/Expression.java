@@ -267,6 +267,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side of the equality
      * @param value the right-hand side value
      * @return a string representation of the equality expression
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     @Beta
     public static String eq(final String literal, final Object value) {
@@ -311,6 +312,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side of the inequality
      * @param value the right-hand side value
      * @return a string representation of the not-equal expression
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     @Beta
     public static String ne(final String literal, final Object value) {
@@ -351,6 +353,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the greater-than expression
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     @Beta
     public static String gt(final String literal, final Object value) {
@@ -388,6 +391,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the greater-than-or-equal expression
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     @Beta
     public static String ge(final String literal, final Object value) {
@@ -425,6 +429,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the less-than expression
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     @Beta
     public static String lt(final String literal, final Object value) {
@@ -462,6 +467,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side of the comparison
      * @param value the right-hand side value
      * @return a string representation of the less-than-or-equal expression
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     @Beta
     public static String le(final String literal, final Object value) {
@@ -674,6 +680,7 @@ public class Expression extends ComposableCondition {
      *
      * @param objects the values to subtract
      * @return a string representation of the subtraction expression
+     * @throws IllegalArgumentException if any value is a {@code NaN} or infinite {@link Float}/{@link Double}
      * @deprecated Use {@link #subtract(Object...)} instead to avoid confusion with the SQL {@code MINUS} set operation.
      */
     @Deprecated
@@ -1009,8 +1016,9 @@ public class Expression extends ComposableCondition {
      * This method performs SQL escaping and formatting:
      * <ul>
      *   <li>{@code null} values become the string {@code "null"}</li>
-     *   <li>Strings are wrapped in single quotes with single/double quotes and any trailing
-     *       backslash escaped via {@link AbstractCondition#escapeStringLiteral(String)}</li>
+     *   <li>Strings are wrapped in single quotes and escaped via {@link AbstractCondition#escapeStringLiteral(String)}:
+     *       embedded single quotes and backslashes are doubled ({@code '} becomes {@code ''}, {@code \} becomes {@code \\}),
+     *       while embedded double quotes are backslash-escaped ({@code "} becomes {@code \"})</li>
      *   <li>{@link Number} and {@link Boolean} values are converted via {@code toString()} (no quoting);
      *       {@code NaN}/infinite {@link Float}/{@link Double} values are rejected</li>
      *   <li>{@link Expression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null})</li>
@@ -1021,7 +1029,7 @@ public class Expression extends ComposableCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression.normalize("text");      // Returns: "'text'"
-     * Expression.normalize("O'Brien");   // Returns: "'O\'Brien'" (escaped quote)
+     * Expression.normalize("O'Brien");   // Returns: "'O''Brien'" (single quote doubled)
      * Expression.normalize(123);         // Returns: "123"
      * Expression.normalize(45.67);       // Returns: "45.67"
      * Expression.normalize(null);        // Returns: "null"
@@ -1661,7 +1669,7 @@ public class Expression extends ComposableCondition {
      * (i.e. without quoting or escaping). String arguments that represent literal
      * values must therefore be pre-quoted by the caller (e.g. {@code "'foo'"}).
      *
-     * @param functionName the function name (emitted in upper-case, as supplied)
+     * @param functionName the function name, emitted verbatim as supplied
      * @param args the function arguments; emitted verbatim, comma-separated
      * @return the rendered function call string
      */

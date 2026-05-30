@@ -43,7 +43,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Support for comparison operators (equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual)</li>
  *   <li>Support for pattern matching (like, notLike, startsWith, notStartsWith, endsWith, notEndsWith, contains, notContains)</li>
  *   <li>Support for null checks (isNull, isNotNull)</li>
- *   <li>Support for range and set operations (between, notBetween, in, notIn) with overloads for {@code Object[]}, {@code int[]}, {@code long[]}, {@code double[]}, and {@link Collection}</li>
+ *   <li>Support for range operations (between, notBetween) and set operations (in, notIn), with set operations offering overloads for {@code Object[]}, {@code int[]}, {@code long[]}, {@code double[]}, and {@link Collection}</li>
  *   <li>Convenience methods for OR combinations (equalsAny) with overloads for {@code Object[]}, {@code int[]}, {@code long[]}, {@code double[]}, and {@link Collection}</li>
  * </ul>
  *
@@ -71,14 +71,13 @@ import com.landawn.abacus.util.Strings;
  * // Chain conditions with OR
  * Or orCondition = age.equalsAny(25, 30, 35);   // age = 25 OR age = 30 OR age = 35
  *
- * // Combine with AND/OR for complex queries (chained via ComposableCondition.and/or)
- * Condition complex = age.greaterThan(18).and(status.equal("active"));
- * // Results in: ((age > 18) AND (status = 'active'))
+ * // Combine conditions for complex queries via Filters.and / Filters.or
+ * Condition complex = Filters.and(age.greaterThan(18), status.equal("active"));
+ * // Results in: (age > 18) AND (status = 'active')
  *
- * // Use in query building
- * SqlBuilder builder = PSC.select("*")
- *     .from("users")
- *     .where(age.greaterThanOrEqual(21).and(status.in("active", "pending")));
+ * // Combine multiple conditions for use in a WHERE clause
+ * Condition where = Filters.and(age.greaterThanOrEqual(21), status.in("active", "pending"));
+ * // Results in: (age >= 21) AND (status IN ('active', 'pending'))
  * }</pre>
  *
  * @see Condition

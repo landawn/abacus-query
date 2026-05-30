@@ -25,8 +25,8 @@ package com.landawn.abacus.query.condition;
  * 
  * <p>Key characteristics:</p>
  * <ul>
- *   <li>Returns true when subquery returns zero rows</li>
- *   <li>Returns false when subquery returns one or more rows</li>
+ *   <li>Returns {@code true} when subquery returns zero rows</li>
+ *   <li>Returns {@code false} when subquery returns one or more rows</li>
  *   <li>Often more efficient than NOT IN for large datasets</li>
  *   <li>Handles NULL values more predictably than NOT IN</li>
  *   <li>Short-circuits evaluation on first row found</li>

@@ -348,7 +348,7 @@ public class SubQuery extends AbstractCondition {
      * // Returns: null
      * }</pre>
      *
-     * @return the entity class, or {@code null} if created with entity name string or raw SQL
+     * @return the entity class, or {@code null} if created with an entity name string or raw SQL
      */
     public Class<?> getEntityClass() {
         return entityClass;

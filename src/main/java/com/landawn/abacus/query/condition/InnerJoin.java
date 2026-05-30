@@ -157,7 +157,7 @@ public class InnerJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
+     * @param cond the condition appended after the join target. Use {@link On} when the SQL should include an
      *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */

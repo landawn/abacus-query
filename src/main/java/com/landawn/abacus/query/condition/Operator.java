@@ -28,7 +28,8 @@ import com.landawn.abacus.util.Strings;
  * <p>This enum defines all the operators that can be used in SQL conditions,
  * including comparison operators, composable operators, join types, and SQL clauses.
  * Each operator has a string representation that corresponds to its SQL syntax.
- * The {@link #of(String)} method provides case-insensitive lookup with caching.</p>
+ * The {@link #of(String)} method provides constant-time, case-insensitive lookup
+ * backed by a precomputed map.</p>
  *
  * <p>Categories of operators:</p>
  * <ul>
@@ -365,7 +366,9 @@ public enum Operator {
     private final String sqlToken;
 
     /**
-     * Cache for operator lookup by name.
+     * Precomputed lookup table mapping each operator's SQL token and enum constant name
+     * (both in original and lower case) to the corresponding {@link Operator}.
+     * Built once during class initialization and used by {@link #of(String)}.
      */
     private static final Map<String, Operator> operatorMap;
 
@@ -395,8 +398,11 @@ public enum Operator {
     /**
      * Gets an Operator by its string representation.
      *
-     * <p>This method performs case-insensitive lookup and caches results for performance.
-     * It can handle both symbolic operators (like "=", ">") and word operators (like "AND", "OR").</p>
+     * <p>This method performs a case-insensitive lookup against a precomputed map built once
+     * during class initialization, so resolution is a constant-time operation. It accepts both
+     * the SQL token (such as {@code "="} or {@code ">"}) and the enum constant name (such as
+     * {@code "EQUAL"} or {@code "GREATER_THAN"}), including word operators like {@code "AND"}
+     * and {@code "OR"}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

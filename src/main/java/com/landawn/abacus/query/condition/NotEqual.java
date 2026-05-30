@@ -69,7 +69,7 @@ public class NotEqual extends Binary {
      *
      * <p>The NOT EQUAL operator is commonly used to exclude specific values from query results.
      * It's particularly useful for filtering out deleted records, excluding default values,
-     * or finding records that don't match a specific criteria.</p>
+     * or finding records that don't match a specific criterion.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

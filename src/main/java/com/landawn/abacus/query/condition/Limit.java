@@ -92,7 +92,7 @@ public class Limit extends Clause {
      * }</pre>
      *
      * @param count the maximum number of rows to return. Must be non-negative.
-     * @throws IllegalArgumentException if count is negative
+     * @throws IllegalArgumentException if {@code count} is negative
      */
     public Limit(final int count) {
         this(count, 0);

@@ -23,8 +23,8 @@ package com.landawn.abacus.query.condition;
  *
  * <p>The LIKE operator supports two standard SQL wildcards:</p>
  * <ul>
- *   <li>% (percent sign): Matches any sequence of zero or more characters</li>
- *   <li>_ (underscore): Matches any single character</li>
+ *   <li>{@code %} (percent sign): Matches any sequence of zero or more characters</li>
+ *   <li>{@code _} (underscore): Matches any single character</li>
  * </ul>
  * 
  * <p>Common use cases include:</p>
@@ -38,7 +38,7 @@ package com.landawn.abacus.query.condition;
  * 
  * <p>Performance considerations:</p>
  * <ul>
- *   <li>Patterns starting with % prevent index usage (full table scan)</li>
+ *   <li>Patterns starting with {@code %} prevent index usage (full table scan)</li>
  *   <li>Patterns starting with literal characters can use indexes efficiently</li>
  *   <li>Consider full-text search for complex text searching needs</li>
  *   <li>Case sensitivity depends on database collation settings</li>
@@ -78,7 +78,7 @@ public class Like extends Binary {
 
     /**
      * Creates a new LIKE condition with the specified property name and pattern.
-     * The pattern should include SQL wildcards (% or _) for pattern matching.
+     * The pattern should include SQL wildcards ({@code %} or {@code _}) for pattern matching.
      * If special characters need to be matched literally, they should be escaped
      * according to your database's escape syntax.
      *

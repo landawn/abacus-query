@@ -23,11 +23,12 @@ import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.Strings;
 
 /**
- * A fluent builder for creating dynamic SQL queries programmatically.
- * This builder provides a fluent and lightweight way to construct SQL SELECT statements
- * with support for joins, conditions, grouping, ordering, and set operations.
- * 
- * <p>The builder follows a fluent interface pattern where each method returns the builder
+ * Entry point for fluently creating dynamic SQL queries programmatically.
+ * This utility class exposes {@link #builder()}, which returns a {@link Builder} that provides
+ * a fluent and lightweight way to construct SQL SELECT statements with support for joins,
+ * conditions, grouping, ordering, and set operations.
+ *
+ * <p>The {@link Builder} follows a fluent interface pattern where each method returns the builder
  * instance, allowing method chaining. The SQL components are built in a natural order:
  * SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT/OFFSET.</p>
  * 
@@ -1183,10 +1184,10 @@ public final class DynamicQuery {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * where.append("id IN (").placeholders(3).append(")");
-         * // sb contents so far: "WHERE id IN ( ?, ?, ? )"
-         * // Note: append(String) inserts a single space between fragments, so a manual
-         * // close paren produces "( ... )" with surrounding spaces. Prefer placeholders(int, String, String)
-         * // when you want the parentheses tightly attached.
+         * // sb contents so far: "WHERE id IN (?, ?, ? )"
+         * // Note: placeholders(int) appends the markers with no leading space, while append(String)
+         * // inserts a single space before each fragment, so a manual close paren is preceded by a space.
+         * // Prefer placeholders(int, String, String) when you want the parentheses tightly attached.
          * }</pre>
          *
          * @param placeholderCount the number of question marks to append (must not be negative)

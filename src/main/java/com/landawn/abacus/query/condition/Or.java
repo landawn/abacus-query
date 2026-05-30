@@ -42,7 +42,7 @@ import com.landawn.abacus.util.N;
  *   <li>OR requires at least one condition to be true</li>
  *   <li>AND requires all conditions to be true</li>
  *   <li>NOT negates a condition</li>
- *   <li>XOR is available via {@code ComposableCondition.xor()} method, requiring exactly one of two conditions to be true</li>
+ *   <li>XOR is available via the {@link ComposableCondition#xor(Condition)} method, requiring exactly one of two conditions to be true</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>

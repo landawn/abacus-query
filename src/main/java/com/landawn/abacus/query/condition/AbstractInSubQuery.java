@@ -235,6 +235,8 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      *
      * <p>For a single property: {@code propName IN (subQuery)}</p>
      * <p>For multiple properties: {@code (prop1, prop2, ...) IN (subQuery)}</p>
+     * <p>The rendered operator ({@code IN} or {@code NOT IN}) reflects this condition's
+     * {@link Operator}; {@code IN} above is shown only as an example.</p>
      * <p>If {@code propNames} is empty (only possible for an uninitialized instance), only
      * {@code OPERATOR (subQuery)} is rendered, and the operator falls back to the literal
      * {@code "null"} when {@code operator} is also {@code null}.</p>

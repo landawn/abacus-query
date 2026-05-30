@@ -34,19 +34,19 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who have placed at least one order
- * SubQuery orderExists = Filters.subQuery(
+ * SubQuery orderExists = CF.subQuery(
  *     "SELECT 1 FROM orders WHERE orders.customer_id = customers.id"
  * );
  * Exists hasOrders = new Exists(orderExists);
  *
  * // Find products that have been reviewed
- * SubQuery reviewExists = Filters.subQuery(
+ * SubQuery reviewExists = CF.subQuery(
  *     "SELECT 1 FROM reviews WHERE reviews.product_id = products.id"
  * );
  * Exists hasReviews = new Exists(reviewExists);
  *
  * // Find departments with employees
- * SubQuery employeeExists = Filters.subQuery(
+ * SubQuery employeeExists = CF.subQuery(
  *     "SELECT 1 FROM employees WHERE employees.dept_id = departments.id"
  * );
  * Exists hasEmployees = new Exists(employeeExists);
@@ -78,7 +78,7 @@ public class Exists extends ComposableCell {
      * <p><b>Usage Example:</b></p>
      * <pre>{@code
      * // Check if employee has any subordinates (correlated subquery)
-     * SubQuery subordinatesQuery = Filters.subQuery(
+     * SubQuery subordinatesQuery = CF.subQuery(
      *     "SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id"
      * );
      * Exists hasSubordinates = new Exists(subordinatesQuery);

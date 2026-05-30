@@ -16,9 +16,7 @@ package com.landawn.abacus.query;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +33,7 @@ import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.type.Type;
 import com.landawn.abacus.util.ClassUtil;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.InternalUtil;
 import com.landawn.abacus.util.N;
@@ -59,8 +58,8 @@ import com.landawn.abacus.util.Tuple.Tuple2;
 public final class QueryUtil {
 
     /**
-     * Regular expression pattern for validating alphanumeric column names.
-     * Column names must consist of letters, digits, underscores, or hyphens.
+     * Regular expression pattern for validating simple column names.
+     * To match, a column name must be non-empty and consist solely of letters, digits, underscores, or hyphens.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -115,8 +114,8 @@ public final class QueryUtil {
      *
      * // Nested property example
      * Tuple2<String, Boolean> nested = propMap.get("address.street");
-     * String nestedColumn = nested._1;  // "address.street"
-     * boolean isNestedSimple = nested._2;  // false (contains dot)
+     * String nestedColumn = nested._1;  // "<sub-table-alias-or-name>.street" (e.g. "addr.street")
+     * boolean isNestedSimple = nested._2;  // false (key contains a dot)
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
@@ -176,9 +175,9 @@ public final class QueryUtil {
      * ImmutableMap<String, String> columnToProp = QueryUtil.getColumn2PropNameMap(User.class);
      *
      * // If User has @Column("User_Name") on property "userName":
-     * String propName  = columnToProp.get("User_Name");   // "userName" (original column name)
-     * String propName2 = columnToProp.get("USER_NAME");   // "userName" (uppercase variant)
-     * String propName3 = columnToProp.get("user_name");   // "userName" (lowercase variant)
+     * String propName  = columnToProp.get("User_Name");   // "userName" (looked up by original column name)
+     * String propName2 = columnToProp.get("USER_NAME");   // "userName" (looked up by uppercase variant)
+     * String propName3 = columnToProp.get("user_name");   // "userName" (looked up by lowercase variant)
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
@@ -233,7 +232,7 @@ public final class QueryUtil {
      *
      * @param entityClass the entity class to analyze (may be {@code null})
      * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
-     * @return an immutable map of property names to column names, or an empty immutable map if {@code entityClass} is {@code null} or assignable from {@link Map}
+     * @return an immutable map of property names to column names, or an empty immutable map if {@code entityClass} is {@code null} or is a {@link Map} type
      */
     public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
@@ -271,8 +270,22 @@ public final class QueryUtil {
         }
 
         final Table tableAnno = entityClass.getAnnotation(Table.class);
-        final Set<String> columnFields = tableAnno == null ? N.emptySet() : N.toSet(tableAnno.columnFields());
-        final Set<String> nonColumnFields = tableAnno == null ? N.emptySet() : N.toSet(tableAnno.nonColumnFields());
+        final Set<String> columnFields;
+        final Set<String> nonColumnFields;
+
+        if (tableAnno == null) {
+            columnFields = N.emptySet();
+            nonColumnFields = N.emptySet();
+        } else {
+            // @Table accessors clone their array on each call and N.toSet allocates a HashSet even
+            // for an empty array; capture each array once and reuse the shared empty set when the
+            // field list is absent (the common case for tables that only declare name/alias).
+            final String[] columnFieldArray = tableAnno.columnFields();
+            columnFields = columnFieldArray.length == 0 ? N.emptySet() : N.toSet(columnFieldArray);
+
+            final String[] nonColumnFieldArray = tableAnno.nonColumnFields();
+            nonColumnFields = nonColumnFieldArray.length == 0 ? N.emptySet() : N.toSet(nonColumnFieldArray);
+        }
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
         Map<String, String> propColumnNameMap = N.newHashMap(entityInfo.propInfoList.size() * 2);
 
@@ -584,7 +597,7 @@ public final class QueryUtil {
     @Deprecated
     @Internal
     @Immutable
-    public static List<String> getIdPropNames(final Class<?> entityClass) {
+    public static ImmutableList<String> getIdPropNames(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
         return ParserUtil.getBeanInfo(entityClass).idPropNameList;
@@ -624,26 +637,37 @@ public final class QueryUtil {
                 || (N.notEmpty(nonColumnFields) && nonColumnFields.contains(propInfo.name));
     }
 
-    // Built once in the static initializer then only read at runtime; wrapped as an
-    // immutable map to document/enforce read-only access. Cached values and the
-    // out-of-range fallback in placeholders(int) are unchanged (get(...) still
-    // returns null for keys that were never populated).
-    private static final Map<Integer, String> QM_CACHE;
+    /**
+     * Dense lookup of pre-built placeholder strings for the common counts {@code 0..30}.
+     * Indexed directly by count so {@link #placeholders(int)} avoids both {@link Integer}
+     * boxing and a hash lookup on the hot path; {@code QM_CACHE[i]} equals
+     * {@code Strings.repeat("?", i, ", ")}.
+     */
+    private static final String[] QM_CACHE = new String[31];
+
+    // Pre-built placeholder strings for the larger "round" counts that the previous map-based
+    // cache also retained, kept as constants so batch INSERT / large IN (...) clauses reuse a
+    // single instance instead of rebuilding the string on every call.
+    private static final String QM_100;
+
+    private static final String QM_200;
+
+    private static final String QM_300;
+
+    private static final String QM_500;
+
+    private static final String QM_1000;
 
     static {
-        final Map<Integer, String> qmCache = new HashMap<>();
-
-        for (int i = 0; i <= 30; i++) {
-            qmCache.put(i, Strings.repeat("?", i, ", "));
+        for (int i = 0; i < QM_CACHE.length; i++) {
+            QM_CACHE[i] = Strings.repeat("?", i, ", ");
         }
 
-        qmCache.put(100, Strings.repeat("?", 100, ", "));
-        qmCache.put(200, Strings.repeat("?", 200, ", "));
-        qmCache.put(300, Strings.repeat("?", 300, ", "));
-        qmCache.put(500, Strings.repeat("?", 500, ", "));
-        qmCache.put(1000, Strings.repeat("?", 1000, ", "));
-
-        QM_CACHE = ImmutableMap.wrap(qmCache);
+        QM_100 = Strings.repeat("?", 100, ", ");
+        QM_200 = Strings.repeat("?", 200, ", ");
+        QM_300 = Strings.repeat("?", 300, ", ");
+        QM_500 = Strings.repeat("?", 500, ", ");
+        QM_1000 = Strings.repeat("?", 1000, ", ");
     }
 
     /**
@@ -668,13 +692,24 @@ public final class QueryUtil {
     public static String placeholders(final int n) {
         N.checkArgNotNegative(n, "count");
 
-        String result = QM_CACHE.get(n);
-
-        if (result == null) {
-            result = Strings.repeat("?", n, ", ");
+        if (n < QM_CACHE.length) {
+            return QM_CACHE[n];
         }
 
-        return result;
+        switch (n) {
+            case 100:
+                return QM_100;
+            case 200:
+                return QM_200;
+            case 300:
+                return QM_300;
+            case 500:
+                return QM_500;
+            case 1000:
+                return QM_1000;
+            default:
+                return Strings.repeat("?", n, ", ");
+        }
     }
 
     /**

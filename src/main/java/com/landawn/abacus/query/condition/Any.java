@@ -54,6 +54,9 @@ package com.landawn.abacus.query.condition;
  *   <li>!= ANY: true if different from at least one value</li>
  * </ul>
  *
+ * <p>Note: when the subquery returns no rows, {@code x op ANY (...)} is {@code false}
+ * for every operator.</p>
+ *
  * <p>Relationship to ALL and SOME:</p>
  * <ul>
  *   <li>ANY and SOME are functionally equivalent - both return true if condition matches at least one value</li>

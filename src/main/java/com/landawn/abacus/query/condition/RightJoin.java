@@ -27,7 +27,7 @@ import java.util.Collection;
  * <ul>
  *   <li>All rows from the right table are included in the result</li>
  *   <li>Matching rows from the left table are included with their values</li>
- *   <li>Non-matching rows from right table have NULL for left table columns</li>
+ *   <li>Right-table rows with no match in the left table have NULL for the left table columns</li>
  *   <li>Rows from left table without matches in right table are excluded</li>
  *   <li>The join condition determines which rows match between tables</li>
  * </ul>
