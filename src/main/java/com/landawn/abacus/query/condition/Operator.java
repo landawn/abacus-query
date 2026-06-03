@@ -67,7 +67,7 @@ public enum Operator {
     EQUAL(SK.EQUAL),
 
     /**
-     * Not equal operator (!=).
+     * Not-equal operator ({@code !=}).
      * Used for inequality comparisons.
      */
     NOT_EQUAL(SK.NOT_EQUAL),
@@ -85,8 +85,8 @@ public enum Operator {
     NOT(SK.NOT),
 
     /**
-     * NOT operator symbol (!).
-     * Alternative representation of NOT.
+     * NOT operator symbol ({@code !}).
+     * A non-standard programmatic token; prefer {@link #NOT} for standard SQL.
      */
     NOT_OP(SK.EXCLAMATION),
 
@@ -115,8 +115,8 @@ public enum Operator {
     AND(SK.AND),
 
     /**
-     * AND operator symbol (&amp;&amp;).
-     * Alternative representation of AND.
+     * AND operator symbol ({@code &&}).
+     * A non-standard programmatic token; prefer {@link #AND} for standard SQL.
      */
     AND_OP(SK.AND_OP),
 
@@ -127,8 +127,9 @@ public enum Operator {
     OR(SK.OR),
 
     /**
-     * OR operator symbol (||).
-     * Alternative representation of OR.
+     * OR operator symbol ({@code ||}).
+     * A non-standard programmatic token; note that in standard SQL {@code ||} is string concatenation —
+     * use {@link #OR} for logical OR.
      */
     OR_OP(SK.OR_OP),
 

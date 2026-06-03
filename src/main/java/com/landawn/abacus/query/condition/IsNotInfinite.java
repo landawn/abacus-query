@@ -85,7 +85,7 @@ public class IsNotInfinite extends IsNot {
 
     /**
      * Creates a new IsNotInfinite condition for the specified property.
-     * This condition generates an "IS NOT INFINITE" SQL clause to check if the property's
+     * This condition generates an {@code IS NOT INFINITE} SQL clause to check if the property's
      * numeric value is NOT infinite (neither positive infinity nor negative infinity).
      * This ensures that values are within the finite range of floating-point numbers
      * and is essential for data validation before performing calculations or analysis.

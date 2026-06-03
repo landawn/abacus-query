@@ -34,6 +34,10 @@ import com.landawn.abacus.query.SortDirection;
  *   <li>Often used with HAVING clause to filter groups</li>
  *   <li>Columns in SELECT must either be in GROUP BY or be aggregate functions</li>
  * </ul>
+ *
+ * <p><b>Note:</b> sort directions in {@code GROUP BY} (e.g. {@code GROUP BY col ASC/DESC})
+ * are non-standard SQL and not supported by all databases. Use them only when targeting
+ * a database that explicitly supports this syntax.</p>
  * 
  * <p>Common use cases:
  * <ul>
@@ -53,11 +57,11 @@ import com.landawn.abacus.query.SortDirection;
  * GroupBy byLocation = new GroupBy("department", "location");
  * // SQL: GROUP BY department, location
  *
- * // GROUP BY with sort direction
+ * // GROUP BY with sort direction (non-standard; database-specific)
  * GroupBy bySales = new GroupBy("sales_amount", SortDirection.DESC);
  * // SQL: GROUP BY sales_amount DESC
  *
- * // GROUP BY with mixed sort directions
+ * // GROUP BY with mixed sort directions (non-standard; database-specific)
  * Map<String, SortDirection> orders = new LinkedHashMap<>();
  * orders.put("department", SortDirection.ASC);
  * orders.put("salary", SortDirection.DESC);

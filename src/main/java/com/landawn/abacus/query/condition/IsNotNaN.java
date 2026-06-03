@@ -89,7 +89,7 @@ public class IsNotNaN extends IsNot {
 
     /**
      * Creates a new IsNotNaN condition for the specified property.
-     * This condition generates an "IS NOT NAN" SQL clause to check if the property's
+     * This condition generates an {@code IS NOT NAN} SQL clause to check if the property's
      * numeric value is NOT NaN (i.e., is a valid number). This is essential for filtering
      * out invalid data and ensuring that only valid numeric values are processed in
      * calculations and analyses.

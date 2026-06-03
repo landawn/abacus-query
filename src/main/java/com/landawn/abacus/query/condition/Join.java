@@ -48,6 +48,8 @@ import com.landawn.abacus.util.Strings;
  *   <li>{@link LeftJoin} - Returns all rows from the left table and matching rows from the right</li>
  *   <li>{@link RightJoin} - Returns all rows from the right table and matching rows from the left</li>
  *   <li>{@link FullJoin} - Returns all rows from both tables</li>
+ *   <li>{@link CrossJoin} - Returns the Cartesian product of rows from both tables</li>
+ *   <li>{@link NaturalJoin} - Automatically joins on all columns with identical names</li>
  * </ul>
  * 
  * <p>Join performance considerations:
@@ -72,8 +74,7 @@ import com.landawn.abacus.util.Strings;
  * // Join with Expression for custom conditions
  * Join exprJoin = new Join("orders o",
  *     Filters.expr("customers.id = o.customer_id"));
- * // Generates: JOIN orders o customers.id = o.customer_id
- * // Plain expressions are appended verbatim after the JOIN target
+ * // Generates: JOIN orders o ON customers.id = o.customer_id
  *
  * // Join multiple tables
  * Join multiJoin = new Join(Arrays.asList("orders o", "order_items oi"),
@@ -172,8 +173,7 @@ public class Join extends AbstractCondition {
      * // Join with Expression for custom condition
      * Join exprJoin = new Join("orders o",
      *     Filters.expr("customers.id = o.customer_id"));
-     * // Generates: JOIN orders o customers.id = o.customer_id
-     * // Note: Expression conditions don't add ON keyword
+     * // Generates: JOIN orders o ON customers.id = o.customer_id
      *
      * // Join with complex condition using And
      * Join complexJoin = new Join("products p",
@@ -181,7 +181,7 @@ public class Join extends AbstractCondition {
      *         new On("categories.id", "p.category_id"),
      *         Filters.equal("p.active", true)
      *     ));
-     * // Generates: JOIN products p ((ON categories.id = p.category_id) AND (p.active = true))
+     * // Generates: JOIN products p ON ((ON categories.id = p.category_id) AND (p.active = true))
      * // Note: And wraps each child in parentheses and the whole junction in outer parentheses
      * }</pre>
      *
@@ -238,8 +238,7 @@ public class Join extends AbstractCondition {
      *         Filters.expr("o.customer_id = c.id"),
      *         Filters.expr("o.status = 'active'")
      *     ));
-     * // Generates: JOIN (orders o, customers c) ((o.customer_id = c.id) AND (o.status = 'active'))
-     * // Note: Expression conditions don't add ON keyword
+     * // Generates: JOIN (orders o, customers c) ON ((o.customer_id = c.id) AND (o.status = 'active'))
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with
@@ -407,8 +406,8 @@ public class Join extends AbstractCondition {
      * the optional join condition; the join operator keyword and entity strings themselves are emitted
      * verbatim. The condition's string representation depends on its type (On, Using, Expression, etc.).
      * A single join entity is rendered bare while multiple entities are wrapped in parentheses
-     * (e.g. {@code "JOIN (orders o, customers c) ..."}). A non-{@code On} condition is appended
-     * without an {@code ON} keyword.
+     * (e.g. {@code "JOIN (orders o, customers c) ..."}). A non-{@code On}/{@code Using} condition is
+     * prepended with the {@code ON} keyword before being appended.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -419,7 +418,7 @@ public class Join extends AbstractCondition {
      * // Edge: naming policy rewrites property names within the condition
      * Join snake = new Join("orders o", Filters.equal("firstName", "John"));
      * snake.toString(NamingPolicy.SNAKE_CASE);
-     * // returns "JOIN orders o first_name = 'John'"
+     * // returns "JOIN orders o ON first_name = 'John'"
      *
      * // Edge: no condition -> just the operator and entity
      * new Join("products").toString(NamingPolicy.NO_CHANGE);   // returns "JOIN products"

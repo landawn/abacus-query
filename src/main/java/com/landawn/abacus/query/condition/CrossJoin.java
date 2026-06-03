@@ -35,10 +35,10 @@ import java.util.Collection;
  * 
  * <p>Note: While this implementation allows a join condition for flexibility,
  * standard SQL CROSS JOIN does not accept an {@code ON} clause. The supplied condition is
- * appended verbatim after the joined table list, so the rendered SQL may not be valid in all
- * dialects. For a filtered Cartesian product, prefer adding the predicate via a separate
- * {@link Where} clause (which is semantically equivalent to {@link InnerJoin} with the same
- * condition).</p>
+ * appended after an {@code ON} keyword unless the condition is an {@link On} or {@link Using},
+ * so the rendered SQL may not be valid in all dialects. For a filtered Cartesian product,
+ * prefer adding the predicate via a separate {@link Where} clause (which is semantically
+ * equivalent to {@link InnerJoin} with the same condition).</p>
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -56,14 +56,13 @@ import java.util.Collection;
  * // CROSS JOIN with condition (unusual but supported)
  * CrossJoin filtered = new CrossJoin("categories",
  *     Filters.equal("active", true));
- * // Generates: CROSS JOIN categories active = true
+ * // Generates: CROSS JOIN categories ON active = true
  * // Note: Functionally equivalent to INNER JOIN with the condition
  *
  * // CROSS JOIN with Expression
  * CrossJoin exprJoin = new CrossJoin("inventory",
  *     Filters.expr("quantity > 0"));
- * // Generates: CROSS JOIN inventory quantity > 0
- * // Note: Expression conditions don't add ON keyword
+ * // Generates: CROSS JOIN inventory ON quantity > 0
  * }</pre>
  * 
  * @see Join
@@ -119,8 +118,7 @@ public class CrossJoin extends Join {
      * // Cross join with filter using Expression
      * CrossJoin filtered = new CrossJoin("products p",
      *     Filters.expr("p.category = 'electronics'"));
-     * // Generates: CROSS JOIN products p p.category = 'electronics'
-     * // Note: Expression conditions don't add ON keyword
+     * // Generates: CROSS JOIN products p ON p.category = 'electronics'
      *
      * // Cross join with ON condition (unusual usage)
      * CrossJoin withOn = new CrossJoin("inventory i",
@@ -134,7 +132,7 @@ public class CrossJoin extends Join {
      *         new On("i.warehouse_id", "w.id"),
      *         Filters.equal("i.active", true)
      *     ));
-     * // Generates: CROSS JOIN inventory i ((ON i.warehouse_id = w.id) AND (i.active = true))
+     * // Generates: CROSS JOIN inventory i ON ((ON i.warehouse_id = w.id) AND (i.active = true))
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -156,7 +154,7 @@ public class CrossJoin extends Join {
      * List<String> tables = Arrays.asList("sizes s", "colors c", "styles st");
      * CrossJoin join = new CrossJoin(tables,
      *     Filters.equal("active", true));
-     * // Generates: CROSS JOIN (sizes s, colors c, styles st) active = true
+     * // Generates: CROSS JOIN (sizes s, colors c, styles st) ON active = true
      *
      * // Using ON conditions (makes it similar to INNER JOIN)
      * List<String> relatedTables = Arrays.asList("table1 t1", "table2 t2");
@@ -167,8 +165,7 @@ public class CrossJoin extends Join {
      * // Using Expression for complex conditions
      * CrossJoin exprJoin = new CrossJoin(tables,
      *     Filters.expr("active = true AND archived = false"));
-     * // Generates: CROSS JOIN (sizes s, colors c, styles st) active = true AND archived = false
-     * // Note: Expression conditions don't add ON keyword
+     * // Generates: CROSS JOIN (sizes s, colors c, styles st) ON active = true AND archived = false
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

@@ -50,8 +50,11 @@ package com.landawn.abacus.query.condition;
  * @see Binary
  * @see IsNot
  * @see IsNull
+ * @see IsNotNull
  * @see IsNaN
+ * @see IsNotNaN
  * @see IsInfinite
+ * @see IsNotInfinite
  * @see Condition
  */
 public class Is extends Binary {
@@ -67,8 +70,8 @@ public class Is extends Binary {
     /**
      * Creates a new {@code IS} condition with the specified property name and right-hand value.
      * The generated SQL takes the form {@code propName IS propValue}, where {@code propValue} is
-     * typically an {@link Expression} representing a special SQL keyword such as {@code NULL},
-     * {@code NAN}, {@code INFINITE}, or {@code UNKNOWN}.
+     * typically an {@link Expression} representing a special SQL keyword such as {@code NULL}
+     * or a custom expression like {@code UNKNOWN}.
      *
      * <p>If {@code propValue} is the Java {@code null} reference, the generated SQL collapses to
      * {@code propName IS NULL}.</p>
@@ -78,11 +81,6 @@ public class Is extends Binary {
      * // Check for NULL (though IsNull is preferred)
      * Is nullCheck = new Is("phone_number", null);
      * // Generates: phone_number IS NULL
-     *
-     * // Check against a special expression
-     * Expression nanExpr = Filters.expr("NAN");
-     * Is nanCheck = new Is("temperature", nanExpr);
-     * // Generates: temperature IS NAN
      *
      * // Custom database-specific value
      * Expression unknownExpr = Filters.expr("UNKNOWN");

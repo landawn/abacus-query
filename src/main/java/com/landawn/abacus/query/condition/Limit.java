@@ -273,6 +273,10 @@ public class Limit extends Clause {
      * are typically part of the SQL structure itself, not parameterized values.
      * This method always returns an empty list.
      *
+     * <p>If the expression form ({@link #Limit(String)}) contains placeholders ({@code ?} or
+     * named parameters), this class does not track them; the caller is responsible for binding
+     * those values separately when preparing the statement.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * new Limit(10).getParameters();              // returns [] (empty, immutable)

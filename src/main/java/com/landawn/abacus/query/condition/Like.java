@@ -98,7 +98,8 @@ public class Like extends Binary {
      *
      * // Escape special characters if needed (syntax varies by database)
      * Like escaped = new Like("path", "%\\_%");   // To match literal underscore
-     * // Check your database documentation for escape syntax
+     * // Note: the query must include an ESCAPE clause (e.g., ESCAPE '\') for the
+     * // escape character to be honored by the database engine.
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null} or empty)

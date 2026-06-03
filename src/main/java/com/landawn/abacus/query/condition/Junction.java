@@ -165,7 +165,8 @@ public class Junction extends ComposableCondition {
      *
      * @param operator the composable operator to use (AND, OR, etc.)
      * @param conditions the conditions to combine; may be {@code null} or empty (treated as no conditions)
-     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}
+     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
+     *             element is a {@link Criteria} or has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.)
      */
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
@@ -197,7 +198,8 @@ public class Junction extends ComposableCondition {
      *
      * @param operator the composable operator to use (AND, OR, etc.)
      * @param conditions the collection of conditions to combine; may be {@code null} or empty (treated as no conditions)
-     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}
+     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
+     *             element is a {@link Criteria} or has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.)
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);

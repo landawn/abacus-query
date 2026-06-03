@@ -29,7 +29,6 @@ package com.landawn.abacus.query.condition;
  *   <li>Returns {@code false} when subquery returns one or more rows</li>
  *   <li>Often more efficient than NOT IN for large datasets</li>
  *   <li>Handles NULL values more predictably than NOT IN</li>
- *   <li>Short-circuits evaluation on first row found</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -103,8 +102,7 @@ public class NotExists extends ComposableCell {
      * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
      * NotExists notExists = new NotExists(subQuery);
      * SubQuery retrieved = notExists.getSubQuery();
-     * // returns the same SubQuery instance that was supplied
-     * // retrieved == subQuery -> true
+     * // returns the subquery passed to the constructor
      *
      * // The wrapped subquery is also what getCondition() returns
      * boolean sameAsCondition = notExists.getSubQuery() == notExists.getCondition();

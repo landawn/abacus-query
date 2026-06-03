@@ -130,6 +130,8 @@ public sealed class NamedProperty permits NP {
      * }</pre>
      *
      * @param propName the property name. Must not be null or empty.
+     *                 Note: unlike the constructor, a {@code null} argument causes an {@code IllegalArgumentException}
+     *                 (null is treated like the empty string by the internal {@code Strings.isEmpty} check).
      * @return a cached or new NamedProperty instance
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
@@ -610,8 +612,10 @@ public sealed class NamedProperty permits NP {
      * NamedProperty.of("price").notBetween(10.0, 100.0);   // price NOT BETWEEN 10.0 AND 100.0
      * }</pre>
      *
-     * @param minValue the lower bound of the range to exclude (inclusive). Can be numeric, date, string, or any comparable type.
-     * @param maxValue the upper bound of the range to exclude (inclusive). Can be numeric, date, string, or any comparable type.
+     * @param minValue the lower bound of the excluded range (a value equal to this boundary is itself excluded, per SQL NOT BETWEEN).
+     *                 Can be numeric, date, string, or any comparable type.
+     * @param maxValue the upper bound of the excluded range (a value equal to this boundary is itself excluded, per SQL NOT BETWEEN).
+     *                 Can be numeric, date, string, or any comparable type.
      * @return a NotBetween condition for this property
      * @see NotBetween
      * @see Filters#notBetween(String, Object, Object)
@@ -805,6 +809,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param values primitive int values to check membership against. Must not be null or empty.
      * @return an In condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
      * @see Filters#in(String, int[])
      */
@@ -823,6 +828,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param values primitive long values to check membership against. Must not be null or empty.
      * @return an In condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
      * @see Filters#in(String, long[])
      */
@@ -841,6 +847,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param values primitive double values to check membership against. Must not be null or empty.
      * @return an In condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
      * @see Filters#in(String, double[])
      */
@@ -906,6 +913,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param values primitive int values to check non-membership against. Must not be null or empty.
      * @return a NotIn condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn
      * @see Filters#notIn(String, int[])
      */
@@ -924,6 +932,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param values primitive long values to check non-membership against. Must not be null or empty.
      * @return a NotIn condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn
      * @see Filters#notIn(String, long[])
      */
@@ -942,6 +951,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param values primitive double values to check non-membership against. Must not be null or empty.
      * @return a NotIn condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn
      * @see Filters#notIn(String, double[])
      */
@@ -983,7 +993,7 @@ public sealed class NamedProperty permits NP {
      * <pre>{@code
      * NamedProperty.of("age").hashCode();                                         // returns "age".hashCode()
      * NamedProperty.of("age").hashCode() == NamedProperty.of("age").hashCode();   // true (same name)
-     * NamedProperty.of("age").hashCode() == NamedProperty.of("Age").hashCode();   // typically false (case-sensitive)
+     * NamedProperty.of("age").hashCode() == NamedProperty.of("Age").hashCode();   // false — hash codes of "age" and "Age" differ (case-sensitive)
      * }</pre>
      *
      * @return hash code of the property name
@@ -1001,7 +1011,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * new NamedProperty("age").equals(new NamedProperty("age"));   // returns true (same name)
-     * NamedProperty.of("age").equals(NamedProperty.of("age"));     // returns true (cached, same instance)
+     * NamedProperty.of("age").equals(NamedProperty.of("age"));     // true — same property name (structural equality)
      * new NamedProperty("age").equals(new NamedProperty("Age"));   // returns false (case-sensitive)
      * new NamedProperty("age").equals("age");                      // returns false (not a NamedProperty)
      * }</pre>

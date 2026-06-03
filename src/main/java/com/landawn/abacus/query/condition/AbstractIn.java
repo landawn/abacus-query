@@ -145,7 +145,8 @@ public abstract class AbstractIn extends ComposableCondition {
      * List<Object> p2 = nums.getParameters();   // [1, 2, 3]
      * }</pre>
      *
-     * @return an immutable list of parameter values, or an empty immutable list if no values are set
+     * @return an immutable list of parameter values, or an empty immutable list for an uninitialized instance
+     *         (e.g. created via the no-arg constructor for deserialization)
      */
     @Override
     public ImmutableList<Object> getParameters() {

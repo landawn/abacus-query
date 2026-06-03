@@ -82,7 +82,7 @@ import com.landawn.abacus.util.stream.Stream;
  * Base class for fluent SQL builders. Provides clause-by-clause construction of SQL statements
  * (SELECT, INSERT, UPDATE, DELETE) with support for:
  * <ul>
- *   <li>Multiple naming policies (snake_case, UPPER_CASE, camelCase)</li>
+ *   <li>Multiple naming policies (snake_case, SCREAMING_SNAKE_CASE, camelCase)</li>
  *   <li>Parameterized ({@code ?}) and named ({@code :name}, {@code #{name}}) parameter styles</li>
  *   <li>Entity class mapping driven by annotations</li>
  *   <li>Joins, subqueries, set operations ({@code UNION}, {@code INTERSECT}, etc.) and arbitrary conditions</li>
@@ -118,10 +118,10 @@ import com.landawn.abacus.util.stream.Stream;
  * <p>The builder supports different naming policies through its subclasses:</p>
  * <ul>
  *   <li>{@link PSC} - Parameterized SQL with snake_case naming</li>
- *   <li>{@link PAC} - Parameterized SQL with UPPER_CASE naming</li>
+ *   <li>{@link PAC} - Parameterized SQL with SCREAMING_SNAKE_CASE naming</li>
  *   <li>{@link PLC} - Parameterized SQL with camelCase naming</li>
  *   <li>{@link NSC} - Named SQL with snake_case naming</li>
- *   <li>{@link NAC} - Named SQL with UPPER_CASE naming</li>
+ *   <li>{@link NAC} - Named SQL with SCREAMING_SNAKE_CASE naming</li>
  *   <li>{@link NLC} - Named SQL with camelCase naming</li>
  * </ul>
  *
@@ -927,9 +927,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p>This is useful for building INSERT/UPDATE column-to-placeholder maps that the builder will
      * later render as {@code ?} (or as {@code :name} / {@code #{name}} when named/iBATIS SQL is used).</p>
      *
+     * <p>This is an internal helper available to subclasses; it is not part of the public API.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Map<String, Expression> params = AbstractQueryBuilder.namedPlaceholders("firstName", "lastName");
+     * // Within a subclass of AbstractQueryBuilder:
+     * Map<String, Expression> params = namedPlaceholders("firstName", "lastName");
      * }</pre>
      *
      * @param propNames the property names
@@ -951,9 +954,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p>This is useful for building INSERT/UPDATE column-to-placeholder maps that the builder will
      * later render as {@code ?} (or as {@code :name} / {@code #{name}} when named/iBATIS SQL is used).</p>
      *
+     * <p>This is an internal helper available to subclasses; it is not part of the public API.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Map<String, Expression> params = AbstractQueryBuilder.namedPlaceholders(Arrays.asList("firstName", "lastName"));
+     * // Within a subclass of AbstractQueryBuilder:
+     * Map<String, Expression> params = namedPlaceholders(Arrays.asList("firstName", "lastName"));
      * }</pre>
      *
      * @param propNames the collection of property names
@@ -2446,6 +2452,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param columnName the column to group by
      * @param direction the sort direction
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code columnName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     public This groupBy(final String columnName, final SortDirection direction) {
         N.checkArgNotNull(direction, "direction");
@@ -2472,6 +2480,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param propOrColumnNames the collection of columns to group by
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     public This groupBy(final Collection<String> propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -2508,6 +2518,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the collection of columns to group by
      * @param direction the direction appended after each column in the GROUP BY clause
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element, or if {@code direction} is {@code null}
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     public This groupBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -2548,6 +2560,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param groupings map of columns to their sort directions
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code groupings} is {@code null} or empty, contains a {@code null}, empty, or blank key, or maps any key to a {@code null} direction
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     public This groupBy(final Map<String, SortDirection> groupings) {
         checkSqlFragmentKeysNotBlank(groupings, "groupings");
@@ -2716,6 +2730,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param columnName the column to order by
      * @param direction the sort direction
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code columnName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     public This orderBy(final String columnName, final SortDirection direction) {
         N.checkArgNotNull(direction, "direction");
@@ -2743,6 +2759,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns to order by
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     public This orderBy(final Collection<String> propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -2779,6 +2797,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the collection of columns to order by
      * @param direction the direction appended after each column in the ORDER BY clause
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element, or if {@code direction} is {@code null}
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     public This orderBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -2820,6 +2840,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param orders map of columns to their sort directions
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code orders} is {@code null} or empty, contains a {@code null}, empty, or blank key, or maps any key to a {@code null} direction
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     public This orderBy(final Map<String, SortDirection> orders) {
         checkSqlFragmentKeysNotBlank(orders, "orders");
@@ -3527,7 +3549,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Starts a new SELECT query for UNION operation.
-     * 
+     * This method prepares the builder to specify a second SELECT query after UNION.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("id", "name")
@@ -3537,9 +3560,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
-     * 
+     *
      * @param propOrColumnNames the columns for the union query
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
     public This union(final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -3584,6 +3608,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns for the union query
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
     public This union(final Collection<String> propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -3646,8 +3671,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
      *
-     * @param query the SQL query to union all
+     * @param query the SQL query to union all (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
      */
     public This unionAll(final String query) {
         checkSqlFragmentNotBlank(query, "query");
@@ -3671,6 +3697,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns for the union all query
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
     public This unionAll(final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -3715,6 +3742,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns for the union all query
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
     public This unionAll(final Collection<String> propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -3777,8 +3805,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
      * }</pre>
      *
-     * @param query the SQL query to intersect
+     * @param query the SQL query to intersect (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
      */
     public This intersect(final String query) {
         checkSqlFragmentNotBlank(query, "query");
@@ -3802,6 +3831,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns for the intersect query
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
     public This intersect(final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -3846,6 +3876,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns for the intersect query
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
     public This intersect(final Collection<String> propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -3908,8 +3939,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * @param query the SQL query to except
+     * @param query the SQL query to except (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
      */
     public This except(final String query) {
         checkSqlFragmentNotBlank(query, "query");
@@ -3933,6 +3965,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns for the except query
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
     public This except(final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -3977,6 +4010,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns for the except query
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
     public This except(final Collection<String> propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -4040,8 +4074,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * @param query the SQL query to minus
+     * @param query the SQL query to minus (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
      */
     public This minus(final String query) {
         checkSqlFragmentNotBlank(query, "query");
@@ -4065,6 +4100,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns for the minus query
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
     public This minus(final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -4109,6 +4145,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns for the minus query
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
     public This minus(final Collection<String> propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");

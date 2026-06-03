@@ -38,7 +38,7 @@ import com.landawn.abacus.util.Strings;
  * <p>Instances are effectively immutable once built: the constituent conditions list is final
  * and never mutated post-construction, and all collection accessors ({@link #getConditions()},
  * {@link #getJoins()}, {@link #getSetOperations()}, {@link #findConditions(Operator)}) return
- * unmodifiable views.</p>
+ * unmodifiable lists.</p>
  *
  * <p>Instances are created via {@link #builder()}. Each clause is independent and should not
  * be nested inside another clause; compose multiple clauses within a single {@code Criteria}.</p>
@@ -746,6 +746,7 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Sets the DISTINCTROW modifier with specific columns.
+         * Only the specified columns are considered for duplicate removal.
          * If {@code columnNames} is {@code null} or empty, a plain {@code DISTINCTROW}
          * modifier (without parentheses) is used.
          *
@@ -1462,6 +1463,7 @@ public class Criteria extends AbstractCondition {
          * 
          * @param propNames the property names to group by
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
          */
         public Builder groupBy(final String... propNames) {
             add(new GroupBy(propNames));
@@ -1483,6 +1485,7 @@ public class Criteria extends AbstractCondition {
          * @param propName the property name to group by
          * @param direction the sort direction
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code direction} is {@code null}
          */
         public Builder groupBy(final String propName, final SortDirection direction) {
             add(new GroupBy(propName, direction));
@@ -1506,6 +1509,7 @@ public class Criteria extends AbstractCondition {
          * @param propName2 the second property name to group by
          * @param direction2 the sort direction for the second property
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if any property name is {@code null} or empty, or if any sort direction is {@code null}
          */
         public Builder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
             groupBy(N.asMap(propName, direction, propName2, direction2));
@@ -1531,6 +1535,7 @@ public class Criteria extends AbstractCondition {
          * @param propName3 the third property name to group by
          * @param direction3 the sort direction for the third property
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if any property name is {@code null} or empty, or if any sort direction is {@code null}
          */
         public Builder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
                 final String propName3, final SortDirection direction3) {
@@ -1584,6 +1589,8 @@ public class Criteria extends AbstractCondition {
          *                  to preserve the column order)
          * @param direction the sort direction for all properties
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements,
+         *                                  or if {@code direction} is {@code null}
          */
         public Builder groupBy(final Collection<String> propNames, final SortDirection direction) {
             add(new GroupBy(propNames, direction));
@@ -1608,6 +1615,8 @@ public class Criteria extends AbstractCondition {
          * 
          * @param groupings a map of property names to sort directions
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code groupings} is {@code null}, empty, or contains {@code null} or empty keys
+         *                                  or {@code null} values
          */
         public Builder groupBy(final Map<String, SortDirection> groupings) {
             add(new GroupBy(groupings));
@@ -1698,6 +1707,7 @@ public class Criteria extends AbstractCondition {
          * 
          * @param propNames the property names to order by ascending
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
          */
         public Builder orderByAsc(final String... propNames) {
             add(Filters.orderByAsc(propNames));
@@ -1717,7 +1727,10 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          * 
          * @param propNames the collection of property names to order by ascending
+         *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
+         *                  to preserve the column order)
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
          */
         public Builder orderByAsc(final Collection<String> propNames) {
             add(Filters.orderByAsc(propNames));
@@ -1739,6 +1752,7 @@ public class Criteria extends AbstractCondition {
          * 
          * @param propNames the property names to order by descending
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
          */
         public Builder orderByDesc(final String... propNames) {
             add(Filters.orderByDesc(propNames));
@@ -1761,6 +1775,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order)
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
          */
         public Builder orderByDesc(final Collection<String> propNames) {
             add(Filters.orderByDesc(propNames));
@@ -1818,6 +1833,7 @@ public class Criteria extends AbstractCondition {
          * 
          * @param propNames the property names to order by
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
          */
         public Builder orderBy(final String... propNames) {
             add(new OrderBy(propNames));
@@ -1839,6 +1855,7 @@ public class Criteria extends AbstractCondition {
          * @param propName the property name to order by
          * @param direction the sort direction
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code direction} is {@code null}
          */
         public Builder orderBy(final String propName, final SortDirection direction) {
             add(new OrderBy(propName, direction));
@@ -1862,6 +1879,7 @@ public class Criteria extends AbstractCondition {
          * @param propName2 the second property name to order by
          * @param direction2 the sort direction for the second property
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if any property name is {@code null} or empty, or if any sort direction is {@code null}
          */
         public Builder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
             orderBy(N.asMap(propName, direction, propName2, direction2));
@@ -1887,6 +1905,7 @@ public class Criteria extends AbstractCondition {
          * @param propName3 the third property name to order by
          * @param direction3 the sort direction for the third property
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if any property name is {@code null} or empty, or if any sort direction is {@code null}
          */
         public Builder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
                 final String propName3, final SortDirection direction3) {
@@ -1941,6 +1960,8 @@ public class Criteria extends AbstractCondition {
          *                  to preserve the column order)
          * @param direction the sort direction for all properties
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements,
+         *                                  or if {@code direction} is {@code null}
          */
         public Builder orderBy(final Collection<String> propNames, final SortDirection direction) {
             add(new OrderBy(propNames, direction));
@@ -1965,6 +1986,8 @@ public class Criteria extends AbstractCondition {
          * 
          * @param orders a map of property names to sort directions
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, or contains {@code null} or empty keys
+         *                                  or {@code null} values
          */
         public Builder orderBy(final Map<String, SortDirection> orders) {
             add(new OrderBy(orders));

@@ -95,8 +95,9 @@ public class GreaterThanOrEqual extends Binary {
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null} or empty)
-     * @param propValue the value to compare against (a literal value or a {@link SubQuery}; using
-     *                  {@code null} produces undefined behavior for the {@code >=} operator)
+     * @param propValue the value to compare against (a literal value or a {@link SubQuery}); passing
+     *                  {@code null} renders as {@code prop >= null}, which is not a meaningful SQL
+     *                  comparison; do not pass {@code null} to this operator
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public GreaterThanOrEqual(final String propName, final Object propValue) {

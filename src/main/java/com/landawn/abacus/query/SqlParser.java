@@ -38,12 +38,13 @@ import com.landawn.abacus.util.Strings;
  *   <li>Single-quoted and double-quoted strings/identifiers are kept as a single token.
  *       Both doubled-quote ({@code ''}, {@code ""}) and backslash escaping are recognized
  *       as in-string escapes.</li>
- *   <li>Comments are stripped: line comments ({@code -- ...}), MySQL hash comments
- *       ({@code # ...}), and block comments ({@code /* ... *}{@code /}). Nested block
- *       comments and PostgreSQL dollar-quoting ({@code $$...$$}) are NOT supported.</li>
- *   <li>Block comments are normally discarded; they are retained as tokens only when the
- *       SQL begins (case-insensitively) with the marker {@code "-- Keep comments"}. Line and
- *       hash comments are always discarded regardless of this marker.</li>
+ *   <li>Comments are normally stripped: line comments ({@code -- ...}), MySQL hash comments
+ *       ({@code # ...}), and block comments ({@code /* ... *}{@code /}) are discarded.
+ *       Exception: block comments are retained as tokens when the SQL begins
+ *       (case-insensitively) with the marker {@code "-- Keep comments"}; line and hash
+ *       comments are always discarded regardless of this marker.
+ *       Nested block comments and PostgreSQL dollar-quoting ({@code $$...$$}) are NOT
+ *       supported.</li>
  *   <li>Runs of whitespace between emitted tokens are collapsed into a single space token
  *       ({@code " "}); leading whitespace before the very first emitted token is dropped.</li>
  *   <li>Multi-character operators (e.g. {@code >=}, {@code <>}, {@code ->>}) are emitted
@@ -958,7 +959,7 @@ public final class SqlParser {
      * context), in addition to checking {@code ch} against the registered separator set.</p>
      *
      * @param str the SQL string being parsed
-     * @param len the length of the SQL string (must be {@code >= index + 1})
+     * @param len the length of the SQL string (must equal the length of {@code str})
      * @param index the current position in the string (0-based)
      * @param ch the character to check; expected to equal {@code str.charAt(index)}
      * @return {@code true} if the character is a separator in this context, {@code false} otherwise

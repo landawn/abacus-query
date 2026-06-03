@@ -210,8 +210,8 @@ public abstract class AbstractCondition implements Condition {
 
     /**
      * Converts a parameter value to its string representation for use in condition strings.
-     * Handles special cases like strings (adds quotes), conditions (recursive toString),
-     * and null values.
+     * Handles special cases like strings (adds quotes) and conditions (recursive toString).
+     * Returns Java {@code null} when the parameter is {@code null}.
      *
      * <p>This utility method is used internally by condition implementations to format
      * parameter values consistently across the framework.</p>
@@ -281,10 +281,11 @@ public abstract class AbstractCondition implements Condition {
 
     /**
      * Escapes a string for safe inclusion as the body of a single-quoted SQL string literal.
-     * Single quotes, double quotes, and any trailing backslash are escaped (or doubled) so that
-     * the surrounding quote characters cannot be terminated prematurely by the input. This is a
-     * defense-in-depth helper used by {@link #formatParameter(Object, NamingPolicy)} and by
-     * {@link Expression#normalize(Object)}; callers must still emit the surrounding {@code '} quotes.
+     * Single quotes and double quotes are backslash-escaped via {@link com.landawn.abacus.util.Strings#quoteEscaped},
+     * and a trailing-backslash guard is applied so that the closing {@code '} quote cannot be consumed
+     * as an escape sequence. This is a defense-in-depth helper used by
+     * {@link #formatParameter(Object, NamingPolicy)} and by {@link Expression#normalize(Object)};
+     * callers must still emit the surrounding {@code '} quotes.
      *
      * <p>Note: this is dialect-tolerant escaping (backslash-style, with an extra trailing-backslash
      * guard) rather than strict SQL-standard quote doubling; the resulting literal is safe to embed
@@ -648,7 +649,7 @@ public abstract class AbstractCondition implements Condition {
      *
      * @param cond the condition to validate; may be {@code null} (will trigger the exception)
      * @param methodName the name of the composable method being called (for error messages)
-     * @return the validated condition
+     * @return {@code cond} unchanged, after validation succeeds
      * @throws IllegalArgumentException if {@code cond} is {@code null} or has a {@code null}, clause,
      *                                  {@code ON}, or {@code USING} operator
      */
@@ -691,7 +692,7 @@ public abstract class AbstractCondition implements Condition {
      * Equal eq = new Equal("name", "John");
      * String s1 = eq.toString();   // "name = 'John'"
      *
-     * // Null value with = renders as IS NULL
+     * // Equal subclass behavior: null value with = renders as IS NULL
      * Equal nullEq = new Equal("deletedAt", (Object) null);
      * String s2 = nullEq.toString();   // "deletedAt IS NULL"
      * }</pre>

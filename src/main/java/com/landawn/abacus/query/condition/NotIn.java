@@ -87,9 +87,9 @@ public class NotIn extends AbstractIn {
      * // Generates: user_id NOT IN (1, 2, 999)
      * }</pre>
      *
-     * @param propName the property/column name. Must not be null or empty.
-     * @param values the collection of values that the property should NOT match.
-     *               The collection is copied internally to ensure immutability.
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param values the collection of values that the property should NOT match
+     *               (must not be {@code null} or empty); the collection is copied internally to ensure immutability
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty, or if {@code values} is {@code null}/empty
      */
     public NotIn(final String propName, final Collection<?> values) {

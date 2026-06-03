@@ -69,7 +69,7 @@ public final class QueryUtil {
     public static final Pattern PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME = Pattern.compile("^[a-zA-Z0-9_-]+$");
 
     private QueryUtil() {
-        // singleton
+        // utility class — no instances
     }
 
     @SuppressWarnings("deprecation")
@@ -90,7 +90,7 @@ public final class QueryUtil {
 
     /**
      * Caches, per entity class, the {@link PropInfo} objects resolved for that class's ID
-     * property names (in {@link #getIdPropNames} order). This avoids repeating the
+     * property names (in {@link #getIdPropNames(Class)} order). This avoids repeating the
      * reflective {@code BeanInfo.getPropInfo(name)} lookups on every insert-prop-name call.
      * A cached entry may contain {@code null} elements, mirroring the original per-call
      * behavior when an id name does not resolve to a {@link PropInfo}.
@@ -120,7 +120,12 @@ public final class QueryUtil {
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
-     * @return an immutable map where keys are property names and values are tuples of (column name, isSimpleProperty)
+     * @return an immutable map whose entries come in two kinds:
+     *         (1) property-name keys — each property name maps to a {@code (columnName, hasNoDot)} tuple, where
+     *         {@code hasNoDot} is {@code true} when the property name contains no {@code '.'} character; and
+     *         (2) column-name keys — for each entry whose column value is not already a property-name key, the column
+     *         name itself is also inserted as a key mapping to {@code (columnName, hasNoDot)} (where {@code hasNoDot}
+     *         reflects whether the column name contains no {@code '.'}).
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      * @deprecated for internal use only. No public replacement is provided.
      */
@@ -631,7 +636,7 @@ public final class QueryUtil {
      *                        {@link Table#nonColumnFields()}; may be {@code null} or empty for no blacklist)
      * @param propInfo the property information to check (must not be {@code null})
      * @return {@code true} if the property should not be mapped to a database column
-     * @throws NullPointerException if {@code propInfo} is {@code null}
+     * @throws NullPointerException if {@code propInfo} is {@code null} (thrown by dereference; this method performs no explicit null-check)
      */
     public static boolean isNonColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
         return propInfo.isTransient || propInfo.isAnnotationPresent(NonColumn.class) || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))

@@ -90,7 +90,7 @@ public class IsInfinite extends Is {
 
     /**
      * Creates a new IsInfinite condition for the specified property.
-     * This condition generates an "IS INFINITE" SQL clause to check if the property's
+     * This condition generates an {@code IS INFINITE} SQL clause to check if the property's
      * numeric value is infinite (either positive infinity or negative infinity).
      * This is particularly useful for identifying numeric overflow conditions,
      * division by zero results, and other exceptional calculation outcomes.

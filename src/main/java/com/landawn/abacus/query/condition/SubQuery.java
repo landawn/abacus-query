@@ -601,9 +601,9 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Generates the hash code for this subquery.
-     * The hash code is based on the SQL string (for raw queries) or the combination
-     * of entity name/class, properties, and condition (for structured queries),
-     * ensuring consistent hashing for equivalent subqueries.
+     * The hash code incorporates all identity fields unconditionally — the raw SQL string,
+     * the entity name, the entity class, the property names, and the condition — ensuring
+     * consistent hashing for equivalent subqueries regardless of how they were constructed.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

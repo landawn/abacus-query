@@ -103,7 +103,7 @@ public final class Selection {
      * SqlBuilder sqlBuilder = Selection.builder()
      *     .add(User.class, "u", "user")
      *     .add(Order.class, "o", "order", Arrays.asList("id", "orderDate", "total"))
-     *     .apply(PSC::selectFrom);
+     *     .apply(SqlBuilder.PSC::selectFrom);
      *
      * // Or build and use separately
      * List<Selection> selections = Selection.builder()
@@ -286,16 +286,16 @@ public final class Selection {
          * SqlBuilder query = Selection.builder()
          *     .add(User.class, "u", "user")
          *     .add(Order.class, "o", "order")
-         *     .apply(PSC::selectFrom);
+         *     .apply(SqlBuilder.PSC::selectFrom);
          *
          * // Using with named-parameter snake_case builder (NSC)
          * SqlBuilder namedQuery = Selection.builder()
          *     .add(Product.class, "p", "product")
          *     .add(Category.class, "c", "category")
-         *     .apply(NSC::select);
+         *     .apply(SqlBuilder.NSC::select);
          * }</pre>
          *
-         * @param func the function to apply the built selections to (e.g., {@code PSC::select}, {@code NSC::selectFrom}); must not be {@code null}
+         * @param func the function to apply the built selections to (e.g., {@code SqlBuilder.PSC::selectFrom}, {@code SqlBuilder.NSC::select}); must not be {@code null}
          * @return the SqlBuilder instance returned by the function
          * @throws IllegalArgumentException if {@code func} is {@code null}
          * @see SqlBuilder.PSC#select(List)

@@ -177,7 +177,10 @@ public abstract class Cell extends AbstractCondition {
      * // Edge: an uninitialized Cell (null operator) renders the literal "null" for the operator
      * }</pre>
      *
-     * @param namingPolicy the naming policy to apply to property names within the wrapped condition
+     * @param namingPolicy the naming policy to apply to property names within the wrapped condition;
+     *                     unlike {@link ComposableCell#toString(NamingPolicy)}, a {@code null} policy is
+     *                     passed through directly to the wrapped condition — the resulting behavior depends
+     *                     on how that condition handles a {@code null} naming policy
      * @return a string representation of this Cell
      */
     @Override

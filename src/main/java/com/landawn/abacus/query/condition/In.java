@@ -90,9 +90,9 @@ public class In extends AbstractIn {
      * // Generates: priority IN ('HIGH', 'CRITICAL')
      * }</pre>
      *
-     * @param propName the property/column name. Must not be null or empty.
-     * @param values the collection of values to check against. Must not be null or empty.
-     *               The collection is copied internally to prevent external modifications.
+     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param values the collection of values to check against (must not be {@code null} or empty);
+     *               the collection is copied internally to prevent external modifications
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty, or if {@code values} is {@code null}/empty
      */
     public In(final String propName, final Collection<?> values) {

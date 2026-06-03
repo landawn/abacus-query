@@ -59,7 +59,7 @@ import com.landawn.abacus.util.N;
  *     Filters.expr("o.order_date > c.registration_date")
  * );
  * LeftJoin leftJoin = new LeftJoin("customers c", complexJoin);
- * // Generates: LEFT JOIN customers c ((ON o.customer_id = c.id) AND (o.order_date > c.registration_date))
+ * // Generates: LEFT JOIN customers c ON ((ON o.customer_id = c.id) AND (o.order_date > c.registration_date))
  *
  * // Multiple join conditions using Map (composite key)
  * Map<String, String> joinMap = new LinkedHashMap<>();
@@ -75,7 +75,7 @@ import com.landawn.abacus.util.N;
  *     Filters.equal("categories.active", true)
  * );
  * RightJoin rightJoin = new RightJoin("categories", filteredJoin);
- * // Generates: RIGHT JOIN categories ((ON products.category_id = categories.id) AND (categories.active = true))
+ * // Generates: RIGHT JOIN categories ON ((ON products.category_id = categories.id) AND (categories.active = true))
  * }</pre>
  * 
  * @see Using
@@ -216,11 +216,12 @@ public class On extends Cell {
 
     /**
      * Creates an ON condition for simple column equality.
-     * This static factory method is used internally to create Equal conditions
+     * This static factory method is used internally (package-private helper) to create Equal conditions
      * for the convenience constructors.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Internal Usage Example:</b></p>
      * <pre>{@code
+     * // Internal helper — not part of the public API
      * Condition joinCondition = On.createOnCondition("users.id", "posts.user_id");
      * // Creates: Equal("users.id", Expression("posts.user_id"))
      * }</pre>
@@ -240,11 +241,13 @@ public class On extends Cell {
 
     /**
      * Creates an ON condition from multiple column pairs.
+     * This static factory method is used internally (package-private helper).
      * If only one pair is provided, returns a simple Equal condition.
      * If multiple pairs are provided, combines them with AND.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Internal Usage Example:</b></p>
      * <pre>{@code
+     * // Internal helper — not part of the public API
      * Map<String, String> joinColumns = new LinkedHashMap<>();
      * joinColumns.put("t1.col1", "t2.col1");
      * joinColumns.put("t1.col2", "t2.col2");

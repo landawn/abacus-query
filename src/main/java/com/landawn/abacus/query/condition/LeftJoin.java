@@ -64,13 +64,12 @@ import java.util.Collection;
  *         Filters.equal("oi.status", "active"),
  *         Filters.greaterThan("oi.quantity", 0)
  *     ));
- * // Generates: LEFT JOIN order_items oi ((ON o.id = oi.order_id) AND (oi.status = 'active') AND (oi.quantity > 0))
+ * // Generates: LEFT JOIN order_items oi ON ((ON o.id = oi.order_id) AND (oi.status = 'active') AND (oi.quantity > 0))
  *
  * // Using Expression for custom join logic
  * LeftJoin exprJoin = new LeftJoin("orders o",
  *     Filters.expr("customers.id = o.customer_id"));
- * // Generates: LEFT JOIN orders o customers.id = o.customer_id
- * // Note: Expression conditions don't add ON keyword
+ * // Generates: LEFT JOIN orders o ON customers.id = o.customer_id
  * }</pre>
  * 
  * @see Join
@@ -141,13 +140,12 @@ public class LeftJoin extends Join {
      *         Filters.equal("oi.status", "active"),
      *         Filters.greaterThan("oi.created_date", "2023-01-01")
      *     ));
-     * // Generates: LEFT JOIN order_items oi ((ON orders.id = oi.order_id) AND (oi.status = 'active') AND (oi.created_date > '2023-01-01'))
+     * // Generates: LEFT JOIN order_items oi ON ((ON orders.id = oi.order_id) AND (oi.status = 'active') AND (oi.created_date > '2023-01-01'))
      *
      * // Using Expression for custom join logic
      * LeftJoin exprJoin = new LeftJoin("orders o",
      *     Filters.expr("customers.id = o.customer_id AND o.amount > 100"));
-     * // Generates: LEFT JOIN orders o customers.id = o.customer_id AND o.amount > 100
-     * // Note: Expression conditions don't add ON keyword
+     * // Generates: LEFT JOIN orders o ON customers.id = o.customer_id AND o.amount > 100
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -172,13 +170,12 @@ public class LeftJoin extends Join {
      *         new On("c.id", "o.customer_id"),
      *         new On("o.id", "oi.order_id")
      *     ));
-     * // Generates: LEFT JOIN (orders o, order_items oi) ((ON c.id = o.customer_id) AND (ON o.id = oi.order_id))
+     * // Generates: LEFT JOIN (orders o, order_items oi) ON ((ON c.id = o.customer_id) AND (ON o.id = oi.order_id))
      *
      * // Using Expression for multiple tables
      * LeftJoin exprJoin = new LeftJoin(tables,
      *     Filters.expr("c.id = o.customer_id AND o.id = oi.order_id"));
-     * // Generates: LEFT JOIN (orders o, order_items oi) c.id = o.customer_id AND o.id = oi.order_id
-     * // Note: Expression conditions don't add ON keyword
+     * // Generates: LEFT JOIN (orders o, order_items oi) ON c.id = o.customer_id AND o.id = oi.order_id
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

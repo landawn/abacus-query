@@ -24,8 +24,8 @@ package com.landawn.abacus.query.condition;
  *
  * <p>The NOT LIKE operator supports two standard SQL wildcards:</p>
  * <ul>
- *   <li>% (percent sign): Matches any sequence of zero or more characters</li>
- *   <li>_ (underscore): Matches any single character</li>
+ *   <li>{@code %} (percent sign): Matches any sequence of zero or more characters</li>
+ *   <li>{@code _} (underscore): Matches any single character</li>
  * </ul>
  *
  * <p>Common use cases:</p>

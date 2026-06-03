@@ -529,7 +529,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // Output: SELECT first_name AS "firstName", last_name AS "lastName" FROM account WHERE id = 1
      * }</pre>
      *
-     * @deprecated {@code PSC or NSC} is preferred for better security and performance. 
+     * @deprecated {@code PSC} or {@code NSC} is preferred for better security and performance.
      *             Un-parameterized SQL is vulnerable to SQL injection attacks.
      */
     @Deprecated
@@ -1831,7 +1831,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName" FROM account WHERE ID = 1
      * }</pre>
      *
-     * @deprecated {@code PAC or NAC} is preferred for better security and performance. 
+     * @deprecated {@code PAC} or {@code NAC} is preferred for better security and performance.
      *             Un-parameterized SQL is vulnerable to SQL injection attacks.
      */
     @Deprecated
@@ -2489,10 +2489,12 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder with column aliases.
-         * 
+         *
          * <p>This method allows specifying custom aliases for each selected column. The map keys
-         * are column names (converted to uppercase) and values are the aliases to use.</p>
-         * 
+         * are property or column names (which are converted to uppercase column names when an entity
+         * class is in scope or the value matches the alphanumeric column pattern), and the values are
+         * the aliases to use in the SELECT clause.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Map<String, String> aliases = new HashMap<>();
@@ -3795,10 +3797,12 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates a SELECT SQL builder with column aliases.
-         * 
-         * <p>This method allows specification of column names with their aliases for
-         * the SELECT statement.</p>
-         * 
+         *
+         * <p>This method allows specifying custom aliases for each selected column. The map keys
+         * are property or column names (which are converted to camelCase column names when an entity
+         * class is in scope or the value matches the alphanumeric column pattern), and the values are
+         * the aliases to use in the SELECT clause.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Map<String, String> aliases = new HashMap<>();
@@ -4412,10 +4416,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          * 
          * @param cond the condition to parse into SQL
-         * @param entityClass the entity class for property name resolution
+         * @param entityClass the entity class for property name resolution (can be null)
          * @return a new SqlBuilder instance containing only the condition SQL
          * @throws IllegalArgumentException if cond is null
-         * 
+         *
          * @see Filters
          */
         public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
@@ -5377,7 +5381,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the prefix for properties of the second entity in results
          * @return a new SqlBuilder instance configured for multi-table SELECT
-         * @throws IllegalArgumentException if any required parameter is null
+         * @throws IllegalArgumentException if {@code entityClassA} is {@code null}
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -5477,7 +5481,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the prefix for properties of the second entity in results
          * @return a new SqlBuilder instance with SELECT and FROM clauses configured
-         * @throws IllegalArgumentException if any required parameter is null
+         * @throws IllegalArgumentException if {@code entityClassA} is {@code null}
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -6734,7 +6738,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity results
          * @return a new SqlBuilder instance for method chaining
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if {@code entityClassA} is {@code null}
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -6843,7 +6847,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity
          * @return a new SqlBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if {@code entityClassA} is {@code null}
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -7029,6 +7033,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // Note: table names passed to from()/into()/update()/deleteFrom() as String literals are kept verbatim;
      * // only column/property names are converted per the SCREAMING_SNAKE_CASE naming policy.
      * }</pre>
+     *
+     * @see SqlBuilder
+     * @see NAC
      */
     public static class PAC extends SqlBuilder {
 
@@ -7991,6 +7998,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity results
          * @return a new SqlBuilder instance configured for multi-table SELECT
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -8092,6 +8100,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity
          * @return a new SqlBuilder instance with SELECT and FROM configured
+         * @throws IllegalArgumentException if entityClassA is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -8299,7 +8308,6 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * }</pre>
      * 
      * @see SqlBuilder
-     * @see PSC
      * @see NLC
      */
     public static class PLC extends SqlBuilder {
@@ -9589,6 +9597,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity
          * @return a new SqlBuilder instance for method chaining
+         * @throws IllegalArgumentException if {@code entityClassA} is {@code null}
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -9690,6 +9699,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity
          * @return a new SqlBuilder instance for method chaining
+         * @throws IllegalArgumentException if {@code entityClassA} is {@code null}
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -9755,6 +9765,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection objects defining what to select from each entity
          * @return a new SqlBuilder instance for method chaining
+         * @throws IllegalArgumentException if multiSelects is null or empty
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -11151,6 +11162,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * String sql = NSC.insert(account).into("account").build().query();
      * // Output: INSERT INTO account (first_name, last_name) VALUES (:firstName, :lastName)
      * }</pre>
+     *
+     * @see SqlBuilder
+     * @see PSC
      */
     public static class NSC extends SqlBuilder {
 
@@ -12326,6 +12340,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * String sql = NAC.insert(account).into("ACCOUNT").build().query();
      * // Output: INSERT INTO ACCOUNT (FIRST_NAME, LAST_NAME) VALUES (:firstName, :lastName)
      * }</pre>
+     *
+     * @see SqlBuilder
+     * @see PAC
      */
     public static class NAC extends SqlBuilder {
 
@@ -13537,6 +13554,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * String sql = NLC.insert(account).into("account").build().query();
      * // Output: INSERT INTO account (firstName, lastName) VALUES (:firstName, :lastName)
      * }</pre>
+     *
+     * @see SqlBuilder
+     * @see PLC
      */
     public static class NLC extends SqlBuilder {
 
@@ -14803,9 +14823,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                  .build().query();
          * // Output: SELECT count(*) FROM orders WHERE (amount > :amount) AND (orderDate BETWEEN :minOrderDate AND :maxOrderDate)
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class
          * @return an SqlBuilder configured for COUNT query
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder count(final Class<?> entityClass) {
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
@@ -14865,7 +14886,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // Output: SELECT first_Name, last_NaMe FROM account WHERE last_NaMe = #{last_NaMe}
      * }</pre>
      * 
-     * @deprecated Use {@link NSB} or other non-deprecated builders instead.
+     * @deprecated Use {@link NSB} instead.
      * Note: Switching from MSB to NSB changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
@@ -16133,7 +16154,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // Output: INSERT INTO account (first_name, last_name) VALUES (#{firstName}, #{lastName})
      * }</pre>
      * 
-     * @deprecated Use {@link NSC} or other non-deprecated builders instead.
+     * @deprecated Use {@link NSC} instead.
      * Note: Switching from MSC to NSC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
@@ -16339,9 +16360,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = MSC.insert(User.class).into("users").build().query();
          * // Output: INSERT INTO users (first_name, last_name, email) VALUES (#{firstName}, #{lastName}, #{email})
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to generate INSERT for
          * @return a new SqlBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder insert(final Class<?> entityClass) {
             return insert(entityClass, null);
@@ -16393,9 +16415,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = MSC.insertInto(User.class).build().query();
          * // Output: INSERT INTO users (first_name, last_name) VALUES (#{firstName}, #{lastName})
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to insert
          * @return a new SqlBuilder instance for method chaining
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder insertInto(final Class<?> entityClass) {
             return insertInto(entityClass, null);
@@ -16909,8 +16932,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = MSC.selectFrom(User.class, "u")
          *                 .where(Filters.equal("u.active", true))
          *                 .build().query();
-         * // Output: SELECT u.first_name AS "firstName", u.last_name AS "lastName" 
-         * //         FROM users u WHERE u.active = #{u.active}
+         * // Output: SELECT u.first_name AS "firstName", u.last_name AS "lastName"
+         * //         FROM users u WHERE u.active = #{active}
          * }</pre>
          * 
          * @param entityClass the entity class to select from
@@ -17374,7 +17397,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // Output: INSERT INTO ACCOUNT (FIRST_NAME, LAST_NAME) VALUES (#{firstName}, #{lastName})
      * }</pre>
      *
-     * @deprecated Use {@link NAC} (Named SQL with All Caps) instead.
+     * @deprecated Use {@link NAC} instead.
      * Note: Switching from MAC to NAC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
@@ -18011,6 +18034,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param entityClass the entity class to select properties from
          * @return a new SqlBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder select(final Class<?> entityClass) {
             return select(entityClass, false);
@@ -18032,6 +18056,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param entityClass the entity class to select properties from
          * @param includeSubEntityProperties whether to include properties from related sub-entities
          * @return a new SqlBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return select(entityClass, includeSubEntityProperties, null);
@@ -18050,6 +18075,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param entityClass the entity class to select properties from
          * @param excludedPropNames set of property names to exclude from the SELECT
          * @return a new SqlBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return select(entityClass, false, excludedPropNames);
@@ -18546,7 +18572,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * // Output: INSERT INTO account (firstName, lastName) VALUES (#{firstName}, #{lastName})
      * }</pre>
      *
-     * @deprecated Use {@link NLC} (Named SQL with Lower Camel) instead.
+     * @deprecated Use {@link NLC} instead.
      * Note: Switching from MLC to NLC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated

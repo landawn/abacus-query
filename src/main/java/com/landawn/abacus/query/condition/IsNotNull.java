@@ -71,7 +71,7 @@ public class IsNotNull extends IsNot {
 
     /**
      * Creates a new IsNotNull condition for the specified property.
-     * This condition generates an "IS NOT NULL" SQL clause to check if the property value
+     * This condition generates an {@code IS NOT NULL} SQL clause to check if the property value
      * is not NULL, effectively filtering for records that have values in the specified field.
      * This is essential for data validation and ensuring required fields are populated.
      *
@@ -79,7 +79,7 @@ public class IsNotNull extends IsNot {
      * {@code NULL} comparisons have special semantics in SQL: {@code expr != NULL} always evaluates to
      * UNKNOWN regardless of {@code expr}'s value (which behaves as {@code false} in WHERE clauses,
      * so no rows would ever match). {@code IS NOT NULL} returns {@code true} for non-null values
-     * and {@code false} for null values, giving the correct and predictable filtering behavior.
+     * and {@code false} for null values, giving the correct and predictable filtering behavior.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

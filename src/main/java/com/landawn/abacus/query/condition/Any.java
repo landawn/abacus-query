@@ -117,8 +117,7 @@ public class Any extends ComposableCell {
      * SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
      * Any any = new Any(subQuery);
      * SubQuery retrieved = any.getSubQuery();
-     * // returns the same SubQuery instance that was supplied
-     * // retrieved == subQuery -> true
+     * // returns the subquery passed to the constructor
      *
      * // The wrapped subquery is also what getCondition() returns
      * boolean sameAsCondition = any.getSubQuery() == any.getCondition();

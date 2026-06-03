@@ -36,7 +36,7 @@ package com.landawn.abacus.query;
  *
  * // Use with a SqlBuilder (typical use case). orderBy(...) may be called only once,
  * // so pass multiple columns in a single call.
- * String built = PSC.selectFrom(User.class)
+ * String built = SqlBuilder.PSC.selectFrom(User.class)
  *     .orderBy(Arrays.asList("lastName", "firstName"), SortDirection.ASC)
  *     .build().query();
  * // built ends with: ... ORDER BY last_name ASC, first_name ASC

@@ -24,6 +24,8 @@ import com.landawn.abacus.util.Strings;
  * A composable variant of {@link Cell} that supports logical composition via AND/OR/NOT operations.
  * Like Cell, it wraps another condition with an operator, but extends {@link ComposableCondition}
  * instead of {@link AbstractCondition}, enabling chaining with other conditions.
+ * Unlike {@link Cell}, the wrapped condition is always enclosed in parentheses in the rendered output:
+ * {@code OPERATOR (cond)}.
  *
  * <p>Concrete subclasses include {@link Not}, {@link Exists}, {@link NotExists}, {@link All}, {@link Any}, and {@link Some}.</p>
  *

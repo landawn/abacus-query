@@ -33,7 +33,7 @@ package com.landawn.abacus.query.condition;
  *   <li>{@link GroupBy} - GROUP BY clause for grouping rows</li>
  *   <li>{@link OrderBy} - ORDER BY clause for sorting results</li>
  *   <li>{@link Limit} - LIMIT clause for restricting result count</li>
- *   <li>{@link Union}, {@link Intersect}, {@link Except} - Set operations</li>
+ *   <li>{@link Union}, {@link UnionAll}, {@link Intersect}, {@link Except}, {@link Minus} - Set operations</li>
  * </ul>
  * 
  * <p><b>Usage Examples:</b></p>
@@ -63,6 +63,8 @@ package com.landawn.abacus.query.condition;
  * 
  * @see Condition
  * @see Criteria
+ * @see UnionAll
+ * @see Minus
  */
 public abstract class Clause extends Cell {
 

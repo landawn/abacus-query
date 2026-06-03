@@ -60,7 +60,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Oracle, DB2: Use MINUS keyword</li>
  *   <li>PostgreSQL, SQL Server, SQLite, MySQL 8.0.31+: Use EXCEPT keyword</li>
  *   <li>MySQL before 8.0.31: Does not support MINUS/EXCEPT (use NOT IN or LEFT JOIN with NULL check)</li>
- *   <li>Part of SQL standard as EXCEPT; MINUS is Oracle-specific but widely recognized</li>
+ *   <li>Part of SQL standard as EXCEPT; MINUS is the Oracle/DB2 keyword but widely recognized</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>

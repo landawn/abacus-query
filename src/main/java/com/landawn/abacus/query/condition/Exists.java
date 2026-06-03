@@ -106,8 +106,7 @@ public class Exists extends ComposableCell {
      * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
      * Exists exists = new Exists(subQuery);
      * SubQuery retrieved = exists.getSubQuery();
-     * // returns the same SubQuery instance that was supplied
-     * // retrieved == subQuery -> true
+     * // returns the subquery passed to the constructor
      *
      * // The wrapped subquery is also what getCondition() returns
      * boolean sameAsCondition = exists.getSubQuery() == exists.getCondition();

@@ -91,7 +91,7 @@ public class IsNaN extends Is {
 
     /**
      * Creates a new IsNaN condition for the specified property.
-     * This condition generates an "IS NAN" SQL clause to check if the property's numeric
+     * This condition generates an {@code IS NAN} SQL clause to check if the property's numeric
      * value is NaN (Not a Number), which represents an invalid or undefined mathematical
      * result. This is crucial for data validation, quality checks, and identifying
      * calculation errors in floating-point operations.

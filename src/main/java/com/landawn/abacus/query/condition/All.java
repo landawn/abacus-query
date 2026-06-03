@@ -117,8 +117,7 @@ public class All extends ComposableCell {
      * SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE in_stock = true");
      * All all = new All(subQuery);
      * SubQuery retrieved = all.getSubQuery();
-     * // returns the same SubQuery instance that was supplied
-     * // retrieved == subQuery -> true
+     * // returns the subquery passed to the constructor
      *
      * // The wrapped subquery is also what getCondition() returns
      * boolean sameAsCondition = all.getSubQuery() == all.getCondition();

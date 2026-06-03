@@ -61,8 +61,8 @@ import com.landawn.abacus.util.N;
  * // Results in: ((age > 65) OR (age < 18))
  * }</pre>
  *
- * @see And
  * @see Junction
+ * @see And
  * @see Not
  * @see Condition
  */
@@ -104,7 +104,8 @@ public class Or extends Junction {
      * }</pre>
      *
      * @param conditions the conditions to combine with OR logic; may be {@code null} or empty
-     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}
+     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
+     *             element is a {@link Criteria} or has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.)
      */
     public Or(final Condition... conditions) {
         super(Operator.OR, conditions);
@@ -137,7 +138,8 @@ public class Or extends Junction {
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with OR logic; may be {@code null} or empty
-     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}
+     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
+     *             element is a {@link Criteria} or has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.)
      */
     public Or(final Collection<? extends Condition> conditions) {
         super(Operator.OR, conditions);
@@ -147,6 +149,8 @@ public class Or extends Junction {
      * Trusted private constructor used by fluent chaining ({@link #or(Condition)}) to avoid
      * re-validating already-validated conditions. Behavior is identical to the public
      * collection constructor; only the redundant per-element null check is skipped.
+     * The supplied list is taken over directly (not copied), so callers must pass a private,
+     * freshly created list that they will not retain or mutate afterwards.
      *
      * @param validatedConditions an already-validated, freshly created list of conditions
      * @param marker disambiguation marker (ignored)
@@ -182,11 +186,11 @@ public class Or extends Junction {
      * // Results vary based on flags
      * }</pre>
      *
-     * @param cond the condition to add to this OR. Must not be {@code null} and must not
-     *             be a clause or join condition (ON/USING).
+     * @param cond the condition to add to this OR. Must not be {@code null} and must be
+     *             composable (i.e. not a {@link Clause}, a {@link Join}, or an {@code ON}/{@code USING} condition).
      * @return a new Or condition containing all existing conditions plus the new one
      * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond}
-     *             is a clause or join condition (ON/USING) that cannot be composed
+     *             is a non-composable condition (a {@link Clause}, a {@link Join}, or an {@code ON}/{@code USING} condition)
      */
     @Override
     public Or or(final Condition cond) {

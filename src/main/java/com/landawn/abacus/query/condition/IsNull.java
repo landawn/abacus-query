@@ -85,7 +85,7 @@ public class IsNull extends Is {
 
     /**
      * Creates a new IsNull condition for the specified property.
-     * This condition generates an "IS NULL" SQL clause to check if the property value is NULL,
+     * This condition generates an {@code IS NULL} SQL clause to check if the property value is NULL,
      * which represents the absence of a value in the database. NULL is distinctly different
      * from empty strings, zero values, or false boolean values.
      *

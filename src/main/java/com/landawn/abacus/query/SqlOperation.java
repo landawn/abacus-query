@@ -76,7 +76,7 @@ public enum SqlOperation {
     DELETE(SK.DELETE),
 
     /**
-     * MERGE operation for upsert functionality.
+     * MERGE operation for upserting (inserting or updating) records.
      */
     MERGE(SK.MERGE),
 
@@ -116,7 +116,7 @@ public enum SqlOperation {
     RENAME(SK.RENAME),
 
     /**
-     * BEGIN_TRANSACTION operation for starting a transaction.
+     * BEGIN TRANSACTION operation for starting a transaction.
      */
     BEGIN_TRANSACTION(SK.BEGIN_TRANSACTION),
 
@@ -240,7 +240,7 @@ public enum SqlOperation {
      * boolean same = SqlOperation.DELETE.toString().equals(SqlOperation.DELETE.sqlToken()); // true
      * }</pre>
      *
-     * @return the SQL keyword string representation of this operation
+     * @return the SQL keyword string representation of this operation, never {@code null}
      */
     @Override
     public String toString() {

@@ -86,7 +86,7 @@ public class NotEqual extends Binary {
      * // SQL: balance != 0
      * }</pre>
      *
-     * <p>Note: For null comparisons, consider using {@link IsNull} or {@link IsNotNull}
+     * <p>Note: For null comparisons, consider using {@link IsNotNull}
      * as SQL NULL comparisons behave differently (NULL != value returns NULL, not true).</p>
      *
      * @param propName the property/column name (must not be {@code null} or empty)

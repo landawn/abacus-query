@@ -627,8 +627,9 @@ public class Filters {
     }
 
     /**
-     * Creates an {@code AND} condition with two property-value pairs.
-     * 
+     * Creates an {@code AND} condition with two property-value pairs
+     * across <b>different</b> columns/properties.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.allEqual("status", "active", "type", "premium");
@@ -646,8 +647,9 @@ public class Filters {
     }
 
     /**
-     * Creates an {@code AND} condition with three property-value pairs.
-     * 
+     * Creates an {@code AND} condition with three property-value pairs
+     * across <b>different</b> columns/properties.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.allEqual("status", "active", "type", "premium", "verified", true);
@@ -1395,6 +1397,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link Between} condition with parameter placeholders
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     public static Between between(final String propName) {
         return new Between(propName, Filters.QME, Filters.QME);
@@ -1433,6 +1436,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link NotBetween} condition with parameter placeholders
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     public static NotBetween notBetween(final String propName) {
         return new NotBetween(propName, Filters.QME, Filters.QME);
@@ -1467,6 +1471,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link Like} condition with a parameter placeholder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     public static Like like(final String propName) {
         return new Like(propName, QME);
@@ -1501,6 +1506,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link NotLike} condition with a parameter placeholder
+     * @see com.landawn.abacus.query.SqlBuilder
      */
     public static NotLike notLike(final String propName) {
         return new NotLike(propName, Filters.QME);
@@ -2018,6 +2024,8 @@ public class Filters {
      * Creates a {@link GroupBy} clause with the specified property names.
      * Groups results by the given columns. No explicit sort direction is appended
      * to the columns; the database default is used.
+     * <p>Note: unlike {@link #groupBy(Collection)}, which appends {@code ASC} to each column,
+     * this varargs overload appends no direction suffix.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2034,7 +2042,10 @@ public class Filters {
 
     /**
      * Creates a {@link GroupBy} clause with properties from a collection.
-     * Groups results by the given columns in ascending order.
+     * Groups results by the given columns in ascending order (an explicit {@code ASC}
+     * is appended to each column).
+     * <p>Note: unlike {@link #groupBy(String...)}, which appends no sort direction,
+     * this overload appends {@code ASC} to every column.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3150,7 +3161,9 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE dept = 'IT'");
      * All condition = Filters.all(subQuery);
-     * // SQL fragment: salary > ALL (SELECT salary FROM employees WHERE dept = 'IT')
+     * // This factory only wraps the subquery as: ALL (SELECT salary FROM employees WHERE dept = 'IT').
+     * // When used as the RHS of a comparison such as gt(...), the full fragment renders:
+     * // salary > ALL (SELECT salary FROM employees WHERE dept = 'IT')
      * }</pre>
      *
      * @param subQuery the subquery
@@ -3168,7 +3181,9 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'electronics'");
      * Any condition = Filters.any(subQuery);
-     * // SQL fragment: price < ANY (SELECT price FROM products WHERE category = 'electronics')
+     * // This factory only wraps the subquery as: ANY (SELECT price FROM products WHERE category = 'electronics').
+     * // When used as the RHS of a comparison such as lt(...), the full fragment renders:
+     * // price < ANY (SELECT price FROM products WHERE category = 'electronics')
      * }</pre>
      *
      * @param subQuery the subquery
@@ -3186,7 +3201,9 @@ public class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT score FROM exams WHERE student_id = 123");
      * Some condition = Filters.some(subQuery);
-     * // SQL fragment: passing_score <= SOME (SELECT score FROM exams WHERE student_id = 123)
+     * // This factory only wraps the subquery as: SOME (SELECT score FROM exams WHERE student_id = 123).
+     * // When used as the RHS of a comparison such as le(...), the full fragment renders:
+     * // passing_score <= SOME (SELECT score FROM exams WHERE student_id = 123)
      * }</pre>
      *
      * @param subQuery the subquery

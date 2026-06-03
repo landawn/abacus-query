@@ -260,8 +260,8 @@ public final class DynamicQuery {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.limit("LIMIT 10 OFFSET 20");
-         * // Or for Oracle-style row-limiting
-         * builder.limit("FETCH FIRST 10 ROWS ONLY");
+         * // Or for SQL Server / Sybase-style row-limiting (no typed overload exists for this form)
+         * builder.limit("TOP 10");
          * }</pre>
          *
          * @param limitCond the complete limit/pagination expression (e.g., {@code "LIMIT 10 OFFSET 20"}) (must not be {@code null}, empty, or blank)
@@ -951,7 +951,8 @@ public final class DynamicQuery {
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@code append(...)}/{@code appendIf(...)}/{@code appendIfOrElse(...)} call
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
         public FromClause join(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -976,7 +977,8 @@ public final class DynamicQuery {
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@code append(...)}/{@code appendIf(...)}/{@code appendIfOrElse(...)} call
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
         public FromClause innerJoin(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -1001,7 +1003,8 @@ public final class DynamicQuery {
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@code append(...)}/{@code appendIf(...)}/{@code appendIfOrElse(...)} call
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
         public FromClause leftJoin(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -1026,7 +1029,8 @@ public final class DynamicQuery {
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@code append(...)}/{@code appendIf(...)}/{@code appendIfOrElse(...)} call
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
         public FromClause rightJoin(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -1052,7 +1056,8 @@ public final class DynamicQuery {
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior {@code append(...)}/{@code appendIf(...)}/{@code appendIfOrElse(...)} call
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
         public FromClause fullJoin(final String table, final String on) {
             checkSqlFragmentNotBlank(table, "table");
@@ -1164,6 +1169,9 @@ public final class DynamicQuery {
          * Appends a condition to the {@code WHERE} clause.
          * Automatically adds "WHERE " prefix on first call.
          *
+         * <p>Unlike {@link #and(String)}/{@link #or(String)}, this method does <em>not</em> insert a logical
+         * connective — the caller must include any required {@code AND}/{@code OR} in the argument.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * where.append("active = true").append("AND deleted = false");
@@ -1266,6 +1274,8 @@ public final class DynamicQuery {
 
         /**
          * Adds an {@code AND} condition to the {@code WHERE} clause.
+         * If called before any {@link #append(String)}, this acts as the first condition and emits
+         * {@code WHERE cond} with no leading {@code AND}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1293,6 +1303,8 @@ public final class DynamicQuery {
 
         /**
          * Adds an {@code OR} condition to the {@code WHERE} clause.
+         * If called before any {@link #append(String)}, this acts as the first condition and emits
+         * {@code WHERE cond} with no leading {@code OR}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1594,6 +1606,8 @@ public final class DynamicQuery {
 
         /**
          * Adds an {@code AND} condition to the {@code HAVING} clause.
+         * If called before any {@link #append(String)}, this acts as the first condition and emits
+         * {@code HAVING cond} with no leading {@code AND}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1621,6 +1635,8 @@ public final class DynamicQuery {
 
         /**
          * Adds an {@code OR} condition to the {@code HAVING} clause.
+         * If called before any {@link #append(String)}, this acts as the first condition and emits
+         * {@code HAVING cond} with no leading {@code OR}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code

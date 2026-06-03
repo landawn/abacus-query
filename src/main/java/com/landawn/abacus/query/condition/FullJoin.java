@@ -17,7 +17,7 @@ package com.landawn.abacus.query.condition;
 import java.util.Collection;
 
 /**
- * Represents a FULL OUTER JOIN operation in SQL queries.
+ * Represents a FULL JOIN (a.k.a. FULL OUTER JOIN) operation in SQL queries.
  * A FULL JOIN returns all rows from both tables: matched rows are combined,
  * and unmatched rows from either side are returned with NULLs filled in for
  * the columns of the other table. It is equivalent to the union of the
@@ -56,7 +56,7 @@ import java.util.Collection;
  *         new On("internal_data.id", "e.id"),
  *         Filters.greaterThan("e.updated_date", "2024-01-01")
  *     ));
- * // Generates: FULL JOIN external_data e ((ON internal_data.id = e.id) AND (e.updated_date > '2024-01-01'))
+ * // Generates: FULL JOIN external_data e ON ((ON internal_data.id = e.id) AND (e.updated_date > '2024-01-01'))
  * }</pre>
  * 
  * @see Join
@@ -127,13 +127,12 @@ public class FullJoin extends Join {
      *         Filters.equal("ei.active", true),
      *         Filters.greaterThan("ei.updated_date", "2023-01-01")
      *     ));
-     * // Generates: FULL JOIN external_inventory ei ((ON internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01'))
+     * // Generates: FULL JOIN external_inventory ei ON ((ON internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01'))
      *
      * // Using Expression for custom join logic
      * FullJoin exprJoin = new FullJoin("departments d",
      *     Filters.expr("employees.dept_id = d.id AND d.active = true"));
-     * // Generates: FULL JOIN departments d employees.dept_id = d.id AND d.active = true
-     * // Note: Expression conditions don't add ON keyword
+     * // Generates: FULL JOIN departments d ON employees.dept_id = d.id AND d.active = true
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -158,13 +157,12 @@ public class FullJoin extends Join {
      *         new On("d.id", "e.dept_id"),
      *         new On("d.id", "c.dept_id")
      *     ));
-     * // Generates: FULL JOIN (employees e, contractors c) ((ON d.id = e.dept_id) AND (ON d.id = c.dept_id))
+     * // Generates: FULL JOIN (employees e, contractors c) ON ((ON d.id = e.dept_id) AND (ON d.id = c.dept_id))
      *
      * // Using Expression for multiple tables
      * FullJoin exprJoin = new FullJoin(tables,
      *     Filters.expr("d.id = e.dept_id AND d.id = c.dept_id"));
-     * // Generates: FULL JOIN (employees e, contractors c) d.id = e.dept_id AND d.id = c.dept_id
-     * // Note: Expression conditions don't add ON keyword
+     * // Generates: FULL JOIN (employees e, contractors c) ON d.id = e.dept_id AND d.id = c.dept_id
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

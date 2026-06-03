@@ -161,11 +161,12 @@ public class Using extends Cell {
 
     /**
      * Creates a condition expression for the USING clause from an array of column names.
-     * This static factory method constructs the appropriate condition expression
-     * for the USING clause from the provided column names.
+     * This static factory method is used internally (package-private helper) and constructs
+     * the appropriate condition expression for the USING clause from the provided column names.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Internal Usage Example:</b></p>
      * <pre>{@code
+     * // Internal helper — not part of the public API
      * // Single column - always parenthesized
      * Condition singleCol = Using.createUsingCondition("customer_id");
      * // Creates condition for: USING (customer_id)
@@ -191,11 +192,12 @@ public class Using extends Cell {
 
     /**
      * Creates a condition expression for the USING clause from a collection of column names.
-     * This static factory method constructs the appropriate condition expression
-     * for the USING clause from the provided column collection.
+     * This static factory method is used internally (package-private helper) and constructs
+     * the appropriate condition expression for the USING clause from the provided column collection.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Internal Usage Example:</b></p>
      * <pre>{@code
+     * // Internal helper — not part of the public API
      * // Single column collection - always parenthesized
      * List<String> singleCol = Collections.singletonList("tenant_id");
      * Condition singleCondition = Using.createUsingCondition(singleCol);

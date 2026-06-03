@@ -42,6 +42,9 @@ package com.landawn.abacus.query.condition;
  * // Used with: price < SOME (SELECT price FROM competitor_products)
  * }</pre>
  *
+ * <p>Note: when the subquery returns no rows, {@code x op SOME (...)} is {@code false}
+ * for every operator.</p>
+ *
  * <p>Relationship to ANY and ALL:</p>
  * <ul>
  *   <li>SOME and ANY are functionally equivalent - both return true if condition matches at least one value</li>
@@ -104,8 +107,7 @@ public class Some extends ComposableCell {
      * SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE role = 'manager'");
      * Some some = new Some(subQuery);
      * SubQuery retrieved = some.getSubQuery();
-     * // returns the same SubQuery instance that was supplied
-     * // retrieved == subQuery -> true
+     * // returns the subquery passed to the constructor
      *
      * // The wrapped subquery is also what getCondition() returns
      * boolean sameAsCondition = some.getSubQuery() == some.getCondition();

@@ -583,6 +583,7 @@ public final class SqlMapper {
      * Compares this {@code SqlMapper} to another object for equality.
      * Two {@code SqlMapper} instances are considered equal if they contain the same id-to-SQL mappings
      * and id-to-attributes mappings (order-independent, per {@link Map#equals(Object)}).
+     * Note: equality ignores entry order, although {@link #sqlIds()} and {@link #toString()} reflect insertion order.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

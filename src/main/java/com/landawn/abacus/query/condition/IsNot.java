@@ -64,8 +64,8 @@ public class IsNot extends Binary {
     /**
      * Creates a new {@code IS NOT} condition with the specified property name and right-hand value.
      * The generated SQL takes the form {@code propName IS NOT propValue}, where {@code propValue}
-     * is typically an {@link Expression} representing a special SQL keyword such as {@code NULL},
-     * {@code NAN}, {@code INFINITE}, or {@code UNKNOWN}.
+     * is typically an {@link Expression} representing a special SQL keyword such as {@code NULL}
+     * or a custom expression like {@code UNKNOWN}.
      *
      * <p>If {@code propValue} is the Java {@code null} reference, the generated SQL collapses to
      * {@code propName IS NOT NULL}.</p>
@@ -76,15 +76,10 @@ public class IsNot extends Binary {
      * IsNot notNull = new IsNot("phone_number", null);
      * // Generates: phone_number IS NOT NULL
      *
-     * // Check if not NaN
-     * Expression nanExpr = Filters.expr("NAN");
-     * IsNot notNaN = new IsNot("temperature", nanExpr);
-     * // Generates: temperature IS NOT NAN
-     *
      * // Check if not a custom value
-     * Expression pendingExpr = Filters.expr("PENDING");
-     * IsNot notPending = new IsNot("order_status", pendingExpr);
-     * // Generates: order_status IS NOT PENDING
+     * Expression unknownExpr = Filters.expr("UNKNOWN");
+     * IsNot notUnknown = new IsNot("verification_status", unknownExpr);
+     * // Generates: verification_status IS NOT UNKNOWN
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null} or empty)
