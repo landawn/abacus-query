@@ -145,6 +145,8 @@ public class Junction extends ComposableCondition {
      *     new GreaterThanOrEqual("age", 18),
      *     new IsNotNull("email")
      * );
+     * // activeAdults.toString() returns
+     * //   "((active = true) AND (age >= 18) AND (email IS NOT NULL))"
      *
      * // Create an OR junction for status checks
      * Junction validStatus = new Junction(Operator.OR,
@@ -152,6 +154,13 @@ public class Junction extends ComposableCondition {
      *     new Equal("status", "pending_review"),
      *     new Equal("override", true)
      * );
+     *
+     * // Edge: no conditions -> renders as an empty string
+     * Junction none = new Junction(Operator.AND);
+     * // none.toString() returns ""
+     *
+     * // Edge: a null element is rejected
+     * Junction bad = new Junction(Operator.AND, new Equal("a", 1), (Condition) null);   // throws IllegalArgumentException
      * }</pre>
      *
      * @param operator the composable operator to use (AND, OR, etc.)
@@ -179,6 +188,11 @@ public class Junction extends ComposableCondition {
      * }
      *
      * Junction junction = new Junction(Operator.AND, conditions);
+     * // junction.toString() returns "((status = 'active') AND (score > 80))"
+     *
+     * // Edge: a null collection is treated as no conditions -> renders as ""
+     * Junction empty = new Junction(Operator.OR, (Collection<Condition>) null);
+     * // empty.toString() returns ""
      * }</pre>
      *
      * @param operator the composable operator to use (AND, OR, etc.)
@@ -202,9 +216,15 @@ public class Junction extends ComposableCondition {
      *     new Equal("status", "active"),
      *     new GreaterThan("age", 18));
      * List<Condition> conditions = and.getConditions();
-     * // Returns: [Equal("status", "active"), GreaterThan("age", 18)]
-     * int count = conditions.size();
-     * // Returns: 2
+     * // conditions = [Equal("status", "active"), GreaterThan("age", 18)]
+     * conditions.size();             // returns 2
+     * conditions.get(0).toString();  // returns "status = 'active'"
+     *
+     * // Edge: the returned view is unmodifiable
+     * conditions.add(new Equal("x", 1));   // throws UnsupportedOperationException
+     *
+     * // Edge: an empty junction returns an empty list
+     * new Junction(Operator.AND).getConditions().isEmpty();   // returns true
      * }</pre>
      *
      * @return an unmodifiable view of the list of conditions in this junction
@@ -253,7 +273,23 @@ public class Junction extends ComposableCondition {
      * This method recursively collects parameters from all nested conditions,
      * including those in nested junctions. The order of parameters matches
      * the order they would appear in the generated SQL.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Junction and = new Junction(Operator.AND,
+     *     new Equal("status", "active"),
+     *     new Between("age", 18, 65));
+     * and.getParameters();          // returns ["active", 18, 65]
+     *
+     * // Edge: an empty junction has no parameters
+     * Junction empty = new Junction(Operator.AND);
+     * empty.getParameters();        // returns [] (empty, immutable)
+     *
+     * // Edge: conditions without bound values contribute nothing
+     * Junction noParams = new Junction(Operator.OR, new IsNotNull("email"));
+     * noParams.getParameters();     // returns []
+     * }</pre>
+     *
      * @return an immutable list containing all parameters from all conditions
      */
     @Override
@@ -283,6 +319,26 @@ public class Junction extends ComposableCondition {
      * {@code "((cond1) AND (cond2) AND (cond3))"}). This ensures proper precedence in nested
      * composable expressions. Any {@code null} entries in the conditions list are skipped, and an
      * empty string is returned if the junction has no conditions or every condition is {@code null}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Junction and = new Junction(Operator.AND,
+     *     new Equal("status", "active"),
+     *     new GreaterThan("age", 18));
+     * and.toString(NamingPolicy.NO_CHANGE);
+     * // returns "((status = 'active') AND (age > 18))"
+     *
+     * // Edge: a single condition is still doubly parenthesized
+     * Junction single = new Junction(Operator.OR, new Equal("x", 1));
+     * single.toString(NamingPolicy.NO_CHANGE);   // returns "((x = 1))"
+     *
+     * // Edge: naming policy rewrites property names
+     * Junction snake = new Junction(Operator.AND, new Equal("firstName", "John"));
+     * snake.toString(NamingPolicy.SNAKE_CASE);   // returns "((first_name = 'John'))"
+     *
+     * // Edge: an empty junction renders as an empty string
+     * new Junction(Operator.AND).toString(NamingPolicy.NO_CHANGE);   // returns ""
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names within each condition
      * @return the string representation with proper parentheses and spacing, or an empty string if
@@ -349,7 +405,18 @@ public class Junction extends ComposableCondition {
      * Computes the hash code for this junction based on its operator and conditions.
      * The hash code is consistent with equals() - junctions with the same operator
      * and conditions will have the same hash code.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Junction a = new Junction(Operator.AND, new Equal("status", "active"));
+     * Junction b = new Junction(Operator.AND, new Equal("status", "active"));
+     * a.hashCode() == b.hashCode();   // true (same operator and conditions)
+     *
+     * // Edge: a different operator produces a different hash code
+     * Junction c = new Junction(Operator.OR, new Equal("status", "active"));
+     * a.hashCode() == c.hashCode();   // (typically) false
+     * }</pre>
+     *
      * @return hash code based on operator and condition list
      */
     @Override
@@ -375,7 +442,25 @@ public class Junction extends ComposableCondition {
      * Checks if this junction is equal to another object.
      * Two junctions are considered equal if they have the same operator
      * and contain the same conditions in the same order.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Junction a = new Junction(Operator.AND, new Equal("status", "active"));
+     * Junction b = new Junction(Operator.AND, new Equal("status", "active"));
+     * a.equals(b);    // returns true
+     *
+     * // Edge: a different operator -> not equal
+     * Junction c = new Junction(Operator.OR, new Equal("status", "active"));
+     * a.equals(c);    // returns false
+     *
+     * // Edge: same conditions in a different order -> not equal
+     * Junction d = new Junction(Operator.AND, new Equal("a", 1), new Equal("b", 2));
+     * Junction e = new Junction(Operator.AND, new Equal("b", 2), new Equal("a", 1));
+     * d.equals(e);    // returns false
+     *
+     * a.equals(null); // returns false
+     * }</pre>
+     *
      * @param obj the object to compare with
      * @return {@code true} if the object is a Junction with the same operator and conditions
      */

@@ -69,6 +69,22 @@ public abstract class Cell extends AbstractCondition {
      * <p>This constructor is typically invoked by subclass constructors such as
      * {@link Clause} subclasses, {@link On}, and {@link Using}.</p>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Subclasses pass a fixed operator; the rendered form is "OPERATOR condition"
+     * Cell where = new Where(Filters.eq("active", true));
+     * // where.toString() returns "WHERE active = true"
+     *
+     * Cell having = new Having(Filters.gt("count", 5));
+     * // having.toString() returns "HAVING count > 5"
+     *
+     * // Edge: a null condition is rejected
+     * Cell bad = new Where((Condition) null);     // throws IllegalArgumentException
+     *
+     * // Edge: a null operator (only via the package-private default ctor path) renders as "null"
+     * // e.g. an uninitialized Cell renders the literal "null" in place of the operator
+     * }</pre>
+     *
      * @param operator the operator to apply to the condition (must not be {@code null})
      * @param cond the condition to wrap (must not be {@code null})
      * @throws NullPointerException if {@code operator} is {@code null}
@@ -87,6 +103,15 @@ public abstract class Cell extends AbstractCondition {
      * <pre>{@code
      * On onCond = new On("a.id", "b.id");
      * Equal inner = (Equal) onCond.getCondition();
+     * // inner.toString() returns "a.id = b.id"
+     *
+     * Where where = new Where(Filters.eq("active", true));
+     * Condition c = where.getCondition();
+     * // c.toString() returns "active = true"
+     *
+     * // Edge: the wrapped condition is returned as-is; cast to the concrete type to access subtype API
+     * Equal eq = (Equal) where.getCondition();   // ok
+     * Like bad = (Like) where.getCondition();    // throws ClassCastException
      * }</pre>
      *
      * @return the wrapped condition; never {@code null} for instances created via the public
@@ -100,7 +125,22 @@ public abstract class Cell extends AbstractCondition {
     /**
      * Gets the parameters from the wrapped condition.
      * This method delegates to the wrapped condition's getParameters method.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Where where = new Where(Filters.between("age", 18, 65));
+     * where.getParameters();          // returns [18, 65]
+     *
+     * Where single = new Where(Filters.eq("active", true));
+     * single.getParameters();         // returns [true]
+     *
+     * // Edge: wrapping a parameter-free condition yields an empty list
+     * On onCond = new On("a.id", "b.id");
+     * onCond.getParameters();         // returns [] (empty, immutable)
+     *
+     * // Edge: the returned list reflects the wrapped condition only and is immutable
+     * }</pre>
+     *
      * @return an immutable list of parameters from the wrapped condition, or an empty immutable list if no condition is set
      */
     @Override
@@ -121,6 +161,21 @@ public abstract class Cell extends AbstractCondition {
      * {@code OPERATOR} if the wrapped condition is {@code null}. Unlike {@link ComposableCell#toString(NamingPolicy)},
      * the inner condition is <em>not</em> enclosed in parentheses. If the operator is {@code null}
      * (only possible for an uninitialized instance), the literal {@code "null"} is rendered in place of the operator.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Where where = new Where(Filters.eq("active", true));
+     * where.toString(NamingPolicy.NO_CHANGE);   // returns "WHERE active = true"
+     *
+     * On onCond = new On("a.id", "b.id");
+     * onCond.toString(NamingPolicy.NO_CHANGE);  // returns "ON a.id = b.id" (inner NOT parenthesized)
+     *
+     * // Edge: naming policy rewrites property names in the wrapped condition
+     * Where w = new Where(Filters.eq("firstName", "John"));
+     * w.toString(NamingPolicy.SNAKE_CASE);      // returns "WHERE first_name = 'John'"
+     *
+     * // Edge: an uninitialized Cell (null operator) renders the literal "null" for the operator
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names within the wrapped condition
      * @return a string representation of this Cell
@@ -145,7 +200,18 @@ public abstract class Cell extends AbstractCondition {
     /**
      * Returns the hash code of this Cell.
      * The hash code is computed based on the operator and wrapped condition.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Where a = new Where(Filters.eq("active", true));
+     * Where b = new Where(Filters.eq("active", true));
+     * a.hashCode() == b.hashCode();   // true (same operator and condition)
+     *
+     * // Edge: a different wrapped condition produces a different hash code
+     * Where c = new Where(Filters.eq("active", false));
+     * a.hashCode() == c.hashCode();   // (typically) false
+     * }</pre>
+     *
      * @return hash code based on operator and wrapped condition
      */
     @Override
@@ -172,6 +238,24 @@ public abstract class Cell extends AbstractCondition {
      * Two Cells are equal if they are of the same runtime class and have the same operator
      * and wrapped condition. Different concrete subclasses of {@code Cell} are never equal,
      * even when their operator and wrapped condition are equal.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Where a = new Where(Filters.eq("active", true));
+     * Where b = new Where(Filters.eq("active", true));
+     * a.equals(b);    // returns true
+     *
+     * // Edge: different wrapped condition -> not equal
+     * Where c = new Where(Filters.eq("active", false));
+     * a.equals(c);    // returns false
+     *
+     * // Edge: different concrete subclass -> never equal, even with equal operator/condition
+     * Where w = new Where(Filters.eq("x", 1));
+     * Having h = new Having(Filters.eq("x", 1));
+     * w.equals(h);    // returns false
+     *
+     * a.equals(null); // returns false
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

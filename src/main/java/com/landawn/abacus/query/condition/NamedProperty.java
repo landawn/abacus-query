@@ -55,21 +55,21 @@ import com.landawn.abacus.util.Strings;
  * NamedProperty name = NamedProperty.of("name");
  *
  * // Use it to create various conditions
- * Condition c1 = age.equal(25);   // age = 25
- * Condition c2 = age.greaterThan(18);   // age > 18
- * Condition c3 = age.between(20, 30);   // age BETWEEN 20 AND 30
+ * Condition c1 = age.equal(25);                       // age = 25
+ * Condition c2 = age.greaterThan(18);                 // age > 18
+ * Condition c3 = age.between(20, 30);                 // age BETWEEN 20 AND 30
  * Condition c4 = age.in(Arrays.asList(25, 30, 35));   // age IN (25, 30, 35)
  *
  * // Pattern matching conditions
- * Condition c5 = name.like("John%");   // name LIKE 'John%'
+ * Condition c5 = name.like("John%");     // name LIKE 'John%'
  * Condition c6 = name.startsWith("J");   // name LIKE 'J%'
- * Condition c7 = name.contains("oh");   // name LIKE '%oh%'
+ * Condition c7 = name.contains("oh");    // name LIKE '%oh%'
  *
  * // Null checks
  * Condition c8 = status.isNotNull();   // status IS NOT NULL
  *
  * // Chain conditions with OR
- * Or orCondition = age.equalsAny(25, 30, 35);   // age = 25 OR age = 30 OR age = 35
+ * Or orCondition = age.equalsAny(25, 30, 35);   // ((age = 25) OR (age = 30) OR (age = 35))
  *
  * // Combine conditions for complex queries via Filters.and / Filters.or
  * Condition complex = Filters.and(age.greaterThan(18), status.equal("active"));
@@ -203,10 +203,12 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("color").equalsAny("red", "green", "blue");
-     * // Results in: color = 'red' OR color = 'green' OR color = 'blue'
+     * // Results in: ((color = 'red') OR (color = 'green') OR (color = 'blue'))
      *
      * NamedProperty.of("priority").equalsAny(1, 2, 3);
-     * // Results in: priority = 1 OR priority = 2 OR priority = 3
+     * // Results in: ((priority = 1) OR (priority = 2) OR (priority = 3))
+     *
+     * NamedProperty.of("x").equalsAny();   // throws IllegalArgumentException (empty values)
      * }</pre>
      *
      * @param values array of values to check equality against. Each value will be tested with OR logic.
@@ -235,7 +237,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("priority").equalsAny(new int[]{1, 2, 3});
-     * // Results in: priority = 1 OR priority = 2 OR priority = 3
+     * // Results in: ((priority = 1) OR (priority = 2) OR (priority = 3))
      * }</pre>
      *
      * @param values primitive int values to check. Must not be {@code null} or empty.
@@ -263,7 +265,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("user_id").equalsAny(new long[]{1001L, 1002L, 1003L});
-     * // Results in: user_id = 1001 OR user_id = 1002 OR user_id = 1003
+     * // Results in: ((user_id = 1001) OR (user_id = 1002) OR (user_id = 1003))
      * }</pre>
      *
      * @param values primitive long values to check. Must not be {@code null} or empty.
@@ -291,7 +293,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("rate").equalsAny(new double[]{1.5, 2.0, 2.5});
-     * // Results in: rate = 1.5 OR rate = 2.0 OR rate = 2.5
+     * // Results in: ((rate = 1.5) OR (rate = 2.0) OR (rate = 2.5))
      * }</pre>
      *
      * @param values primitive double values to check. Must not be {@code null} or empty.
@@ -321,11 +323,11 @@ public sealed class NamedProperty permits NP {
      * <pre>{@code
      * List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
      * NamedProperty.of("city").equalsAny(cities);
-     * // Results in: city = 'New York' OR city = 'Los Angeles' OR city = 'Chicago'
+     * // Results in: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
      *
      * Set<Integer> validIds = Set.of(10, 20, 30);
      * NamedProperty.of("department_id").equalsAny(validIds);
-     * // Results in: department_id = 10 OR department_id = 20 OR department_id = 30
+     * // Results in: ((department_id = 10) OR (department_id = 20) OR (department_id = 30))
      * }</pre>
      *
      * @param values collection of values to check equality against. Each value will be tested with OR logic.
@@ -720,7 +722,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("email").notEndsWith("@temp.com");   // email NOT LIKE '%@temp.com'
-     * NamedProperty.of("filename").notEndsWith(".tmp");      // filename NOT LIKE '%.tmp'
+     * NamedProperty.of("filename").notEndsWith(".tmp");     // filename NOT LIKE '%.tmp'
      * }</pre>
      *
      * @param value the suffix to exclude. The % wildcard will be automatically prepended.
@@ -977,6 +979,13 @@ public sealed class NamedProperty permits NP {
      * Two NamedProperty instances with the same property name will have the same hash code,
      * ensuring correct behavior in hash-based collections.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("age").hashCode();                                         // returns "age".hashCode()
+     * NamedProperty.of("age").hashCode() == NamedProperty.of("age").hashCode();   // true (same name)
+     * NamedProperty.of("age").hashCode() == NamedProperty.of("Age").hashCode();   // typically false (case-sensitive)
+     * }</pre>
+     *
      * @return hash code of the property name
      */
     @Override
@@ -989,6 +998,14 @@ public sealed class NamedProperty permits NP {
      * Two NamedProperty instances are equal if they have the same property name.
      * The comparison is case-sensitive and requires exact match.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * new NamedProperty("age").equals(new NamedProperty("age"));   // returns true (same name)
+     * NamedProperty.of("age").equals(NamedProperty.of("age"));     // returns true (cached, same instance)
+     * new NamedProperty("age").equals(new NamedProperty("Age"));   // returns false (case-sensitive)
+     * new NamedProperty("age").equals("age");                      // returns false (not a NamedProperty)
+     * }</pre>
+     *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal (same property name), {@code false} otherwise
      */
@@ -1000,6 +1017,12 @@ public sealed class NamedProperty permits NP {
     /**
      * Returns the string representation of this NamedProperty.
      * The string representation is simply the property name itself.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("age").toString();          // returns "age"
+     * NamedProperty.of("user.email").toString();   // returns "user.email" (returned verbatim, no quoting)
+     * }</pre>
      *
      * @return the property name
      */
@@ -1018,6 +1041,14 @@ public sealed class NamedProperty permits NP {
 
         /**
          * Creates an {@code NP} instance for the specified property name.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * NamedProperty.NP age = new NamedProperty.NP("age");
+         * age.equal(25).toString();        // returns "age = 25" (inherits NamedProperty builders)
+         * new NamedProperty.NP("");        // throws IllegalArgumentException (empty name)
+         * new NamedProperty.NP(null);      // throws NullPointerException (null name)
+         * }</pre>
          *
          * @param propName the property name; must not be {@code null} or empty
          * @throws NullPointerException if {@code propName} is {@code null}

@@ -84,11 +84,18 @@ public class Limit extends Clause {
      * <pre>{@code
      * // Get top 5 customers
      * Limit topFive = new Limit(5);
-     * // SQL: SELECT * FROM customers LIMIT 5
+     * // topFive.toString() returns "LIMIT 5"
      *
      * // Limit search results to 100
      * Limit searchLimit = new Limit(100);
-     * // SQL: SELECT * FROM products WHERE name LIKE '%phone%' LIMIT 100
+     * // searchLimit.toString() returns "LIMIT 100"
+     *
+     * // Boundary: zero is allowed
+     * Limit none = new Limit(0);
+     * // none.toString() returns "LIMIT 0"
+     *
+     * // Edge: a negative count is rejected
+     * Limit bad = new Limit(-1);   // throws IllegalArgumentException
      * }</pre>
      *
      * @param count the maximum number of rows to return. Must be non-negative.
@@ -107,11 +114,14 @@ public class Limit extends Clause {
      * <pre>{@code
      * // Page 3: Results 21-30 (count=10, offset=20)
      * Limit page3 = new Limit(10, 20);
-     * // SQL: LIMIT 10 OFFSET 20
+     * // page3.toString() returns "LIMIT 10 OFFSET 20"
      *
      * // offset == 0 omits the OFFSET clause
      * Limit firstPage = new Limit(10, 0);
-     * // SQL: LIMIT 10
+     * // firstPage.toString() returns "LIMIT 10"
+     *
+     * // Edge: a negative offset (or count) is rejected
+     * Limit bad = new Limit(10, -1);   // throws IllegalArgumentException
      * }</pre>
      *
      * @param count the maximum number of rows to return. Must be non-negative.
@@ -152,6 +162,11 @@ public class Limit extends Clause {
      * // Non-numeric prefix is kept verbatim (no automatic "LIMIT " prepend)
      * Limit custom = new Limit("FETCH FIRST 10 ROWS ONLY");
      * // toString() -> "FETCH FIRST 10 ROWS ONLY"
+     *
+     * // Edge: a null, empty, or blank expression is rejected
+     * Limit bad1 = new Limit((String) null);   // throws IllegalArgumentException
+     * Limit bad2 = new Limit("");              // throws IllegalArgumentException
+     * Limit bad3 = new Limit("   ");           // throws IllegalArgumentException
      * }</pre>
      *
      * @param expr the custom LIMIT expression as a string. Must not be {@code null}, empty, or blank.
@@ -257,7 +272,16 @@ public class Limit extends Clause {
      * LIMIT clauses do not have bindable parameters as the count and offset
      * are typically part of the SQL structure itself, not parameterized values.
      * This method always returns an empty list.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * new Limit(10).getParameters();              // returns [] (empty, immutable)
+     * new Limit(10, 20).getParameters();          // returns []
+     *
+     * // Edge: even an expression containing a placeholder yields no bound parameters
+     * new Limit("? OFFSET ?").getParameters();    // returns []
+     * }</pre>
+     *
      * @return an empty immutable list as LIMIT has no parameters
      */
     @Override
@@ -277,6 +301,19 @@ public class Limit extends Clause {
      *   <li>Count only (offset {@code == 0}): returns {@code "LIMIT count"}</li>
      *   <li>Count with offset ({@code offset > 0}): returns {@code "LIMIT count OFFSET offset"}</li>
      * </ul>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * new Limit(10).toString(NamingPolicy.NO_CHANGE);            // returns "LIMIT 10"
+     * new Limit(10, 20).toString(NamingPolicy.NO_CHANGE);        // returns "LIMIT 10 OFFSET 20"
+     *
+     * // Edge: a numeric-prefixed expression keeps its auto-prepended "LIMIT "
+     * new Limit("10 OFFSET 20").toString(NamingPolicy.NO_CHANGE); // returns "LIMIT 10 OFFSET 20"
+     *
+     * // Edge: a non-numeric expression is rendered verbatim (no "LIMIT " prepend)
+     * new Limit("FETCH FIRST 10 ROWS ONLY").toString(NamingPolicy.NO_CHANGE);
+     * // returns "FETCH FIRST 10 ROWS ONLY"
+     * }</pre>
      *
      * @param namingPolicy the naming policy parameter is currently ignored — LIMIT operates on numeric
      *                      values or a raw expression, not property names
@@ -302,7 +339,16 @@ public class Limit extends Clause {
      * The hash code is calculated based on either the custom expression (if present)
      * or the combination of count and offset values. This ensures that Limit instances
      * with the same logical content have the same hash code.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * new Limit(10, 20).hashCode() == new Limit(10, 20).hashCode();                   // true
+     * new Limit("10 OFFSET 20").hashCode() == new Limit("10 OFFSET 20").hashCode();   // true
+     *
+     * // Edge: different count/offset -> different hash code
+     * new Limit(10).hashCode() == new Limit(20).hashCode();   // (typically) false
+     * }</pre>
+     *
      * @return the hash code based on expr if present, otherwise based on count and offset
      */
     @Override
@@ -323,6 +369,21 @@ public class Limit extends Clause {
      *   <li>both have a non-empty custom expression and the expressions are equal, or</li>
      *   <li>neither has a custom expression and both have the same count and offset values.</li>
      * </ul>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * new Limit(10, 20).equals(new Limit(10, 20));                   // returns true
+     * new Limit("10 OFFSET 20").equals(new Limit("10 OFFSET 20"));   // returns true
+     *
+     * // Edge: different count -> not equal
+     * new Limit(10).equals(new Limit(20));   // returns false
+     *
+     * // Edge: the numeric form and the expression form are never equal,
+     * // even when they render to the same SQL
+     * new Limit(10, 20).equals(new Limit("10 OFFSET 20"));   // returns false
+     *
+     * new Limit(10).equals(null);   // returns false
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the object is a Limit with the same {@code expr} or matching count/offset values

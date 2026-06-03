@@ -57,7 +57,7 @@ import com.landawn.abacus.util.XmlUtil;
  * <pre>{@code
  * <sqlMapper>
  *     <sql id="findAccountById">select * from account where id = ?</sql>
- *     <sql id="updateAccountNameById">update account set name = ? where id = ?</sql>
+ *     <sql id="updateAccountNameById">update account set name  = ? where id = ?</sql>
  *     <sql id="batchInsertAccounts" batchSize="100" fetchSize="50" timeout="30">
  *         insert into account (id, name, email) values (?, ?, ?)
  *     </sql>
@@ -150,6 +150,17 @@ public final class SqlMapper {
 
     /**
      * Creates an empty SqlMapper instance.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SqlMapper mapper = new SqlMapper();
+     * boolean empty = mapper.isEmpty();   // true
+     *
+     * // Populate it programmatically
+     * mapper.add("findUserById", ParsedSql.parse("select * from users where id = ?"));
+     * boolean nowEmpty = mapper.isEmpty();   // false
+     * }</pre>
+     *
      */
     public SqlMapper() {
         // empty constructor
@@ -469,7 +480,7 @@ public final class SqlMapper {
      * <pre>{@code
      * <sqlMapper>
      *     <sql id="findUser" fetchSize="100">select * from users where id = ?</sql>
-     *     <sql id="updateUser">update users set name = ? where id = ?</sql>
+     *     <sql id="updateUser">update users set name                      = ? where id = ?</sql>
      * </sqlMapper>
      * }</pre>
      *
@@ -551,6 +562,16 @@ public final class SqlMapper {
      * Returns the hash code value for this {@code SqlMapper}.
      * The hash code is based on the internal SQL map and the attributes map.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SqlMapper a = new SqlMapper();
+     * a.add("q", ParsedSql.parse("SELECT 1"));
+     * SqlMapper b = new SqlMapper();
+     * b.add("q", ParsedSql.parse("SELECT 1"));
+     * // Equal mappers produce equal hash codes
+     * boolean sameHash = a.hashCode() == b.hashCode();   // true
+     * }</pre>
+     *
      * @return the hash code value
      */
     @Override
@@ -562,6 +583,20 @@ public final class SqlMapper {
      * Compares this {@code SqlMapper} to another object for equality.
      * Two {@code SqlMapper} instances are considered equal if they contain the same id-to-SQL mappings
      * and id-to-attributes mappings (order-independent, per {@link Map#equals(Object)}).
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SqlMapper a = new SqlMapper();
+     * a.add("q", ParsedSql.parse("SELECT 1"));
+     * SqlMapper b = new SqlMapper();
+     * b.add("q", ParsedSql.parse("SELECT 1"));
+     * SqlMapper c = new SqlMapper();
+     * c.add("q", ParsedSql.parse("SELECT 2"));
+     *
+     * boolean eq = a.equals(b);                // true (same id-to-SQL mappings)
+     * boolean ne = a.equals(c);                // false (different SQL for "q")
+     * boolean notMapper = a.equals("text");    // false (not a SqlMapper)
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if {@code obj} is a {@code SqlMapper} whose internal SQL and attribute maps
@@ -575,6 +610,15 @@ public final class SqlMapper {
     /**
      * Returns a string representation of this {@code SqlMapper}.
      * The string contains all SQL definitions in the mapper.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SqlMapper mapper = new SqlMapper();
+     * String empty = mapper.toString();   // "{}"
+     *
+     * mapper.add("findUser", ParsedSql.parse("select * from users where id = ?"));
+     * String s = mapper.toString();       // contains "findUser" and the parsed SQL
+     * }</pre>
      *
      * @return a string representation of this SQL mapper
      */

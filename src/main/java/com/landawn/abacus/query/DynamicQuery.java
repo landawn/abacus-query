@@ -59,6 +59,22 @@ public final class DynamicQuery {
     /**
      * Creates a new Builder instance for constructing a dynamic SQL query.
      *
+     * <p>Each call returns a fresh, independent {@link Builder}. Always finish with
+     * {@link Builder#build()} to obtain the SQL and release pooled resources.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Builder builder = DynamicQuery.builder();
+     * builder.select().append("*");
+     * builder.from().append("users");
+     * builder.where().append("active = true");
+     * String sql = builder.build();
+     * // Returns: "SELECT * FROM users WHERE active = true"
+     *
+     * // Each call returns a new, independent builder
+     * Builder another = DynamicQuery.builder();   // not the same instance as 'builder'
+     * }</pre>
+     *
      * @return a new Builder instance
      */
     public static Builder builder() {

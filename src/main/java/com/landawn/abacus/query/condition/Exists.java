@@ -34,19 +34,19 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who have placed at least one order
- * SubQuery orderExists = CF.subQuery(
+ * SubQuery orderExists = Filters.subQuery(
  *     "SELECT 1 FROM orders WHERE orders.customer_id = customers.id"
  * );
  * Exists hasOrders = new Exists(orderExists);
  *
  * // Find products that have been reviewed
- * SubQuery reviewExists = CF.subQuery(
+ * SubQuery reviewExists = Filters.subQuery(
  *     "SELECT 1 FROM reviews WHERE reviews.product_id = products.id"
  * );
  * Exists hasReviews = new Exists(reviewExists);
  *
  * // Find departments with employees
- * SubQuery employeeExists = CF.subQuery(
+ * SubQuery employeeExists = Filters.subQuery(
  *     "SELECT 1 FROM employees WHERE employees.dept_id = departments.id"
  * );
  * Exists hasEmployees = new Exists(employeeExists);
@@ -75,14 +75,19 @@ public class Exists extends ComposableCell {
      * Creates a new EXISTS condition with the specified subquery.
      * The condition evaluates to true if the subquery returns at least one row.
      *
-     * <p><b>Usage Example:</b></p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if employee has any subordinates (correlated subquery)
-     * SubQuery subordinatesQuery = CF.subQuery(
+     * SubQuery subordinatesQuery = Filters.subQuery(
      *     "SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id"
      * );
      * Exists hasSubordinates = new Exists(subordinatesQuery);
-     * // Generates: EXISTS (SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id)
+     * hasSubordinates.toString();
+     * // returns "EXISTS (SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id)"
+     *
+     * // A null subquery is rejected
+     * Exists bad = new Exists((SubQuery) null);
+     * // throws IllegalArgumentException
      * }</pre>
      *
      * @param subQuery the subquery to check for existence of rows (must not be {@code null})
@@ -94,6 +99,20 @@ public class Exists extends ComposableCell {
 
     /**
      * Gets the subquery used by this EXISTS condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Retrieve the wrapped subquery
+     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
+     * Exists exists = new Exists(subQuery);
+     * SubQuery retrieved = exists.getSubQuery();
+     * // returns the same SubQuery instance that was supplied
+     * // retrieved == subQuery -> true
+     *
+     * // The wrapped subquery is also what getCondition() returns
+     * boolean sameAsCondition = exists.getSubQuery() == exists.getCondition();
+     * // returns true
+     * }</pre>
      *
      * @return the {@link SubQuery} supplied at construction time
      */

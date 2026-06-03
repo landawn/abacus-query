@@ -457,6 +457,25 @@ public class SubQuery extends AbstractCondition {
      * These are the parameter values that will be bound to the prepared statement placeholders
      * when the query is executed. For raw SQL subqueries, this returns an empty list.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Structured subquery: parameters are collected from the condition (in order)
+     * Condition cond = Filters.and(Filters.equal("status", "active"), Filters.between("age", 18, 65));
+     * SubQuery structured = Filters.subQuery("users", Arrays.asList("id"), cond);
+     * List<Object> params = structured.getParameters();
+     * // returns ["active", 18, 65]
+     *
+     * // Raw SQL subquery: no bound parameters
+     * SubQuery raw = Filters.subQuery("SELECT * FROM users");
+     * List<Object> rawParams = raw.getParameters();
+     * // returns [] (empty immutable list)
+     *
+     * // Structured subquery without a condition: also empty
+     * SubQuery noCond = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
+     * List<Object> noCondParams = noCond.getParameters();
+     * // returns [] (empty immutable list)
+     * }</pre>
+     *
      * @return an immutable list of parameter values, or an empty immutable list if no condition or raw SQL subquery
      */
     @Override
@@ -478,6 +497,30 @@ public class SubQuery extends AbstractCondition {
      * For structured subqueries, generates a {@code SELECT [props] FROM [entity] [condition]}
      * statement, applying the naming policy to property names, the entity/table name, and to
      * the inner WHERE condition.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Raw SQL subquery: SQL returned as-is, naming policy is ignored
+     * SubQuery raw = Filters.subQuery("SELECT user_id FROM users");
+     * String rawStr = raw.toString(NamingPolicy.SNAKE_CASE);
+     * // returns "SELECT user_id FROM users"
+     *
+     * // Structured subquery with NO_CHANGE: names rendered verbatim
+     * SubQuery sq = Filters.subQuery("users", Arrays.asList("id", "name"), Filters.equal("status", "active"));
+     * String s1 = sq.toString(NamingPolicy.NO_CHANGE);
+     * // returns "SELECT id, name FROM users WHERE status = 'active'"
+     *
+     * // Structured subquery with SNAKE_CASE: props, entity, and condition are all converted
+     * SubQuery sq2 = Filters.subQuery("userAccount", Arrays.asList("firstName", "lastName"),
+     *                                 Filters.equal("isActive", true));
+     * String s2 = sq2.toString(NamingPolicy.SNAKE_CASE);
+     * // returns "SELECT first_name, last_name FROM user_account WHERE is_active = true"
+     *
+     * // null naming policy behaves like NO_CHANGE
+     * SubQuery sq3 = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
+     * String s3 = sq3.toString((NamingPolicy) null);
+     * // returns "SELECT id FROM users"
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply; if {@code null},
      *            {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
@@ -562,6 +605,20 @@ public class SubQuery extends AbstractCondition {
      * of entity name/class, properties, and condition (for structured queries),
      * ensuring consistent hashing for equivalent subqueries.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Equal subqueries produce equal hash codes
+     * SubQuery a = Filters.subQuery("SELECT id FROM users");
+     * SubQuery b = Filters.subQuery("SELECT id FROM users");
+     * boolean sameHash = a.hashCode() == b.hashCode();
+     * // returns true
+     *
+     * // Different SQL typically produces different hash codes
+     * SubQuery c = Filters.subQuery("SELECT id FROM customers");
+     * boolean differentHash = a.hashCode() != c.hashCode();
+     * // returns true
+     * }</pre>
+     *
      * @return hash code based on sql, entity name/class, properties, and condition
      */
     @Override
@@ -590,6 +647,31 @@ public class SubQuery extends AbstractCondition {
      * Checks if this subquery is equal to another object.
      * Two subqueries are equal if they have the same SQL (for raw queries) or the same
      * entity name/class, properties, and condition (for structured queries).
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Same raw SQL: equal
+     * SubQuery a = Filters.subQuery("SELECT id FROM users");
+     * SubQuery b = Filters.subQuery("SELECT id FROM users");
+     * boolean eq = a.equals(b);
+     * // returns true
+     *
+     * // Different raw SQL: not equal
+     * SubQuery c = Filters.subQuery("SELECT id FROM customers");
+     * boolean ne = a.equals(c);
+     * // returns false
+     *
+     * // A class-based subquery is NOT equal to a name-based one, even with the same simple name,
+     * // because the entity class is part of identity.
+     * SubQuery classBased = Filters.subQuery(Product.class, Arrays.asList("id"), Filters.equal("active", true));
+     * SubQuery nameBased = Filters.subQuery("Product", Arrays.asList("id"), Filters.equal("active", true));
+     * boolean differ = classBased.equals(nameBased);
+     * // returns false
+     *
+     * // Comparison with null or a different type
+     * boolean vsNull = a.equals(null);   // returns false
+     * boolean vsString = a.equals("x");  // returns false
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

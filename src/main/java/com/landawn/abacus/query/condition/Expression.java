@@ -583,7 +583,7 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.isNotNullAndNotEmpty("name");      // Returns: "name IS NOT BLANK"
+     * String expr = Expression.isNotNullAndNotEmpty("name");       // Returns: "name IS NOT BLANK"
      * String expr2 = Expression.isNotNullAndNotEmpty("comment");   // Returns: "comment IS NOT BLANK"
      * }</pre>
      *
@@ -677,6 +677,23 @@ public class Expression extends ComposableCondition {
 
     /**
      * Creates a subtraction expression for the given objects.
+     * This is a deprecated alias for {@link #subtract(Object...)} and produces identical output.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Use Expression.of() for column references to avoid single-quote wrapping
+     * String expr = Expression.minus(Expression.of("total"), Expression.of("discount"));
+     * // Returns: "total - discount"
+     *
+     * String expr2 = Expression.minus(Expression.of("price"), 10);
+     * // Returns: "price - 10"
+     *
+     * String none = Expression.minus();
+     * // Returns: "" (no operands)
+     *
+     * Expression.minus(Expression.of("x"), Double.NaN);
+     * // throws IllegalArgumentException (NaN has no portable SQL literal)
+     * }</pre>
      *
      * @param objects the values to subtract
      * @return a string representation of the subtraction expression
@@ -1017,8 +1034,9 @@ public class Expression extends ComposableCondition {
      * <ul>
      *   <li>{@code null} values become the string {@code "null"}</li>
      *   <li>Strings are wrapped in single quotes and escaped via {@link AbstractCondition#escapeStringLiteral(String)}:
-     *       embedded single quotes and backslashes are doubled ({@code '} becomes {@code ''}, {@code \} becomes {@code \\}),
-     *       while embedded double quotes are backslash-escaped ({@code "} becomes {@code \"})</li>
+     *       embedded single and double quotes are backslash-escaped ({@code '} becomes {@code \'}, {@code "} becomes {@code \"});
+     *       backslashes are left as-is except for a defensive guard that appends one extra backslash when the body
+     *       would otherwise end in an unescaped trailing backslash</li>
      *   <li>{@link Number} and {@link Boolean} values are converted via {@code toString()} (no quoting);
      *       {@code NaN}/infinite {@link Float}/{@link Double} values are rejected</li>
      *   <li>{@link Expression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null})</li>
@@ -1028,15 +1046,16 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression.normalize("text");      // Returns: "'text'"
-     * Expression.normalize("O'Brien");   // Returns: "'O''Brien'" (single quote doubled)
-     * Expression.normalize(123);         // Returns: "123"
-     * Expression.normalize(45.67);       // Returns: "45.67"
-     * Expression.normalize(null);        // Returns: "null"
-     * Expression.normalize(true);        // Returns: "true"
-     * Expression.normalize(false);       // Returns: "false"
-     * Expression expr = new Expression("COUNT(*)");
-     * Expression.normalize(expr);   // Returns: "COUNT(*)" (the expression's literal)
+     * Expression.normalize("text");                      // returns "'text'"
+     * Expression.normalize("O'Brien");                   // returns "'O\'Brien'" (single quote backslash-escaped)
+     * Expression.normalize("say \"hi\"");                // returns "'say \"hi\"'" (double quote backslash-escaped)
+     * Expression.normalize(123);                         // returns "123"
+     * Expression.normalize(45.67);                       // returns "45.67"
+     * Expression.normalize(null);                        // returns "null"
+     * Expression.normalize(true);                        // returns "true"
+     * Expression.normalize(false);                       // returns "false"
+     * Expression.normalize(new Expression("COUNT(*)"));  // returns "COUNT(*)" (the expression's literal)
+     * Expression.normalize(Double.NaN);                  // throws IllegalArgumentException
      * }</pre>
      *
      * @param value the value to normalize
@@ -1656,6 +1675,13 @@ public class Expression extends ComposableCondition {
      * Returns an empty list as expressions have no parameters.
      * Expressions are literal SQL strings and don't have bindable parameters.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ImmutableList<Object> params = Expression.of("price * quantity").getParameters();   // returns []
+     * boolean empty = params.isEmpty();                                                   // returns true
+     * Expression.of("id = 5").getParameters();                                            // returns [] (value is part of the literal, not a parameter)
+     * }</pre>
+     *
      * @return an empty immutable list
      */
     @Override
@@ -1702,6 +1728,16 @@ public class Expression extends ComposableCondition {
      * Returns the string form of this expression, with the naming policy applied to any
      * identifiers (column or property names) that can be detected within the literal.
      * Pure SQL tokens, function names, quoted strings, and numeric literals are left unchanged.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Expression.of("firstName").toString(NamingPolicy.SNAKE_CASE);          // returns "first_name"
+     * Expression.of("firstName = 'John'").toString(NamingPolicy.SNAKE_CASE); // returns "first_name = 'John'" (identifier converted, quoted literal kept)
+     * Expression.of("firstName").toString(NamingPolicy.NO_CHANGE);           // returns "firstName"
+     * Expression.of("firstName").toString(null);                             // returns "firstName" (null defaults to NO_CHANGE)
+     * new Expression(null).toString(NamingPolicy.NO_CHANGE);                 // returns "null"
+     * Expression.of("").toString(NamingPolicy.NO_CHANGE);                    // returns "" (empty literal)
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to detected identifiers;
      *                     if {@code null}, {@link NamingPolicy#NO_CHANGE} is used
@@ -1763,6 +1799,13 @@ public class Expression extends ComposableCondition {
     /**
      * Computes the hash code based on the literal string.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * new Expression("price * quantity").hashCode();                            // returns "price * quantity".hashCode()
+     * new Expression(null).hashCode();                                          // returns 0
+     * Expression.of("a + b").hashCode() == Expression.of("a + b").hashCode();   // true (same literal)
+     * }</pre>
+     *
      * @return the hash code of the literal
      */
     @Override
@@ -1773,6 +1816,14 @@ public class Expression extends ComposableCondition {
     /**
      * Checks if this expression equals another object.
      * Two expressions are equal if they are both {@code Expression} instances with the same literal string.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * new Expression("a + b").equals(new Expression("a + b"));   // returns true (same literal)
+     * Expression.of("a + b").equals(Expression.of("a + b"));     // returns true (cached, same instance)
+     * new Expression("a + b").equals(new Expression("a - b"));   // returns false (different literal)
+     * new Expression("a + b").equals("a + b");                   // returns false (not an Expression)
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal

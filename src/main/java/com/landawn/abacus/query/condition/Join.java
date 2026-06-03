@@ -302,13 +302,16 @@ public class Join extends AbstractCondition {
      * // Single table join
      * Join join = new Join("orders o", new On("customers.id", "o.customer_id"));
      * List<String> entities = join.getJoinEntities();
-     * // Returns: ["orders o"]
+     * // entities = ["orders o"]
      *
      * // Multi-table join
      * Join multiJoin = new Join(Arrays.asList("orders o", "order_items oi"),
      *     new On("o.id", "oi.order_id"));
      * List<String> multiEntities = multiJoin.getJoinEntities();
-     * // Returns: ["orders o", "order_items oi"]
+     * // multiEntities = ["orders o", "order_items oi"]
+     *
+     * // Edge: the returned view is unmodifiable
+     * entities.add("more");   // throws UnsupportedOperationException
      * }</pre>
      *
      * @return an unmodifiable view of the list of join entities
@@ -340,12 +343,15 @@ public class Join extends AbstractCondition {
      * On onCondition = new On("customers.id", "o.customer_id");
      * Join join = new Join("orders o", onCondition);
      * On condition = (On) join.getCondition();
-     * // Returns the same On instance
+     * // condition == onCondition (the same On instance is returned)
      *
      * // Join without condition
      * Join simpleJoin = new Join("products");
      * Condition noCondition = simpleJoin.getCondition();
-     * // Returns: null
+     * // noCondition == null
+     *
+     * // Edge: the condition is returned as-is; an incompatible cast fails
+     * Using bad = (Using) join.getCondition();   // throws ClassCastException
      * }</pre>
      *
      * @return the join condition, or {@code null} if no condition was specified
@@ -358,7 +364,21 @@ public class Join extends AbstractCondition {
      * Gets all parameters from the join condition.
      * Returns any bound parameters used in the join condition. Returns an empty
      * list if there's no condition or the condition has no parameters.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Condition with a bound value
+     * Join valueJoin = new Join("products p", Filters.equal("p.active", true));
+     * valueJoin.getParameters();    // returns [true]
+     *
+     * // Edge: an ON condition compares columns and has no bound parameters
+     * Join onJoin = new Join("orders o", new On("customers.id", "o.customer_id"));
+     * onJoin.getParameters();       // returns [] (empty, immutable)
+     *
+     * // Edge: no condition at all -> empty list
+     * new Join("products").getParameters();   // returns []
+     * }</pre>
+     *
      * @return an immutable list of parameters from the condition, or an empty immutable list if no condition
      */
     @Override
@@ -378,6 +398,24 @@ public class Join extends AbstractCondition {
      * to the join condition. The output format includes the join operator, the joined entities, and
      * the optional join condition; the join operator keyword and entity strings themselves are emitted
      * verbatim. The condition's string representation depends on its type (On, Using, Expression, etc.).
+     * A single join entity is rendered bare while multiple entities are wrapped in parentheses
+     * (e.g. {@code "JOIN (orders o, customers c) ..."}). A non-{@code On} condition is appended
+     * without an {@code ON} keyword.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Join join = new Join("orders o", new On("customers.id", "o.customer_id"));
+     * join.toString(NamingPolicy.NO_CHANGE);
+     * // returns "JOIN orders o ON customers.id = o.customer_id"
+     *
+     * // Edge: naming policy rewrites property names within the condition
+     * Join snake = new Join("orders o", Filters.equal("firstName", "John"));
+     * snake.toString(NamingPolicy.SNAKE_CASE);
+     * // returns "JOIN orders o first_name = 'John'"
+     *
+     * // Edge: no condition -> just the operator and entity
+     * new Join("products").toString(NamingPolicy.NO_CHANGE);   // returns "JOIN products"
+     * }</pre>
      *
      * @param namingPolicy the naming policy passed through to the join condition's {@code toString}
      * @return the string representation, e.g., "JOIN orders o ON customers.id = o.customer_id"
@@ -416,7 +454,18 @@ public class Join extends AbstractCondition {
      * Computes the hash code for this JOIN clause.
      * The hash code is based on the operator, join entities, and condition,
      * ensuring consistent hashing for equivalent joins.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Join a = new Join("orders o", new On("a.id", "b.id"));
+     * Join b = new Join("orders o", new On("a.id", "b.id"));
+     * a.hashCode() == b.hashCode();   // true (same operator, entities, and condition)
+     *
+     * // Edge: a different join entity produces a different hash code
+     * Join c = new Join("customers c", new On("a.id", "b.id"));
+     * a.hashCode() == c.hashCode();   // (typically) false
+     * }</pre>
+     *
      * @return hash code based on operator, join entities, and condition
      */
     @Override
@@ -442,8 +491,27 @@ public class Join extends AbstractCondition {
     /**
      * Checks if this JOIN clause is equal to another object.
      * Two Join instances are equal if they have the same operator, join entities,
-     * and condition.
-     * 
+     * and condition. Because the operator participates in the comparison, a {@code Join}
+     * and a subclass such as {@link LeftJoin} are never equal even with identical
+     * entities and condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Join a = new Join("orders o", new On("a.id", "b.id"));
+     * Join b = new Join("orders o", new On("a.id", "b.id"));
+     * a.equals(b);    // returns true
+     *
+     * // Edge: different join entity -> not equal
+     * Join c = new Join("customers c", new On("a.id", "b.id"));
+     * a.equals(c);    // returns false
+     *
+     * // Edge: a different join type (operator) -> not equal
+     * Join left = new LeftJoin("orders o", new On("a.id", "b.id"));
+     * a.equals(left); // returns false
+     *
+     * a.equals(null); // returns false
+     * }</pre>
+     *
      * @param obj the object to compare with
      * @return {@code true} if the object is a Join with the same operator, entities, and condition
      */

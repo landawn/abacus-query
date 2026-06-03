@@ -147,6 +147,22 @@ public abstract class AbstractBetween extends ComposableCondition {
      * If either bound is a {@link Condition} (typically a {@link SubQuery}), its parameters are
      * spliced in place of the bound itself.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Literal bounds -> [min, max]
+     * Between between = new Between("age", 18, 65);
+     * List<Object> p1 = between.getParameters();   // [18, 65]
+     *
+     * // Null bounds are kept as-is
+     * Between nullBounds = new Between("age", (Object) null, (Object) null);
+     * List<Object> p2 = nullBounds.getParameters();   // [null, null]
+     *
+     * // A Condition bound has its parameters spliced in
+     * SubQuery sub = Filters.subQuery("config", Arrays.asList("minAge"), Filters.eq("active", true));
+     * Between subBound = new Between("age", sub, 65);
+     * List<Object> p3 = subBound.getParameters();   // [true, 65]
+     * }</pre>
+     *
      * @return an immutable list containing {@code [minValue, maxValue]}, or their respective
      *         parameters spliced in where a bound is itself a {@link Condition}
      */
@@ -187,6 +203,21 @@ public abstract class AbstractBetween extends ComposableCondition {
      * If the operator is {@code null} (only possible for an uninitialized instance), the literal
      * {@code "null"} is rendered in place of the operator.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Numeric bounds are unquoted
+     * Between between = new Between("age", 18, 65);
+     * String s1 = between.toString(NamingPolicy.NO_CHANGE);   // "age BETWEEN 18 AND 65"
+     *
+     * // NotBetween uses the NOT BETWEEN operator
+     * NotBetween nb = new NotBetween("age", 18, 65);
+     * String s2 = nb.toString(NamingPolicy.NO_CHANGE);   // "age NOT BETWEEN 18 AND 65"
+     *
+     * // String bounds are single-quoted; a null naming policy uses NO_CHANGE
+     * Between str = new Between("name", "A", "M");
+     * String s3 = str.toString(null);   // "name BETWEEN 'A' AND 'M'"
+     * }</pre>
+     *
      * @param namingPolicy the naming policy to apply to the property name;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a string representation of this condition
@@ -223,6 +254,18 @@ public abstract class AbstractBetween extends ComposableCondition {
     /**
      * Returns the hash code of this condition.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Same property/operator/bounds -> equal hash codes
+     * Between a = new Between("age", 18, 65);
+     * Between b = new Between("age", 18, 65);
+     * boolean same = a.hashCode() == b.hashCode();   // true
+     *
+     * // Different bound -> different hash codes
+     * Between c = new Between("age", 18, 99);
+     * boolean diff = a.hashCode() == c.hashCode();   // false
+     * }</pre>
+     *
      * @return hash code based on property name, operator, and range values
      */
     @Override
@@ -250,6 +293,22 @@ public abstract class AbstractBetween extends ComposableCondition {
      * Checks if this condition is equal to another object.
      * Two conditions are equal if they have the same property name,
      * operator, minValue, and maxValue.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Between a = new Between("age", 18, 65);
+     * Between b = new Between("age", 18, 65);
+     * boolean eq = a.equals(b);   // true
+     *
+     * // Different upper bound -> not equal
+     * boolean neMax = a.equals(new Between("age", 18, 99));   // false
+     *
+     * // Different operator (BETWEEN vs NOT BETWEEN) -> not equal
+     * boolean neOp = a.equals(new NotBetween("age", 18, 65));   // false
+     *
+     * // Non-AbstractBetween object -> not equal
+     * boolean neType = a.equals("age");   // false
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

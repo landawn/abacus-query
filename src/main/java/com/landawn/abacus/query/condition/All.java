@@ -85,13 +85,20 @@ public class All extends ComposableCell {
      * Creates a new ALL condition with the specified subquery.
      * The ALL operator ensures that a comparison is true for every value returned by the subquery.
      *
-     * <p><b>Usage Example:</b></p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery competitorPrices = Filters.subQuery(
      *     "SELECT price FROM competitor_products WHERE product_type = 'Premium'"
      * );
      * All allCompetitors = new All(competitorPrices);
-     * // Used with: WHERE our_price > ALL (SELECT price FROM competitor_products WHERE product_type = 'Premium')
+     * allCompetitors.toString();
+     * // returns "ALL (SELECT price FROM competitor_products WHERE product_type = 'Premium')"
+     * // Typically used as the right-hand value of a comparison, e.g.:
+     * //   WHERE our_price > ALL (SELECT price FROM competitor_products WHERE product_type = 'Premium')
+     *
+     * // A null subquery is rejected
+     * All bad = new All((SubQuery) null);
+     * // throws IllegalArgumentException
      * }</pre>
      *
      * @param subQuery the subquery that returns values to compare against (must not be {@code null})
@@ -103,6 +110,20 @@ public class All extends ComposableCell {
 
     /**
      * Gets the subquery wrapped by this ALL condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Retrieve the wrapped subquery
+     * SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE in_stock = true");
+     * All all = new All(subQuery);
+     * SubQuery retrieved = all.getSubQuery();
+     * // returns the same SubQuery instance that was supplied
+     * // retrieved == subQuery -> true
+     *
+     * // The wrapped subquery is also what getCondition() returns
+     * boolean sameAsCondition = all.getSubQuery() == all.getCondition();
+     * // returns true
+     * }</pre>
      *
      * @return the {@link SubQuery} supplied to this condition
      */

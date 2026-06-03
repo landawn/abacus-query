@@ -2409,7 +2409,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = ACSB.select("COUNT(*) as total, AVG(SALARY) as avgSalary")
          *                  .from("EMPLOYEES")
          *                  .build().query();
-         * // Output: SELECT COUNT(*) as total, AVG(SALARY) as avgSalary FROM EMPLOYEES
+         * // Output: SELECT COUNT(*) AS total, AVG(SALARY) as avgSalary FROM EMPLOYEES
          * }</pre>
          *
          * @param selectPart the SELECT expression or clause
@@ -3716,7 +3716,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = LCSB.select("COUNT(*) as total, AVG(salary) as avgSalary")
          *                  .from("employees")
          *                  .build().query();
-         * // Output: SELECT COUNT(*) as total, AVG(salary) as avgSalary FROM employees
+         * // Output: SELECT COUNT(*) AS total, AVG(salary) as avgSalary FROM employees
          * }</pre>
          * 
          * @param selectPart the SELECT expression or clause
@@ -6278,12 +6278,12 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                 .from("account")
          *                 .where(Filters.equal("status", "active"))
          *                 .build().query();
-         * // Output: SELECT count(*) FROM account WHERE status = ?
-         * 
+         * // Output: SELECT COUNT(*) FROM account WHERE status = ?
+         *
          * String sql2 = PSC.select("firstName || ' ' || lastName AS fullName")
          *                  .from("account")
          *                  .build().query();
-         * // Output: SELECT firstName || ' ' || lastName AS fullName FROM account
+         * // Output: SELECT first_name || ' ' || last_name AS fullName FROM account
          * }</pre>
          * 
          * @param selectPart the select expression
@@ -7575,10 +7575,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = PAC.select("COUNT(*)").from("users").build().query();
-         * // Output: SELECT count(*) FROM users
+         * // Output: SELECT COUNT(*) FROM users
          *
          * String sql2 = PAC.select("MAX(age)").from("users").build().query();
-         * // Output: SELECT MAX(age) FROM users
+         * // Output: SELECT MAX(AGE) AS "MAX(age)" FROM users
          * }</pre>
          * 
          * @param selectPart the SELECT expression (e.g., "COUNT(*)", "MAX(age)", "firstName")
@@ -8989,8 +8989,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                 .from("account")
          *                 .where(Filters.equal("status", "active"))
          *                 .build().query();
-         * // Output: SELECT count(*) FROM account WHERE status = ?
-         * 
+         * // Output: SELECT COUNT(*) FROM account WHERE status = ?
+         *
          * // Complex expression
          * String sql2 = PLC.select("firstName || ' ' || lastName AS fullName")
          *                  .from("account")
@@ -11684,7 +11684,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NSC.select("COUNT(*)").from("users").where(Filters.equal("active", true)).build().query();
-         * // Output: SELECT count(*) FROM users WHERE active = :active
+         * // Output: SELECT COUNT(*) FROM users WHERE active = :active
          * }</pre>
          * 
          * @param selectPart the column name or SQL expression to select
@@ -12849,8 +12849,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NAC.select("COUNT(*)").from("ACCOUNT").build().query();
-         * // Output: SELECT count(*) FROM ACCOUNT
-         * 
+         * // Output: SELECT COUNT(*) FROM ACCOUNT
+         *
          * String sql2 = NAC.select("MAX(BALANCE)").from("ACCOUNT").where(Filters.equal("STATUS", "ACTIVE")).build().query();
          * // Output: SELECT MAX(BALANCE) FROM ACCOUNT WHERE STATUS = :STATUS
          * }</pre>
@@ -14086,8 +14086,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = NLC.select("COUNT(*)").from("account").build().query();
-         * // Output: SELECT count(*) FROM account
-         * 
+         * // Output: SELECT COUNT(*) FROM account
+         *
          * String sql2 = NLC.select("MAX(balance)").from("account").where(Filters.equal("status", "active")).build().query();
          * // Output: SELECT MAX(balance) FROM account WHERE status = :status
          * }</pre>
@@ -15421,8 +15421,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSB.select("COUNT(*)").from("users").build().query();
-         * // Output: SELECT count(*) FROM users
-         * 
+         * // Output: SELECT COUNT(*) FROM users
+         *
          * String sql2 = MSB.select("MAX(salary)").from("employees").build().query();
          * // Output: SELECT MAX(salary) FROM employees
          * }</pre>
@@ -16683,8 +16683,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.select("COUNT(*)").from("users").build().query();
-         * // Output: SELECT count(*) FROM users
-         * 
+         * // Output: SELECT COUNT(*) FROM users
+         *
          * String sql2 = MSC.select("firstName").from("users").build().query();
          * // Output: SELECT first_name AS "firstName" FROM users
          * }</pre>
@@ -17875,7 +17875,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = MAC.deleteFrom(Account.class)
          *                 .where(Filters.in("id", Arrays.asList(1, 2, 3)))
          *                 .build().query();
-         * // Output: DELETE FROM ACCOUNT WHERE ID IN (#{id_0}, #{id_1}, #{id_2})
+         * // Output: DELETE FROM ACCOUNT WHERE ID IN (#{id1}, #{id2}, #{id3})
          * }</pre>
          *
          * @param entityClass the entity class to delete from
@@ -17900,10 +17900,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MAC.select("COUNT(*)").from("ACCOUNT").build().query();
-         * // Output: SELECT count(*) FROM ACCOUNT
+         * // Output: SELECT COUNT(*) FROM ACCOUNT
          *
          * String sql2 = MAC.select("firstName").from("ACCOUNT").build().query();
-         * // Output: SELECT FIRST_NAME FROM ACCOUNT
+         * // Output: SELECT FIRST_NAME AS "firstName" FROM ACCOUNT
          * }</pre>
          *
          * @param selectPart the column name or SQL expression to select
@@ -17929,7 +17929,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = MAC.select("firstName", "lastName", "emailAddress")
          *                 .from("ACCOUNT")
          *                 .build().query();
-         * // Output: SELECT FIRST_NAME, LAST_NAME, EMAIL_ADDRESS FROM ACCOUNT
+         * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", EMAIL_ADDRESS AS "emailAddress" FROM ACCOUNT
          * }</pre>
          *
          * @param propOrColumnNames the property or column names to select
@@ -17954,7 +17954,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * List<String> columns = Arrays.asList("firstName", "lastName", "phoneNumber");
          * String sql = MAC.select(columns).from("ACCOUNT").build().query();
-         * // Output: SELECT FIRST_NAME, LAST_NAME, PHONE_NUMBER FROM ACCOUNT
+         * // Output: SELECT FIRST_NAME AS "firstName", LAST_NAME AS "lastName", PHONE_NUMBER AS "phoneNumber" FROM ACCOUNT
          * }</pre>
          *
          * @param propOrColumnNames collection of property or column names to select

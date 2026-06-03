@@ -82,7 +82,9 @@ public class Where extends Clause {
      *     Filters.equal("vip", true)
      * );
      * Where complexWhere = new Where(complexCondition);
-     * // SQL: WHERE (((status = 'active') AND (balance > 1000)) OR (vip = true))
+     * // SQL: WHERE ((((status = 'active') AND (balance > 1000))) OR (vip = true))
+     * // (the nested AND inside the OR picks up an extra layer of parens, since each junction
+     * //  wraps every child in parentheses and the whole junction in an outer pair)
      *
      * // WHERE with subquery
      * SubQuery activeUsers = new SubQuery("SELECT id FROM users WHERE active = true");

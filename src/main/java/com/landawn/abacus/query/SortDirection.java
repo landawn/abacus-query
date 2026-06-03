@@ -34,11 +34,12 @@ package com.landawn.abacus.query;
  * // Use in SQL building (toString() yields "ASC" / "DESC")
  * String sql = "SELECT * FROM users ORDER BY name " + SortDirection.DESC;
  *
- * // Use with a SqlBuilder (typical use case)
+ * // Use with a SqlBuilder (typical use case). orderBy(...) may be called only once,
+ * // so pass multiple columns in a single call.
  * String built = PSC.selectFrom(User.class)
- *     .orderBy("lastName", SortDirection.ASC)
- *     .orderBy("firstName", SortDirection.ASC)
+ *     .orderBy(Arrays.asList("lastName", "firstName"), SortDirection.ASC)
  *     .build().query();
+ * // built ends with: ... ORDER BY last_name ASC, first_name ASC
  * }</pre>
  *
  * @see SqlBuilder

@@ -71,7 +71,7 @@ public class NotExists extends ComposableCell {
      * checking for missing relationships, finding orphaned records, or identifying
      * entities without certain attributes.</p>
      *
-     * <p><b>Usage Example:</b></p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Find employees without any assigned projects (correlated subquery)
      * SubQuery projectCheck = Filters.subQuery(
@@ -79,7 +79,12 @@ public class NotExists extends ComposableCell {
      *     "WHERE project_assignments.employee_id = employees.id"
      * );
      * NotExists noProjects = new NotExists(projectCheck);
-     * // Generates: NOT EXISTS (SELECT 1 FROM project_assignments WHERE project_assignments.employee_id = employees.id)
+     * noProjects.toString();
+     * // returns "NOT EXISTS (SELECT 1 FROM project_assignments WHERE project_assignments.employee_id = employees.id)"
+     *
+     * // A null subquery is rejected
+     * NotExists bad = new NotExists((SubQuery) null);
+     * // throws IllegalArgumentException
      * }</pre>
      *
      * @param subQuery the subquery to check for non-existence of rows (must not be {@code null})
@@ -91,6 +96,20 @@ public class NotExists extends ComposableCell {
 
     /**
      * Gets the subquery used by this NOT EXISTS condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Retrieve the wrapped subquery
+     * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
+     * NotExists notExists = new NotExists(subQuery);
+     * SubQuery retrieved = notExists.getSubQuery();
+     * // returns the same SubQuery instance that was supplied
+     * // retrieved == subQuery -> true
+     *
+     * // The wrapped subquery is also what getCondition() returns
+     * boolean sameAsCondition = notExists.getSubQuery() == notExists.getCondition();
+     * // returns true
+     * }</pre>
      *
      * @return the {@link SubQuery} supplied at construction time
      */

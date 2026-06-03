@@ -169,6 +169,19 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     /**
      * Gets the list of parameters from the subquery.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Raw SQL subquery has no bind parameters -> empty list
+     * SubQuery raw = new SubQuery("SELECT id FROM departments WHERE active = true");
+     * InSubQuery inSub = new InSubQuery("deptId", raw);
+     * List<Object> p1 = inSub.getParameters();   // [] (empty)
+     *
+     * // Structured subquery with a parameterized condition -> subquery's params
+     * SubQuery structured = Filters.subQuery("departments", Arrays.asList("id"), Filters.eq("active", true));
+     * InSubQuery inSub2 = new InSubQuery("deptId", structured);
+     * List<Object> p2 = inSub2.getParameters();   // [true]
+     * }</pre>
+     *
      * @return an immutable list of parameter values from the subquery; an empty immutable list
      *         if the subquery is {@code null} (only possible for an uninitialized instance)
      */
@@ -186,6 +199,18 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
 
     /**
      * Generates the hash code for this condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT id FROM departments");
+     * InSubQuery a = new InSubQuery("deptId", subQuery);
+     * InSubQuery b = new InSubQuery("deptId", subQuery);
+     * boolean same = a.hashCode() == b.hashCode();   // true
+     *
+     * // Different property -> different hash codes
+     * InSubQuery c = new InSubQuery("teamId", subQuery);
+     * boolean diff = a.hashCode() == c.hashCode();   // false
+     * }</pre>
      *
      * @return hash code based on property name(s), operator, and subquery
      */
@@ -214,6 +239,23 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * Two conditions are equal if they have the same property names,
      * operator, and subquery.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT id FROM departments");
+     * InSubQuery a = new InSubQuery("deptId", subQuery);
+     * InSubQuery b = new InSubQuery("deptId", subQuery);
+     * boolean eq = a.equals(b);   // true
+     *
+     * // Different property -> not equal
+     * boolean neProp = a.equals(new InSubQuery("teamId", subQuery));   // false
+     *
+     * // Different operator (IN vs NOT IN) -> not equal
+     * boolean neOp = a.equals(new NotInSubQuery("deptId", subQuery));   // false
+     *
+     * // Non-AbstractInSubQuery object -> not equal
+     * boolean neType = a.equals("deptId");   // false
+     * }</pre>
+     *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
      */
@@ -240,6 +282,26 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * <p>If {@code propNames} is empty (only possible for an uninitialized instance), only
      * {@code OPERATOR (subQuery)} is rendered, and the operator falls back to the literal
      * {@code "null"} when {@code operator} is also {@code null}.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Single property -> propName IN (subQuery)
+     * SubQuery subQuery = new SubQuery("SELECT id FROM departments WHERE active = true");
+     * InSubQuery inSub = new InSubQuery("deptId", subQuery);
+     * String s1 = inSub.toString(NamingPolicy.NO_CHANGE);
+     * // "deptId IN (SELECT id FROM departments WHERE active = true)"
+     *
+     * // NotInSubQuery uses the NOT IN operator
+     * NotInSubQuery notInSub = new NotInSubQuery("deptId", subQuery);
+     * String s2 = notInSub.toString(NamingPolicy.NO_CHANGE);
+     * // "deptId NOT IN (SELECT id FROM departments WHERE active = true)"
+     *
+     * // Multiple properties -> (prop1, prop2) IN (subQuery)
+     * SubQuery multi = new SubQuery("SELECT firstName, lastName FROM employees");
+     * InSubQuery inMulti = new InSubQuery(Arrays.asList("firstName", "lastName"), multi);
+     * String s3 = inMulti.toString(null);   // null naming policy uses NO_CHANGE
+     * // "(firstName, lastName) IN (SELECT firstName, lastName FROM employees)"
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used

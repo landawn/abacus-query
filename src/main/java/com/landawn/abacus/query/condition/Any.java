@@ -84,14 +84,21 @@ public class Any extends ComposableCell {
      * The ANY operator is used in conjunction with comparison operators to test
      * if the comparison is true for any value returned by the subquery.
      *
-     * <p><b>Usage Example:</b></p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery budgetQuery = Filters.subQuery(
      *     "SELECT budget FROM departments WHERE region = 'West'"
      * );
      * Any anyBudget = new Any(budgetQuery);
-     * // Used with: WHERE expense > ANY (SELECT budget FROM departments WHERE region = 'West')
+     * anyBudget.toString();
+     * // returns "ANY (SELECT budget FROM departments WHERE region = 'West')"
+     * // Typically used as the right-hand value of a comparison, e.g.:
+     * //   WHERE expense > ANY (SELECT budget FROM departments WHERE region = 'West')
      * // Matches expenses greater than at least one department budget in the West region.
+     *
+     * // A null subquery is rejected
+     * Any bad = new Any((SubQuery) null);
+     * // throws IllegalArgumentException
      * }</pre>
      *
      * @param subQuery the subquery that returns values to compare against (must not be {@code null})
@@ -103,6 +110,20 @@ public class Any extends ComposableCell {
 
     /**
      * Gets the subquery wrapped by this ANY condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Retrieve the wrapped subquery
+     * SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
+     * Any any = new Any(subQuery);
+     * SubQuery retrieved = any.getSubQuery();
+     * // returns the same SubQuery instance that was supplied
+     * // retrieved == subQuery -> true
+     *
+     * // The wrapped subquery is also what getCondition() returns
+     * boolean sameAsCondition = any.getSubQuery() == any.getCondition();
+     * // returns true
+     * }</pre>
      *
      * @return the {@link SubQuery} supplied to this condition
      */

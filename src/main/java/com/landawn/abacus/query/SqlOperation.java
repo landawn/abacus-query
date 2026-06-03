@@ -172,7 +172,16 @@ public enum SqlOperation {
      * SqlOperation selectOp = SqlOperation.of("SELECT");      // returns SELECT
      * SqlOperation insertOp = SqlOperation.of("INSERT");      // returns INSERT
      * SqlOperation mergeOp = SqlOperation.of("MERGE");        // returns MERGE
-     * SqlOperation unknownOp = SqlOperation.of("TRUNCATE");   // returns null (not supported)
+     *
+     * // Case-insensitive; multi-word and enum constant names are accepted
+     * SqlOperation lower = SqlOperation.of("select");                  // returns SELECT
+     * SqlOperation tx = SqlOperation.of("begin transaction");          // returns BEGIN_TRANSACTION
+     * SqlOperation txByName = SqlOperation.of("BEGIN_TRANSACTION");    // returns BEGIN_TRANSACTION
+     *
+     * // Edge cases
+     * SqlOperation unsupported = SqlOperation.of("TRUNCATE");   // returns null (not supported)
+     * SqlOperation blank = SqlOperation.of("");                 // returns null
+     * SqlOperation nil = SqlOperation.of(null);                 // throws IllegalArgumentException
      * }</pre>
      *
      * @param name the SQL operation name to look up (case-insensitive)
@@ -219,6 +228,17 @@ public enum SqlOperation {
     /**
      * Returns the string representation of this SQL operation.
      * This method returns the same value as {@link #sqlToken()}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String select = SqlOperation.SELECT.toString();             // "SELECT"
+     * String insert = SqlOperation.INSERT.toString();             // "INSERT"
+     * String tx = SqlOperation.BEGIN_TRANSACTION.toString();      // "BEGIN TRANSACTION"
+     * String unknown = SqlOperation.UNKNOWN.toString();           // "UNKNOWN"
+     *
+     * // toString() always equals sqlToken()
+     * boolean same = SqlOperation.DELETE.toString().equals(SqlOperation.DELETE.sqlToken()); // true
+     * }</pre>
      *
      * @return the SQL keyword string representation of this operation
      */

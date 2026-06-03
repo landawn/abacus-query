@@ -134,6 +134,17 @@ public abstract class AbstractIn extends ComposableCondition {
      * itself a {@link Condition} has its parameters spliced into the result in place of the
      * element; non-{@code Condition} elements are included as-is.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // String values listed in order
+     * In in = new In("status", Arrays.asList("active", "pending"));
+     * List<Object> p1 = in.getParameters();   // ["active", "pending"]
+     *
+     * // Numeric values
+     * In nums = new In("id", Arrays.asList(1, 2, 3));
+     * List<Object> p2 = nums.getParameters();   // [1, 2, 3]
+     * }</pre>
+     *
      * @return an immutable list of parameter values, or an empty immutable list if no values are set
      */
     @Override
@@ -172,6 +183,21 @@ public abstract class AbstractIn extends ComposableCondition {
      * (or {@code NOT IN} for {@link NotIn}). If the operator is {@code null}
      * (only possible for an uninitialized instance), the literal {@code "null"} is rendered
      * in place of the operator.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // String values are single-quoted
+     * In in = new In("status", Arrays.asList("active", "pending"));
+     * String s1 = in.toString(NamingPolicy.NO_CHANGE);   // "status IN ('active', 'pending')"
+     *
+     * // NotIn uses the NOT IN operator
+     * NotIn notIn = new NotIn("status", Arrays.asList("active", "pending"));
+     * String s2 = notIn.toString(NamingPolicy.NO_CHANGE);   // "status NOT IN ('active', 'pending')"
+     *
+     * // Numeric values are unquoted; a null naming policy uses NO_CHANGE
+     * In nums = new In("id", Arrays.asList(1, 2, 3));
+     * String s3 = nums.toString(null);   // "id IN (1, 2, 3)"
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to the property name;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
@@ -216,6 +242,18 @@ public abstract class AbstractIn extends ComposableCondition {
     /**
      * Generates the hash code for this condition.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Same property/operator/values -> equal hash codes
+     * In a = new In("status", Arrays.asList("active", "pending"));
+     * In b = new In("status", Arrays.asList("active", "pending"));
+     * boolean same = a.hashCode() == b.hashCode();   // true
+     *
+     * // Different values -> different hash codes
+     * In c = new In("status", Arrays.asList("active"));
+     * boolean diff = a.hashCode() == c.hashCode();   // false
+     * }</pre>
+     *
      * @return the hash code based on property name, operator, and values
      */
     @Override
@@ -242,6 +280,22 @@ public abstract class AbstractIn extends ComposableCondition {
      * Checks if this condition is equal to another object.
      * Two conditions are equal if they have the same property name,
      * operator, and values list.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In a = new In("status", Arrays.asList("active", "pending"));
+     * In b = new In("status", Arrays.asList("active", "pending"));
+     * boolean eq = a.equals(b);   // true
+     *
+     * // Different values -> not equal
+     * boolean neValues = a.equals(new In("status", Arrays.asList("active")));   // false
+     *
+     * // Different operator (IN vs NOT IN) -> not equal
+     * boolean neOp = a.equals(new NotIn("status", Arrays.asList("active", "pending")));   // false
+     *
+     * // Non-AbstractIn object -> not equal
+     * boolean neType = a.equals("status");   // false
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

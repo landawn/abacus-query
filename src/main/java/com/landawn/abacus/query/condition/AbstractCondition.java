@@ -143,8 +143,8 @@ public abstract class AbstractCondition implements Condition {
      * boolean result1 = isClause("WHERE");      // true
      * boolean result2 = isClause("ORDER BY");   // true
      * boolean result3 = isClause("GROUP BY");   // true
-     * boolean result4 = isClause("=");           // false
-     * boolean result5 = isClause("AND");         // false
+     * boolean result4 = isClause("=");          // false
+     * boolean result5 = isClause("AND");        // false
      * }</pre>
      *
      * @param operator the operator string to check
@@ -227,10 +227,10 @@ public abstract class AbstractCondition implements Condition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * formatParameter("John", NamingPolicy.NO_CHANGE);         // Returns: 'John'
-     * formatParameter(123, NamingPolicy.NO_CHANGE);            // Returns: 123
-     * formatParameter(null, NamingPolicy.NO_CHANGE);           // Returns: null (Java null)
-     * formatParameter(subCondition, NamingPolicy.NO_CHANGE);   // Returns: subCondition.toString(policy)
+     * formatParameter("John", NamingPolicy.NO_CHANGE);                // Returns: 'John'
+     * formatParameter(123, NamingPolicy.NO_CHANGE);                   // Returns: 123
+     * formatParameter(null, NamingPolicy.NO_CHANGE);                  // Returns: null (Java null)
+     * formatParameter(subCondition, NamingPolicy.NO_CHANGE);          // Returns: subCondition.toString(policy)
      * formatParameter(new java.util.Date(0), NamingPolicy.NO_CHANGE); // Returns the date as a quoted, escaped string literal
      * }</pre>
      *
@@ -660,6 +660,15 @@ public abstract class AbstractCondition implements Condition {
      * Gets the operator for this condition.
      * The operator defines the type of operation (e.g., EQUAL, GREATER_THAN, AND, OR).
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Equal eq = new Equal("status", "active");
+     * Operator op1 = eq.operator();   // Operator.EQUAL
+     *
+     * GreaterThan gt = new GreaterThan("age", 18);
+     * Operator op2 = gt.operator();   // Operator.GREATER_THAN
+     * }</pre>
+     *
      * @return the operator for this condition
      */
     @Override
@@ -670,6 +679,16 @@ public abstract class AbstractCondition implements Condition {
     /**
      * Returns a string representation of this condition using the default naming policy.
      * This method delegates to {@link #toString(NamingPolicy)} with {@link NamingPolicy#NO_CHANGE}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Equal eq = new Equal("name", "John");
+     * String s1 = eq.toString();   // "name = 'John'"
+     *
+     * // Null value with = renders as IS NULL
+     * Equal nullEq = new Equal("deletedAt", (Object) null);
+     * String s2 = nullEq.toString();   // "deletedAt IS NULL"
+     * }</pre>
      *
      * @return a string representation of this condition
      */

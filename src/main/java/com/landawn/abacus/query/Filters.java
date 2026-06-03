@@ -335,6 +335,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Equal condition = Filters.eq("status", "active");
+     * // SQL fragment: status = 'active'
      * }</pre>
      *
      * @param propName the property/column name
@@ -371,11 +372,11 @@ public class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Map<String, Object> props = new HashMap<>();
+     * Map<String, Object> props = new LinkedHashMap<>();
      * props.put("name", "John");
      * props.put("email", "john@example.com");
      * Or condition = Filters.anyEqual(props);
-     * // SQL fragment: name = 'John' OR email = 'john@example.com'
+     * // SQL fragment: ((name = 'John') OR (email = 'john@example.com'))
      * }</pre>
      *
      * @param props map of property names to values (must not be empty)
@@ -416,7 +417,7 @@ public class Filters {
      * <pre>{@code
      * User user = new User("John", "john@example.com");
      * Or condition = Filters.anyEqual(user);
-     * // SQL fragment: name = 'John' OR email = 'john@example.com'
+     * // SQL fragment: ((name = 'John') OR (email = 'john@example.com'))
      * }</pre>
      *
      * @param entity the entity object whose properties will be used
@@ -480,7 +481,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Or condition = Filters.anyEqual("name", "John", "email", "john@example.com");
-     * // SQL fragment: name = 'John' OR email = 'john@example.com'
+     * // SQL fragment: ((name = 'John') OR (email = 'john@example.com'))
      * }</pre>
      *
      * @param propName1 first property name
@@ -500,6 +501,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Or condition = Filters.anyEqual("status", "active", "type", "premium", "verified", true);
+     * // SQL fragment: ((status = 'active') OR (type = 'premium') OR (verified = true))
      * }</pre>
      *
      * @param propName1 first property name
@@ -521,11 +523,11 @@ public class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Map<String, Object> props = new HashMap<>();
+     * Map<String, Object> props = new LinkedHashMap<>();
      * props.put("status", "active");
      * props.put("type", "premium");
      * And condition = Filters.allEqual(props);
-     * // SQL fragment: status = 'active' AND type = 'premium'
+     * // SQL fragment: ((status = 'active') AND (type = 'premium'))
      * }</pre>
      *
      * @param props map of property names to values (must not be empty)
@@ -567,7 +569,7 @@ public class Filters {
      * <pre>{@code
      * User user = new User("John", "john@example.com", 25);
      * And condition = Filters.allEqual(user);
-     * // SQL fragment: name = 'John' AND email = 'john@example.com' AND age = 25
+     * // SQL fragment: ((name = 'John') AND (email = 'john@example.com') AND (age = 25))
      * }</pre>
      *
      * @param entity the entity object whose properties will be used
@@ -630,7 +632,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.allEqual("status", "active", "type", "premium");
-     * // SQL fragment: status = 'active' AND type = 'premium'
+     * // SQL fragment: ((status = 'active') AND (type = 'premium'))
      * }</pre>
      *
      * @param propName1 first property name
@@ -649,6 +651,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.allEqual("status", "active", "type", "premium", "verified", true);
+     * // SQL fragment: ((status = 'active') AND (type = 'premium') AND (verified = true))
      * }</pre>
      *
      * @param propName1 first property name
@@ -728,9 +731,10 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<User> users = Arrays.asList(new User(...), new User(...));
+     * List<User> users = Arrays.asList(new User("John", "active"), new User("Jane", "trial"));
      * Or condition = Filters.anyOfAllEqual(users, Arrays.asList("name", "status"));
      * // Only uses name and status properties from each user
+     * // Results in: (((name = 'John') AND (status = 'active'))) OR (((name = 'Jane') AND (status = 'trial')))
      * }</pre>
      *
      * @param entities collection of entity objects (must not be empty)
@@ -765,7 +769,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.gtAndLt("age", 18, 65);
-     * // SQL fragment: age > 18 AND age < 65
+     * // SQL fragment: ((age > 18) AND (age < 65))
      * }</pre>
      *
      * @param propName the property/column name
@@ -787,7 +791,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.gtAndLt("price");
-     * // SQL fragment: price > ? AND price < ?
+     * // SQL fragment: ((price > ?) AND (price < ?))
      * }</pre>
      *
      * @param propName the property/column name
@@ -807,7 +811,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.geAndLt("price", 100, 500);
-     * // SQL fragment: price >= 100 AND price < 500
+     * // SQL fragment: ((price >= 100) AND (price < 500))
      * }</pre>
      *
      * @param propName the property/column name
@@ -829,7 +833,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.geAndLt("score");
-     * // SQL fragment: score >= ? AND score < ?
+     * // SQL fragment: ((score >= ?) AND (score < ?))
      * }</pre>
      *
      * @param propName the property/column name
@@ -848,8 +852,8 @@ public class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * And condition = Filters.geAndLe("date", startDate, endDate);
-     * // SQL fragment: date >= '2023-01-01' AND date <= '2023-12-31'
+     * And condition = Filters.geAndLe("date", "2023-01-01", "2023-12-31");
+     * // SQL fragment: ((date >= '2023-01-01') AND (date <= '2023-12-31'))
      * }</pre>
      *
      * @param propName the property/column name
@@ -871,7 +875,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.geAndLe("amount");
-     * // SQL fragment: amount >= ? AND amount <= ?
+     * // SQL fragment: ((amount >= ?) AND (amount <= ?))
      * }</pre>
      *
      * @param propName the property/column name
@@ -891,7 +895,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.gtAndLe("score", 0, 100);
-     * // SQL fragment: score > 0 AND score <= 100
+     * // SQL fragment: ((score > 0) AND (score <= 100))
      * }</pre>
      *
      * @param propName the property/column name
@@ -913,7 +917,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.gtAndLe("temperature");
-     * // SQL fragment: temperature > ? AND temperature <= ?
+     * // SQL fragment: ((temperature > ?) AND (temperature <= ?))
      * }</pre>
      *
      * @param propName the property/column name
@@ -929,9 +933,10 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * EntityId id = EntityId.of("userId", 123, "orderId", 456);
+     * EntityId id = EntityId.of("companyId", 1, "userId", 100);
      * And condition = Filters.id2Cond(id);
-     * // SQL fragment: userId = 123 AND orderId = 456
+     * // SQL fragment: ((companyId = 1) AND (userId = 100))
+     * // (EntityId orders its keys alphabetically, regardless of insertion order)
      * }</pre>
      *
      * @param entityId the {@link EntityId} containing key-value pairs (must not be null)
@@ -972,11 +977,11 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<EntityId> ids = Arrays.asList(
-     *     EntityId.of("userId", 1, "orderId", 100),
-     *     EntityId.of("userId", 2, "orderId", 200)
+     *     EntityId.of("companyId", 1, "userId", 100),
+     *     EntityId.of("companyId", 2, "userId", 200)
      * );
      * Or condition = Filters.id2Cond(ids);
-     * // Results in: (userId=1 AND orderId=100) OR (userId=2 AND orderId=200)
+     * // Results in: ((((companyId = 1) AND (userId = 100))) OR (((companyId = 2) AND (userId = 200))))
      * }</pre>
      *
      * @param entityIds collection of {@link EntityId}s (must not be {@code null} or empty)
@@ -1041,6 +1046,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotEqual condition = Filters.ne("status", "inactive");
+     * // SQL fragment: status != 'inactive'
      * }</pre>
      *
      * @param propName the property/column name
@@ -1112,6 +1118,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThan condition = Filters.gt("price", 100);
+     * // SQL fragment: price > 100
      * }</pre>
      *
      * @param propName the property/column name
@@ -1183,6 +1190,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThanOrEqual condition = Filters.ge("level", 5);
+     * // SQL fragment: level >= 5
      * }</pre>
      *
      * @param propName the property/column name
@@ -1254,6 +1262,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThan condition = Filters.lt("stock", 10);
+     * // SQL fragment: stock < 10
      * }</pre>
      *
      * @param propName the property/column name
@@ -1325,6 +1334,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThanOrEqual condition = Filters.le("priority", 3);
+     * // SQL fragment: priority <= 3
      * }</pre>
      *
      * @param propName the property/column name
@@ -1639,7 +1649,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Or condition = Filters.isNullOrEmpty("description");
-     * // SQL fragment: description IS NULL OR description = ''
+     * // SQL fragment: ((description IS NULL) OR (description = ''))
      * }</pre>
      *
      * @param propName the property/column name
@@ -1657,7 +1667,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Or condition = Filters.isNullOrZero("quantity");
-     * // SQL fragment: quantity IS NULL OR quantity = 0
+     * // SQL fragment: ((quantity IS NULL) OR (quantity = 0))
      * }</pre>
      *
      * @param propName the property/column name
@@ -1690,7 +1700,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.isNotNullAndNotEmpty("email");
-     * // SQL fragment: email IS NOT NULL AND email != ''
+     * // SQL fragment: ((email IS NOT NULL) AND (email != ''))
      * }</pre>
      *
      * @param propName the property/column name
@@ -1707,7 +1717,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.isNotNullAndNotZero("quantity");
-     * // SQL fragment: quantity IS NOT NULL AND quantity != 0
+     * // SQL fragment: ((quantity IS NOT NULL) AND (quantity != 0))
      * }</pre>
      *
      * @param propName the property/column name

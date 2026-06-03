@@ -416,8 +416,14 @@ public enum Operator {
      * Operator or = Operator.of("or");      // Operator.OR
      * Operator like = Operator.of("LIKE");  // Operator.LIKE
      *
-     * // Returns null for unknown operators
-     * Operator unknown = Operator.of("UNKNOWN");   // null
+     * // Enum constant names are also accepted (case-insensitive)
+     * Operator eq2 = Operator.of("EQUAL");          // Operator.EQUAL
+     * Operator lj = Operator.of("greater_than");    // Operator.GREATER_THAN
+     *
+     * // Edge cases
+     * Operator unknown = Operator.of("UNKNOWN");    // null (not a known token or name)
+     * Operator empty = Operator.of("");             // Operator.EMPTY (its SQL token is "")
+     * Operator nil = Operator.of(null);             // throws IllegalArgumentException
      * }</pre>
      *
      * @param name the string representation of the operator. Must not be {@code null}.
@@ -460,6 +466,7 @@ public enum Operator {
      * String betweenToken = Operator.BETWEEN.sqlToken();    // "BETWEEN"
      * String likeToken = Operator.LIKE.sqlToken();          // "LIKE"
      * String joinToken = Operator.LEFT_JOIN.sqlToken();     // "LEFT JOIN"
+     * String emptyToken = Operator.EMPTY.sqlToken();        // "" (empty placeholder operator)
      * }</pre>
      *
      * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
@@ -471,6 +478,18 @@ public enum Operator {
     /**
      * Returns the SQL string representation of this operator.
      * This is equivalent to calling {@link #sqlToken()}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String eq = Operator.EQUAL.toString();                  // "="
+     * String and = Operator.AND.toString();                   // "AND"
+     * String gte = Operator.GREATER_THAN_OR_EQUAL.toString(); // ">="
+     * String join = Operator.LEFT_JOIN.toString();            // "LEFT JOIN"
+     * String empty = Operator.EMPTY.toString();               // "" (empty placeholder operator)
+     *
+     * // toString() always equals sqlToken()
+     * boolean same = Operator.IN.toString().equals(Operator.IN.sqlToken()); // true
+     * }</pre>
      *
      * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
      */

@@ -176,6 +176,22 @@ public class Binary extends ComposableCondition {
      *   <li>Otherwise, a single-element list containing the value is returned.</li>
      * </ul>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Literal value -> single-element list
+     * Binary eq = new Equal("age", 25);
+     * List<Object> p1 = eq.getParameters();   // [25]
+     *
+     * // Null value with = or != -> empty list (rendered as IS NULL / IS NOT NULL)
+     * Binary nullEq = new Equal("name", (Object) null);
+     * List<Object> p2 = nullEq.getParameters();   // [] (empty)
+     *
+     * // Subquery value -> the subquery's own parameters
+     * SubQuery sub = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
+     * Binary in = new Equal("userId", sub);
+     * List<Object> p3 = in.getParameters();   // [true] (the subquery's params)
+     * }</pre>
+     *
      * @return an immutable list of parameter values; never {@code null}
      */
     @Override
@@ -217,6 +233,27 @@ public class Binary extends ComposableCondition {
      * {@code propertyName IS NULL}; when the operator is {@code !=}, {@code <>}, or {@code IS NOT},
      * the output is {@code propertyName IS NOT NULL}.</p>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // String values are single-quoted; numbers are unquoted
+     * Binary eq = new Equal("name", "John");
+     * String s1 = eq.toString(NamingPolicy.NO_CHANGE);   // "name = 'John'"
+     *
+     * Binary gt = new GreaterThan("age", 18);
+     * String s2 = gt.toString(NamingPolicy.NO_CHANGE);   // "age > 18"
+     *
+     * // Null value with = renders as IS NULL; with != renders as IS NOT NULL
+     * Binary nullEq = new Equal("deletedAt", (Object) null);
+     * String s3 = nullEq.toString(NamingPolicy.NO_CHANGE);   // "deletedAt IS NULL"
+     *
+     * Binary nullNe = new NotEqual("deletedAt", (Object) null);
+     * String s4 = nullNe.toString(NamingPolicy.NO_CHANGE);   // "deletedAt IS NOT NULL"
+     *
+     * // Subquery values are parenthesized; a null naming policy uses NO_CHANGE
+     * Binary sub = new Equal("userId", Filters.subQuery("SELECT id FROM users"));
+     * String s5 = sub.toString(null);   // "userId = (SELECT id FROM users)"
+     * }</pre>
+     *
      * @param namingPolicy the naming policy to apply to the property name;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a string representation of this condition
@@ -254,7 +291,19 @@ public class Binary extends ComposableCondition {
     /**
      * Returns the hash code of this Binary condition.
      * The hash code is computed based on the property name, operator, and value.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Equal property/operator/value -> equal hash codes
+     * Binary a = new Equal("age", 25);
+     * Binary b = new Equal("age", 25);
+     * boolean same = a.hashCode() == b.hashCode();   // true
+     *
+     * // Different value -> different hash codes
+     * Binary c = new Equal("age", 30);
+     * boolean diff = a.hashCode() == c.hashCode();   // false
+     * }</pre>
+     *
      * @return hash code based on property name, operator, and value
      */
     @Override
@@ -284,6 +333,20 @@ public class Binary extends ComposableCondition {
      * equality contract — so two instances of different concrete subclasses are considered equal
      * when their property name, operator, and value all match. In practice this rarely happens,
      * because different subclasses use different operators.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Binary a = new Equal("age", 25);
+     * Binary b = new Equal("age", 25);
+     * boolean eq = a.equals(b);   // true (same prop, operator, value)
+     *
+     * // Different value or property -> not equal
+     * boolean neValue = a.equals(new Equal("age", 30));   // false
+     * boolean neProp = a.equals(new Equal("name", 25));   // false
+     *
+     * // Non-Binary object -> not equal
+     * boolean neType = a.equals("age");   // false
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise

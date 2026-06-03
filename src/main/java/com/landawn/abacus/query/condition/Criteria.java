@@ -116,6 +116,13 @@ public class Criteria extends AbstractCondition {
      * {@code DISTINCT(col1, col2)}, or any custom modifier set via
      * {@link Builder#selectModifier(String)}), or {@code null} if none was set.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria.builder().build().getSelectModifier();                    // returns null
+     * Criteria.builder().distinct().build().getSelectModifier();         // returns "DISTINCT"
+     * Criteria.builder().distinctBy("a, b").build().getSelectModifier(); // returns "DISTINCT(a, b)"
+     * }</pre>
+     *
      * @return the SELECT modifier, or {@code null} if not set
      * @see Builder#distinct()
      * @see Builder#distinctBy(String)
@@ -130,6 +137,15 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns all JOIN clauses (JOIN, INNER JOIN, LEFT JOIN, RIGHT JOIN, FULL JOIN, CROSS JOIN, NATURAL JOIN)
      * in the order they were added.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria.builder().build().getJoins();   // returns [] (empty list)
+     *
+     * Criteria c = Criteria.builder().join("orders").innerJoin("items").build();
+     * c.getJoins().size();                     // returns 2
+     * c.getJoins().add(null);                  // throws UnsupportedOperationException (unmodifiable view)
+     * }</pre>
      *
      * @return an unmodifiable list of {@link Join} conditions; empty if none exist
      */
@@ -159,6 +175,14 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns the WHERE clause, or {@code null} if none was set.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria.builder().build().getWhere();   // returns null
+     *
+     * Criteria c = Criteria.builder().where(Filters.eq("a", 1)).build();
+     * c.getWhere().operator();                 // returns Operator.WHERE
+     * }</pre>
+     *
      * @return the {@link Where} clause as a {@link Clause}, or {@code null}
      */
     public Clause getWhere() {
@@ -167,6 +191,14 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Returns the GROUP BY clause, or {@code null} if none was set.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria.builder().build().getGroupBy();   // returns null
+     *
+     * Criteria c = Criteria.builder().groupBy("dept").build();
+     * c.getGroupBy().operator();                 // returns Operator.GROUP_BY
+     * }</pre>
      *
      * @return the {@link GroupBy} clause as a {@link Clause}, or {@code null}
      */
@@ -177,6 +209,14 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns the HAVING clause, or {@code null} if none was set.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria.builder().build().getHaving();   // returns null
+     *
+     * Criteria c = Criteria.builder().having(Filters.greaterThan("COUNT(*)", 5)).build();
+     * c.getHaving().operator();                 // returns Operator.HAVING
+     * }</pre>
+     *
      * @return the {@link Having} clause as a {@link Clause}, or {@code null}
      */
     public Clause getHaving() {
@@ -185,6 +225,14 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Returns all set operations (UNION, UNION ALL, INTERSECT, EXCEPT, MINUS) in the order they were added.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria.builder().build().getSetOperations();   // returns [] (empty list)
+     *
+     * Criteria c = Criteria.builder().union(Filters.subQuery("SELECT id FROM t")).build();
+     * c.getSetOperations().size();                     // returns 1
+     * }</pre>
      *
      * @return an unmodifiable list of set operation clauses; empty if none exist
      */
@@ -214,6 +262,14 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns the ORDER BY clause, or {@code null} if none was set.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria.builder().build().getOrderBy();   // returns null
+     *
+     * Criteria c = Criteria.builder().orderBy("name").build();
+     * c.getOrderBy().operator();                 // returns Operator.ORDER_BY
+     * }</pre>
+     *
      * @return the {@link OrderBy} clause as a {@link Clause}, or {@code null}
      */
     public Clause getOrderBy() {
@@ -223,6 +279,14 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns the LIMIT clause, or {@code null} if none was set.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria.builder().build().getLimit();   // returns null
+     *
+     * Criteria c = Criteria.builder().limit(10).build();
+     * c.getLimit().toString(NamingPolicy.NO_CHANGE);   // returns "LIMIT 10"
+     * }</pre>
+     *
      * @return the {@link Limit} clause, or {@code null}
      */
     public Limit getLimit() {
@@ -231,6 +295,15 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Returns all conditions (clauses) in this criteria in the order they were added.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria.builder().build().getConditions();   // returns [] (empty list)
+     *
+     * Criteria c = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").build();
+     * c.getConditions().size();                      // returns 2
+     * c.getConditions().clear();                     // throws UnsupportedOperationException (unmodifiable view)
+     * }</pre>
      *
      * @return an unmodifiable list of all conditions
      */
@@ -243,6 +316,15 @@ public class Criteria extends AbstractCondition {
      * in the order they were added. This includes any duplicate clauses that were added directly
      * (the Builder normally replaces single-instance clauses like WHERE/ORDER BY, but multiple
      * JOINs and set operations such as UNION accumulate).
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria c = Criteria.builder().join("o1").join("o2").where(Filters.eq("a", 1)).build();
+     * c.findConditions(Operator.JOIN).size();    // returns 2 (JOINs accumulate)
+     * c.findConditions(Operator.WHERE).size();   // returns 1
+     * c.findConditions(Operator.HAVING);         // returns [] (no HAVING present)
+     * c.findConditions(null);                    // returns [] (null never matches an operator)
+     * }</pre>
      *
      * @param operator the operator to match (may be {@code null}, in which case this returns an
      *                 empty list since {@link AbstractCondition} disallows null operators)
@@ -263,6 +345,14 @@ public class Criteria extends AbstractCondition {
     /**
      * Collects parameters from all conditions in SQL clause order:
      * JOIN, WHERE, GROUP BY, HAVING, set operations, ORDER BY, LIMIT.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria.builder().build().getParameters();   // returns [] (empty list)
+     *
+     * Criteria c = Criteria.builder().where(Filters.eq("status", "active")).limit(10).build();
+     * c.getParameters();   // returns ["active"] (the literal LIMIT count carries no parameter)
+     * }</pre>
      *
      * @return an immutable list of all parameters collected from the constituent clauses;
      *         empty if this criteria has no conditions or if none of the conditions carry parameters
@@ -371,7 +461,15 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns a string representation of this Criteria using the specified naming policy.
      * Clauses are emitted in SQL order: select modifier, JOINs, WHERE, GROUP BY, HAVING,
-     * set operations (UNION/INTERSECT/EXCEPT), ORDER BY, LIMIT.
+     * set operations (UNION/INTERSECT/EXCEPT), ORDER BY, LIMIT. Each clause is prefixed by a
+     * leading space, so a non-empty result starts with a space.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria c = Criteria.builder().where(Filters.eq("firstName", "John")).build();
+     * c.toString(NamingPolicy.NO_CHANGE);    // returns " WHERE firstName = 'John'"
+     * c.toString(NamingPolicy.SNAKE_CASE);   // returns " WHERE first_name = 'John'"
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names within each clause
      * @return a string representation of this Criteria
@@ -441,6 +539,13 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns the hash code of this Criteria, based on its select modifier and conditions list.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria c1 = Criteria.builder().where(Filters.eq("a", 1)).build();
+     * Criteria c2 = Criteria.builder().where(Filters.eq("a", 1)).build();
+     * c1.hashCode() == c2.hashCode();   // returns true (equal criteria share a hash code)
+     * }</pre>
+     *
      * @return hash code based on the select modifier and the ordered conditions list
      */
     @Override
@@ -467,6 +572,16 @@ public class Criteria extends AbstractCondition {
      * Two {@code Criteria} instances are equal if they have the same select modifier
      * and the same ordered list of conditions.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria c1 = Criteria.builder().where(Filters.eq("a", 1)).build();
+     * Criteria c2 = Criteria.builder().where(Filters.eq("a", 1)).build();
+     * c1.equals(c2);               // returns true
+     * c1.equals(c1);               // returns true (reflexive)
+     * c1.equals(null);             // returns false
+     * c1.equals("not a Criteria"); // returns false
+     * }</pre>
+     *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
      */
@@ -492,6 +607,13 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Creates a new {@link Builder} pre-populated with this criteria's select modifier and conditions.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Criteria original = Criteria.builder().distinct().where(Filters.eq("a", 1)).build();
+     * Criteria copy = original.toBuilder().build();
+     * copy.equals(original);   // returns true (a faithful copy)
+     * }</pre>
      *
      * @return a new mutable Builder initialized from this criteria
      */
@@ -555,10 +677,12 @@ public class Criteria extends AbstractCondition {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria c = Criteria.builder()
          *     .distinct()
          *     .where(Filters.equal("status", "active"))
          *     .build();
+         * c.getSelectModifier();                 // returns "DISTINCT"
+         * c.toString(NamingPolicy.NO_CHANGE);    // returns " DISTINCT WHERE status = 'active'"
          * // Combined with a SqlBuilder SELECT, renders: SELECT DISTINCT ... WHERE status = 'active'
          * }</pre>
          *
@@ -579,13 +703,14 @@ public class Criteria extends AbstractCondition {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .distinctBy("department, location");
-         * // Results in: SELECT DISTINCT(department, location) ...
+         * Criteria.builder().distinctBy("department, location").build().getSelectModifier();
+         * // returns "DISTINCT(department, location)"
          *
-         * // Or with a single column
-         * builder.distinctBy("city");
-         * // Results in: SELECT DISTINCT(city) ...
+         * Criteria.builder().distinctBy("city").build().getSelectModifier();   // returns "DISTINCT(city)"
+         *
+         * // null or empty falls back to a plain DISTINCT (no parentheses).
+         * Criteria.builder().distinctBy(null).build().getSelectModifier();     // returns "DISTINCT"
+         * Criteria.builder().distinctBy("").build().getSelectModifier();       // returns "DISTINCT"
          * }</pre>
          *
          * @param columnNames the columns to apply DISTINCT to; if {@code null} or empty, plain {@code DISTINCT} is used
@@ -603,13 +728,14 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria c = Criteria.builder()
          *     .distinctRow()
          *     .where(Filters.equal("active", true))
          *     .build();
-         * // Results in: SELECT DISTINCTROW ... WHERE active = true
+         * c.getSelectModifier();   // returns "DISTINCTROW"
+         * // Combined with a SqlBuilder SELECT, renders: SELECT DISTINCTROW ... WHERE active = true
          * }</pre>
-         * 
+         *
          * @return this Builder instance for method chaining
          */
         public Builder distinctRow() {
@@ -625,9 +751,11 @@ public class Criteria extends AbstractCondition {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .distinctRowBy("category, subcategory");
-         * // Results in: SELECT DISTINCTROW(category, subcategory) ...
+         * Criteria.builder().distinctRowBy("category, subcategory").build().getSelectModifier();
+         * // returns "DISTINCTROW(category, subcategory)"
+         *
+         * // null or empty falls back to a plain DISTINCTROW (no parentheses).
+         * Criteria.builder().distinctRowBy(null).build().getSelectModifier();   // returns "DISTINCTROW"
          * }</pre>
          *
          * @param columnNames the columns to apply DISTINCTROW to; if {@code null} or empty, plain {@code DISTINCTROW} is used
@@ -645,13 +773,11 @@ public class Criteria extends AbstractCondition {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .selectModifier("SQL_CALC_FOUND_ROWS")
-         *     .where(Filters.equal("active", true));
-         * // Results in: SELECT SQL_CALC_FOUND_ROWS ... WHERE active = true
+         * Criteria.builder().selectModifier("SQL_CALC_FOUND_ROWS").build().getSelectModifier();
+         * // returns "SQL_CALC_FOUND_ROWS"
          *
-         * // MySQL-specific modifier
-         * builder.selectModifier("SQL_NO_CACHE");
+         * // The value is stored verbatim; passing null clears any previously set modifier.
+         * Criteria.builder().selectModifier(null).build().getSelectModifier();   // returns null
          * }</pre>
          *
          * @param selectModifier the custom SELECT modifier
@@ -669,13 +795,19 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
+         * Criteria c = Criteria.builder()
          *     .join(
          *         new LeftJoin("orders", new On("users.id", "orders.user_id")),
          *         new InnerJoin("products", new On("orders.product_id", "products.id"))
-         *     );
+         *     )
+         *     .build();
+         * c.getJoins().size();   // returns 2
+         *
+         * // Passing no joins is a no-op.
+         * Criteria empty = Criteria.builder().join(new Join[0]).build();
+         * empty.getJoins();      // returns [] (empty list)
          * }</pre>
-         * 
+         *
          * @param joins the JOIN clauses to add
          * @return this Builder instance for method chaining
          */
@@ -691,12 +823,17 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<Join> joins = Arrays.asList(
-         *     new LeftJoin("orders", condition1),
-         *     new RightJoin("payments", condition2)
+         *     new LeftJoin("orders", new On("users.id", "orders.user_id")),
+         *     new RightJoin("payments", new On("orders.id", "payments.order_id"))
          * );
-         * Criteria.Builder builder = Criteria.builder().join(joins);
+         * Criteria c = Criteria.builder().join(joins).build();
+         * c.getJoins().size();   // returns 2
+         *
+         * // An empty collection is a no-op.
+         * Criteria empty = Criteria.builder().join(new ArrayList<Join>()).build();
+         * empty.getJoins();      // returns [] (empty list)
          * }</pre>
-         * 
+         *
          * @param joins the collection of JOIN clauses to add
          * @return this Builder instance for method chaining
          */
@@ -751,12 +888,19 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a plain JOIN (no explicit type keyword) with multiple entities and a condition to this criteria.
+         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Collection<String> tables = Arrays.asList("orders", "order_items");
-         * Criteria.Builder builder = Criteria.builder()
-         *     .join(tables, new On("id", "order_id"));
+         * Criteria c = Criteria.builder()
+         *     .join(tables, new On("id", "order_id"))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " JOIN (orders, order_items) ON id = order_id"
+         *
+         * // A single-element collection is rendered without parentheses.
+         * Criteria c2 = Criteria.builder().join(Arrays.asList("orders"), new On("a", "b")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " JOIN orders ON a = b"
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
@@ -772,11 +916,16 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds an INNER JOIN to this criteria.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
+         * Criteria c = Criteria.builder()
          *     .innerJoin("orders")
          *     .where(Filters.expr("users.id = orders.user_id"))
          *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders WHERE users.id = orders.user_id"
+         *
+         * Criteria bare = Criteria.builder().innerJoin("orders").build();
+         * bare.toString(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -791,9 +940,16 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds an INNER JOIN with a condition to this criteria.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .innerJoin("orders", Filters.on("users.id", "orders.user_id"));
+         * Criteria c = Criteria.builder()
+         *     .innerJoin("orders", Filters.on("users.id", "orders.user_id"))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders ON users.id = orders.user_id"
+         *
+         * // The ON value is treated as a property reference, so it is rendered unquoted.
+         * Criteria c2 = Criteria.builder().innerJoin("orders", Filters.on("a", "b")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders ON a = b"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -808,10 +964,18 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds an INNER JOIN with multiple entities and a condition.
+         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .innerJoin(Arrays.asList("orders", "order_items"), Filters.on("id", "order_id"));
+         * Criteria c = Criteria.builder()
+         *     .innerJoin(Arrays.asList("orders", "order_items"), Filters.on("id", "order_id"))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN (orders, order_items) ON id = order_id"
+         *
+         * // A single-element collection is rendered without parentheses.
+         * Criteria c2 = Criteria.builder().innerJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders ON a = b"
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
@@ -827,9 +991,13 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a LEFT JOIN to this criteria.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .leftJoin("orders");
+         * Criteria c = Criteria.builder().leftJoin("orders").build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders"
+         *
+         * Criteria c2 = Criteria.builder().leftJoin("orders").where(Filters.eq("a", 1)).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders WHERE a = 1"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -844,9 +1012,15 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a LEFT JOIN with a condition to this criteria.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .leftJoin("orders", Filters.on("users.id", "orders.user_id"));
+         * Criteria c = Criteria.builder()
+         *     .leftJoin("orders", Filters.on("users.id", "orders.user_id"))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders ON users.id = orders.user_id"
+         *
+         * Criteria c2 = Criteria.builder().leftJoin("orders", Filters.on("a", "b")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders ON a = b"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -861,6 +1035,19 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a LEFT JOIN with multiple entities and a condition.
+         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria c = Criteria.builder()
+         *     .leftJoin(Arrays.asList("orders", "items"), Filters.on("a", "b"))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN (orders, items) ON a = b"
+         *
+         * // A single-element collection is rendered without parentheses.
+         * Criteria c2 = Criteria.builder().leftJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders ON a = b"
+         * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
@@ -875,9 +1062,13 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a RIGHT JOIN to this criteria.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .rightJoin("orders");
+         * Criteria c = Criteria.builder().rightJoin("orders").build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders"
+         *
+         * Criteria c2 = Criteria.builder().rightJoin("orders").where(Filters.eq("a", 1)).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders WHERE a = 1"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -892,9 +1083,15 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a RIGHT JOIN with a condition to this criteria.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .rightJoin("orders", Filters.on("users.id", "orders.user_id"));
+         * Criteria c = Criteria.builder()
+         *     .rightJoin("orders", Filters.on("users.id", "orders.user_id"))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders ON users.id = orders.user_id"
+         *
+         * Criteria c2 = Criteria.builder().rightJoin("orders", Filters.on("a", "b")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders ON a = b"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -909,6 +1106,19 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a RIGHT JOIN with multiple entities and a condition.
+         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria c = Criteria.builder()
+         *     .rightJoin(Arrays.asList("orders", "items"), Filters.on("a", "b"))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN (orders, items) ON a = b"
+         *
+         * // A single-element collection is rendered without parentheses.
+         * Criteria c2 = Criteria.builder().rightJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders ON a = b"
+         * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
@@ -923,9 +1133,13 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a FULL JOIN to this criteria.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .fullJoin("orders");
+         * Criteria c = Criteria.builder().fullJoin("orders").build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders"
+         *
+         * Criteria c2 = Criteria.builder().fullJoin("orders").where(Filters.eq("a", 1)).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders WHERE a = 1"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -940,9 +1154,15 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a FULL JOIN with a condition to this criteria.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .fullJoin("orders", Filters.on("users.id", "orders.user_id"));
+         * Criteria c = Criteria.builder()
+         *     .fullJoin("orders", Filters.on("users.id", "orders.user_id"))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders ON users.id = orders.user_id"
+         *
+         * Criteria c2 = Criteria.builder().fullJoin("orders", Filters.on("a", "b")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders ON a = b"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -957,6 +1177,19 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a FULL JOIN with multiple entities and a condition.
+         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria c = Criteria.builder()
+         *     .fullJoin(Arrays.asList("orders", "items"), Filters.on("a", "b"))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN (orders, items) ON a = b"
+         *
+         * // A single-element collection is rendered without parentheses.
+         * Criteria c2 = Criteria.builder().fullJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders ON a = b"
+         * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
@@ -971,9 +1204,13 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a CROSS JOIN to this criteria.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .crossJoin("colors");
+         * Criteria c = Criteria.builder().crossJoin("colors").build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors"
+         *
+         * Criteria c2 = Criteria.builder().crossJoin("colors").where(Filters.eq("a", 1)).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors WHERE a = 1"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -988,9 +1225,17 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a CROSS JOIN with a condition to this criteria.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .crossJoin("colors", Filters.eq("active", true));
+         * // A non-clause condition (e.g. Equal) renders directly after the entity, with no ON keyword.
+         * Criteria c = Criteria.builder()
+         *     .crossJoin("colors", Filters.eq("active", true))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors active = true"
+         *
+         * // An On condition renders with the ON keyword.
+         * Criteria c2 = Criteria.builder().crossJoin("colors", Filters.on("a", "b")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors ON a = b"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -1005,6 +1250,19 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a CROSS JOIN with multiple entities and a condition.
+         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria c = Criteria.builder()
+         *     .crossJoin(Arrays.asList("a", "b"), Filters.on("x", "y"))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN (a, b) ON x = y"
+         *
+         * // A single-element collection is rendered without parentheses.
+         * Criteria c2 = Criteria.builder().crossJoin(Arrays.asList("a"), Filters.on("x", "y")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN a ON x = y"
+         * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
@@ -1019,9 +1277,13 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a NATURAL JOIN to this criteria.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .naturalJoin("employees");
+         * Criteria c = Criteria.builder().naturalJoin("employees").build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees"
+         *
+         * Criteria c2 = Criteria.builder().naturalJoin("employees").where(Filters.eq("a", 1)).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees WHERE a = 1"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -1036,9 +1298,17 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a NATURAL JOIN with a condition to this criteria.
          *
+         * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .naturalJoin("employees", Filters.eq("status", "active"));
+         * // On's second argument is treated as a property reference, so it renders unquoted.
+         * Criteria c = Criteria.builder()
+         *     .naturalJoin("employees", Filters.on("status", "active"))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees ON status = active"
+         *
+         * // A non-clause condition (e.g. Equal) renders directly after the entity, with no ON keyword.
+         * Criteria c2 = Criteria.builder().naturalJoin("employees", Filters.eq("status", "active")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees status = 'active'"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -1053,6 +1323,19 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a NATURAL JOIN with multiple entities and a condition.
+         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria c = Criteria.builder()
+         *     .naturalJoin(Arrays.asList("a", "b"), Filters.on("x", "y"))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN (a, b) ON x = y"
+         *
+         * // A single-element collection is rendered without parentheses.
+         * Criteria c2 = Criteria.builder().naturalJoin(Arrays.asList("a"), Filters.on("x", "y")).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN a ON x = y"
+         * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
@@ -1070,14 +1353,16 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .where(Filters.and(
-         *         Filters.equal("status", "active"),
-         *         Filters.greaterThan("age", 18),
-         *         Filters.like("email", "%@company.com")
-         *     ));
+         * Criteria c = Criteria.builder()
+         *     .where(Filters.and(Filters.equal("status", "active"), Filters.greaterThan("age", 18)))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " WHERE ((status = 'active') AND (age > 18))"
+         *
+         * // Edge cases:
+         * Criteria.builder().where((Condition) null);   // throws IllegalArgumentException
+         * Criteria.builder().where(new GroupBy("x"));   // throws IllegalArgumentException (wrong clause)
          * }</pre>
-         * 
+         *
          * @param cond the WHERE condition (must not be {@code null}); if its operator is already
          *             {@link Operator#WHERE} it is added directly, otherwise it is wrapped in a {@link Where}
          * @return this Builder instance for method chaining
@@ -1108,13 +1393,14 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .where("age > 18 AND status = 'active'");
+         * Criteria c = Criteria.builder().where("age > 18 AND status = 'active'").build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " WHERE age > 18 AND status = 'active'"
          *
-         * // Complex expression
-         * builder.where("YEAR(created_date) = 2024 OR special_flag = true");
+         * // Edge cases:
+         * Criteria.builder().where((String) null);   // throws IllegalArgumentException
+         * Criteria.builder().where("");              // throws IllegalArgumentException
          * }</pre>
-         * 
+         *
          * @param expr the WHERE condition as a string (must not be {@code null} or empty)
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
@@ -1133,10 +1419,12 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .groupBy(Filters.expr("YEAR(order_date), MONTH(order_date)"));
+         * Criteria c = Criteria.builder().groupBy(Filters.expr("YEAR(order_date)")).build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " GROUP BY YEAR(order_date)"
+         *
+         * Criteria.builder().groupBy((Condition) null);   // throws IllegalArgumentException
          * }</pre>
-         * 
+         *
          * @param cond the GROUP BY condition (must not be {@code null}); if its operator is already
          *             {@link Operator#GROUP_BY} it is added directly, otherwise it is wrapped in a {@link GroupBy}
          * @return this Builder instance for method chaining
@@ -1259,9 +1547,10 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> groupCols = Arrays.asList("region", "product_type");
-         * Criteria.Builder builder = Criteria.builder()
-         *     .groupBy(groupCols);
-         * // Results in: GROUP BY region, product_type
+         * Criteria c = Criteria.builder().groupBy(groupCols).build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " GROUP BY region, product_type"
+         *
+         * Criteria.builder().groupBy((Collection<String>) null);   // throws IllegalArgumentException
          * }</pre>
          *
          * @param propNames the collection of property names to group by
@@ -1333,14 +1622,16 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
+         * Criteria c = Criteria.builder()
          *     .groupBy("department")
-         *     .having(Filters.and(
-         *         Filters.greaterThan("COUNT(*)", 10),
-         *         Filters.lessThan("AVG(salary)", 100000)
-         *     ));
+         *     .having(Filters.and(Filters.greaterThan("COUNT(*)", 10), Filters.lessThan("AVG(salary)", 100000)))
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);
+         * // returns " GROUP BY department HAVING ((COUNT(*) > 10) AND (AVG(salary) < 100000))"
+         *
+         * Criteria.builder().having((Condition) null);   // throws IllegalArgumentException
          * }</pre>
-         * 
+         *
          * @param cond the HAVING condition (must not be {@code null}); if its operator is already
          *             {@link Operator#HAVING} it is added directly, otherwise it is wrapped in a {@link Having}
          * @return this Builder instance for method chaining
@@ -1371,11 +1662,16 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
+         * Criteria c = Criteria.builder()
          *     .groupBy("product_category")
-         *     .having("SUM(revenue) > 10000 AND COUNT(*) > 5");
+         *     .having("SUM(revenue) > 10000 AND COUNT(*) > 5")
+         *     .build();
+         * c.toString(NamingPolicy.NO_CHANGE);
+         * // returns " GROUP BY product_category HAVING SUM(revenue) > 10000 AND COUNT(*) > 5"
+         *
+         * Criteria.builder().having("");   // throws IllegalArgumentException
          * }</pre>
-         * 
+         *
          * @param expr the HAVING condition as a string (must not be {@code null} or empty)
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
@@ -1478,11 +1774,12 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * // Complex ordering expression
-         * Criteria.Builder builder = Criteria.builder()
-         *     .orderBy(Filters.expr("CASE WHEN priority = 'HIGH' THEN 1 ELSE 2 END, created_date DESC"));
+         * Criteria c = Criteria.builder().orderBy(Filters.expr("created_date DESC")).build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " ORDER BY created_date DESC"
+         *
+         * Criteria.builder().orderBy((Condition) null);   // throws IllegalArgumentException
          * }</pre>
-         * 
+         *
          * @param cond the ORDER BY condition (must not be {@code null}); if its operator is already
          *             {@link Operator#ORDER_BY} it is added directly, otherwise it is wrapped in an {@link OrderBy}
          * @return this Builder instance for method chaining
@@ -1607,9 +1904,10 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> sortCols = Arrays.asList("country", "state", "city");
-         * Criteria.Builder builder = Criteria.builder()
-         *     .orderBy(sortCols);
-         * // Results in: ORDER BY country, state, city
+         * Criteria c = Criteria.builder().orderBy(sortCols).build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " ORDER BY country, state, city"
+         *
+         * Criteria.builder().orderBy((Collection<String>) null);   // throws IllegalArgumentException
          * }</pre>
          *
          * @param propNames the collection of property names to order by
@@ -1680,9 +1978,10 @@ public class Criteria extends AbstractCondition {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Limit customLimit = Filters.limit(100);
-         * Criteria.Builder builder = Criteria.builder()
-         *     .limit(customLimit);
+         * Criteria c = Criteria.builder().limit(Filters.limit(100)).build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " LIMIT 100"
+         *
+         * Criteria.builder().limit((Limit) null);   // throws IllegalArgumentException
          * }</pre>
          *
          * @param condition the LIMIT condition (must not be {@code null}); its operator must be
@@ -1751,13 +2050,14 @@ public class Criteria extends AbstractCondition {
          * 
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.Builder builder = Criteria.builder()
-         *     .limit("10 OFFSET 20");
+         * Criteria c = Criteria.builder().limit("10 OFFSET 20").build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " LIMIT 10 OFFSET 20"
          *
-         * // Or with parameters
-         * builder.limit("? OFFSET ?");
+         * // Placeholder form for parameterized queries.
+         * Criteria c2 = Criteria.builder().limit("? OFFSET ?").build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " LIMIT ? OFFSET ?"
          * }</pre>
-         * 
+         *
          * @param expr the LIMIT expression as a string
          * @return this Builder instance for method chaining
          */
@@ -1774,13 +2074,17 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery archivedUsers = Filters.subQuery("SELECT * FROM archived_users WHERE active = true");
-         * Criteria criteria = Criteria.builder()
+         * Criteria c = Criteria.builder()
          *     .where(Filters.equal("status", "active"))
          *     .union(archivedUsers)
          *     .build();
-         * // Returns active users from both current and archived tables
+         * c.toString(NamingPolicy.NO_CHANGE);
+         * // returns " WHERE status = 'active' UNION SELECT * FROM archived_users WHERE active = true"
+         *
+         * // Multiple set operations accumulate in order.
+         * c.getSetOperations().size();   // returns 1
          * }</pre>
-         * 
+         *
          * @param subQuery the subquery to union with
          * @return this Builder instance for method chaining
          */
@@ -1797,13 +2101,14 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery pendingOrders = Filters.subQuery("SELECT * FROM pending_orders");
-         * Criteria criteria = Criteria.builder()
+         * Criteria c = Criteria.builder()
          *     .where(Filters.equal("status", "completed"))
          *     .unionAll(pendingOrders)
          *     .build();
-         * // Returns all orders, including duplicates if any exist
+         * c.toString(NamingPolicy.NO_CHANGE);
+         * // returns " WHERE status = 'completed' UNION ALL SELECT * FROM pending_orders"
          * }</pre>
-         * 
+         *
          * @param subQuery the subquery to union with
          * @return this Builder instance for method chaining
          */
@@ -1820,13 +2125,14 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery premiumUsers = Filters.subQuery("SELECT user_id FROM premium_members");
-         * Criteria criteria = Criteria.builder()
+         * Criteria c = Criteria.builder()
          *     .where(Filters.equal("active", true))
          *     .intersect(premiumUsers)
          *     .build();
-         * // Returns only active users who are also premium members
+         * c.toString(NamingPolicy.NO_CHANGE);
+         * // returns " WHERE active = true INTERSECT SELECT user_id FROM premium_members"
          * }</pre>
-         * 
+         *
          * @param subQuery the subquery to intersect with
          * @return this Builder instance for method chaining
          */
@@ -1843,13 +2149,14 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery excludedUsers = Filters.subQuery("SELECT user_id FROM blacklist");
-         * Criteria criteria = Criteria.builder()
+         * Criteria c = Criteria.builder()
          *     .where(Filters.equal("status", "active"))
          *     .except(excludedUsers)
          *     .build();
-         * // Returns active users who are not in the blacklist
+         * c.toString(NamingPolicy.NO_CHANGE);
+         * // returns " WHERE status = 'active' EXCEPT SELECT user_id FROM blacklist"
          * }</pre>
-         * 
+         *
          * @param subQuery the subquery to except
          * @return this Builder instance for method chaining
          */
@@ -1866,13 +2173,14 @@ public class Criteria extends AbstractCondition {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery inactiveUsers = Filters.subQuery("SELECT user_id FROM inactive_users");
-         * Criteria criteria = Criteria.builder()
+         * Criteria c = Criteria.builder()
          *     .where(Filters.equal("registered", true))
          *     .minus(inactiveUsers)
          *     .build();
-         * // Returns registered users minus inactive ones
+         * c.toString(NamingPolicy.NO_CHANGE);
+         * // returns " WHERE registered = true MINUS SELECT user_id FROM inactive_users"
          * }</pre>
-         * 
+         *
          * @param subQuery the subquery to minus
          * @return this Builder instance for method chaining
          */

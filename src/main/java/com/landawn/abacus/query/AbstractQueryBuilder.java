@@ -1320,8 +1320,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.select("*").from("users", "orders").build().query();
-     * // Output: SELECT * FROM users, orders
+     * String sql = PSC.select("*").from("users", "orders", "items").build().query();
+     * // Output: SELECT * FROM users, orders, items
      * }</pre>
      *
      * @param tableNames the table names to use in the FROM clause (must not be {@code null} or empty, and no element may be {@code null} or empty)
@@ -2586,7 +2586,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .groupBy("category")
      *                 .having("COUNT(*) > 10")
      *                 .build().query();
-     * // Output: SELECT category, COUNT(*) as count FROM products GROUP BY category HAVING COUNT(*) > 10
+     * // Output: SELECT category, COUNT(*) AS count FROM products GROUP BY category HAVING COUNT(*) > 10
      * }</pre>
      *
      * @param expr the HAVING condition expression (must not be {@code null}, empty, or blank)
@@ -2616,7 +2616,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .groupBy("category")
      *                 .having(Filters.greaterThan("COUNT(*)", 10))
      *                 .build().query();
-     * // Output: SELECT category, COUNT(*) as count FROM products GROUP BY category HAVING COUNT(*) > ?
+     * // Output: SELECT category, COUNT(*) AS count FROM products GROUP BY category HAVING COUNT(*) > ?
      * }</pre>
      *
      * @param cond the HAVING condition (must not be {@code null})

@@ -110,11 +110,11 @@ public final class QueryUtil {
      *
      * Tuple2<String, Boolean> result = propMap.get("firstName");
      * String columnName = result._1;  // "first_name"
-     * boolean isSimple = result._2;  // true (no dots in property name)
+     * boolean isSimple = result._2;   // true (no dots in property name)
      *
      * // Nested property example
      * Tuple2<String, Boolean> nested = propMap.get("address.street");
-     * String nestedColumn = nested._1;  // "<sub-table-alias-or-name>.street" (e.g. "addr.street")
+     * String nestedColumn = nested._1;     // "<sub-table-alias-or-name>.street" (e.g. "addr.street")
      * boolean isNestedSimple = nested._2;  // false (key contains a dot)
      * }</pre>
      *
@@ -525,7 +525,9 @@ public final class QueryUtil {
 
     /**
      * Gets the property names to be used for UPDATE operations on the given entity class.
-     * This method excludes properties marked as non-updatable, which typically includes ID fields.
+     * This method excludes properties marked as non-updatable. Note that a plain read-write
+     * {@code @Id} property is <i>not</i> excluded; only {@code @ReadOnly}/{@code @ReadOnlyId}
+     * (read-only) id properties are.
      *
      * <p>Properties are considered non-updatable if they are:</p>
      * <ul>
@@ -538,14 +540,13 @@ public final class QueryUtil {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Get all updatable property names (excludes ID fields automatically)
-     * Collection<String> updateProps = QueryUtil.getUpdatePropNames(User.class, null);
-     * // Returns: ["name", "email", "status", ...] (excludes "id")
+     * // Account declares a plain read-write @Id "id", so it remains updatable.
+     * Collection<String> updateProps = QueryUtil.getUpdatePropNames(Account.class, null);
+     * // returns ["id", "gui", "emailAddress", "firstName", ...] (a plain @Id is NOT excluded)
      *
-     * // Exclude additional properties
-     * Set<String> excluded = N.asSet("createdDate");
-     * Collection<String> filteredProps = QueryUtil.getUpdatePropNames(User.class, excluded);
-     * // Returns: ["name", "email", "status", ...] (excludes "id" and "createdDate")
+     * // Exclude additional properties explicitly.
+     * Collection<String> filteredProps = QueryUtil.getUpdatePropNames(Account.class, N.asSet("createTime"));
+     * // returns the same list without "createTime"
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be {@code null})

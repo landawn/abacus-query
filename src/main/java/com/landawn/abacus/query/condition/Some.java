@@ -73,12 +73,19 @@ public class Some extends ComposableCell {
      * particularly useful for finding records that exceed minimum thresholds or fall
      * below maximum limits from a dynamic set of values.</p>
      *
-     * <p><b>Usage Example:</b></p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery deptBudgets = Filters.subQuery("SELECT budget FROM departments");
      * Some someCondition = new Some(deptBudgets);
-     * // Used with: WHERE project_cost < SOME (SELECT budget FROM departments)
+     * someCondition.toString();
+     * // returns "SOME (SELECT budget FROM departments)"
+     * // Typically used as the right-hand value of a comparison, e.g.:
+     * //   WHERE project_cost < SOME (SELECT budget FROM departments)
      * // Matches projects that cost less than at least one department's budget.
+     *
+     * // A null subquery is rejected
+     * Some bad = new Some((SubQuery) null);
+     * // throws IllegalArgumentException
      * }</pre>
      *
      * @param subQuery the subquery that returns values to compare against (must not be {@code null})
@@ -90,6 +97,20 @@ public class Some extends ComposableCell {
 
     /**
      * Gets the subquery wrapped by this SOME condition.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Retrieve the wrapped subquery
+     * SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE role = 'manager'");
+     * Some some = new Some(subQuery);
+     * SubQuery retrieved = some.getSubQuery();
+     * // returns the same SubQuery instance that was supplied
+     * // retrieved == subQuery -> true
+     *
+     * // The wrapped subquery is also what getCondition() returns
+     * boolean sameAsCondition = some.getSubQuery() == some.getCondition();
+     * // returns true
+     * }</pre>
      *
      * @return the {@link SubQuery} supplied to this condition
      */

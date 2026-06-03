@@ -487,6 +487,14 @@ public final class ParsedSql {
      * Returns the hash code value for this {@code ParsedSql}.
      * The hash code is based on the trimmed original SQL string returned by {@link #originalSql()}.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql a = ParsedSql.parse("SELECT * FROM users WHERE id = :id");
+     * ParsedSql b = ParsedSql.parse("  SELECT * FROM users WHERE id = :id  ");
+     * // Both trim to the same original SQL, so their hash codes match
+     * boolean sameHash = a.hashCode() == b.hashCode();   // true
+     * }</pre>
+     *
      * @return the hash code value
      */
     @Override
@@ -498,6 +506,17 @@ public final class ParsedSql {
      * Indicates whether some other object is "equal to" this one.
      * Two {@code ParsedSql} objects are equal if their trimmed original SQL strings
      * (as returned by {@link #originalSql()}) are equal.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql a = ParsedSql.parse("SELECT * FROM users WHERE id = :id");
+     * ParsedSql b = ParsedSql.parse("  SELECT * FROM users WHERE id = :id  ");
+     * ParsedSql c = ParsedSql.parse("SELECT * FROM users WHERE id = :otherId");
+     *
+     * boolean eq = a.equals(b);                    // true (same trimmed original SQL)
+     * boolean ne = a.equals(c);                    // false (different parameter name)
+     * boolean notString = a.equals("SELECT ...");  // false (not a ParsedSql)
+     * }</pre>
      *
      * @param obj the reference object with which to compare
      * @return {@code true} if this object equals the obj argument; {@code false} otherwise
@@ -518,6 +537,13 @@ public final class ParsedSql {
     /**
      * Returns a string representation of this {@code ParsedSql}.
      * The string contains both the original SQL and the parameterized SQL.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :id");
+     * String s = parsed.toString();
+     * // "{sql=SELECT * FROM users WHERE id = :id, parameterizedSql=SELECT * FROM users WHERE id = ?}"
+     * }</pre>
      *
      * @return a string representation of this object
      */

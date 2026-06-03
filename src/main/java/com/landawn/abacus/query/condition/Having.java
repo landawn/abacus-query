@@ -40,39 +40,35 @@ package com.landawn.abacus.query.condition;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find departments with more than 5 employees
- * Having moreThan5 = new Having(CF.greaterThan("COUNT(*)", 5));
+ * Having moreThan5 = new Having(Filters.greaterThan("COUNT(*)", 5));
  * // SQL: HAVING COUNT(*) > 5
  *
  * // Find categories with average price above 100
- * Having avgPriceHigh = new Having(CF.greaterThan("AVG(price)", 100));
+ * Having avgPriceHigh = new Having(Filters.greaterThan("AVG(price)", 100));
  * // SQL: HAVING AVG(price) > 100
  *
  * // Find customers with total orders over 10000
- * Having bigSpenders = new Having(CF.greaterThan("SUM(order_total)", 10000));
+ * Having bigSpenders = new Having(Filters.greaterThan("SUM(order_total)", 10000));
  * // SQL: HAVING SUM(order_total) > 10000
  *
  * // Complex HAVING with multiple conditions
  * Having complex = new Having(
- *     CF.and(
- *         CF.greaterThan("COUNT(*)", 10),
- *         CF.lessThan("AVG(age)", 40),
- *         CF.greaterThanOrEqual("SUM(revenue)", 50000)
+ *     Filters.and(
+ *         Filters.greaterThan("COUNT(*)", 10),
+ *         Filters.lessThan("AVG(age)", 40),
+ *         Filters.greaterThanOrEqual("SUM(revenue)", 50000)
  *     )
  * );
  * // SQL: HAVING ((COUNT(*) > 10) AND (AVG(age) < 40) AND (SUM(revenue) >= 50000))
  *
- * // Complete query example
- * SQLBuilder builder = PSC.select("department", "COUNT(*) as emp_count", "AVG(salary) as avg_salary")
- *     .from("employees")
- *     .groupBy("department")
- *     .having(CF.and(
- *         CF.greaterThan("COUNT(*)", 5),
- *         CF.greaterThan("AVG(salary)", 50000)
- *     ));
- * // SQL: SELECT department, COUNT(*) as emp_count, AVG(salary) as avg_salary
- * //      FROM employees
- * //      GROUP BY department
- * //      HAVING ((COUNT(*) > 5) AND (AVG(salary) > 50000))
+ * // Combine GROUP BY and HAVING conditions for a grouped-aggregate query
+ * GroupBy groupBy = new GroupBy("department");
+ * // SQL: GROUP BY department
+ * Having having = new Having(Filters.and(
+ *     Filters.greaterThan("COUNT(*)", 5),
+ *     Filters.greaterThan("AVG(salary)", 50000)
+ * ));
+ * // SQL: HAVING ((COUNT(*) > 5) AND (AVG(salary) > 50000))
  * }</pre>
  *
  * @see Clause
@@ -103,32 +99,32 @@ public class Having extends Clause {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Filter groups where the sum of sales exceeds 10000
-     * Having highSales = new Having(CF.greaterThan("SUM(sales)", 10000));
+     * Having highSales = new Having(Filters.greaterThan("SUM(sales)", 10000));
      * // SQL: HAVING SUM(sales) > 10000
      *
      * // Filter groups with at least 3 members
-     * Having minCount = new Having(CF.greaterThanOrEqual("COUNT(*)", 3));
+     * Having minCount = new Having(Filters.greaterThanOrEqual("COUNT(*)", 3));
      * // SQL: HAVING COUNT(*) >= 3
      *
      * // Filter groups with average value in range
      * Having avgRange = new Having(
-     *     CF.and(
-     *         CF.greaterThanOrEqual("AVG(score)", 60),
-     *         CF.lessThanOrEqual("AVG(score)", 90)
+     *     Filters.and(
+     *         Filters.greaterThanOrEqual("AVG(score)", 60),
+     *         Filters.lessThanOrEqual("AVG(score)", 90)
      *     )
      * );
      * // SQL: HAVING ((AVG(score) >= 60) AND (AVG(score) <= 90))
      *
      * // Filter groups with maximum value check
-     * Having maxCheck = new Having(CF.lessThan("MAX(temperature)", 100));
+     * Having maxCheck = new Having(Filters.lessThan("MAX(temperature)", 100));
      * // SQL: HAVING MAX(temperature) < 100
      *
      * // Multiple aggregate conditions
      * Having multipleAggs = new Having(
-     *     CF.and(
-     *         CF.greaterThan("COUNT(DISTINCT customer_id)", 10),
-     *         CF.greaterThanOrEqual("SUM(amount)", 5000),
-     *         CF.between("AVG(rating)", 3.0, 5.0)
+     *     Filters.and(
+     *         Filters.greaterThan("COUNT(DISTINCT customer_id)", 10),
+     *         Filters.greaterThanOrEqual("SUM(amount)", 5000),
+     *         Filters.between("AVG(rating)", 3.0, 5.0)
      *     )
      * );
      * // SQL: HAVING ((COUNT(DISTINCT customer_id) > 10)

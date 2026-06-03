@@ -66,6 +66,21 @@ public abstract class ComposableCell extends ComposableCondition {
      * <p>This constructor is typically invoked by subclass constructors such as
      * {@link Not}, {@link Exists}, {@link NotExists}, {@link All}, {@link Any}, and {@link Some}.</p>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Subclasses pass a fixed operator; the rendered form is "OPERATOR (condition)"
+     * ComposableCell not = new Not(Filters.eq("status", "active"));
+     * // not.toString() returns "NOT (status = 'active')"
+     *
+     * ComposableCell exists = new Exists(Filters.subQuery("SELECT id FROM orders"));
+     * // exists.toString() returns "EXISTS (SELECT id FROM orders)"
+     *
+     * // Edge: a null condition is rejected
+     * ComposableCell bad = new Not((Condition) null);   // throws IllegalArgumentException
+     *
+     * // Edge: an uninitialized instance (null operator) renders the literal "null" for the operator
+     * }</pre>
+     *
      * @param operator the operator to apply to the condition (must not be {@code null})
      * @param cond the condition to wrap (must not be {@code null})
      * @throws NullPointerException if {@code operator} is {@code null}
@@ -85,6 +100,15 @@ public abstract class ComposableCell extends ComposableCondition {
      * Condition eq = Filters.equal("status", "active");
      * Not notCond = new Not(eq);
      * Equal inner = (Equal) notCond.getCondition();
+     * // inner.toString() returns "status = 'active'"
+     *
+     * SubQuery sub = Filters.subQuery("SELECT id FROM orders");
+     * Exists exists = new Exists(sub);
+     * Condition c = exists.getCondition();
+     * // c == sub (the same wrapped SubQuery is returned)
+     *
+     * // Edge: the wrapped condition is returned as-is; an incompatible cast fails
+     * Like bad = (Like) notCond.getCondition();   // throws ClassCastException
      * }</pre>
      *
      * @return the wrapped condition; never {@code null} for instances created via the public
@@ -98,7 +122,22 @@ public abstract class ComposableCell extends ComposableCondition {
     /**
      * Gets the parameters from the wrapped condition.
      * This method delegates to the wrapped condition's getParameters method.
-     * 
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Not not = new Not(Filters.between("age", 18, 65));
+     * not.getParameters();          // returns [18, 65]
+     *
+     * Not single = new Not(Filters.eq("active", true));
+     * single.getParameters();       // returns [true]
+     *
+     * // Edge: a wrapped SubQuery with no bound parameters yields an empty list
+     * Exists exists = new Exists(Filters.subQuery("SELECT 1"));
+     * exists.getParameters();       // returns [] (empty, immutable)
+     *
+     * // Edge: the returned list reflects the wrapped condition only and is immutable
+     * }</pre>
+     *
      * @return an immutable list of parameters from the wrapped condition, or an empty immutable list if no condition is set
      */
     @Override
@@ -119,6 +158,22 @@ public abstract class ComposableCell extends ComposableCondition {
      * (the inner condition is always enclosed in parentheses).
      * If the operator is {@code null} (only possible for an uninitialized instance), the literal
      * {@code "null"} is rendered in place of the operator.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Not not = new Not(Filters.eq("status", "active"));
+     * not.toString(NamingPolicy.NO_CHANGE);   // returns "NOT (status = 'active')"
+     *
+     * Exists exists = new Exists(Filters.subQuery("SELECT 1"));
+     * exists.toString(NamingPolicy.NO_CHANGE); // returns "EXISTS (SELECT 1)"
+     *
+     * // Edge: naming policy rewrites property names in the wrapped condition
+     * Not w = new Not(Filters.eq("firstName", "John"));
+     * w.toString(NamingPolicy.SNAKE_CASE);    // returns "NOT (first_name = 'John')"
+     *
+     * // Edge: a null naming policy falls back to NO_CHANGE; an uninitialized
+     * // instance (null operator) renders the literal "null" for the operator
+     * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names within the wrapped condition;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
@@ -150,6 +205,17 @@ public abstract class ComposableCell extends ComposableCondition {
     /**
      * Returns the hash code of this ComposableCell, based on the operator and wrapped condition.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Not a = new Not(Filters.eq("status", "active"));
+     * Not b = new Not(Filters.eq("status", "active"));
+     * a.hashCode() == b.hashCode();   // true (same operator and condition)
+     *
+     * // Edge: a different wrapped condition produces a different hash code
+     * Not c = new Not(Filters.eq("status", "inactive"));
+     * a.hashCode() == c.hashCode();   // (typically) false
+     * }</pre>
+     *
      * @return hash code based on operator and wrapped condition
      */
     @Override
@@ -176,6 +242,25 @@ public abstract class ComposableCell extends ComposableCondition {
      * Two ComposableCells are equal if they are of the same runtime class and have the same
      * operator and wrapped condition. Different concrete subclasses of {@code ComposableCell}
      * are never equal, even when their operator and wrapped condition are equal.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Not a = new Not(Filters.eq("status", "active"));
+     * Not b = new Not(Filters.eq("status", "active"));
+     * a.equals(b);    // returns true
+     *
+     * // Edge: different wrapped condition -> not equal
+     * Not c = new Not(Filters.eq("status", "inactive"));
+     * a.equals(c);    // returns false
+     *
+     * // Edge: different concrete subclass -> never equal, even with equal operator/condition
+     * SubQuery sub = Filters.subQuery("SELECT 1");
+     * Exists exists = new Exists(sub);
+     * NotExists notExists = new NotExists(sub);
+     * exists.equals(notExists);   // returns false
+     *
+     * a.equals(null); // returns false
+     * }</pre>
      *
      * @param obj the object to compare with
      * @return {@code true} if the objects are equal, {@code false} otherwise
