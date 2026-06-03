@@ -277,7 +277,7 @@ public class Join extends AbstractCondition {
         super(operator);
 
         this.joinEntities = copyAndValidateJoinEntities(joinEntities);
-        this.condition = cond;
+        this.condition = validateJoinCondition(cond);
     }
 
     private static List<String> copyAndValidateJoinEntities(final Collection<String> joinEntities) {
@@ -291,6 +291,14 @@ public class Join extends AbstractCondition {
         }
 
         return copy;
+    }
+
+    private static Condition validateJoinCondition(final Condition cond) {
+        if (cond != null && (cond instanceof Criteria || isClause(cond))) {
+            throw new IllegalArgumentException("Join condition cannot be a SQL clause: " + cond.operator());
+        }
+
+        return cond;
     }
 
     /**
@@ -445,7 +453,13 @@ public class Join extends AbstractCondition {
 
         final String opStr = (op == null) ? Strings.NULL : op.toString();
         final String entityPart = entities.isEmpty() ? Strings.EMPTY : _SPACE + entities;
-        final String condPart = (condition == null) ? Strings.EMPTY : (_SPACE + condition.toString(namingPolicy));
+        String condPart = Strings.EMPTY;
+
+        if (condition != null) {
+            final String conditionString = condition.toString(namingPolicy);
+            condPart = _SPACE + (condition.operator() == Operator.ON || condition.operator() == Operator.USING ? conditionString
+                    : Operator.ON.toString() + _SPACE + conditionString);
+        }
 
         return opStr + entityPart + condPart;
     }

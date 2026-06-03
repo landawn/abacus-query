@@ -54,6 +54,11 @@ class And2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsClauseOperand() {
+        assertThrows(IllegalArgumentException.class, () -> new And(Filters.where(Filters.eq("a", 1))));
+    }
+
+    @Test
     public void testGetConditions() {
         Equal cond1 = new Equal("a", 1);
         Equal cond2 = new Equal("b", 2);

@@ -246,9 +246,7 @@ public class Junction extends ComposableCondition {
         }
 
         for (final Condition condition : conditions) {
-            if (condition == null) {
-                throw new IllegalArgumentException("Condition cannot be null");
-            }
+            validateConstructorOperand(condition);
         }
 
         Collections.addAll(this.conditions, conditions);
@@ -260,12 +258,22 @@ public class Junction extends ComposableCondition {
         }
 
         for (final Condition condition : conditions) {
-            if (condition == null) {
-                throw new IllegalArgumentException("Condition cannot be null");
-            }
+            validateConstructorOperand(condition);
         }
 
         this.conditions.addAll(conditions);
+    }
+
+    private static Condition validateConstructorOperand(final Condition condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("Condition cannot be null");
+        }
+
+        if (condition instanceof Criteria || isClause(condition.operator())) {
+            throw new IllegalArgumentException("Condition with operator '" + condition.operator() + "' cannot be used in a junction constructor");
+        }
+
+        return condition;
     }
 
     /**

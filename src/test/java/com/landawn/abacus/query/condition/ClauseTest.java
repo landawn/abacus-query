@@ -208,4 +208,10 @@ public class ClauseTest extends TestBase {
 
         Assertions.assertEquals(clause1.hashCode(), clause2.hashCode());
     }
+
+    @Test
+    public void testConstructorRejectsNestedClauses() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(new OrderBy("name")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Having(new Where(Filters.eq("a", 1))));
+    }
 }

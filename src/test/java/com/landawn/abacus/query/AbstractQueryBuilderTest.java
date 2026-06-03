@@ -1001,6 +1001,44 @@ class AbstractQueryBuilder2026BatchTest extends TestBase {
         }
     }
 
+    @com.landawn.abacus.annotation.Table(name = "composite_id_tbl")
+    public static class CompositeIdEntity {
+        @com.landawn.abacus.annotation.Id
+        private long tenantId;
+
+        @com.landawn.abacus.annotation.Id
+        private long localId;
+
+        private String name;
+
+        public long getTenantId() {
+            return tenantId;
+        }
+
+        public CompositeIdEntity setTenantId(long tenantId) {
+            this.tenantId = tenantId;
+            return this;
+        }
+
+        public long getLocalId() {
+            return localId;
+        }
+
+        public CompositeIdEntity setLocalId(long localId) {
+            this.localId = localId;
+            return this;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public CompositeIdEntity setName(String name) {
+            this.name = name;
+            return this;
+        }
+    }
+
     @Test
     public void testFix_insertEntity_doesNotSkipFractionalBigDecimalIdAsZero() {
         // BigDecimal("0.5").longValue() == 0 (truncation), so the buggy check would
@@ -1013,6 +1051,41 @@ class AbstractQueryBuilder2026BatchTest extends TestBase {
 
         assertTrue(sql.contains("my_name"), "my_name should be included: " + sql);
         assertTrue(sql.contains("my_key"), "Fractional BigDecimal id 0.5 must not be skipped as default: " + sql);
+    }
+
+    @Test
+    public void testFix_insertEntity_keepsDefaultCompositeIdPartWhenAnotherIdAssigned() {
+        CompositeIdEntity entity = new CompositeIdEntity();
+        entity.setTenantId(7);
+        entity.setLocalId(0);
+        entity.setName("Alice");
+
+        AbstractQueryBuilder.SP sp = SqlBuilder.PSC.insert(entity).into("composite_id_tbl").build();
+        String sql = sp.query();
+
+        assertTrue(sql.contains("tenant_id"), "assigned id should be included: " + sql);
+        assertTrue(sql.contains("local_id"), "default-valued composite id part should be included: " + sql);
+        assertTrue(sql.contains("name"), "regular non-null property should be included: " + sql);
+        assertEquals(Arrays.asList(7L, 0L, "Alice"), sp.parameters());
+    }
+
+    @Test
+    public void testFix_setColumnNamesNamedSqlDeduplicatesPlaceholders() {
+        AbstractQueryBuilder.SP sp = SqlBuilder.NSC.update("users").set("status").where(Filters.eq("status", "OLD")).build();
+
+        assertEquals("UPDATE users SET status = :status WHERE status = :status_2", sp.query());
+        assertEquals(Arrays.asList("OLD"), sp.parameters());
+    }
+
+    @Test
+    public void testFix_setColumnNamesIbatisSqlSanitizesAliasAndDeduplicatesPlaceholders() {
+        AbstractQueryBuilder.SP sp = SqlBuilder.MSC.update("users").set("u.firstName").where(Filters.eq("u.firstName", "John")).build();
+        String sql = sp.query();
+
+        assertTrue(sql.contains("#{firstName}"), "SET placeholder should be sanitized: " + sql);
+        assertTrue(sql.contains("#{firstName_2}"), "WHERE placeholder should be de-duplicated: " + sql);
+        assertFalse(sql.contains("#{u.firstName}"), "Raw dotted placeholder is invalid: " + sql);
+        assertEquals(Arrays.asList("John"), sp.parameters());
     }
 
     @Test
@@ -1153,11 +1226,13 @@ class AbstractQueryBuilder2026BatchTest extends TestBase {
         assertEquals("orderDate", AbstractQueryBuilder.sanitizeNamedParameterName("ord.orderDate"));
         // Multi-level prefixes collapse to the last segment.
         assertEquals("c", AbstractQueryBuilder.sanitizeNamedParameterName("a.b.c"));
+        // Function/expression names are reduced to legal placeholder identifiers.
+        assertEquals("COUNT", AbstractQueryBuilder.sanitizeNamedParameterName("COUNT(*)"));
+        assertEquals("COUNT", AbstractQueryBuilder.sanitizeNamedParameterName("COUNT(o.id)"));
         // Edge cases.
         assertEquals("", AbstractQueryBuilder.sanitizeNamedParameterName(""));
         assertEquals(null, AbstractQueryBuilder.sanitizeNamedParameterName(null));
-        // Trailing dot is treated as no usable suffix (returned unchanged).
-        assertEquals("ord.", AbstractQueryBuilder.sanitizeNamedParameterName("ord."));
+        assertEquals("ord", AbstractQueryBuilder.sanitizeNamedParameterName("ord."));
     }
 
     /**

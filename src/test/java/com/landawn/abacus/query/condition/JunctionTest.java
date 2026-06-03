@@ -56,6 +56,12 @@ class Junction2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsClauseOperands() {
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.where(Filters.eq("a", 1))));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, Arrays.asList(new OrderBy("name"))));
+    }
+
+    @Test
     public void testGetConditions() {
         Equal cond1 = Filters.eq("name", "John");
         LessThan cond2 = Filters.lt("price", 100);

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.landawn.abacus.query.SortDirection;
+import com.landawn.abacus.query.SqlParser;
 import com.landawn.abacus.util.ImmutableSet;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -73,7 +74,8 @@ public abstract class AbstractCondition implements Condition {
         set.add(Operator.HAVING);
         set.add(Operator.ORDER_BY);
         set.add(Operator.LIMIT);
-        // clauseOperators.add(Operator.FOR_UPDATE);
+        set.add(Operator.OFFSET);
+        set.add(Operator.FOR_UPDATE);
         // Notice: If there are several connection operators,
         // this is their order.
         set.add(Operator.UNION_ALL);
@@ -180,26 +182,30 @@ public abstract class AbstractCondition implements Condition {
      * @return {@code true} if the condition has a clause operator, {@code false} if null or not a clause
      */
     protected static boolean isClause(final Condition cond) {
-        //        if (cond == null) {
-        //            return false;
-        //        }
-        //
-        //        if (cond instanceof Expression) {
-        //            Expression exp = (Expression) cond;
-        //
-        //            if (N.isEmpty(exp.getLiteral())) {
-        //                return false;
-        //            } else {
-        //                SqlParser sqlParser = SqlParser.valueOf(exp.getLiteral());
-        //                String word = sqlParser.nextWord();
-        //
-        //                return isClause(word) || isClause(word + D._SPACE + sqlParser.nextWord());
-        //            }
-        //        } else {
-        //            return isClause(cond.operator());
-        //        }
+        if (cond == null) {
+            return false;
+        }
 
-        return cond != null && isClause(cond.operator());
+        if (cond instanceof Expression) {
+            final String literal = ((Expression) cond).getLiteral();
+
+            if (Strings.isEmpty(literal)) {
+                return false;
+            }
+
+            final String firstWord = SqlParser.nextWord(literal, 0);
+
+            if (isClause(firstWord)) {
+                return true;
+            }
+
+            final int secondWordStart = literal.indexOf(firstWord) + firstWord.length();
+            final String secondWord = SqlParser.nextWord(literal, secondWordStart);
+
+            return Strings.isNotEmpty(secondWord) && isClause(firstWord + SPACE + secondWord);
+        }
+
+        return isClause(cond.operator());
     }
 
     /**

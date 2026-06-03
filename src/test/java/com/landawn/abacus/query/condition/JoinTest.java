@@ -270,6 +270,20 @@ public class JoinTest extends TestBase {
     }
 
     @Test
+    public void testToStringAddsOnForPlainPredicateCondition() {
+        Join plainPredicate = new Join("orders", Filters.expr("customers.id = orders.customer_id"));
+        Join explicitOn = new Join("orders", Filters.on("customers.id", "orders.customer_id"));
+
+        Assertions.assertEquals("JOIN orders ON customers.id = orders.customer_id", plainPredicate.toString(NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("JOIN orders ON customers.id = orders.customer_id", explicitOn.toString(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testConstructorRejectsClauseCondition() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", Filters.where(Filters.eq("a", 1))));
+    }
+
+    @Test
     public void testToStringWithNamingPolicy() {
         Condition condition = Filters.eq("customerId", Filters.expr("orderId"));
         Join join = new Join("orderTable", condition);

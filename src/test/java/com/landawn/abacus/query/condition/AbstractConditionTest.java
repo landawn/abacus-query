@@ -306,6 +306,15 @@ public class AbstractConditionTest extends TestBase {
     }
 
     @Test
+    public void testOffsetAndForUpdateCannotBeComposedAsPredicates() {
+        TestCondition offset = new TestCondition(Operator.OFFSET, "10");
+        TestCondition forUpdate = new TestCondition(Operator.FOR_UPDATE, "");
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> offset.and(Filters.eq("id", 1)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> forUpdate.or(Filters.eq("id", 1)));
+    }
+
+    @Test
     public void testOr() {
         TestCondition cond1 = new TestCondition(Operator.GREATER_THAN, "10");
         TestCondition cond2 = new TestCondition(Operator.LESS_THAN, "5");

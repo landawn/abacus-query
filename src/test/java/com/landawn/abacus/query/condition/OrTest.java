@@ -53,6 +53,11 @@ class Or2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsClauseOperand() {
+        assertThrows(IllegalArgumentException.class, () -> new Or(new OrderBy("name")));
+    }
+
+    @Test
     public void testGetConditions() {
         Equal cond1 = new Equal("a", 1);
         Equal cond2 = new Equal("b", 2);

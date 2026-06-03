@@ -138,6 +138,13 @@ class SubQuery2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorDoesNotDoubleWrapWhereExpression() {
+        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.expr("WHERE active = true"));
+
+        assertEquals("SELECT id FROM users WHERE active = true", subQuery.toString(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
     public void testConstructorWithNullCondition() {
         String entityName = "users";
         Collection<String> props = Arrays.asList("id");

@@ -4262,7 +4262,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     if (columnName.indexOf('=') < 0) {
                         _sb.append(" = ");
 
-                        _handlerForNamedParameter.accept(_sb, columnName);
+                        _handlerForNamedParameter.accept(_sb, nextNamedParameterName(columnName));
                     }
                 }
 
@@ -4280,7 +4280,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     if (columnName.indexOf('=') < 0) {
                         _sb.append(" = #{");
-                        _sb.append(columnName);
+                        _sb.append(nextNamedParameterName(columnName));
                         _sb.append('}');
                     }
                 }
@@ -5201,10 +5201,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Generates the next unique named parameter name for the given property name.
-     * Any table-alias prefix (text up to and including the last {@code '.'}) is stripped
-     * so that names like {@code "u.id"} or {@code "ord.orderDate"} produce SQL-compatible
-     * placeholders (e.g. {@code :id}, {@code :orderDate}) rather than placeholders with
-     * embedded dots which most named-parameter parsers (Spring, MyBatis, etc.) reject.
+     * The source text is normalized so that names like {@code "u.id"}, {@code "ord.orderDate"},
+     * or {@code "COUNT(*)"} produce SQL-compatible placeholders (e.g. {@code :id},
+     * {@code :orderDate}, {@code :COUNT}) rather than placeholders with punctuation that most
+     * named-parameter parsers (Spring, MyBatis, etc.) reject.
      * On the first occurrence of a simple name, returns it as-is. On subsequent occurrences,
      * appends a numeric suffix (e.g., {@code "propName_2"}, {@code "propName_3"}).
      *
@@ -5218,10 +5218,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Strips any table-alias prefix from {@code propName} so the remaining text is a valid
-     * named-parameter identifier. {@code "u.id"} becomes {@code "id"}, {@code "a.b.c"} becomes
-     * {@code "c"}, and a name without a dot is returned unchanged. {@code null}, an empty
-     * string, or a name whose only dot is the trailing character is returned unchanged.
+     * Normalizes {@code propName} so the remaining text is a valid named-parameter identifier.
+     * {@code "u.id"} becomes {@code "id"}, {@code "COUNT(*)"} becomes {@code "COUNT"}, and
+     * invalid identifier characters are converted to underscores. {@code null} and empty strings
+     * are returned unchanged.
      *
      * @param propName the property name (may include table-alias prefix)
      * @return the sanitized identifier suitable for use after {@code :} or inside {@code #{}}
@@ -5230,11 +5230,45 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (propName == null || propName.isEmpty()) {
             return propName;
         }
-        final int dotIdx = propName.lastIndexOf('.');
-        if (dotIdx < 0 || dotIdx == propName.length() - 1) {
-            return propName;
+
+        String name = propName.trim();
+        final int parenthesisIdx = name.indexOf('(');
+
+        if (parenthesisIdx > 0) {
+            name = name.substring(0, parenthesisIdx).trim();
+        } else {
+            final int dotIdx = name.lastIndexOf('.');
+
+            if (dotIdx >= 0 && dotIdx < name.length() - 1) {
+                name = name.substring(dotIdx + 1);
+            }
         }
-        return propName.substring(dotIdx + 1);
+
+        final StringBuilder sb = new StringBuilder(name.length());
+
+        for (int i = 0, len = name.length(); i < len; i++) {
+            final char ch = name.charAt(i);
+
+            if (Character.isLetterOrDigit(ch) || ch == '_') {
+                sb.append(ch);
+            } else if (!sb.isEmpty() && sb.charAt(sb.length() - 1) != '_') {
+                sb.append('_');
+            }
+        }
+
+        while (!sb.isEmpty() && sb.charAt(sb.length() - 1) == '_') {
+            sb.setLength(sb.length() - 1);
+        }
+
+        if (sb.isEmpty()) {
+            return "param";
+        }
+
+        if (Character.isDigit(sb.charAt(0))) {
+            sb.insert(0, 'p');
+        }
+
+        return sb.toString();
     }
 
     /**
@@ -5805,7 +5839,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Parses an entity (String, Map, or bean) for an INSERT operation and populates the builder's
-     * property names or property-value map. Null values and zero-valued ID properties are skipped for bean entities.
+     * property names or property-value map. Null values are skipped for bean entities.
      *
      * @param instance the query builder instance to populate
      * @param entity the entity to parse (a column name String, a Map of properties, or a bean object)
@@ -5827,12 +5861,26 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final Map<String, Object> map = N.newLinkedHashMap(propNames.size());
             final BeanInfo beanInfo = ParserUtil.getBeanInfo(entity.getClass());
             final ImmutableList<String> idPropNameList = beanInfo.idPropNameList;
+            boolean allIdPropsWithDefaultValue = true;
             Object propValue;
+
+            // check for composite id.
+            if (N.size(idPropNameList) > 1) {
+                for (String idPropName : idPropNameList) {
+                    propValue = beanInfo.getPropValue(entity, idPropName);
+
+                    if (!isDefaultIdPropValue(propValue)) {
+                        allIdPropsWithDefaultValue = false;
+                        break;
+                    }
+                }
+            }
 
             for (final String propName : propNames) {
                 propValue = beanInfo.getPropValue(entity, propName);
 
-                if (propValue == null || (!idPropNameList.isEmpty() && idPropNameList.contains(propName) && isDefaultIdPropValue(propValue))) {
+                if (propValue == null
+                        || (allIdPropsWithDefaultValue && !idPropNameList.isEmpty() && idPropNameList.contains(propName) && isDefaultIdPropValue(propValue))) {
                     continue; // skip null or zero id values
                 }
 

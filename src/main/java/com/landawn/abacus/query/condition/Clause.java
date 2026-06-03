@@ -94,6 +94,20 @@ public abstract class Clause extends Cell {
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public Clause(final Operator operator, final Condition cond) {
-        super(operator, cond);
+        super(operator, validateClauseOperand(cond));
+    }
+
+    private static Condition validateClauseOperand(final Condition cond) {
+        if (cond == null) {
+            throw new IllegalArgumentException("Condition cannot be null");
+        }
+
+        final Operator operator = cond.operator();
+
+        if (cond instanceof Criteria || isClause(operator) || operator == Operator.ON || operator == Operator.USING) {
+            throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be nested inside a clause");
+        }
+
+        return cond;
     }
 }

@@ -11832,7 +11832,19 @@ class SqlBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("FROM"));
             Assertions.assertTrue(sql.contains("WHERE"));
             Assertions.assertTrue(sql.contains("GROUP BY account.type"));
-            Assertions.assertTrue(sql.contains("HAVING COUNT(*) > #{COUNT(*)}"));
+            Assertions.assertTrue(sql.contains("HAVING COUNT(*) > #{COUNT}"));
+        }
+
+        @Test
+        public void testNamedHavingFunctionExpressionUsesValidPlaceholder() {
+            AbstractQueryBuilder.SP sp = NLC.select("department", "COUNT(*)")
+                    .from("employees")
+                    .groupBy("department")
+                    .having(Filters.gt("COUNT(*)", 5))
+                    .build();
+
+            Assertions.assertEquals("SELECT department, COUNT(*) FROM employees GROUP BY department HAVING COUNT(*) > :COUNT", sp.query());
+            Assertions.assertEquals(Arrays.asList(5), sp.parameters());
         }
 
         private List<Selection> createComplexSelections() {
