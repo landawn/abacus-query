@@ -166,6 +166,7 @@ public class SubQuery extends AbstractCondition {
      * <pre>{@code
      * SubQuery subQuery = new SubQuery("orders",
      *     "SELECT order_id FROM orders WHERE total > 1000");
+     * // Generates: SELECT order_id FROM orders WHERE total > 1000
      * }</pre>
      *
      * @param entityName the entity/table name; may be {@code null} or empty, in which case it is

@@ -90,6 +90,7 @@ public abstract class Clause extends Cell {
      *
      * // HAVING clause wrapping an aggregate condition
      * Having having = new Having(Filters.greaterThan("COUNT(*)", 5));
+     * // SQL: HAVING COUNT(*) > 5
      * }</pre>
      *
      * @param operator the operator to apply to the condition (must not be {@code null});

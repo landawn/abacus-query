@@ -92,10 +92,12 @@ public class Binary extends ComposableCondition {
      * <pre>{@code
      * // Create a custom binary condition
      * Binary condition = new Binary("price", Operator.GREATER_THAN, 100.0);
-     * 
+     * // SQL fragment: price > 100.0
+     *
      * // With a subquery as value
      * SubQuery subQuery = Filters.subQuery("SELECT MIN(price) FROM products");
      * Binary minPrice = new Binary("price", Operator.GREATER_THAN_OR_EQUAL, subQuery);
+     * // SQL fragment: price >= (SELECT MIN(price) FROM products)
      * }</pre>
      * 
      * @param propName the property name to compare (must not be {@code null} or empty)

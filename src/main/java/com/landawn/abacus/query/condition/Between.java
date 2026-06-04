@@ -79,6 +79,7 @@ public class Between extends AbstractBetween {
      * SubQuery avgMinus10 = Filters.subQuery("SELECT AVG(score) - 10 FROM scores");
      * SubQuery avgPlus10 = Filters.subQuery("SELECT AVG(score) + 10 FROM scores");
      * Between nearAverage = new Between("score", avgMinus10, avgPlus10);
+     * // SQL: score BETWEEN (SELECT AVG(score) - 10 FROM scores) AND (SELECT AVG(score) + 10 FROM scores)
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null} or empty)

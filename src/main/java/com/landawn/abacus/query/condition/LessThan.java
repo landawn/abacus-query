@@ -100,6 +100,7 @@ public class LessThan extends Binary {
      * // Use with subquery - find products priced below average
      * SubQuery avgPrice = Filters.subQuery("SELECT AVG(price) FROM products");
      * LessThan belowAverage = new LessThan("price", avgPrice);
+     * // SQL: price < (SELECT AVG(price) FROM products)
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null} or empty)

@@ -1611,6 +1611,7 @@ public class Criteria extends AbstractCondition {
          * grouping.put("years_experience", SortDirection.DESC);
          * Criteria.Builder builder = Criteria.builder()
          *     .groupBy(grouping);
+         * // Results in: GROUP BY department ASC, salary_range DESC, years_experience DESC
          * }</pre>
          *
          * @param groupings a map of property names to sort directions
@@ -1724,6 +1725,7 @@ public class Criteria extends AbstractCondition {
          * List<String> sortCols = Arrays.asList("country", "state", "city");
          * Criteria.Builder builder = Criteria.builder()
          *     .orderByAsc(sortCols);
+         * // Results in: ORDER BY country ASC, state ASC, city ASC
          * }</pre>
          *
          * @param propNames the collection of property names to order by ascending
@@ -1769,6 +1771,7 @@ public class Criteria extends AbstractCondition {
          * List<String> sortCols = Arrays.asList("revenue", "profit");
          * Criteria.Builder builder = Criteria.builder()
          *     .orderByDesc(sortCols);
+         * // Results in: ORDER BY revenue DESC, profit DESC
          * }</pre>
          *
          * @param propNames the collection of property names to order by descending
@@ -1982,6 +1985,7 @@ public class Criteria extends AbstractCondition {
          * ordering.put("name", SortDirection.ASC);
          * Criteria.Builder builder = Criteria.builder()
          *     .orderBy(ordering);
+         * // Results in: ORDER BY priority DESC, createdDate DESC, name ASC
          * }</pre>
          *
          * @param orders a map of property names to sort directions

@@ -170,6 +170,7 @@ public class Expression extends ComposableCondition {
      * Expression expr2 = new Expression("price * quantity");
      * Expression expr3 = new Expression("CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END");
      * Expression expr4 = new Expression("COALESCE(middle_name, '')");
+     * // expr4.toString() returns: "COALESCE(middle_name, '')"
      * }</pre>
      *
      * @param literal the SQL expression as a string; may be {@code null}

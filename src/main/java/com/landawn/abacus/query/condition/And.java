@@ -101,6 +101,7 @@ public class And extends Junction {
      *     Filters.in("role", Arrays.asList("Manager", "Director")),
      *     Filters.isNotNull("email")
      * );
+     * // Results in: ((status = 'active') AND (age BETWEEN 25 AND 65) AND (role IN ('Manager', 'Director')) AND (email IS NOT NULL))
      * }</pre>
      *
      * @param conditions the conditions to combine with AND logic; may be {@code null} or empty

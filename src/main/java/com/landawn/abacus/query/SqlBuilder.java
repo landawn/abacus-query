@@ -27,9 +27,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import com.landawn.abacus.annotation.Beta;
-import com.landawn.abacus.annotation.NonUpdatable;
-import com.landawn.abacus.annotation.ReadOnly;
-import com.landawn.abacus.annotation.ReadOnlyId;
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
 import com.landawn.abacus.query.condition.Between;
@@ -8890,6 +8887,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql2 = PLC.deleteFrom("account", Account.class)
          *                  .where(Filters.equal("id", account.getId()))
          *                  .build().query();
+         * // Output: DELETE FROM account WHERE id = ?
          * }</pre>
          * 
          * @param tableName the name of the table to delete from
@@ -8985,6 +8983,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                  .groupBy("departmentId")
          *                  .having(Filters.greaterThan("COUNT(*)", 10))
          *                  .build().query();
+         * // Output: SELECT departmentId, COUNT(*) AS employeeCount FROM employee GROUP BY departmentId HAVING COUNT(*) > ?
          * }</pre>
          * 
          * @param selectPart the select expression
@@ -9023,10 +9022,11 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                  .build().query();
          * 
          * // Mixed columns and expressions
-         * String sql3 = PLC.select("id", "firstName", "lastName", 
+         * String sql3 = PLC.select("id", "firstName", "lastName",
          *                          "YEAR(CURRENT_DATE) - YEAR(birthDate) AS age")
          *                  .from("account")
          *                  .build().query();
+         * // Output: SELECT id, firstName, lastName, YEAR(CURRENT_DATE) - YEAR(birthDate) AS age FROM account
          * }</pre>
          * 
          * @param propOrColumnNames the property or column names to select

@@ -2265,6 +2265,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .join("orders o")
      *                 .on(Filters.equal("u.id", "o.user_id"))
      *                 .build().query();
+     * // Output: SELECT * FROM users u JOIN orders o ON u.id = ?
      * }</pre>
      *
      * @param cond the join condition (must not be {@code null})
@@ -2486,6 +2487,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .from("products")
      *                 .groupBy(columns)
      *                 .build().query();
+     * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category, brand
      * }</pre>
      * 
      * @param propOrColumnNames the collection of columns to group by
@@ -3425,10 +3427,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * boolean complexFilter = true;
      * String sql = PSC.select("*")
      *                 .from("users")
-     *                 .appendIf(complexFilter, builder -> 
+     *                 .appendIf(complexFilter, builder ->
      *                     builder.where(Filters.greaterThan("age", 18))
      *                            .orderBy("name"))
      *                 .build().query();
+     * // Output: SELECT * FROM users WHERE age > ? ORDER BY name
      * }</pre>
      * 
      * @param condition if true, the consumer will be executed
@@ -4531,6 +4534,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .set(Account.class)
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
+     * // Output: UPDATE account SET id = ?, gui = ?, email_address = ?, first_name = ?, middle_name = ?, last_name = ?, birth_date = ?, status = ?, last_update_time = ?, create_time = ?, contact = ? WHERE id = ?
      * }</pre>
      *
      * @param entityClass the entity class to get properties from
@@ -4549,11 +4553,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Set<String> excluded = N.asSet("lastModified");
+     * Set<String> excluded = N.asSet("lastUpdateTime");
      * String sql = PSC.update("account")
      *                 .set(Account.class, excluded)
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
+     * // Output: UPDATE account SET id = ?, gui = ?, email_address = ?, first_name = ?, middle_name = ?, last_name = ?, birth_date = ?, status = ?, create_time = ?, contact = ? WHERE id = ?
      * }</pre>
      *
      * @param entityClass the entity class to get properties from
@@ -4605,6 +4610,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .where(Filters.equal("status", "ACTIVE"))
      *                 .build()
      *                 .query();
+     * // Output: SELECT * FROM users WHERE status = ?
      * }</pre>
      *
      * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list

@@ -92,6 +92,7 @@ public class GreaterThanOrEqual extends Binary {
      * // Use with subquery - find products priced at or above average
      * SubQuery avgPrice = Filters.subQuery("SELECT AVG(price) FROM products");
      * GreaterThanOrEqual atOrAboveAverage = new GreaterThanOrEqual("price", avgPrice);
+     * // SQL: price >= (SELECT AVG(price) FROM products)
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null} or empty)

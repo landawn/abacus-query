@@ -335,7 +335,7 @@ public final class SqlMapper {
      * mapper.add("findUserById", parsedSql);
      *
      * // Later, retrieve the SQL
-     * ParsedSql retrieved = mapper.get("findUserById");
+     * ParsedSql retrieved = mapper.get("findUserById");   // returns the same parsedSql instance just added
      * }</pre>
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)

@@ -91,6 +91,7 @@ public class Equal extends Binary {
      * // Subquery equality - find employees with average salary
      * SubQuery avgSalary = Filters.subQuery("SELECT AVG(salary) FROM employees");
      * Equal avgCheck = new Equal("salary", avgSalary);
+     * // SQL: salary = (SELECT AVG(salary) FROM employees)
      * }</pre>
      * 
      * @param propName the property/column name (must not be {@code null} or empty)

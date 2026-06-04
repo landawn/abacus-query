@@ -164,6 +164,7 @@ public class Filters {
      * <pre>{@code
      * Condition condition = includeFilter ? Filters.equal("status", "active")
      *                                    : Filters.alwaysTrue();
+     * // Filters.alwaysTrue() renders the literal: 1 < 2
      * }</pre>
      *
      * @return an {@link Expression} that always evaluates to true (1 &lt; 2)
@@ -182,6 +183,7 @@ public class Filters {
      * <pre>{@code
      * Condition condition = excludeAll ? Filters.alwaysFalse()
      *                                  : Filters.equal("status", "active");
+     * // Filters.alwaysFalse() renders the literal: 1 > 2
      * }</pre>
      *
      * @return an {@link Expression} that always evaluates to false (1 &gt; 2)
@@ -238,6 +240,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty prop = Filters.namedProperty("user_name");
+     * // Renders as: user_name
      * }</pre>
      *
      * @param propName the name of the property/column (must not be {@code null} or empty)
@@ -259,6 +262,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression expr = Filters.expr("UPPER(name) = 'JOHN'");
+     * // SQL fragment: UPPER(name) = 'JOHN'
      * }</pre>
      *
      * @param literal the SQL expression as a string (must not be {@code null})
@@ -278,6 +282,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = Filters.binary("price", Operator.GREATER_THAN, 100);
+     * // SQL fragment: price > 100
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null} or empty)
@@ -298,6 +303,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Equal condition = Filters.equal("username", "john_doe");
+     * // SQL fragment: username = 'john_doe'
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null} or empty)
@@ -1898,6 +1904,7 @@ public class Filters {
      *     Filters.equal("type", "moderator")
      * );
      * Or condition = Filters.or(conditions);
+     * // Results in: ((type = 'admin') OR (type = 'moderator'))
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with {@code OR}; {@code null} or
@@ -1943,6 +1950,7 @@ public class Filters {
      *     Filters.equal("in_stock", true)
      * );
      * And condition = Filters.and(conditions);
+     * // Results in: ((price BETWEEN 10 AND 100) AND (in_stock = true))
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with {@code AND}; {@code null} or
@@ -1965,6 +1973,7 @@ public class Filters {
      *     Filters.equal("flag1", true),
      *     Filters.equal("flag2", true)
      * );
+     * // Results in: ((flag1 = true) XOR (flag2 = true))
      * }</pre>
      *
      * @param operator the junction operator to use
@@ -1983,7 +1992,9 @@ public class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * List<Condition> conditionsList = Arrays.asList(Filters.equal("flag1", true), Filters.equal("flag2", true));
      * Junction condition = Filters.junction(Operator.XOR, conditionsList);
+     * // Results in: ((flag1 = true) XOR (flag2 = true))
      * }</pre>
      *
      * @param operator the junction operator to use
@@ -2001,6 +2012,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Where where = Filters.where(Filters.equal("active", true));
+     * // Results in SQL like: WHERE active = true
      * }</pre>
      *
      * @param cond the condition for the {@code WHERE} clause (must not be {@code null})
@@ -2018,6 +2030,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Where where = Filters.where("YEAR(created_date) = 2023");
+     * // Results in SQL like: WHERE YEAR(created_date) = 2023
      * }</pre>
      *
      * @param expr the SQL expression as a string (must not be {@code null} or empty)
@@ -2130,6 +2143,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GroupBy groupBy = Filters.groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
+     * // Results in SQL like: GROUP BY country ASC, state ASC, city DESC
      * }</pre>
      *
      * @param propName1 first property name
@@ -2155,6 +2169,7 @@ public class Filters {
      * orders.put("department", SortDirection.ASC);
      * orders.put("salary", SortDirection.DESC);
      * GroupBy groupBy = Filters.groupBy(orders);
+     * // Results in SQL like: GROUP BY department ASC, salary DESC
      * }</pre>
      *
      * @param groupings map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
@@ -2208,6 +2223,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Having having = Filters.having("SUM(amount) > 1000");
+     * // Results in SQL like: HAVING SUM(amount) > 1000
      * }</pre>
      *
      * @param expr the SQL expression as a string (must not be {@code null} or empty)
@@ -2260,6 +2276,7 @@ public class Filters {
      * <pre>{@code
      * List<String> columns = Arrays.asList("priority", "created_date");
      * OrderBy orderBy = Filters.orderByAsc(columns);
+     * // Results in SQL like: ORDER BY priority ASC, created_date ASC
      * }</pre>
      *
      * @param propNames collection of property/column names to order by ascending
@@ -2292,6 +2309,7 @@ public class Filters {
      * <pre>{@code
      * List<String> columns = Arrays.asList("amount", "date");
      * OrderBy orderBy = Filters.orderByDesc(columns);
+     * // Results in SQL like: ORDER BY amount DESC, date DESC
      * }</pre>
      *
      * @param propNames collection of property/column names to order by descending
@@ -2377,6 +2395,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * OrderBy orderBy = Filters.orderBy("year", SortDirection.DESC, "month", SortDirection.DESC, "day", SortDirection.ASC);
+     * // Results in SQL like: ORDER BY year DESC, month DESC, day ASC
      * }</pre>
      *
      * @param propName1 first property name
@@ -2403,6 +2422,7 @@ public class Filters {
      * orders.put("price", SortDirection.DESC);
      * orders.put("name", SortDirection.ASC);
      * OrderBy orderBy = Filters.orderBy(orders);
+     * // Results in SQL like: ORDER BY category ASC, price DESC, name ASC
      * }</pre>
      *
      * @param orders map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
@@ -2421,6 +2441,7 @@ public class Filters {
      * OrderBy orderBy = Filters.orderBy(
      *     Filters.expr("CASE WHEN status = 'urgent' THEN 1 ELSE 2 END, created_date DESC")
      * );
+     * // Results in SQL like: ORDER BY CASE WHEN status = 'urgent' THEN 1 ELSE 2 END, created_date DESC
      * }</pre>
      *
      * @param cond the ordering condition (must not be {@code null})
@@ -2462,6 +2483,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * On on = Filters.on("users.department_id = departments.id AND users.active = true");
+     * // Results in SQL like: ON users.department_id = departments.id AND users.active = true
      * }</pre>
      *
      * @param expr the join condition as a string (must not be {@code null})
@@ -2597,6 +2619,7 @@ public class Filters {
      * <pre>{@code
      * Join join = Filters.join(Arrays.asList("orders", "products"),
      *     Filters.on("orders.product_id", "products.id"));
+     * // Results in SQL like: JOIN (orders, products) ON orders.product_id = products.id
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to join
@@ -2649,6 +2672,7 @@ public class Filters {
      * <pre>{@code
      * LeftJoin join = Filters.leftJoin(Arrays.asList("orders", "order_items"),
      *     Filters.on("orders.id", "order_items.order_id"));
+     * // Results in SQL like: LEFT JOIN (orders, order_items) ON orders.id = order_items.order_id
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to left join
@@ -2701,6 +2725,7 @@ public class Filters {
      * <pre>{@code
      * RightJoin join = Filters.rightJoin(Arrays.asList("departments", "locations"),
      *     Filters.on("departments.location_id", "locations.id"));
+     * // Results in SQL like: RIGHT JOIN (departments, locations) ON departments.location_id = locations.id
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to right join
@@ -2735,6 +2760,8 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * CrossJoin join = Filters.crossJoin("sizes", Filters.equal("active", true));
+     * // Results in SQL like: CROSS JOIN sizes ON active = true
+     * // (a non-ON condition is prefixed with the ON keyword when rendered)
      * }</pre>
      *
      * @param joinEntity the entity/table name to cross join
@@ -2751,6 +2778,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * CrossJoin join = Filters.crossJoin(Arrays.asList("colors", "sizes"), null);
+     * // Results in SQL like: CROSS JOIN (colors, sizes)
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to cross join
@@ -2803,6 +2831,7 @@ public class Filters {
      * <pre>{@code
      * FullJoin join = Filters.fullJoin(Arrays.asList("employees", "contractors"),
      *     Filters.on("employees.project_id", "contractors.project_id"));
+     * // Results in SQL like: FULL JOIN (employees, contractors) ON employees.project_id = contractors.project_id
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to full join
@@ -2855,6 +2884,7 @@ public class Filters {
      * <pre>{@code
      * InnerJoin join = Filters.innerJoin(Arrays.asList("orders", "order_details"),
      *     Filters.on("orders.id", "order_details.order_id"));
+     * // Results in SQL like: INNER JOIN (orders, order_details) ON orders.id = order_details.order_id
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to inner join
@@ -2889,6 +2919,8 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NaturalJoin join = Filters.naturalJoin("departments", Filters.equal("active", true));
+     * // Results in SQL like: NATURAL JOIN departments ON active = true
+     * // (a non-ON condition is prefixed with the ON keyword when rendered)
      * }</pre>
      *
      * @param joinEntity the entity/table name to natural join
@@ -2905,6 +2937,7 @@ public class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NaturalJoin join = Filters.naturalJoin(Arrays.asList("tables", "categories"), null);
+     * // Results in SQL like: NATURAL JOIN (tables, categories)
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to natural join
@@ -3172,7 +3205,7 @@ public class Filters {
      * SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE dept = 'IT'");
      * All condition = Filters.all(subQuery);
      * // This factory only wraps the subquery as: ALL (SELECT salary FROM employees WHERE dept = 'IT').
-     * // When used as the RHS of a comparison such as gt(...), the full fragment renders:
+     * // When used as the RHS of a comparison such as gt, the full fragment renders:
      * // salary > ALL (SELECT salary FROM employees WHERE dept = 'IT')
      * }</pre>
      *
@@ -3192,7 +3225,7 @@ public class Filters {
      * SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'electronics'");
      * Any condition = Filters.any(subQuery);
      * // This factory only wraps the subquery as: ANY (SELECT price FROM products WHERE category = 'electronics').
-     * // When used as the RHS of a comparison such as lt(...), the full fragment renders:
+     * // When used as the RHS of a comparison such as lt, the full fragment renders:
      * // price < ANY (SELECT price FROM products WHERE category = 'electronics')
      * }</pre>
      *
@@ -3212,7 +3245,7 @@ public class Filters {
      * SubQuery subQuery = Filters.subQuery("SELECT score FROM exams WHERE student_id = 123");
      * Some condition = Filters.some(subQuery);
      * // This factory only wraps the subquery as: SOME (SELECT score FROM exams WHERE student_id = 123).
-     * // When used as the RHS of a comparison such as le(...), the full fragment renders:
+     * // When used as the RHS of a comparison such as le, the full fragment renders:
      * // passing_score <= SOME (SELECT score FROM exams WHERE student_id = 123)
      * }</pre>
      *
@@ -3437,6 +3470,7 @@ public class Filters {
      * SubQuery subQuery = Filters.subQuery("products",
      *     Arrays.asList("id", "price"),
      *     "category = 'electronics' AND in_stock = true");
+     * // Generates: SELECT id, price FROM products WHERE category = 'electronics' AND in_stock = true
      * }</pre>
      *
      * @param entityName the entity/table name (must not be {@code null} or empty)
@@ -3456,8 +3490,9 @@ public class Filters {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SubQuery subQuery = Filters.subQuery("orders", 
+     * SubQuery subQuery = Filters.subQuery("orders",
      *     "SELECT COUNT(*) FROM orders WHERE user_id = ?");
+     * // Generates: SELECT COUNT(*) FROM orders WHERE user_id = ?   (entityName is ignored when full SQL is supplied)
      * }</pre>
      *
      * @param entityName the entity/table name
@@ -3484,6 +3519,7 @@ public class Filters {
      * SubQuery subQuery = Filters.subQuery(
      *     "SELECT user_id FROM orders WHERE total > 1000 GROUP BY user_id"
      * );
+     * // Generates: SELECT user_id FROM orders WHERE total > 1000 GROUP BY user_id
      * }</pre>
      *
      * @param sql the complete SQL for the subquery (must not be {@code null} or empty)
