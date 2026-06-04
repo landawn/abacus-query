@@ -81,8 +81,8 @@ public abstract class Cell extends AbstractCondition {
      * // Edge: a null condition is rejected
      * Cell bad = new Where((Condition) null);     // throws IllegalArgumentException
      *
-     * // Edge: a null operator (only via the package-private default ctor path) renders as "null"
-     * // e.g. an uninitialized Cell renders the literal "null" in place of the operator
+     * // Edge: an uninitialized Cell (created only via the package-private no-arg constructor)
+     * // has a null operator and renders the literal "null".
      * }</pre>
      *
      * @param operator the operator to apply to the condition (must not be {@code null})

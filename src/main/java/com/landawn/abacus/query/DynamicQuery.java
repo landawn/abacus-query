@@ -260,8 +260,8 @@ public final class DynamicQuery {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.limit("LIMIT 10 OFFSET 20");
-         * // Or for SQL Server / Sybase-style row-limiting (no typed overload exists for this form)
-         * builder.limit("TOP 10");
+         * // Or for a SQL:2008-style trailing row-limiting clause (no typed overload exists for this exact form)
+         * builder.limit("FETCH FIRST 10 ROWS ONLY");
          * }</pre>
          *
          * @param limitCond the complete limit/pagination expression (e.g., {@code "LIMIT 10 OFFSET 20"}) (must not be {@code null}, empty, or blank)
@@ -378,6 +378,7 @@ public final class DynamicQuery {
         /**
          * Adds a {@code FETCH FIRST} clause for SQL:2008 standard result limiting.
          * This is an alternative to {@code FETCH NEXT} with the same functionality.
+         * Typically used after {@link #offsetRows(int)}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -388,6 +389,7 @@ public final class DynamicQuery {
          * @param count the number of rows to fetch (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code count} is negative
+         * @see #offsetRows(int)
          */
         public Builder fetchFirstRows(final int count) {
             N.checkArgNotNegative(count, "count");
@@ -473,7 +475,7 @@ public final class DynamicQuery {
          * // Appends: EXCEPT SELECT user_id FROM blocked_users
          * }</pre>
          *
-         * @param query the complete SQL query to exclude results from (must not be {@code null}, empty, or blank)
+         * @param query the complete SQL query whose result rows are subtracted from the current result set (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          */
@@ -495,7 +497,7 @@ public final class DynamicQuery {
          * // Appends: MINUS SELECT user_id FROM inactive_users
          * }</pre>
          *
-         * @param query the complete SQL query to exclude results from (must not be {@code null}, empty, or blank)
+         * @param query the complete SQL query whose result rows are subtracted from the current result set (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          */

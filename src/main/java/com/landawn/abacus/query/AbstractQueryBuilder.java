@@ -1449,6 +1449,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr the FROM clause expression
      * @param entityClass the entity class for property mapping (may be {@code null}, in which case no entity-class association is performed)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
+     * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final String expr, final Class<?> entityClass) {
         if (entityClass != null) {
@@ -1470,6 +1472,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param entityClass the entity class representing the table
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final Class<?> entityClass) {
         return from(entityClass, QueryUtil.getTableAlias(entityClass));
@@ -1487,6 +1490,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class representing the table
      * @param alias the table alias
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final Class<?> entityClass, final String alias) {
         setEntityClass(entityClass);
@@ -1810,8 +1814,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id
      * }</pre>
      * 
-     * @param expr the join expression
+     * @param expr the join expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public This innerJoin(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -1880,8 +1885,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id
      * }</pre>
      * 
-     * @param expr the join expression
+     * @param expr the join expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public This leftJoin(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -1950,8 +1956,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id
      * }</pre>
      * 
-     * @param expr the join expression
+     * @param expr the join expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public This rightJoin(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -2020,8 +2027,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users u FULL JOIN orders o ON u.id = o.user_id
      * }</pre>
      * 
-     * @param expr the join expression
+     * @param expr the join expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public This fullJoin(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -2090,8 +2098,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users CROSS JOIN orders
      * }</pre>
      * 
-     * @param expr the join expression
+     * @param expr the join expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public This crossJoin(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -2160,8 +2169,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users NATURAL JOIN orders
      * }</pre>
      * 
-     * @param expr the join expression
+     * @param expr the join expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public This naturalJoin(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -3198,6 +3208,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param cond the condition to append
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalStateException if a clause it emits has already been set
      * @see Filters
      */
     @Beta
@@ -3341,6 +3353,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public This append(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -3395,6 +3408,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
      */
+    @Beta
     public This appendIf(final boolean condition, final String expr) {
         if (condition) {
             append(expr);
@@ -4509,7 +4523,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets all updatable properties from an entity class for UPDATE operation.
-     * Properties marked with @NonUpdatable, @ReadOnly, @ReadOnlyId, or @Transient annotations are excluded.
+     * Properties marked with {@code @NonUpdatable}, {@code @ReadOnly}, {@code @ReadOnlyId}, or {@code @Transient} annotations are excluded.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4521,6 +4535,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class to get properties from
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     public This set(final Class<?> entityClass) {
         setEntityClass(entityClass);
@@ -4530,7 +4545,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.
-     * Properties marked with @NonUpdatable, @ReadOnly, @ReadOnlyId, or @Transient annotations are automatically excluded.
+     * Properties marked with {@code @NonUpdatable}, {@code @ReadOnly}, {@code @ReadOnlyId}, or {@code @Transient} annotations are automatically excluded.
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4544,6 +4559,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class to get properties from
      * @param excludedPropNames additional properties to exclude from the update
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     public This set(final Class<?> entityClass, final Set<String> excludedPropNames) {
         setEntityClass(entityClass);

@@ -93,9 +93,9 @@ public class LeftJoin extends Join {
 
     /**
      * Creates a LEFT JOIN clause for the specified table or entity without a join condition.
-     * The rendered SQL is {@code LEFT JOIN <joinEntity>} with no {@code ON} / {@code USING} clause; most
-     * databases require a join predicate, so this form is typically used to build the join fragment
-     * incrementally and combine it with a separately specified condition.
+     * Most databases require an {@code ON} or {@code USING} clause for a LEFT JOIN; supply
+     * the condition separately (for example by combining this with another clause) or use
+     * {@link #LeftJoin(String, Condition)} instead.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -149,7 +149,7 @@ public class LeftJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
+     * @param cond the condition appended after the join target. Use {@link On} when the SQL should include an
      *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */

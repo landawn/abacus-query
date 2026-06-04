@@ -789,8 +789,9 @@ public sealed class NamedProperty permits NP {
      * // Results in: priority IN (1, 2, 3)
      * }</pre>
      *
-     * @param values array of values to check membership against
+     * @param values array of values to check membership against (must not be {@code null} or empty)
      * @return an In condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
      * @see Filters#in(String, Object[])
      */
@@ -871,8 +872,9 @@ public sealed class NamedProperty permits NP {
      * // Results in: department IN ('Sales', 'Marketing', 'IT')
      * }</pre>
      *
-     * @param values collection of values to check membership against
+     * @param values collection of values to check membership against (must not be {@code null} or empty)
      * @return an In condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
      * @see Filters#in(String, Collection)
      */
@@ -893,8 +895,9 @@ public sealed class NamedProperty permits NP {
      * // Results in: priority NOT IN (4, 5)
      * }</pre>
      *
-     * @param values array of values to check non-membership against
+     * @param values array of values to check non-membership against (must not be {@code null} or empty)
      * @return a NotIn condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn
      * @see Filters#notIn(String, Object[])
      */
@@ -975,8 +978,9 @@ public sealed class NamedProperty permits NP {
      * // Results in: department NOT IN ('Temp', 'Archived')
      * }</pre>
      *
-     * @param values collection of values to check non-membership against
+     * @param values collection of values to check non-membership against (must not be {@code null} or empty)
      * @return a NotIn condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn
      * @see Filters#notIn(String, Collection)
      */

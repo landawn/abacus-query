@@ -725,7 +725,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets the DISTINCTROW modifier for the query.
          * DISTINCTROW is similar to DISTINCT but may have database-specific behavior.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder()
@@ -793,7 +793,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds JOIN clauses to this criteria.
          * Multiple joins can be added in a single call.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder()
@@ -820,7 +820,7 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds JOIN clauses to this criteria.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<Join> joins = Arrays.asList(
@@ -1351,7 +1351,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets or replaces the WHERE clause.
          * If a WHERE clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder()
@@ -1391,7 +1391,7 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the WHERE clause using a string expression.
          * Useful for complex conditions that are easier to express as SQL.
          * If a WHERE clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder().where("age > 18 AND status = 'active'").build();
@@ -1417,7 +1417,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets or replaces the GROUP BY clause.
          * If a GROUP BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder().groupBy(Filters.expr("YEAR(order_date)")).build();
@@ -1453,17 +1453,17 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the GROUP BY clause with property names.
          * Groups results by the specified columns (no explicit sort direction is emitted).
          * If a GROUP BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("department", "location", "role");
          * // Results in: GROUP BY department, location, role
          * }</pre>
-         * 
+         *
          * @param propNames the property names to group by
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null} or empty element
          */
         public Builder groupBy(final String... propNames) {
             add(new GroupBy(propNames));
@@ -1474,14 +1474,14 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets or replaces the GROUP BY clause with a property and sort direction.
          * If a GROUP BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("total_sales", SortDirection.DESC);
          * // Results in: GROUP BY total_sales DESC
          * }</pre>
-         * 
+         *
          * @param propName the property name to group by
          * @param direction the sort direction
          * @return this Builder instance for method chaining
@@ -1496,14 +1496,14 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets or replaces the GROUP BY clause with two properties and their sort directions.
          * If a GROUP BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
          * // Results in: GROUP BY year DESC, month ASC
          * }</pre>
-         * 
+         *
          * @param propName the first property name to group by
          * @param direction the sort direction for the first property
          * @param propName2 the second property name to group by
@@ -1520,14 +1520,14 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets or replaces the GROUP BY clause with three properties and their sort directions.
          * If a GROUP BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
          * // Results in: GROUP BY country ASC, state ASC, city DESC
          * }</pre>
-         * 
+         *
          * @param propName the first property name to group by
          * @param direction the sort direction for the first property
          * @param propName2 the second property name to group by
@@ -1562,7 +1562,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order; must not be {@code null} or empty)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null} or empty element
          */
         public Builder groupBy(final Collection<String> propNames) {
             N.checkArgNotEmpty(propNames, "propNames");
@@ -1575,7 +1575,7 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the GROUP BY clause with multiple properties and sort direction.
          * All properties will use the same sort direction.
          * If a GROUP BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> groupCols = Arrays.asList("category", "brand");
@@ -1602,7 +1602,7 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the GROUP BY clause with custom sort directions per property.
          * The map should be a LinkedHashMap to preserve order.
          * If a GROUP BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Map<String, SortDirection> grouping = new LinkedHashMap<>();
@@ -1612,7 +1612,7 @@ public class Criteria extends AbstractCondition {
          * Criteria.Builder builder = Criteria.builder()
          *     .groupBy(grouping);
          * }</pre>
-         * 
+         *
          * @param groupings a map of property names to sort directions
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code groupings} is {@code null}, empty, or contains {@code null} or empty keys
@@ -1628,7 +1628,7 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the HAVING clause.
          * HAVING is used to filter grouped results after GROUP BY.
          * If a HAVING clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder()
@@ -1668,7 +1668,7 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the HAVING clause using a string expression.
          * Useful for aggregate function conditions.
          * If a HAVING clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder()
@@ -1697,14 +1697,14 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the ORDER BY clause with ascending order.
          * Convenience method that sorts all specified columns in ascending order.
          * If an ORDER BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .orderByAsc("lastName", "firstName", "middleName");
          * // Results in: ORDER BY lastName ASC, firstName ASC, middleName ASC
          * }</pre>
-         * 
+         *
          * @param propNames the property names to order by ascending
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
@@ -1718,14 +1718,14 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets or replaces the ORDER BY clause with ascending order.
          * If an ORDER BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> sortCols = Arrays.asList("country", "state", "city");
          * Criteria.Builder builder = Criteria.builder()
          *     .orderByAsc(sortCols);
          * }</pre>
-         * 
+         *
          * @param propNames the collection of property names to order by ascending
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order)
@@ -1742,14 +1742,14 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the ORDER BY clause with descending order.
          * Convenience method that sorts all specified columns in descending order.
          * If an ORDER BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .orderByDesc("score", "createdDate");
          * // Results in: ORDER BY score DESC, createdDate DESC
          * }</pre>
-         * 
+         *
          * @param propNames the property names to order by descending
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
@@ -1763,7 +1763,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets or replaces the ORDER BY clause with descending order.
          * If an ORDER BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> sortCols = Arrays.asList("revenue", "profit");
@@ -1786,7 +1786,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets or replaces the ORDER BY clause.
          * If an ORDER BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder().orderBy(Filters.expr("created_date DESC")).build();
@@ -1823,17 +1823,17 @@ public class Criteria extends AbstractCondition {
          * Orders by the specified columns using the default (ascending) direction; no explicit
          * {@code ASC} keyword is emitted.
          * If an ORDER BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .orderBy("department", "lastName", "firstName");
          * // Results in: ORDER BY department, lastName, firstName
          * }</pre>
-         * 
+         *
          * @param propNames the property names to order by
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null} or empty element
          */
         public Builder orderBy(final String... propNames) {
             add(new OrderBy(propNames));
@@ -1844,14 +1844,14 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets or replaces the ORDER BY clause with a property and sort direction.
          * If an ORDER BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .orderBy("createdDate", SortDirection.DESC);
          * // Results in: ORDER BY createdDate DESC
          * }</pre>
-         * 
+         *
          * @param propName the property name to order by
          * @param direction the sort direction
          * @return this Builder instance for method chaining
@@ -1866,14 +1866,14 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets or replaces the ORDER BY clause with two properties and their sort directions.
          * If an ORDER BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .orderBy("priority", SortDirection.DESC, "createdDate", SortDirection.ASC);
          * // Results in: ORDER BY priority DESC, createdDate ASC
          * }</pre>
-         * 
+         *
          * @param propName the first property name to order by
          * @param direction the sort direction for the first property
          * @param propName2 the second property name to order by
@@ -1890,14 +1890,14 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets or replaces the ORDER BY clause with three properties and their sort directions.
          * If an ORDER BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .orderBy("category", SortDirection.ASC, "price", SortDirection.DESC, "name", SortDirection.ASC);
          * // Results in: ORDER BY category ASC, price DESC, name ASC
          * }</pre>
-         * 
+         *
          * @param propName the first property name to order by
          * @param direction the sort direction for the first property
          * @param propName2 the second property name to order by
@@ -1933,7 +1933,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order; must not be {@code null} or empty)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null} or empty element
          */
         public Builder orderBy(final Collection<String> propNames) {
             N.checkArgNotEmpty(propNames, "propNames");
@@ -1946,7 +1946,7 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the ORDER BY clause with multiple properties and sort direction.
          * All properties will use the same sort direction.
          * If an ORDER BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * List<String> sortCols = Arrays.asList("score", "rating");
@@ -1973,7 +1973,7 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the ORDER BY clause with custom sort directions per property.
          * The map should be a LinkedHashMap to preserve order.
          * If an ORDER BY clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Map<String, SortDirection> ordering = new LinkedHashMap<>();
@@ -1983,7 +1983,7 @@ public class Criteria extends AbstractCondition {
          * Criteria.Builder builder = Criteria.builder()
          *     .orderBy(ordering);
          * }</pre>
-         * 
+         *
          * @param orders a map of property names to sort directions
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, or contains {@code null} or empty keys
@@ -2022,7 +2022,7 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the LIMIT clause with a count.
          * Limits the number of rows returned by the query.
          * If a LIMIT clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria criteria = Criteria.builder()
@@ -2031,7 +2031,7 @@ public class Criteria extends AbstractCondition {
          *     .build();
          * // Results in: WHERE status = 'active' LIMIT 10
          * }</pre>
-         * 
+         *
          * @param count the maximum number of results to return
          * @return this Builder instance for method chaining
          */
@@ -2070,7 +2070,7 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the LIMIT clause using a string expression.
          * Allows for database-specific limit syntax.
          * If a LIMIT clause already exists, it will be replaced.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder().limit("10 OFFSET 20").build();
@@ -2093,7 +2093,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a UNION operation with a subquery.
          * UNION combines results and removes duplicates.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery archivedUsers = Filters.subQuery("SELECT * FROM archived_users WHERE active = true");
@@ -2108,8 +2108,9 @@ public class Criteria extends AbstractCondition {
          * c.getSetOperations().size();   // returns 1
          * }</pre>
          *
-         * @param subQuery the subquery to union with
+         * @param subQuery the subquery to union with (must not be {@code null})
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code subQuery} is {@code null}
          */
         public Builder union(final SubQuery subQuery) {
             add(new Union(subQuery));
@@ -2120,7 +2121,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a UNION ALL operation with a subquery.
          * UNION ALL combines results and keeps duplicates.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery pendingOrders = Filters.subQuery("SELECT * FROM pending_orders");
@@ -2132,8 +2133,9 @@ public class Criteria extends AbstractCondition {
          * // returns " WHERE status = 'completed' UNION ALL SELECT * FROM pending_orders"
          * }</pre>
          *
-         * @param subQuery the subquery to union with
+         * @param subQuery the subquery to union with (must not be {@code null})
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code subQuery} is {@code null}
          */
         public Builder unionAll(final SubQuery subQuery) {
             add(new UnionAll(subQuery));
@@ -2144,7 +2146,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds an INTERSECT operation with a subquery.
          * INTERSECT returns only rows that appear in both result sets.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery premiumUsers = Filters.subQuery("SELECT user_id FROM premium_members");
@@ -2156,8 +2158,9 @@ public class Criteria extends AbstractCondition {
          * // returns " WHERE active = true INTERSECT SELECT user_id FROM premium_members"
          * }</pre>
          *
-         * @param subQuery the subquery to intersect with
+         * @param subQuery the subquery to intersect with (must not be {@code null})
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code subQuery} is {@code null}
          */
         public Builder intersect(final SubQuery subQuery) {
             add(new Intersect(subQuery));
@@ -2168,7 +2171,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds an EXCEPT operation with a subquery.
          * EXCEPT returns rows from the first query that don't appear in the second.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery excludedUsers = Filters.subQuery("SELECT user_id FROM blacklist");
@@ -2180,8 +2183,9 @@ public class Criteria extends AbstractCondition {
          * // returns " WHERE status = 'active' EXCEPT SELECT user_id FROM blacklist"
          * }</pre>
          *
-         * @param subQuery the subquery to except
+         * @param subQuery the subquery to except (must not be {@code null})
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code subQuery} is {@code null}
          */
         public Builder except(final SubQuery subQuery) {
             add(new Except(subQuery));
@@ -2192,7 +2196,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a MINUS operation with a subquery.
          * MINUS is equivalent to EXCEPT in some databases (like Oracle).
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * SubQuery inactiveUsers = Filters.subQuery("SELECT user_id FROM inactive_users");
@@ -2204,8 +2208,9 @@ public class Criteria extends AbstractCondition {
          * // returns " WHERE registered = true MINUS SELECT user_id FROM inactive_users"
          * }</pre>
          *
-         * @param subQuery the subquery to minus
+         * @param subQuery the subquery to minus (must not be {@code null})
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code subQuery} is {@code null}
          */
         public Builder minus(final SubQuery subQuery) {
             add(new Minus(subQuery));

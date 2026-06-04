@@ -201,9 +201,9 @@ public final class Selection {
          * }</pre>
          *
          * @param entityClass the entity class to select from
-         * @param tableAlias the alias to use for the table in SQL (can be null)
-         * @param classAlias the alias to use for result mapping (can be null)
-         * @param selectPropNames the property names to include in the selection (null means all)
+         * @param tableAlias the alias to use for the table in SQL (can be {@code null})
+         * @param classAlias the alias to use for result mapping (can be {@code null})
+         * @param selectPropNames the property names to include in the selection ({@code null} means all properties)
          * @return this builder instance for method chaining
          */
         public MultiSelectionBuilder add(final Class<?> entityClass, final String tableAlias, final String classAlias,
@@ -225,7 +225,7 @@ public final class Selection {
          *
          * @param entityClass the entity class to select from
          * @param includeSubEntityProperties whether to include properties from sub-entities
-         * @param excludedPropNames property names to exclude from the selection
+         * @param excludedPropNames property names to exclude from the selection (may be {@code null})
          * @return this builder instance for method chaining
          */
         public MultiSelectionBuilder add(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
@@ -244,10 +244,10 @@ public final class Selection {
          * }</pre>
          *
          * @param entityClass the entity class to select from
-         * @param tableAlias the alias to use for the table in SQL (can be null)
-         * @param classAlias the alias to use for result mapping (can be null)
+         * @param tableAlias the alias to use for the table in SQL (can be {@code null})
+         * @param classAlias the alias to use for result mapping (can be {@code null})
          * @param includeSubEntityProperties whether to include properties from sub-entities
-         * @param excludedPropNames property names to exclude from the selection
+         * @param excludedPropNames property names to exclude from the selection (may be {@code null})
          * @return this builder instance for method chaining
          */
         public MultiSelectionBuilder add(final Class<?> entityClass, final String tableAlias, final String classAlias, final boolean includeSubEntityProperties,

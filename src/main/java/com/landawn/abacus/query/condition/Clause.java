@@ -63,7 +63,10 @@ package com.landawn.abacus.query.condition;
  * 
  * @see Condition
  * @see Criteria
+ * @see Union
  * @see UnionAll
+ * @see Intersect
+ * @see Except
  * @see Minus
  */
 public abstract class Clause extends Cell {

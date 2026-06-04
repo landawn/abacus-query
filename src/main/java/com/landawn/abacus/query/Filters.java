@@ -341,6 +341,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare for equality
      * @return an {@link Equal} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     @Beta
     public static Equal eq(final String propName, final Object propValue) {
@@ -381,7 +382,7 @@ public class Filters {
      *
      * @param props map of property names to values (must not be empty)
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code props} is empty
+     * @throws IllegalArgumentException if {@code props} is {@code null} or empty
      */
     public static Or anyEqual(final Map<String, ?> props) {
         N.checkArgNotEmpty(props, "props");
@@ -422,7 +423,7 @@ public class Filters {
      *
      * @param entity the entity object whose properties will be used
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entity} is null
+     * @throws IllegalArgumentException if {@code entity} is {@code null}
      */
     public static Or anyEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
@@ -445,7 +446,7 @@ public class Filters {
      * @param entity the entity object
      * @param selectPropNames the property names to include (must not be empty)
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entity} is null or {@code selectPropNames} is empty
+     * @throws IllegalArgumentException if {@code entity} is {@code null} or {@code selectPropNames} is {@code null} or empty
      */
     public static Or anyEqual(final Object entity, final Collection<String> selectPropNames) {
         N.checkArgNotNull(entity, "entity");
@@ -532,7 +533,7 @@ public class Filters {
      *
      * @param props map of property names to values (must not be empty)
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code props} is empty
+     * @throws IllegalArgumentException if {@code props} is {@code null} or empty
      */
     public static And allEqual(final Map<String, ?> props) {
         N.checkArgNotEmpty(props, "props");
@@ -574,7 +575,7 @@ public class Filters {
      *
      * @param entity the entity object whose properties will be used
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code entity} is null
+     * @throws IllegalArgumentException if {@code entity} is {@code null}
      */
     public static And allEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
@@ -597,7 +598,7 @@ public class Filters {
      * @param entity the entity object
      * @param selectPropNames the property names to include (must not be empty)
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code entity} is null or {@code selectPropNames} is empty
+     * @throws IllegalArgumentException if {@code entity} is {@code null} or {@code selectPropNames} is {@code null} or empty
      */
     public static And allEqual(final Object entity, final Collection<String> selectPropNames) {
         N.checkArgNotNull(entity, "entity");
@@ -1054,6 +1055,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare for inequality
      * @return a {@link NotEqual} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     @Beta
     public static NotEqual ne(final String propName, final Object propValue) {
@@ -1088,9 +1090,10 @@ public class Filters {
      * // SQL fragment: age > 18
      * }</pre>
      *
-     * @param propName the property/column name
+     * @param propName the property/column name (must not be {@code null} or empty)
      * @param propValue the value to compare against
      * @return a {@link GreaterThan} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public static GreaterThan greaterThan(final String propName, final Object propValue) {
         return new GreaterThan(propName, propValue);
@@ -1126,6 +1129,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a {@link GreaterThan} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     @Beta
     public static GreaterThan gt(final String propName, final Object propValue) {
@@ -1160,9 +1164,10 @@ public class Filters {
      * // SQL fragment: score >= 60
      * }</pre>
      *
-     * @param propName the property/column name
+     * @param propName the property/column name (must not be {@code null} or empty)
      * @param propValue the value to compare against
      * @return a {@link GreaterThanOrEqual} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public static GreaterThanOrEqual greaterThanOrEqual(final String propName, final Object propValue) {
         return new GreaterThanOrEqual(propName, propValue);
@@ -1198,6 +1203,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a {@link GreaterThanOrEqual} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     @Beta
     public static GreaterThanOrEqual ge(final String propName, final Object propValue) {
@@ -1232,9 +1238,10 @@ public class Filters {
      * // SQL fragment: age < 65
      * }</pre>
      *
-     * @param propName the property/column name
+     * @param propName the property/column name (must not be {@code null} or empty)
      * @param propValue the value to compare against
      * @return a {@link LessThan} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public static LessThan lessThan(final String propName, final Object propValue) {
         return new LessThan(propName, propValue);
@@ -1270,6 +1277,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a {@link LessThan} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     @Beta
     public static LessThan lt(final String propName, final Object propValue) {
@@ -1304,9 +1312,10 @@ public class Filters {
      * // SQL fragment: discount <= 50
      * }</pre>
      *
-     * @param propName the property/column name
+     * @param propName the property/column name (must not be {@code null} or empty)
      * @param propValue the value to compare against
      * @return a {@link LessThanOrEqual} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     public static LessThanOrEqual lessThanOrEqual(final String propName, final Object propValue) {
         return new LessThanOrEqual(propName, propValue);
@@ -1342,6 +1351,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a {@link LessThanOrEqual} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
     @Beta
     public static LessThanOrEqual le(final String propName, final Object propValue) {
@@ -2608,7 +2618,7 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to left join
-     * @return a LeftJoin clause
+     * @return a {@link LeftJoin} clause
      */
     public static LeftJoin leftJoin(final String joinEntity) {
         return new LeftJoin(joinEntity);
@@ -2626,7 +2636,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to left join
      * @param cond the join condition
-     * @return a LeftJoin clause
+     * @return a {@link LeftJoin} clause
      */
     public static LeftJoin leftJoin(final String joinEntity, final Condition cond) {
         return new LeftJoin(joinEntity, cond);
@@ -2643,7 +2653,7 @@ public class Filters {
      *
      * @param joinEntities collection of entity/table names to left join
      * @param cond the join condition
-     * @return a LeftJoin clause
+     * @return a {@link LeftJoin} clause
      */
     public static LeftJoin leftJoin(final Collection<String> joinEntities, final Condition cond) {
         return new LeftJoin(joinEntities, cond);
@@ -2660,7 +2670,7 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to right join
-     * @return a RightJoin clause
+     * @return a {@link RightJoin} clause
      */
     public static RightJoin rightJoin(final String joinEntity) {
         return new RightJoin(joinEntity);
@@ -2678,7 +2688,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to right join
      * @param cond the join condition
-     * @return a RightJoin clause
+     * @return a {@link RightJoin} clause
      */
     public static RightJoin rightJoin(final String joinEntity, final Condition cond) {
         return new RightJoin(joinEntity, cond);
@@ -2695,7 +2705,7 @@ public class Filters {
      *
      * @param joinEntities collection of entity/table names to right join
      * @param cond the join condition
-     * @return a RightJoin clause
+     * @return a {@link RightJoin} clause
      */
     public static RightJoin rightJoin(final Collection<String> joinEntities, final Condition cond) {
         return new RightJoin(joinEntities, cond);
@@ -2712,7 +2722,7 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to cross join
-     * @return a CrossJoin clause
+     * @return a {@link CrossJoin} clause
      */
     public static CrossJoin crossJoin(final String joinEntity) {
         return new CrossJoin(joinEntity);
@@ -2729,7 +2739,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to cross join
      * @param cond the optional join condition
-     * @return a CrossJoin clause
+     * @return a {@link CrossJoin} clause
      */
     public static CrossJoin crossJoin(final String joinEntity, final Condition cond) {
         return new CrossJoin(joinEntity, cond);
@@ -2745,7 +2755,7 @@ public class Filters {
      *
      * @param joinEntities collection of entity/table names to cross join
      * @param cond the optional join condition
-     * @return a CrossJoin clause
+     * @return a {@link CrossJoin} clause
      */
     public static CrossJoin crossJoin(final Collection<String> joinEntities, final Condition cond) {
         return new CrossJoin(joinEntities, cond);
@@ -2762,7 +2772,7 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to full join
-     * @return a FullJoin clause
+     * @return a {@link FullJoin} clause
      */
     public static FullJoin fullJoin(final String joinEntity) {
         return new FullJoin(joinEntity);
@@ -2780,7 +2790,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to full join
      * @param cond the join condition
-     * @return a FullJoin clause
+     * @return a {@link FullJoin} clause
      */
     public static FullJoin fullJoin(final String joinEntity, final Condition cond) {
         return new FullJoin(joinEntity, cond);
@@ -2797,7 +2807,7 @@ public class Filters {
      *
      * @param joinEntities collection of entity/table names to full join
      * @param cond the join condition
-     * @return a FullJoin clause
+     * @return a {@link FullJoin} clause
      */
     public static FullJoin fullJoin(final Collection<String> joinEntities, final Condition cond) {
         return new FullJoin(joinEntities, cond);
@@ -2814,7 +2824,7 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to inner join
-     * @return an InnerJoin clause
+     * @return an {@link InnerJoin} clause
      */
     public static InnerJoin innerJoin(final String joinEntity) {
         return new InnerJoin(joinEntity);
@@ -2832,7 +2842,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to inner join
      * @param cond the join condition
-     * @return an InnerJoin clause
+     * @return an {@link InnerJoin} clause
      */
     public static InnerJoin innerJoin(final String joinEntity, final Condition cond) {
         return new InnerJoin(joinEntity, cond);
@@ -2849,7 +2859,7 @@ public class Filters {
      *
      * @param joinEntities collection of entity/table names to inner join
      * @param cond the join condition
-     * @return an InnerJoin clause
+     * @return an {@link InnerJoin} clause
      */
     public static InnerJoin innerJoin(final Collection<String> joinEntities, final Condition cond) {
         return new InnerJoin(joinEntities, cond);
@@ -2866,7 +2876,7 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntity the entity/table name to natural join
-     * @return a NaturalJoin clause
+     * @return a {@link NaturalJoin} clause
      */
     public static NaturalJoin naturalJoin(final String joinEntity) {
         return new NaturalJoin(joinEntity);
@@ -2883,7 +2893,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to natural join
      * @param cond the additional join condition
-     * @return a NaturalJoin clause
+     * @return a {@link NaturalJoin} clause
      */
     public static NaturalJoin naturalJoin(final String joinEntity, final Condition cond) {
         return new NaturalJoin(joinEntity, cond);
@@ -2899,7 +2909,7 @@ public class Filters {
      *
      * @param joinEntities collection of entity/table names to natural join
      * @param cond the additional join condition
-     * @return a NaturalJoin clause
+     * @return a {@link NaturalJoin} clause
      */
     public static NaturalJoin naturalJoin(final Collection<String> joinEntities, final Condition cond) {
         return new NaturalJoin(joinEntities, cond);

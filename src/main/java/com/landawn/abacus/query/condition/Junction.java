@@ -37,8 +37,10 @@ import com.landawn.abacus.util.Strings;
  * 
  * <p>Important: Junction is intended for composable boolean conditions. It is not meant to
  * contain clause conditions (WHERE, ORDER BY, etc.); those are handled by {@link Criteria}.
- * The class itself does not reject clause conditions at construction time — callers are
- * responsible for honoring this contract.
+ * The public constructors enforce this contract via {@code validateConstructorOperand} and
+ * reject {@link Criteria} and clause-operator conditions by throwing
+ * {@link IllegalArgumentException}. Only the package-private marker constructor (used for
+ * trusted, already-validated fluent chaining) skips this validation.
  * 
  * <p>This class serves as the parent for specific junction types:
  * <ul>

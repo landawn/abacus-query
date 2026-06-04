@@ -959,7 +959,7 @@ public final class SqlParser {
      * context), in addition to checking {@code ch} against the registered separator set.</p>
      *
      * @param str the SQL string being parsed
-     * @param len the length of the SQL string (must equal the length of {@code str})
+     * @param len the exclusive upper bound for scanning (normally the length of {@code str})
      * @param index the current position in the string (0-based)
      * @param ch the character to check; expected to equal {@code str.charAt(index)}
      * @return {@code true} if the character is a separator in this context, {@code false} otherwise

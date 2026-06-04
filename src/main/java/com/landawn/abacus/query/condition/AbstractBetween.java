@@ -75,6 +75,7 @@ public abstract class AbstractBetween extends ComposableCondition {
      *                 literal value, a {@link SubQuery}, or any other {@link Condition} whose
      *                 parameters will be spliced into {@link #getParameters()}; may be {@code null}
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractBetween(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
         super(operator);

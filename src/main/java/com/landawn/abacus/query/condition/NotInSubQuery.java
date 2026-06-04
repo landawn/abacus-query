@@ -27,7 +27,8 @@ import java.util.Collection;
  *
  * <p>Important considerations:</p>
  * <ul>
- *   <li>NULL handling: If the subquery returns any NULL values, NOT IN may produce unexpected results</li>
+ *   <li>NULL handling: if the subquery returns any NULL value, {@code col NOT IN (subquery)}
+ *       evaluates to UNKNOWN for every row (behaves as false in WHERE clauses) and no rows match</li>
  *   <li>Performance: For large result sets, consider using NOT EXISTS instead</li>
  *   <li>Empty subquery results: If subquery returns no rows, all values pass the NOT IN check</li>
  * </ul>

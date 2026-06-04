@@ -68,7 +68,7 @@ import com.landawn.abacus.util.Strings;
  * //  for the selected properties is also applied when available)
  *
  * // Use in IN condition
- * Condition inCondition = Filters.in("userId", subQuery1);
+ * InSubQuery inCondition = Filters.in("userId", subQuery1);
  * // Results in: userId IN (SELECT id FROM users WHERE status = 'active')
  * }</pre>
  *
@@ -243,7 +243,10 @@ public class SubQuery extends AbstractCondition {
      *     Arrays.asList("id", "categoryId"),
      *     Filters.like("name", "%electronics%")
      * );
-     * // Generates: SELECT id, categoryId FROM Product WHERE name LIKE '%electronics%'
+     * // Generates: SELECT id, categoryId FROM <Product-table-name> WHERE name LIKE '%electronics%'
+     * // (the FROM target is resolved from the entity class via QueryUtil — for a class without
+     * //  table-mapping annotations it falls back to the class's simple name "Product"; column-name
+     * //  mapping for the selected properties is also applied when available)
      *
      * // With complex conditions
      * SubQuery activeProducts = Filters.subQuery(Product.class,

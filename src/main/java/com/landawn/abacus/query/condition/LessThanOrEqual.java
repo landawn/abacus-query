@@ -68,7 +68,7 @@ public class LessThanOrEqual extends Binary {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor creates an uninitialized LessThanOrEqual instance and should not be used 
+     * This constructor creates an uninitialized LessThanOrEqual instance and should not be used
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     LessThanOrEqual() {

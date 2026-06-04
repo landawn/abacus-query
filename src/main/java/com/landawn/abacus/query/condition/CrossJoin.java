@@ -136,7 +136,8 @@ public class CrossJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
+     * @param cond the condition appended after the join target. Supplying any condition (including an
+     *            {@link On}) produces non-standard CROSS JOIN SQL, since a standard CROSS JOIN takes no
      *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
@@ -169,7 +170,8 @@ public class CrossJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
+     * @param cond the condition appended after the joined table list. Supplying any condition (including an
+     *            {@link On}) produces non-standard CROSS JOIN SQL, since a standard CROSS JOIN takes no
      *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
      */

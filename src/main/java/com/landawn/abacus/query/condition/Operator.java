@@ -445,18 +445,6 @@ public enum Operator {
         return value;
     }
 
-    //    /**
-    //     * Gets an Operator by its string representation.
-    //     *
-    //     * @param name the string representation of the operator. Can be null.
-    //     * @return the corresponding Operator enum value, or {@code null} if name is null or not found
-    //     * @deprecated Use {@link #of(String)} instead
-    //     */
-    //    @Deprecated
-    //    public static Operator operator(final String name) {
-    //        return of(name);
-    //    }
-
     /**
      * Gets the SQL string representation of this operator.
      *

@@ -41,7 +41,7 @@ import com.landawn.abacus.util.N;
  *   <li>AND requires all conditions to be true</li>
  *   <li>OR requires at least one condition to be true</li>
  *   <li>NOT negates a condition</li>
- *   <li>XOR is available via {@code ComposableCondition.xor()} method, requiring exactly one of two conditions to be true</li>
+ *   <li>XOR is available via the {@link ComposableCondition#xor(Condition)} method, requiring exactly one of two conditions to be true</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -114,7 +114,9 @@ public class And extends Junction {
     /**
      * Creates a new AND condition with the specified collection of conditions.
      * All conditions in the collection must be true for this AND condition to evaluate to true.
-     * 
+     * The collection is copied internally so that subsequent changes to the original collection
+     * do not affect this condition.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Build conditions dynamically

@@ -390,7 +390,7 @@ public final class SqlMapper {
      * <ul>
      *   <li>Must not be empty</li>
      *   <li>Must not contain whitespace</li>
-     *   <li>Must not exceed {@link #MAX_ID_LENGTH} (128) characters</li>
+     *   <li>Must not exceed {@value #MAX_ID_LENGTH} characters</li>
      *   <li>Must not already exist in the mapper</li>
      * </ul>
      *

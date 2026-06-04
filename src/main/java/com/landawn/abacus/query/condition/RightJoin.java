@@ -19,8 +19,8 @@ import java.util.Collection;
 /**
  * Represents a RIGHT JOIN clause in SQL queries.
  * 
- * <p>A RIGHT JOIN (or RIGHT OUTER JOIN) returns all records from the right table (table2),
- * and the matched records from the left table (table1). If there is no match, NULL values
+ * <p>A RIGHT JOIN (or RIGHT OUTER JOIN) returns all records from the right table (second table),
+ * and the matched records from the left table (first table). If there is no match, NULL values
  * are returned for columns from the left table. This is essentially the opposite of a LEFT JOIN.</p>
  * 
  * <p>RIGHT JOIN behavior:</p>
@@ -87,9 +87,9 @@ public class RightJoin extends Join {
 
     /**
      * Creates a RIGHT JOIN clause for the specified table or entity without a join condition.
-     * The rendered SQL is {@code RIGHT JOIN <joinEntity>} with no {@code ON} / {@code USING} clause; most
-     * databases require a join predicate, so this form is typically used to build the join fragment
-     * incrementally and combine it with a separately specified condition.
+     * Most databases require an {@code ON} or {@code USING} clause for a RIGHT JOIN; supply
+     * the condition separately (for example by combining this with another clause) or use
+     * {@link #RightJoin(String, Condition)} instead.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -143,7 +143,7 @@ public class RightJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
+     * @param cond the condition appended after the join target. Use {@link On} when the SQL should include an
      *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
