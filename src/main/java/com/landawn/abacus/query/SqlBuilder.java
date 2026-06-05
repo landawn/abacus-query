@@ -21,6 +21,7 @@ import static com.landawn.abacus.util.SK._PARENTHESIS_R;
 import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -129,12 +130,6 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
     protected static final Logger logger = LoggerFactory.getLogger(SqlBuilder.class);
 
-    //    public static final String _1 = "1";
-    //
-    //    public static final List<String> _1_list = ImmutableList.of(_1);
-
-    // private static final Map<Class<?>, ImmutableSet<String>> nonSubEntityPropNamesPool = new ObjectPool<>(N.POOL_SIZE);
-
     /**
      * Constructs a new SqlBuilder with the specified naming policy and SQL policy.
      *
@@ -165,10 +160,6 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      */
     @Override
     protected void appendCondition(final Condition cond) {
-        //    if (sb.charAt(sb.length() - 1) != _SPACE) {
-        //        sb.append(_SPACE);
-        //    }
-
         if (cond instanceof final Binary binary) {
             final String propName = binary.getPropName();
             final Object propValue = binary.getPropValue();
@@ -191,161 +182,17 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             _sb.append(_SPACE);
             setParameter(propName, propValue);
         } else if (cond instanceof final Between bt) {
-            final String propName = bt.getPropName();
-
-            appendColumnName(propName);
-
-            _sb.append(_SPACE);
-            _sb.append(bt.operator().toString());
-            _sb.append(_SPACE);
-
-            // Strip any table-alias prefix (e.g. "ord.orderDate" -> "orderDate") so the
-            // synthesized "minX"/"maxX" parameter names remain valid identifiers.
-            final String paramBase = sanitizeNamedParameterName(propName);
-            final String cap = Strings.capitalize(paramBase);
-
-            final Object minValue = bt.getMinValue();
-            setParameter("min" + cap, minValue);
-
-            _sb.append(_SPACE);
-            _sb.append(SK.AND);
-            _sb.append(_SPACE);
-
-            final Object maxValue = bt.getMaxValue();
-            setParameter("max" + cap, maxValue);
+            appendBetweenClause(bt.getPropName(), bt.operator(), bt.getMinValue(), bt.getMaxValue());
         } else if (cond instanceof final NotBetween nbt) {
-            final String propName = nbt.getPropName();
-
-            appendColumnName(propName);
-
-            _sb.append(_SPACE);
-            _sb.append(nbt.operator().toString());
-            _sb.append(_SPACE);
-
-            // Strip any table-alias prefix to keep "minX"/"maxX" parameter names valid.
-            final String paramBase = sanitizeNamedParameterName(propName);
-            final String cap = Strings.capitalize(paramBase);
-
-            final Object minValue = nbt.getMinValue();
-            setParameter("min" + cap, minValue);
-
-            _sb.append(_SPACE);
-            _sb.append(SK.AND);
-            _sb.append(_SPACE);
-
-            final Object maxValue = nbt.getMaxValue();
-            setParameter("max" + cap, maxValue);
+            appendBetweenClause(nbt.getPropName(), nbt.operator(), nbt.getMinValue(), nbt.getMaxValue());
         } else if (cond instanceof final In in) {
-            final String propName = in.getPropName();
-            final List<?> values = in.getValues();
-
-            appendColumnName(propName);
-
-            _sb.append(_SPACE);
-            _sb.append(in.operator().toString());
-            _sb.append(SK.SPACE_PARENTHESIS_L);
-
-            if (values != null) {
-                final boolean indexedParamName = _sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL;
-
-                for (int i = 0, len = values.size(); i < len; i++) {
-                    if (i > 0) {
-                        _sb.append(_COMMA_SPACE);
-                    }
-
-                    if (indexedParamName) {
-                        setParameter(propName + (i + 1), values.get(i));
-                    } else {
-                        setParameter(propName, values.get(i));
-                    }
-                }
-            }
-
-            _sb.append(SK._PARENTHESIS_R);
+            appendInClause(in.getPropName(), in.operator(), in.getValues());
         } else if (cond instanceof final InSubQuery inSubQuery) {
-            final Collection<String> propNames = inSubQuery.getPropNames();
-
-            if (propNames.size() == 1) {
-                appendColumnName(propNames.iterator().next());
-            } else {
-                _sb.append(SK._PARENTHESIS_L);
-
-                int idx = 0;
-
-                for (final String e : propNames) {
-                    if (idx++ > 0) {
-                        _sb.append(_COMMA_SPACE);
-                    }
-
-                    appendColumnName(e);
-                }
-
-                _sb.append(SK._PARENTHESIS_R);
-            }
-
-            _sb.append(_SPACE);
-            _sb.append(inSubQuery.operator().toString());
-
-            _sb.append(SK.SPACE_PARENTHESIS_L);
-
-            appendCondition(inSubQuery.getSubQuery());
-
-            _sb.append(SK._PARENTHESIS_R);
+            appendInSubQueryClause(inSubQuery.getPropNames(), inSubQuery.operator(), inSubQuery.getSubQuery());
         } else if (cond instanceof final NotIn notIn) {
-            final String propName = notIn.getPropName();
-            final List<?> values = notIn.getValues();
-
-            appendColumnName(propName);
-
-            _sb.append(_SPACE);
-            _sb.append(notIn.operator().toString());
-            _sb.append(SK.SPACE_PARENTHESIS_L);
-
-            if (values != null) {
-                final boolean indexedParamName = _sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL;
-
-                for (int i = 0, len = values.size(); i < len; i++) {
-                    if (i > 0) {
-                        _sb.append(_COMMA_SPACE);
-                    }
-
-                    if (indexedParamName) {
-                        setParameter(propName + (i + 1), values.get(i));
-                    } else {
-                        setParameter(propName, values.get(i));
-                    }
-                }
-            }
-
-            _sb.append(SK._PARENTHESIS_R);
+            appendInClause(notIn.getPropName(), notIn.operator(), notIn.getValues());
         } else if (cond instanceof final NotInSubQuery notInSubQuery) {
-            final Collection<String> propNames = notInSubQuery.getPropNames();
-
-            if (propNames.size() == 1) {
-                appendColumnName(propNames.iterator().next());
-            } else {
-                _sb.append(SK._PARENTHESIS_L);
-
-                int idx = 0;
-
-                for (final String e : propNames) {
-                    if (idx++ > 0) {
-                        _sb.append(_COMMA_SPACE);
-                    }
-
-                    appendColumnName(e);
-                }
-
-                _sb.append(SK._PARENTHESIS_R);
-            }
-
-            _sb.append(_SPACE);
-            _sb.append(notInSubQuery.operator().toString());
-            _sb.append(SK.SPACE_PARENTHESIS_L);
-
-            appendCondition(notInSubQuery.getSubQuery());
-
-            _sb.append(SK._PARENTHESIS_R);
+            appendInSubQueryClause(notInSubQuery.getPropNames(), notInSubQuery.operator(), notInSubQuery.getSubQuery());
         } else if (cond instanceof Where || cond instanceof Having) {
             final Clause clause = (Clause) cond;
 
@@ -355,21 +202,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
             appendCondition(clause.getCondition());
         } else if (cond instanceof final Cell cell) {
-            _sb.append(_SPACE);
-            _sb.append(cell.operator().toString());
-            _sb.append(_SPACE);
-
-            _sb.append(_PARENTHESIS_L);
-            appendCondition(cell.getCondition());
-            _sb.append(_PARENTHESIS_R);
+            appendParenthesizedCondition(cell.operator(), cell.getCondition());
         } else if (cond instanceof final ComposableCell cell) {
-            _sb.append(_SPACE);
-            _sb.append(cell.operator().toString());
-            _sb.append(_SPACE);
-
-            _sb.append(_PARENTHESIS_L);
-            appendCondition(cell.getCondition());
-            _sb.append(_PARENTHESIS_R);
+            appendParenthesizedCondition(cell.operator(), cell.getCondition());
         } else if (cond instanceof final Junction junction) {
             final List<Condition> conditionList = junction.getConditions();
 
@@ -380,10 +215,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
             if (conditionList.size() == 1) {
                 appendCondition(conditionList.get(0));
             } else {
-                // TODO ((id = :id) AND (gui = :gui)) is not support in Cassandra.
-                // only (id = :id) AND (gui = :gui) works.
-                // sb.append(_PARENTHESIS_L);
-
+                // Note: the outer parentheses around the whole junction are intentionally omitted:
+                // Cassandra rejects "((id = :id) AND (gui = :gui))" and only accepts "(id = :id) AND (gui = :gui)".
                 for (int i = 0, size = conditionList.size(); i < size; i++) {
                     if (i > 0) {
                         _sb.append(_SPACE);
@@ -397,8 +230,6 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
                     _sb.append(_PARENTHESIS_R);
                 }
-
-                // sb.append(_PARENTHESIS_R);
             }
         } else if (cond instanceof final SubQuery subQuery) {
             final Condition subCond = subQuery.getCondition();
@@ -421,33 +252,94 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
                 }
             }
         } else if (cond instanceof Expression) {
-            // ==== version 1
-            // sb.append(cond.toString());
-
-            // ==== version 2
-            //    final List<String> words = SqlParser.parse(((Expression) cond).getLiteral());
-            //    final Map<String, String> propColumnNameMap = getPropColumnNameMap(entityClass, namingPolicy);
-            //
-            //    String word = null;
-            //
-            //    for (int i = 0, size = words.size(); i < size; i++) {
-            //        word = words.get(i);
-            //
-            //        if ((i > 2) && SK.AS.equalsIgnoreCase(words.get(i - 2))) {
-            //            sb.append(word);
-            //        } else if ((i > 1) && SK.SPACE.equalsIgnoreCase(words.get(i - 1))
-            //                && (propColumnNameMap.containsKey(words.get(i - 2)) || propColumnNameMap.containsValue(words.get(i - 2)))) {
-            //            sb.append(word);
-            //        } else {
-            //            sb.append(normalizeColumnName(propColumnNameMap, word));
-            //        }
-            //    }
-
-            // ==== version 3
             appendStringExpr(((Expression) cond).getLiteral(), false);
         } else {
             throw new IllegalArgumentException("Unsupported condition type: " + cond);
         }
+    }
+
+    private void appendBetweenClause(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
+        appendColumnName(propName);
+
+        _sb.append(_SPACE);
+        _sb.append(operator.toString());
+        _sb.append(_SPACE);
+
+        // Strip any table-alias prefix (e.g. "ord.orderDate" -> "orderDate") so the
+        // synthesized "minX"/"maxX" parameter names remain valid identifiers.
+        final String cap = Strings.capitalize(sanitizeNamedParameterName(propName));
+
+        setParameter("min" + cap, minValue);
+
+        _sb.append(_SPACE);
+        _sb.append(SK.AND);
+        _sb.append(_SPACE);
+
+        setParameter("max" + cap, maxValue);
+    }
+
+    private void appendInClause(final String propName, final Operator operator, final List<?> values) {
+        appendColumnName(propName);
+
+        _sb.append(_SPACE);
+        _sb.append(operator.toString());
+        _sb.append(SK.SPACE_PARENTHESIS_L);
+
+        if (values != null) {
+            final boolean indexedParamName = _sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL;
+
+            for (int i = 0, len = values.size(); i < len; i++) {
+                if (i > 0) {
+                    _sb.append(_COMMA_SPACE);
+                }
+
+                if (indexedParamName) {
+                    setParameter(propName + (i + 1), values.get(i));
+                } else {
+                    setParameter(propName, values.get(i));
+                }
+            }
+        }
+
+        _sb.append(SK._PARENTHESIS_R);
+    }
+
+    private void appendInSubQueryClause(final Collection<String> propNames, final Operator operator, final SubQuery subQuery) {
+        if (propNames.size() == 1) {
+            appendColumnName(propNames.iterator().next());
+        } else {
+            _sb.append(SK._PARENTHESIS_L);
+
+            int idx = 0;
+
+            for (final String e : propNames) {
+                if (idx++ > 0) {
+                    _sb.append(_COMMA_SPACE);
+                }
+
+                appendColumnName(e);
+            }
+
+            _sb.append(SK._PARENTHESIS_R);
+        }
+
+        _sb.append(_SPACE);
+        _sb.append(operator.toString());
+        _sb.append(SK.SPACE_PARENTHESIS_L);
+
+        appendCondition(subQuery);
+
+        _sb.append(SK._PARENTHESIS_R);
+    }
+
+    private void appendParenthesizedCondition(final Operator operator, final Condition inner) {
+        _sb.append(_SPACE);
+        _sb.append(operator.toString());
+        _sb.append(_SPACE);
+
+        _sb.append(_PARENTHESIS_L);
+        appendCondition(inner);
+        _sb.append(_PARENTHESIS_R);
     }
 
     /**
@@ -457,7 +349,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * subclass {@code createInstance()}, so the produced builder type is identical to what the
      * previous {@code if (this instanceof XxxBuilder) ...} chain produced.
      */
-    private static final Map<Class<?>, Supplier<SqlBuilder>> SUB_QUERY_BUILDER_FACTORIES = new java.util.HashMap<>();
+    private static final Map<Class<?>, Supplier<SqlBuilder>> SUB_QUERY_BUILDER_FACTORIES = new HashMap<>();
 
     static {
         SUB_QUERY_BUILDER_FACTORIES.put(SCSB.class, SCSB::createInstance);
@@ -2911,7 +2803,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection objects defining what to select
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if multiSelects is invalid
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -3012,7 +2904,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection objects defining what to select
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if multiSelects is invalid
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -4222,7 +4114,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection objects defining the entities to select
          * @return a new SqlBuilder instance configured for multi-table SELECT operation
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -4329,7 +4221,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection objects defining the entities to select
          * @return a new SqlBuilder instance configured for multi-table SELECT FROM operation
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -5431,7 +5323,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection configurations for each table
          * @return a new SqlBuilder instance configured for multi-table SELECT
-         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid selections
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -5534,7 +5426,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection configurations for each table
          * @return a new SqlBuilder instance with SELECT and FROM clauses configured
-         * @throws IllegalArgumentException if multiSelects is null, empty, or invalid
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -6791,7 +6683,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection objects defining what to select from each entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -6893,7 +6785,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection objects defining what to select from each entity
          * @return a new SqlBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -8040,7 +7932,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection descriptors for each entity
          * @return a new SqlBuilder instance configured for multi-table SELECT
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -8136,7 +8028,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection descriptors
          * @return a new SqlBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -9638,7 +9530,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection objects defining what to select from each entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -9739,7 +9631,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection objects defining what to select from each entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -10914,7 +10806,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection configurations
          * @return a new SqlBuilder instance configured for multi-table SELECT
-         * @throws IllegalArgumentException if multiSelects is invalid
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -11010,7 +10902,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection configurations
          * @return a new SqlBuilder with SELECT and FROM clauses configured
-         * @throws IllegalArgumentException if multiSelects is invalid
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -12100,7 +11992,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection objects defining the entities to select
          * @return a new SqlBuilder instance configured for multi-table SELECT operation
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -12197,7 +12089,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection objects defining the entities to select
          * @return a new SqlBuilder instance configured for multi-table SELECT with FROM clause
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -13294,7 +13186,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection configurations for each entity
          * @return an SqlBuilder configured for SELECT operation
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -13392,7 +13284,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection configurations for each entity
          * @return an SqlBuilder configured for SELECT operation with FROM clause
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -14600,7 +14492,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection configurations for each entity
          * @return an SqlBuilder configured for SELECT operation
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -14721,7 +14613,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection configurations for each entity
          * @return an SqlBuilder configured for SELECT operation with FROM clause
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -15889,7 +15781,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param multiSelects list of Selection configurations for each entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid configurations
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -15991,7 +15883,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection configurations for each entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid configurations
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -17134,7 +17026,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection objects defining entities and their configurations
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -17230,7 +17122,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection objects defining entities and their configurations
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -18311,7 +18203,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection configurations for multiple entities
          * @return a new SqlBuilder instance configured for multi-entity SELECT
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -18407,7 +18299,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection configurations for multiple entities
          * @return a new SqlBuilder instance configured for multi-entity SELECT FROM
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -19515,7 +19407,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection objects defining what to select from each entity
          * @return a new SqlBuilder instance configured for multi-entity SELECT operation
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder select(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
@@ -19608,7 +19500,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param multiSelects list of Selection objects defining what to select from each entity
          * @return a new SqlBuilder instance configured for multi-entity SELECT operation with FROM clause
-         * @throws IllegalArgumentException if multiSelects is null or empty
+         * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
          */
         public static SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);

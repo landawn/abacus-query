@@ -365,43 +365,12 @@ public final class SqlParser {
                         bsEscaped = false;
                     }
                 } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+                    // Line comment (-- ...): always discarded (unlike block comments, the "Keep
+                    // comments" marker does not preserve these). Skip to the end of the line.
                     if (!sb.isEmpty()) {
                         words.add(sb.toString());
                         sb.setLength(0);
                     }
-
-                    //    if (keepComments == -1) {
-                    //        keepComments = Strings.startsWithIgnoreCase(sql, "-- Keep comments") ? 1 : 0;
-                    //    }
-                    //
-                    //    if (keepComments == 1) {
-                    //        sb.append(c);
-                    //
-                    //        while (++index < sqlLength) {
-                    //            c = sql.charAt(index);
-                    //            sb.append(c);
-                    //
-                    //            if (c == ENTER || c == ENTER_2) {
-                    //                final String tmp = sb.toString();
-                    //
-                    //                if (!Strings.startsWithIgnoreCase(tmp, "-- Keep comments")) {
-                    //                    words.add(sb.toString());
-                    //                }
-                    //
-                    //                sb.setLength(0);
-                    //
-                    //                break;
-                    //            }
-                    //        }
-                    //    } else {
-                    //        while (++index < sqlLength) {
-                    //            c = sql.charAt(index);
-                    //
-                    //            if (c == ENTER || c == ENTER_2) {
-                    //                break;
-                    //            }
-                    //        }
-                    //    }
 
                     while (++index < sqlLength) {
                         c = sql.charAt(index);
@@ -1090,9 +1059,6 @@ public final class SqlParser {
      *         by a token beginning with {@code '('}; {@code false} otherwise
      */
     public static boolean isFunctionName(final List<String> words, final int len, final int index) {
-        //    return (i < len - 1 && words.get(i + 1).charAt(0) == SK._PARENTHESIS_L)
-        //            || (i < len - 2 && SK.SPACE.equals(words.get(i + 1)) && words.get(i + 2).charAt(0) == SK._PARENTHESIS_L);
-
         if (index < len - 1) {
             String nextWord = words.get(index + 1);
             if (!nextWord.isEmpty() && nextWord.charAt(0) == SK._PARENTHESIS_L) {

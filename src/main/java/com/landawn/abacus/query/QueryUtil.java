@@ -328,12 +328,6 @@ public final class QueryUtil {
             }
         }
 
-        //    final Map<String, String> tmp = entityTablePropColumnNameMap.get(entityClass);
-        //
-        //    if (N.notEmpty(tmp)) {
-        //        propColumnNameMap.putAll(tmp);
-        //    }
-
         if (N.isEmpty(propColumnNameMap)) {
             propColumnNameMap = N.emptyMap();
         }

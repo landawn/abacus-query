@@ -76,12 +76,12 @@ public final class ParsedSql {
 
     private static final int MAX_IDLE_TIME = 24 * 60 * 60 * 1000;
 
-    private static final Set<String> opSqlPrefixSet = Set.of(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE, SK.CALL, SK.VALUES, "EXPLAIN",
+    private static final Set<String> OP_SQL_PREFIX_SET = Set.of(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE, SK.CALL, SK.VALUES, "EXPLAIN",
             "REPLACE");
 
-    private static final int factor = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
+    private static final int FACTOR = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
 
-    private static final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> pool = PoolFactory.createKeyedObjectPool(1000 * factor, EVICT_TIME);
+    private static final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> pool = PoolFactory.createKeyedObjectPool(1000 * FACTOR, EVICT_TIME);
 
     private static final String PREFIX_OF_NAMED_PARAMETER = ":";
 
@@ -391,12 +391,12 @@ public final class ParsedSql {
     }
 
     /**
-     * Equivalent to {@code opSqlPrefixSet.contains(word.toUpperCase(Locale.ROOT))} but without
-     * allocating a temporary upper-cased String. All entries of {@code opSqlPrefixSet} are
+     * Equivalent to {@code OP_SQL_PREFIX_SET.contains(word.toUpperCase(Locale.ROOT))} but without
+     * allocating a temporary upper-cased String. All entries of {@code OP_SQL_PREFIX_SET} are
      * uppercase ASCII keywords, so a case-insensitive scan yields the identical result.
      */
     private static boolean isOpSqlPrefixWord(final String word) {
-        for (final String prefix : opSqlPrefixSet) {
+        for (final String prefix : OP_SQL_PREFIX_SET) {
             if (prefix.equalsIgnoreCase(word)) {
                 return true;
             }
@@ -479,8 +479,9 @@ public final class ParsedSql {
     }
 
     private static boolean isValidNamedParameterChar(final char ch) {
+        // Valid name chars: ASCII letters/digits, '_', '.', plus any non-ASCII char (>= 128).
         // https://www.cs.cmu.edu/~pattis/15-1XX/common/handouts/ascii.html
-        return ch == '_' || ch == '.' || !(ch < '0' || (ch > '9' && ch < 'A') || (ch > 'Z' && ch < 'a') || (ch > 'z' && ch < 128));
+        return ch == '_' || ch == '.' || (ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch >= 128;
     }
 
     /**

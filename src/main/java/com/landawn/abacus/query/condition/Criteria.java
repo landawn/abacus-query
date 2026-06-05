@@ -1228,11 +1228,11 @@ public class Criteria extends AbstractCondition {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * // A non-clause condition (e.g. Equal) renders directly after the entity, with no ON keyword.
+         * // A non-On/Using condition (e.g. Equal) has the ON keyword prepended by the join.
          * Criteria c = Criteria.builder()
          *     .crossJoin("colors", Filters.eq("active", true))
          *     .build();
-         * c.toString(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors active = true"
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors ON active = true"
          *
          * // An On condition renders with the ON keyword.
          * Criteria c2 = Criteria.builder().crossJoin("colors", Filters.on("a", "b")).build();
@@ -1307,9 +1307,9 @@ public class Criteria extends AbstractCondition {
          *     .build();
          * c.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees ON status = active"
          *
-         * // A non-clause condition (e.g. Equal) renders directly after the entity, with no ON keyword.
+         * // A non-On/Using condition (e.g. Equal) has the ON keyword prepended by the join.
          * Criteria c2 = Criteria.builder().naturalJoin("employees", Filters.eq("status", "active")).build();
-         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees status = 'active'"
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees ON status = 'active'"
          * }</pre>
          *
          * @param joinEntity the table or entity to join

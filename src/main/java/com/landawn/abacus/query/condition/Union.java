@@ -31,6 +31,8 @@ package com.landawn.abacus.query.condition;
  *   <li>Column names from the first SELECT are used in the result</li>
  *   <li>Slower than UNION ALL due to duplicate elimination overhead</li>
  *   <li>Result order is not guaranteed unless ORDER BY is specified</li>
+ *   <li>For row comparison purposes, two {@code NULL} values in the same column position are
+ *       treated as equal (SQL set-operation semantics, unlike regular {@code =} comparisons)</li>
  * </ul>
  *
  * <p>When to use UNION vs UNION ALL:

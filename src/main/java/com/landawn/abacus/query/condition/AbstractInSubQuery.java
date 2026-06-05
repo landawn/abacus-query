@@ -331,24 +331,24 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
             final int size = propNames.size();
 
             if (size == 1) {
-                final String singleProp = (propNames instanceof List) ? ((List<String>) propNames).get(0) : propNames.iterator().next();
+                final String singleProp = propNames.iterator().next();
 
                 return effectiveNamingPolicy.convert(singleProp) + SK._SPACE + opStr + SK.SPACE_PARENTHESIS_L + subQueryString + SK.PARENTHESIS_R;
             }
 
             final StringBuilder sb = new StringBuilder(16 + (size << 4) + subQueryString.length());
-            sb.append('(');
+            sb.append(SK._PARENTHESIS_L);
 
             int i = 0;
             for (final String propName : propNames) {
                 if (i++ > 0) {
-                    sb.append(", ");
+                    sb.append(SK.COMMA_SPACE);
                 }
 
                 sb.append(effectiveNamingPolicy.convert(propName));
             }
 
-            sb.append(") ").append(opStr).append(SK.SPACE_PARENTHESIS_L).append(subQueryString).append(SK.PARENTHESIS_R);
+            sb.append(SK._PARENTHESIS_R).append(SK._SPACE).append(opStr).append(SK.SPACE_PARENTHESIS_L).append(subQueryString).append(SK.PARENTHESIS_R);
 
             return sb.toString();
         }

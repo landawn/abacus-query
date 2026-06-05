@@ -105,6 +105,23 @@ public final class DynamicQuery {
     }
 
     /**
+     * Emits the leading token for a clause fragment: the clause {@code keyword} when the buffer is
+     * still empty (the first fragment), otherwise the inter-fragment {@code separator}. Shared by all
+     * clause builders to keep the "first vs subsequent fragment" decision in one place.
+     *
+     * @param sb the clause buffer
+     * @param keyword the clause keyword to start with (e.g. {@code "SELECT "})
+     * @param separator the separator placed between fragments (e.g. {@code ", "})
+     */
+    private static void startClauseFragment(final StringBuilder sb, final String keyword, final String separator) {
+        if (sb.isEmpty()) {
+            sb.append(keyword);
+        } else {
+            sb.append(separator);
+        }
+    }
+
+    /**
      * Builder for constructing dynamic SQL queries clause by clause.
      */
     public static final class Builder {
@@ -678,11 +695,7 @@ public final class DynamicQuery {
         public SelectClause append(final String column) {
             checkSqlFragmentNotBlank(column, "column");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("SELECT ");
-            }
+            startClauseFragment(sb, "SELECT ", ", ");
 
             sb.append(column);
 
@@ -708,11 +721,7 @@ public final class DynamicQuery {
             checkSqlFragmentNotBlank(column, "column");
             checkSqlFragmentNotBlank(alias, "alias");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("SELECT ");
-            }
+            startClauseFragment(sb, "SELECT ", ", ");
 
             sb.append(column).append(" AS ").append(alias);
 
@@ -741,11 +750,7 @@ public final class DynamicQuery {
 
             checkSqlFragmentsNotBlank(columns, "columns");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("SELECT ");
-            }
+            startClauseFragment(sb, "SELECT ", ", ");
 
             sb.append(Strings.join(columns, ", "));
 
@@ -779,11 +784,7 @@ public final class DynamicQuery {
 
             checkSqlFragmentMapNotBlank(columnsAndAliasMap, "columnsAndAliasMap");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("SELECT ");
-            }
+            startClauseFragment(sb, "SELECT ", ", ");
 
             sb.append(Strings.joinEntries(columnsAndAliasMap, ", ", " AS "));
 
@@ -809,11 +810,7 @@ public final class DynamicQuery {
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                if (!sb.isEmpty()) {
-                    sb.append(", ");
-                } else {
-                    sb.append("SELECT ");
-                }
+                startClauseFragment(sb, "SELECT ", ", ");
 
                 sb.append(textToAppend);
             }
@@ -842,11 +839,7 @@ public final class DynamicQuery {
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("SELECT ");
-            }
+            startClauseFragment(sb, "SELECT ", ", ");
 
             if (condition) {
                 sb.append(textToAppendWhenTrue);
@@ -899,11 +892,7 @@ public final class DynamicQuery {
         public FromClause append(final String table) {
             checkSqlFragmentNotBlank(table, "table");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("FROM ");
-            }
+            startClauseFragment(sb, "FROM ", ", ");
 
             sb.append(table);
 
@@ -929,11 +918,7 @@ public final class DynamicQuery {
             checkSqlFragmentNotBlank(table, "table");
             checkSqlFragmentNotBlank(alias, "alias");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("FROM ");
-            }
+            startClauseFragment(sb, "FROM ", ", ");
 
             sb.append(table).append(" ").append(alias);
 
@@ -1094,11 +1079,7 @@ public final class DynamicQuery {
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                if (!sb.isEmpty()) {
-                    sb.append(", ");
-                } else {
-                    sb.append("FROM ");
-                }
+                startClauseFragment(sb, "FROM ", ", ");
 
                 sb.append(textToAppend);
             }
@@ -1125,11 +1106,7 @@ public final class DynamicQuery {
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("FROM ");
-            }
+            startClauseFragment(sb, "FROM ", ", ");
 
             if (condition) {
                 sb.append(textToAppendWhenTrue);
@@ -1187,11 +1164,7 @@ public final class DynamicQuery {
         public WhereClause append(final String cond) {
             checkSqlFragmentNotBlank(cond, "cond");
 
-            if (!sb.isEmpty()) {
-                sb.append(" ");
-            } else {
-                sb.append("WHERE ");
-            }
+            startClauseFragment(sb, "WHERE ", " ");
 
             sb.append(cond);
 
@@ -1223,13 +1196,7 @@ public final class DynamicQuery {
         public WhereClause placeholders(final int placeholderCount) {
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
 
-            for (int i = 0; i < placeholderCount; i++) {
-                if (i > 0) {
-                    sb.append(", ?");
-                } else {
-                    sb.append('?');
-                }
-            }
+            appendPlaceholders(placeholderCount);
 
             return this;
         }
@@ -1259,19 +1226,27 @@ public final class DynamicQuery {
 
             if (placeholderCount > 0) {
                 sb.append(prefix);
-
-                for (int i = 0; i < placeholderCount; i++) {
-                    if (i > 0) {
-                        sb.append(", ?");
-                    } else {
-                        sb.append('?');
-                    }
-                }
-
+                appendPlaceholders(placeholderCount);
                 sb.append(postfix);
             }
 
             return this;
+        }
+
+        /**
+         * Appends {@code placeholderCount} comma-separated {@code ?} placeholders, with no surrounding
+         * prefix/postfix. Shared by the {@code placeholders(...)} overloads.
+         *
+         * @param placeholderCount the number of {@code ?} placeholders to append
+         */
+        private void appendPlaceholders(final int placeholderCount) {
+            for (int i = 0; i < placeholderCount; i++) {
+                if (i > 0) {
+                    sb.append(", ?");
+                } else {
+                    sb.append('?');
+                }
+            }
         }
 
         /**
@@ -1351,11 +1326,7 @@ public final class DynamicQuery {
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                if (!sb.isEmpty()) {
-                    sb.append(" ");
-                } else {
-                    sb.append("WHERE ");
-                }
+                startClauseFragment(sb, "WHERE ", " ");
 
                 sb.append(textToAppend);
             }
@@ -1384,11 +1355,7 @@ public final class DynamicQuery {
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            if (!sb.isEmpty()) {
-                sb.append(" ");
-            } else {
-                sb.append("WHERE ");
-            }
+            startClauseFragment(sb, "WHERE ", " ");
 
             if (condition) {
                 sb.append(textToAppendWhenTrue);
@@ -1442,11 +1409,7 @@ public final class DynamicQuery {
         public GroupByClause append(final String column) {
             checkSqlFragmentNotBlank(column, "column");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("GROUP BY ");
-            }
+            startClauseFragment(sb, "GROUP BY ", ", ");
 
             sb.append(column);
 
@@ -1475,11 +1438,7 @@ public final class DynamicQuery {
 
             checkSqlFragmentsNotBlank(columns, "columns");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("GROUP BY ");
-            }
+            startClauseFragment(sb, "GROUP BY ", ", ");
 
             sb.append(Strings.join(columns, ", "));
 
@@ -1505,11 +1464,7 @@ public final class DynamicQuery {
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                if (!sb.isEmpty()) {
-                    sb.append(", ");
-                } else {
-                    sb.append("GROUP BY ");
-                }
+                startClauseFragment(sb, "GROUP BY ", ", ");
 
                 sb.append(textToAppend);
             }
@@ -1538,11 +1493,7 @@ public final class DynamicQuery {
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("GROUP BY ");
-            }
+            startClauseFragment(sb, "GROUP BY ", ", ");
 
             if (condition) {
                 sb.append(textToAppendWhenTrue);
@@ -1595,11 +1546,7 @@ public final class DynamicQuery {
         public HavingClause append(final String cond) {
             checkSqlFragmentNotBlank(cond, "cond");
 
-            if (!sb.isEmpty()) {
-                sb.append(" ");
-            } else {
-                sb.append("HAVING ");
-            }
+            startClauseFragment(sb, "HAVING ", " ");
 
             sb.append(cond);
 
@@ -1683,11 +1630,7 @@ public final class DynamicQuery {
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                if (!sb.isEmpty()) {
-                    sb.append(" ");
-                } else {
-                    sb.append("HAVING ");
-                }
+                startClauseFragment(sb, "HAVING ", " ");
 
                 sb.append(textToAppend);
             }
@@ -1716,11 +1659,7 @@ public final class DynamicQuery {
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            if (!sb.isEmpty()) {
-                sb.append(" ");
-            } else {
-                sb.append("HAVING ");
-            }
+            startClauseFragment(sb, "HAVING ", " ");
 
             if (condition) {
                 sb.append(textToAppendWhenTrue);
@@ -1774,11 +1713,7 @@ public final class DynamicQuery {
         public OrderByClause append(final String column) {
             checkSqlFragmentNotBlank(column, "column");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("ORDER BY ");
-            }
+            startClauseFragment(sb, "ORDER BY ", ", ");
 
             sb.append(column);
 
@@ -1808,11 +1743,7 @@ public final class DynamicQuery {
 
             checkSqlFragmentsNotBlank(columns, "columns");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("ORDER BY ");
-            }
+            startClauseFragment(sb, "ORDER BY ", ", ");
 
             sb.append(Strings.join(columns, ", "));
 
@@ -1838,11 +1769,7 @@ public final class DynamicQuery {
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                if (!sb.isEmpty()) {
-                    sb.append(", ");
-                } else {
-                    sb.append("ORDER BY ");
-                }
+                startClauseFragment(sb, "ORDER BY ", ", ");
 
                 sb.append(textToAppend);
             }
@@ -1871,11 +1798,7 @@ public final class DynamicQuery {
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            if (!sb.isEmpty()) {
-                sb.append(", ");
-            } else {
-                sb.append("ORDER BY ");
-            }
+            startClauseFragment(sb, "ORDER BY ", ", ");
 
             if (condition) {
                 sb.append(textToAppendWhenTrue);

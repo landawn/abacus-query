@@ -21,9 +21,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.util.ClassUtil;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -547,8 +548,7 @@ public class SubQuery extends AbstractCondition {
     private String doToString(final NamingPolicy namingPolicy) {
         if (sql == null) {
             final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-            final java.util.Map<String, String> prop2ColumnNameMap = entityClass == null ? null
-                    : QueryUtil.getProp2ColumnNameMap(entityClass, effectiveNamingPolicy);
+            final Map<String, String> prop2ColumnNameMap = entityClass == null ? null : QueryUtil.getProp2ColumnNameMap(entityClass, effectiveNamingPolicy);
             final StringBuilder sb = Objectory.createStringBuilder();
 
             try {

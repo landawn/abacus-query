@@ -189,15 +189,20 @@ public abstract class Cell extends AbstractCondition {
             return cachedTostring;
         }
 
-        final Operator op = operator();
-
-        final String result = (op == null ? Strings.NULL : op.toString())
-                + ((condition == null) ? Strings.EMPTY : SK._SPACE + condition.toString(namingPolicy));
+        final String result = doToString(namingPolicy);
 
         cachedTostring = result;
         cachedTostringNamingPolicy = namingPolicy;
 
         return result;
+    }
+
+    private String doToString(final NamingPolicy namingPolicy) {
+        final Operator op = operator();
+
+        // Note: unlike ComposableCell, the wrapped condition is NOT parenthesized and the naming
+        // policy is passed through as-is (a null policy is handled by the wrapped condition).
+        return (op == null ? Strings.NULL : op.toString()) + ((condition == null) ? Strings.EMPTY : SK._SPACE + condition.toString(namingPolicy));
     }
 
     /**

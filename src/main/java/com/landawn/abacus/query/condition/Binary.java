@@ -18,6 +18,7 @@ import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.SK;
+import com.landawn.abacus.util.Strings;
 
 /**
  * Base class for binary conditions that compare a property with a value.
@@ -286,7 +287,7 @@ public class Binary extends ComposableCondition {
             }
         }
 
-        final String opStr = op == null ? String.valueOf((Object) null) : op.toString();
+        final String opStr = op == null ? Strings.NULL : op.toString();
         return effectiveNamingPolicy.convert(propName) + SK._SPACE + opStr + SK._SPACE + formatParameter(propValue, effectiveNamingPolicy);
     }
 

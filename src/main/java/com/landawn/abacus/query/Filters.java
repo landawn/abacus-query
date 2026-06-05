@@ -564,7 +564,6 @@ public class Filters {
 
             return and(conds);
         }
-
     }
 
     /**
@@ -1416,7 +1415,7 @@ public class Filters {
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static Between between(final String propName) {
-        return new Between(propName, Filters.QME, Filters.QME);
+        return new Between(propName, QME, QME);
     }
 
     // Removed: bt(String, Object, Object) and bt(String) - non-standard abbreviations.
@@ -1455,7 +1454,7 @@ public class Filters {
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static NotBetween notBetween(final String propName) {
-        return new NotBetween(propName, Filters.QME, Filters.QME);
+        return new NotBetween(propName, QME, QME);
     }
 
     /**
@@ -1525,7 +1524,7 @@ public class Filters {
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static NotLike notLike(final String propName) {
-        return new NotLike(propName, Filters.QME);
+        return new NotLike(propName, QME);
     }
 
     /**
@@ -2959,7 +2958,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param values array of integer values
-     * @return an In condition
+     * @return an {@link In} condition
      */
     public static In in(final String propName, final int[] values) {
         return in(propName, Array.box(values));
@@ -2976,7 +2975,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param values array of long values
-     * @return an In condition
+     * @return an {@link In} condition
      */
     public static In in(final String propName, final long[] values) {
         return in(propName, Array.box(values));
@@ -2993,7 +2992,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param values array of double values
-     * @return an In condition
+     * @return an {@link In} condition
      */
     public static In in(final String propName, final double[] values) {
         return in(propName, Array.box(values));
@@ -3010,7 +3009,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param values array of values
-     * @return an In condition
+     * @return an {@link In} condition
      */
     public static In in(final String propName, final Object[] values) {
         return in(propName, Arrays.asList(values));
@@ -3028,7 +3027,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param values collection of values
-     * @return an In condition
+     * @return an {@link In} condition
      */
     public static In in(final String propName, final Collection<?> values) {
         return new In(propName, values);
@@ -3047,7 +3046,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param subQuery the subquery to check against
-     * @return an InSubQuery condition
+     * @return an {@link InSubQuery} condition
      */
     public static InSubQuery in(final String propName, final SubQuery subQuery) {
         return new InSubQuery(propName, subQuery);
@@ -3066,7 +3065,7 @@ public class Filters {
      *
      * @param propNames collection of property/column names
      * @param subQuery the subquery to check against
-     * @return an InSubQuery condition
+     * @return an {@link InSubQuery} condition
      */
     public static InSubQuery in(final Collection<String> propNames, final SubQuery subQuery) {
         return new InSubQuery(propNames, subQuery);
@@ -3083,7 +3082,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param values array of integer values to exclude
-     * @return a NotIn condition
+     * @return a {@link NotIn} condition
      */
     public static NotIn notIn(final String propName, final int[] values) {
         return notIn(propName, Array.box(values));
@@ -3100,7 +3099,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param values array of long values to exclude
-     * @return a NotIn condition
+     * @return a {@link NotIn} condition
      */
     public static NotIn notIn(final String propName, final long[] values) {
         return notIn(propName, Array.box(values));
@@ -3117,7 +3116,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param values array of double values to exclude
-     * @return a NotIn condition
+     * @return a {@link NotIn} condition
      */
     public static NotIn notIn(final String propName, final double[] values) {
         return notIn(propName, Array.box(values));
@@ -3134,7 +3133,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param values array of values to exclude
-     * @return a NotIn condition
+     * @return a {@link NotIn} condition
      */
     public static NotIn notIn(final String propName, final Object[] values) {
         return notIn(propName, Arrays.asList(values));
@@ -3152,7 +3151,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param values collection of values to exclude
-     * @return a NotIn condition
+     * @return a {@link NotIn} condition
      */
     public static NotIn notIn(final String propName, final Collection<?> values) {
         return new NotIn(propName, values);
@@ -3171,7 +3170,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @param subQuery the subquery to check against
-     * @return a NotInSubQuery condition
+     * @return a {@link NotInSubQuery} condition
      */
     public static NotInSubQuery notIn(final String propName, final SubQuery subQuery) {
         return new NotInSubQuery(propName, subQuery);
@@ -3190,7 +3189,7 @@ public class Filters {
      *
      * @param propNames collection of property/column names
      * @param subQuery the subquery to check against
-     * @return a NotInSubQuery condition
+     * @return a {@link NotInSubQuery} condition
      */
     public static NotInSubQuery notIn(final Collection<String> propNames, final SubQuery subQuery) {
         return new NotInSubQuery(propNames, subQuery);
@@ -3210,7 +3209,7 @@ public class Filters {
      * }</pre>
      *
      * @param subQuery the subquery
-     * @return an All condition
+     * @return an {@link All} condition
      */
     public static All all(final SubQuery subQuery) {
         return new All(subQuery);
@@ -3230,7 +3229,7 @@ public class Filters {
      * }</pre>
      *
      * @param subQuery the subquery
-     * @return an Any condition
+     * @return an {@link Any} condition
      */
     public static Any any(final SubQuery subQuery) {
         return new Any(subQuery);
@@ -3250,7 +3249,7 @@ public class Filters {
      * }</pre>
      *
      * @param subQuery the subquery
-     * @return a Some condition
+     * @return a {@link Some} condition
      */
     public static Some some(final SubQuery subQuery) {
         return new Some(subQuery);
@@ -3267,7 +3266,7 @@ public class Filters {
      * }</pre>
      *
      * @param subQuery the subquery to check
-     * @return an Exists condition
+     * @return an {@link Exists} condition
      */
     public static Exists exists(final SubQuery subQuery) {
         return new Exists(subQuery);
@@ -3284,7 +3283,7 @@ public class Filters {
      * }</pre>
      *
      * @param subQuery the subquery to check
-     * @return a NotExists condition
+     * @return a {@link NotExists} condition
      */
     public static NotExists notExists(final SubQuery subQuery) {
         return new NotExists(subQuery);
@@ -3302,7 +3301,7 @@ public class Filters {
      * }</pre>
      *
      * @param subQuery the subquery to union with
-     * @return a Union clause
+     * @return a {@link Union} clause
      */
     public static Union union(final SubQuery subQuery) {
         return new Union(subQuery);
@@ -3320,7 +3319,7 @@ public class Filters {
      * }</pre>
      *
      * @param subQuery the subquery to union with
-     * @return a UnionAll clause
+     * @return a {@link UnionAll} clause
      */
     public static UnionAll unionAll(final SubQuery subQuery) {
         return new UnionAll(subQuery);
@@ -3338,7 +3337,7 @@ public class Filters {
      * }</pre>
      *
      * @param subQuery the subquery to subtract
-     * @return an Except clause
+     * @return an {@link Except} clause
      */
     public static Except except(final SubQuery subQuery) {
         return new Except(subQuery);
@@ -3356,7 +3355,7 @@ public class Filters {
      * }</pre>
      *
      * @param subQuery the subquery to intersect with
-     * @return an Intersect clause
+     * @return an {@link Intersect} clause
      */
     public static Intersect intersect(final SubQuery subQuery) {
         return new Intersect(subQuery);
@@ -3374,38 +3373,11 @@ public class Filters {
      * }</pre>
      *
      * @param subQuery the subquery to subtract
-     * @return a Minus clause
+     * @return a {@link Minus} clause
      */
     public static Minus minus(final SubQuery subQuery) {
         return new Minus(subQuery);
     }
-
-    //    /**
-    //     * Creates a Cell condition with a custom operator and condition.
-    //     * This is for advanced use cases requiring special condition handling.
-    //     *
-    //     * <p><b>Usage Examples:</b></p>
-    //     * <pre>{@code
-    //     * Cell cell = Filters.cell(Operator.ALL, Filters.exists(subQuery));
-    //     * // Advanced condition wrapping for database-specific operations
-    //     * }</pre>
-    //     *
-    //     * @param operator the operator to apply
-    //     * @param cond the condition to wrap
-    //     * @return a Cell condition
-    //     */
-    //    @Beta
-    //    public static Condition cell(final Operator operator, final Condition cond) {
-    //        if (operator == Operator.NOT) {
-    //            return not(cond);
-    //        } else if (operator == Operator.EXISTS) {
-    //            return exists((SubQuery) cond);
-    //        } else if (operator == Operator.NOT_EXISTS) {
-    //            return notExists((SubQuery) cond);
-    //        } else {
-    //            return new Cell(operator, cond);
-    //        }
-    //    }
 
     /**
      * Creates a SubQuery from an entity class with selected properties and condition.
@@ -3497,7 +3469,7 @@ public class Filters {
      *
      * @param entityName the entity/table name
      * @param sql the complete SQL for the subquery
-     * @return a SubQuery
+     * @return a {@link SubQuery}
      * @see #subQuery(String)
      * @deprecated when the full SQL is supplied, {@code entityName} is not used to build the
      *             subquery; use {@link #subQuery(String)} instead.

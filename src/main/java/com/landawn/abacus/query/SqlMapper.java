@@ -286,7 +286,7 @@ public final class SqlMapper {
      * @return the {@link ParsedSql} object, or {@code null} if the id is {@code null}, empty, exceeds {@link #MAX_ID_LENGTH} characters, or is not found
      */
     public ParsedSql get(final String id) {
-        if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
+        if (!isValidLookupId(id)) {
             return null;
         }
 
@@ -317,7 +317,7 @@ public final class SqlMapper {
      * @return an immutable map of attribute names to values, or {@code null} if the id is {@code null}, empty, exceeds {@link #MAX_ID_LENGTH} characters, or is not found
      */
     public ImmutableMap<String, String> getAttributes(final String id) {
-        if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
+        if (!isValidLookupId(id)) {
             return null; // NOSONAR
         }
 
@@ -414,6 +414,18 @@ public final class SqlMapper {
     }
 
     /**
+     * Returns {@code true} if {@code id} could plausibly be a stored key: non-empty and no longer
+     * than {@link #MAX_ID_LENGTH}. Used by the silent lookup/remove methods to skip ids that can
+     * never be present (as opposed to {@link #checkId(String)}, which throws on invalid input).
+     *
+     * @param id the identifier to test
+     * @return {@code true} if the id is within the valid length bounds
+     */
+    private static boolean isValidLookupId(final String id) {
+        return Strings.isNotEmpty(id) && id.length() <= MAX_ID_LENGTH;
+    }
+
+    /**
      * Removes the SQL and its attributes associated with the specified identifier.
      * If the id is {@code null}, empty, exceeds {@link #MAX_ID_LENGTH} characters, or is not found, this method does nothing.
      *
@@ -428,7 +440,7 @@ public final class SqlMapper {
      * @param id the SQL identifier to remove
      */
     public void remove(final String id) {
-        if (Strings.isEmpty(id) || id.length() > MAX_ID_LENGTH) {
+        if (!isValidLookupId(id)) {
             return;
         }
 

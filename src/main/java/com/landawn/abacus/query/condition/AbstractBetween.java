@@ -229,6 +229,15 @@ public abstract class AbstractBetween extends ComposableCondition {
             return cachedTostring;
         }
 
+        final String result = doToString(namingPolicy);
+
+        cachedTostring = result;
+        cachedTostringNamingPolicy = namingPolicy;
+
+        return result;
+    }
+
+    private String doToString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Operator op = operator();
         final String opStr = op == null ? Strings.NULL : op.toString();
@@ -244,12 +253,7 @@ public abstract class AbstractBetween extends ComposableCondition {
                 .append(SK._SPACE)
                 .append(formatParameter(maxValue, effectiveNamingPolicy));
 
-        final String result = sb.toString();
-
-        cachedTostring = result;
-        cachedTostringNamingPolicy = namingPolicy;
-
-        return result;
+        return sb.toString();
     }
 
     /**

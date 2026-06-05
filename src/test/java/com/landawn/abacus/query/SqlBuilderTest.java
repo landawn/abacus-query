@@ -11837,11 +11837,7 @@ class SqlBuilder14Test extends TestBase {
 
         @Test
         public void testNamedHavingFunctionExpressionUsesValidPlaceholder() {
-            AbstractQueryBuilder.SP sp = NLC.select("department", "COUNT(*)")
-                    .from("employees")
-                    .groupBy("department")
-                    .having(Filters.gt("COUNT(*)", 5))
-                    .build();
+            AbstractQueryBuilder.SP sp = NLC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.gt("COUNT(*)", 5)).build();
 
             Assertions.assertEquals("SELECT department, COUNT(*) FROM employees GROUP BY department HAVING COUNT(*) > :COUNT", sp.query());
             Assertions.assertEquals(Arrays.asList(5), sp.parameters());

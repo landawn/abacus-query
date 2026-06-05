@@ -27,6 +27,8 @@ package com.landawn.abacus.query.condition;
  *   <li>Both queries must have the same number of columns</li>
  *   <li>Corresponding columns must have compatible data types</li>
  *   <li>Column names from the first query are used in the result</li>
+ *   <li>For row comparison purposes, two {@code NULL} values in the same column position are
+ *       treated as equal (SQL set-operation semantics, unlike regular {@code =} comparisons)</li>
  * </ul>
  * 
  * <p>The INTERSECT operator is useful for:

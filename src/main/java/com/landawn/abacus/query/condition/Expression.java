@@ -113,25 +113,18 @@ import com.landawn.abacus.util.Strings;
  */
 public class Expression extends ComposableCondition {
 
+    /** Lowercase {@code "null"} literal used when rendering a null value (distinct from the {@code "NULL"} SQL keyword in {@link #NULL_KEYWORD}). */
     static final String NULL_STRING = Strings.NULL;
-
-    static final char[] NULL_CHAR_ARRAY = NULL_STRING.toCharArray();
-
-    static final String TRUE = Boolean.TRUE.toString().intern();
-
-    static final char[] TRUE_CHAR_ARRAY = TRUE.toCharArray();
-
-    static final String FALSE = Boolean.FALSE.toString().intern();
-
-    static final char[] FALSE_CHAR_ARRAY = FALSE.toCharArray();
 
     private static final String LEFT_SHIFT = "<<";
 
     private static final String RIGHT_SHIFT = ">>";
 
-    private static final String NULL = "NULL";
+    /** SQL keyword rendered as the right-hand side of {@code IS NULL} / {@code IS NOT NULL}. */
+    private static final String NULL_KEYWORD = "NULL";
 
-    private static final String EMPTY = "BLANK";
+    /** Framework-specific sentinel rendered as the right-hand side of {@code IS BLANK} / {@code IS NOT BLANK}. */
+    private static final String BLANK_KEYWORD = "BLANK";
 
     private static final Map<String, Expression> cachedExpression = new ConcurrentHashMap<>();
 
@@ -538,7 +531,7 @@ public class Expression extends ComposableCondition {
      * @return a string representation of the IS NULL expression
      */
     public static String isNull(final String literal) {
-        return link2(Operator.IS, literal, NULL);
+        return link2(Operator.IS, literal, NULL_KEYWORD);
     }
 
     /**
@@ -554,7 +547,7 @@ public class Expression extends ComposableCondition {
      * @return a string representation of the IS NOT NULL expression
      */
     public static String isNotNull(final String literal) {
-        return link2(Operator.IS_NOT, literal, NULL);
+        return link2(Operator.IS_NOT, literal, NULL_KEYWORD);
     }
 
     /**
@@ -573,7 +566,7 @@ public class Expression extends ComposableCondition {
      * @return a framework-specific {@code IS BLANK} expression string
      */
     public static String isNullOrEmpty(final String literal) {
-        return link2(Operator.IS, literal, EMPTY);
+        return link2(Operator.IS, literal, BLANK_KEYWORD);
     }
 
     /**
@@ -592,7 +585,7 @@ public class Expression extends ComposableCondition {
      * @return a framework-specific {@code IS NOT BLANK} expression string
      */
     public static String isNotNullAndNotEmpty(final String literal) {
-        return link2(Operator.IS_NOT, literal, EMPTY);
+        return link2(Operator.IS_NOT, literal, BLANK_KEYWORD);
     }
 
     /**
