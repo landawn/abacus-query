@@ -2889,6 +2889,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param count the maximum number of rows to return
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if {@code LIMIT} has already been set on this builder
+     * @throws IllegalArgumentException if {@code count} is negative
      */
     public This limit(final int count) {
         N.checkArgNotNegative(count, "count");
@@ -2917,6 +2918,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param offset the number of rows to skip (appears as OFFSET in SQL)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if {@code LIMIT} or {@code OFFSET} has already been set on this builder
+     * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
      */
     public This limit(final int count, final int offset) {
         N.checkArgNotNegative(count, "count");
@@ -2969,6 +2971,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
+     * @throws IllegalArgumentException if {@code offset} is negative
      */
     public This offset(final int offset) {
         N.checkArgNotNegative(offset, "offset");
@@ -2996,6 +2999,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
+     * @throws IllegalArgumentException if {@code offset} is negative
      */
     public This offsetRows(final int offset) {
         N.checkArgNotNegative(offset, "offset");
@@ -3025,6 +3029,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param rowCount the number of rows to fetch
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if {@code FETCH NEXT} or {@code FETCH FIRST} has already been set
+     * @throws IllegalArgumentException if {@code rowCount} is negative
      */
     public This fetchNextRows(final int rowCount) {
         N.checkArgNotNegative(rowCount, "rowCount");
@@ -3054,6 +3059,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param rowCount the number of rows to fetch
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if {@code FETCH FIRST} or {@code FETCH NEXT} has already been set
+     * @throws IllegalArgumentException if {@code rowCount} is negative
      */
     public This fetchFirstRows(final int rowCount) {
         N.checkArgNotNegative(rowCount, "rowCount");

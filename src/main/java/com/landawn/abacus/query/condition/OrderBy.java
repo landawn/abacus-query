@@ -95,7 +95,7 @@ public class OrderBy extends Clause {
      * }</pre>
      *
      * @param cond the ordering condition. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a {@link Criteria}, another clause, or an {@code ON}/{@code USING} condition (cannot be nested inside a clause)
      * @see Filters#expr(String)
      */
     public OrderBy(final Condition cond) {

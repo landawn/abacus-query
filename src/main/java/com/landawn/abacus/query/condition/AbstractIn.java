@@ -77,6 +77,7 @@ public abstract class AbstractIn extends ComposableCondition {
      * @param values the collection of values to check membership against (must not be {@code null} or empty);
      *               elements may be {@code null}
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty or {@code values} is {@code null}/empty
+     * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final String propName, final Operator operator, final Collection<?> values) {
         super(operator);

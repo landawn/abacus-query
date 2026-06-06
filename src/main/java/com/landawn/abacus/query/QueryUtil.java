@@ -690,7 +690,7 @@ public final class QueryUtil {
      * @throws IllegalArgumentException if {@code n} is negative
      */
     public static String placeholders(final int n) {
-        N.checkArgNotNegative(n, "count");
+        N.checkArgNotNegative(n, "n");
 
         if (n < QM_CACHE.length) {
             return QM_CACHE[n];

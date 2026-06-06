@@ -101,7 +101,7 @@ public class GroupBy extends Clause {
      * }</pre>
      *
      * @param cond the grouping condition or expression. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a {@link Criteria}, another clause, or an {@code ON}/{@code USING} condition (cannot be nested inside a clause)
      */
     public GroupBy(final Condition cond) {
         super(Operator.GROUP_BY, cond);

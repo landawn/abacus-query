@@ -110,13 +110,18 @@ public class Binary extends ComposableCondition {
      * @param propValue the value to compare against; may be a literal value, {@code null}
      *                  (for equality operators, renders as {@code IS NULL} / {@code IS NOT NULL}),
      *                  or a {@link Condition} such as a {@link SubQuery}
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code propValue}
+     *                                  is an empty {@link Collection} for an {@code IN}/{@code NOT_IN} operator
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     public Binary(final String propName, final Operator operator, final Object propValue) {
         super(operator);
 
         N.checkArgNotEmpty(propName, "propName");
+
+        if (isCollectionOperator(operator) && propValue instanceof final Collection<?> values) {
+            N.checkArgNotEmpty(values, "propValue");
+        }
 
         this.propName = propName;
         this.propValue = propValue;

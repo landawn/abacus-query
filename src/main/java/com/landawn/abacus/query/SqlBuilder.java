@@ -1438,7 +1438,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for the second entity
          * @param classAliasB property prefix for the second entity in results
          * @return a new SqlBuilder instance for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -1471,7 +1471,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB property prefix for the second entity in results
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -1542,7 +1542,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for the second entity
          * @param classAliasB property prefix for the second entity in results
          * @return a new SqlBuilder instance for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -1574,7 +1574,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB property prefix for the second entity in results
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -2734,7 +2734,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB class alias prefix for second entity columns
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -2768,7 +2768,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB class alias prefix for second entity columns
          * @param excludedPropNamesB properties to exclude from second entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -2838,7 +2838,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB class alias prefix for second entity columns
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -2871,7 +2871,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB class alias prefix for second entity columns
          * @param excludedPropNamesB properties to exclude from second entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -4044,7 +4044,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the class alias for the second entity (used in result mapping)
          * @return a new SqlBuilder instance configured for multi-table SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -4078,7 +4078,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the class alias for the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for multi-table SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -4149,7 +4149,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the class alias for the second entity
          * @return a new SqlBuilder instance configured for multi-table SELECT FROM operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          * 
          * @see #select(Class, String, String, Class, String, String)
          */
@@ -4184,7 +4184,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the class alias for the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for multi-table SELECT FROM operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -5257,7 +5257,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the prefix for properties of the second entity in results
          * @return a new SqlBuilder instance configured for multi-table SELECT
-         * @throws IllegalArgumentException if {@code entityClassA} is {@code null}
+         * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -5290,7 +5290,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the prefix for properties of the second entity in results
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for multi-table SELECT
-         * @throws IllegalArgumentException if {@code entityClassA} is null
+         * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -5357,7 +5357,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the prefix for properties of the second entity in results
          * @return a new SqlBuilder instance with SELECT and FROM clauses configured
-         * @throws IllegalArgumentException if {@code entityClassA} is {@code null}
+         * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -5389,7 +5389,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the prefix for properties of the second entity in results
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance with SELECT and FROM clauses configured
-         * @throws IllegalArgumentException if {@code entityClassA} is null
+         * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -6611,7 +6611,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity results
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if {@code entityClassA} is {@code null}
+         * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -6646,7 +6646,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB property prefix for second entity results
          * @param excludedPropNamesB excluded properties for second entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -6720,7 +6720,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity
          * @return a new SqlBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if {@code entityClassA} is {@code null}
+         * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -6751,7 +6751,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB property prefix for second entity
          * @param excludedPropNamesB excluded properties for second entity
          * @return a new SqlBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -7865,7 +7865,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity results
          * @return a new SqlBuilder instance configured for multi-table SELECT
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -7898,7 +7898,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB property prefix for second entity
          * @param excludedPropNamesB properties to exclude from second entity
          * @return a new SqlBuilder instance configured for multi-table SELECT
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -7967,7 +7967,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity
          * @return a new SqlBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -7997,7 +7997,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB property prefix for second entity
          * @param excludedPropNamesB properties to exclude from second entity
          * @return a new SqlBuilder instance with SELECT and FROM configured
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -9463,7 +9463,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if {@code entityClassA} is {@code null}
+         * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -9497,7 +9497,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB property prefix for second entity
          * @param excludedPropNamesB excluded properties for second entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -9565,7 +9565,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB property prefix for second entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if {@code entityClassA} is {@code null}
+         * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -9598,7 +9598,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB property prefix for second entity
          * @param excludedPropNamesB excluded properties for second entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -10735,7 +10735,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB column prefix for second entity in results
          * @return a new SqlBuilder instance configured for multi-table SELECT
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -10770,7 +10770,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB column prefix for second entity
          * @param excludedPropNamesB properties to exclude from second entity
          * @return a new SqlBuilder instance configured for multi-table SELECT
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -10841,7 +10841,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for second entity
          * @param classAliasB column prefix for second entity
          * @return a new SqlBuilder with SELECT and FROM clauses configured
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -10871,7 +10871,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB column prefix for second entity
          * @param excludedPropNamesB properties to exclude from second entity
          * @return a new SqlBuilder with SELECT and FROM clauses configured
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -11928,7 +11928,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the class alias for property prefixing of the second entity
          * @return a new SqlBuilder instance configured for multi-table SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -11961,7 +11961,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the class alias for property prefixing of the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for multi-table SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -12027,7 +12027,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the class alias for property prefixing of the second entity
          * @return a new SqlBuilder instance configured for multi-table SELECT with FROM clause
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -12059,7 +12059,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the class alias for property prefixing of the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for multi-table SELECT with FROM clause
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -13122,7 +13122,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the class alias prefix for columns from the second entity
          * @return an SqlBuilder configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -13154,7 +13154,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the class alias prefix for columns from the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return an SqlBuilder configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -13219,7 +13219,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the class alias prefix for columns from the second entity
          * @return an SqlBuilder configured for SELECT operation with FROM clause
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -13252,7 +13252,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the class alias prefix for columns from the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return an SqlBuilder configured for SELECT operation with FROM clause
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -14412,7 +14412,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the class alias prefix for columns from the second entity
          * @return an SqlBuilder configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -14455,7 +14455,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the class alias prefix for columns from the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return an SqlBuilder configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -14529,7 +14529,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the class alias prefix for columns from the second entity
          * @return an SqlBuilder configured for SELECT operation with FROM clause
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -14572,7 +14572,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the class alias prefix for columns from the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return an SqlBuilder configured for SELECT operation with FROM clause
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -15717,7 +15717,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for the second entity
          * @param classAliasB column prefix for the second entity's columns in the result
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -15751,7 +15751,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB column prefix for the second entity's columns
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -15816,7 +15816,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB table alias for the second entity
          * @param classAliasB column prefix for the second entity's columns
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -15849,7 +15849,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB column prefix for the second entity's columns
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -16994,7 +16994,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the result set alias prefix for the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -17095,7 +17095,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the result set alias prefix for the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -18176,7 +18176,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the class alias prefix for the second entity's columns
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for multi-entity SELECT
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -18271,7 +18271,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the class alias prefix for the second entity's columns
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for multi-entity SELECT FROM
-         * @throws IllegalArgumentException if entityClassA is null
+         * @throws IllegalArgumentException if entityClassA or entityClassB is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,
@@ -19347,7 +19347,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the result set alias prefix for the second entity
          * @return a new SqlBuilder instance configured for multi-entity SELECT operation
-         * @throws IllegalArgumentException if {@code entityClassA} is null
+         * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -19379,7 +19379,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the result set alias prefix for the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for multi-entity SELECT operation
-         * @throws IllegalArgumentException if {@code entityClassA} is null
+         * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is null
          */
         public static SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
                 final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
@@ -19445,7 +19445,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableAliasB the table alias for the second entity
          * @param classAliasB the result set alias prefix for the second entity
          * @return a new SqlBuilder instance configured for multi-entity SELECT operation with FROM clause
-         * @throws IllegalArgumentException if {@code entityClassA} is null
+         * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
                 final String tableAliasB, final String classAliasB) {
@@ -19475,7 +19475,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param classAliasB the result set alias prefix for the second entity
          * @param excludedPropNamesB properties to exclude from the second entity
          * @return a new SqlBuilder instance configured for multi-entity SELECT operation with FROM clause
-         * @throws IllegalArgumentException if {@code entityClassA} is null
+         * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is null
          */
         public static SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA,
                 final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB,

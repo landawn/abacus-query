@@ -138,8 +138,9 @@ public class CrossJoin extends Join {
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param cond the condition appended after the join target. Supplying any condition (including an
      *            {@link On}) produces non-standard CROSS JOIN SQL, since a standard CROSS JOIN takes no
-     *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     *            {@code ON} clause. Any non-clause {@link Condition} is allowed and can be {@code null}.
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
+     *                                  {@link Criteria}, a SQL clause, or an {@code ON}/{@code USING} condition
      */
     public CrossJoin(final String joinEntity, final Condition cond) {
         super(Operator.CROSS_JOIN, joinEntity, cond);
@@ -172,8 +173,9 @@ public class CrossJoin extends Join {
      * @param joinEntities the collection of tables or entities to join with.
      * @param cond the condition appended after the joined table list. Supplying any condition (including an
      *            {@link On}) produces non-standard CROSS JOIN SQL, since a standard CROSS JOIN takes no
-     *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
+     *            {@code ON} clause. Any non-clause {@link Condition} is allowed and can be {@code null}.
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
+     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@code ON}/{@code USING} condition
      */
     public CrossJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.CROSS_JOIN, joinEntities, cond);

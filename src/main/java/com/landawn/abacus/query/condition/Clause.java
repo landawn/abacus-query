@@ -14,6 +14,8 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.util.N;
+
 /**
  * Abstract base class for SQL clause conditions.
  * Clauses represent major SQL query components like WHERE, HAVING, GROUP BY, ORDER BY, etc.
@@ -100,18 +102,17 @@ public abstract class Clause extends Cell {
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public Clause(final Operator operator, final Condition cond) {
-        super(operator, validateClauseOperand(cond));
+        super(operator, validateClauseOperand(operator, cond));
     }
 
-    private static Condition validateClauseOperand(final Condition cond) {
-        if (cond == null) {
-            throw new IllegalArgumentException("Condition cannot be null");
-        }
+    private static Condition validateClauseOperand(final Operator operator, final Condition cond) {
+        N.requireNonNull(operator, "operator");
+        N.checkArgNotNull(cond, "cond");
 
-        final Operator operator = cond.operator();
+        final Operator condOperator = cond.operator();
 
-        if (cond instanceof Criteria || isClause(operator) || operator == Operator.ON || operator == Operator.USING) {
-            throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be nested inside a clause");
+        if (cond instanceof Criteria || isClause(condOperator) || condOperator == Operator.ON || condOperator == Operator.USING) {
+            throw new IllegalArgumentException("Condition with operator '" + condOperator + "' cannot be nested inside a clause");
         }
 
         return cond;

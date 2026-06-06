@@ -76,6 +76,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * @param subQuery the subquery (must not be {@code null})
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty, if {@code subQuery} is
      *             {@code null}, or if the subquery is structured and selects a number of columns other than 1
+     * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractInSubQuery(final String propName, final Operator operator, final SubQuery subQuery) {
         super(operator);
@@ -101,6 +102,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is
      *             {@code null}/empty, if {@code subQuery} is {@code null}, or if the subquery is structured and
      *             its number of selected columns does not match {@code propNames.size()}
+     * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractInSubQuery(final Collection<String> propNames, final Operator operator, final SubQuery subQuery) {
         super(operator);

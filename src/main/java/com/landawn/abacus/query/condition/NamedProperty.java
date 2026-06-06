@@ -634,7 +634,8 @@ public sealed class NamedProperty permits NP {
      * NamedProperty.of("email").like("%@example.com");   // email LIKE '%@example.com'
      * }</pre>
      *
-     * @param value the pattern to match (can include % for any characters and _ for single character)
+     * @param value the pattern to match (can include % for any characters and _ for single character).
+     *              A {@code null} value is permitted (the resulting condition renders the value as {@code null}).
      * @return a Like condition for this property
      * @see Like
      * @see Filters#like(String, String)
@@ -653,7 +654,8 @@ public sealed class NamedProperty permits NP {
      * NamedProperty.of("name").notLike("test%");         // name NOT LIKE 'test%'
      * }</pre>
      *
-     * @param value the pattern to exclude (can include % for any characters and _ for single character)
+     * @param value the pattern to exclude (can include % for any characters and _ for single character).
+     *              A {@code null} value is permitted (the resulting condition renders the value as {@code null}).
      * @return a NotLike condition for this property
      * @see NotLike
      * @see Filters#notLike(String, String)
@@ -674,6 +676,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param value the prefix to match. The % wildcard will be automatically appended.
      * @return a Like condition with % appended to the value
+     * @throws IllegalArgumentException if {@code value} is {@code null}
      * @see Like
      * @see Filters#startsWith(String, String)
      */
@@ -693,6 +696,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param value the prefix to exclude. The % wildcard will be automatically appended.
      * @return a NotLike condition with % appended to the value
+     * @throws IllegalArgumentException if {@code value} is {@code null}
      * @see NotLike
      * @see Filters#notStartsWith(String, String)
      */
@@ -712,6 +716,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param value the suffix to match. The % wildcard will be automatically prepended.
      * @return a Like condition with % prepended to the value
+     * @throws IllegalArgumentException if {@code value} is {@code null}
      * @see Like
      * @see Filters#endsWith(String, String)
      */
@@ -731,6 +736,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param value the suffix to exclude. The % wildcard will be automatically prepended.
      * @return a NotLike condition with % prepended to the value
+     * @throws IllegalArgumentException if {@code value} is {@code null}
      * @see NotLike
      * @see Filters#notEndsWith(String, String)
      */
@@ -750,6 +756,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param value the substring to match. The % wildcard will be automatically added to both sides.
      * @return a Like condition with % on both sides of the value
+     * @throws IllegalArgumentException if {@code value} is {@code null}
      * @see Like
      * @see Filters#contains(String, String)
      */
@@ -769,6 +776,7 @@ public sealed class NamedProperty permits NP {
      *
      * @param value the substring to exclude. The % wildcard will be automatically added to both sides.
      * @return a NotLike condition with % on both sides of the value
+     * @throws IllegalArgumentException if {@code value} is {@code null}
      * @see NotLike
      * @see Filters#notContains(String, String)
      */

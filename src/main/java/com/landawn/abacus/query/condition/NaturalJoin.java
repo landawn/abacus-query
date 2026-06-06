@@ -140,9 +140,10 @@ public class NaturalJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond an additional condition appended after the natural join fragment. Use {@link On} or {@link Using} when the SQL should include those keywords; any other non-{@code null} condition is automatically prefixed with {@code ON}. Any {@link Condition} is allowed
+     * @param cond an additional condition appended after the natural join fragment. Use {@link On} or {@link Using} when the SQL should include those keywords; any other non-{@code null} condition is automatically prefixed with {@code ON}. Any non-clause {@link Condition} is allowed
      *            and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
+     *                                  {@link Criteria}, a SQL clause, or an {@code ON}/{@code USING} condition
      */
     public NaturalJoin(final String joinEntity, final Condition cond) {
         super(Operator.NATURAL_JOIN, joinEntity, cond);
@@ -179,9 +180,10 @@ public class NaturalJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param cond an additional condition appended after the natural join fragment. Use {@link On} or {@link Using} when the SQL should include those keywords; any other non-{@code null} condition is automatically prefixed with {@code ON}. Any {@link Condition} is allowed
+     * @param cond an additional condition appended after the natural join fragment. Use {@link On} or {@link Using} when the SQL should include those keywords; any other non-{@code null} condition is automatically prefixed with {@code ON}. Any non-clause {@link Condition} is allowed
      *            and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
+     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@code ON}/{@code USING} condition
      */
     public NaturalJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.NATURAL_JOIN, joinEntities, cond);

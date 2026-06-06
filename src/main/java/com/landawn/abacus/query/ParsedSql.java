@@ -270,15 +270,15 @@ public final class ParsedSql {
      * System.out.println(ps3.parameterCount());   // 2
      * }</pre>
      *
-     * @param sql the SQL string to parse (must not be {@code null} or empty)
+     * @param sql the SQL string to parse (must not be {@code null}, empty, or blank)
      * @return a {@code ParsedSql} instance containing the parsed information
-     * @throws IllegalArgumentException if {@code sql} is {@code null} or empty, if it mixes different
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, if it mixes different
      *         parameter styles ({@code ?}, {@code :propName}, {@code #{propName}}), or if it contains
      *         a malformed iBatis/MyBatis parameter that is missing its closing brace
      */
     public static ParsedSql parse(final String sql) {
         if (Strings.isBlank(sql)) {
-            throw new IllegalArgumentException("sql cannot be null or empty");
+            throw new IllegalArgumentException("sql cannot be null, empty, or blank");
         }
 
         ParsedSql result = null;

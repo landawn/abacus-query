@@ -187,8 +187,7 @@ public final class SqlMapper {
      *         after splitting, or if a loaded {@code <sql>} element has an invalid id (empty, containing whitespace,
      *         exceeding {@link #MAX_ID_LENGTH} characters, or duplicated)
      * @throws UncheckedIOException if an I/O error occurs reading the files
-     * @throws ParsingException if the XML content is invalid
-     * @throws RuntimeException if any of the loaded files does not contain a {@code <sqlMapper>} element
+     * @throws ParsingException if the XML content is invalid, or if any of the loaded files does not contain a {@code <sqlMapper>} element
      */
     public static SqlMapper load(final String filePath) {
         N.checkArgNotEmpty(filePath, "filePath");
@@ -220,7 +219,7 @@ public final class SqlMapper {
                 final NodeList sqlMapperEle = doc.getElementsByTagName(SqlMapper.SQL_MAPPER);
 
                 if (0 == sqlMapperEle.getLength()) {
-                    throw new RuntimeException("No 'sqlMapper' element found in the configuration");
+                    throw new ParsingException("No '" + SqlMapper.SQL_MAPPER + "' element found in file: " + file.getAbsolutePath());
                 }
 
                 final List<Element> sqlElementList = XmlUtil.getElementsByTagName((Element) sqlMapperEle.item(0), SQL);
@@ -368,9 +367,9 @@ public final class SqlMapper {
      * }</pre>
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
-     * @param sql the SQL string to parse and store (must not be {@code null})
+     * @param sql the SQL string to parse and store (must not be {@code null} or blank)
      * @param attrs additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, or if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
+     * @throws IllegalArgumentException if {@code sql} is {@code null} or blank (blank is rejected by {@link ParsedSql#parse(String)}), or if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
      */
     public void add(final String id, final String sql, final Map<String, String> attrs) {
         N.checkArgNotNull(sql, "sql");

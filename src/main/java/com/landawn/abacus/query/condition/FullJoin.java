@@ -137,8 +137,9 @@ public class FullJoin extends Join {
      *
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should include
-     *            those keywords. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     *            those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
+     *                                  {@link Criteria}, a SQL clause, or an {@code ON}/{@code USING} condition
      */
     public FullJoin(final String joinEntity, final Condition cond) {
         super(Operator.FULL_JOIN, joinEntity, cond);
@@ -167,8 +168,9 @@ public class FullJoin extends Join {
      *
      * @param joinEntities the collection of tables or entities to join with.
      * @param cond the condition appended after the joined table list. Use {@link On} or {@link Using} when the SQL should include
-     *            those keywords. Any {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
+     *            those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
+     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@code ON}/{@code USING} condition
      */
     public FullJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.FULL_JOIN, joinEntities, cond);

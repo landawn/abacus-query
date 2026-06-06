@@ -590,7 +590,7 @@ public abstract class AbstractCondition implements Condition {
             int i = 0;
             for (final String propName : propNames) {
                 if (Strings.isEmpty(propName)) {
-                    throw new IllegalArgumentException("Property name in collection cannot be null or empty");
+                    throw new IllegalArgumentException("Property name cannot be null or empty");
                 }
 
                 if (i++ > 0) {
@@ -623,9 +623,7 @@ public abstract class AbstractCondition implements Condition {
      *                                  or {@code null} values
      */
     protected static String createSortExpression(final Map<String, SortDirection> orders) {
-        if (orders == null || orders.isEmpty()) {
-            throw new IllegalArgumentException("orders cannot be null or empty");
-        }
+        N.checkArgNotEmpty(orders, "orders");
 
         final StringBuilder sb = Objectory.createStringBuilder();
 
@@ -636,7 +634,7 @@ public abstract class AbstractCondition implements Condition {
                 final SortDirection direction = entry.getValue();
 
                 if (Strings.isEmpty(propName)) {
-                    throw new IllegalArgumentException("Property name in orders cannot be null or empty");
+                    throw new IllegalArgumentException("Property name cannot be null or empty");
                 }
                 if (direction == null) {
                     throw new IllegalArgumentException("SortDirection in orders cannot be null");
@@ -680,7 +678,9 @@ public abstract class AbstractCondition implements Condition {
      *                                  {@code ON}, or {@code USING} operator
      */
     protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
-        final Operator operator = cond == null ? null : cond.operator();
+        N.checkArgNotNull(cond, "cond");
+
+        final Operator operator = cond.operator();
 
         if (operator == null || isClause(cond) || isOnOrUsing(cond)) {
             throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in composable method '" + methodName + "'");

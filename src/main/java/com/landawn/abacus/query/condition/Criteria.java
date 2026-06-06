@@ -1372,9 +1372,7 @@ public class Criteria extends AbstractCondition {
          *                                  with an operator other than {@code WHERE}
          */
         public Builder where(final Condition cond) {
-            if (cond == null) {
-                throw new IllegalArgumentException("Condition cannot be null");
-            }
+            N.checkArgNotNull(cond, "cond");
 
             validateClauseCondition(cond, Operator.WHERE, "where");
 
@@ -1434,9 +1432,7 @@ public class Criteria extends AbstractCondition {
          *                                  with an operator other than {@code GROUP_BY}
          */
         public Builder groupBy(final Condition cond) {
-            if (cond == null) {
-                throw new IllegalArgumentException("Condition cannot be null");
-            }
+            N.checkArgNotNull(cond, "cond");
 
             validateClauseCondition(cond, Operator.GROUP_BY, "groupBy");
 
@@ -1650,9 +1646,7 @@ public class Criteria extends AbstractCondition {
          *                                  with an operator other than {@code HAVING}
          */
         public Builder having(final Condition cond) {
-            if (cond == null) {
-                throw new IllegalArgumentException("Condition cannot be null");
-            }
+            N.checkArgNotNull(cond, "cond");
 
             validateClauseCondition(cond, Operator.HAVING, "having");
 
@@ -1806,9 +1800,7 @@ public class Criteria extends AbstractCondition {
          *                                  with an operator other than {@code ORDER_BY}
          */
         public Builder orderBy(final Condition cond) {
-            if (cond == null) {
-                throw new IllegalArgumentException("Condition cannot be null");
-            }
+            N.checkArgNotNull(cond, "cond");
 
             validateClauseCondition(cond, Operator.ORDER_BY, "orderBy");
 
@@ -2038,6 +2030,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param count the maximum number of results to return
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code count} is negative
          */
         public Builder limit(final int count) {
             add(Filters.limit(count));
@@ -2063,6 +2056,7 @@ public class Criteria extends AbstractCondition {
          * @param count the maximum number of results to return
          * @param offset the number of rows to skip
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
          */
         public Builder limit(final int count, final int offset) {
             add(Filters.limit(count, offset));
@@ -2274,9 +2268,7 @@ public class Criteria extends AbstractCondition {
         }
 
         private void checkCondition(final Condition cond) {
-            if (cond == null) {
-                throw new IllegalArgumentException("Condition cannot be null");
-            }
+            N.checkArgNotNull(cond, "cond");
 
             if (!isClause(cond.operator())) {
                 throw new IllegalArgumentException(

@@ -167,6 +167,7 @@ public class Junction extends ComposableCondition {
      *
      * @param operator the composable operator to use (AND, OR, etc.)
      * @param conditions the conditions to combine; may be {@code null} or empty (treated as no conditions)
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is a {@link Criteria} or has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.)
      */
@@ -179,6 +180,8 @@ public class Junction extends ComposableCondition {
     /**
      * Creates a new Junction with the specified operator and collection of conditions.
      * This constructor is useful when conditions are already collected in a list or set.
+     * The collection is copied internally so that subsequent changes to the original collection
+     * do not affect this condition.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -200,6 +203,7 @@ public class Junction extends ComposableCondition {
      *
      * @param operator the composable operator to use (AND, OR, etc.)
      * @param conditions the collection of conditions to combine; may be {@code null} or empty (treated as no conditions)
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is a {@link Criteria} or has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.)
      */
@@ -269,9 +273,7 @@ public class Junction extends ComposableCondition {
     }
 
     private static Condition validateConstructorOperand(final Condition condition) {
-        if (condition == null) {
-            throw new IllegalArgumentException("Condition cannot be null");
-        }
+        N.checkArgNotNull(condition, "condition");
 
         if (condition instanceof Criteria || isClause(condition) || (isOnOrUsing(condition) && !(condition instanceof On))) {
             throw new IllegalArgumentException("Condition with operator '" + condition.operator() + "' cannot be used in a junction constructor");
