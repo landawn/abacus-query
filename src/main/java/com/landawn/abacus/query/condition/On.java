@@ -53,13 +53,13 @@ import com.landawn.abacus.util.N;
  * InnerJoin join = new InnerJoin("customers", on1);
  * // Generates: INNER JOIN customers ON orders.customer_id = customers.id
  *
- * // Complex condition with custom logic using Expression
- * Condition complexJoin = Filters.and(
- *     new On("o.customer_id", "c.id"),
+ * // Complex condition combining multiple expressions in a single ON
+ * On complexJoin = new On(Filters.and(
+ *     Filters.expr("o.customer_id = c.id"),
  *     Filters.expr("o.order_date > c.registration_date")
- * );
+ * ));
  * LeftJoin leftJoin = new LeftJoin("customers c", complexJoin);
- * // Generates: LEFT JOIN customers c ON ((ON o.customer_id = c.id) AND (o.order_date > c.registration_date))
+ * // Generates: LEFT JOIN customers c ON ((o.customer_id = c.id) AND (o.order_date > c.registration_date))
  *
  * // Multiple join conditions using Map (composite key)
  * Map<String, String> joinMap = new LinkedHashMap<>();
@@ -69,13 +69,13 @@ import com.landawn.abacus.util.N;
  * // The wrapped condition is an And of two Equals, which renders as:
  * // ON ((emp.department_id = dept.id) AND (emp.location_id = dept.location_id))
  *
- * // Join with ON condition and additional filter
- * Condition filteredJoin = Filters.and(
- *     new On("products.category_id", "categories.id"),
+ * // Join with an additional filter inside the ON condition
+ * On filteredJoin = new On(Filters.and(
+ *     Filters.expr("products.category_id = categories.id"),
  *     Filters.equal("categories.active", true)
- * );
+ * ));
  * RightJoin rightJoin = new RightJoin("categories", filteredJoin);
- * // Generates: RIGHT JOIN categories ON ((ON products.category_id = categories.id) AND (categories.active = true))
+ * // Generates: RIGHT JOIN categories ON ((products.category_id = categories.id) AND (categories.active = true))
  * }</pre>
  * 
  * @see Using
@@ -137,7 +137,17 @@ public class On extends Cell {
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     public On(final Condition cond) {
-        super(Operator.ON, cond);
+        super(Operator.ON, validateOnCondition(cond));
+    }
+
+    private static Condition validateOnCondition(final Condition cond) {
+        N.checkArgNotNull(cond, "cond");
+
+        if (cond instanceof Criteria || isClause(cond) || isOnOrUsing(cond)) {
+            throw new IllegalArgumentException("ON condition cannot wrap a SQL clause or ON/USING connector: " + cond.operator());
+        }
+
+        return cond;
     }
 
     /**

@@ -37,7 +37,7 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>The class maintains an internal cache (a keyed object pool) of parsed SQL statements for
  * performance optimization, so repeated calls to {@link #parse(String)} with the same SQL string
- * return the same cached instance. Supported parameter formats include:</p>
+ * typically return the same cached instance (subject to pool eviction after prolonged inactivity). Supported parameter formats include:</p>
  * <ul>
  *   <li>Named parameters: {@code :paramName}</li>
  *   <li>iBatis/MyBatis style: {@code #{paramName}}</li>
@@ -277,7 +277,9 @@ public final class ParsedSql {
      *         a malformed iBatis/MyBatis parameter that is missing its closing brace
      */
     public static ParsedSql parse(final String sql) {
-        N.checkArgNotEmpty(sql, "sql");
+        if (Strings.isBlank(sql)) {
+            throw new IllegalArgumentException("sql cannot be null or empty");
+        }
 
         ParsedSql result = null;
         PoolableAdapter<ParsedSql> w = pool.get(sql);

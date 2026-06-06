@@ -180,7 +180,7 @@ public class SubQuery extends AbstractCondition {
         this.entityName = entityName == null ? Strings.EMPTY : entityName;
         entityClass = null;
 
-        if (Strings.isEmpty(sql)) {
+        if (Strings.isBlank(sql)) {
             throw new IllegalArgumentException("SQL statement cannot be null or empty");
         }
 
@@ -219,7 +219,7 @@ public class SubQuery extends AbstractCondition {
     public SubQuery(final String entityName, final Collection<String> propNames, final Condition cond) {
         super(Operator.EMPTY);
 
-        if (Strings.isEmpty(entityName)) {
+        if (Strings.isBlank(entityName)) {
             throw new IllegalArgumentException("Entity name cannot be null or empty");
         }
 
@@ -406,7 +406,7 @@ public class SubQuery extends AbstractCondition {
         final List<String> result = new ArrayList<>(propNames.size());
 
         for (final String propName : propNames) {
-            if (Strings.isEmpty(propName)) {
+            if (Strings.isBlank(propName)) {
                 throw new IllegalArgumentException("Property name in propNames cannot be null or empty");
             }
 
@@ -425,7 +425,7 @@ public class SubQuery extends AbstractCondition {
             return null;
         }
 
-        if (cond.operator() == Operator.ON || cond.operator() == Operator.USING) {
+        if (isOnOrUsing(cond)) {
             throw new IllegalArgumentException("ON/USING conditions are not valid subquery filters");
         }
 

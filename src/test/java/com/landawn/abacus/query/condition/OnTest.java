@@ -362,4 +362,12 @@ public class OnTest extends TestBase {
         Assertions.assertEquals(complexJoin, on.getCondition());
         Assertions.assertEquals(2, on.getCondition().getParameters().size());
     }
+
+    @Test
+    public void testConstructorRejectsClauseAndConnectorConditions() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.where(Filters.eq("active", true))));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.using("id")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.expr("ON users.id = orders.user_id")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.expr("USING (id)")));
+    }
 }

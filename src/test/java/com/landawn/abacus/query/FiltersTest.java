@@ -995,6 +995,11 @@ class Filters2025Test extends TestBase {
     }
 
     @Test
+    public void testInObjectArrayNullDelegatesToValidation() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.in("status", (Object[]) null));
+    }
+
+    @Test
     public void testInCollection() {
         com.landawn.abacus.query.condition.In in = Filters.in("id", Arrays.asList(1, 2, 3));
         assertNotNull(in);
@@ -1036,6 +1041,11 @@ class Filters2025Test extends TestBase {
     public void testNotInObjectArray() {
         com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("status", new Object[] { "deleted", "archived" });
         assertNotNull(notIn);
+    }
+
+    @Test
+    public void testNotInObjectArrayNullDelegatesToValidation() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.notIn("status", (Object[]) null));
     }
 
     @Test

@@ -343,20 +343,22 @@ public final class SqlParser {
 
                     // end in quote.
                     if (c == quoteChar) {
-                        if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+                        if (bsEscaped) {
+                            // Escaped closing quote: stays in the string. The quote char itself
+                            // is not a backslash, so the run parity resets to even. Checked before
+                            // the doubled-quote case so an escaped quote immediately followed by
+                            // another quote is not mis-read as a doubled-quote pair.
+                            bsEscaped = false;
+                        } else if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
                             sb.append(sql.charAt(++index));
                             // Two quote chars consumed (non-backslash) -> run parity is even.
                             bsEscaped = false;
-                        } else if (!bsEscaped) {
+                        } else {
                             // Even count (including 0) of preceding backslashes -> quote NOT escaped.
                             words.add(sb.toString());
                             sb.setLength(0);
 
                             quoteChar = 0;
-                            bsEscaped = false;
-                        } else {
-                            // Escaped closing quote: stays in the string. The quote char itself
-                            // is not a backslash, so the run parity resets to even.
                             bsEscaped = false;
                         }
                     } else if (c == '\\') {
@@ -429,6 +431,8 @@ public final class SqlParser {
                                 break;
                             }
                         }
+
+                        appendSpaceAfterSkippedBlockCommentIfNeeded(sql, sqlLength, index, words);
                     }
                 } else if (isSeparator(sql, sqlLength, index, c)) {
                     if (!sb.isEmpty()) {
@@ -527,13 +531,14 @@ public final class SqlParser {
             try {
                 int result = N.INDEX_NOT_FOUND;
                 final int sqlLength = sql.length();
+                final int startIndex = Math.max(0, fromIndex);
                 String temp = "";
                 char quoteChar = 0;
                 // Forward-running backslash parity (see parse()): true iff the char at the current
                 // `index` is preceded by an ODD number of consecutive backslashes.
                 boolean bsEscaped = false;
 
-                for (int index = Math.max(0, fromIndex); index < sqlLength; index++) {
+                for (int index = 0; index < sqlLength; index++) {
                     final char c = sql.charAt(index);
 
                     // is it in a quoted identifier?
@@ -542,24 +547,28 @@ public final class SqlParser {
 
                         // end in quote.
                         if (c == quoteChar) {
-                            if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+                            if (bsEscaped) {
+                                // Escaped closing quote: stays in the string. Checked before the
+                                // doubled-quote case so an escaped quote immediately followed by
+                                // another quote is not mis-read as a doubled-quote pair.
+                                bsEscaped = false;
+                            } else if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
                                 sb.append(sql.charAt(++index));
                                 bsEscaped = false;
-                            } else if (!bsEscaped) {
+                            } else {
                                 // Even count (including 0) of preceding backslashes -> NOT escaped.
                                 temp = sb.toString();
 
-                                if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                                    result = index - word.length() + 1;
+                                final int matchStart = index - word.length() + 1;
+
+                                if (matchStart >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                                    result = matchStart;
 
                                     break;
                                 }
 
                                 sb.setLength(0);
                                 quoteChar = 0;
-                                bsEscaped = false;
-                            } else {
-                                // Escaped closing quote: stays in the string.
                                 bsEscaped = false;
                             }
                         } else if (c == '\\') {
@@ -571,8 +580,10 @@ public final class SqlParser {
                         // Skip single-line comment (-- ...)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                                result = index - word.length();
+                            final int matchStart = index - word.length();
+
+                            if (matchStart >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                                result = matchStart;
                                 break;
                             }
                             sb.setLength(0);
@@ -587,8 +598,10 @@ public final class SqlParser {
                         // Skip MySQL single-line comment (# ...)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                                result = index - word.length();
+                            final int matchStart = index - word.length();
+
+                            if (matchStart >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                                result = matchStart;
                                 break;
                             }
                             sb.setLength(0);
@@ -603,8 +616,10 @@ public final class SqlParser {
                         // Skip block comment (/* ... */)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                                result = index - word.length();
+                            final int matchStart = index - word.length();
+
+                            if (matchStart >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                                result = matchStart;
                                 break;
                             }
                             sb.setLength(0);
@@ -619,9 +634,10 @@ public final class SqlParser {
                     } else if (isSeparator(sql, sqlLength, index, c)) {
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
+                            final int matchStart = index - word.length();
 
-                            if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                                result = index - word.length();
+                            if (matchStart >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                                result = matchStart;
 
                                 break;
                             }
@@ -635,14 +651,14 @@ public final class SqlParser {
                         temp = matchMultiCharSeparator(sql, sqlLength, index);
 
                         if (temp != null) {
-                            if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
+                            if (index >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
                                 result = index;
 
                                 break;
                             }
 
                             index += temp.length() - 1;
-                        } else if (word.equals(String.valueOf(c)) || (!caseSensitive && word.equalsIgnoreCase(String.valueOf(c)))) {
+                        } else if (index >= startIndex && (word.equals(String.valueOf(c)) || (!caseSensitive && word.equalsIgnoreCase(String.valueOf(c))))) {
                             result = index;
 
                             break;
@@ -659,9 +675,10 @@ public final class SqlParser {
 
                 if (result < 0 && !sb.isEmpty()) {
                     temp = sb.toString();
+                    final int matchStart = sqlLength - word.length();
 
-                    if (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp))) {
-                        result = sqlLength - word.length();
+                    if (matchStart >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                        result = matchStart;
                     }
                 }
 
@@ -757,15 +774,17 @@ public final class SqlParser {
 
                     // end in quote.
                     if (c == quoteChar) {
-                        if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+                        if (bsEscaped) {
+                            // Escaped closing quote: stays in the string. Checked before the
+                            // doubled-quote case so an escaped quote immediately followed by
+                            // another quote is not mis-read as a doubled-quote pair.
+                            bsEscaped = false;
+                        } else if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
                             sb.append(sql.charAt(++index));
                             bsEscaped = false;
-                        } else if (!bsEscaped) {
+                        } else {
                             // Even count (including 0) of preceding backslashes -> NOT escaped.
                             break;
-                        } else {
-                            // Escaped closing quote: stays in the string.
-                            bsEscaped = false;
                         }
                     } else if (c == '\\') {
                         bsEscaped = !bsEscaped;
@@ -948,6 +967,21 @@ public final class SqlParser {
         }
 
         return matchMultiCharSeparator(str, len, index) != null;
+    }
+
+    private static void appendSpaceAfterSkippedBlockCommentIfNeeded(final String sql, final int sqlLength, final int commentEndIndex,
+            final List<String> words) {
+        final int nextIndex = commentEndIndex + 1;
+
+        if (nextIndex >= sqlLength || words.isEmpty() || SK.SPACE.equals(words.get(words.size() - 1))) {
+            return;
+        }
+
+        final char nextChar = sql.charAt(nextIndex);
+
+        if (!Character.isWhitespace(nextChar) && !isSeparator(sql, sqlLength, nextIndex, nextChar)) {
+            words.add(SK.SPACE);
+        }
     }
 
     private static boolean isHashCommentStart(final String str, final int len, final int index) {

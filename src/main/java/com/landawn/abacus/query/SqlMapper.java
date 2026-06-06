@@ -419,7 +419,7 @@ public final class SqlMapper {
      * never be present (as opposed to {@link #checkId(String)}, which throws on invalid input).
      *
      * @param id the identifier to test
-     * @return {@code true} if the id is within the valid length bounds
+     * @return {@code true} if the id is non-empty and does not exceed {@link #MAX_ID_LENGTH} characters
      */
     private static boolean isValidLookupId(final String id) {
         return Strings.isNotEmpty(id) && id.length() <= MAX_ID_LENGTH;

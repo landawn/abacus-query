@@ -688,9 +688,9 @@ public class Filters {
      * // Results in: (status='active' AND type='premium') OR (status='trial' AND verified=true)
      * }</pre>
      *
-     * @param propsList list of property maps (must not be empty)
+     * @param propsList list of property maps (must not be null or empty)
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code propsList} is empty
+     * @throws IllegalArgumentException if {@code propsList} is {@code null} or empty
      */
     @Beta
     public static Or anyOfAllEqual(final List<? extends Map<String, ?>> propsList) {
@@ -3012,7 +3012,7 @@ public class Filters {
      * @return an {@link In} condition
      */
     public static In in(final String propName, final Object[] values) {
-        return in(propName, Arrays.asList(values));
+        return in(propName, values == null ? (Collection<?>) null : Arrays.asList(values));
     }
 
     /**
@@ -3136,7 +3136,7 @@ public class Filters {
      * @return a {@link NotIn} condition
      */
     public static NotIn notIn(final String propName, final Object[] values) {
-        return notIn(propName, Arrays.asList(values));
+        return notIn(propName, values == null ? (Collection<?>) null : Arrays.asList(values));
     }
 
     /**

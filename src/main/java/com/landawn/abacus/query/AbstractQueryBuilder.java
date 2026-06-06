@@ -1084,7 +1084,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                                 _sb.append(_COMMA_SPACE);
                             }
 
-                            _handlerForNamedParameter.accept(_sb, columnName);
+                            _handlerForNamedParameter.accept(_sb, nextNamedParameterName(columnName));
                         }
 
                         break;
@@ -1098,7 +1098,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                             }
 
                             _sb.append("#{");
-                            _sb.append(columnName);
+                            _sb.append(nextNamedParameterName(columnName));
                             _sb.append('}');
                         }
 
@@ -1188,6 +1188,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      * 
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if a select modifier has already been set
      */
     public This distinct() { //NOSONAR
         return selectModifier(DISTINCT);
@@ -2890,6 +2891,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code LIMIT} has already been set on this builder
      */
     public This limit(final int count) {
+        N.checkArgNotNegative(count, "count");
         checkIfAlreadyCalled(SK.LIMIT);
 
         _sb.append(_SPACE_LIMIT_SPACE);
@@ -2917,6 +2919,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code LIMIT} or {@code OFFSET} has already been set on this builder
      */
     public This limit(final int count, final int offset) {
+        N.checkArgNotNegative(count, "count");
+        N.checkArgNotNegative(offset, "offset");
         checkIfAlreadyCalled(SK.LIMIT);
         checkIfAlreadyCalled(SK.OFFSET);
 
@@ -2967,6 +2971,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
      */
     public This offset(final int offset) {
+        N.checkArgNotNegative(offset, "offset");
         checkIfAlreadyCalled(SK.OFFSET);
 
         _sb.append(_SPACE_OFFSET_SPACE).append(offset);
@@ -2993,6 +2998,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
      */
     public This offsetRows(final int offset) {
+        N.checkArgNotNegative(offset, "offset");
         checkIfAlreadyCalled(SK.OFFSET);
 
         _sb.append(_SPACE_OFFSET_SPACE).append(offset).append(_SPACE_ROWS);
@@ -3021,6 +3027,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code FETCH NEXT} or {@code FETCH FIRST} has already been set
      */
     public This fetchNextRows(final int rowCount) {
+        N.checkArgNotNegative(rowCount, "rowCount");
         checkIfAlreadyCalled(SK.FETCH_NEXT);
         calledOpSet.add(SK.FETCH_FIRST);
 
@@ -3049,6 +3056,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code FETCH FIRST} or {@code FETCH NEXT} has already been set
      */
     public This fetchFirstRows(final int rowCount) {
+        N.checkArgNotNegative(rowCount, "rowCount");
         checkIfAlreadyCalled(SK.FETCH_FIRST);
         calledOpSet.add(SK.FETCH_NEXT);
 
@@ -3248,6 +3256,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param condition if true, the condition will be appended
      * @param cond the condition to append
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code cond} is {@code null}
      */
     @Beta
     public This appendIf(final boolean condition, final Condition cond) {
@@ -3276,6 +3285,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param condition if true, the expression will be appended
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code expr} is {@code null}, empty, or blank
      */
     @Beta
     public This appendIf(final boolean condition, final String expr) {

@@ -59,6 +59,15 @@ class Junction2025Test extends TestBase {
     public void testConstructorRejectsClauseOperands() {
         assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.where(Filters.eq("a", 1))));
         assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, Arrays.asList(new OrderBy("name"))));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("WHERE active = true")));
+    }
+
+    @Test
+    public void testConstructorRejectsUsingAndRawConnectorOperandsButAllowsOn() {
+        assertDoesNotThrow(() -> new Junction(Operator.AND, Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.using("id")));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("ON a.id = b.a_id")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.eq("active", true).and(Filters.expr("USING (id)")));
     }
 
     @Test

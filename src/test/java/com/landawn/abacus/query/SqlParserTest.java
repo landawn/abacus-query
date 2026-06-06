@@ -959,6 +959,7 @@ class SqlParser2026BatchTest extends TestBase {
 
         assertTrue(words.contains("col"));
         assertTrue(words.contains("FROM"));
+        assertEquals("SELECT col FROM users", String.join("", words));
         assertFalse(words.stream().anyMatch(e -> e.contains("hidden")));
     }
 
@@ -988,6 +989,22 @@ class SqlParser2026BatchTest extends TestBase {
         String sql = "value/* hidden */WHERE id = 1";
 
         assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", 0, false));
+    }
+
+    @Test
+    public void testIndexOfWord_FromIndexInsideQuotedLiteralSkipsToLaterToken() {
+        String sql = "SELECT 'hidden WHERE token' FROM users WHERE id = 1";
+        int fromIndex = sql.indexOf("WHERE token");
+
+        assertEquals(sql.lastIndexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", fromIndex, false));
+    }
+
+    @Test
+    public void testIndexOfWord_FromIndexInsideBlockCommentSkipsToLaterToken() {
+        String sql = "SELECT /* hidden WHERE token */ id FROM users WHERE id = 1";
+        int fromIndex = sql.indexOf("WHERE token");
+
+        assertEquals(sql.lastIndexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", fromIndex, false));
     }
 
     @Test
@@ -1185,5 +1202,34 @@ class SqlParserJavadocExamples extends TestBase {
         int idx = SqlParser.indexOfWord(sql, "JOIN", 0, false);
         // The only token in this SQL containing JOIN is "RIGHTJOIN" itself, which is not a separate word.
         assertEquals(-1, idx, "indexOfWord('JOIN') must not match the substring inside identifier RIGHTJOIN");
+    }
+
+    @Test
+    public void testParseBackslashEscapedQuoteThenClosingQuote() {
+        // Regression: a backslash-escaped quote (\') immediately followed by the real closing
+        // quote must terminate the string literal. Previously the doubled-quote ('') check won
+        // over the pending backslash escape, so the literal stayed open and swallowed the rest
+        // of the SQL (FROM/t never became separate tokens).
+        String sql = "SELECT 'a\\'' FROM t";
+        List<String> words = SqlParser.parse(sql);
+        assertTrue(words.contains("'a\\''"),
+                "Expected the escaped-quote-then-closing-quote literal as a single token, got: " + words);
+        assertTrue(words.contains("FROM"), "FROM must be parsed as a separate token (string terminated), got: " + words);
+        assertTrue(words.contains("t"), "table name must be parsed as a separate token, got: " + words);
+    }
+
+    @Test
+    public void testNextWordBackslashEscapedQuoteThenClosingQuote() {
+        // nextWord must return the whole terminated literal '...\'' and stop at it.
+        String sql = "'a\\'' rest";
+        assertEquals("'a\\''", SqlParser.nextWord(sql, 0));
+    }
+
+    @Test
+    public void testIndexOfWordAfterBackslashEscapedQuoteThenClosingQuote() {
+        // The escaped-then-closing quote terminates the literal, so a keyword after it is found.
+        String sql = "WHERE x = 'a\\'' AND y = 1";
+        int idx = SqlParser.indexOfWord(sql, "AND", 0, false);
+        assertTrue(idx > 0, "AND after a terminated escaped-quote literal must be found, got index: " + idx);
     }
 }

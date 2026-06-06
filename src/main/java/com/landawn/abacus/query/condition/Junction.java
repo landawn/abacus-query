@@ -273,7 +273,7 @@ public class Junction extends ComposableCondition {
             throw new IllegalArgumentException("Condition cannot be null");
         }
 
-        if (condition instanceof Criteria || isClause(condition.operator())) {
+        if (condition instanceof Criteria || isClause(condition) || (isOnOrUsing(condition) && !(condition instanceof On))) {
             throw new IllegalArgumentException("Condition with operator '" + condition.operator() + "' cannot be used in a junction constructor");
         }
 

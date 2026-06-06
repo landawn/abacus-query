@@ -623,6 +623,19 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
+    public void testParse_blankSql_throwsException() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("   \t"));
+    }
+
+    @Test
+    public void testParse_strippedBlockCommentKeepsTokenBoundary() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :id/*comment*/AND status = :status");
+
+        Assertions.assertEquals("SELECT * FROM users WHERE id = ? AND status = ?", parsed.parameterizedSql());
+        Assertions.assertEquals(Arrays.asList("id", "status"), parsed.namedParameters());
+    }
+
+    @Test
     public void testParse_cacheReuse() {
         String sql = "SELECT * FROM users WHERE id = :userId";
         ParsedSql parsed1 = ParsedSql.parse(sql);

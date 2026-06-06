@@ -357,10 +357,12 @@ public class Limit extends Clause {
      */
     @Override
     public int hashCode() {
+        int h = 17;
+        h = (h * 31) + ((operator() == null) ? 0 : operator().hashCode());
+
         if (Strings.isNotEmpty(expr)) {
-            return expr.hashCode();
+            return (h * 31) + expr.hashCode();
         } else {
-            int h = 17;
             h = (h * 31) + count;
             return (h * 31) + offset;
         }
@@ -399,6 +401,10 @@ public class Limit extends Clause {
         }
 
         if (obj instanceof final Limit other) {
+            if (!N.equals(operator(), other.operator())) {
+                return false;
+            }
+
             if (Strings.isNotEmpty(expr)) {
                 return Strings.isNotEmpty(other.expr) && expr.equals(other.expr);
             } else {

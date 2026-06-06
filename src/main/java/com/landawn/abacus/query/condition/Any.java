@@ -52,6 +52,8 @@ package com.landawn.abacus.query.condition;
  *   <li>&gt; ANY: true if greater than at least one value (greater than the minimum)</li>
  *   <li>&lt; ANY: true if less than at least one value (less than the maximum)</li>
  *   <li>!= ANY: true if different from at least one value</li>
+ *   <li>&gt;= ANY: true if greater than or equal to at least one value (greater than or equal to the minimum)</li>
+ *   <li>&lt;= ANY: true if less than or equal to at least one value (less than or equal to the maximum)</li>
  * </ul>
  *
  * <p>Note: when the subquery returns no rows, {@code x op ANY (...)} is {@code false}

@@ -511,4 +511,13 @@ class Limit2026Batch2Test extends TestBase {
         Limit zeroRows = new Limit(0);
         Assertions.assertEquals("LIMIT 0", zeroRows.toString(NamingPolicy.NO_CHANGE));
     }
+
+    @Test
+    public void testDefaultConstructorNotEqualToInitializedLimitZero() {
+        Limit emptyState = new Limit();
+        Limit zeroRows = new Limit(0);
+
+        Assertions.assertNotEquals(emptyState, zeroRows);
+        Assertions.assertNotEquals(emptyState.hashCode(), zeroRows.hashCode());
+    }
 }

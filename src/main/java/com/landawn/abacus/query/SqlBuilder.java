@@ -627,7 +627,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = SCSB.insert(Account.class).into("account").build().query();
-         * // Output: INSERT INTO account (first_name, last_name, email, status)
+         * // Output: INSERT INTO account (first_name, last_name, email, status) VALUES (?, ?, ?, ?)
          * }</pre>
          *
          * @param entityClass the entity class
@@ -649,7 +649,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = N.asSet("id", "createdDate");
          * String sql = SCSB.insert(Account.class, excluded).into("account").build().query();
-         * // Output: INSERT INTO account (first_name, last_name, email)
+         * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
          * }</pre>
          *
          * @param entityClass the entity class
@@ -1686,7 +1686,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param cond the condition to render (must not be {@code null})
          * @param entityClass the entity class used for property-to-column mapping (may be {@code null})
          * @return a new SqlBuilder instance containing the rendered condition SQL
-         * @throws IllegalArgumentException if {@code cond} is {@code null}
+         * @throws IllegalArgumentException if cond is null
          */
         public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
@@ -3251,7 +3251,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <pre>{@code
          * Set<String> excluded = new HashSet<>(Arrays.asList("id", "createdDate"));
          * String sql = LCSB.insert(User.class, excluded).into("users").build().query();
-         * // Output: INSERT INTO users (firstName, lastName, email)
+         * // Output: INSERT INTO users (firstName, lastName, email) VALUES (?, ?, ?)
          * }</pre>
          * 
          * @param entityClass the entity class to create INSERT for
@@ -4689,7 +4689,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to update
          * @param entityClass the entity class for property mapping
          * @return a new SqlBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if tableName or entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -4798,7 +4798,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to delete from
          * @param entityClass the entity class for property mapping
          * @return a new SqlBuilder instance configured for DELETE operation
-         * @throws IllegalArgumentException if tableName or entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -6160,7 +6160,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql2 = PSC.select("firstName || ' ' || lastName AS fullName")
          *                  .from("account")
          *                  .build().query();
-         * // Output: SELECT first_name || ' ' || last_name AS fullName FROM account
+         * // Output: SELECT firstName || ' ' || lastName AS fullName FROM account
          * }</pre>
          * 
          * @param selectPart the select expression
@@ -7275,7 +7275,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to update
          * @param entityClass the entity class for property mapping
          * @return a new SqlBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if tableName or entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -7396,7 +7396,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to delete from
          * @param entityClass the entity class for property mapping
          * @return a new SqlBuilder instance configured for DELETE operation
-         * @throws IllegalArgumentException if tableName or entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -10119,7 +10119,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to update
          * @param entityClass the entity class for property mapping
          * @return a new SqlBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if tableName is null/empty or entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -10241,7 +10241,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to delete from
          * @param entityClass the entity class for property mapping
          * @return a new SqlBuilder instance configured for DELETE operation
-         * @throws IllegalArgumentException if tableName is null/empty or entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -12552,7 +12552,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to update
          * @param entityClass the entity class for property mapping
          * @return an SqlBuilder configured for UPDATE operation
-         * @throws IllegalArgumentException if tableName is null/empty or entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -12668,7 +12668,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to delete from
          * @param entityClass the entity class for property mapping
          * @return an SqlBuilder configured for DELETE operation
-         * @throws IllegalArgumentException if tableName is null/empty or entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -13785,7 +13785,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to update
          * @param entityClass the entity class for property-to-column name mapping
          * @return an SqlBuilder configured for UPDATE operation
-         * @throws IllegalArgumentException if tableName is null/empty or entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -13906,7 +13906,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to delete from
          * @param entityClass the entity class for property mapping
          * @return an SqlBuilder configured for DELETE operation
-         * @throws IllegalArgumentException if tableName is null/empty or entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -16244,8 +16244,9 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         /**
          * Creates an INSERT statement with automatic table name detection.
          * 
-         * <p>The table name is determined from the {@code @Table} annotation,
-         * with the entity's property names converted to snake_case columns.</p>
+         * <p>The table name is determined from the {@code @Table} annotation on the entity class,
+         * or derived from the class name if no annotation is present, with the entity's property
+         * names converted to snake_case columns.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -16380,7 +16381,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to update
          * @param entityClass the entity class for property mapping
          * @return a new SqlBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if tableName is null or empty, or if entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -16497,7 +16498,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to delete from
          * @param entityClass the entity class for property mapping
          * @return a new SqlBuilder instance configured for DELETE operation
-         * @throws IllegalArgumentException if tableName is null or empty, or if entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);
@@ -16515,7 +16516,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         /**
          * Creates a DELETE statement for an entity class.
          * 
-         * <p>The table name is determined from the {@code @Table} annotation.</p>
+         * <p>The table name is determined from the {@code @Table} annotation on the entity class,
+         * or derived from the class name if no annotation is present.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -16746,7 +16748,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         /**
          * Creates a complete SELECT statement with automatic table name detection.
          * 
-         * <p>The table name is determined from the {@code @Table} annotation.</p>
+         * <p>The table name is determined from the {@code @Table} annotation on the entity class,
+         * or derived from the class name if no annotation is present.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -17162,7 +17165,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         /**
          * Creates a SELECT COUNT(*) statement for an entity class.
          * 
-         * <p>The table name is determined from the {@code @Table} annotation.</p>
+         * <p>The table name is determined from the {@code @Table} annotation on the entity class,
+         * or derived from the class name if no annotation is present.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -17201,6 +17205,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param cond the condition to render (must not be {@code null})
          * @param entityClass the entity class used for property-to-column mapping (may be {@code null})
          * @return a new SqlBuilder instance containing the rendered condition SQL
+         * @throws IllegalArgumentException if cond is null
          */
         public static SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
@@ -17595,7 +17600,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to update
          * @param entityClass the entity class for property mapping
          * @return a new SqlBuilder instance configured for UPDATE operation
-         * @throws IllegalArgumentException if tableName is null or empty, or if entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder update(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, UPDATE_PART_MSG);
@@ -17714,7 +17719,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * @param tableName the name of the table to delete from
          * @param entityClass the entity class for property mapping
          * @return a new SqlBuilder instance configured for DELETE operation
-         * @throws IllegalArgumentException if tableName is null or empty, or if entityClass is null
+         * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
          */
         public static SqlBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
             N.checkArgNotEmpty(tableName, DELETION_PART_MSG);

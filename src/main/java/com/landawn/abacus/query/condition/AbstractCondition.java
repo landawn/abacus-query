@@ -208,6 +208,32 @@ public abstract class AbstractCondition implements Condition {
         return isClause(cond.operator());
     }
 
+    protected static boolean isOnOrUsing(final Condition cond) {
+        if (cond == null) {
+            return false;
+        }
+
+        if (cond instanceof Expression) {
+            final String literal = ((Expression) cond).getLiteral();
+
+            if (Strings.isEmpty(literal)) {
+                return false;
+            }
+
+            return isOnOrUsing(SqlParser.nextWord(literal, 0));
+        }
+
+        return isOnOrUsing(cond.operator());
+    }
+
+    private static boolean isOnOrUsing(final Operator operator) {
+        return operator == Operator.ON || operator == Operator.USING;
+    }
+
+    private static boolean isOnOrUsing(final String word) {
+        return Operator.ON.toString().equalsIgnoreCase(word) || Operator.USING.toString().equalsIgnoreCase(word);
+    }
+
     /**
      * Converts a parameter value to its string representation for use in condition strings.
      * Handles special cases like strings (adds quotes) and conditions (recursive toString).
@@ -656,7 +682,7 @@ public abstract class AbstractCondition implements Condition {
     protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
         final Operator operator = cond == null ? null : cond.operator();
 
-        if (operator == null || isClause(operator) || operator == Operator.ON || operator == Operator.USING) {
+        if (operator == null || isClause(cond) || isOnOrUsing(cond)) {
             throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in composable method '" + methodName + "'");
         }
 

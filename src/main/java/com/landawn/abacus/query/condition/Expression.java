@@ -259,7 +259,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param literal the left-hand side of the equality
-     * @param value the right-hand side value
+     * @param value the right-hand side value; may be {@code null} (renders as {@code IS NULL})
      * @return a string representation of the equality expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
@@ -304,7 +304,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param literal the left-hand side of the inequality
-     * @param value the right-hand side value
+     * @param value the right-hand side value; may be {@code null} (renders as {@code IS NOT NULL})
      * @return a string representation of the not-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */

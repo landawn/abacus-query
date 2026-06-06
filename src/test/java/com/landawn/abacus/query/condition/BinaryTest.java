@@ -446,6 +446,17 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
+    public void testInCollectionValueRendersAsListAndFlattensParameters() {
+        Binary in = Filters.binary("prop", Operator.IN, Arrays.asList(1, 2, 3));
+        Binary notIn = Filters.binary("prop", Operator.NOT_IN, Arrays.asList("a", "b"));
+
+        Assertions.assertEquals("prop IN (1, 2, 3)", in.toString());
+        Assertions.assertEquals(Arrays.asList(1, 2, 3), in.getParameters());
+        Assertions.assertEquals("prop NOT IN ('a', 'b')", notIn.toString());
+        Assertions.assertEquals(Arrays.asList("a", "b"), notIn.getParameters());
+    }
+
+    @Test
     public void testDefaultConstructor_EmptyState_Batch2() {
         Binary binary = new Binary();
         Binary same = new Binary();

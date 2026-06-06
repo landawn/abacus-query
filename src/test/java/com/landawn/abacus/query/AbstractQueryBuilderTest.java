@@ -447,6 +447,16 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    public void testRowLimitApisRejectNegativeValues() {
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").limit(-1));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").limit(10, -1));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").offset(-1));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").offsetRows(-1));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").fetchNextRows(-1));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").fetchFirstRows(-1));
+    }
+
+    @Test
     public void testChainedSetCollectionCallsIncludeComma() {
         String sql = SqlBuilder.PSC.update("users").set("firstName").set("lastName").where(Filters.eq("id", 1)).build().query();
         assertTrue(sql.contains("first_name = ?"), "first_name assignment missing: " + sql);
@@ -1233,6 +1243,32 @@ class AbstractQueryBuilder2026BatchTest extends TestBase {
         assertEquals("", AbstractQueryBuilder.sanitizeNamedParameterName(""));
         assertEquals(null, AbstractQueryBuilder.sanitizeNamedParameterName(null));
         assertEquals("ord", AbstractQueryBuilder.sanitizeNamedParameterName("ord."));
+    }
+
+    /**
+     * Regression test: the {@code insert(String...).into(...)} VALUES placeholders for named
+     * and iBATIS SQL must be routed through {@code nextNamedParameterName(...)} — exactly like
+     * every other named-parameter site ({@code set(...)}, {@code appendInsertProps(...)}). Before
+     * the fix this INSERT column path emitted the raw column name verbatim, so duplicate column
+     * names produced colliding placeholders (e.g. {@code :id, :id}) instead of the de-duplicated
+     * {@code :id, :id_2}. The common case of clean, distinct property names is unchanged.
+     */
+    @Test
+    public void testInsertNamedPlaceholdersAreSanitizedAndDeduplicated() {
+        // Clean, distinct names: unchanged (no regression).
+        String named = SqlBuilder.NLC.insert("firstName", "lastName").into("account").build().query();
+        assertTrue(named.contains("VALUES (:firstName, :lastName)"), "Unexpected named INSERT SQL: " + named);
+
+        // Duplicate column names: placeholders must be de-duplicated via the occurrence counter.
+        String dup = SqlBuilder.NLC.insert("id", "id").into("account").build().query();
+        assertTrue(dup.contains("VALUES (:id, :id_2)"), "Duplicate named placeholders not de-duplicated: " + dup);
+
+        // iBATIS (#{...}) path: same routing through nextNamedParameterName.
+        String ibatisClean = SqlBuilder.MLC.insert("firstName").into("account").build().query();
+        assertTrue(ibatisClean.contains("VALUES (#{firstName})"), "Unexpected iBATIS INSERT SQL: " + ibatisClean);
+
+        String ibatisDup = SqlBuilder.MLC.insert("id", "id").into("account").build().query();
+        assertTrue(ibatisDup.contains("VALUES (#{id}, #{id_2})"), "Duplicate iBATIS placeholders not de-duplicated: " + ibatisDup);
     }
 
     /**

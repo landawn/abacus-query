@@ -691,6 +691,24 @@ public class SubQueryTest extends TestBase {
         Assertions.assertEquals(3, subQuery.getParameters().size());
     }
 
+    @Test
+    public void testConstructorRejectsWhitespaceOnlyRawSql() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("   "));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", "   "));
+    }
+
+    @Test
+    public void testConstructorRejectsBlankEntityAndPropertyNames() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("   ", Arrays.asList("id"), (Condition) null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList("id", "   "), (Condition) null));
+    }
+
+    @Test
+    public void testConstructorRejectsRawOnUsingExpressions() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList("id"), Filters.expr("ON users.id = orders.user_id")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList("id"), Filters.expr("USING (id)")));
+    }
+
     // Test entity class for constructor test
     static class TestEntity {
         // Empty class for testing

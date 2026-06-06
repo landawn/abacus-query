@@ -131,6 +131,15 @@ class Join2025Test extends TestBase {
         Join join = new Join("orders o", andCondition);
         assertEquals(2, (int) join.getParameters().size());
     }
+
+    @Test
+    public void testConstructorRejectsRawOnUsingExpressionsButAllowsExplicitConnectors() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", Filters.expr("ON users.id = orders.user_id")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", Filters.expr("USING (id)")));
+
+        Assertions.assertDoesNotThrow(() -> new Join("orders", Filters.on("users.id", "orders.user_id")));
+        Assertions.assertDoesNotThrow(() -> new Join("orders", Filters.using("id")));
+    }
 }
 
 public class JoinTest extends TestBase {

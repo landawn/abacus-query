@@ -143,8 +143,8 @@ public class RightJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond the condition appended after the join target. Use {@link On} when the SQL should include an
-     *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
+     * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should include
+     *            those keywords. Any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
     public RightJoin(final String joinEntity, final Condition cond) {
@@ -173,8 +173,8 @@ public class RightJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param cond the condition appended after the joined table list. Use {@link On} when the SQL should include an
-     *            {@code ON} clause. Any {@link Condition} is allowed and can be {@code null}.
+     * @param cond the condition appended after the joined table list. Use {@link On} or {@link Using} when the SQL should include
+     *            those keywords. Any {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
      */
     public RightJoin(final Collection<String> joinEntities, final Condition cond) {

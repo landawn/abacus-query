@@ -68,10 +68,10 @@ public abstract class AbstractBetween extends ComposableCondition {
      *
      * @param propName the property/column name (must not be {@code null} or empty)
      * @param operator the operator ({@link Operator#BETWEEN} or {@link Operator#NOT_BETWEEN})
-     * @param minValue the lower bound of the range (inclusive for {@code BETWEEN}); may be a
+     * @param minValue the lower bound of the range (inclusive for {@code BETWEEN}; for {@code NOT_BETWEEN} the bound value itself is excluded from the match); may be a
      *                 literal value, a {@link SubQuery}, or any other {@link Condition} whose
      *                 parameters will be spliced into {@link #getParameters()}; may be {@code null}
-     * @param maxValue the upper bound of the range (inclusive for {@code BETWEEN}); may be a
+     * @param maxValue the upper bound of the range (inclusive for {@code BETWEEN}; for {@code NOT_BETWEEN} the bound value itself is excluded from the match); may be a
      *                 literal value, a {@link SubQuery}, or any other {@link Condition} whose
      *                 parameters will be spliced into {@link #getParameters()}; may be {@code null}
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty

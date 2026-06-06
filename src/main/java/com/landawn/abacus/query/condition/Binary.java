@@ -14,6 +14,10 @@
 
 package com.landawn.abacus.query.condition;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -221,6 +225,20 @@ public class Binary extends ComposableCondition {
             return ImmutableList.empty();
         }
 
+        if (isCollectionOperator(op) && propValue instanceof final Collection<?> values) {
+            final List<Object> parameters = new ArrayList<>(values.size());
+
+            for (final Object value : values) {
+                if (value instanceof Condition) {
+                    parameters.addAll(((Condition) value).getParameters());
+                } else {
+                    parameters.add(value);
+                }
+            }
+
+            return ImmutableList.wrap(parameters);
+        }
+
         if (propValue instanceof Condition) {
             return ((Condition) propValue).getParameters();
         } else {
@@ -288,7 +306,33 @@ public class Binary extends ComposableCondition {
         }
 
         final String opStr = op == null ? Strings.NULL : op.toString();
+
+        if (isCollectionOperator(op) && propValue instanceof final Collection<?> values) {
+            return effectiveNamingPolicy.convert(propName) + SK._SPACE + opStr + SK._SPACE + formatCollection(values, effectiveNamingPolicy);
+        }
+
         return effectiveNamingPolicy.convert(propName) + SK._SPACE + opStr + SK._SPACE + formatParameter(propValue, effectiveNamingPolicy);
+    }
+
+    private static boolean isCollectionOperator(final Operator op) {
+        return op == Operator.IN || op == Operator.NOT_IN;
+    }
+
+    private static String formatCollection(final Collection<?> values, final NamingPolicy namingPolicy) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(SK._PARENTHESIS_L);
+
+        int i = 0;
+        for (final Object value : values) {
+            if (i++ > 0) {
+                sb.append(SK.COMMA_SPACE);
+            }
+
+            sb.append(formatParameter(value, namingPolicy));
+        }
+
+        sb.append(SK._PARENTHESIS_R);
+        return sb.toString();
     }
 
     /**

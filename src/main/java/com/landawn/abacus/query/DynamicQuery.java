@@ -1533,6 +1533,9 @@ public final class DynamicQuery {
          * Appends a condition to the {@code HAVING} clause.
          * Automatically adds "HAVING " prefix on first call.
          *
+         * <p>Unlike {@link #and(String)}/{@link #or(String)}, this method does <em>not</em> insert a logical
+         * connective — the caller must include any required {@code AND}/{@code OR} in the argument.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * having.append("SUM(amount) > 1000");

@@ -140,7 +140,7 @@ public class NaturalJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond an additional condition appended after the natural join fragment. Any {@link Condition} is allowed
+     * @param cond an additional condition appended after the natural join fragment. Use {@link On} or {@link Using} when the SQL should include those keywords; any other non-{@code null} condition is automatically prefixed with {@code ON}. Any {@link Condition} is allowed
      *            and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
      */
@@ -179,7 +179,7 @@ public class NaturalJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param cond an additional condition appended after the natural join fragment. Any {@link Condition} is allowed
+     * @param cond an additional condition appended after the natural join fragment. Use {@link On} or {@link Using} when the SQL should include those keywords; any other non-{@code null} condition is automatically prefixed with {@code ON}. Any {@link Condition} is allowed
      *            and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
      */

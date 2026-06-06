@@ -293,7 +293,7 @@ public class Join extends AbstractCondition {
     }
 
     private static Condition validateJoinCondition(final Condition cond) {
-        if (cond != null && (cond instanceof Criteria || isClause(cond))) {
+        if (cond != null && (cond instanceof Criteria || isClause(cond) || (cond instanceof Expression && isOnOrUsing(cond)))) {
             throw new IllegalArgumentException("Join condition cannot be a SQL clause: " + cond.operator());
         }
 

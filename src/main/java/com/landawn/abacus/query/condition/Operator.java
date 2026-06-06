@@ -419,7 +419,7 @@ public enum Operator {
      *
      * // Enum constant names are also accepted (case-insensitive)
      * Operator eq2 = Operator.of("EQUAL");          // Operator.EQUAL
-     * Operator lj = Operator.of("greater_than");    // Operator.GREATER_THAN
+     * Operator gt2 = Operator.of("greater_than");    // Operator.GREATER_THAN
      *
      * // Edge cases
      * Operator unknown = Operator.of("UNKNOWN");    // null (not a known token or name)
