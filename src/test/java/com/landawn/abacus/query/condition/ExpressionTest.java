@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -1548,5 +1550,81 @@ public class ExpressionTest extends TestBase {
         Assertions.assertFalse(result.contains("\n"),
                 "Short literal with trailing newline must be parsed (whitespace collapsed), got: " + result.replace("\n", "\\n"));
         Assertions.assertTrue(result.startsWith("col"), "Column token must be preserved, got: " + result);
+    }
+
+    /**
+     * Regression: the single-slot {@code toString(NamingPolicy)} cache must return the value rendered
+     * for the <i>requested</i> policy, never a value cached for a different policy. {@link Expression#of}
+     * interns instances, so the same object is reused across calls and must answer each policy correctly
+     * even when callers alternate policies on it.
+     */
+    @Test
+    public void testToStringCacheReturnsValuePerNamingPolicy() {
+        Expression expr = Expression.of("firstName");
+        assertSame(expr, Expression.of("firstName"), "Expression.of must intern instances");
+
+        for (int i = 0; i < 1000; i++) {
+            assertEquals("firstName", expr.toString(NamingPolicy.NO_CHANGE));
+            assertEquals("first_name", expr.toString(NamingPolicy.SNAKE_CASE));
+            assertEquals("FIRST_NAME", expr.toString(NamingPolicy.SCREAMING_SNAKE_CASE));
+            assertEquals("firstName", expr.toString(null)); // null defaults to NO_CHANGE
+        }
+    }
+
+    /**
+     * Regression for the toString-cache data race: the cache pairs a {@link NamingPolicy} with its rendered
+     * string in a single immutable holder published through one {@code volatile} reference. Previously the
+     * policy and string were two separate non-volatile fields; two threads rendering the same interned
+     * instance under different policies could interleave the two writes so a reader saw one field's policy
+     * paired with the other field's value, returning a string rendered for the wrong policy. This test hammers
+     * a single shared instance with three policies concurrently and asserts every call returns its own policy's
+     * value.
+     */
+    @Test
+    public void testToStringCacheThreadSafeAcrossNamingPolicies() throws InterruptedException {
+        final Expression expr = Expression.of("firstName");
+
+        final NamingPolicy[] policies = { NamingPolicy.NO_CHANGE, NamingPolicy.SNAKE_CASE, NamingPolicy.SCREAMING_SNAKE_CASE };
+        final String[] expected = { "firstName", "first_name", "FIRST_NAME" };
+
+        final int threadCount = 12;
+        final int iterations = 50_000;
+        final CountDownLatch start = new CountDownLatch(1);
+        final AtomicReference<String> firstError = new AtomicReference<>();
+        final Thread[] threads = new Thread[threadCount];
+
+        for (int t = 0; t < threadCount; t++) {
+            final int idx = t % policies.length;
+            final NamingPolicy policy = policies[idx];
+            final String want = expected[idx];
+
+            threads[t] = new Thread(() -> {
+                try {
+                    start.await();
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+
+                for (int i = 0; i < iterations && firstError.get() == null; i++) {
+                    final String got = expr.toString(policy);
+
+                    if (!want.equals(got)) {
+                        firstError.compareAndSet(null, "policy=" + policy + " expected=" + want + " got=" + got);
+                        return;
+                    }
+                }
+            });
+            threads[t].start();
+        }
+
+        start.countDown();
+
+        for (final Thread thread : threads) {
+            thread.join();
+        }
+
+        Assertions.assertNull(firstError.get(),
+                "toString(NamingPolicy) returned a value rendered for the wrong policy under concurrency: " + firstError.get());
     }
 }

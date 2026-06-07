@@ -1646,4 +1646,28 @@ class CriteriaBugFixTest extends TestBase {
     public void testBuilderOrderByCollection_Empty_ThrowsIAE() {
         assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(java.util.Collections.<String> emptyList()));
     }
+
+    /**
+     * Regression for the single-slot toString cache (shared {@code CachedToString} holder): rendering the
+     * same Criteria with alternating naming policies must always return the value for the requested policy,
+     * never a value cached for a previously-requested policy.
+     */
+    @Test
+    public void testToStringCacheReturnsValuePerNamingPolicy() {
+        Criteria criteria = Criteria.builder().where(Filters.eq("firstName", "John")).orderBy("lastName").build();
+
+        for (int i = 0; i < 100; i++) {
+            String noChange = criteria.toString(NamingPolicy.NO_CHANGE);
+            Assertions.assertTrue(noChange.contains("firstName = 'John'") && noChange.contains("lastName"),
+                    "NO_CHANGE render wrong: " + noChange);
+
+            String snake = criteria.toString(NamingPolicy.SNAKE_CASE);
+            Assertions.assertTrue(snake.contains("first_name = 'John'") && snake.contains("last_name"),
+                    "SNAKE_CASE render wrong: " + snake);
+
+            String screaming = criteria.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+            Assertions.assertTrue(screaming.contains("FIRST_NAME = 'John'") && screaming.contains("LAST_NAME"),
+                    "SCREAMING_SNAKE_CASE render wrong: " + screaming);
+        }
+    }
 }

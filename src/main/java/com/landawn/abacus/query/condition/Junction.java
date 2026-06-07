@@ -98,10 +98,8 @@ public class Junction extends ComposableCondition {
     /** Lazily memoized hashCode (0 == not computed). */
     private transient int cachedHashCode;
 
-    /** Single-slot toString cache: last naming policy and its rendered string (performance only). */
-    private transient NamingPolicy cachedTostringNamingPolicy;
-
-    private transient String cachedTostring;
+    /** Single-slot toString cache pairing a naming policy with its rendered string (performance only). */
+    private transient volatile CachedToString cachedTostring;
 
     /** Lazily memoized unmodifiable view of {@link #conditions} (performance only). */
     private transient List<Condition> cachedConditionsView;
@@ -360,14 +358,15 @@ public class Junction extends ComposableCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        if (cachedTostring != null && cachedTostringNamingPolicy == namingPolicy) {
-            return cachedTostring;
+        final CachedToString cache = cachedTostring;
+
+        if (cache != null && cache.namingPolicy == namingPolicy) {
+            return cache.value;
         }
 
         final String result = doToString(namingPolicy);
 
-        cachedTostring = result;
-        cachedTostringNamingPolicy = namingPolicy;
+        cachedTostring = new CachedToString(namingPolicy, result);
 
         return result;
     }

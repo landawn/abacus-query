@@ -646,4 +646,20 @@ public class BinaryTest extends TestBase {
         // Body of the literal must contain an escaped quote (either \' or '').
         assertTrue(result.contains("\\'") || result.contains("''"), "Single-quote Character must be escaped, got: " + result);
     }
+
+    /**
+     * Regression for the single-slot toString cache (shared {@code CachedToString} holder): rendering the
+     * same instance with alternating naming policies must always return the value for the requested policy,
+     * never a value cached for a previously-requested policy.
+     */
+    @Test
+    public void testToStringCacheReturnsValuePerNamingPolicy() {
+        Binary binary = Filters.binary("firstName", Operator.LIKE, "John%");
+
+        for (int i = 0; i < 100; i++) {
+            assertEquals("firstName LIKE 'John%'", binary.toString(NamingPolicy.NO_CHANGE));
+            assertEquals("first_name LIKE 'John%'", binary.toString(NamingPolicy.SNAKE_CASE));
+            assertEquals("FIRST_NAME LIKE 'John%'", binary.toString(NamingPolicy.SCREAMING_SNAKE_CASE));
+        }
+    }
 }
