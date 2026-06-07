@@ -147,8 +147,8 @@ public class SubQuery extends AbstractCondition {
      * );
      * }</pre>
      *
-     * @param sql the SQL SELECT statement (must not be {@code null} or empty)
-     * @throws IllegalArgumentException if {@code sql} is {@code null} or empty
+     * @param sql the SQL SELECT statement (must not be {@code null}, empty, or blank)
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
      */
     public SubQuery(final String sql) {
         this(Strings.EMPTY, sql);
@@ -170,8 +170,8 @@ public class SubQuery extends AbstractCondition {
      *
      * @param entityName the entity/table name; may be {@code null} or empty, in which case it is
      *            stored as the empty string
-     * @param sql the SQL SELECT statement (must not be {@code null} or empty)
-     * @throws IllegalArgumentException if {@code sql} is {@code null} or empty
+     * @param sql the SQL SELECT statement (must not be {@code null}, empty, or blank)
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
      */
     public SubQuery(final String entityName, final String sql) {
         super(Operator.EMPTY);

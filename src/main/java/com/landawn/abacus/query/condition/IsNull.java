@@ -63,6 +63,8 @@ import com.landawn.abacus.query.Filters;
  * }</pre>
  * 
  * @see IsNotNull
+ * @see IsNaN
+ * @see IsInfinite
  * @see Is
  */
 public class IsNull extends Is {

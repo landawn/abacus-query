@@ -590,7 +590,7 @@ public final class QueryUtil {
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
-     * @return an immutable list of ID field names, or empty list if no ID fields are defined
+     * @return an immutable list of ID field names, or an empty list if no ID fields are defined
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      * @deprecated for internal use only. No public replacement is provided.
      */

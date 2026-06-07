@@ -742,7 +742,7 @@ public class Filters {
      * List<User> users = Arrays.asList(new User("John", "active"), new User("Jane", "trial"));
      * Or condition = Filters.anyOfAllEqual(users, Arrays.asList("name", "status"));
      * // Only uses name and status properties from each user
-     * // Results in: (((name = 'John') AND (status = 'active'))) OR (((name = 'Jane') AND (status = 'trial')))
+     * // Results in: (name = 'John' AND status = 'active') OR (name = 'Jane' AND status = 'trial')
      * }</pre>
      *
      * @param entities collection of entity objects (must not be empty)

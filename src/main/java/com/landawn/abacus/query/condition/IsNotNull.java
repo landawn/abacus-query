@@ -50,6 +50,8 @@ package com.landawn.abacus.query.condition;
  * }</pre>
  * 
  * @see IsNull
+ * @see IsNotNaN
+ * @see IsNotInfinite
  * @see IsNot
  */
 public class IsNotNull extends IsNot {

@@ -506,7 +506,7 @@ public final class SqlParser {
      * 
      * @param sql the SQL statement to search within (must not be {@code null})
      * @param word the word or composite keyword to find (must not be {@code null})
-     * @param fromIndex the starting position for the search (0-based); negative values are treated as {@code 0}
+     * @param fromIndex the earliest character position at which a match may be reported (0-based); scanning still begins at the start of {@code sql} for correct tokenization, but any match starting before {@code fromIndex} is skipped; negative values are treated as {@code 0}
      * @param caseSensitive whether the search should be case-sensitive
      * @return the index of the word if found, or {@code -1} if not found
      * @throws NullPointerException if {@code sql} or {@code word} is {@code null}

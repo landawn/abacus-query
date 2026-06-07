@@ -68,6 +68,7 @@ import com.landawn.abacus.query.Filters;
  * }</pre>
  * 
  * @see IsNotNaN
+ * @see IsNull
  * @see IsInfinite
  * @see Is
  */

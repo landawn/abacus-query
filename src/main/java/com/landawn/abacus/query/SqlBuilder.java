@@ -1972,7 +1972,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Creates an INSERT INTO SQL builder for an entity class.
          *
          * <p>This is a convenience method that combines insert() and into() operations.
-         * The table name is derived from the entity class name and converted to uppercase.
+         * The table name is derived from the entity class name and converted to upper snake case (SCREAMING_SNAKE_CASE).
          * When called with an entity class (rather than an entity instance), the VALUES
          * clause will contain {@code ?} placeholders for each insertable column.</p>
          *
@@ -1995,7 +1995,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * Creates an INSERT INTO SQL builder for an entity class, excluding specified properties.
          *
          * <p>This convenience method combines insert() and into() operations with property exclusion.
-         * The table name is derived from the entity class and converted to uppercase. When called
+         * The table name is derived from the entity class and converted to upper snake case (SCREAMING_SNAKE_CASE). When called
          * with an entity class (rather than an entity instance), the VALUES clause will contain
          * {@code ?} placeholders for each included insertable column.</p>
          *
@@ -2930,7 +2930,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          *
          * @param tableName the table to count rows from
-         * @return a new SqlBuilder instance configured for COUNT operation
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SqlBuilder count(final String tableName) {
@@ -2954,7 +2954,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          *
          * @param entityClass the entity class to count
-         * @return a new SqlBuilder instance configured for COUNT operation
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder count(final Class<?> entityClass) {
@@ -3004,7 +3004,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
      * 
      * <p>Features:</p>
      * <ul>
-     *   <li>Preserves "firstName" as "firstName" (no conversion)</li>
+     *   <li>Emits property names in camelCase (e.g., "first_name" becomes "firstName"); names already in camelCase are unchanged</li>
      *   <li>Generates non-parameterized SQL (values embedded directly)</li>
      *   <li>Suitable for databases with camelCase column names</li>
      * </ul>
@@ -4246,7 +4246,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          * 
          * @param tableName the table to count rows from
-         * @return a new SqlBuilder instance configured for COUNT operation
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SqlBuilder count(final String tableName) {
@@ -4270,7 +4270,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          * 
          * @param entityClass the entity class to count
-         * @return a new SqlBuilder instance configured for COUNT operation
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder count(final Class<?> entityClass) {
@@ -5451,7 +5451,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          * 
          * @param tableName the name of the table to count rows from
-         * @return a new SqlBuilder instance configured for COUNT query
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SqlBuilder count(final String tableName) {
@@ -5474,7 +5474,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          *
          * @param entityClass the entity class to count rows for
-         * @return a new SqlBuilder instance configured for COUNT query
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder count(final Class<?> entityClass) {
@@ -7042,18 +7042,19 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT statement from an entity object.
-         * 
-         * <p>This method inspects the entity object and includes all properties that are not marked 
-         * with exclusion annotations (@Transient, @ReadOnly, etc.). The table name is inferred 
-         * from the entity class or @Table annotation.</p>
-         * 
+         *
+         * <p>This method inspects the entity object and includes all insertable properties
+         * (those not marked with {@code @Transient}, {@code @ReadOnly}, or {@code @ReadOnlyId}).
+         * Property names are converted to SCREAMING_SNAKE_CASE format. The target table must be
+         * specified separately via {@code .into(...)}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * User user = new User("John", "Doe", "john@example.com");
          * String sql = PAC.insert(user).into("users").build().query();
          * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
-         * 
+         *
          * @param entity the entity object to insert
          * @return a new SqlBuilder instance configured for INSERT operation
          * @throws IllegalArgumentException if entity is null
@@ -7064,10 +7065,10 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT statement from an entity object with excluded properties.
-         * 
+         *
          * <p>This method allows fine-grained control over which properties to include in the INSERT.
          * Properties in the exclusion set will not be included even if they are normally insertable.</p>
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * User user = new User("John", "Doe", "john@example.com");
@@ -7075,7 +7076,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = PAC.insert(user, exclude).into("users").build().query();
          * // Output: INSERT INTO users (FIRST_NAME, LAST_NAME, EMAIL) VALUES (?, ?, ?)
          * }</pre>
-         * 
+         *
          * @param entity the entity object to insert
          * @param excludedPropNames set of property names to exclude from the INSERT
          * @return a new SqlBuilder instance configured for INSERT operation
@@ -8051,7 +8052,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          * 
          * @param tableName the table to count rows from
-         * @return a new SqlBuilder instance configured for COUNT query
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SqlBuilder count(final String tableName) {
@@ -8074,7 +8075,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          * 
          * @param entityClass the entity class to count
-         * @return a new SqlBuilder instance configured for COUNT query
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder count(final Class<?> entityClass) {
@@ -9264,7 +9265,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * // Without sub-entities (flat selection)
          * String sql = PLC.selectFrom(BlogPost.class, false)
          *                 .build().query();
-         * // Output: SELECT id, title FROM blog_post
+         * // Output: SELECT id, title FROM blogPost
          * 
          * // With sub-entities (includes author fields)
          * String sql2 = PLC.selectFrom(BlogPost.class, true)
@@ -10235,7 +10236,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = NSB.deleteFrom("user_accounts", User.class)
          *                 .where(Filters.lessThan("lastLogin", someDate))
          *                 .build().query();
-         * // DELETE FROM user_accounts WHERE last_login < :lastLogin
+         * // DELETE FROM user_accounts WHERE lastLogin < :lastLogin
          * }</pre>
          *
          * @param tableName the name of the table to delete from
@@ -10574,8 +10575,8 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * // Automatically includes joins for sub-entities
          * String sql = NSB.selectFrom(Order.class, true).build().query();
          * // May generate: SELECT o.*, c.*, p.* FROM orders o
-         * // LEFT JOIN customers c ON o.customer_id = c.id
-         * // LEFT JOIN products p ON o.product_id = p.id
+         * // LEFT JOIN customers c ON o.customerId = c.id
+         * // LEFT JOIN products p ON o.productId = p.id
          * }</pre>
          *
          * @param entityClass the entity class to select from
@@ -10925,7 +10926,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          *
          * @param tableName the table to count records from
-         * @return a new SqlBuilder configured for COUNT query
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SqlBuilder count(final String tableName) {
@@ -10948,7 +10949,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          *
          * @param entityClass the entity class to count
-         * @return a new SqlBuilder configured for COUNT query
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder count(final Class<?> entityClass) {
@@ -12110,7 +12111,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          * 
          * @param tableName the name of the table to count rows from
-         * @return a new SqlBuilder instance configured for COUNT operation
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SqlBuilder count(final String tableName) {
@@ -12134,7 +12135,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          * 
          * @param entityClass the entity class to count rows from
-         * @return a new SqlBuilder instance configured for COUNT operation
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder count(final Class<?> entityClass) {
@@ -13308,7 +13309,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          * 
          * @param tableName the name of the table to count rows from
-         * @return an SqlBuilder configured for COUNT query
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SqlBuilder count(final String tableName) {
@@ -13333,7 +13334,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          * 
          * @param entityClass the entity class
-         * @return an SqlBuilder configured for COUNT query
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder count(final Class<?> entityClass) {
@@ -14644,7 +14645,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          * 
          * @param tableName the name of the table to count rows from
-         * @return an SqlBuilder configured for COUNT query
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SqlBuilder count(final String tableName) {
@@ -14676,7 +14677,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          *
          * @param entityClass the entity class
-         * @return an SqlBuilder configured for COUNT query
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder count(final Class<?> entityClass) {
@@ -15135,21 +15136,24 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         }
 
         /**
-         * Creates an UPDATE statement for an entity class with automatic table name detection.
-         * 
-         * <p>All updatable properties (excluding those marked with {@code @ReadOnly},
-         * {@code @ReadOnlyId}, {@code @NonUpdatable}, or {@code @Transient}) will be
-         * included in the SET clause.</p>
+         * Creates an UPDATE SQL builder for the specified entity class.
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * The SET clause is pre-populated with all updatable properties (those not marked
+         * {@code @ReadOnly}, {@code @ReadOnlyId}, {@code @NonUpdatable}, or {@code @Transient}),
+         * each mapped to an iBatis/MyBatis placeholder {@code #{propName}} with property names
+         * kept as-is (NO_CHANGE naming policy).
+         * A WHERE clause should be added before calling {@code build()}.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSB.update(User.class)
          *                 .where(Filters.equal("id", 123))
          *                 .build().query();
-         * // Output: UPDATE users SET firstName = #{firstName}, lastName = #{lastName}, 
+         * // Output: UPDATE users SET firstName = #{firstName}, lastName = #{lastName},
          * //         email = #{email} WHERE id = #{id}
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to update
          * @return a new SqlBuilder instance configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
@@ -15159,10 +15163,14 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
         }
 
         /**
-         * Creates an UPDATE statement for an entity class, excluding specified properties.
-         * 
-         * <p>This method provides fine-grained control over which properties are included
-         * in the UPDATE statement's SET clause.</p>
+         * Creates an UPDATE SQL builder for the specified entity class with excluded properties.
+         *
+         * <p>The table name is derived from the entity class name or {@code @Table} annotation.
+         * The SET clause is pre-populated with all updatable properties, additionally excluding those
+         * in {@code excludedPropNames} and those marked with {@code @NonUpdatable}, {@code @ReadOnly},
+         * {@code @ReadOnlyId}, or {@code @Transient}. Each column is mapped to an iBatis/MyBatis
+         * placeholder {@code #{propName}} with property names kept as-is (NO_CHANGE naming policy).
+         * A WHERE clause should be added before calling {@code build()}.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -15170,10 +15178,12 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = MSB.update(User.class, exclude)
          *                 .where(Filters.equal("id", 123))
          *                 .build().query();
+         * // Output: UPDATE users SET firstName = #{firstName}, lastName = #{lastName}, ... WHERE id = #{id}
+         * // (createdDate and createdBy are excluded from the SET clause)
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to update
-         * @param excludedPropNames set of property names to exclude from the update
+         * @param excludedPropNames additional property names to exclude from the SET clause
          * @return a new SqlBuilder instance configured for UPDATE operation
          * @throws IllegalArgumentException if entityClass is null
          */
@@ -16152,6 +16162,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * 
          * @param entity the entity object containing data to insert
          * @return a new SqlBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entity is null
          */
         public static SqlBuilder insert(final Object entity) {
             return insert(entity, null);
@@ -16159,7 +16170,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT statement based on an entity object, excluding specified properties.
-         * 
+         *
          * <p>Provides fine-grained control over which properties are included,
          * with automatic snake_case conversion for column names.</p>
          *
@@ -16664,12 +16675,13 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * String sql = MSC.select(User.class).from("users").build().query();
-         * // Output: SELECT first_name AS "firstName", last_name AS "lastName", 
+         * // Output: SELECT first_name AS "firstName", last_name AS "lastName",
          * //               email AS "email" FROM users
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to select from
          * @return a new SqlBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder select(final Class<?> entityClass) {
             return select(entityClass, false);
@@ -16686,10 +16698,11 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = MSC.select(User.class, true).from("users").build().query();
          * // Will include properties from any embedded entities
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to select from
          * @param includeSubEntityProperties whether to include properties from embedded entities
          * @return a new SqlBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
             return select(entityClass, includeSubEntityProperties, null);
@@ -16706,10 +16719,11 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * String sql = MSC.select(User.class, exclude).from("users").build().query();
          * // Output: SELECT first_name AS "firstName", last_name AS "lastName" FROM users
          * }</pre>
-         * 
+         *
          * @param entityClass the entity class to select from
          * @param excludedPropNames set of property names to exclude from selection
          * @return a new SqlBuilder instance configured for SELECT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
             return select(entityClass, false, excludedPropNames);
@@ -17394,6 +17408,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param entity the entity object to insert
          * @return a new SqlBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entity is null
          */
         public static SqlBuilder insert(final Object entity) {
             return insert(entity, null);
@@ -17401,7 +17416,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
 
         /**
          * Creates an INSERT SQL builder for the given entity object, excluding specified properties.
-         * 
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Account account = new Account();
@@ -17443,6 +17458,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *
          * @param entityClass the entity class to generate INSERT for
          * @return a new SqlBuilder instance configured for INSERT operation
+         * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder insert(final Class<?> entityClass) {
             return insert(entityClass, null);
@@ -18325,7 +18341,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          *
          * @param tableName the table to count rows from
-         * @return a new SqlBuilder instance configured for COUNT operation
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SqlBuilder count(final String tableName) {
@@ -18350,7 +18366,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          *
          * @param entityClass the entity class to count rows from
-         * @return a new SqlBuilder instance configured for COUNT operation
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder count(final Class<?> entityClass) {
@@ -19079,7 +19095,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          *                 .from("account")
          *                 .innerJoin("address").on("account.addressId = address.id")
          *                 .build().query();
-         * // Output: SELECT account.*, address.* FROM account INNER JOIN address ON account.addressId = address.id
+         * // Output: SELECT <all Account columns>, <all Address sub-entity columns> FROM account INNER JOIN address ON account.addressId = address.id
          * }</pre>
          *
          * @param entityClass the entity class to generate SELECT for
@@ -19528,7 +19544,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          *
          * @param tableName the name of the table to count rows from
-         * @return a new SqlBuilder instance configured for COUNT operation
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if tableName is null or empty
          */
         public static SqlBuilder count(final String tableName) {
@@ -19550,7 +19566,7 @@ public abstract class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // N
          * }</pre>
          *
          * @param entityClass the entity class to count rows for
-         * @return a new SqlBuilder instance configured for COUNT operation
+         * @return a new SqlBuilder instance configured for a COUNT query
          * @throws IllegalArgumentException if entityClass is null
          */
         public static SqlBuilder count(final Class<?> entityClass) {

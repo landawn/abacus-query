@@ -46,8 +46,11 @@ package com.landawn.abacus.query.condition;
  *
  * @see Binary
  * @see Is
+ * @see IsNull
  * @see IsNotNull
+ * @see IsNaN
  * @see IsNotNaN
+ * @see IsInfinite
  * @see IsNotInfinite
  * @see Condition
  */

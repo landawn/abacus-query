@@ -143,7 +143,7 @@ public class NaturalJoin extends Join {
      * @param cond an additional condition appended after the natural join fragment. Use {@link On} or {@link Using} when the SQL should include those keywords; any other non-{@code null} condition is automatically prefixed with {@code ON}. Any non-clause {@link Condition} is allowed
      *            and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
-     *                                  {@link Criteria}, a SQL clause, or an {@code ON}/{@code USING} condition
+     *                                  {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
      */
     public NaturalJoin(final String joinEntity, final Condition cond) {
         super(Operator.NATURAL_JOIN, joinEntity, cond);
@@ -183,7 +183,7 @@ public class NaturalJoin extends Join {
      * @param cond an additional condition appended after the natural join fragment. Use {@link On} or {@link Using} when the SQL should include those keywords; any other non-{@code null} condition is automatically prefixed with {@code ON}. Any non-clause {@link Condition} is allowed
      *            and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
-     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@code ON}/{@code USING} condition
+     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
      */
     public NaturalJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.NATURAL_JOIN, joinEntities, cond);

@@ -45,7 +45,7 @@ package com.landawn.abacus.query.condition;
  * SubQuery minPrice = Filters.subQuery("SELECT MIN(price) FROM products");
  * SubQuery maxPrice = Filters.subQuery("SELECT MAX(price) FROM products");
  * Between priceRange = new Between("price", minPrice, maxPrice);
- * // SQL: price BETWEEN (SELECT MIN(price)...) AND (SELECT MAX(price)...)
+ * // SQL: price BETWEEN (SELECT MIN(price) FROM products) AND (SELECT MAX(price) FROM products)
  *
  * // String range (alphabetical)
  * Between nameRange = new Between("lastName", "A", "M");

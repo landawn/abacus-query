@@ -53,6 +53,7 @@ import java.util.Collection;
  * // Exclude test users
  * List<String> testEmails = Arrays.asList("test@example.com", "demo@example.com");
  * NotIn emailCondition = new NotIn("email", testEmails);
+ * // Results in: email NOT IN ('test@example.com', 'demo@example.com')
  * }</pre>
  *
  * @see AbstractIn

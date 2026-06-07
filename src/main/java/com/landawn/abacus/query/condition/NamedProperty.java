@@ -437,7 +437,7 @@ public sealed class NamedProperty permits NP {
      * NamedProperty.of("age").greaterThanOrEqual(21);     // age >= 21
      * }</pre>
      *
-     * @param value the value to compare against (inclusive). Can be numeric, date, string, or any comparable type.
+     * @param value the value to compare against. Can be numeric, date, string, or any comparable type.
      * @return a GreaterThanOrEqual condition for this property
      * @see GreaterThanOrEqual
      * @see Filters#greaterThanOrEqual(String, Object)
@@ -513,7 +513,7 @@ public sealed class NamedProperty permits NP {
      * NamedProperty.of("age").lessThanOrEqual(65);        // age <= 65
      * }</pre>
      *
-     * @param value the value to compare against (inclusive). Can be numeric, date, string, or any comparable type.
+     * @param value the value to compare against. Can be numeric, date, string, or any comparable type.
      * @return a LessThanOrEqual condition for this property
      * @see LessThanOrEqual
      * @see Filters#lessThanOrEqual(String, Object)

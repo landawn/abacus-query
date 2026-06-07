@@ -1251,9 +1251,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users, orders, items
      * }</pre>
      *
-     * @param tableNames the table names to use in the FROM clause (must not be {@code null} or empty, and no element may be {@code null} or empty)
+     * @param tableNames the table names to use in the FROM clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code tableNames} is {@code null} or empty, or contains a {@code null} or empty element
+     * @throws IllegalArgumentException if {@code tableNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final String... tableNames) {
@@ -1287,9 +1287,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users, orders
      * }</pre>
      *
-     * @param tableNames the collection of table names to use in the FROM clause (must not be {@code null} or empty, and no element may be {@code null} or empty)
+     * @param tableNames the collection of table names to use in the FROM clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code tableNames} is {@code null} or empty, or contains a {@code null} or empty element
+     * @throws IllegalArgumentException if {@code tableNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final Collection<String> tableNames) {
@@ -1329,7 +1329,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * 
      * @param expr the FROM clause expression
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final String expr) {
@@ -2888,8 +2888,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param count the maximum number of rows to return
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if {@code LIMIT} has already been set on this builder
      * @throws IllegalArgumentException if {@code count} is negative
+     * @throws IllegalStateException if {@code LIMIT} has already been set on this builder
      */
     public This limit(final int count) {
         N.checkArgNotNegative(count, "count");
@@ -2917,8 +2917,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param count the maximum number of rows to return (appears as LIMIT in SQL)
      * @param offset the number of rows to skip (appears as OFFSET in SQL)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if {@code LIMIT} or {@code OFFSET} has already been set on this builder
      * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
+     * @throws IllegalStateException if {@code LIMIT} or {@code OFFSET} has already been set on this builder
      */
     public This limit(final int count, final int offset) {
         N.checkArgNotNegative(count, "count");
@@ -2970,8 +2970,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
      * @throws IllegalArgumentException if {@code offset} is negative
+     * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
      */
     public This offset(final int offset) {
         N.checkArgNotNegative(offset, "offset");
@@ -2998,8 +2998,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
      * @throws IllegalArgumentException if {@code offset} is negative
+     * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
      */
     public This offsetRows(final int offset) {
         N.checkArgNotNegative(offset, "offset");
@@ -3028,8 +3028,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param rowCount the number of rows to fetch
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if {@code FETCH NEXT} or {@code FETCH FIRST} has already been set
      * @throws IllegalArgumentException if {@code rowCount} is negative
+     * @throws IllegalStateException if {@code FETCH NEXT} or {@code FETCH FIRST} has already been set
      */
     public This fetchNextRows(final int rowCount) {
         N.checkArgNotNegative(rowCount, "rowCount");
@@ -3058,8 +3058,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param rowCount the number of rows to fetch
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if {@code FETCH FIRST} or {@code FETCH NEXT} has already been set
      * @throws IllegalArgumentException if {@code rowCount} is negative
+     * @throws IllegalStateException if {@code FETCH FIRST} or {@code FETCH NEXT} has already been set
      */
     public This fetchFirstRows(final int rowCount) {
         N.checkArgNotNegative(rowCount, "rowCount");

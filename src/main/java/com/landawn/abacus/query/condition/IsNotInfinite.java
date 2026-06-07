@@ -63,6 +63,7 @@ package com.landawn.abacus.query.condition;
  * }</pre>
  * 
  * @see IsInfinite
+ * @see IsNotNull
  * @see IsNotNaN
  * @see IsNot
  */

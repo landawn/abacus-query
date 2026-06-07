@@ -718,7 +718,7 @@ public abstract class AbstractCondition implements Condition {
      * Equal eq = new Equal("name", "John");
      * String s1 = eq.toString();   // "name = 'John'"
      *
-     * // Equal subclass behavior: null value with = renders as IS NULL
+     * // Binary rendering (inherited by Equal): a null value with = renders as IS NULL
      * Equal nullEq = new Equal("deletedAt", (Object) null);
      * String s2 = nullEq.toString();   // "deletedAt IS NULL"
      * }</pre>

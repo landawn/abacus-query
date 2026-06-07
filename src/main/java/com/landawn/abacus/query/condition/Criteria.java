@@ -2080,6 +2080,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param expr the LIMIT expression as a string
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public Builder limit(final String expr) {
             add(Filters.limit(expr));

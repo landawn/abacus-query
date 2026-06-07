@@ -1100,7 +1100,7 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Creates an AVERAGE function expression.
+     * Creates an AVG (average) function expression.
      * AVG returns the average value of a numeric column.
      *
      * <p><b>Usage Examples:</b></p>
