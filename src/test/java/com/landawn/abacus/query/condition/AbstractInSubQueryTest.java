@@ -5,6 +5,7 @@ import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 import java.util.Arrays;
 import java.util.Collection;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -145,6 +146,15 @@ public class AbstractInSubQueryTest extends TestBase {
         final SubQuery subQuery = Filters.subQuery("pairs", Arrays.asList("left_id"), Filters.eq("status", "ACTIVE"));
 
         assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"), subQuery));
+    }
+
+    @Test
+    @Tag("2025")
+    public void testConstructor_RejectsBlankPropertyNames() {
+        final SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery("   ", subQuery));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery(Arrays.asList("id", "   "), subQuery));
     }
 
     @Test

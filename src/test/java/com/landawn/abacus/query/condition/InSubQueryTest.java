@@ -64,8 +64,10 @@ class InSubQuery2025Test extends TestBase {
     @Test
     public void testConstructor_MultiplePropertiesRejectsInvalidElements() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+        assertThrows(IllegalArgumentException.class, () -> new InSubQuery("   ", subQuery));
         assertThrows(IllegalArgumentException.class, () -> new InSubQuery(Arrays.asList("dept_id", null), subQuery));
         assertThrows(IllegalArgumentException.class, () -> new InSubQuery(Arrays.asList("dept_id", ""), subQuery));
+        assertThrows(IllegalArgumentException.class, () -> new InSubQuery(Arrays.asList("dept_id", "   "), subQuery));
     }
 
     @Test
@@ -330,8 +332,10 @@ public class InSubQueryTest extends TestBase {
     public void testConstructorWithMultiplePropNamesRejectsInvalidElements() {
         SubQuery subQuery = Filters.subQuery("SELECT dept_id, loc_id FROM valid_assignments");
 
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new InSubQuery("   ", subQuery));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new InSubQuery(Arrays.asList("department_id", null), subQuery));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new InSubQuery(Arrays.asList("department_id", ""), subQuery));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new InSubQuery(Arrays.asList("department_id", "   "), subQuery));
     }
 
     @Test

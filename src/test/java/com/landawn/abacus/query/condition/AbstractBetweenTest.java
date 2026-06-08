@@ -5,6 +5,7 @@ import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -94,6 +95,16 @@ public class AbstractBetweenTest extends TestBase {
         final TestAbstractBetween left = new TestAbstractBetween("age", 18, 65);
         final TestAbstractBetween right = new TestAbstractBetween("age", 18, 65);
 
+        assertEquals(left.hashCode(), right.hashCode());
+    }
+
+    @Test
+    @Tag("2025")
+    public void testHashCode_ArrayBoundsMatchEquals() {
+        final TestAbstractBetween left = new TestAbstractBetween("payload", new byte[] { 1 }, new byte[] { 2 });
+        final TestAbstractBetween right = new TestAbstractBetween("payload", new byte[] { 1 }, new byte[] { 2 });
+
+        assertEquals(left, right);
         assertEquals(left.hashCode(), right.hashCode());
     }
 

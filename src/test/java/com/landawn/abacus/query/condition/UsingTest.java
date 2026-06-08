@@ -157,6 +157,11 @@ class Using2025Test extends TestBase {
     }
 
     @Test
+    public void testCreateUsingCondition_ThrowsOnQualifiedColumnName() {
+        assertThrows(IllegalArgumentException.class, () -> Using.createUsingCondition("orders.customer_id"));
+    }
+
+    @Test
     public void testCreateUsingCondition_ThrowsOnNullCollection() {
         assertThrows(IllegalArgumentException.class, () -> {
             Using.createUsingCondition((List<String>) null);
@@ -290,6 +295,12 @@ public class UsingTest extends TestBase {
         Using condition = Filters.using(columns);
 
         Assertions.assertNotNull(condition);
+    }
+
+    @Test
+    public void testConstructorRejectsQualifiedColumnName() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.using("orders.customer_id"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.using(Arrays.asList("id", "orders.customer_id")));
     }
 
     @Test

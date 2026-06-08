@@ -1054,18 +1054,15 @@ public class CriteriaTest extends TestBase {
         Assertions.assertEquals(Operator.NATURAL_JOIN, joins1.get(0).operator());
 
         Equal eq = Filters.eq("status", "active");
-        Criteria criteria2 = Criteria.builder().naturalJoin("employees", eq).build();
-        List<Join> joins2 = criteria2.getJoins();
-        Assertions.assertEquals(1, joins2.size());
-        Assertions.assertEquals(Operator.NATURAL_JOIN, joins2.get(0).operator());
-        Assertions.assertEquals(eq, joins2.get(0).getCondition());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Criteria.builder().naturalJoin("employees", eq).build());
 
         List<String> tables = Arrays.asList("employees", "departments");
-        Criteria criteria3 = Criteria.builder().naturalJoin(tables, eq).build();
+        Criteria criteria3 = Criteria.builder().naturalJoin(tables, null).build();
         List<Join> joins3 = criteria3.getJoins();
         Assertions.assertEquals(1, joins3.size());
         Assertions.assertEquals(Operator.NATURAL_JOIN, joins3.get(0).operator());
         Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Criteria.builder().naturalJoin(tables, eq).build());
     }
 
     @Test

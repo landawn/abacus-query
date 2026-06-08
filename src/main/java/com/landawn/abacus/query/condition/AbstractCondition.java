@@ -226,12 +226,50 @@ public abstract class AbstractCondition implements Condition {
         return isOnOrUsing(cond.operator());
     }
 
-    private static boolean isOnOrUsing(final Operator operator) {
+    protected static boolean isQuantifiedSubQueryOperand(final Condition cond) {
+        return cond != null && isQuantifiedSubQueryOperator(cond.operator());
+    }
+
+    protected static boolean isQuantifiedSubQueryOperator(final Operator operator) {
+        return operator == Operator.ALL || operator == Operator.ANY || operator == Operator.SOME;
+    }
+
+    protected static boolean isOnOrUsing(final Operator operator) {
         return operator == Operator.ON || operator == Operator.USING;
     }
 
-    private static boolean isOnOrUsing(final String word) {
+    protected static boolean isOnOrUsing(final String word) {
         return Operator.ON.toString().equalsIgnoreCase(word) || Operator.USING.toString().equalsIgnoreCase(word);
+    }
+
+    protected static boolean containsOnOrUsing(final Condition cond) {
+        if (cond == null) {
+            return false;
+        }
+
+        if (isOnOrUsing(cond)) {
+            return true;
+        }
+
+        if (cond instanceof Junction) {
+            for (final Condition child : ((Junction) cond).getConditions()) {
+                if (containsOnOrUsing(child)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (cond instanceof Cell) {
+            return containsOnOrUsing(((Cell) cond).getCondition());
+        }
+
+        if (cond instanceof ComposableCell) {
+            return containsOnOrUsing(((ComposableCell) cond).getCondition());
+        }
+
+        return false;
     }
 
     /**
@@ -322,7 +360,7 @@ public abstract class AbstractCondition implements Condition {
      *            is returned unchanged
      * @return the escaped string body, suitable for inclusion between two single quotes; never {@code null}
      */
-    static String escapeStringLiteral(final String str) {
+    protected static String escapeStringLiteral(final String str) {
         if (str == null || str.isEmpty()) {
             return str == null ? Strings.EMPTY : str;
         }
@@ -353,7 +391,7 @@ public abstract class AbstractCondition implements Condition {
      *
      * @param value the value to check; non-numeric or finite values are ignored
      */
-    static void checkFiniteNumber(final Object value) {
+    protected static void checkFiniteNumber(final Object value) {
         if (value instanceof Double) {
             final double d = (Double) value;
             if (Double.isNaN(d) || Double.isInfinite(d)) {
@@ -523,9 +561,7 @@ public abstract class AbstractCondition implements Condition {
         try {
             int i = 0;
             for (final String propName : propNames) {
-                if (Strings.isEmpty(propName)) {
-                    throw new IllegalArgumentException("Property name cannot be null or empty");
-                }
+                checkPropName(propName);
 
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
@@ -554,9 +590,8 @@ public abstract class AbstractCondition implements Condition {
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty or {@code direction} is {@code null}
      */
     protected static String createSortExpression(final String propName, final SortDirection direction) {
-        if (Strings.isEmpty(propName)) {
-            throw new IllegalArgumentException("Property name cannot be null or empty");
-        }
+        checkPropName(propName);
+
         if (direction == null) {
             throw new IllegalArgumentException("direction cannot be null");
         }
@@ -589,9 +624,7 @@ public abstract class AbstractCondition implements Condition {
         try {
             int i = 0;
             for (final String propName : propNames) {
-                if (Strings.isEmpty(propName)) {
-                    throw new IllegalArgumentException("Property name cannot be null or empty");
-                }
+                checkPropName(propName);
 
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
@@ -633,9 +666,8 @@ public abstract class AbstractCondition implements Condition {
                 final String propName = entry.getKey();
                 final SortDirection direction = entry.getValue();
 
-                if (Strings.isEmpty(propName)) {
-                    throw new IllegalArgumentException("Property name cannot be null or empty");
-                }
+                checkPropName(propName);
+
                 if (direction == null) {
                     throw new IllegalArgumentException("SortDirection in orders cannot be null");
                 }
@@ -682,11 +714,17 @@ public abstract class AbstractCondition implements Condition {
 
         final Operator operator = cond.operator();
 
-        if (operator == null || isClause(cond) || isOnOrUsing(cond)) {
+        if (operator == null || isClause(cond) || containsOnOrUsing(cond) || isQuantifiedSubQueryOperand(cond)) {
             throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in composable method '" + methodName + "'");
         }
 
         return cond;
+    }
+
+    protected static void checkPropName(final String propName) {
+        if (Strings.isEmpty(propName) || Strings.isBlank(propName)) {
+            throw new IllegalArgumentException("Property name cannot be null, empty, or blank");
+        }
     }
 
     /**

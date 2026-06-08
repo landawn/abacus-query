@@ -132,6 +132,15 @@ class Binary2025Test extends TestBase {
     }
 
     @Test
+    public void testHashCode_ArrayValueMatchesEquals() {
+        Binary cond1 = new Binary("payload", Operator.EQUAL, new byte[] { 1, 2 });
+        Binary cond2 = new Binary("payload", Operator.EQUAL, new byte[] { 1, 2 });
+
+        assertEquals(cond1, cond2);
+        assertEquals(cond1.hashCode(), cond2.hashCode());
+    }
+
+    @Test
     public void testHashCode_DifferentValues() {
         Binary cond1 = new Binary("age", Operator.EQUAL, 25);
         Binary cond2 = new Binary("age", Operator.EQUAL, 30);
@@ -369,6 +378,15 @@ public class BinaryTest extends TestBase {
         Binary binary1 = Filters.binary("optional", Operator.EQUAL, null);
         Binary binary2 = Filters.binary("optional", Operator.EQUAL, null);
 
+        Assertions.assertEquals(binary1.hashCode(), binary2.hashCode());
+    }
+
+    @Test
+    public void testHashCodeArrayValueMatchesEquals() {
+        Binary binary1 = Filters.binary("payload", Operator.EQUAL, new byte[] { 1, 2 });
+        Binary binary2 = Filters.binary("payload", Operator.EQUAL, new byte[] { 1, 2 });
+
+        Assertions.assertEquals(binary1, binary2);
         Assertions.assertEquals(binary1.hashCode(), binary2.hashCode());
     }
 

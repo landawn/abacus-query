@@ -125,8 +125,10 @@ public final class ParsedSql {
 
                 if (isOpSqlPrefix) {
                     if (word.equals(SK.QUESTION_MARK)) {
-                        paramCount++;
-                        type |= QUESTION_MARK_TYPE;
+                        if (!isPostgreSqlJsonQuestionOperator(words, i)) {
+                            paramCount++;
+                            type |= QUESTION_MARK_TYPE;
+                        }
                     } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)) {
                         // Bug fix: a single tokenized word may contain multiple iBatis markers
                         // (e.g. "#{a}#{b}") because none of '#', '{', '}' are token separators
@@ -463,6 +465,43 @@ public final class ParsedSql {
         }
 
         return -1;
+    }
+
+    private static int previousNonCommentWord(final List<String> words, final int fromIndex) {
+        for (int i = fromIndex; i >= 0; i--) {
+            if (!isCommentOrSpaceToken(words.get(i))) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private static boolean isPostgreSqlJsonQuestionOperator(final List<String> words, final int questionMarkIndex) {
+        final int previousIndex = previousNonCommentWord(words, questionMarkIndex - 1);
+        final int nextIndex = nextNonCommentWord(words, questionMarkIndex + 1);
+
+        return previousIndex >= 0 && nextIndex >= 0 && canPrecedeJsonQuestionOperator(words.get(previousIndex))
+                && canFollowJsonQuestionOperator(words.get(nextIndex));
+    }
+
+    private static boolean canPrecedeJsonQuestionOperator(final String word) {
+        if (Strings.isEmpty(word) || "(".equals(word) || ",".equals(word) || "=".equals(word) || "<".equals(word) || ">".equals(word) || "<=".equals(word)
+                || ">=".equals(word) || "<>".equals(word) || "!=".equals(word) || "+".equals(word) || "-".equals(word) || "*".equals(word) || "/".equals(word)
+                || "%".equals(word)) {
+            return false;
+        }
+
+        return !("SELECT".equalsIgnoreCase(word) || "WHERE".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word) || "ON".equalsIgnoreCase(word)
+                || "AND".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "NOT".equalsIgnoreCase(word) || "IN".equalsIgnoreCase(word)
+                || "VALUES".equalsIgnoreCase(word) || "SET".equalsIgnoreCase(word) || "THEN".equalsIgnoreCase(word) || "ELSE".equalsIgnoreCase(word)
+                || "WHEN".equalsIgnoreCase(word));
+    }
+
+    private static boolean canFollowJsonQuestionOperator(final String word) {
+        return Strings.isNotEmpty(word)
+                && (word.equals(SK.QUESTION_MARK) || word.charAt(0) == '\'' || word.charAt(0) == '"' || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)
+                        || (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))));
     }
 
     private static boolean isCommentOrSpaceToken(final String word) {

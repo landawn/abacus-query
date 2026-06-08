@@ -27,16 +27,13 @@ class NaturalJoin2025Test extends TestBase {
 
     @Test
     public void testConstructor_WithCondition() {
-        NaturalJoin join = new NaturalJoin("departments", new Equal("status", "active"));
-        assertNotNull(join);
-        assertNotNull(join.getCondition());
-        assertEquals(Operator.NATURAL_JOIN, join.operator());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new NaturalJoin("departments", new Equal("status", "active")));
     }
 
     @Test
     public void testConstructor_MultipleEntities() {
         List<String> entities = Arrays.asList("customers", "orders", "products");
-        NaturalJoin join = new NaturalJoin(entities, new GreaterThan("totalAmount", (Object) 1000));
+        NaturalJoin join = new NaturalJoin(entities, null);
         assertNotNull(join);
         assertEquals(3, (int) join.getJoinEntities().size());
         assertEquals(Operator.NATURAL_JOIN, join.operator());
@@ -54,10 +51,8 @@ class NaturalJoin2025Test extends TestBase {
 
     @Test
     public void testGetCondition() {
-        Equal condition = new Equal("status", "active");
-        NaturalJoin join = new NaturalJoin("departments", condition);
-        Condition retrieved = join.getCondition();
-        assertEquals(condition, retrieved);
+        NaturalJoin join = new NaturalJoin("departments");
+        assertNull(join.getCondition());
     }
 
     @Test
@@ -74,10 +69,7 @@ class NaturalJoin2025Test extends TestBase {
 
     @Test
     public void testGetParameters_WithCondition() {
-        NaturalJoin join = new NaturalJoin("orders", new Equal("status", "completed"));
-        List<Object> params = join.getParameters();
-        assertEquals(1, (int) params.size());
-        assertEquals("completed", params.get(0));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new NaturalJoin("orders", new Equal("status", "completed")));
     }
 
     @Test
@@ -90,16 +82,13 @@ class NaturalJoin2025Test extends TestBase {
 
     @Test
     public void testToString_WithCondition() {
-        NaturalJoin join = new NaturalJoin("departments", new Equal("active", true));
-        String result = join.toString(NamingPolicy.NO_CHANGE);
-        assertTrue(result.contains("NATURAL JOIN"));
-        assertTrue(result.contains("departments"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new NaturalJoin("departments", new Equal("active", true)));
     }
 
     @Test
     public void testHashCode() {
-        NaturalJoin join1 = new NaturalJoin("employees", new Equal("a", "b"));
-        NaturalJoin join2 = new NaturalJoin("employees", new Equal("a", "b"));
+        NaturalJoin join1 = new NaturalJoin("employees");
+        NaturalJoin join2 = new NaturalJoin("employees");
         assertEquals(join1.hashCode(), join2.hashCode());
     }
 
@@ -111,8 +100,8 @@ class NaturalJoin2025Test extends TestBase {
 
     @Test
     public void testEquals_EqualObjects() {
-        NaturalJoin join1 = new NaturalJoin("employees", new Equal("a", "b"));
-        NaturalJoin join2 = new NaturalJoin("employees", new Equal("a", "b"));
+        NaturalJoin join1 = new NaturalJoin("employees");
+        NaturalJoin join2 = new NaturalJoin("employees");
         assertEquals(join1, join2);
     }
 
@@ -138,9 +127,7 @@ class NaturalJoin2025Test extends TestBase {
 
     @Test
     public void testWithAdditionalFilter() {
-        NaturalJoin join = new NaturalJoin("orders", new GreaterThan("orderDate", "2024-01-01"));
-        assertNotNull(join.getCondition());
-        assertEquals(1, (int) join.getParameters().size());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new NaturalJoin("orders", new GreaterThan("orderDate", "2024-01-01")));
     }
 }
 
@@ -160,24 +147,16 @@ public class NaturalJoinTest extends TestBase {
     @Test
     public void testConstructorWithEntityAndCondition() {
         Condition activeOnly = Filters.eq("status", "active");
-        NaturalJoin join = Filters.naturalJoin("departments", activeOnly);
 
-        Assertions.assertEquals(Operator.NATURAL_JOIN, join.operator());
-        Assertions.assertEquals(1, join.getJoinEntities().size());
-        Assertions.assertTrue(join.getJoinEntities().contains("departments"));
-        Assertions.assertEquals(activeOnly, join.getCondition());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin("departments", activeOnly));
     }
 
     @Test
     public void testConstructorWithMultipleEntitiesAndCondition() {
         List<String> tables = Arrays.asList("employees", "departments");
         Condition condition = Filters.gt("salary", 50000);
-        NaturalJoin join = Filters.naturalJoin(tables, condition);
 
-        Assertions.assertEquals(Operator.NATURAL_JOIN, join.operator());
-        Assertions.assertEquals(2, join.getJoinEntities().size());
-        Assertions.assertTrue(join.getJoinEntities().containsAll(tables));
-        Assertions.assertEquals(condition, join.getCondition());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin(tables, condition));
     }
 
     @Test
@@ -192,20 +171,15 @@ public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        GreaterThan recentOnly = Filters.gt("orderDate", "2023-01-01");
-        NaturalJoin join = Filters.naturalJoin("orders", recentOnly);
+        NaturalJoin join = Filters.naturalJoin("orders");
 
-        Assertions.assertEquals(recentOnly, join.getCondition());
+        Assertions.assertNull(join.getCondition());
     }
 
     @Test
     public void testGetParameters() {
         Equal condition = Filters.eq("active", true);
-        NaturalJoin join = Filters.naturalJoin("users", condition);
-
-        List<Object> params = join.getParameters();
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertEquals(true, params.get(0));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin("users", condition));
     }
 
     @Test
@@ -229,12 +203,7 @@ public class NaturalJoinTest extends TestBase {
     @Test
     public void testToStringWithCondition() {
         Equal condition = Filters.eq("active", true);
-        NaturalJoin join = Filters.naturalJoin("users", condition);
-
-        String result = join.toString();
-        Assertions.assertTrue(result.contains("NATURAL JOIN"));
-        Assertions.assertTrue(result.contains("users"));
-        Assertions.assertTrue(result.contains("active"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin("users", condition));
     }
 
     @Test
@@ -254,12 +223,11 @@ public class NaturalJoinTest extends TestBase {
         NaturalJoin join1 = Filters.naturalJoin("employees");
         NaturalJoin join2 = Filters.naturalJoin("employees");
         NaturalJoin join3 = Filters.naturalJoin("departments");
-        NaturalJoin join4 = Filters.naturalJoin("employees", condition);
 
         Assertions.assertTrue(join1.equals(join1));
         Assertions.assertTrue(join1.equals(join2));
         Assertions.assertFalse(join1.equals(join3));
-        Assertions.assertFalse(join1.equals(join4));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin("employees", condition));
         Assertions.assertFalse(join1.equals(null));
         Assertions.assertFalse(join1.equals("not a NaturalJoin"));
     }
@@ -268,10 +236,7 @@ public class NaturalJoinTest extends TestBase {
     public void testComplexCondition() {
         Condition complexCondition = Filters.and(Filters.eq("department", "Sales"), Filters.gt("experience", 5), Filters.like("skills", "%leadership%"));
 
-        NaturalJoin join = Filters.naturalJoin("employees", complexCondition);
-
-        Assertions.assertEquals(complexCondition, join.getCondition());
-        Assertions.assertEquals(3, join.getParameters().size());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin("employees", complexCondition));
     }
 
     @Test
@@ -279,10 +244,6 @@ public class NaturalJoinTest extends TestBase {
         List<String> tables = Arrays.asList("customers", "orders", "products");
         Condition highValue = Filters.gt("totalAmount", 1000);
 
-        NaturalJoin join = Filters.naturalJoin(tables, highValue);
-
-        Assertions.assertEquals(3, join.getJoinEntities().size());
-        Assertions.assertTrue(join.getJoinEntities().containsAll(tables));
-        Assertions.assertEquals(highValue, join.getCondition());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin(tables, highValue));
     }
 }

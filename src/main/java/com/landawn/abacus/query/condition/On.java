@@ -144,7 +144,7 @@ public class On extends Cell {
     private static Condition validateOnCondition(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
 
-        if (cond instanceof Criteria || isClause(cond) || isOnOrUsing(cond)) {
+        if (cond instanceof Criteria || isClause(cond) || containsOnOrUsing(cond)) {
             throw new IllegalArgumentException("ON condition cannot wrap a SQL clause or ON/USING connector: " + cond.operator());
         }
 

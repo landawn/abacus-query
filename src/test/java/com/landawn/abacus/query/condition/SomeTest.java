@@ -40,6 +40,14 @@ class Some2025Test extends TestBase {
     }
 
     @Test
+    public void testRejectsStandalonePredicateUse() {
+        Some condition = new Some(Filters.subQuery("SELECT score FROM tests"));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(condition));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> condition.and(Filters.eq("active", true)));
+    }
+
+    @Test
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT budget FROM departments");
         Some condition = new Some(subQuery);
@@ -278,6 +286,14 @@ public class SomeTest extends TestBase {
 
         String result = some.toString();
         Assertions.assertEquals("SOME (SELECT level FROM requirements)", result);
+    }
+
+    @Test
+    public void testRejectsStandalonePredicateUse() {
+        Some some = Filters.some(Filters.subQuery("SELECT score FROM tests"));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.where(some));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> some.or(Filters.eq("active", true)));
     }
 
     @Test

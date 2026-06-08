@@ -79,7 +79,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     protected AbstractInSubQuery(final String propName, final Operator operator, final SubQuery subQuery) {
         super(operator);
 
-        N.checkArgNotEmpty(propName, "propName");
+        checkPropName(propName);
         N.checkArgNotNull(subQuery, "subQuery");
 
         this.propNames = Collections.singletonList(propName);
@@ -134,7 +134,8 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
         final List<String> copy = new ArrayList<>(propNames.size());
 
         for (final String propName : propNames) {
-            N.checkArgNotEmpty(propName, "Property name in propNames");
+            checkPropName(propName);
+
             copy.add(propName);
         }
 

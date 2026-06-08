@@ -32,6 +32,14 @@ class Any2025Test extends TestBase {
     }
 
     @Test
+    public void testRejectsStandalonePredicateUse() {
+        Any condition = new Any(Filters.subQuery("SELECT score FROM exams"));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(condition));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> condition.and(Filters.eq("active", true)));
+    }
+
+    @Test
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
         Any condition = new Any(subQuery);
@@ -231,6 +239,14 @@ public class AnyTest extends TestBase {
 
         String result = any.toString();
         Assertions.assertEquals("ANY (SELECT budget FROM departments)", result);
+    }
+
+    @Test
+    public void testRejectsStandalonePredicateUse() {
+        Any any = Filters.any(Filters.subQuery("SELECT score FROM exams"));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.where(any));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> any.or(Filters.eq("active", true)));
     }
 
     @Test

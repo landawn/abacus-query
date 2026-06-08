@@ -1201,4 +1201,28 @@ class ParsedSql2026BatchTest extends TestBase {
         Assertions.assertEquals(3, second.parameterCount());
     }
 
+    @Test
+    public void testParse_PostgresJsonQuestionOperatorDoesNotCountAsJdbcParameter() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM events WHERE payload ? 'active'");
+        Assertions.assertEquals("SELECT * FROM events WHERE payload ? 'active'", parsed.parameterizedSql());
+        Assertions.assertEquals(0, parsed.parameterCount());
+        Assertions.assertTrue(parsed.namedParameters().isEmpty());
+    }
+
+    @Test
+    public void testParse_PostgresJsonQuestionOperatorWithNamedParameterRhs() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM events WHERE payload ? :key AND id = :id");
+        Assertions.assertEquals("SELECT * FROM events WHERE payload ? ? AND id = ?", parsed.parameterizedSql());
+        Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertEquals(Arrays.asList("key", "id"), parsed.namedParameters());
+    }
+
+    @Test
+    public void testParse_PostgresJsonQuestionOperatorWithJdbcParameterRhs() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM events WHERE payload ? ? AND tenant_id = ?");
+        Assertions.assertEquals("SELECT * FROM events WHERE payload ? ? AND tenant_id = ?", parsed.parameterizedSql());
+        Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertTrue(parsed.namedParameters().isEmpty());
+    }
+
 }

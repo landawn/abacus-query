@@ -46,6 +46,13 @@ class On2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsNestedConnectorCondition() {
+        Condition nestedOn = new Junction(Operator.AND, java.util.Arrays.asList(Filters.on("a.id", "b.id"), Filters.eq("b.active", true)), true);
+
+        assertThrows(IllegalArgumentException.class, () -> new On(nestedOn));
+    }
+
+    @Test
     public void testGetCondition() {
         Equal condition = new Equal("users.id", "posts.user_id");
         On on = new On(condition);
@@ -369,5 +376,12 @@ public class OnTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.using("id")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.expr("ON users.id = orders.user_id")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.expr("USING (id)")));
+    }
+
+    @Test
+    public void testConstructorRejectsNestedConnectorCondition() {
+        Condition nestedOn = new Junction(Operator.AND, java.util.Arrays.asList(Filters.on("a.id", "b.id"), Filters.eq("b.active", true)), true);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(nestedOn));
     }
 }

@@ -959,15 +959,13 @@ class Filters2025Test extends TestBase {
     @Test
     public void testNaturalJoinEntityWithCondition() {
         Condition condition = Filters.expr("users.id = orders.user_id");
-        com.landawn.abacus.query.condition.NaturalJoin naturalJoin = Filters.naturalJoin("orders", condition);
-        assertNotNull(naturalJoin);
+        assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin("orders", condition));
     }
 
     @Test
     public void testNaturalJoinEntitiesWithCondition() {
         Condition condition = Filters.expr("id = user_id");
-        com.landawn.abacus.query.condition.NaturalJoin naturalJoin = Filters.naturalJoin(Arrays.asList("orders", "payments"), condition);
-        assertNotNull(naturalJoin);
+        assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin(Arrays.asList("orders", "payments"), condition));
     }
 
     @Test
@@ -2227,14 +2225,13 @@ public class FiltersTest extends TestBase {
         NaturalJoin naturalJoin1 = Filters.naturalJoin("departments");
         Assertions.assertNotNull(naturalJoin1);
 
-        // Test with entity name and condition
+        // NATURAL JOIN does not support explicit conditions.
         Condition condition = Filters.expr("TRUE");
-        NaturalJoin naturalJoin2 = Filters.naturalJoin("departments", condition);
-        Assertions.assertNotNull(naturalJoin2);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin("departments", condition));
 
-        // Test with collection of entities and condition
+        // Test with collection of entities and no condition
         List<String> entities = Arrays.asList("employees", "departments");
-        NaturalJoin naturalJoin3 = Filters.naturalJoin(entities, condition);
+        NaturalJoin naturalJoin3 = Filters.naturalJoin(entities, null);
         Assertions.assertNotNull(naturalJoin3);
     }
 

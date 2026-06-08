@@ -103,6 +103,17 @@ class OrderBy2025Test extends TestBase {
     }
 
     @Test
+    public void testStaticCreateConditionRejectsBlankPropertyNames() {
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        orders.put("   ", SortDirection.ASC);
+
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression("   "));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression("   ", SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(Arrays.asList("name", "   "), SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(orders));
+    }
+
+    @Test
     public void testStaticCreateConditionWithDirection() {
         String result = AbstractCondition.createSortExpression("price", SortDirection.DESC);
 
@@ -329,6 +340,17 @@ class OrderBy2025Test extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> {
             AbstractCondition.createSortExpression(orders);
         });
+    }
+
+    @Test
+    public void testConstructorRejectsBlankPropertyNames() {
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        orders.put("   ", SortDirection.ASC);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("   "));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("   ", SortDirection.ASC));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.orderBy(Arrays.asList("name", "   "), SortDirection.ASC));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.orderBy(orders));
     }
 
     @Test

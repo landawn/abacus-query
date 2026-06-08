@@ -40,6 +40,14 @@ class All2025Test extends TestBase {
     }
 
     @Test
+    public void testRejectsStandalonePredicateUse() {
+        All condition = new All(Filters.subQuery("SELECT score FROM tests"));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(condition));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> condition.and(Filters.eq("active", true)));
+    }
+
+    @Test
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE in_stock = true");
         All condition = new All(subQuery);
@@ -229,6 +237,14 @@ public class AllTest extends TestBase {
 
         String result = all.toString();
         Assertions.assertEquals("ALL (SELECT price FROM competitor_products)", result);
+    }
+
+    @Test
+    public void testRejectsStandalonePredicateUse() {
+        All all = Filters.all(Filters.subQuery("SELECT score FROM exams"));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.where(all));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> all.or(Filters.eq("active", true)));
     }
 
     @Test

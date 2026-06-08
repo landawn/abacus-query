@@ -367,7 +367,7 @@ public class Binary extends ComposableCondition {
             h = 17;
             h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
             h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-            h = (h * 31) + ((propValue == null) ? 0 : propValue.hashCode());
+            h = (h * 31) + N.deepHashCode(propValue);
 
             if (h == 0) {
                 h = 1;

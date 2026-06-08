@@ -146,7 +146,7 @@ public class NaturalJoin extends Join {
      *                                  {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
      */
     public NaturalJoin(final String joinEntity, final Condition cond) {
-        super(Operator.NATURAL_JOIN, joinEntity, cond);
+        super(Operator.NATURAL_JOIN, joinEntity, validateNaturalJoinCondition(cond));
     }
 
     /**
@@ -186,6 +186,14 @@ public class NaturalJoin extends Join {
      *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
      */
     public NaturalJoin(final Collection<String> joinEntities, final Condition cond) {
-        super(Operator.NATURAL_JOIN, joinEntities, cond);
+        super(Operator.NATURAL_JOIN, joinEntities, validateNaturalJoinCondition(cond));
+    }
+
+    private static Condition validateNaturalJoinCondition(final Condition cond) {
+        if (cond != null) {
+            throw new IllegalArgumentException("NATURAL JOIN does not support explicit join conditions");
+        }
+
+        return null;
     }
 }

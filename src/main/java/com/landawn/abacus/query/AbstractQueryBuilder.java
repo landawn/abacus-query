@@ -3415,18 +3415,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
      */
     public This union(final This sqlBuilder) {
-        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
-        N.checkArgument(sqlBuilder != this, "Cannot apply UNION with the same SqlBuilder instance");
-
-        final SP sp = sqlBuilder.build();
-
-        if (N.notEmpty(sp.parameters())) {
-            _parameters.addAll(sp.parameters());
-        }
-
-        final String sql = sp.query();
-
-        return union(sql);
+        return appendSetOperation(_SPACE_UNION_SPACE, sqlBuilder, "UNION");
     }
 
     /**
@@ -3514,18 +3503,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
      */
     public This unionAll(final This sqlBuilder) {
-        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
-        N.checkArgument(sqlBuilder != this, "Cannot apply UNION ALL with the same SqlBuilder instance");
-
-        final SP sp = sqlBuilder.build();
-
-        if (N.notEmpty(sp.parameters())) {
-            _parameters.addAll(sp.parameters());
-        }
-
-        final String sql = sp.query();
-
-        return unionAll(sql);
+        return appendSetOperation(_SPACE_UNION_ALL_SPACE, sqlBuilder, "UNION ALL");
     }
 
     /**
@@ -3613,18 +3591,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
      */
     public This intersect(final This sqlBuilder) {
-        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
-        N.checkArgument(sqlBuilder != this, "Cannot apply INTERSECT with the same SqlBuilder instance");
-
-        final SP sp = sqlBuilder.build();
-
-        if (N.notEmpty(sp.parameters())) {
-            _parameters.addAll(sp.parameters());
-        }
-
-        final String sql = sp.query();
-
-        return intersect(sql);
+        return appendSetOperation(_SPACE_INTERSECT_SPACE, sqlBuilder, "INTERSECT");
     }
 
     /**
@@ -3712,18 +3679,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
      */
     public This except(final This sqlBuilder) {
-        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
-        N.checkArgument(sqlBuilder != this, "Cannot apply EXCEPT with the same SqlBuilder instance");
-
-        final SP sp = sqlBuilder.build();
-
-        if (N.notEmpty(sp.parameters())) {
-            _parameters.addAll(sp.parameters());
-        }
-
-        final String sql = sp.query();
-
-        return except(sql);
+        return appendSetOperation(_SPACE_EXCEPT_SPACE, sqlBuilder, "EXCEPT");
     }
 
     /**
@@ -3812,18 +3768,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
      */
     public This minus(final This sqlBuilder) {
-        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
-        N.checkArgument(sqlBuilder != this, "Cannot apply MINUS with the same SqlBuilder instance");
-
-        final SP sp = sqlBuilder.build();
-
-        if (N.notEmpty(sp.parameters())) {
-            _parameters.addAll(sp.parameters());
-        }
-
-        final String sql = sp.query();
-
-        return minus(sql);
+        return appendSetOperation(_SPACE_EXCEPT_MINUS_SPACE, sqlBuilder, "MINUS");
     }
 
     /**
@@ -3954,6 +3899,131 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(keyword);
 
         return (This) this;
+    }
+
+    /**
+     * Renders a sibling builder for set operations while preserving the unique named-parameter
+     * sequence across the full compound query.
+     */
+    private This appendSetOperation(final char[] keyword, final This sqlBuilder, final String operationName) {
+        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
+        N.checkArgument(sqlBuilder != this, "Cannot apply " + operationName + " with the same SqlBuilder instance");
+
+        final Map<String, Integer> parentOccurrences = N.isEmpty(_namedParameterNameOccurrences) ? Collections.emptyMap()
+                : new HashMap<>(_namedParameterNameOccurrences);
+
+        final SP sp = sqlBuilder.build();
+
+        final String sql = uniquifySetOperationNamedParameters(sp.query(), sqlBuilder._namedParameterNameOccurrences, parentOccurrences);
+        mergeNamedParameterOccurrences(sqlBuilder._namedParameterNameOccurrences);
+
+        if (N.notEmpty(sp.parameters())) {
+            _parameters.addAll(sp.parameters());
+        }
+
+        return appendSetOperation(keyword, sql);
+    }
+
+    private String uniquifySetOperationNamedParameters(final String sql, final Map<String, Integer> childOccurrences,
+            final Map<String, Integer> parentOccurrences) {
+        if ((_sqlPolicy != SQLPolicy.NAMED_SQL && _sqlPolicy != SQLPolicy.IBATIS_SQL) || N.isEmpty(childOccurrences) || N.isEmpty(parentOccurrences)) {
+            return sql;
+        }
+
+        String result = sql;
+
+        for (final Map.Entry<String, Integer> entry : childOccurrences.entrySet()) {
+            final String name = entry.getKey();
+            final int parentCount = parentOccurrences.getOrDefault(name, 0);
+
+            if (parentCount <= 0) {
+                continue;
+            }
+
+            for (int i = entry.getValue(); i > 0; i--) {
+                final String oldName = indexedNamedParameterName(name, i);
+                final String newName = indexedNamedParameterName(name, parentCount + i);
+
+                result = _sqlPolicy == SQLPolicy.NAMED_SQL ? replaceNamedParameterName(result, oldName, newName)
+                        : replaceIbatisParameterName(result, oldName, newName);
+            }
+        }
+
+        return result;
+    }
+
+    private void mergeNamedParameterOccurrences(final Map<String, Integer> occurrences) {
+        if (N.isEmpty(occurrences)) {
+            return;
+        }
+
+        for (final Map.Entry<String, Integer> entry : occurrences.entrySet()) {
+            _namedParameterNameOccurrences.merge(entry.getKey(), entry.getValue(), Integer::sum);
+        }
+    }
+
+    private static String indexedNamedParameterName(final String name, final int occurrence) {
+        return occurrence == 1 ? name : name + "_" + occurrence;
+    }
+
+    private static String replaceNamedParameterName(final String sql, final String oldName, final String newName) {
+        StringBuilder sb = null;
+        int last = 0;
+
+        for (int i = 0, len = sql.length(); i < len; i++) {
+            if (sql.charAt(i) != ':' || i + 1 >= len || !isSqlParameterNameChar(sql.charAt(i + 1))) {
+                continue;
+            }
+
+            int end = i + 2;
+            while (end < len && isSqlParameterNameChar(sql.charAt(end))) {
+                end++;
+            }
+
+            if (sql.substring(i + 1, end).equals(oldName)) {
+                if (sb == null) {
+                    sb = new StringBuilder(sql.length() + Math.max(0, newName.length() - oldName.length()));
+                }
+
+                sb.append(sql, last, i + 1).append(newName);
+                last = end;
+            }
+
+            i = end - 1;
+        }
+
+        return sb == null ? sql : sb.append(sql, last, sql.length()).toString();
+    }
+
+    private static String replaceIbatisParameterName(final String sql, final String oldName, final String newName) {
+        StringBuilder sb = null;
+        int last = 0;
+        int start = sql.indexOf("#{");
+
+        while (start >= 0) {
+            final int end = sql.indexOf('}', start + 2);
+
+            if (end < 0) {
+                break;
+            }
+
+            if (sql.substring(start + 2, end).equals(oldName)) {
+                if (sb == null) {
+                    sb = new StringBuilder(sql.length() + Math.max(0, newName.length() - oldName.length()));
+                }
+
+                sb.append(sql, last, start + 2).append(newName);
+                last = end;
+            }
+
+            start = sql.indexOf("#{", end + 1);
+        }
+
+        return sb == null ? sql : sb.append(sql, last, sql.length()).toString();
+    }
+
+    private static boolean isSqlParameterNameChar(final char ch) {
+        return ch == '_' || ch == '.' || (ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch >= 128;
     }
 
     /**
@@ -4686,6 +4756,28 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final String sanitized = sanitizeNamedParameterName(propName);
         final int occurrence = _namedParameterNameOccurrences.compute(sanitized, (k, v) -> v == null ? 1 : v + 1);
         return occurrence == 1 ? sanitized : sanitized + "_" + occurrence;
+    }
+
+    /**
+     * Seeds a nested or sibling builder with this builder's named-parameter occurrence counts so the
+     * child cannot generate placeholders that already exist in the surrounding SQL.
+     */
+    protected final void seedNamedParameterOccurrences(final AbstractQueryBuilder<?> childBuilder) {
+        if (N.isEmpty(_namedParameterNameOccurrences)) {
+            return;
+        }
+
+        for (final Map.Entry<String, Integer> entry : _namedParameterNameOccurrences.entrySet()) {
+            childBuilder._namedParameterNameOccurrences.merge(entry.getKey(), entry.getValue(), Math::max);
+        }
+    }
+
+    /**
+     * Copies back named-parameter occurrence counts after a nested or sibling builder has rendered.
+     */
+    protected final void adoptNamedParameterOccurrences(final AbstractQueryBuilder<?> childBuilder) {
+        _namedParameterNameOccurrences.clear();
+        _namedParameterNameOccurrences.putAll(childBuilder._namedParameterNameOccurrences);
     }
 
     /**

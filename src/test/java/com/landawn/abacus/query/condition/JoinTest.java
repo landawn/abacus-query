@@ -140,6 +140,14 @@ class Join2025Test extends TestBase {
         Assertions.assertDoesNotThrow(() -> new Join("orders", Filters.on("users.id", "orders.user_id")));
         Assertions.assertDoesNotThrow(() -> new Join("orders", Filters.using("id")));
     }
+
+    @Test
+    public void testConstructorRejectsNestedOnConnectorCondition() {
+        Condition nestedOn = new Junction(Operator.AND,
+                Arrays.asList(Filters.on("sales.product_id", "products.id"), Filters.eq("products.active", true)), true);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("products", nestedOn));
+    }
 }
 
 public class JoinTest extends TestBase {
@@ -290,6 +298,14 @@ public class JoinTest extends TestBase {
     @Test
     public void testConstructorRejectsClauseCondition() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", Filters.where(Filters.eq("a", 1))));
+    }
+
+    @Test
+    public void testConstructorRejectsNestedOnConnectorCondition() {
+        Condition nestedOn = new Junction(Operator.AND,
+                Arrays.asList(Filters.on("sales.product_id", "products.id"), Filters.eq("products.active", true)), true);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("products", nestedOn));
     }
 
     @Test

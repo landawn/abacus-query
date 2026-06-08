@@ -63,8 +63,10 @@ class NotInSubQuery2025Test extends TestBase {
     @Test
     public void testConstructor_MultiplePropertiesRejectsInvalidElements() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+        assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery("   ", subQuery));
         assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery(Arrays.asList("firstName", null), subQuery));
         assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery(Arrays.asList("firstName", ""), subQuery));
+        assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery(Arrays.asList("firstName", "   "), subQuery));
     }
 
     @Test
@@ -279,8 +281,10 @@ public class NotInSubQueryTest extends TestBase {
     public void testConstructorWithMultiplePropertiesRejectsInvalidElements() {
         SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
 
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.notIn("   ", subQuery));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.notIn(Arrays.asList("firstName", null), subQuery));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.notIn(Arrays.asList("firstName", ""), subQuery));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.notIn(Arrays.asList("firstName", "   "), subQuery));
     }
 
     @Test

@@ -275,7 +275,7 @@ public class Junction extends ComposableCondition {
     private static Condition validateConstructorOperand(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
 
-        if (condition instanceof Criteria || isClause(condition) || (isOnOrUsing(condition) && !(condition instanceof On))) {
+        if (condition instanceof Criteria || isClause(condition) || containsOnOrUsing(condition)) {
             throw new IllegalArgumentException("Condition with operator '" + condition.operator() + "' cannot be used in a junction constructor");
         }
 

@@ -139,6 +139,11 @@ class Where2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsQuantifiedSubQueryOperand() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(Filters.any(Filters.subQuery("SELECT id FROM t"))));
+    }
+
+    @Test
     public void testWithOrCondition() {
         Or orCondition = new Or(new Equal("type", "A"), new Equal("type", "B"));
         Where where = new Where(orCondition);

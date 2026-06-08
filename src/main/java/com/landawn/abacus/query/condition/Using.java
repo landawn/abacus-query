@@ -184,7 +184,7 @@ public class Using extends Cell {
         N.checkArgNotEmpty(columnNames, "columnNames");
 
         for (final String columnName : columnNames) {
-            N.checkArgNotEmpty(columnName, "columnName in columnNames");
+            validateColumnName(columnName);
         }
 
         return Filters.expr(parenthesizeColumnNames(concatPropNames(columnNames)));
@@ -217,10 +217,18 @@ public class Using extends Cell {
         N.checkArgNotEmpty(columnNames, "columnNames");
 
         for (final String columnName : columnNames) {
-            N.checkArgNotEmpty(columnName, "columnName in columnNames");
+            validateColumnName(columnName);
         }
 
         return Filters.expr(parenthesizeColumnNames(concatPropNames(columnNames)));
+    }
+
+    private static void validateColumnName(final String columnName) {
+        N.checkArgNotEmpty(columnName, "columnName in columnNames");
+
+        if (columnName.indexOf('.') >= 0) {
+            throw new IllegalArgumentException("USING column names must be unqualified: " + columnName);
+        }
     }
 
     private static String parenthesizeColumnNames(final String columnNamesExpr) {

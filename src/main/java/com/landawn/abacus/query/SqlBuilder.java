@@ -344,12 +344,14 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                 _sb.append(subQuery.sql());
             } else {
                 final SqlBuilder subBuilder = newSubQueryBuilder(subQuery);
+                seedNamedParameterOccurrences(subBuilder);
 
                 if (subCond != null) {
                     subBuilder.append(subCond);
                 }
 
                 final SP subSP = subBuilder.build();
+                adoptNamedParameterOccurrences(subBuilder);
 
                 _sb.append(subSP.query());
 

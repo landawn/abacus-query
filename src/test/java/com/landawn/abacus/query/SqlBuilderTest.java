@@ -813,6 +813,40 @@ class SqlBuilder10Test extends TestBase {
     }
 
     @Test
+    @Tag("2025")
+    public void testSetOperationBuildersKeepNamedParameterNamesUnique() {
+        assertEquals("SELECT id FROM users WHERE status = :status UNION SELECT id FROM archived_users WHERE status = :status_2",
+                NSC.select("id").from("users").where(Filters.eq("status", "ACTIVE"))
+                        .union(NSC.select("id").from("archived_users").where(Filters.eq("status", "INACTIVE")))
+                        .build()
+                        .query());
+
+        assertEquals("SELECT id FROM users WHERE status = :status UNION ALL SELECT id FROM archived_users WHERE status = :status_2",
+                NSC.select("id").from("users").where(Filters.eq("status", "ACTIVE"))
+                        .unionAll(NSC.select("id").from("archived_users").where(Filters.eq("status", "INACTIVE")))
+                        .build()
+                        .query());
+
+        assertEquals("SELECT id FROM users WHERE status = :status INTERSECT SELECT id FROM archived_users WHERE status = :status_2",
+                NSC.select("id").from("users").where(Filters.eq("status", "ACTIVE"))
+                        .intersect(NSC.select("id").from("archived_users").where(Filters.eq("status", "INACTIVE")))
+                        .build()
+                        .query());
+
+        assertEquals("SELECT id FROM users WHERE status = :status EXCEPT SELECT id FROM archived_users WHERE status = :status_2",
+                NSC.select("id").from("users").where(Filters.eq("status", "ACTIVE"))
+                        .except(NSC.select("id").from("archived_users").where(Filters.eq("status", "INACTIVE")))
+                        .build()
+                        .query());
+
+        assertEquals("SELECT id FROM users WHERE status = :status MINUS SELECT id FROM archived_users WHERE status = :status_2",
+                NSC.select("id").from("users").where(Filters.eq("status", "ACTIVE"))
+                        .minus(NSC.select("id").from("archived_users").where(Filters.eq("status", "INACTIVE")))
+                        .build()
+                        .query());
+    }
+
+    @Test
     public void testUnionAll_StringOverload() {
         String sql = PSC.select("id", "name").from("users").unionAll("SELECT id, name FROM customers").build().query();
         assertEquals("SELECT id, name FROM users UNION ALL SELECT id, name FROM customers", sql);
@@ -13214,6 +13248,21 @@ class SqlBuilder16Test extends TestBase {
         assertEquals(countQmarks(sp.query()), sp.parameters().size(),
                 "Number of '?' placeholders must equal parameter list size; SQL: " + sp.query() + " params: " + sp.parameters());
         assertEquals(Arrays.asList("EU", 18, 65), sp.parameters(), "Expected [EU, 18, 65] but got " + sp.parameters() + " SQL=" + sp.query());
+    }
+
+    @Test
+    @Tag("2025")
+    public void testNamedParameters_InSubQueryAndOuterConditionsUseUniqueNames_Pass4() {
+        SubQuery innerSubQuery = Filters.subQuery("orders", Arrays.asList("user_id"), Filters.eq("status", "SHIPPED"));
+        SP sp = NSC.select("id")
+                .from("users")
+                .where(Filters.and(Filters.eq("status", "ACTIVE"), Filters.in("id", innerSubQuery), Filters.eq("status", "PENDING")))
+                .build();
+
+        assertEquals(
+                "SELECT id FROM users WHERE (status = :status) AND (id IN (SELECT user_id FROM orders WHERE status = :status_2)) AND (status = :status_3)",
+                sp.query());
+        assertEquals(Arrays.asList("ACTIVE", "SHIPPED", "PENDING"), sp.parameters());
     }
 
     // ===== Pass-4: DML schema validation =====

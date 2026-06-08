@@ -266,6 +266,17 @@ class GroupBy2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsBlankPropertyNames() {
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        orders.put("   ", SortDirection.ASC);
+
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy("   "));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy("   ", SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(Arrays.asList("department", "   "), SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(orders));
+    }
+
+    @Test
     public void testConstructorWithCollectionOfOne() {
         List<String> props = Arrays.asList("singleCol");
         GroupBy groupBy = new GroupBy(props, SortDirection.DESC);
@@ -399,6 +410,17 @@ public class GroupByTest extends TestBase {
     @Test
     public void testEmptyPropNames() {
         assertThrows(IllegalArgumentException.class, () -> new GroupBy(new String[0]));
+    }
+
+    @Test
+    public void testConstructorRejectsBlankPropertyNames() {
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        orders.put("   ", SortDirection.ASC);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("   "));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new GroupBy("   ", SortDirection.ASC));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new GroupBy(Arrays.asList("department", "   "), SortDirection.ASC));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new GroupBy(orders));
     }
 
     @Test

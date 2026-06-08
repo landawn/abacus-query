@@ -59,6 +59,11 @@ class And2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsOnConnectorOperand() {
+        assertThrows(IllegalArgumentException.class, () -> new And(Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
+    }
+
+    @Test
     public void testGetConditions() {
         Equal cond1 = new Equal("a", 1);
         Equal cond2 = new Equal("b", 2);
@@ -280,6 +285,11 @@ public class AndTest extends TestBase {
         And and = Filters.and((Collection<Condition>) null);
 
         assertTrue(and.getConditions().isEmpty());
+    }
+
+    @Test
+    public void testConstructorRejectsOnConnectorOperand() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
     }
 
     @Test

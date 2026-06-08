@@ -58,6 +58,11 @@ class Or2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsOnConnectorOperand() {
+        assertThrows(IllegalArgumentException.class, () -> new Or(Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
+    }
+
+    @Test
     public void testGetConditions() {
         Equal cond1 = new Equal("a", 1);
         Equal cond2 = new Equal("b", 2);
@@ -269,6 +274,11 @@ public class OrTest extends TestBase {
         Or or = Filters.or(conditions);
 
         Assertions.assertEquals(2, or.getConditions().size());
+    }
+
+    @Test
+    public void testConstructorRejectsOnConnectorOperand() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.or(Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
     }
 
     @Test

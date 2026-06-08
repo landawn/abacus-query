@@ -8,7 +8,6 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -63,8 +62,8 @@ class Junction2025Test extends TestBase {
     }
 
     @Test
-    public void testConstructorRejectsUsingAndRawConnectorOperandsButAllowsOn() {
-        assertDoesNotThrow(() -> new Junction(Operator.AND, Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
+    public void testConstructorRejectsConnectorOperands() {
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
         assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.using("id")));
         assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("ON a.id = b.a_id")));
         assertThrows(IllegalArgumentException.class, () -> Filters.eq("active", true).and(Filters.expr("USING (id)")));
@@ -528,5 +527,11 @@ public class JunctionTest extends TestBase {
         List<Object> params = outer.getParameters();
 
         Assertions.assertEquals(Arrays.asList(3, 1, 2, 4), params);
+    }
+
+    @Test
+    public void testConstructorRejectsConnectorOperand() {
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> new Junction(Operator.AND, Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
     }
 }

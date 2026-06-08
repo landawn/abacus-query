@@ -193,7 +193,7 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithComplexCondition() {
-        And complexCondition = Filters.and(Filters.on("orders.product_id", "products.id"), Filters.eq("products.active", true));
+        On complexCondition = Filters.on(Filters.expr("orders.product_id = products.id").and(Filters.eq("products.active", true)));
         RightJoin join = Filters.rightJoin("products", complexCondition);
 
         Assertions.assertEquals(complexCondition, join.getCondition());
@@ -203,7 +203,8 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testConstructorWithMultipleEntitiesAndCondition() {
         List<String> tables = Arrays.asList("categories", "subcategories");
-        And joinCondition = Filters.and(Filters.on("products.category_id", "categories.id"), Filters.on("products.subcategory_id", "subcategories.id"));
+        On joinCondition = Filters
+                .on(Filters.expr("products.category_id = categories.id").and(Filters.expr("products.subcategory_id = subcategories.id")));
         RightJoin join = Filters.rightJoin(tables, joinCondition);
 
         Assertions.assertEquals(Operator.RIGHT_JOIN, join.operator());
@@ -322,7 +323,8 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testPracticalExample3() {
         // Complex right join with additional conditions
-        And complexCondition = Filters.and(Filters.on("sales.product_id", "products.id"), Filters.eq("products.active", true), Filters.gt("products.price", 0));
+        On complexCondition = Filters
+                .on(Filters.expr("sales.product_id = products.id").and(Filters.eq("products.active", true)).and(Filters.gt("products.price", 0)));
         RightJoin activeProducts = Filters.rightJoin("products", complexCondition);
 
         // Gets all active products with price > 0, even if they have no sales
@@ -332,7 +334,8 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testMultipleTablesJoin() {
         List<String> tables = Arrays.asList("departments", "locations");
-        And joinCondition = Filters.and(Filters.on("employees.dept_id", "departments.id"), Filters.on("departments.location_id", "locations.id"));
+        On joinCondition = Filters
+                .on(Filters.expr("employees.dept_id = departments.id").and(Filters.expr("departments.location_id = locations.id")));
 
         RightJoin join = Filters.rightJoin(tables, joinCondition);
 
