@@ -45,6 +45,7 @@ import com.landawn.abacus.logging.LoggerFactory;
 import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
+import com.landawn.abacus.query.SqlDialect.IdentifierQuote;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
@@ -416,6 +417,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected final SQLPolicy _sqlPolicy; //NOSONAR
 
+    protected final char _identifierQuote; //NOSONAR
+
     protected final List<Object> _parameters = new ArrayList<>(); //NOSONAR
 
     protected final Map<String, Integer> _namedParameterNameOccurrences = new HashMap<>(); //NOSONAR
@@ -478,6 +481,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _namingPolicy = this.sqlDialect.namingPolicy() == null ? NamingPolicy.SNAKE_CASE : this.sqlDialect.namingPolicy();
         _sqlPolicy = this.sqlDialect.sqlPolicy() == null ? SQLPolicy.RAW_SQL : this.sqlDialect.sqlPolicy();
+        _identifierQuote = this.sqlDialect.identifierQuote() == IdentifierQuote.BACKTICK ? '`' : '"';
 
         _handlerForNamedParameter = handlerForNamedParameter_TL.get();
 
@@ -1466,7 +1470,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         sb.append(normalizeColumnName(_propColumnNameMap, columnName));
 
                         if (_namingPolicy != NamingPolicy.NO_CHANGE && !SK.ASTERISK.equals(columnName)) {
-                            sb.append(SPACE_AS_SPACE).append(SK.DOUBLE_QUOTE).append(columnName).append(SK.DOUBLE_QUOTE);
+                            sb.append(SPACE_AS_SPACE).append(_identifierQuote).append(columnName).append(_identifierQuote);
                         }
                     }
 
@@ -4975,7 +4979,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 continue;
             }
 
-            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE) {
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
                 quoteChar = ch;
                 continue;
             }
@@ -5035,7 +5039,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 _sb.append(_SPACE_AS_SPACE);
 
                 if (quotePropAlias) {
-                    _sb.append(SK._DOUBLE_QUOTE);
+                    _sb.append(_identifierQuote);
                 }
 
                 if (withClassAlias) {
@@ -5045,7 +5049,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 _sb.append(Strings.isNotEmpty(propAlias) ? propAlias : propName);
 
                 if (quotePropAlias) {
-                    _sb.append(SK._DOUBLE_QUOTE);
+                    _sb.append(_identifierQuote);
                 }
             }
 
@@ -5079,13 +5083,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         _sb.append(_SPACE_AS_SPACE);
 
                         if (quotePropAlias) {
-                            _sb.append(SK._DOUBLE_QUOTE);
+                            _sb.append(_identifierQuote);
                         }
 
                         _sb.append(propInfo.name).append(SK._PERIOD).append(subPropName);
 
                         if (quotePropAlias) {
-                            _sb.append(SK._DOUBLE_QUOTE);
+                            _sb.append(_identifierQuote);
                         }
                     }
                 }
@@ -5112,7 +5116,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                             _sb.append(_SPACE_AS_SPACE);
 
                             if (quotePropAlias) {
-                                _sb.append(SK._DOUBLE_QUOTE);
+                                _sb.append(_identifierQuote);
                             }
 
                             if (withClassAlias) {
@@ -5122,7 +5126,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                             _sb.append(Strings.isNotEmpty(propAlias) ? propAlias : propName);
 
                             if (quotePropAlias) {
-                                _sb.append(SK._DOUBLE_QUOTE);
+                                _sb.append(_identifierQuote);
                             }
                         }
 
@@ -5143,7 +5147,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 _sb.append(_SPACE_AS_SPACE);
 
                 if (quotePropAlias) {
-                    _sb.append(SK._DOUBLE_QUOTE);
+                    _sb.append(_identifierQuote);
                 }
 
                 if (withClassAlias) {
@@ -5153,7 +5157,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 _sb.append(propAlias);
 
                 if (quotePropAlias) {
-                    _sb.append(SK._DOUBLE_QUOTE);
+                    _sb.append(_identifierQuote);
                 }
             }
         } else if (isForSelect) {
@@ -5174,7 +5178,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     _sb.append(_SPACE_AS_SPACE);
 
                     if (quotePropAlias) {
-                        _sb.append(SK._DOUBLE_QUOTE);
+                        _sb.append(_identifierQuote);
                     }
 
                     if (withClassAlias) {
@@ -5184,7 +5188,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     _sb.append(propName);
 
                     if (quotePropAlias) {
-                        _sb.append(SK._DOUBLE_QUOTE);
+                        _sb.append(_identifierQuote);
                     }
                 }
             }

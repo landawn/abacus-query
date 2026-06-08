@@ -335,14 +335,14 @@ public final class SqlParser {
                 // TODO [performance improvement]. will it improve performance if
                 // change to char array?
                 // char c = sqlCharArray[charIndex];
-                char c = sql.charAt(index);
+                char ch = sql.charAt(index);
 
                 if (quoteChar != 0) {
                     // is it in a quoted identifier?
-                    sb.append(c);
+                    sb.append(ch);
 
                     // end in quote.
-                    if (c == quoteChar) {
+                    if (ch == quoteChar) {
                         if (bsEscaped) {
                             // Escaped closing quote: stays in the string. The quote char itself
                             // is not a backslash, so the run parity resets to even. Checked before
@@ -361,12 +361,12 @@ public final class SqlParser {
                             quoteChar = 0;
                             bsEscaped = false;
                         }
-                    } else if (c == '\\') {
+                    } else if (ch == '\\') {
                         bsEscaped = !bsEscaped;
                     } else {
                         bsEscaped = false;
                     }
-                } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+                } else if (ch == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
                     // Line comment (-- ...): always discarded (unlike block comments, the "Keep
                     // comments" marker does not preserve these). Skip to the end of the line.
                     if (!sb.isEmpty()) {
@@ -375,9 +375,9 @@ public final class SqlParser {
                     }
 
                     while (++index < sqlLength) {
-                        c = sql.charAt(index);
+                        ch = sql.charAt(index);
 
-                        if (c == ENTER || c == ENTER_2) {
+                        if (ch == ENTER || ch == ENTER_2) {
                             index--; // back up so the newline is reprocessed by the outer loop as whitespace
                             break;
                         }
@@ -389,14 +389,14 @@ public final class SqlParser {
                     }
 
                     while (++index < sqlLength) {
-                        c = sql.charAt(index);
+                        ch = sql.charAt(index);
 
-                        if (c == ENTER || c == ENTER_2) {
+                        if (ch == ENTER || ch == ENTER_2) {
                             index--; // back up so the newline is reprocessed by the outer loop as whitespace
                             break;
                         }
                     }
-                } else if (c == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+                } else if (ch == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
                     if (!sb.isEmpty()) {
                         words.add(sb.toString());
                         sb.setLength(0);
@@ -407,13 +407,13 @@ public final class SqlParser {
                     }
 
                     if (keepComments == 1) {
-                        sb.append(c);
+                        sb.append(ch);
 
                         while (++index < sqlLength) {
-                            c = sql.charAt(index);
-                            sb.append(c);
+                            ch = sql.charAt(index);
+                            sb.append(ch);
 
-                            if (c == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+                            if (ch == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
                                 sb.append(sql.charAt(++index));
 
                                 words.add(sb.toString());
@@ -424,9 +424,9 @@ public final class SqlParser {
                         }
                     } else {
                         while (++index < sqlLength) {
-                            c = sql.charAt(index);
+                            ch = sql.charAt(index);
 
-                            if (c == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+                            if (ch == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
                                 index++;
                                 break;
                             }
@@ -434,7 +434,7 @@ public final class SqlParser {
 
                         appendSpaceAfterSkippedBlockCommentIfNeeded(sql, sqlLength, index, words);
                     }
-                } else if (isSeparator(sql, sqlLength, index, c)) {
+                } else if (isSeparator(sql, sqlLength, index, ch)) {
                     if (!sb.isEmpty()) {
                         words.add(sb.toString());
                         sb.setLength(0);
@@ -445,18 +445,18 @@ public final class SqlParser {
                     if (temp != null) {
                         words.add(temp);
                         index += temp.length() - 1;
-                    } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
+                    } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
                         if (!words.isEmpty() && !words.get(words.size() - 1).equals(SK.SPACE)) {
                             words.add(SK.SPACE);
                         }
                     } else {
-                        words.add(String.valueOf(c));
+                        words.add(String.valueOf(ch));
                     }
                 } else {
-                    sb.append(c);
+                    sb.append(ch);
 
-                    if ((c == SK._SINGLE_QUOTE) || (c == SK._DOUBLE_QUOTE)) {
-                        quoteChar = c;
+                    if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                        quoteChar = ch;
                         // Opening quote char is non-backslash -> first content char has even parity.
                         bsEscaped = false;
                     }
@@ -478,7 +478,7 @@ public final class SqlParser {
      * Finds the index of a specific word within a SQL statement starting from a given position.
      * This method is capable of finding both simple words and composite keywords (like "LEFT JOIN").
      * It respects SQL syntax rules, including quoted identifiers and case sensitivity options.
-     * 
+     *
      * <p>The method handles:</p>
      * <ul>
      *   <li>Simple words and operators</li>
@@ -493,7 +493,7 @@ public final class SqlParser {
      * {@code word} appears as a <em>complete</em> SQL token (or composite token), not where it
      * occurs as a substring of another identifier; matches that fall inside line/hash/block
      * comments are skipped.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
@@ -503,7 +503,7 @@ public final class SqlParser {
      * int whereIndex = SqlParser.indexOfWord(sql, "WHERE", 0, false);
      * // Returns: 20 (the position where "WHERE" starts)
      * }</pre>
-     * 
+     *
      * @param sql the SQL statement to search within (must not be {@code null})
      * @param word the word or composite keyword to find (must not be {@code null})
      * @param fromIndex the earliest character position at which a match may be reported (0-based); scanning still begins at the start of {@code sql} for correct tokenization, but any match starting before {@code fromIndex} is skipped; negative values are treated as {@code 0}
@@ -539,14 +539,14 @@ public final class SqlParser {
                 boolean bsEscaped = false;
 
                 for (int index = 0; index < sqlLength; index++) {
-                    final char c = sql.charAt(index);
+                    final char ch = sql.charAt(index);
 
                     // is it in a quoted identifier?
                     if (quoteChar != 0) {
-                        sb.append(c);
+                        sb.append(ch);
 
                         // end in quote.
-                        if (c == quoteChar) {
+                        if (ch == quoteChar) {
                             if (bsEscaped) {
                                 // Escaped closing quote: stays in the string. Checked before the
                                 // doubled-quote case so an escaped quote immediately followed by
@@ -571,12 +571,12 @@ public final class SqlParser {
                                 quoteChar = 0;
                                 bsEscaped = false;
                             }
-                        } else if (c == '\\') {
+                        } else if (ch == '\\') {
                             bsEscaped = !bsEscaped;
                         } else {
                             bsEscaped = false;
                         }
-                    } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+                    } else if (ch == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
                         // Skip single-line comment (-- ...)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
@@ -612,7 +612,7 @@ public final class SqlParser {
                                 break;
                             }
                         }
-                    } else if (c == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+                    } else if (ch == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
                         // Skip block comment (/* ... */)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
@@ -631,7 +631,7 @@ public final class SqlParser {
                                 break;
                             }
                         }
-                    } else if (isSeparator(sql, sqlLength, index, c)) {
+                    } else if (isSeparator(sql, sqlLength, index, ch)) {
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
                             final int matchStart = index - word.length();
@@ -643,7 +643,7 @@ public final class SqlParser {
                             }
 
                             sb.setLength(0);
-                        } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
+                        } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
                             // skip white char
                             continue;
                         }
@@ -658,16 +658,16 @@ public final class SqlParser {
                             }
 
                             index += temp.length() - 1;
-                        } else if (index >= startIndex && (word.equals(String.valueOf(c)) || (!caseSensitive && word.equalsIgnoreCase(String.valueOf(c))))) {
+                        } else if (index >= startIndex && (word.equals(String.valueOf(ch)) || (!caseSensitive && word.equalsIgnoreCase(String.valueOf(ch))))) {
                             result = index;
 
                             break;
                         }
                     } else {
-                        sb.append(c);
+                        sb.append(ch);
 
-                        if ((c == SK._SINGLE_QUOTE) || (c == SK._DOUBLE_QUOTE)) {
-                            quoteChar = c;
+                        if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                            quoteChar = ch;
                             bsEscaped = false;
                         }
                     }
@@ -729,7 +729,7 @@ public final class SqlParser {
      * Extracts the next word or token from a SQL statement starting at the specified index.
      * This method skips leading whitespace and returns the next meaningful token,
      * which could be a keyword, identifier, operator, or separator.
-     * 
+     *
      * <p>The method handles:</p>
      * <ul>
      *   <li>Whitespace skipping (only between tokens; once a token has begun accumulating,
@@ -740,7 +740,7 @@ public final class SqlParser {
      *   <li>Multi-character operators (e.g., {@code >=}, {@code !=}).</li>
      *   <li>Single-character tokens.</li>
      * </ul>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT   name,   age FROM users";
@@ -748,7 +748,7 @@ public final class SqlParser {
      * String word2 = SqlParser.nextWord(sql, 13);   // Returns: ","
      * String word3 = SqlParser.nextWord(sql, 14);   // Returns: "age" (skips spaces after comma)
      * }</pre>
-     * 
+     *
      * @param sql the SQL statement to extract the word from (must not be {@code null})
      * @param fromIndex the starting position for extraction (0-based); negative values are treated as {@code 0}
      * @return the next word or token found, or an empty string if no more tokens exist
@@ -766,14 +766,14 @@ public final class SqlParser {
             boolean bsEscaped = false;
 
             for (int index = Math.max(0, fromIndex); index < sqlLength; index++) {
-                final char c = sql.charAt(index);
+                final char ch = sql.charAt(index);
 
                 // is it in a quoted identifier?
                 if (quoteChar != 0) {
-                    sb.append(c);
+                    sb.append(ch);
 
                     // end in quote.
-                    if (c == quoteChar) {
+                    if (ch == quoteChar) {
                         if (bsEscaped) {
                             // Escaped closing quote: stays in the string. Checked before the
                             // doubled-quote case so an escaped quote immediately followed by
@@ -786,12 +786,12 @@ public final class SqlParser {
                             // Even count (including 0) of preceding backslashes -> NOT escaped.
                             break;
                         }
-                    } else if (c == '\\') {
+                    } else if (ch == '\\') {
                         bsEscaped = !bsEscaped;
                     } else {
                         bsEscaped = false;
                     }
-                } else if (c == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+                } else if (ch == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
                     // Skip single-line comment (-- ...)
                     if (!sb.isEmpty()) {
                         break;
@@ -813,7 +813,7 @@ public final class SqlParser {
                             break;
                         }
                     }
-                } else if (c == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+                } else if (ch == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
                     // Skip block comment (/* ... */)
                     if (!sb.isEmpty()) {
                         break;
@@ -825,10 +825,10 @@ public final class SqlParser {
                             break;
                         }
                     }
-                } else if (isSeparator(sql, sqlLength, index, c)) {
+                } else if (isSeparator(sql, sqlLength, index, ch)) {
                     if (!sb.isEmpty()) {
                         break;
-                    } else if (c == SK._SPACE || c == TAB || c == ENTER || c == ENTER_2) {
+                    } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
                         // skip white char
                         continue;
                     }
@@ -838,15 +838,15 @@ public final class SqlParser {
                     if (temp != null) {
                         sb.append(temp);
                     } else {
-                        sb.append(c);
+                        sb.append(ch);
                     }
 
                     break;
                 } else {
-                    sb.append(c);
+                    sb.append(ch);
 
-                    if ((c == SK._SINGLE_QUOTE) || (c == SK._DOUBLE_QUOTE)) {
-                        quoteChar = c;
+                    if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                        quoteChar = ch;
                         bsEscaped = false;
                     }
                 }
@@ -862,14 +862,14 @@ public final class SqlParser {
      * Registers a single character as a SQL separator.
      * Once registered, this character will be recognized as a token separator
      * during SQL parsing operations.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SqlParser.registerSeparator('$');   // Register $ as a separator
      * List<String> words = SqlParser.parse("SELECT$FROM$users");
      * // Result: ["SELECT", "$", "FROM", "$", "users"]
      * }</pre>
-     * 
+     *
      * @param separator the character to register as a separator
      */
     public static void registerSeparator(final char separator) {
