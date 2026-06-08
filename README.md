@@ -1,7 +1,7 @@
 # abacus-query
  
-[![Maven Central](https://img.shields.io/maven-central/v/com.landawn.abacus/abacus-query.svg)](https://central.sonatype.com/artifact/com.landawn.abacus/abacus-query/4.7.6)
-[![Javadocs](https://img.shields.io/badge/javadoc-4.7.6-brightgreen.svg)](https://www.javadoc.io/doc/com.landawn.abacus/abacus-query/4.7.6/index.html)
+[![Maven Central](https://img.shields.io/maven-central/v/com.landawn.abacus/abacus-query.svg)](https://central.sonatype.com/artifact/com.landawn.abacus/abacus-query/4.7.7)
+[![Javadocs](https://img.shields.io/badge/javadoc-4.7.7-brightgreen.svg)](https://www.javadoc.io/doc/com.landawn.abacus/abacus-query/4.7.7/index.html)
 
 ## Overview
 
@@ -56,7 +56,7 @@ SP sp = PSC.select("firstName", "lastName")
 * Gradle:
 ```gradle
 // JDK 17 or above:
-compile 'com.landawn.abacus:abacus-query:4.7.6'
+compile 'com.landawn.abacus:abacus-query:4.7.7'
 ```
 
 
