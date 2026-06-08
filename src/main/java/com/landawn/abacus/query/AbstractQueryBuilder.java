@@ -45,12 +45,6 @@ import com.landawn.abacus.logging.LoggerFactory;
 import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
-import com.landawn.abacus.query.SqlBuilder.NAC;
-import com.landawn.abacus.query.SqlBuilder.NLC;
-import com.landawn.abacus.query.SqlBuilder.NSC;
-import com.landawn.abacus.query.SqlBuilder.PAC;
-import com.landawn.abacus.query.SqlBuilder.PLC;
-import com.landawn.abacus.query.SqlBuilder.PSC;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
@@ -115,14 +109,14 @@ import com.landawn.abacus.util.stream.Stream;
  *                  .build().query();
  * }</pre>
  *
- * <p>The builder supports different naming policies through its subclasses:</p>
+ * <p>The builder supports different naming policies through the predefined {@link SqlBuilder.Factory} constants:</p>
  * <ul>
- *   <li>{@link PSC} - Parameterized SQL with snake_case naming</li>
- *   <li>{@link PAC} - Parameterized SQL with SCREAMING_SNAKE_CASE naming</li>
- *   <li>{@link PLC} - Parameterized SQL with camelCase naming</li>
- *   <li>{@link NSC} - Named SQL with snake_case naming</li>
- *   <li>{@link NAC} - Named SQL with SCREAMING_SNAKE_CASE naming</li>
- *   <li>{@link NLC} - Named SQL with camelCase naming</li>
+ *   <li>{@link SqlBuilder#PSC} - Parameterized SQL with snake_case naming</li>
+ *   <li>{@link SqlBuilder#PAC} - Parameterized SQL with SCREAMING_SNAKE_CASE naming</li>
+ *   <li>{@link SqlBuilder#PLC} - Parameterized SQL with camelCase naming</li>
+ *   <li>{@link SqlBuilder#NSC} - Named SQL with snake_case naming</li>
+ *   <li>{@link SqlBuilder#NAC} - Named SQL with SCREAMING_SNAKE_CASE naming</li>
+ *   <li>{@link SqlBuilder#NLC} - Named SQL with camelCase naming</li>
  * </ul>
  *
  * @param <This> the concrete subclass type, used as the return type for chained calls (CRTP/self-type)
@@ -416,6 +410,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected static final AtomicInteger activeStringBuilderCounter = new AtomicInteger();
 
+    protected final SqlDialect sqlDialect;
+
     protected final NamingPolicy _namingPolicy; //NOSONAR
 
     protected final SQLPolicy _sqlPolicy; //NOSONAR
@@ -465,7 +461,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param namingPolicy the naming policy for column names, defaults to SNAKE_CASE if null
      * @param sqlPolicy the SQL generation policy, defaults to RAW_SQL if null
      */
-    protected AbstractQueryBuilder(final NamingPolicy namingPolicy, final SQLPolicy sqlPolicy) {
+    protected AbstractQueryBuilder(final SqlDialect sqlDialect) {
         final int activeBuilderCount = activeStringBuilderCounter.incrementAndGet();
 
         if (activeBuilderCount > 1024) {
@@ -478,8 +474,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _sb = Objectory.createStringBuilder();
 
-        _namingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
-        _sqlPolicy = sqlPolicy == null ? SQLPolicy.RAW_SQL : sqlPolicy;
+        this.sqlDialect = sqlDialect;
+        _namingPolicy = sqlDialect.namingPolicy() == null ? NamingPolicy.SNAKE_CASE : sqlDialect.namingPolicy();
+        _sqlPolicy = sqlDialect.sqlPolicy() == null ? SQLPolicy.RAW_SQL : sqlDialect.sqlPolicy();
 
         _handlerForNamedParameter = handlerForNamedParameter_TL.get();
 
@@ -490,11 +487,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Checks if this SQL builder generates named SQL (with named parameters).
-     * 
+     *
      * @return {@code true} if this builder generates named SQL, {@code false} otherwise
      */
     protected boolean isNamedSql() {
-        return false;
+        return _sqlPolicy == SQLPolicy.NAMED_SQL;
     }
 
     /**
@@ -542,7 +539,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Gets the table alias for the specified entity class.
      * The alias is retrieved from the @Table annotation's alias attribute.
-     * 
+     *
      * @param entityClass the entity class
      * @return the table alias, or empty string if not defined
      */
@@ -570,7 +567,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Gets the table alias if specified, otherwise returns the default table alias for the entity class.
-     * 
+     *
      * @param alias the specified alias
      * @param entityClass the entity class
      * @return the table alias
@@ -585,7 +582,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Gets the table alias or table name for the specified entity class.
-     * 
+     *
      * @param entityClass the entity class
      * @param namingPolicy the naming policy to apply
      * @return the table alias if defined, otherwise the table name
@@ -597,7 +594,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Gets the table alias or table name for the specified entity class.
      * Priority: specified alias > class-defined alias > table name
-     * 
+     *
      * @param alias the specified alias
      * @param entityClass the entity class
      * @param namingPolicy the naming policy to apply
@@ -930,7 +927,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Resets the named parameter handler to the default format.
      * The default handler formats parameters as ":paramName".
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // After using a custom handler, reset to default
@@ -1180,13 +1177,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds DISTINCT clause to the SELECT statement.
      * <p>This method is equivalent to calling {@code selectModifier(DISTINCT)}.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("name").distinct().from("account").build().query();
      * // Output: SELECT DISTINCT name FROM account
      * }</pre>
-     * 
+     *
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if a select modifier has already been set
      */
@@ -1317,16 +1314,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets the FROM clause with a single expression.
      * <p>The expression can be a table name, subquery, or multiple tables separated by comma.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*").from("users u").build().query();
      * // Output: SELECT * FROM users u
-     * 
+     *
      * String sql2 = PSC.select("*").from("(SELECT * FROM users) t").build().query();
      * // Output: SELECT * FROM (SELECT * FROM users) t
      * }</pre>
-     * 
+     *
      * @param expr the FROM clause expression
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
@@ -1384,13 +1381,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets the FROM clause using an entity class.
      * <p>The table name will be derived from the entity class.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).build().query();
      * // Table name derived from User class based on naming policy
      * }</pre>
-     * 
+     *
      * @param entityClass the entity class representing the table
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
@@ -1401,13 +1398,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets the FROM clause using an entity class with an alias.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class, "u").build().query();
      * // Output: SELECT * FROM users u (table name based on naming policy)
      * }</pre>
-     * 
+     *
      * @param entityClass the entity class representing the table
      * @param alias the table alias
      * @return this SqlBuilder instance for method chaining
@@ -1674,7 +1671,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a JOIN clause using an entity class.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -1683,7 +1680,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .on("users.id = orders.user_id")
      *                 .build().query();
      * }</pre>
-     * 
+     *
      * @param entityClass the entity class to join
      * @return this SqlBuilder instance for method chaining
      */
@@ -1720,7 +1717,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a JOIN clause using an entity class with an alias.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -1729,7 +1726,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .on("u.id = o.user_id")
      *                 .build().query();
      * }</pre>
-     * 
+     *
      * @param entityClass the entity class to join
      * @param alias the table alias
      * @return this SqlBuilder instance for method chaining
@@ -1740,7 +1737,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an INNER JOIN clause to the SQL statement.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -1749,7 +1746,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id
      * }</pre>
-     * 
+     *
      * @param expr the join expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
@@ -1799,7 +1796,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a LEFT JOIN clause to the SQL statement.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -1808,7 +1805,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id
      * }</pre>
-     * 
+     *
      * @param expr the join expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
@@ -1858,7 +1855,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a RIGHT JOIN clause to the SQL statement.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -1867,7 +1864,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id
      * }</pre>
-     * 
+     *
      * @param expr the join expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
@@ -1917,7 +1914,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a FULL JOIN clause to the SQL statement.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -1926,7 +1923,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users u FULL JOIN orders o ON u.id = o.user_id
      * }</pre>
-     * 
+     *
      * @param expr the join expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
@@ -1976,7 +1973,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a CROSS JOIN clause to the SQL statement.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -1985,7 +1982,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users CROSS JOIN orders
      * }</pre>
-     * 
+     *
      * @param expr the join expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
@@ -2035,7 +2032,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a NATURAL JOIN clause to the SQL statement.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2044,7 +2041,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users NATURAL JOIN orders
      * }</pre>
-     * 
+     *
      * @param expr the join expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
@@ -2148,7 +2145,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a USING clause for join conditions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2158,7 +2155,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users JOIN orders USING (user_id)
      * }</pre>
-     * 
+     *
      * @param expr the column name(s) for the USING clause
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or contains a SQL comment token
@@ -2314,7 +2311,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a GROUP BY clause with a single column and sort direction.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("category", "COUNT(*)")
@@ -2323,7 +2320,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT category, COUNT(*) FROM products GROUP BY category DESC
      * }</pre>
-     * 
+     *
      * @param columnName the column to group by
      * @param direction the sort direction
      * @return this SqlBuilder instance for method chaining
@@ -2343,7 +2340,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a GROUP BY clause with a collection of columns.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> columns = Arrays.asList("category", "brand");
@@ -2353,7 +2350,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category, brand
      * }</pre>
-     * 
+     *
      * @param propOrColumnNames the collection of columns to group by
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
@@ -2421,7 +2418,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a GROUP BY clause with columns and individual sort directions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, SortDirection> orders = new LinkedHashMap<>();
@@ -2433,7 +2430,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category ASC, brand DESC
      * }</pre>
-     * 
+     *
      * @param groupings map of columns to their sort directions
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code groupings} is {@code null} or empty, contains a {@code null}, empty, or blank key, or maps any key to a {@code null} direction
@@ -2593,7 +2590,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an ORDER BY clause with a single column and sort direction.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2602,7 +2599,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users ORDER BY name DESC
      * }</pre>
-     * 
+     *
      * @param columnName the column to order by
      * @param direction the sort direction
      * @return this SqlBuilder instance for method chaining
@@ -2701,7 +2698,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an ORDER BY clause with columns and individual sort directions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, SortDirection> orders = new LinkedHashMap<>();
@@ -2713,7 +2710,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users ORDER BY last_name ASC, first_name DESC
      * }</pre>
-     * 
+     *
      * @param orders map of columns to their sort directions
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code orders} is {@code null} or empty, contains a {@code null}, empty, or blank key, or maps any key to a {@code null} direction
@@ -2749,7 +2746,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds an ORDER BY ASC clause with a single column.
      * Convenience method equivalent to {@code orderBy(expr, SortDirection.ASC)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2758,7 +2755,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users ORDER BY name ASC
      * }</pre>
-     * 
+     *
      * @param expr the column to order by ascending
      * @return this SqlBuilder instance for method chaining
      */
@@ -2813,7 +2810,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds an ORDER BY DESC clause with a single column.
      * Convenience method equivalent to {@code orderBy(expr, SortDirection.DESC)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2822,7 +2819,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users ORDER BY created_date DESC
      * }</pre>
-     * 
+     *
      * @param expr the column to order by descending
      * @return this SqlBuilder instance for method chaining
      */
@@ -3224,7 +3221,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Appends a string expression to the SQL statement.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -3233,7 +3230,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users FOR UPDATE
      * }</pre>
-     * 
+     *
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
@@ -3248,7 +3245,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Conditionally appends a condition to the SQL statement.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * boolean includeAgeFilter = true;
@@ -3258,7 +3255,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users WHERE age > ?
      * }</pre>
-     * 
+     *
      * @param condition if true, the condition will be appended
      * @param cond the condition to append
      * @return this SqlBuilder instance for method chaining
@@ -3304,7 +3301,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Conditionally executes an append operation using a consumer function.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * boolean complexFilter = true;
@@ -3316,7 +3313,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users WHERE age > ? ORDER BY name
      * }</pre>
-     * 
+     *
      * @param condition if true, the consumer will be executed
      * @param append the consumer function to execute
      * @return this SqlBuilder instance for method chaining
@@ -3332,19 +3329,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Conditionally appends one of two conditions based on a boolean value.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * boolean isActive = true;
      * String sql = PSC.select("*")
      *                 .from("users")
-     *                 .appendIfOrElse(isActive, 
+     *                 .appendIfOrElse(isActive,
      *                     Filters.equal("status", "active"),
      *                     Filters.equal("status", "inactive"))
      *                 .build().query();
      * // Output: SELECT * FROM users WHERE status = ?
      * }</pre>
-     * 
+     *
      * @param condition if true, append condToAppendForTrue; otherwise append condToAppendForFalse
      * @param condToAppendForTrue the condition to append if condition is true
      * @param condToAppendForFalse the condition to append if condition is false
@@ -3953,7 +3950,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a FOR UPDATE clause to lock selected rows.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -3963,7 +3960,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users WHERE id = ? FOR UPDATE
      * }</pre>
-     * 
+     *
      * @return this SqlBuilder instance for method chaining
      */
     public This forUpdate() {
@@ -4123,7 +4120,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets columns and values for UPDATE operation using a map.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Map<String, Object> values = new HashMap<>();
@@ -4135,7 +4132,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: UPDATE users SET first_name = ?, last_name = ? WHERE id = ?
      * }</pre>
-     * 
+     *
      * @param props map of column names to values
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or contains a {@code null}, empty, or blank key
@@ -4297,7 +4294,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets all updatable properties from an entity class for UPDATE operation.
      * Properties marked with {@code @NonUpdatable}, {@code @ReadOnly}, {@code @ReadOnlyId}, or {@code @Transient} annotations are excluded.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.update("account")
@@ -4320,7 +4317,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.
      * Properties marked with {@code @NonUpdatable}, {@code @ReadOnly}, {@code @ReadOnlyId}, or {@code @Transient} annotations are automatically excluded.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<String> excluded = N.asSet("lastUpdateTime");
@@ -4441,7 +4438,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Applies a bi-function to the SQL string and parameters separately and returns the result.
      * This is useful for executing the SQL directly with a data access framework that takes SQL and parameters separately.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * int count = PSC.update("account")
@@ -4466,7 +4463,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Accepts a consumer for the SQL-Parameters pair.
      * This is useful for executing the SQL with a data access framework when no return value is needed.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * PSC.insert("name", "email", "status")
@@ -4486,7 +4483,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Accepts a bi-consumer for the SQL string and parameters separately.
      * This is useful for executing the SQL with a data access framework when no return value is needed.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * PSC.deleteFrom("account")
@@ -4740,7 +4737,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets the parameter based on the current SQL policy.
      *
-     * @param propName the property or parameter name 
+     * @param propName the property or parameter name
      * @param propValue the value to bind to the parameter
      */
     protected void setParameter(final String propName, final Object propValue) {

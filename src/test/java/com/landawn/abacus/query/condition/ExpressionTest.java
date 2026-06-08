@@ -1624,7 +1624,6 @@ public class ExpressionTest extends TestBase {
             thread.join();
         }
 
-        Assertions.assertNull(firstError.get(),
-                "toString(NamingPolicy) returned a value rendered for the wrong policy under concurrency: " + firstError.get());
+        Assertions.assertNull(firstError.get(), "toString(NamingPolicy) returned a value rendered for the wrong policy under concurrency: " + firstError.get());
     }
 }

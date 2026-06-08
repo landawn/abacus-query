@@ -1212,8 +1212,7 @@ class SqlParserJavadocExamples extends TestBase {
         // of the SQL (FROM/t never became separate tokens).
         String sql = "SELECT 'a\\'' FROM t";
         List<String> words = SqlParser.parse(sql);
-        assertTrue(words.contains("'a\\''"),
-                "Expected the escaped-quote-then-closing-quote literal as a single token, got: " + words);
+        assertTrue(words.contains("'a\\''"), "Expected the escaped-quote-then-closing-quote literal as a single token, got: " + words);
         assertTrue(words.contains("FROM"), "FROM must be parsed as a separate token (string terminated), got: " + words);
         assertTrue(words.contains("t"), "table name must be parsed as a separate token, got: " + words);
     }

@@ -2,8 +2,9 @@ package com.landawn.abacus.query.condition;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
+import static com.landawn.abacus.query.SqlBuilder.NSC;
+
 import com.landawn.abacus.query.SortDirection;
-import com.landawn.abacus.query.SqlBuilder.NSC;
 import com.landawn.abacus.query.condition.Criteria.Builder;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.NamingPolicy;
@@ -1658,12 +1659,10 @@ class CriteriaBugFixTest extends TestBase {
 
         for (int i = 0; i < 100; i++) {
             String noChange = criteria.toString(NamingPolicy.NO_CHANGE);
-            Assertions.assertTrue(noChange.contains("firstName = 'John'") && noChange.contains("lastName"),
-                    "NO_CHANGE render wrong: " + noChange);
+            Assertions.assertTrue(noChange.contains("firstName = 'John'") && noChange.contains("lastName"), "NO_CHANGE render wrong: " + noChange);
 
             String snake = criteria.toString(NamingPolicy.SNAKE_CASE);
-            Assertions.assertTrue(snake.contains("first_name = 'John'") && snake.contains("last_name"),
-                    "SNAKE_CASE render wrong: " + snake);
+            Assertions.assertTrue(snake.contains("first_name = 'John'") && snake.contains("last_name"), "SNAKE_CASE render wrong: " + snake);
 
             String screaming = criteria.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
             Assertions.assertTrue(screaming.contains("FIRST_NAME = 'John'") && screaming.contains("LAST_NAME"),

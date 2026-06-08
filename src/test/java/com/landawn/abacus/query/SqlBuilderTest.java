@@ -1,42 +1,14 @@
 package com.landawn.abacus.query;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.annotation.Column;
-import com.landawn.abacus.annotation.Id;
-import com.landawn.abacus.annotation.NonUpdatable;
-import com.landawn.abacus.annotation.ReadOnly;
-import com.landawn.abacus.annotation.Table;
-import com.landawn.abacus.annotation.Transient;
-import com.landawn.abacus.query.AbstractQueryBuilder.SP;
-import com.landawn.abacus.query.SqlBuilder.ACSB;
-import com.landawn.abacus.query.SqlBuilder.LCSB;
-import com.landawn.abacus.query.SqlBuilder.MAC;
-import com.landawn.abacus.query.SqlBuilder.MLC;
-import com.landawn.abacus.query.SqlBuilder.MSB;
-import com.landawn.abacus.query.SqlBuilder.MSC;
-import com.landawn.abacus.query.SqlBuilder.NAC;
-import com.landawn.abacus.query.SqlBuilder.NLC;
-import com.landawn.abacus.query.SqlBuilder.NSB;
-import com.landawn.abacus.query.SqlBuilder.NSC;
-import com.landawn.abacus.query.SqlBuilder.PAC;
-import com.landawn.abacus.query.SqlBuilder.PLC;
-import com.landawn.abacus.query.SqlBuilder.PSB;
-import com.landawn.abacus.query.SqlBuilder.PSC;
-import com.landawn.abacus.query.SqlBuilder.SCSB;
-import com.landawn.abacus.query.SqlBuilder10Test.Order;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Criteria;
-import com.landawn.abacus.query.condition.Expression;
-import com.landawn.abacus.query.condition.Having;
-import com.landawn.abacus.query.condition.SubQuery;
-import com.landawn.abacus.query.condition.Where;
-import com.landawn.abacus.query.entity.Account;
-import com.landawn.abacus.util.Array;
-import com.landawn.abacus.util.ImmutableMap;
-import com.landawn.abacus.util.ImmutableSet;
-import com.landawn.abacus.util.N;
-import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.Tuple.Tuple2;
+import static com.landawn.abacus.query.SqlBuilder.SCSB;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -51,18 +23,49 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.annotation.Column;
+import com.landawn.abacus.annotation.Id;
+import com.landawn.abacus.annotation.NonUpdatable;
+import com.landawn.abacus.annotation.ReadOnly;
+import com.landawn.abacus.annotation.Table;
+import com.landawn.abacus.annotation.Transient;
+import com.landawn.abacus.query.AbstractQueryBuilder.SP;
+import static com.landawn.abacus.query.SqlBuilder.ACSB;
+import static com.landawn.abacus.query.SqlBuilder.LCSB;
+import static com.landawn.abacus.query.SqlBuilder.MAC;
+import static com.landawn.abacus.query.SqlBuilder.MLC;
+import static com.landawn.abacus.query.SqlBuilder.MSB;
+import static com.landawn.abacus.query.SqlBuilder.MSC;
+import static com.landawn.abacus.query.SqlBuilder.NAC;
+import static com.landawn.abacus.query.SqlBuilder.NLC;
+import static com.landawn.abacus.query.SqlBuilder.NSB;
+import static com.landawn.abacus.query.SqlBuilder.NSC;
+import static com.landawn.abacus.query.SqlBuilder.PAC;
+import static com.landawn.abacus.query.SqlBuilder.PLC;
+import static com.landawn.abacus.query.SqlBuilder.PSB;
+import static com.landawn.abacus.query.SqlBuilder.PSC;
+import com.landawn.abacus.query.SqlBuilder10Test.Order;
+import com.landawn.abacus.query.condition.Condition;
+import com.landawn.abacus.query.condition.Criteria;
+import com.landawn.abacus.query.condition.Expression;
+import com.landawn.abacus.query.condition.Having;
+import com.landawn.abacus.query.condition.SubQuery;
+import com.landawn.abacus.query.condition.Where;
+import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.Array;
+import com.landawn.abacus.util.ImmutableMap;
+import com.landawn.abacus.util.ImmutableSet;
+import com.landawn.abacus.util.N;
+import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.Tuple.Tuple2;
 
 class SqlBuilder10Test extends TestBase {
 
@@ -4000,10 +4003,11 @@ class SqlBuilder11Test extends TestBase {
 
         @Test
         public void testCreateInstance() {
-            // Test that createInstance returns a new LCSB instance
-            LCSB instance = LCSB.createInstance();
-            Assertions.assertNotNull(instance);
-            Assertions.assertTrue(instance instanceof LCSB);
+            // Each factory call returns a new SqlBuilder instance
+            SqlBuilder instance1 = LCSB.select("*");
+            SqlBuilder instance2 = LCSB.select("*");
+            Assertions.assertNotNull(instance1);
+            Assertions.assertNotSame(instance1, instance2);
         }
 
         @Test
@@ -4604,9 +4608,9 @@ class SqlBuilder12Test extends TestBase {
 
         @Test
         public void testCreateInstance() {
-            // Test that createInstance returns a new instance
-            PSB instance1 = PSB.createInstance();
-            PSB instance2 = PSB.createInstance();
+            // Each factory call returns a new SqlBuilder instance
+            SqlBuilder instance1 = PSB.select("*");
+            SqlBuilder instance2 = PSB.select("*");
 
             assertNotNull(instance1);
             assertNotNull(instance2);
@@ -5079,8 +5083,8 @@ class SqlBuilder12Test extends TestBase {
 
         @Test
         public void testCreateInstance() {
-            PSC instance1 = PSC.createInstance();
-            PSC instance2 = PSC.createInstance();
+            SqlBuilder instance1 = PSC.select("*");
+            SqlBuilder instance2 = PSC.select("*");
 
             assertNotNull(instance1);
             assertNotNull(instance2);
@@ -5448,8 +5452,8 @@ class SqlBuilder12Test extends TestBase {
 
         @Test
         public void testCreateInstance() {
-            PAC instance1 = PAC.createInstance();
-            PAC instance2 = PAC.createInstance();
+            SqlBuilder instance1 = PAC.select("*");
+            SqlBuilder instance2 = PAC.select("*");
 
             assertNotNull(instance1);
             assertNotNull(instance2);
@@ -5876,8 +5880,8 @@ class SqlBuilder12Test extends TestBase {
 
         @Test
         public void testCreateInstance() {
-            PLC instance1 = PLC.createInstance();
-            PLC instance2 = PLC.createInstance();
+            SqlBuilder instance1 = PLC.select("*");
+            SqlBuilder instance2 = PLC.select("*");
 
             assertNotNull(instance1);
             assertNotNull(instance2);
@@ -6704,8 +6708,8 @@ class SqlBuilder13Test extends TestBase {
 
         @Test
         public void testUnion() {
-            NSB builder1 = (NSB) NSB.select("name").from("users");
-            NSB builder2 = (NSB) NSB.select("name").from("customers");
+            SqlBuilder builder1 = NSB.select("name").from("users");
+            SqlBuilder builder2 = NSB.select("name").from("customers");
 
             String sql1 = builder1.build().query();
             String sql2 = builder2.build().query();

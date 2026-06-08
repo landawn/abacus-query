@@ -705,7 +705,8 @@ public class SubQueryTest extends TestBase {
 
     @Test
     public void testConstructorRejectsRawOnUsingExpressions() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList("id"), Filters.expr("ON users.id = orders.user_id")));
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> Filters.subQuery("users", Arrays.asList("id"), Filters.expr("ON users.id = orders.user_id")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList("id"), Filters.expr("USING (id)")));
     }
 
