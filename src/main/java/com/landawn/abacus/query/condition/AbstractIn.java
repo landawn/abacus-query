@@ -179,8 +179,8 @@ public abstract class AbstractIn extends ComposableCondition {
 
     /**
      * Converts this condition to its string representation.
-     * The format is: {@code propName IN (value1, value2, ...)}
-     * (or {@code NOT IN} for {@link NotIn}). If the operator is {@code null}
+     * The format is {@code propName IN (v1, v2, ...)} for {@link In}, or
+     * {@code propName NOT IN (v1, v2, ...)} for {@link NotIn}. If the operator is {@code null}
      * (only possible for an uninitialized instance), the literal {@code "null"} is rendered
      * in place of the operator.
      *

@@ -852,7 +852,7 @@ public class Criteria extends AbstractCondition {
          *     .join("orders")
          *     .where(Filters.expr("users.id = orders.user_id"))
          *     .build();
-         * // Results in: JOIN orders WHERE users.id = orders.user_id
+         * // SQL: JOIN orders WHERE users.id = orders.user_id
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -873,7 +873,7 @@ public class Criteria extends AbstractCondition {
          *     .join("orders", new On("users.id", "orders.user_id"))
          *     .where(Filters.equal("users.status", "active"))
          *     .build();
-         * // Results in: JOIN orders ON users.id = orders.user_id WHERE users.status = 'active'
+         * // SQL: JOIN orders ON users.id = orders.user_id WHERE users.status = 'active'
          * }</pre>
          *
          * @param joinEntity the table or entity to join
@@ -1453,7 +1453,7 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("department", "location", "role");
-         * // Results in: GROUP BY department, location, role
+         * // SQL: GROUP BY department, location, role
          * }</pre>
          *
          * @param propNames the property names to group by
@@ -1474,7 +1474,7 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("total_sales", SortDirection.DESC);
-         * // Results in: GROUP BY total_sales DESC
+         * // SQL: GROUP BY total_sales DESC
          * }</pre>
          *
          * @param propName the property name to group by
@@ -1496,7 +1496,7 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
-         * // Results in: GROUP BY year DESC, month ASC
+         * // SQL: GROUP BY year DESC, month ASC
          * }</pre>
          *
          * @param propName the first property name to group by
@@ -1520,7 +1520,7 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
-         * // Results in: GROUP BY country ASC, state ASC, city DESC
+         * // SQL: GROUP BY country ASC, state ASC, city DESC
          * }</pre>
          *
          * @param propName the first property name to group by
@@ -1576,7 +1576,7 @@ public class Criteria extends AbstractCondition {
          * List<String> groupCols = Arrays.asList("category", "brand");
          * Criteria.Builder builder = Criteria.builder()
          *     .groupBy(groupCols, SortDirection.DESC);
-         * // Results in: GROUP BY category DESC, brand DESC
+         * // SQL: GROUP BY category DESC, brand DESC
          * }</pre>
          *
          * @param propNames the collection of property names to group by
@@ -1606,7 +1606,7 @@ public class Criteria extends AbstractCondition {
          * grouping.put("years_experience", SortDirection.DESC);
          * Criteria.Builder builder = Criteria.builder()
          *     .groupBy(grouping);
-         * // Results in: GROUP BY department ASC, salary_range DESC, years_experience DESC
+         * // SQL: GROUP BY department ASC, salary_range DESC, years_experience DESC
          * }</pre>
          *
          * @param groupings a map of property names to sort directions
@@ -1696,7 +1696,7 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .orderByAsc("lastName", "firstName", "middleName");
-         * // Results in: ORDER BY lastName ASC, firstName ASC, middleName ASC
+         * // SQL: ORDER BY lastName ASC, firstName ASC, middleName ASC
          * }</pre>
          *
          * @param propNames the property names to order by ascending
@@ -1718,7 +1718,7 @@ public class Criteria extends AbstractCondition {
          * List<String> sortCols = Arrays.asList("country", "state", "city");
          * Criteria.Builder builder = Criteria.builder()
          *     .orderByAsc(sortCols);
-         * // Results in: ORDER BY country ASC, state ASC, city ASC
+         * // SQL: ORDER BY country ASC, state ASC, city ASC
          * }</pre>
          *
          * @param propNames the collection of property names to order by ascending
@@ -1742,7 +1742,7 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .orderByDesc("score", "createdDate");
-         * // Results in: ORDER BY score DESC, createdDate DESC
+         * // SQL: ORDER BY score DESC, createdDate DESC
          * }</pre>
          *
          * @param propNames the property names to order by descending
@@ -1764,7 +1764,7 @@ public class Criteria extends AbstractCondition {
          * List<String> sortCols = Arrays.asList("revenue", "profit");
          * Criteria.Builder builder = Criteria.builder()
          *     .orderByDesc(sortCols);
-         * // Results in: ORDER BY revenue DESC, profit DESC
+         * // SQL: ORDER BY revenue DESC, profit DESC
          * }</pre>
          *
          * @param propNames the collection of property names to order by descending
@@ -1822,7 +1822,7 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .orderBy("department", "lastName", "firstName");
-         * // Results in: ORDER BY department, lastName, firstName
+         * // SQL: ORDER BY department, lastName, firstName
          * }</pre>
          *
          * @param propNames the property names to order by
@@ -1843,7 +1843,7 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .orderBy("createdDate", SortDirection.DESC);
-         * // Results in: ORDER BY createdDate DESC
+         * // SQL: ORDER BY createdDate DESC
          * }</pre>
          *
          * @param propName the property name to order by
@@ -1865,7 +1865,7 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .orderBy("priority", SortDirection.DESC, "createdDate", SortDirection.ASC);
-         * // Results in: ORDER BY priority DESC, createdDate ASC
+         * // SQL: ORDER BY priority DESC, createdDate ASC
          * }</pre>
          *
          * @param propName the first property name to order by
@@ -1889,7 +1889,7 @@ public class Criteria extends AbstractCondition {
          * <pre>{@code
          * Criteria.Builder builder = Criteria.builder()
          *     .orderBy("category", SortDirection.ASC, "price", SortDirection.DESC, "name", SortDirection.ASC);
-         * // Results in: ORDER BY category ASC, price DESC, name ASC
+         * // SQL: ORDER BY category ASC, price DESC, name ASC
          * }</pre>
          *
          * @param propName the first property name to order by
@@ -1946,7 +1946,7 @@ public class Criteria extends AbstractCondition {
          * List<String> sortCols = Arrays.asList("score", "rating");
          * Criteria.Builder builder = Criteria.builder()
          *     .orderBy(sortCols, SortDirection.DESC);
-         * // Results in: ORDER BY score DESC, rating DESC
+         * // SQL: ORDER BY score DESC, rating DESC
          * }</pre>
          *
          * @param propNames the collection of property names to order by
@@ -1976,7 +1976,7 @@ public class Criteria extends AbstractCondition {
          * ordering.put("name", SortDirection.ASC);
          * Criteria.Builder builder = Criteria.builder()
          *     .orderBy(ordering);
-         * // Results in: ORDER BY priority DESC, createdDate DESC, name ASC
+         * // SQL: ORDER BY priority DESC, createdDate DESC, name ASC
          * }</pre>
          *
          * @param orders a map of property names to sort directions
@@ -2024,7 +2024,7 @@ public class Criteria extends AbstractCondition {
          *     .where(Filters.equal("status", "active"))
          *     .limit(10)
          *     .build();
-         * // Results in: WHERE status = 'active' LIMIT 10
+         * // SQL: WHERE status = 'active' LIMIT 10
          * }</pre>
          *
          * @param count the maximum number of results to return
@@ -2049,7 +2049,7 @@ public class Criteria extends AbstractCondition {
          *     .orderBy("id")
          *     .limit(20, 40)
          *     .build();
-         * // Results in: ORDER BY id LIMIT 20 OFFSET 40
+         * // SQL: ORDER BY id LIMIT 20 OFFSET 40
          * }</pre>
          *
          * @param count the maximum number of results to return

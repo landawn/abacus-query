@@ -36,12 +36,12 @@ package com.landawn.abacus.query.condition;
  * <pre>{@code
  * // Check if a property is not null (prefer IsNotNull class)
  * IsNot notNull = new IsNot("email", null);
- * // Generates: email IS NOT NULL
+ * // SQL: email IS NOT NULL
  *
  * // Check if not a specific expression value
  * Expression unknownExpr = Filters.expr("UNKNOWN");
  * IsNot notUnknown = new IsNot("status", unknownExpr);
- * // Generates: status IS NOT UNKNOWN
+ * // SQL: status IS NOT UNKNOWN
  * }</pre>
  *
  * @see Binary
@@ -77,12 +77,12 @@ public class IsNot extends Binary {
      * <pre>{@code
      * // Check for NOT NULL (though IsNotNull is preferred)
      * IsNot notNull = new IsNot("phone_number", null);
-     * // Generates: phone_number IS NOT NULL
+     * // SQL: phone_number IS NOT NULL
      *
      * // Check if not a custom value
      * Expression unknownExpr = Filters.expr("UNKNOWN");
      * IsNot notUnknown = new IsNot("verification_status", unknownExpr);
-     * // Generates: verification_status IS NOT UNKNOWN
+     * // SQL: verification_status IS NOT UNKNOWN
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null} or empty)

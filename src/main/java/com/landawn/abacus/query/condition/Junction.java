@@ -63,7 +63,7 @@ import com.landawn.abacus.util.Strings;
  *     new GreaterThan("age", 18),
  *     new LessThan("age", 65)
  * );
- * // Generates: ((status = 'active') AND (age > 18) AND (age < 65))
+ * // SQL: ((status = 'active') AND (age > 18) AND (age < 65))
  * 
  * // Create an OR junction
  * Junction or = new Junction(Operator.OR,
@@ -71,7 +71,7 @@ import com.landawn.abacus.util.Strings;
  *     new Equal("city", "Los Angeles"),
  *     new Equal("city", "Chicago")
  * );
- * // Generates: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
+ * // SQL: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
  * 
  * // Nested junctions for complex logic
  * Junction complex = new Junction(Operator.AND,
@@ -167,7 +167,8 @@ public class Junction extends ComposableCondition {
      * @param conditions the conditions to combine; may be {@code null} or empty (treated as no conditions)
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
-     *             element is a {@link Criteria} or has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.)
+     *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
+     *             or is an {@code ON}/{@code USING} condition that is not an {@link On} instance
      */
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
@@ -203,7 +204,8 @@ public class Junction extends ComposableCondition {
      * @param conditions the collection of conditions to combine; may be {@code null} or empty (treated as no conditions)
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
-     *             element is a {@link Criteria} or has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.)
+     *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
+     *             or is an {@code ON}/{@code USING} condition that is not an {@link On} instance
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);

@@ -39,12 +39,12 @@ package com.landawn.abacus.query.condition;
  * <pre>{@code
  * // Check if a property is null (prefer IsNull class)
  * Is nullCheck = new Is("email", null);
- * // Generates: email IS NULL
+ * // SQL: email IS NULL
  *
  * // Check against a custom expression
  * Expression customExpr = Filters.expr("UNKNOWN");
  * Is unknownCheck = new Is("status", customExpr);
- * // Generates: status IS UNKNOWN
+ * // SQL: status IS UNKNOWN
  * }</pre>
  *
  * @see Binary
@@ -80,12 +80,12 @@ public class Is extends Binary {
      * <pre>{@code
      * // Check for NULL (though IsNull is preferred)
      * Is nullCheck = new Is("phone_number", null);
-     * // Generates: phone_number IS NULL
+     * // SQL: phone_number IS NULL
      *
      * // Custom database-specific value
      * Expression unknownExpr = Filters.expr("UNKNOWN");
      * Is triStateCheck = new Is("verification_status", unknownExpr);
-     * // Generates: verification_status IS UNKNOWN
+     * // SQL: verification_status IS UNKNOWN
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null} or empty)

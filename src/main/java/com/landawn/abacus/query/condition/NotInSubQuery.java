@@ -38,13 +38,13 @@ import java.util.Collection;
  * // Single property NOT IN subquery
  * SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
  * NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
- * // Generates: userId NOT IN (SELECT id FROM inactive_users)
+ * // SQL: userId NOT IN (SELECT id FROM inactive_users)
  *
  * // Multiple properties NOT IN subquery
  * List<String> props = Arrays.asList("firstName", "lastName");
  * SubQuery subQuery2 = Filters.subQuery("SELECT fname, lname FROM blacklist");
  * NotInSubQuery condition2 = new NotInSubQuery(props, subQuery2);
- * // Generates: (firstName, lastName) NOT IN (SELECT fname, lname FROM blacklist)
+ * // SQL: (firstName, lastName) NOT IN (SELECT fname, lname FROM blacklist)
  * }</pre>
  *
  * @see AbstractInSubQuery
@@ -72,12 +72,12 @@ public class NotInSubQuery extends AbstractInSubQuery {
      * // Exclude deleted items
      * SubQuery deletedItems = Filters.subQuery("SELECT id FROM deleted_items");
      * NotInSubQuery condition = new NotInSubQuery("itemId", deletedItems);
-     * // Generates: itemId NOT IN (SELECT id FROM deleted_items)
+     * // SQL: itemId NOT IN (SELECT id FROM deleted_items)
      *
      * // Exclude users from specific departments
      * SubQuery deptQuery = Filters.subQuery("SELECT user_id FROM dept_users WHERE dept = 'HR'");
      * NotInSubQuery notHR = new NotInSubQuery("id", deptQuery);
-     * // Generates: id NOT IN (SELECT user_id FROM dept_users WHERE dept = 'HR')
+     * // SQL: id NOT IN (SELECT user_id FROM dept_users WHERE dept = 'HR')
      * }</pre>
      *
      * @param propName the property/column name to check against the subquery results (must not be {@code null} or empty).
@@ -101,13 +101,13 @@ public class NotInSubQuery extends AbstractInSubQuery {
      * List<String> props = Arrays.asList("country", "city");
      * SubQuery restricted = Filters.subQuery("SELECT country, city FROM restricted_locations");
      * NotInSubQuery condition = new NotInSubQuery(props, restricted);
-     * // Generates: (country, city) NOT IN (SELECT country, city FROM restricted_locations)
+     * // SQL: (country, city) NOT IN (SELECT country, city FROM restricted_locations)
      *
      * // Exclude duplicate entries
      * List<String> uniqueProps = Arrays.asList("firstName", "lastName", "email");
      * SubQuery existing = Filters.subQuery("SELECT fname, lname, email FROM existing_users");
      * NotInSubQuery noDupes = new NotInSubQuery(uniqueProps, existing);
-     * // Generates: (firstName, lastName, email) NOT IN (SELECT fname, lname, email FROM existing_users)
+     * // SQL: (firstName, lastName, email) NOT IN (SELECT fname, lname, email FROM existing_users)
      * }</pre>
      *
      * @param propNames collection of property names to check against the subquery results (must not be {@code null}

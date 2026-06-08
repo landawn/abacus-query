@@ -58,19 +58,19 @@ import com.landawn.abacus.util.Strings;
  * // Structured subquery with entity name
  * Condition activeCondition = Filters.equal("status", "active");
  * SubQuery subQuery2 = Filters.subQuery("users", Arrays.asList("id"), activeCondition);
- * // Generates: SELECT id FROM users WHERE status = 'active'
+ * // SQL: SELECT id FROM users WHERE status = 'active'
  *
  * // Structured subquery with entity class
  * SubQuery subQuery3 = Filters.subQuery(User.class, Arrays.asList("id", "name"),
  *                                   Filters.greaterThan("age", 18));
- * // Generates: SELECT id, name FROM <User-table-name> WHERE age > 18
+ * // SQL: SELECT id, name FROM <User-table-name> WHERE age > 18
  * // (the FROM target is resolved from the entity class via QueryUtil — for a class without
  * //  table-mapping annotations it falls back to the class's simple name; column-name mapping
  * //  for the selected properties is also applied when available)
  *
  * // Use in IN condition
  * InSubQuery inCondition = Filters.in("userId", subQuery1);
- * // Results in: userId IN (SELECT id FROM users WHERE status = 'active')
+ * // SQL: userId IN (SELECT id FROM users WHERE status = 'active')
  * }</pre>
  *
  * @see InSubQuery
@@ -165,7 +165,7 @@ public class SubQuery extends AbstractCondition {
      * <pre>{@code
      * SubQuery subQuery = new SubQuery("orders",
      *     "SELECT order_id FROM orders WHERE total > 1000");
-     * // Generates: SELECT order_id FROM orders WHERE total > 1000
+     * // SQL: SELECT order_id FROM orders WHERE total > 1000
      * }</pre>
      *
      * @param entityName the entity/table name; may be {@code null} or empty, in which case it is
@@ -203,7 +203,7 @@ public class SubQuery extends AbstractCondition {
      *     Filters.greaterThan("created", "2024-01-01")
      * );
      * SubQuery subQuery = Filters.subQuery("users", props, condition);
-     * // Generates: SELECT id, email FROM users WHERE ((active = true) AND (created > '2024-01-01'))
+     * // SQL: SELECT id, email FROM users WHERE ((active = true) AND (created > '2024-01-01'))
      * }</pre>
      *
      * @param entityName the entity/table name (must not be {@code null} or empty)
@@ -243,7 +243,7 @@ public class SubQuery extends AbstractCondition {
      *     Arrays.asList("id", "categoryId"),
      *     Filters.like("name", "%electronics%")
      * );
-     * // Generates: SELECT id, categoryId FROM <Product-table-name> WHERE name LIKE '%electronics%'
+     * // SQL: SELECT id, categoryId FROM <Product-table-name> WHERE name LIKE '%electronics%'
      * // (the FROM target is resolved from the entity class via QueryUtil — for a class without
      * //  table-mapping annotations it falls back to the class's simple name "Product"; column-name
      * //  mapping for the selected properties is also applied when available)

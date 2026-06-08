@@ -42,16 +42,16 @@ import java.util.Collection;
  * <pre>{@code
  * // Check if status is one of several values
  * In statusCheck = new In("status", Arrays.asList("active", "pending", "approved"));
- * // Generates: status IN ('active', 'pending', 'approved')
+ * // SQL: status IN ('active', 'pending', 'approved')
  *
  * // Check if user_id is in a list
  * In userFilter = new In("user_id", Arrays.asList(1, 2, 3, 5, 8));
- * // Generates: user_id IN (1, 2, 3, 5, 8)
+ * // SQL: user_id IN (1, 2, 3, 5, 8)
  *
  * // Filter by categories
  * Set<String> categories = new HashSet<>(Arrays.asList("electronics", "computers"));
  * In categoryFilter = new In("category", categories);
- * // Generates: category IN ('electronics', 'computers')
+ * // SQL: category IN ('electronics', 'computers')
  * }</pre>
  *
  * @see AbstractIn
@@ -77,17 +77,17 @@ public class In extends AbstractIn {
      * // Filter by multiple categories
      * Set<String> categories = new HashSet<>(Arrays.asList("electronics", "computers", "phones"));
      * In categoryFilter = new In("category", categories);
-     * // Generates: category IN ('electronics', 'computers', 'phones')
+     * // SQL: category IN ('electronics', 'computers', 'phones')
      *
      * // Filter by specific IDs
      * List<Long> ids = Arrays.asList(101L, 102L, 103L);
      * In idFilter = new In("product_id", ids);
-     * // Generates: product_id IN (101, 102, 103)
+     * // SQL: product_id IN (101, 102, 103)
      *
      * // Filter by enum values
      * List<String> priorities = Arrays.asList("HIGH", "CRITICAL");
      * In priorityFilter = new In("priority", priorities);
-     * // Generates: priority IN ('HIGH', 'CRITICAL')
+     * // SQL: priority IN ('HIGH', 'CRITICAL')
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null} or empty)

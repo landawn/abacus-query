@@ -73,11 +73,11 @@ import com.landawn.abacus.util.Strings;
  *
  * // Combine conditions for complex queries via Filters.and / Filters.or
  * Condition complex = Filters.and(age.greaterThan(18), status.equal("active"));
- * // Results in: (age > 18) AND (status = 'active')
+ * // SQL: (age > 18) AND (status = 'active')
  *
  * // Combine multiple conditions for use in a WHERE clause
  * Condition where = Filters.and(age.greaterThanOrEqual(21), status.in("active", "pending"));
- * // Results in: (age >= 21) AND (status IN ('active', 'pending'))
+ * // SQL: (age >= 21) AND (status IN ('active', 'pending'))
  * }</pre>
  *
  * @see Condition
@@ -205,10 +205,10 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("color").equalsAny("red", "green", "blue");
-     * // Results in: ((color = 'red') OR (color = 'green') OR (color = 'blue'))
+     * // SQL: ((color = 'red') OR (color = 'green') OR (color = 'blue'))
      *
      * NamedProperty.of("priority").equalsAny(1, 2, 3);
-     * // Results in: ((priority = 1) OR (priority = 2) OR (priority = 3))
+     * // SQL: ((priority = 1) OR (priority = 2) OR (priority = 3))
      *
      * NamedProperty.of("x").equalsAny();   // throws IllegalArgumentException (empty values)
      * }</pre>
@@ -239,7 +239,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("priority").equalsAny(new int[]{1, 2, 3});
-     * // Results in: ((priority = 1) OR (priority = 2) OR (priority = 3))
+     * // SQL: ((priority = 1) OR (priority = 2) OR (priority = 3))
      * }</pre>
      *
      * @param values primitive int values to check. Must not be {@code null} or empty.
@@ -267,7 +267,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("user_id").equalsAny(new long[]{1001L, 1002L, 1003L});
-     * // Results in: ((user_id = 1001) OR (user_id = 1002) OR (user_id = 1003))
+     * // SQL: ((user_id = 1001) OR (user_id = 1002) OR (user_id = 1003))
      * }</pre>
      *
      * @param values primitive long values to check. Must not be {@code null} or empty.
@@ -295,7 +295,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("rate").equalsAny(new double[]{1.5, 2.0, 2.5});
-     * // Results in: ((rate = 1.5) OR (rate = 2.0) OR (rate = 2.5))
+     * // SQL: ((rate = 1.5) OR (rate = 2.0) OR (rate = 2.5))
      * }</pre>
      *
      * @param values primitive double values to check. Must not be {@code null} or empty.
@@ -325,11 +325,11 @@ public sealed class NamedProperty permits NP {
      * <pre>{@code
      * List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
      * NamedProperty.of("city").equalsAny(cities);
-     * // Results in: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
+     * // SQL: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
      *
      * Set<Integer> validIds = Set.of(10, 20, 30);
      * NamedProperty.of("department_id").equalsAny(validIds);
-     * // Results in: ((department_id = 10) OR (department_id = 20) OR (department_id = 30))
+     * // SQL: ((department_id = 10) OR (department_id = 20) OR (department_id = 30))
      * }</pre>
      *
      * @param values collection of values to check equality against. Each value will be tested with OR logic.
@@ -791,10 +791,10 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("status").in("active", "pending", "approved");
-     * // Results in: status IN ('active', 'pending', 'approved')
+     * // SQL: status IN ('active', 'pending', 'approved')
      *
      * NamedProperty.of("priority").in(1, 2, 3);
-     * // Results in: priority IN (1, 2, 3)
+     * // SQL: priority IN (1, 2, 3)
      * }</pre>
      *
      * @param values array of values to check membership against (must not be {@code null} or empty)
@@ -813,7 +813,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("priority").in(new int[]{1, 2, 3});
-     * // Results in: priority IN (1, 2, 3)
+     * // SQL: priority IN (1, 2, 3)
      * }</pre>
      *
      * @param values primitive int values to check membership against. Must not be null or empty.
@@ -832,7 +832,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("user_id").in(new long[]{1001L, 1002L, 1003L});
-     * // Results in: user_id IN (1001, 1002, 1003)
+     * // SQL: user_id IN (1001, 1002, 1003)
      * }</pre>
      *
      * @param values primitive long values to check membership against. Must not be null or empty.
@@ -851,7 +851,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("rate").in(new double[]{1.5, 2.0, 2.5});
-     * // Results in: rate IN (1.5, 2.0, 2.5)
+     * // SQL: rate IN (1.5, 2.0, 2.5)
      * }</pre>
      *
      * @param values primitive double values to check membership against. Must not be null or empty.
@@ -873,11 +873,11 @@ public sealed class NamedProperty permits NP {
      * <pre>{@code
      * Set<Integer> validIds = new HashSet<>(Arrays.asList(1, 2, 3, 4, 5));
      * NamedProperty.of("id").in(validIds);
-     * // Results in: id IN (1, 2, 3, 4, 5)
+     * // SQL: id IN (1, 2, 3, 4, 5)
      *
      * List<String> departments = Arrays.asList("Sales", "Marketing", "IT");
      * NamedProperty.of("department").in(departments);
-     * // Results in: department IN ('Sales', 'Marketing', 'IT')
+     * // SQL: department IN ('Sales', 'Marketing', 'IT')
      * }</pre>
      *
      * @param values collection of values to check membership against (must not be {@code null} or empty)
@@ -897,10 +897,10 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("status").notIn("deleted", "archived");
-     * // Results in: status NOT IN ('deleted', 'archived')
+     * // SQL: status NOT IN ('deleted', 'archived')
      *
      * NamedProperty.of("priority").notIn(4, 5);
-     * // Results in: priority NOT IN (4, 5)
+     * // SQL: priority NOT IN (4, 5)
      * }</pre>
      *
      * @param values array of values to check non-membership against (must not be {@code null} or empty)
@@ -919,7 +919,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("priority").notIn(new int[]{4, 5});
-     * // Results in: priority NOT IN (4, 5)
+     * // SQL: priority NOT IN (4, 5)
      * }</pre>
      *
      * @param values primitive int values to check non-membership against. Must not be null or empty.
@@ -938,7 +938,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("user_id").notIn(new long[]{999L, 1000L});
-     * // Results in: user_id NOT IN (999, 1000)
+     * // SQL: user_id NOT IN (999, 1000)
      * }</pre>
      *
      * @param values primitive long values to check non-membership against. Must not be null or empty.
@@ -957,7 +957,7 @@ public sealed class NamedProperty permits NP {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty.of("rate").notIn(new double[]{0.0, -1.0});
-     * // Results in: rate NOT IN (0.0, -1.0)
+     * // SQL: rate NOT IN (0.0, -1.0)
      * }</pre>
      *
      * @param values primitive double values to check non-membership against. Must not be null or empty.
@@ -979,11 +979,11 @@ public sealed class NamedProperty permits NP {
      * <pre>{@code
      * Set<Integer> excludedIds = new HashSet<>(Arrays.asList(100, 200, 300));
      * NamedProperty.of("id").notIn(excludedIds);
-     * // Results in: id NOT IN (100, 200, 300)
+     * // SQL: id NOT IN (100, 200, 300)
      *
      * List<String> blockedDepartments = Arrays.asList("Temp", "Archived");
      * NamedProperty.of("department").notIn(blockedDepartments);
-     * // Results in: department NOT IN ('Temp', 'Archived')
+     * // SQL: department NOT IN ('Temp', 'Archived')
      * }</pre>
      *
      * @param values collection of values to check non-membership against (must not be {@code null} or empty)

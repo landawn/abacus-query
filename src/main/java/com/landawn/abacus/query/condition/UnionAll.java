@@ -68,7 +68,7 @@ package com.landawn.abacus.query.condition;
  * SubQuery archivedTransactions = Filters.subQuery("SELECT * FROM archived_transactions WHERE year = 2024");
  * UnionAll unionAll = new UnionAll(archivedTransactions);
  * // When combined with current transactions query:
- * // Results in: SELECT * FROM transactions WHERE year = 2024
+ * // SQL: SELECT * FROM transactions WHERE year = 2024
  * //             UNION ALL
  * //             SELECT * FROM archived_transactions WHERE year = 2024
  *

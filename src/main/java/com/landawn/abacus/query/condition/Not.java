@@ -47,12 +47,12 @@ package com.landawn.abacus.query.condition;
  * // NOT with LIKE - find names that don't contain "test"
  * Like likeCondition = new Like("name", "%test%");
  * Not notLike = new Not(likeCondition);
- * // Results in: NOT (name LIKE '%test%')
+ * // SQL: NOT (name LIKE '%test%')
  *
  * // NOT with IN - exclude specific departments
  * In deptCondition = new In("department_id", Arrays.asList(10, 20, 30));
  * Not notInDepts = new Not(deptCondition);
- * // Results in: NOT (department_id IN (10, 20, 30))
+ * // SQL: NOT (department_id IN (10, 20, 30))
  *
  * // NOT with complex condition - find orders that are NOT (high priority AND urgent)
  * And complexCondition = new And(
@@ -60,13 +60,13 @@ package com.landawn.abacus.query.condition;
  *     new Equal("status", "URGENT")
  * );
  * Not notUrgentHigh = new Not(complexCondition);
- * // Results in: NOT (((priority = 'HIGH') AND (status = 'URGENT')))
+ * // SQL: NOT (((priority = 'HIGH') AND (status = 'URGENT')))
  *
  * // NOT with EXISTS subquery
  * SubQuery hasOrders = new SubQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
  * Exists existsCondition = new Exists(hasOrders);
  * Not noOrders = new Not(existsCondition);
- * // Results in: NOT (EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id))
+ * // SQL: NOT (EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id))
  * }</pre>
  * 
  * @see And
@@ -94,12 +94,12 @@ public class Not extends ComposableCell {
      * // Simple negation
      * Equal isActive = new Equal("active", true);
      * Not isInactive = new Not(isActive);
-     * // Results in: NOT (active = true)
+     * // SQL: NOT (active = true)
      *
      * // Negating BETWEEN
      * Between ageRange = new Between("age", 18, 65);
      * Not outsideRange = new Not(ageRange);
-     * // Results in: NOT (age BETWEEN 18 AND 65)
+     * // SQL: NOT (age BETWEEN 18 AND 65)
      *
      * // Negating OR condition
      * Or multiStatus = new Or(
@@ -107,7 +107,7 @@ public class Not extends ComposableCell {
      *     new Equal("status", "PROCESSING")
      * );
      * Not notPendingOrProcessing = new Not(multiStatus);
-     * // Results in: NOT (((status = 'PENDING') OR (status = 'PROCESSING')))
+     * // SQL: NOT (((status = 'PENDING') OR (status = 'PROCESSING')))
      * }</pre>
      *
      * @param cond the condition to be negated; must not be {@code null}. May be any composable condition,

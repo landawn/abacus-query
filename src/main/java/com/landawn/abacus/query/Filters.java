@@ -2030,7 +2030,7 @@ public class Filters {
      *
      * @param cond the condition for the {@code WHERE} clause (must not be {@code null})
      * @return a {@link Where} clause
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, or an {@code ON}/{@code USING} condition (which cannot be nested inside a clause)
      */
     public static Where where(final Condition cond) {
         return new Where(cond);
@@ -2212,7 +2212,7 @@ public class Filters {
      *
      * @param cond the grouping condition (must not be {@code null})
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, or an {@code ON}/{@code USING} condition (which cannot be nested inside a clause)
      */
     public static GroupBy groupBy(final Condition cond) {
         return new GroupBy(cond);
@@ -2230,7 +2230,7 @@ public class Filters {
      *
      * @param cond the condition for the {@code HAVING} clause (must not be {@code null})
      * @return a {@link Having} clause
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, or an {@code ON}/{@code USING} condition (which cannot be nested inside a clause)
      */
     public static Having having(final Condition cond) {
         return new Having(cond);
@@ -2477,7 +2477,7 @@ public class Filters {
      *
      * @param cond the ordering condition (must not be {@code null})
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, or an {@code ON}/{@code USING} condition (which cannot be nested inside a clause)
      */
     public static OrderBy orderBy(final Condition cond) {
         return new OrderBy(cond);

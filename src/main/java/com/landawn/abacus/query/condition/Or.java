@@ -53,12 +53,12 @@ import com.landawn.abacus.util.N;
  *     Filters.equal("status", "pending"),
  *     Filters.equal("status", "review")
  * );
- * // Results in: ((status = 'active') OR (status = 'pending') OR (status = 'review'))
+ * // SQL: ((status = 'active') OR (status = 'pending') OR (status = 'review'))
  *
  * // Build OR condition fluently
  * Or or2 = new Or(Filters.greaterThan("age", 65))
  *     .or(Filters.lessThan("age", 18));
- * // Results in: ((age > 65) OR (age < 18))
+ * // SQL: ((age > 65) OR (age < 18))
  * }</pre>
  *
  * @see Junction
@@ -92,7 +92,7 @@ public class Or extends Junction {
      *     Filters.equal("city", "Los Angeles"),
      *     Filters.equal("city", "Chicago")
      * );
-     * // Results in: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
+     * // SQL: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
      *
      * // Complex OR with different condition types
      * Or complexOr = new Or(
@@ -100,12 +100,13 @@ public class Or extends Junction {
      *     Filters.like("email", "%@yahoo.com"),
      *     Filters.isNull("email")
      * );
-     * // Results in: ((email LIKE '%@gmail.com') OR (email LIKE '%@yahoo.com') OR (email IS NULL))
+     * // SQL: ((email LIKE '%@gmail.com') OR (email LIKE '%@yahoo.com') OR (email IS NULL))
      * }</pre>
      *
      * @param conditions the conditions to combine with OR logic; may be {@code null} or empty
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
-     *             element is a {@link Criteria} or has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.)
+     *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
+     *             or is an {@code ON}/{@code USING} condition that is not an {@link On} instance
      */
     public Or(final Condition... conditions) {
         super(Operator.OR, conditions);
@@ -127,19 +128,20 @@ public class Or extends Junction {
      *     conditions.add(Filters.like("name", "%" + name + "%"));
      * }
      * Or or = new Or(conditions);
-     * // Results in: ((name LIKE '%name1%') OR (name LIKE '%name2%') OR ...)
+     * // SQL: ((name LIKE '%name1%') OR (name LIKE '%name2%') OR ...)
      *
      * // Combining existing conditions (use an ordered collection to preserve iteration order)
      * List<Condition> statusConditions = new ArrayList<>();
      * statusConditions.add(Filters.equal("status", "active"));
      * statusConditions.add(Filters.equal("status", "pending"));
      * Or statusOr = new Or(statusConditions);
-     * // Results in: ((status = 'active') OR (status = 'pending'))
+     * // SQL: ((status = 'active') OR (status = 'pending'))
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with OR logic; may be {@code null} or empty
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
-     *             element is a {@link Criteria} or has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.)
+     *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
+     *             or is an {@code ON}/{@code USING} condition that is not an {@link On} instance
      */
     public Or(final Collection<? extends Condition> conditions) {
         super(Operator.OR, conditions);
@@ -173,7 +175,7 @@ public class Or extends Junction {
      * Or or = new Or(Filters.equal("type", "A"))
      *     .or(Filters.equal("type", "B"))
      *     .or(Filters.equal("type", "C"));
-     * // Results in: ((type = 'A') OR (type = 'B') OR (type = 'C'))
+     * // SQL: ((type = 'A') OR (type = 'B') OR (type = 'C'))
      *
      * // Add conditions conditionally
      * Or baseOr = new Or(Filters.equal("status", "active"));

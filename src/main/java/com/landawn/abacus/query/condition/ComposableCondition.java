@@ -64,7 +64,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      * <pre>{@code
      * Condition active = Filters.equal("status", "active");
      * Not notActive = ((ComposableCondition) active).not();
-     * // Renders as: NOT (status = 'active')
+     * // SQL: NOT (status = 'active')
      * }</pre>
      *
      * @return a new {@link Not} condition wrapping this condition
@@ -85,7 +85,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      * Condition age = Filters.greaterThan("age", 18);
      * Condition status = Filters.equal("status", "active");
      * And combined = ((ComposableCondition) age).and(status);
-     * // Renders as: ((age > 18) AND (status = 'active'))
+     * // SQL: ((age > 18) AND (status = 'active'))
      * }</pre>
      *
      * @param cond the condition to AND with this condition (must not be {@code null})
@@ -111,7 +111,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      * Condition admin = Filters.equal("role", "admin");
      * Condition manager = Filters.equal("role", "manager");
      * Or either = ((ComposableCondition) admin).or(manager);
-     * // Renders as: ((role = 'admin') OR (role = 'manager'))
+     * // SQL: ((role = 'admin') OR (role = 'manager'))
      * }</pre>
      *
      * @param cond the condition to OR with this condition (must not be {@code null})
@@ -142,7 +142,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      * Condition b = Filters.equal("type", "B");
      * Or exclusive = ((ComposableCondition) a).xor(b);
      * // Logically: (a AND NOT b) OR (NOT a AND b)
-     * // Renders as: ((((type = 'A') AND (NOT (type = 'B')))) OR (((NOT (type = 'A')) AND (type = 'B'))))
+     * // SQL: ((((type = 'A') AND (NOT (type = 'B')))) OR (((NOT (type = 'A')) AND (type = 'B'))))
      * // (each junction wraps every child in parentheses and the whole expression in an outer pair,
      * //  so the nested And inside the outer Or picks up an extra layer of parens)
      * }</pre>

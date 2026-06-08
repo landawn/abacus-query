@@ -80,7 +80,7 @@ package com.landawn.abacus.query.condition;
  * SubQuery laCustomers = Filters.subQuery("SELECT id, name FROM customers WHERE city='LA'");
  * Union union = new Union(laCustomers);
  * // When added to a query that already has "SELECT id, name FROM customers WHERE city='NY'":
- * // Results in: SELECT id, name FROM customers WHERE city='NY'
+ * // SQL: SELECT id, name FROM customers WHERE city='NY'
  * //             UNION
  * //             SELECT id, name FROM customers WHERE city='LA'
  * // If a customer appears in both result sets, they will appear only once

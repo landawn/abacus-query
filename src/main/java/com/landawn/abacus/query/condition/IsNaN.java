@@ -49,15 +49,15 @@ import com.landawn.abacus.query.Filters;
  * <pre>{@code
  * // Check if a calculation result is NaN
  * IsNaN calcCheck = new IsNaN("calculation_result");
- * // Generates: calculation_result IS NAN
+ * // SQL: calculation_result IS NAN
  * 
  * // Find rows with invalid calculations
  * IsNaN invalidRatio = new IsNaN("profit_ratio");
- * // Generates: profit_ratio IS NAN
+ * // SQL: profit_ratio IS NAN
  * 
  * // Check for failed mathematical operations
  * IsNaN mathError = new IsNaN("sqrt_result");
- * // Generates: sqrt_result IS NAN
+ * // SQL: sqrt_result IS NAN
  * 
  * // Combine with other validations
  * Or invalidNumeric = new Or(
@@ -67,10 +67,15 @@ import com.landawn.abacus.query.Filters;
  * );
  * }</pre>
  * 
- * @see IsNotNaN
- * @see IsNull
- * @see IsInfinite
+ * @see Binary
  * @see Is
+ * @see IsNot
+ * @see IsNull
+ * @see IsNotNull
+ * @see IsNotNaN
+ * @see IsInfinite
+ * @see IsNotInfinite
+ * @see Condition
  */
 public class IsNaN extends Is {
 
@@ -105,7 +110,7 @@ public class IsNaN extends Is {
      * <p><b>Usage Example:</b></p>
      * <pre>{@code
      * IsNaN tempCheck = new IsNaN("temperature");
-     * // Generates SQL: temperature IS NAN
+     * // SQL: temperature IS NAN
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null} or empty)

@@ -45,12 +45,12 @@ import java.util.Collection;
  * <pre>{@code
  * // Simple inner join
  * InnerJoin join1 = new InnerJoin("orders");
- * // Generates: INNER JOIN orders
+ * // SQL: INNER JOIN orders
  *
  * // Inner join with ON condition
  * InnerJoin join2 = new InnerJoin("orders o",
  *     new On("customers.id", "o.customer_id"));
- * // Generates: INNER JOIN orders o ON customers.id = o.customer_id
+ * // SQL: INNER JOIN orders o ON customers.id = o.customer_id
  *
  * // Join customers with their orders (only customers who have orders)
  * InnerJoin customerOrders = new InnerJoin("orders o",
@@ -58,7 +58,7 @@ import java.util.Collection;
  *         new On("c.id", "o.customer_id"),
  *         Filters.equal("o.status", "completed")
  *     ));
- * // Generates: INNER JOIN orders o ON ((ON c.id = o.customer_id) AND (o.status = 'completed'))
+ * // SQL: INNER JOIN orders o ON ((ON c.id = o.customer_id) AND (o.status = 'completed'))
  *
  * // Complex multi-condition join
  * InnerJoin complexJoin = new InnerJoin("inventory i",
@@ -67,12 +67,12 @@ import java.util.Collection;
  *         new On("p.warehouse_id", "i.warehouse_id"),
  *         Filters.greaterThan("i.quantity", 0)
  *     ));
- * // Generates: INNER JOIN inventory i ON ((ON p.product_id = i.product_id) AND (ON p.warehouse_id = i.warehouse_id) AND (i.quantity > 0))
+ * // SQL: INNER JOIN inventory i ON ((ON p.product_id = i.product_id) AND (ON p.warehouse_id = i.warehouse_id) AND (i.quantity > 0))
  *
  * // Using Expression for custom join logic
  * InnerJoin exprJoin = new InnerJoin("customers c",
  *     Filters.expr("orders.customer_id = c.id"));
- * // Generates: INNER JOIN customers c ON orders.customer_id = c.id
+ * // SQL: INNER JOIN customers c ON orders.customer_id = c.id
  * }</pre>
  * 
  * @see Join
@@ -104,11 +104,11 @@ public class InnerJoin extends Join {
      * <pre>{@code
      * // Simple join without explicit condition
      * InnerJoin join = new InnerJoin("products");
-     * // Generates: INNER JOIN products
+     * // SQL: INNER JOIN products
      *
      * // Join with table alias
      * InnerJoin aliasJoin = new InnerJoin("order_details od");
-     * // Generates: INNER JOIN order_details od
+     * // SQL: INNER JOIN order_details od
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
@@ -129,7 +129,7 @@ public class InnerJoin extends Join {
      * // Join orders with customers using ON
      * InnerJoin customerOrders = new InnerJoin("customers c",
      *     new On("orders.customer_id", "c.id"));
-     * // Generates: INNER JOIN customers c ON orders.customer_id = c.id
+     * // SQL: INNER JOIN customers c ON orders.customer_id = c.id
      *
      * // Join with composite key using multiple ON conditions
      * InnerJoin compositeJoin = new InnerJoin("order_items oi",
@@ -137,7 +137,7 @@ public class InnerJoin extends Join {
      *         new On("orders.id", "oi.order_id"),
      *         new On("orders.version", "oi.order_version")
      *     ));
-     * // Generates: INNER JOIN order_items oi ON ((ON orders.id = oi.order_id) AND (ON orders.version = oi.order_version))
+     * // SQL: INNER JOIN order_items oi ON ((ON orders.id = oi.order_id) AND (ON orders.version = oi.order_version))
      *
      * // Join with ON condition and additional filter conditions
      * InnerJoin filteredJoin = new InnerJoin("products p",
@@ -146,12 +146,12 @@ public class InnerJoin extends Join {
      *         Filters.equal("p.active", true),
      *         Filters.greaterThan("p.stock", 0)
      *     ));
-     * // Generates: INNER JOIN products p ON ((ON order_items.product_id = p.id) AND (p.active = true) AND (p.stock > 0))
+     * // SQL: INNER JOIN products p ON ((ON order_items.product_id = p.id) AND (p.active = true) AND (p.stock > 0))
      *
      * // Using Expression for custom join logic
      * InnerJoin exprJoin = new InnerJoin("customers c",
      *     Filters.expr("orders.customer_id = c.id"));
-     * // Generates: INNER JOIN customers c ON orders.customer_id = c.id
+     * // SQL: INNER JOIN customers c ON orders.customer_id = c.id
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -175,7 +175,7 @@ public class InnerJoin extends Join {
      * List<String> tables = Arrays.asList("orders o", "customers c");
      * InnerJoin multiJoin = new InnerJoin(tables,
      *     new On("o.customer_id", "c.id"));
-     * // Generates: INNER JOIN (orders o, customers c) ON o.customer_id = c.id
+     * // SQL: INNER JOIN (orders o, customers c) ON o.customer_id = c.id
      *
      * // Complex multi-table join with multiple ON conditions
      * List<String> entities = Arrays.asList("products p", "categories cat", "suppliers s");
@@ -184,12 +184,12 @@ public class InnerJoin extends Join {
      *         new On("p.category_id", "cat.id"),
      *         new On("p.supplier_id", "s.id")
      *     ));
-     * // Generates: INNER JOIN (products p, categories cat, suppliers s) ON ((ON p.category_id = cat.id) AND (ON p.supplier_id = s.id))
+     * // SQL: INNER JOIN (products p, categories cat, suppliers s) ON ((ON p.category_id = cat.id) AND (ON p.supplier_id = s.id))
      *
      * // Using Expression for multiple tables
      * InnerJoin exprMulti = new InnerJoin(tables,
      *     Filters.expr("o.customer_id = c.id AND o.status = 'active'"));
-     * // Generates: INNER JOIN (orders o, customers c) ON o.customer_id = c.id AND o.status = 'active'
+     * // SQL: INNER JOIN (orders o, customers c) ON o.customer_id = c.id AND o.status = 'active'
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

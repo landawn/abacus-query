@@ -44,25 +44,25 @@ import java.util.Collection;
  * <pre>{@code
  * // Simple CROSS JOIN - all combinations of products and colors
  * CrossJoin join = new CrossJoin("colors");
- * // Generates: CROSS JOIN colors
+ * // SQL: CROSS JOIN colors
  * // Each product will be paired with each color
  *
  * // CROSS JOIN multiple tables
  * List<String> tables = Arrays.asList("sizes", "colors");
  * CrossJoin multiJoin = new CrossJoin(tables, null);
- * // Generates: CROSS JOIN (sizes, colors)
+ * // SQL: CROSS JOIN (sizes, colors)
  * // Results in all combinations of products × sizes × colors
  *
  * // CROSS JOIN with condition (unusual but supported)
  * CrossJoin filtered = new CrossJoin("categories",
  *     Filters.equal("active", true));
- * // Generates: CROSS JOIN categories ON active = true
+ * // SQL: CROSS JOIN categories ON active = true
  * // Note: Functionally equivalent to INNER JOIN with the condition
  *
  * // CROSS JOIN with Expression
  * CrossJoin exprJoin = new CrossJoin("inventory",
  *     Filters.expr("quantity > 0"));
- * // Generates: CROSS JOIN inventory ON quantity > 0
+ * // SQL: CROSS JOIN inventory ON quantity > 0
  * }</pre>
  * 
  * @see Join
@@ -93,12 +93,12 @@ public class CrossJoin extends Join {
      * <pre>{@code
      * // Simple cross join - all combinations
      * CrossJoin join = new CrossJoin("colors");
-     * // Generates: CROSS JOIN colors
+     * // SQL: CROSS JOIN colors
      * // If products has 10 rows and colors has 5 rows, result has 50 rows
      *
      * // Cross join with table alias
      * CrossJoin aliasJoin = new CrossJoin("available_sizes s");
-     * // Generates: CROSS JOIN available_sizes s
+     * // SQL: CROSS JOIN available_sizes s
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
@@ -118,12 +118,12 @@ public class CrossJoin extends Join {
      * // Cross join with filter using Expression
      * CrossJoin filtered = new CrossJoin("products p",
      *     Filters.expr("p.category = 'electronics'"));
-     * // Generates: CROSS JOIN products p ON p.category = 'electronics'
+     * // SQL: CROSS JOIN products p ON p.category = 'electronics'
      *
      * // Cross join with ON condition (unusual usage)
      * CrossJoin withOn = new CrossJoin("inventory i",
      *     new On("w.id", "i.warehouse_id"));
-     * // Generates: CROSS JOIN inventory i ON w.id = i.warehouse_id
+     * // SQL: CROSS JOIN inventory i ON w.id = i.warehouse_id
      * // Note: This is functionally the same as INNER JOIN
      *
      * // Complex cross join with multiple conditions
@@ -132,7 +132,7 @@ public class CrossJoin extends Join {
      *         new On("i.warehouse_id", "w.id"),
      *         Filters.equal("i.active", true)
      *     ));
-     * // Generates: CROSS JOIN inventory i ON ((ON i.warehouse_id = w.id) AND (i.active = true))
+     * // SQL: CROSS JOIN inventory i ON ((ON i.warehouse_id = w.id) AND (i.active = true))
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -156,18 +156,18 @@ public class CrossJoin extends Join {
      * List<String> tables = Arrays.asList("sizes s", "colors c", "styles st");
      * CrossJoin join = new CrossJoin(tables,
      *     Filters.equal("active", true));
-     * // Generates: CROSS JOIN (sizes s, colors c, styles st) ON active = true
+     * // SQL: CROSS JOIN (sizes s, colors c, styles st) ON active = true
      *
      * // Using ON conditions (makes it similar to INNER JOIN)
      * List<String> relatedTables = Arrays.asList("table1 t1", "table2 t2");
      * CrossJoin withOn = new CrossJoin(relatedTables,
      *     new On("t1.id", "t2.t1_id"));
-     * // Generates: CROSS JOIN (table1 t1, table2 t2) ON t1.id = t2.t1_id
+     * // SQL: CROSS JOIN (table1 t1, table2 t2) ON t1.id = t2.t1_id
      *
      * // Using Expression for complex conditions
      * CrossJoin exprJoin = new CrossJoin(tables,
      *     Filters.expr("active = true AND archived = false"));
-     * // Generates: CROSS JOIN (sizes s, colors c, styles st) ON active = true AND archived = false
+     * // SQL: CROSS JOIN (sizes s, colors c, styles st) ON active = true AND archived = false
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

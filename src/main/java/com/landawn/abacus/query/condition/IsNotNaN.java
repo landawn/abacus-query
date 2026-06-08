@@ -48,15 +48,15 @@ package com.landawn.abacus.query.condition;
  * <pre>{@code
  * // Check if a calculation result is a valid number
  * IsNotNaN validResult = new IsNotNaN("calculation_result");
- * // Generates: calculation_result IS NOT NAN
+ * // SQL: calculation_result IS NOT NAN
  * 
  * // Filter for rows with valid profit ratios
  * IsNotNaN validRatio = new IsNotNaN("profit_ratio");
- * // Generates: profit_ratio IS NOT NAN
+ * // SQL: profit_ratio IS NOT NAN
  * 
  * // Ensure sensor readings are valid
  * IsNotNaN validReading = new IsNotNaN("temperature");
- * // Generates: temperature IS NOT NAN
+ * // SQL: temperature IS NOT NAN
  * 
  * // Combine with other validations for complete numeric validation
  * And validNumber = new And(
@@ -66,10 +66,15 @@ package com.landawn.abacus.query.condition;
  * );
  * }</pre>
  * 
- * @see IsNaN
- * @see IsNotNull
- * @see IsNotInfinite
+ * @see Binary
+ * @see Is
  * @see IsNot
+ * @see IsNull
+ * @see IsNotNull
+ * @see IsNaN
+ * @see IsInfinite
+ * @see IsNotInfinite
+ * @see Condition
  */
 public class IsNotNaN extends IsNot {
 
@@ -104,7 +109,7 @@ public class IsNotNaN extends IsNot {
      * <p><b>Usage Example:</b></p>
      * <pre>{@code
      * IsNotNaN tempCheck = new IsNotNaN("temperature");
-     * // Generates SQL: temperature IS NOT NAN
+     * // SQL: temperature IS NOT NAN
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null} or empty)

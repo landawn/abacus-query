@@ -456,10 +456,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected final Set<String> calledOpSet = new HashSet<>(); //NOSONAR
 
     /**
-     * Constructs a new AbstractQueryBuilder with the specified naming policy and SQL policy.
+     * Constructs a new AbstractQueryBuilder with the specified SQL dialect.
      *
-     * @param namingPolicy the naming policy for column names, defaults to SNAKE_CASE if null
-     * @param sqlPolicy the SQL generation policy, defaults to RAW_SQL if null
+     * @param sqlDialect the SQL dialect supplying the naming and SQL policies; a {@code null} naming policy on the
+     *                   dialect defaults to {@code SNAKE_CASE}, and a {@code null} SQL policy defaults to {@code RAW_SQL}
      */
     protected AbstractQueryBuilder(final SqlDialect sqlDialect) {
         final int activeBuilderCount = activeStringBuilderCounter.incrementAndGet();
@@ -472,11 +472,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     activeBuilderCount);
         }
 
+        this.sqlDialect = sqlDialect == null ? SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SQLPolicy.RAW_SQL).build() : sqlDialect;
+
         _sb = Objectory.createStringBuilder();
 
-        this.sqlDialect = sqlDialect;
-        _namingPolicy = sqlDialect.namingPolicy() == null ? NamingPolicy.SNAKE_CASE : sqlDialect.namingPolicy();
-        _sqlPolicy = sqlDialect.sqlPolicy() == null ? SQLPolicy.RAW_SQL : sqlDialect.sqlPolicy();
+        _namingPolicy = this.sqlDialect.namingPolicy() == null ? NamingPolicy.SNAKE_CASE : this.sqlDialect.namingPolicy();
+        _sqlPolicy = this.sqlDialect.sqlPolicy() == null ? SQLPolicy.RAW_SQL : this.sqlDialect.sqlPolicy();
 
         _handlerForNamedParameter = handlerForNamedParameter_TL.get();
 
@@ -926,7 +927,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Resets the named parameter handler to the default format.
-     * The default handler formats parameters as ":paramName".
+     * The default handler formats parameters as {@code :paramName}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1367,7 +1368,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr the FROM clause expression
      * @param entityClass the entity class for property mapping (may be {@code null}, in which case no entity-class association is performed)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final String expr, final Class<?> entityClass) {
@@ -3346,6 +3347,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param condToAppendForTrue the condition to append if condition is true
      * @param condToAppendForFalse the condition to append if condition is false
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if the selected condition (the one chosen by {@code condition}) is {@code null}
+     * @throws IllegalStateException if a clause emitted by the selected condition has already been set
      */
     @Beta
     public This appendIfOrElse(final boolean condition, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
@@ -3378,6 +3381,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param exprToAppendForTrue the expression to append if condition is true
      * @param exprToAppendForFalse the expression to append if condition is false
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if the selected expression (the one chosen by {@code condition}) is {@code null}, empty, or blank
      */
     @Beta
     public This appendIfOrElse(final boolean condition, final String exprToAppendForTrue, final String exprToAppendForFalse) {

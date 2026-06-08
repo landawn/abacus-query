@@ -45,14 +45,14 @@ import com.landawn.abacus.util.N;
  * // Single column join - joining employees and departments on department_id
  * Using using1 = new Using("department_id");
  * InnerJoin join1 = new InnerJoin("departments", using1);
- * // Generates: INNER JOIN departments USING (department_id)
+ * // SQL: INNER JOIN departments USING (department_id)
  * // Equivalent to: INNER JOIN departments ON employees.department_id = departments.department_id
  * // But returns only one department_id column instead of two
  *
  * // Multiple column join - composite key join
  * Using using2 = new Using("company_id", "branch_id");
  * LeftJoin join2 = new LeftJoin("branches", using2);
- * // Generates: LEFT JOIN branches USING (company_id, branch_id)
+ * // SQL: LEFT JOIN branches USING (company_id, branch_id)
  * // Equivalent to: LEFT JOIN branches ON companies.company_id = branches.company_id
  * //                                   AND companies.branch_id = branches.branch_id
  *
@@ -60,12 +60,12 @@ import com.landawn.abacus.util.N;
  * Set<String> commonColumns = new LinkedHashSet<>(Arrays.asList("tenant_id", "workspace_id"));
  * Using using3 = new Using(commonColumns);
  * RightJoin join3 = new RightJoin("workspaces", using3);
- * // Generates: RIGHT JOIN workspaces USING (tenant_id, workspace_id)
+ * // SQL: RIGHT JOIN workspaces USING (tenant_id, workspace_id)
  *
  * // Triple column join
  * Using using4 = new Using("org_id", "dept_id", "team_id");
  * InnerJoin join4 = new InnerJoin("assignments", using4);
- * // Generates: INNER JOIN assignments USING (org_id, dept_id, team_id)
+ * // SQL: INNER JOIN assignments USING (org_id, dept_id, team_id)
  * }</pre>
  * 
  * @see On
@@ -98,19 +98,19 @@ public class Using extends Cell {
      * // Simple join on employee_id
      * Using using = new Using("employee_id");
      * InnerJoin join = new InnerJoin("employees", using);
-     * // Generates: INNER JOIN employees USING (employee_id)
+     * // SQL: INNER JOIN employees USING (employee_id)
      * // In query: SELECT * FROM orders INNER JOIN employees USING (employee_id)
      *
      * // Composite key join with three columns
      * Using multiColumn = new Using("company_id", "department_id", "team_id");
      * LeftJoin leftJoin = new LeftJoin("assignments", multiColumn);
-     * // Generates: LEFT JOIN assignments USING (company_id, department_id, team_id)
+     * // SQL: LEFT JOIN assignments USING (company_id, department_id, team_id)
      * // In query: SELECT * FROM projects LEFT JOIN assignments USING (company_id, department_id, team_id)
      *
      * // Two-column join
      * Using twoCol = new Using("user_id", "account_id");
      * RightJoin rightJoin = new RightJoin("accounts", twoCol);
-     * // Generates: RIGHT JOIN accounts USING (user_id, account_id)
+     * // SQL: RIGHT JOIN accounts USING (user_id, account_id)
      * }</pre>
      *
      * @param columnNames variable number of column names to join on.
@@ -133,7 +133,7 @@ public class Using extends Cell {
      * List<String> sharedColumns = Arrays.asList("customer_id", "order_date");
      * Using using = new Using(sharedColumns);
      * InnerJoin join = new InnerJoin("customers", using);
-     * // Generates: INNER JOIN customers USING (customer_id, order_date)
+     * // SQL: INNER JOIN customers USING (customer_id, order_date)
      *
      * // Multi-tenant join pattern
      * Set<String> tenantColumns = new LinkedHashSet<>();
@@ -141,13 +141,13 @@ public class Using extends Cell {
      * tenantColumns.add("organization_id");
      * Using tenantUsing = new Using(tenantColumns);
      * LeftJoin leftJoin = new LeftJoin("organizations", tenantUsing);
-     * // Generates: LEFT JOIN organizations USING (tenant_id, organization_id)
+     * // SQL: LEFT JOIN organizations USING (tenant_id, organization_id)
      *
      * // List-based column specification
      * List<String> joinCols = Arrays.asList("region_id", "country_id", "state_id");
      * Using locationUsing = new Using(joinCols);
      * RightJoin rightJoin = new RightJoin("locations", locationUsing);
-     * // Generates: RIGHT JOIN locations USING (region_id, country_id, state_id)
+     * // SQL: RIGHT JOIN locations USING (region_id, country_id, state_id)
      * }</pre>
      *
      * @param columnNames collection of column names to join on. Must not be {@code null} or empty, and individual

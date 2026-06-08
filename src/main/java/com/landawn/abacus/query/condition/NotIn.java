@@ -43,17 +43,17 @@ import java.util.Collection;
  * // Exclude inactive statuses
  * List<String> inactiveStatuses = Arrays.asList("deleted", "archived", "suspended");
  * NotIn condition = new NotIn("status", inactiveStatuses);
- * // Results in: status NOT IN ('deleted', 'archived', 'suspended')
+ * // SQL: status NOT IN ('deleted', 'archived', 'suspended')
  *
  * // Exclude specific department IDs
  * Set<Integer> excludedDepts = new HashSet<>(Arrays.asList(10, 20, 30));
  * NotIn deptCondition = new NotIn("department_id", excludedDepts);
- * // Results in: department_id NOT IN (10, 20, 30)
+ * // SQL: department_id NOT IN (10, 20, 30)
  *
  * // Exclude test users
  * List<String> testEmails = Arrays.asList("test@example.com", "demo@example.com");
  * NotIn emailCondition = new NotIn("email", testEmails);
- * // Results in: email NOT IN ('test@example.com', 'demo@example.com')
+ * // SQL: email NOT IN ('test@example.com', 'demo@example.com')
  * }</pre>
  *
  * @see AbstractIn
@@ -80,12 +80,12 @@ public class NotIn extends AbstractIn {
      * // Exclude specific product categories
      * List<String> excludedCategories = Arrays.asList("discontinued", "internal", "test");
      * NotIn notIn = new NotIn("category", excludedCategories);
-     * // Generates: category NOT IN ('discontinued', 'internal', 'test')
+     * // SQL: category NOT IN ('discontinued', 'internal', 'test')
      *
      * // Exclude test users by ID
      * Set<Integer> testUserIds = new HashSet<>(Arrays.asList(1, 2, 999));
      * NotIn excludeUsers = new NotIn("user_id", testUserIds);
-     * // Generates: user_id NOT IN (1, 2, 999)
+     * // SQL: user_id NOT IN (1, 2, 999)
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null} or empty)

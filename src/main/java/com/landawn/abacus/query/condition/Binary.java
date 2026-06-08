@@ -95,12 +95,12 @@ public class Binary extends ComposableCondition {
      * <pre>{@code
      * // Create a custom binary condition
      * Binary condition = new Binary("price", Operator.GREATER_THAN, 100.0);
-     * // SQL fragment: price > 100.0
+     * // SQL: price > 100.0
      *
      * // With a subquery as value
      * SubQuery subQuery = Filters.subQuery("SELECT MIN(price) FROM products");
      * Binary minPrice = new Binary("price", Operator.GREATER_THAN_OR_EQUAL, subQuery);
-     * // SQL fragment: price >= (SELECT MIN(price) FROM products)
+     * // SQL: price >= (SELECT MIN(price) FROM products)
      * }</pre>
      * 
      * @param propName the property name to compare (must not be {@code null} or empty)
@@ -182,6 +182,8 @@ public class Binary extends ComposableCondition {
      *       {@code IS NOT NULL} with no bind parameter.</li>
      *   <li>If the operator is {@code null} (only possible for an uninitialized instance), an empty list
      *       is returned.</li>
+     *   <li>If the operator is {@code IN} or {@code NOT IN} and the value is a {@link Collection}, each element is
+     *       added as a parameter; any element that is itself a {@link Condition} has its own parameters spliced in.</li>
      *   <li>If the value is a {@link Condition} (e.g., a subquery), the subquery's own parameters are returned.</li>
      *   <li>Otherwise, a single-element list containing the value is returned.</li>
      * </ul>
@@ -198,8 +200,8 @@ public class Binary extends ComposableCondition {
      *
      * // Subquery value -> the subquery's own parameters
      * SubQuery sub = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
-     * Binary in = new Equal("userId", sub);
-     * List<Object> p3 = in.getParameters();   // [true] (the subquery's params)
+     * Binary eqSub = new Equal("userId", sub);
+     * List<Object> p3 = eqSub.getParameters();   // [true] (the subquery's params)
      * }</pre>
      *
      * @return an immutable list of parameter values; never {@code null}

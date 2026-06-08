@@ -47,11 +47,11 @@ import com.landawn.abacus.util.N;
  * <pre>{@code
  * // Simple column equality join
  * On on1 = new On("orders.customer_id", "customers.id");
- * // Generates: ON orders.customer_id = customers.id
+ * // SQL: ON orders.customer_id = customers.id
  *
  * // Used in a JOIN
  * InnerJoin join = new InnerJoin("customers", on1);
- * // Generates: INNER JOIN customers ON orders.customer_id = customers.id
+ * // SQL: INNER JOIN customers ON orders.customer_id = customers.id
  *
  * // Complex condition combining multiple expressions in a single ON
  * On complexJoin = new On(Filters.and(
@@ -59,7 +59,7 @@ import com.landawn.abacus.util.N;
  *     Filters.expr("o.order_date > c.registration_date")
  * ));
  * LeftJoin leftJoin = new LeftJoin("customers c", complexJoin);
- * // Generates: LEFT JOIN customers c ON ((o.customer_id = c.id) AND (o.order_date > c.registration_date))
+ * // SQL: LEFT JOIN customers c ON ((o.customer_id = c.id) AND (o.order_date > c.registration_date))
  *
  * // Multiple join conditions using Map (composite key)
  * Map<String, String> joinMap = new LinkedHashMap<>();
@@ -75,7 +75,7 @@ import com.landawn.abacus.util.N;
  *     Filters.equal("categories.active", true)
  * ));
  * RightJoin rightJoin = new RightJoin("categories", filteredJoin);
- * // Generates: RIGHT JOIN categories ON ((products.category_id = categories.id) AND (categories.active = true))
+ * // SQL: RIGHT JOIN categories ON ((products.category_id = categories.id) AND (categories.active = true))
  * }</pre>
  * 
  * @see Using
@@ -109,7 +109,7 @@ public class On extends Cell {
      * // Simple equality using Expression
      * On on1 = new On(Filters.expr("a.id = b.a_id"));
      * InnerJoin join1 = new InnerJoin("table_b b", on1);
-     * // Generates: INNER JOIN table_b b ON a.id = b.a_id
+     * // SQL: INNER JOIN table_b b ON a.id = b.a_id
      *
      * // Complex multi-condition join
      * Condition complexCondition = Filters.and(
@@ -119,7 +119,7 @@ public class On extends Cell {
      * );
      * On on2 = new On(complexCondition);
      * LeftJoin join2 = new LeftJoin("customers", on2);
-     * // Generates: LEFT JOIN customers ON ((orders.customer_id = customers.id) AND ... AND (customers.status != 'DELETED'))
+     * // SQL: LEFT JOIN customers ON ((orders.customer_id = customers.id) AND ... AND (customers.status != 'DELETED'))
      *
      * // Range join for salary bands
      * Condition rangeJoin = Filters.and(
@@ -128,7 +128,7 @@ public class On extends Cell {
      * );
      * On on3 = new On(rangeJoin);
      * InnerJoin join3 = new InnerJoin("salary_grades", on3);
-     * // Generates: INNER JOIN salary_grades ON ((emp.salary >= salary_grades.min_salary) AND (emp.salary <= salary_grades.max_salary))
+     * // SQL: INNER JOIN salary_grades ON ((emp.salary >= salary_grades.min_salary) AND (emp.salary <= salary_grades.max_salary))
      * }</pre>
      *
      * @param cond the join condition. Any non-clause, non-{@code null} condition is allowed, including
@@ -161,17 +161,17 @@ public class On extends Cell {
      * // Basic foreign key join
      * On on1 = new On("orders.customer_id", "customers.id");
      * InnerJoin join1 = new InnerJoin("customers", on1);
-     * // Generates: INNER JOIN customers ON orders.customer_id = customers.id
+     * // SQL: INNER JOIN customers ON orders.customer_id = customers.id
      *
      * // Join with table aliases
      * On on2 = new On("o.product_id", "p.id");
      * LeftJoin join2 = new LeftJoin("products p", on2);
-     * // Generates: LEFT JOIN products p ON o.product_id = p.id
+     * // SQL: LEFT JOIN products p ON o.product_id = p.id
      *
      * // Self-join scenario
      * On on3 = new On("emp1.manager_id", "emp2.employee_id");
      * LeftJoin join3 = new LeftJoin("employees emp2", on3);
-     * // Generates: LEFT JOIN employees emp2 ON emp1.manager_id = emp2.employee_id
+     * // SQL: LEFT JOIN employees emp2 ON emp1.manager_id = emp2.employee_id
      * }</pre>
      *
      * @param leftPropName the column name from the first table (can include table name/alias)
@@ -196,7 +196,7 @@ public class On extends Cell {
      * compositeKey.put("order_items.customer_id", "orders.customer_id");
      * On on1 = new On(compositeKey);
      * InnerJoin join1 = new InnerJoin("orders", on1);
-     * // Generates: INNER JOIN orders ON ((order_items.order_id = orders.id)
+     * // SQL: INNER JOIN orders ON ((order_items.order_id = orders.id)
      * //                             AND (order_items.customer_id = orders.customer_id))
      *
      * // Multi-column natural key join
@@ -205,7 +205,7 @@ public class On extends Cell {
      * naturalKey.put("addresses.region_code", "countries.region_code");
      * On on2 = new On(naturalKey);
      * LeftJoin join2 = new LeftJoin("countries", on2);
-     * // Generates: LEFT JOIN countries ON ((addresses.country_code = countries.code)
+     * // SQL: LEFT JOIN countries ON ((addresses.country_code = countries.code)
      * //                                AND (addresses.region_code = countries.region_code))
      *
      * // Three-column composite join
@@ -214,7 +214,7 @@ public class On extends Cell {
      * tripleKey.put("t1.col2", "t2.col2");
      * tripleKey.put("t1.col3", "t2.col3");
      * On on3 = new On(tripleKey);
-     * // Generates: ON ((t1.col1 = t2.col1) AND (t1.col2 = t2.col2) AND (t1.col3 = t2.col3))
+     * // SQL: ON ((t1.col1 = t2.col1) AND (t1.col2 = t2.col2) AND (t1.col3 = t2.col3))
      * }</pre>
      *
      * @param propNamePair map of column pairs where the key is from the first table and the value is from the second

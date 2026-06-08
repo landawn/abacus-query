@@ -64,22 +64,22 @@ import com.landawn.abacus.util.Strings;
  * <pre>{@code
  * // Basic join (usually through subclasses)
  * Join join = new Join("orders");
- * // Generates: JOIN orders
+ * // SQL: JOIN orders
  *
  * // Join with ON condition using On class
  * Join joinWithCondition = new Join("orders o",
  *     new On("customers.id", "o.customer_id"));
- * // Generates: JOIN orders o ON customers.id = o.customer_id
+ * // SQL: JOIN orders o ON customers.id = o.customer_id
  *
  * // Join with Expression for custom conditions
  * Join exprJoin = new Join("orders o",
  *     Filters.expr("customers.id = o.customer_id"));
- * // Generates: JOIN orders o ON customers.id = o.customer_id
+ * // SQL: JOIN orders o ON customers.id = o.customer_id
  *
  * // Join multiple tables
  * Join multiJoin = new Join(Arrays.asList("orders o", "order_items oi"),
  *     new On("o.id", "oi.order_id"));
- * // Generates: JOIN (orders o, order_items oi) ON o.id = oi.order_id
+ * // SQL: JOIN (orders o, order_items oi) ON o.id = oi.order_id
  * }</pre>
  * 
  * @see InnerJoin
@@ -129,11 +129,11 @@ public class Join extends AbstractCondition {
      * <pre>{@code
      * // Simple join (rarely used directly)
      * Join join = new Join("products");
-     * // Generates: JOIN products
+     * // SQL: JOIN products
      *
      * // With alias
      * Join aliasJoin = new Join("product_categories pc");
-     * // Generates: JOIN product_categories pc
+     * // SQL: JOIN product_categories pc
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -166,12 +166,12 @@ public class Join extends AbstractCondition {
      * // Join with ON condition
      * Join orderJoin = new Join("orders o",
      *     new On("customers.id", "o.customer_id"));
-     * // Generates: JOIN orders o ON customers.id = o.customer_id
+     * // SQL: JOIN orders o ON customers.id = o.customer_id
      *
      * // Join with Expression for custom condition
      * Join exprJoin = new Join("orders o",
      *     Filters.expr("customers.id = o.customer_id"));
-     * // Generates: JOIN orders o ON customers.id = o.customer_id
+     * // SQL: JOIN orders o ON customers.id = o.customer_id
      *
      * // Join with complex condition using And
      * Join complexJoin = new Join("products p",
@@ -179,7 +179,7 @@ public class Join extends AbstractCondition {
      *         new On("categories.id", "p.category_id"),
      *         Filters.equal("p.active", true)
      *     ));
-     * // Generates: JOIN products p ON ((ON categories.id = p.category_id) AND (p.active = true))
+     * // SQL: JOIN products p ON ((ON categories.id = p.category_id) AND (p.active = true))
      * // Note: And wraps each child in parentheses and the whole junction in outer parentheses
      * }</pre>
      *
@@ -230,7 +230,7 @@ public class Join extends AbstractCondition {
      * List<String> tables = Arrays.asList("orders o", "customers c");
      * Join multiJoin = new Join(tables,
      *     new On("o.customer_id", "c.id"));
-     * // Generates: JOIN (orders o, customers c) ON o.customer_id = c.id
+     * // SQL: JOIN (orders o, customers c) ON o.customer_id = c.id
      *
      * // Join multiple tables with Expression
      * Join exprMultiJoin = new Join(tables,
@@ -238,7 +238,7 @@ public class Join extends AbstractCondition {
      *         Filters.expr("o.customer_id = c.id"),
      *         Filters.expr("o.status = 'active'")
      *     ));
-     * // Generates: JOIN (orders o, customers c) ON ((o.customer_id = c.id) AND (o.status = 'active'))
+     * // SQL: JOIN (orders o, customers c) ON ((o.customer_id = c.id) AND (o.status = 'active'))
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with

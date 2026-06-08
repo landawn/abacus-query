@@ -45,12 +45,12 @@ import java.util.Collection;
  * <pre>{@code
  * // Simple left join
  * LeftJoin join1 = new LeftJoin("orders");
- * // Generates: LEFT JOIN orders
+ * // SQL: LEFT JOIN orders
  *
  * // Left join with ON condition
  * LeftJoin customerOrders = new LeftJoin("orders o",
  *     new On("customers.id", "o.customer_id"));
- * // Generates: LEFT JOIN orders o ON customers.id = o.customer_id
+ * // SQL: LEFT JOIN orders o ON customers.id = o.customer_id
  *
  * // Find customers without orders using LEFT JOIN
  * LeftJoin noOrders = new LeftJoin("orders o",
@@ -64,12 +64,12 @@ import java.util.Collection;
  *         Filters.equal("oi.status", "active"),
  *         Filters.greaterThan("oi.quantity", 0)
  *     ));
- * // Generates: LEFT JOIN order_items oi ON ((ON o.id = oi.order_id) AND (oi.status = 'active') AND (oi.quantity > 0))
+ * // SQL: LEFT JOIN order_items oi ON ((ON o.id = oi.order_id) AND (oi.status = 'active') AND (oi.quantity > 0))
  *
  * // Using Expression for custom join logic
  * LeftJoin exprJoin = new LeftJoin("orders o",
  *     Filters.expr("customers.id = o.customer_id"));
- * // Generates: LEFT JOIN orders o ON customers.id = o.customer_id
+ * // SQL: LEFT JOIN orders o ON customers.id = o.customer_id
  * }</pre>
  * 
  * @see Join
@@ -101,11 +101,11 @@ public class LeftJoin extends Join {
      * <pre>{@code
      * // Simple left join without condition
      * LeftJoin join = new LeftJoin("departments");
-     * // Generates: LEFT JOIN departments
+     * // SQL: LEFT JOIN departments
      *
      * // Left join with table alias
      * LeftJoin aliasJoin = new LeftJoin("employee_departments ed");
-     * // Generates: LEFT JOIN employee_departments ed
+     * // SQL: LEFT JOIN employee_departments ed
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
@@ -126,12 +126,12 @@ public class LeftJoin extends Join {
      * // Join customers with their orders using ON
      * LeftJoin customerOrders = new LeftJoin("orders o",
      *     new On("customers.id", "o.customer_id"));
-     * // Generates: LEFT JOIN orders o ON customers.id = o.customer_id
+     * // SQL: LEFT JOIN orders o ON customers.id = o.customer_id
      *
      * // Find all employees with their departments
      * LeftJoin empDept = new LeftJoin("departments d",
      *     new On("employees.dept_id", "d.id"));
-     * // Generates: LEFT JOIN departments d ON employees.dept_id = d.id
+     * // SQL: LEFT JOIN departments d ON employees.dept_id = d.id
      *
      * // Complex join with ON condition and filtering
      * LeftJoin activeItems = new LeftJoin("order_items oi",
@@ -140,12 +140,12 @@ public class LeftJoin extends Join {
      *         Filters.equal("oi.status", "active"),
      *         Filters.greaterThan("oi.created_date", "2023-01-01")
      *     ));
-     * // Generates: LEFT JOIN order_items oi ON ((ON orders.id = oi.order_id) AND (oi.status = 'active') AND (oi.created_date > '2023-01-01'))
+     * // SQL: LEFT JOIN order_items oi ON ((ON orders.id = oi.order_id) AND (oi.status = 'active') AND (oi.created_date > '2023-01-01'))
      *
      * // Using Expression for custom join logic
      * LeftJoin exprJoin = new LeftJoin("orders o",
      *     Filters.expr("customers.id = o.customer_id AND o.amount > 100"));
-     * // Generates: LEFT JOIN orders o ON customers.id = o.customer_id AND o.amount > 100
+     * // SQL: LEFT JOIN orders o ON customers.id = o.customer_id AND o.amount > 100
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -171,12 +171,12 @@ public class LeftJoin extends Join {
      *         new On("c.id", "o.customer_id"),
      *         new On("o.id", "oi.order_id")
      *     ));
-     * // Generates: LEFT JOIN (orders o, order_items oi) ON ((ON c.id = o.customer_id) AND (ON o.id = oi.order_id))
+     * // SQL: LEFT JOIN (orders o, order_items oi) ON ((ON c.id = o.customer_id) AND (ON o.id = oi.order_id))
      *
      * // Using Expression for multiple tables
      * LeftJoin exprJoin = new LeftJoin(tables,
      *     Filters.expr("c.id = o.customer_id AND o.id = oi.order_id"));
-     * // Generates: LEFT JOIN (orders o, order_items oi) ON c.id = o.customer_id AND o.id = oi.order_id
+     * // SQL: LEFT JOIN (orders o, order_items oi) ON c.id = o.customer_id AND o.id = oi.order_id
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

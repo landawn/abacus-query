@@ -41,12 +41,12 @@ import java.util.Collection;
  * // Single column IN subquery - find orders from premium customers
  * SubQuery premiumCustomers = Filters.subQuery("SELECT customer_id FROM customers WHERE status = 'premium'");
  * InSubQuery condition = new InSubQuery("customer_id", premiumCustomers);
- * // Generates: customer_id IN (SELECT customer_id FROM customers WHERE status = 'premium')
+ * // SQL: customer_id IN (SELECT customer_id FROM customers WHERE status = 'premium')
  *
  * // Multiple columns IN subquery - find employees in specific department/location combinations
  * SubQuery validAssignments = Filters.subQuery("SELECT dept_id, location_id FROM allowed_assignments");
  * InSubQuery multiColumn = new InSubQuery(Arrays.asList("department_id", "location_id"), validAssignments);
- * // Generates: (department_id, location_id) IN (SELECT dept_id, location_id FROM allowed_assignments)
+ * // SQL: (department_id, location_id) IN (SELECT dept_id, location_id FROM allowed_assignments)
  * }</pre>
  *
  * @see AbstractInSubQuery
@@ -74,12 +74,12 @@ public class InSubQuery extends AbstractInSubQuery {
      * // Find all products in active categories
      * SubQuery activeCategories = Filters.subQuery("SELECT category_id FROM categories WHERE active = true");
      * InSubQuery condition = new InSubQuery("category_id", activeCategories);
-     * // Generates: category_id IN (SELECT category_id FROM categories WHERE active = true)
+     * // SQL: category_id IN (SELECT category_id FROM categories WHERE active = true)
      *
      * // Find employees in departments with high budgets
      * SubQuery richDepts = Filters.subQuery("SELECT dept_id FROM departments WHERE budget > 1000000");
      * InSubQuery condition2 = new InSubQuery("department_id", richDepts);
-     * // Generates: department_id IN (SELECT dept_id FROM departments WHERE budget > 1000000)
+     * // SQL: department_id IN (SELECT dept_id FROM departments WHERE budget > 1000000)
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null} or empty)
@@ -105,7 +105,7 @@ public class InSubQuery extends AbstractInSubQuery {
      *     "SELECT department_id, location_id FROM dept_locations WHERE active = 'Y'"
      * );
      * InSubQuery condition = new InSubQuery(columns, validCombinations);
-     * // Generates: (dept_id, loc_id) IN (SELECT department_id, location_id FROM dept_locations WHERE active = 'Y')
+     * // SQL: (dept_id, loc_id) IN (SELECT department_id, location_id FROM dept_locations WHERE active = 'Y')
      * }</pre>
      *
      * @param propNames the property names to check (must not be {@code null} or empty). Their order must match the

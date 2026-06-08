@@ -20,8 +20,8 @@ package com.landawn.abacus.query.condition;
  *
  * <p>NOT EXISTS is particularly useful for checking the absence of related records without
  * retrieving them. It can be more efficient than using NOT IN with large result sets
- * because it stops processing once it finds the first matching row, making it ideal for
- * non-existence checks.</p>
+ * because the database short-circuits to {@code false} as soon as a matching row is found,
+ * and it handles NULL values more predictably than NOT IN.</p>
  * 
  * <p>Key characteristics:</p>
  * <ul>

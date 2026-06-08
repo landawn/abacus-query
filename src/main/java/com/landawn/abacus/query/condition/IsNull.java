@@ -62,10 +62,15 @@ import com.landawn.abacus.query.Filters;
  * );
  * }</pre>
  * 
+ * @see Binary
+ * @see Is
+ * @see IsNot
  * @see IsNotNull
  * @see IsNaN
+ * @see IsNotNaN
  * @see IsInfinite
- * @see Is
+ * @see IsNotInfinite
+ * @see Condition
  */
 public class IsNull extends Is {
 
@@ -99,7 +104,7 @@ public class IsNull extends Is {
      * <p><b>Usage Example:</b></p>
      * <pre>{@code
      * IsNull birthdateCheck = new IsNull("birth_date");
-     * // Generates SQL: birth_date IS NULL
+     * // SQL: birth_date IS NULL
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null} or empty)

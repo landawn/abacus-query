@@ -44,15 +44,15 @@ package com.landawn.abacus.query.condition;
  * <pre>{@code
  * // Check if a calculated ratio is finite
  * IsNotInfinite finiteRatio = new IsNotInfinite("price_ratio");
- * // Generates: price_ratio IS NOT INFINITE
+ * // SQL: price_ratio IS NOT INFINITE
  * 
  * // Ensure measurement values are within finite range
  * IsNotInfinite validMeasurement = new IsNotInfinite("sensor_reading");
- * // Generates: sensor_reading IS NOT INFINITE
+ * // SQL: sensor_reading IS NOT INFINITE
  * 
  * // Filter for valid growth rates
  * IsNotInfinite validGrowth = new IsNotInfinite("growth_rate");
- * // Generates: growth_rate IS NOT INFINITE
+ * // SQL: growth_rate IS NOT INFINITE
  * 
  * // Combine with other conditions for complete validation
  * And validNumeric = new And(
@@ -62,10 +62,15 @@ package com.landawn.abacus.query.condition;
  * );
  * }</pre>
  * 
- * @see IsInfinite
- * @see IsNotNull
- * @see IsNotNaN
+ * @see Binary
+ * @see Is
  * @see IsNot
+ * @see IsNull
+ * @see IsNotNull
+ * @see IsNaN
+ * @see IsNotNaN
+ * @see IsInfinite
+ * @see Condition
  */
 public class IsNotInfinite extends IsNot {
 
@@ -99,7 +104,7 @@ public class IsNotInfinite extends IsNot {
      * <p><b>Usage Example:</b></p>
      * <pre>{@code
      * IsNotInfinite calcCheck = new IsNotInfinite("calculation_result");
-     * // Generates SQL: calculation_result IS NOT INFINITE
+     * // SQL: calculation_result IS NOT INFINITE
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null} or empty)

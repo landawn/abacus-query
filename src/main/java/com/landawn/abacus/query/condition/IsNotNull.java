@@ -49,10 +49,15 @@ package com.landawn.abacus.query.condition;
  * );
  * }</pre>
  * 
- * @see IsNull
- * @see IsNotNaN
- * @see IsNotInfinite
+ * @see Binary
+ * @see Is
  * @see IsNot
+ * @see IsNull
+ * @see IsNaN
+ * @see IsNotNaN
+ * @see IsInfinite
+ * @see IsNotInfinite
+ * @see Condition
  */
 public class IsNotNull extends IsNot {
 
@@ -86,7 +91,7 @@ public class IsNotNull extends IsNot {
      * <p><b>Usage Example:</b></p>
      * <pre>{@code
      * IsNotNull emailCheck = new IsNotNull("email");
-     * // Generates SQL: email IS NOT NULL
+     * // SQL: email IS NOT NULL
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null} or empty)

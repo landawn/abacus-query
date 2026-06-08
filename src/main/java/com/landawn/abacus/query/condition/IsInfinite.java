@@ -49,15 +49,15 @@ import com.landawn.abacus.query.Filters;
  * <pre>{@code
  * // Check if a calculation resulted in infinity
  * IsInfinite overflowCheck = new IsInfinite("growth_rate");
- * // Generates: growth_rate IS INFINITE
+ * // SQL: growth_rate IS INFINITE
  * 
  * // Find records where division might have produced infinity
  * IsInfinite divisionCheck = new IsInfinite("calculated_ratio");
- * // Generates: calculated_ratio IS INFINITE
+ * // SQL: calculated_ratio IS INFINITE
  * 
  * // Identify problematic calculations
  * IsInfinite calcError = new IsInfinite("risk_score");
- * // Generates: risk_score IS INFINITE
+ * // SQL: risk_score IS INFINITE
  * 
  * // Combine with other checks for comprehensive validation
  * Or invalidValue = new Or(
@@ -66,10 +66,15 @@ import com.landawn.abacus.query.Filters;
  * );
  * }</pre>
  * 
- * @see IsNotInfinite
- * @see IsNull
- * @see IsNaN
+ * @see Binary
  * @see Is
+ * @see IsNot
+ * @see IsNull
+ * @see IsNotNull
+ * @see IsNaN
+ * @see IsNotNaN
+ * @see IsNotInfinite
+ * @see Condition
  */
 public class IsInfinite extends Is {
 
@@ -106,7 +111,7 @@ public class IsInfinite extends Is {
      * <p><b>Usage Example:</b></p>
      * <pre>{@code
      * IsInfinite rateCheck = new IsInfinite("interest_rate");
-     * // Generates SQL: interest_rate IS INFINITE
+     * // SQL: interest_rate IS INFINITE
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null} or empty)

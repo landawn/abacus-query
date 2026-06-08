@@ -99,7 +99,8 @@ public abstract class Clause extends Cell {
      *                 typically a clause operator such as {@code WHERE}, {@code GROUP_BY}, etc.
      * @param cond the condition to wrap (must not be {@code null})
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a {@link Criteria}, another clause
+     *         (e.g. {@code WHERE}, {@code HAVING}), or an {@code ON}/{@code USING} condition (which cannot be nested inside a clause)
      */
     public Clause(final Operator operator, final Condition cond) {
         super(operator, validateClauseOperand(operator, cond));

@@ -52,11 +52,11 @@ import com.landawn.abacus.util.N;
  *     Filters.greaterThan("age", 18),
  *     Filters.lessThan("age", 65)
  * );
- * // Results in: ((status = 'active') AND (age > 18) AND (age < 65))
+ * // SQL: ((status = 'active') AND (age > 18) AND (age < 65))
  *
  * // Chain additional conditions
  * And extended = and.and(Filters.equal("country", "USA"));
- * // Results in: ((status = 'active') AND (age > 18) AND (age < 65) AND (country = 'USA'))
+ * // SQL: ((status = 'active') AND (age > 18) AND (age < 65) AND (country = 'USA'))
  *
  * // Create from a collection
  * List<Condition> conditions = Arrays.asList(
@@ -92,7 +92,7 @@ public class And extends Junction {
      *     Filters.equal("department", "Sales"),
      *     Filters.greaterThanOrEqual("salary", 50000)
      * );
-     * // Results in: ((department = 'Sales') AND (salary >= 50000))
+     * // SQL: ((department = 'Sales') AND (salary >= 50000))
      *
      * // Complex AND with multiple conditions
      * And complex = new And(
@@ -101,12 +101,13 @@ public class And extends Junction {
      *     Filters.in("role", Arrays.asList("Manager", "Director")),
      *     Filters.isNotNull("email")
      * );
-     * // Results in: ((status = 'active') AND (age BETWEEN 25 AND 65) AND (role IN ('Manager', 'Director')) AND (email IS NOT NULL))
+     * // SQL: ((status = 'active') AND (age BETWEEN 25 AND 65) AND (role IN ('Manager', 'Director')) AND (email IS NOT NULL))
      * }</pre>
      *
      * @param conditions the conditions to combine with AND logic; may be {@code null} or empty
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
-     *             element is a {@link Criteria} or has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.)
+     *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
+     *             or is an {@code ON}/{@code USING} condition that is not an {@link On} instance
      */
     public And(final Condition... conditions) {
         super(Operator.AND, conditions);
@@ -134,7 +135,8 @@ public class And extends Junction {
      *
      * @param conditions the collection of conditions to combine with AND logic; may be {@code null} or empty
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
-     *             element is a {@link Criteria} or has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.)
+     *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
+     *             or is an {@code ON}/{@code USING} condition that is not an {@link On} instance
      */
     public And(final Collection<? extends Condition> conditions) {
         super(Operator.AND, conditions);
@@ -168,7 +170,7 @@ public class And extends Junction {
      *     .and(Filters.greaterThan("score", 80))
      *     .and(Filters.lessThan("attempts", 3))
      *     .and(Filters.equal("verified", true));
-     * // Results in: ((status = 'active') AND (score > 80) AND (attempts < 3) AND (verified = true))
+     * // SQL: ((status = 'active') AND (score > 80) AND (attempts < 3) AND (verified = true))
      *
      * // Original 'and' is unchanged
      * // extended is a new instance with all conditions

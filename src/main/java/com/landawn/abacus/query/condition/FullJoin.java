@@ -39,7 +39,7 @@ import java.util.Collection;
  * // Full join to see all users and all orders
  * FullJoin join = new FullJoin("orders",
  *     new On("users.id", "orders.user_id"));
- * // Generates: FULL JOIN orders ON users.id = orders.user_id
+ * // SQL: FULL JOIN orders ON users.id = orders.user_id
  * // Returns:
  * // - Users with orders (matched records)
  * // - Users without orders (NULLs for order columns)
@@ -56,7 +56,7 @@ import java.util.Collection;
  *         new On("internal_data.id", "e.id"),
  *         Filters.greaterThan("e.updated_date", "2024-01-01")
  *     ));
- * // Generates: FULL JOIN external_data e ON ((ON internal_data.id = e.id) AND (e.updated_date > '2024-01-01'))
+ * // SQL: FULL JOIN external_data e ON ((ON internal_data.id = e.id) AND (e.updated_date > '2024-01-01'))
  * }</pre>
  * 
  * @see Join
@@ -88,11 +88,11 @@ public class FullJoin extends Join {
      * <pre>{@code
      * // Simple full join without condition
      * FullJoin join = new FullJoin("departments");
-     * // Generates: FULL JOIN departments
+     * // SQL: FULL JOIN departments
      *
      * // Full join with table alias
      * FullJoin aliasJoin = new FullJoin("employee_departments ed");
-     * // Generates: FULL JOIN employee_departments ed
+     * // SQL: FULL JOIN employee_departments ed
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
@@ -113,12 +113,12 @@ public class FullJoin extends Join {
      * // Join employees with departments using ON
      * FullJoin empDept = new FullJoin("departments d",
      *     new On("employees.dept_id", "d.id"));
-     * // Generates: FULL JOIN departments d ON employees.dept_id = d.id
+     * // SQL: FULL JOIN departments d ON employees.dept_id = d.id
      *
      * // Find all users and orders, showing orphaned records
      * FullJoin allData = new FullJoin("orders o",
      *     new On("users.id", "o.user_id"));
-     * // Generates: FULL JOIN orders o ON users.id = o.user_id
+     * // SQL: FULL JOIN orders o ON users.id = o.user_id
      *
      * // Complex join with ON condition and filtering
      * FullJoin reconcileData = new FullJoin("external_inventory ei",
@@ -127,12 +127,12 @@ public class FullJoin extends Join {
      *         Filters.equal("ei.active", true),
      *         Filters.greaterThan("ei.updated_date", "2023-01-01")
      *     ));
-     * // Generates: FULL JOIN external_inventory ei ON ((ON internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01'))
+     * // SQL: FULL JOIN external_inventory ei ON ((ON internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01'))
      *
      * // Using Expression for custom join logic
      * FullJoin exprJoin = new FullJoin("departments d",
      *     Filters.expr("employees.dept_id = d.id AND d.active = true"));
-     * // Generates: FULL JOIN departments d ON employees.dept_id = d.id AND d.active = true
+     * // SQL: FULL JOIN departments d ON employees.dept_id = d.id AND d.active = true
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -158,12 +158,12 @@ public class FullJoin extends Join {
      *         new On("d.id", "e.dept_id"),
      *         new On("d.id", "c.dept_id")
      *     ));
-     * // Generates: FULL JOIN (employees e, contractors c) ON ((ON d.id = e.dept_id) AND (ON d.id = c.dept_id))
+     * // SQL: FULL JOIN (employees e, contractors c) ON ((ON d.id = e.dept_id) AND (ON d.id = c.dept_id))
      *
      * // Using Expression for multiple tables
      * FullJoin exprJoin = new FullJoin(tables,
      *     Filters.expr("d.id = e.dept_id AND d.id = c.dept_id"));
-     * // Generates: FULL JOIN (employees e, contractors c) ON d.id = e.dept_id AND d.id = c.dept_id
+     * // SQL: FULL JOIN (employees e, contractors c) ON d.id = e.dept_id AND d.id = c.dept_id
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
