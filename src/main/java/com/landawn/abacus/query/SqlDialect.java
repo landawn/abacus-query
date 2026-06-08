@@ -9,7 +9,7 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 /**
- * Configuration that defines a SQL "dialect" for a {@link SqlBuilder.Factory}: the {@link NamingPolicy}
+ * Configuration that defines a SQL "dialect" for a {@link SqlBuilder.Dsl}: the {@link NamingPolicy}
  * used to translate property names into column names, and the {@link SQLPolicy} that controls the
  * parameter style (raw literals, positional {@code ?}, named {@code :name}, or iBATIS {@code #{name}}).
  *

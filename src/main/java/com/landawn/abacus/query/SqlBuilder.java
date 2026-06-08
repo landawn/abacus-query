@@ -61,7 +61,7 @@ import com.landawn.abacus.util.u.Optional;
  * <p>Instances are not thread-safe; create a new builder per thread or per query.
  * Always call {@code build()} to finalize construction and release internal resources.
  *
- * <p>Use one of the predefined {@link Factory} constants based on the desired parameter style and naming
+ * <p>Use one of the predefined {@link Dsl} constants based on the desired parameter style and naming
  * convention. The constant name encodes both the parameter style and the identifier naming policy. The
  * parameter style is given by a leading {@code P} (positional {@code ?}), {@code N} (named {@code :name}),
  * or {@code M} (MyBatis/iBATIS {@code #{name}}); the raw/un-parameterized family (which inlines literal
@@ -73,7 +73,7 @@ import com.landawn.abacus.util.u.Optional;
  * The raw-SQL ({@code *CSB}) family is deprecated due to SQL-injection risk; the MyBatis-style ({@code M*})
  * family is also deprecated &mdash; prefer the named ({@code N*}) family instead.
  * <table border="1">
- *   <caption>Predefined SqlBuilder.Factory constants</caption>
+ *   <caption>Predefined SqlBuilder.Dsl constants</caption>
  *   <tr><th>Constant</th><th>Parameters</th><th>Naming</th><th>Example</th></tr>
  *   <tr><td>{@link #SCSB}</td><td>inlined values (deprecated)</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = 1}</td></tr>
  *   <tr><td>{@link #ACSB}</td><td>inlined values (deprecated)</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = 1}</td></tr>
@@ -127,49 +127,49 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
     /**
      * Parameterized-SQL builder factory ({@code ?} placeholders) that leaves property/column names unchanged.
      */
-    public static final SqlBuilder.Factory PSB = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl PSB = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.NO_CHANGE).sqlPolicy(SQLPolicy.PARAMETERIZED_SQL).build());
 
     /**
      * Parameterized-SQL builder factory ({@code ?} placeholders) with {@code snake_case} naming.
      */
-    public static final SqlBuilder.Factory PSC = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl PSC = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SQLPolicy.PARAMETERIZED_SQL).build());
 
     /**
      * Parameterized-SQL builder factory ({@code ?} placeholders) with {@code UPPER_CASE_WITH_UNDERSCORE} naming.
      */
-    public static final SqlBuilder.Factory PAC = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl PAC = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SQLPolicy.PARAMETERIZED_SQL).build());
 
     /**
      * Parameterized-SQL builder factory ({@code ?} placeholders) with {@code lowerCamelCase} naming.
      */
-    public static final SqlBuilder.Factory PLC = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl PLC = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SQLPolicy.PARAMETERIZED_SQL).build());
 
     /**
      * Named-SQL builder factory ({@code :name} placeholders) that leaves property/column names unchanged.
      */
-    public static final SqlBuilder.Factory NSB = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl NSB = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.NO_CHANGE).sqlPolicy(SQLPolicy.NAMED_SQL).build());
 
     /**
      * Named-SQL builder factory ({@code :name} placeholders) with {@code snake_case} naming.
      */
-    public static final SqlBuilder.Factory NSC = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl NSC = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SQLPolicy.NAMED_SQL).build());
 
     /**
      * Named-SQL builder factory ({@code :name} placeholders) with {@code UPPER_CASE_WITH_UNDERSCORE} naming.
      */
-    public static final SqlBuilder.Factory NAC = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl NAC = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SQLPolicy.NAMED_SQL).build());
 
     /**
      * Named-SQL builder factory ({@code :name} placeholders) with {@code lowerCamelCase} naming.
      */
-    public static final SqlBuilder.Factory NLC = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl NLC = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SQLPolicy.NAMED_SQL).build());
 
     /**
@@ -179,7 +179,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      *             Un-parameterized SQL is vulnerable to SQL injection attacks.
      */
     @Deprecated
-    public static final SqlBuilder.Factory SCSB = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl SCSB = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SQLPolicy.RAW_SQL).build());
 
     /**
@@ -189,7 +189,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      *             Un-parameterized SQL is vulnerable to SQL injection attacks.
      */
     @Deprecated
-    public static final SqlBuilder.Factory ACSB = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl ACSB = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SQLPolicy.RAW_SQL).build());
 
     /**
@@ -199,7 +199,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      *             Un-parameterized SQL is vulnerable to SQL injection attacks.
      */
     @Deprecated
-    public static final SqlBuilder.Factory LCSB = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl LCSB = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SQLPolicy.RAW_SQL).build());
     /**
      * iBATIS/MyBatis-SQL builder factory ({@code #{name}} placeholders) that leaves property/column names unchanged.
@@ -208,7 +208,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      *             Note: Switching from MSB to NSB changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
-    public static final SqlBuilder.Factory MSB = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl MSB = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.NO_CHANGE).sqlPolicy(SQLPolicy.IBATIS_SQL).build());
 
     /**
@@ -218,7 +218,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      *             Note: Switching from MSC to NSC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
-    public static final SqlBuilder.Factory MSC = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl MSC = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SQLPolicy.IBATIS_SQL).build());
 
     /**
@@ -228,7 +228,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      *             Note: Switching from MAC to NAC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
-    public static final SqlBuilder.Factory MAC = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl MAC = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SQLPolicy.IBATIS_SQL).build());
 
     /**
@@ -238,7 +238,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      *             Note: Switching from MLC to NLC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
-    public static final SqlBuilder.Factory MLC = new SqlBuilder.Factory(
+    public static final SqlBuilder.Dsl MLC = new SqlBuilder.Dsl(
             SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SQLPolicy.IBATIS_SQL).build());
 
     // TODO performance goal: 80% cases (or maybe SQL.length < 1024?) can be composed in 0.1 millisecond. 0.01 millisecond will be fantastic if possible.
@@ -483,16 +483,20 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
     /**
      * Entry point for building SQL statements with a fixed {@link SqlDialect} (naming policy + parameter style).
      *
+     * <p>
+     * DSL = a specialized language/API for expressing one kind of task clearly
+     * </p>
+     *
      * <p>Each predefined constant on {@link SqlBuilder} (e.g. {@link #PSC}, {@link #NSC}, {@link #SCSB}) is a
-     * {@code Factory} bound to a specific dialect. Call one of the statement methods &mdash; {@code insert},
+     * {@code Dsl} bound to a specific dialect. Call one of the statement methods &mdash; {@code insert},
      * {@code select}, {@code update}, {@code deleteFrom}, {@code count}, etc. &mdash; to obtain a fresh
-     * {@link SqlBuilder} configured for that operation. Factory instances are immutable and thread-safe; the
+     * {@link SqlBuilder} configured for that operation. Dsl instances are immutable and thread-safe; the
      * {@link SqlBuilder} instances they produce are not.</p>
      */
-    public static final class Factory {
+    public static final class Dsl {
         private final SqlDialect sqlDialect;
 
-        Factory(final SqlDialect sqlDialect) {
+        Dsl(final SqlDialect sqlDialect) {
             this.sqlDialect = sqlDialect;
         }
 

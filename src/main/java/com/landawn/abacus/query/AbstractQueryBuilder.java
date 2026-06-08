@@ -109,7 +109,7 @@ import com.landawn.abacus.util.stream.Stream;
  *                  .build().query();
  * }</pre>
  *
- * <p>The builder supports different naming policies through the predefined {@link SqlBuilder.Factory} constants:</p>
+ * <p>The builder supports different naming policies through the predefined {@link SqlBuilder.Dsl} constants:</p>
  * <ul>
  *   <li>{@link SqlBuilder#PSC} - Parameterized SQL with snake_case naming</li>
  *   <li>{@link SqlBuilder#PAC} - Parameterized SQL with SCREAMING_SNAKE_CASE naming</li>

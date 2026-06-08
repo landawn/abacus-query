@@ -298,8 +298,8 @@ public final class Selection {
          * @param func the function to apply the built selections to (e.g., {@code SqlBuilder.PSC::selectFrom}, {@code SqlBuilder.NSC::select}); must not be {@code null}
          * @return the SqlBuilder instance returned by the function
          * @throws IllegalArgumentException if {@code func} is {@code null}
-         * @see SqlBuilder.Factory#select(List)
-         * @see SqlBuilder.Factory#selectFrom(List)
+         * @see SqlBuilder.Dsl#select(List)
+         * @see SqlBuilder.Dsl#selectFrom(List)
          */
         @Beta
         public SqlBuilder apply(final Function<? super List<Selection>, SqlBuilder> func) {
