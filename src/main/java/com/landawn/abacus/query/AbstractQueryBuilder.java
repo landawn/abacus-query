@@ -46,6 +46,7 @@ import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.query.SqlDialect.IdentifierQuote;
+import com.landawn.abacus.query.SqlDialect.SQLPolicy;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
@@ -5655,18 +5656,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return false;
     }
 
-    /**
-     * Defines the SQL parameterization strategy used by query builders.
-     */
-    protected enum SQLPolicy {
-        /** Inline parameter values directly into the SQL string. */
-        RAW_SQL,
-        /** Use '?' placeholders and collect parameter values in a list. */
-        PARAMETERIZED_SQL,
-        /** Use ':paramName' named placeholders. */
-        NAMED_SQL,
-        /** Use '#{paramName}' iBATIS-style named placeholders. */
-        IBATIS_SQL
+    public SqlDialect SqlDialect() {
+        return sqlDialect;
     }
 
     /**
