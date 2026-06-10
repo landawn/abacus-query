@@ -398,9 +398,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected static final Map<NamingPolicy, Map<Class<?>, String>> fullSelectPartsPool = N.newHashMap(NamingPolicy.values().length);
 
+    // The cached select parts embed the dialect's identifier quote, so backtick dialects use a separate
+    // pool to avoid cross-dialect cache poisoning between dialects sharing the same naming policy.
+    protected static final Map<NamingPolicy, Map<Class<?>, String>> fullSelectPartsPoolForBacktick = N.newHashMap(NamingPolicy.values().length);
+
     static {
         for (final NamingPolicy np : NamingPolicy.values()) {
             fullSelectPartsPool.put(np, new ConcurrentHashMap<>());
+            fullSelectPartsPoolForBacktick.put(np, new ConcurrentHashMap<>());
         }
     }
 
@@ -424,6 +429,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected final Map<String, Integer> _namedParameterNameOccurrences = new HashMap<>(); //NOSONAR
 
+    // Every named-parameter name emitted into the SQL so far. Needed in addition to the occurrence
+    // counts because a generated "<base>_<n>" may collide with a property literally named "<base>_<n>".
+    protected final Set<String> _generatedNamedParameterNames = new HashSet<>(); //NOSONAR
+
     protected StringBuilder _sb; //NOSONAR
 
     protected Class<?> _entityClass; //NOSONAR
@@ -440,6 +449,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected String _selectModifier; //NOSONAR
 
+    // Buffer position right after the current segment's emitted SELECT keyword, or -1 if the
+    // current segment's SELECT has not been emitted yet (reset by set operations like union()).
+    protected int _selectKeywordEndIdx = -1; //NOSONAR
+
     protected Collection<String> _propOrColumnNames; //NOSONAR
 
     protected Map<String, String> _propOrColumnNameAliases; //NOSONAR
@@ -454,6 +467,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected boolean _hasFromBeenSet = false; //NOSONAR
     protected boolean _isForConditionOnly = false; //NOSONAR
+
+    // Whether a set(...) call has already written assignments, so chained set(...) calls know a
+    // leading comma is required (sniffing the buffer's last char breaks on trailing whitespace).
+    protected boolean _setListStarted = false; //NOSONAR
 
     protected final BiConsumer<StringBuilder, String> _handlerForNamedParameter; //NOSONAR
 
@@ -1202,6 +1219,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p>For better performance, this method should be called before {@code from}.
      * A {@code null} or empty value is silently ignored; a non-empty but blank value is rejected.</p>
      *
+     * <p>The modifier applies only to the current SELECT segment: starting a new set-operation
+     * segment ({@code union}, {@code unionAll}, {@code intersect}, {@code except}, {@code minus})
+     * clears it, so each segment can carry its own modifier.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*").selectModifier("TOP 10").from("account").build().query();
@@ -1211,7 +1232,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param selectModifier modifiers like {@code ALL}, {@code DISTINCT}, {@code DISTINCTROW},
      *                       {@code TOP}, etc.; may be {@code null} or empty (no-op)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if a select modifier has already been set
+     * @throws IllegalStateException if a select modifier has already been set for the current SELECT segment
      * @throws IllegalArgumentException if {@code selectModifier} is non-empty but blank (whitespace only)
      */
     public This selectModifier(final String selectModifier) {
@@ -1227,9 +1248,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _selectModifier = selectModifier;
 
-        final int selectIdx = _sb.indexOf(SK.SELECT);
-
-        if (selectIdx >= 0) {
+        // Insert into the buffer only if the current segment's SELECT keyword has already been emitted;
+        // otherwise the modifier is emitted by appendOperationBeforeFrom() when from(...) runs. A raw
+        // indexOf("SELECT") search must not be used here: it can match a column/table name containing
+        // "SELECT" (e.g. "SELECTED_FLAG") or the SELECT of an earlier set-operation segment.
+        if (_selectKeywordEndIdx >= 0) {
             final int len = _sb.length();
 
             _sb.append(_SPACE);
@@ -1238,7 +1261,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             final int newLength = _sb.length();
 
-            _sb.insert(selectIdx + SK.SELECT.length(), _sb.substring(len));
+            _sb.insert(_selectKeywordEndIdx, _sb.substring(len));
             _sb.setLength(newLength);
         }
 
@@ -1457,7 +1480,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         if (N.notEmpty(_propOrColumnNames)) {
             if (_entityClass != null && !withAlias && _propOrColumnNames == QueryUtil.getSelectPropNames(_entityClass, false, null)) { // NOSONAR
-                String fullSelectParts = fullSelectPartsPool.get(_namingPolicy).get(_entityClass);
+                final Map<Class<?>, String> fullSelectPartsCache = (_identifierQuote == '`' ? fullSelectPartsPoolForBacktick : fullSelectPartsPool)
+                        .get(_namingPolicy);
+                String fullSelectParts = fullSelectPartsCache.get(_entityClass);
 
                 if (Strings.isEmpty(fullSelectParts)) {
                     final StringBuilder sb = new StringBuilder();
@@ -1477,7 +1502,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     fullSelectParts = sb.toString();
 
-                    fullSelectPartsPool.get(_namingPolicy).put(_entityClass, fullSelectParts);
+                    fullSelectPartsCache.put(_entityClass, fullSelectParts);
                 }
 
                 _sb.append(fullSelectParts);
@@ -1609,6 +1634,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         _sb.append(_SELECT);
+        _selectKeywordEndIdx = _sb.length();
         _sb.append(_SPACE);
 
         if (Strings.isNotEmpty(_selectModifier)) {
@@ -3862,6 +3888,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         calledOpSet.clear();
         _hasFromBeenSet = false;
         _tableAlias = null;
+        _selectModifier = null;
+        _selectKeywordEndIdx = -1;
 
         _sb.append(keyword);
 
@@ -3896,6 +3924,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         calledOpSet.clear();
         _hasFromBeenSet = false;
         _tableAlias = null;
+        _selectModifier = null;
+        _selectKeywordEndIdx = -1;
 
         _sb.append(keyword);
 
@@ -3915,8 +3945,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         final SP sp = sqlBuilder.build();
 
-        final String sql = uniquifySetOperationNamedParameters(sp.query(), sqlBuilder._namedParameterNameOccurrences, parentOccurrences);
+        final Set<String> childParameterNames = new HashSet<>(sqlBuilder._generatedNamedParameterNames);
+        final String sql = uniquifySetOperationNamedParameters(sp.query(), sqlBuilder._namedParameterNameOccurrences, parentOccurrences, childParameterNames);
         mergeNamedParameterOccurrences(sqlBuilder._namedParameterNameOccurrences);
+        _generatedNamedParameterNames.addAll(childParameterNames);
 
         if (N.notEmpty(sp.parameters())) {
             _parameters.addAll(sp.parameters());
@@ -3926,7 +3958,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     private String uniquifySetOperationNamedParameters(final String sql, final Map<String, Integer> childOccurrences,
-            final Map<String, Integer> parentOccurrences) {
+            final Map<String, Integer> parentOccurrences, final Set<String> childParameterNames) {
         if ((_sqlPolicy != SQLPolicy.NAMED_SQL && _sqlPolicy != SQLPolicy.IBATIS_SQL) || N.isEmpty(childOccurrences) || N.isEmpty(parentOccurrences)) {
             return sql;
         }
@@ -3943,10 +3975,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             for (int i = entry.getValue(); i > 0; i--) {
                 final String oldName = indexedNamedParameterName(name, i);
-                final String newName = indexedNamedParameterName(name, parentCount + i);
+
+                if (!childParameterNames.contains(oldName)) {
+                    continue; // this suffix was never emitted by the child (skipped due to a literal-name collision)
+                }
+
+                int suffix = parentCount + i;
+                String newName = indexedNamedParameterName(name, suffix);
+
+                // Bump past names already taken on either side, e.g. a property literally named "<base>_<n>".
+                while (_generatedNamedParameterNames.contains(newName) || childParameterNames.contains(newName)) {
+                    newName = indexedNamedParameterName(name, ++suffix);
+                }
 
                 result = _sqlPolicy == SQLPolicy.NAMED_SQL ? replaceNamedParameterName(result, oldName, newName)
                         : replaceIbatisParameterName(result, oldName, newName);
+
+                childParameterNames.remove(oldName);
+                childParameterNames.add(newName);
             }
         }
 
@@ -4128,8 +4174,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         init(false);
 
         // When set() is chained (called more than once), _sb already has SET content and
-        // its last char is not a space. We must prepend a comma before the next assignment list.
-        final boolean needsLeadingComma = !_sb.isEmpty() && _sb.charAt(_sb.length() - 1) != ' ';
+        // a comma must separate it from the next assignment list.
+        final boolean needsLeadingComma = _setListStarted;
+        _setListStarted = true;
 
         switch (_sqlPolicy) {
             case RAW_SQL:
@@ -4222,8 +4269,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         init(false);
 
         // When set() is chained (called more than once), _sb already has SET content and
-        // its last char is not a space. We must prepend a comma before the next assignment list.
-        final boolean needsLeadingComma = !_sb.isEmpty() && _sb.charAt(_sb.length() - 1) != ' ';
+        // a comma must separate it from the next assignment list.
+        final boolean needsLeadingComma = _setListStarted;
+        _setListStarted = true;
 
         switch (_sqlPolicy) {
             case RAW_SQL: {
@@ -4748,15 +4796,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@code :orderDate}, {@code :COUNT}) rather than placeholders with punctuation that most
      * named-parameter parsers (Spring, MyBatis, etc.) reject.
      * On the first occurrence of a simple name, returns it as-is. On subsequent occurrences,
-     * appends a numeric suffix (e.g., {@code "propName_2"}, {@code "propName_3"}).
+     * appends a numeric suffix (e.g., {@code "propName_2"}, {@code "propName_3"}). A candidate that
+     * is already taken — e.g. a generated {@code "id_2"} when a property is literally named
+     * {@code "id_2"} — is skipped, so no two placeholders in the SQL ever share a name.
      *
      * @param propName the property name to generate a parameter name for
      * @return the unique named parameter name
      */
     protected String nextNamedParameterName(final String propName) {
         final String sanitized = sanitizeNamedParameterName(propName);
-        final int occurrence = _namedParameterNameOccurrences.compute(sanitized, (k, v) -> v == null ? 1 : v + 1);
-        return occurrence == 1 ? sanitized : sanitized + "_" + occurrence;
+        int occurrence = _namedParameterNameOccurrences.compute(sanitized, (k, v) -> v == null ? 1 : v + 1);
+        String result = indexedNamedParameterName(sanitized, occurrence);
+
+        while (!_generatedNamedParameterNames.add(result)) {
+            occurrence = _namedParameterNameOccurrences.compute(sanitized, (k, v) -> v == null ? 1 : v + 1);
+            result = indexedNamedParameterName(sanitized, occurrence);
+        }
+
+        return result;
     }
 
     /**
@@ -4771,6 +4828,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         for (final Map.Entry<String, Integer> entry : _namedParameterNameOccurrences.entrySet()) {
             childBuilder._namedParameterNameOccurrences.merge(entry.getKey(), entry.getValue(), Math::max);
         }
+
+        childBuilder._generatedNamedParameterNames.addAll(_generatedNamedParameterNames);
     }
 
     /**
@@ -4779,6 +4838,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected final void adoptNamedParameterOccurrences(final AbstractQueryBuilder<?> childBuilder) {
         _namedParameterNameOccurrences.clear();
         _namedParameterNameOccurrences.putAll(childBuilder._namedParameterNameOccurrences);
+
+        _generatedNamedParameterNames.clear();
+        _generatedNamedParameterNames.addAll(childBuilder._generatedNamedParameterNames);
     }
 
     /**
@@ -5302,19 +5364,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Checks whether the array represents a single inline subquery rather than a list of column names.
-     * Returns {@code true} only when the array has exactly one element and that element contains
-     * both a {@code SELECT} and a {@code FROM} keyword (in that order).
+     * Checks whether the array represents a single inline query rather than a list of column names.
+     * Returns {@code true} when the array has exactly one element and that element either starts with
+     * the {@code SELECT} keyword (a FROM-less query such as {@code "SELECT 1"} is still a valid query),
+     * or contains both a {@code SELECT} and a {@code FROM} keyword (in that order).
      *
      * @param propOrColumnNames array of property or column names to check
-     * @return {@code true} if the array contains a single SELECT ... FROM subquery, {@code false} otherwise
+     * @return {@code true} if the array contains a single inline query, {@code false} otherwise
      */
     protected static boolean isSubQuery(final String... propOrColumnNames) {
         if (propOrColumnNames.length == 1) {
-            int index = SqlParser.indexOfWord(propOrColumnNames[0], SK.SELECT, 0, false);
+            final String query = propOrColumnNames[0].trim();
+            int index = SqlParser.indexOfWord(query, SK.SELECT, 0, false);
 
-            if (index >= 0) {
-                index = SqlParser.indexOfWord(propOrColumnNames[0], SK.FROM, index, false);
+            if (index == 0) {
+                return true;
+            }
+
+            if (index > 0) {
+                index = SqlParser.indexOfWord(query, SK.FROM, index, false);
 
                 return index >= 1;
             }
@@ -5656,7 +5724,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return false;
     }
 
-    public SqlDialect SqlDialect() {
+    /**
+     * Returns the {@link SqlDialect} this builder renders SQL with.
+     *
+     * @return the dialect (naming policy, parameter style and identifier quote) bound to this builder
+     */
+    public SqlDialect sqlDialect() {
         return sqlDialect;
     }
 

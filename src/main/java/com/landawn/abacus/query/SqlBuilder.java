@@ -45,6 +45,7 @@ import com.landawn.abacus.query.condition.NotIn;
 import com.landawn.abacus.query.condition.NotInSubQuery;
 import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.SubQuery;
+import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.Beans;
@@ -308,6 +309,14 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             _sb.append(_SPACE);
 
             appendCondition(clause.getCondition());
+        } else if (cond instanceof final Using using) {
+            // The inner expression of a Using condition already carries the required parentheses,
+            // e.g. "(employee_id)"; wrapping it again would produce invalid SQL like "USING ((employee_id))".
+            _sb.append(_SPACE);
+            _sb.append(using.operator().toString());
+            _sb.append(_SPACE);
+
+            appendCondition(using.getCondition());
         } else if (cond instanceof final Cell cell) {
             appendParenthesizedCondition(cell.operator(), cell.getCondition());
         } else if (cond instanceof final ComposableCell cell) {
@@ -527,6 +536,10 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
 
         private SqlBuilder createSqlBuilderInstance() {
             return new SqlBuilder(sqlDialect);
+        }
+
+        private NamingPolicy namingPolicy() {
+            return sqlDialect.namingPolicy() == null ? NamingPolicy.SNAKE_CASE : sqlDialect.namingPolicy();
         }
 
         /**
@@ -1503,7 +1516,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             N.checkArgNotNull(entityClass, SELECTION_PART_MSG);
 
             if (hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, NamingPolicy.SNAKE_CASE);
+                final List<String> selectTableNames = getSelectTableNames(entityClass, alias, excludedPropNames, namingPolicy());
                 return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
             }
 
@@ -1713,8 +1726,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         public SqlBuilder selectFrom(final List<Selection> multiSelects) {
             checkMultiSelects(multiSelects);
 
-            final NamingPolicy namingPolicy = NamingPolicy.SNAKE_CASE;
-            final String fromClause = getFromClause(multiSelects, namingPolicy);
+            final String fromClause = getFromClause(multiSelects, namingPolicy());
 
             return select(multiSelects).from(fromClause);
         }

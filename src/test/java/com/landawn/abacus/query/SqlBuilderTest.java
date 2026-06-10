@@ -58,6 +58,7 @@ import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.Having;
 import com.landawn.abacus.query.condition.SubQuery;
+import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.Array;
@@ -13382,5 +13383,334 @@ class SqlBuilder16Test extends TestBase {
         SP sp = PSC.batchInsert(rows).into("account").build();
         assertEquals("INSERT INTO account (first_name, last_name) VALUES (?, ?), (?, ?)", sp.query());
         assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
+    }
+}
+
+/**
+ * Regression tests for the 2026-06-09 bug-review fixes: dialect-quote-aware select-parts cache,
+ * dialect naming policy in {@code selectFrom} FROM clauses, {@code USING} join-condition rendering,
+ * select-modifier scoping across set operations, named-parameter literal-name collisions,
+ * FROM-less inline union queries, chained {@code set()} comma handling, and the
+ * {@code sqlDialect()} accessor.
+ */
+class SqlBuilder2026DialectBugFixTest extends TestBase {
+
+    public static class BfxQuoted {
+        private long id;
+        private String firstName;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getFirstName() {
+            return firstName;
+        }
+
+        public void setFirstName(final String firstName) {
+            this.firstName = firstName;
+        }
+    }
+
+    public static class BfxAddress {
+        private long id;
+        private String streetName;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getStreetName() {
+            return streetName;
+        }
+
+        public void setStreetName(final String streetName) {
+            this.streetName = streetName;
+        }
+    }
+
+    public static class BfxUser {
+        private long id;
+        private String firstName;
+        private BfxAddress address;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getFirstName() {
+            return firstName;
+        }
+
+        public void setFirstName(final String firstName) {
+            this.firstName = firstName;
+        }
+
+        public BfxAddress getAddress() {
+            return address;
+        }
+
+        public void setAddress(final BfxAddress address) {
+            this.address = address;
+        }
+    }
+
+    /**
+     * Bug: the static full-select-parts cache was keyed only by naming policy + entity class, so two
+     * dialects sharing a naming policy but using different identifier quotes poisoned each other's
+     * cached SELECT list (e.g. PSC emitting backtick-quoted aliases after a backtick dialect ran first).
+     */
+    @Test
+    public void testFullSelectPartsCacheIsDialectQuoteAware() {
+        SqlBuilder.Dsl backtickDsl = SqlBuilder.Dsl.forDialect(SqlDialect.builder()
+                .namingPolicy(NamingPolicy.SNAKE_CASE)
+                .sqlPolicy(SqlDialect.SQLPolicy.PARAMETERIZED_SQL)
+                .identifierQuote(SqlDialect.IdentifierQuote.BACKTICK)
+                .build());
+
+        String backtickSql = backtickDsl.selectFrom(BfxQuoted.class).build().query();
+        assertEquals("SELECT id AS `id`, first_name AS `firstName` FROM bfx_quoted", backtickSql);
+
+        String pscSql = PSC.selectFrom(BfxQuoted.class).build().query();
+        assertEquals("SELECT id AS \"id\", first_name AS \"firstName\" FROM bfx_quoted", pscSql);
+
+        // Render both again to verify neither direction poisoned the other's cache.
+        assertEquals(backtickSql, backtickDsl.selectFrom(BfxQuoted.class).build().query());
+        assertEquals(pscSql, PSC.selectFrom(BfxQuoted.class).build().query());
+    }
+
+    /**
+     * Bug: {@code Dsl.selectFrom(List<Selection>)} hardcoded SNAKE_CASE for the generated FROM clause,
+     * so non-snake-case DSLs (PAC/PLC/...) emitted a FROM clause inconsistent with the SELECT list.
+     */
+    @Test
+    public void testMultiSelectFromUsesDialectNamingPolicyForFromClause() {
+        String pacSql = PAC.selectFrom(BfxUser.class, "u", "user", BfxAddress.class, "a", "address").build().query();
+        assertTrue(pacSql.endsWith(" FROM BFX_USER u, BFX_ADDRESS a"), pacSql);
+
+        String plcSql = PLC.selectFrom(BfxUser.class, "u", "user", BfxAddress.class, "a", "address").build().query();
+        assertTrue(plcSql.endsWith(" FROM bfxUser u, bfxAddress a"), plcSql);
+
+        // snake_case DSL behavior is unchanged.
+        String pscSql = PSC.selectFrom(BfxUser.class, "u", "user", BfxAddress.class, "a", "address").build().query();
+        assertTrue(pscSql.endsWith(" FROM bfx_user u, bfx_address a"), pscSql);
+    }
+
+    /**
+     * Bug: {@code Dsl.selectFrom(Class, alias, includeSubEntityProperties, excludedPropNames)} hardcoded
+     * SNAKE_CASE for the sub-entity FROM table names, producing FROM clauses that did not match the
+     * sub-entity column prefixes in the SELECT list for non-snake-case DSLs.
+     */
+    @Test
+    public void testSelectFromWithSubEntitiesUsesDialectNamingPolicyForFromClause() {
+        String pacSql = PAC.selectFrom(BfxUser.class, true).build().query();
+        assertTrue(pacSql.endsWith(" FROM BFX_USER, BFX_ADDRESS"), pacSql);
+
+        String plcSql = PLC.selectFrom(BfxUser.class, true).build().query();
+        assertTrue(plcSql.endsWith(" FROM bfxUser, bfxAddress"), plcSql);
+
+        String pscSql = PSC.selectFrom(BfxUser.class, true).build().query();
+        assertTrue(pscSql.endsWith(" FROM bfx_user, bfx_address"), pscSql);
+    }
+
+    /**
+     * Bug: a {@code Using} join condition reached the generic Cell branch of appendCondition, which
+     * wrapped its already-parenthesized column list in a second pair of parentheses:
+     * {@code USING ((employee_id))} — invalid SQL.
+     */
+    @Test
+    public void testCriteriaJoinWithUsingRendersSingleParentheses() {
+        Criteria criteria = Criteria.builder().innerJoin("employees", new Using("employee_id")).build();
+        String sql = PSC.select("*").from("orders").append(criteria).build().query();
+        assertEquals("SELECT * FROM orders INNER JOIN employees USING (employee_id)", sql);
+
+        Criteria multiColumn = Criteria.builder().leftJoin("assignments", new Using("company_id", "department_id")).build();
+        String sql2 = PSC.select("*").from("projects").append(multiColumn).build().query();
+        assertEquals("SELECT * FROM projects LEFT JOIN assignments USING (company_id, department_id)", sql2);
+    }
+
+    /**
+     * Bug: a select modifier set on the first segment leaked into every following set-operation
+     * segment (DISTINCT silently applied to the UNION ALL branch, changing query semantics).
+     */
+    @Test
+    public void testSelectModifierDoesNotLeakIntoSetOperationSegments() {
+        String sql = PSC.select("id").distinct().from("a_tbl").unionAll("id").from("b_tbl").build().query();
+        assertEquals("SELECT DISTINCT id FROM a_tbl UNION ALL SELECT id FROM b_tbl", sql);
+    }
+
+    /**
+     * Bug: a select modifier set after a set operation was inserted into the FIRST segment's SELECT
+     * (raw indexOf-based insertion) and then also emitted for the new segment.
+     */
+    @Test
+    public void testSelectModifierAfterSetOperationAppliesToNewSegmentOnly() {
+        String sql = PSC.select("id").from("users").union("id").distinct().from("customers").build().query();
+        assertEquals("SELECT id FROM users UNION SELECT DISTINCT id FROM customers", sql);
+    }
+
+    /**
+     * Regression: a modifier set after from() is still inserted right after the current SELECT keyword.
+     */
+    @Test
+    public void testSelectModifierAfterFromStillApplies() {
+        String sql = PSC.select("name").from("account").distinct().build().query();
+        assertEquals("SELECT DISTINCT name FROM account", sql);
+    }
+
+    /**
+     * Bug: in the INSERT ... SELECT flow, the modifier insertion searched for the "SELECT" substring
+     * and matched inside a rendered identifier (e.g. "SELECTED_FLAG"), splicing the modifier into the
+     * column list of the INSERT clause.
+     */
+    @Test
+    public void testSelectModifierWithInsertSelectAndSelectLikeColumnName() {
+        String sql = PAC.select("selectedFlag").into("t2").distinct().from("t1").build().query();
+        assertEquals("INSERT INTO t2 (SELECTED_FLAG) SELECT DISTINCT SELECTED_FLAG AS \"selectedFlag\" FROM t1", sql);
+    }
+
+    /**
+     * Bug: the generated "name_N" suffix for repeated named parameters could collide with a property
+     * literally named "name_N", producing two different values bound to one placeholder.
+     */
+    @Test
+    public void testNamedParameterSuffixDoesNotCollideWithLiteralPropertyName() {
+        SP sp = NSC.select("*")
+                .from("users")
+                .where(Filters.and(Filters.eq("id", 1), Filters.eq("id", 2), Filters.eq("id_2", 3)))
+                .build();
+
+        assertEquals("SELECT * FROM users WHERE (id = :id) AND (id = :id_2) AND (id_2 = :id_2_2)", sp.query());
+        assertEquals(Arrays.asList(1, 2, 3), sp.parameters());
+    }
+
+    /**
+     * Same collision with the literal "name_N" property occurring first: the second occurrence of the
+     * base name must skip the taken "name_2" suffix.
+     */
+    @Test
+    public void testNamedParameterSuffixSkipsNameTakenByLiteralProperty() {
+        SP sp = NSC.select("*")
+                .from("users")
+                .where(Filters.and(Filters.eq("id_2", 3), Filters.eq("id", 1), Filters.eq("id", 2)))
+                .build();
+
+        assertEquals("SELECT * FROM users WHERE (id_2 = :id_2) AND (id = :id) AND (id = :id_3)", sp.query());
+        assertEquals(Arrays.asList(3, 1, 2), sp.parameters());
+    }
+
+    /**
+     * Bug: the union-rename logic picked "name_(parentCount+i)" blindly, colliding with a property
+     * literally named "name_2" on the child side.
+     */
+    @Test
+    public void testUnionNamedParameterRenameAvoidsChildLiteralName() {
+        SP sp = NSC.select("id")
+                .from("users")
+                .where(Filters.eq("id", 1))
+                .union(NSC.select("id").from("archive").where(Filters.and(Filters.eq("id", 2), Filters.eq("id_2", 3))))
+                .build();
+
+        assertEquals("SELECT id FROM users WHERE id = :id UNION SELECT id FROM archive WHERE (id = :id_3) AND (id_2 = :id_2)", sp.query());
+        assertEquals(Arrays.asList(1, 2, 3), sp.parameters());
+    }
+
+    /**
+     * Same union-rename collision on the parent side: the renamed child parameter must not collide
+     * with the parent's literally-named "id_2" placeholder.
+     */
+    @Test
+    public void testUnionNamedParameterRenameAvoidsParentLiteralName() {
+        SP sp = NSC.select("id")
+                .from("users")
+                .where(Filters.and(Filters.eq("id", 1), Filters.eq("id_2", 9)))
+                .union(NSC.select("id").from("archive").where(Filters.eq("id", 2)))
+                .build();
+
+        assertEquals("SELECT id FROM users WHERE (id = :id) AND (id_2 = :id_2) UNION SELECT id FROM archive WHERE id = :id_3", sp.query());
+        assertEquals(Arrays.asList(1, 9, 2), sp.parameters());
+    }
+
+    /**
+     * Regression: the plain duplicated-name union rename (no literal-name collisions) is unchanged.
+     */
+    @Test
+    public void testUnionNamedParameterRenamePlainCaseUnchanged() {
+        SP sp = NSC.select("id")
+                .from("users")
+                .where(Filters.eq("id", 1))
+                .union(NSC.select("id").from("archive").where(Filters.eq("id", 2)))
+                .build();
+
+        assertEquals("SELECT id FROM users WHERE id = :id UNION SELECT id FROM archive WHERE id = :id_2", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+    }
+
+    /**
+     * Bug: {@code union("SELECT 1")} (a valid FROM-less query) was treated as a column list and
+     * silently dropped, emitting "... UNION " with nothing after the keyword.
+     */
+    @Test
+    public void testUnionWithFromLessQueryIsAppendedInline() {
+        String sql = PSC.select("id").from("users").union("SELECT 1").build().query();
+        assertEquals("SELECT id FROM users UNION SELECT 1", sql);
+    }
+
+    /**
+     * Regression: a full inline sub-query and a plain column list after union are unchanged.
+     */
+    @Test
+    public void testUnionWithFullQueryAndColumnListUnchanged() {
+        String sql = PSC.select("id").from("users").union("SELECT id FROM customers").build().query();
+        assertEquals("SELECT id FROM users UNION SELECT id FROM customers", sql);
+
+        String sql2 = PSC.select("id").from("users").union("id").from("customers").build().query();
+        assertEquals("SELECT id FROM users UNION SELECT id FROM customers", sql2);
+    }
+
+    /**
+     * Bug: chained set() calls decided the leading comma by sniffing the buffer's last character,
+     * so a raw fragment with trailing whitespace swallowed the comma and produced invalid SQL.
+     */
+    @Test
+    public void testChainedSetWithTrailingWhitespaceFragmentKeepsComma() {
+        String sql = PSC.update("users").set("a = 1 ").set("b").where(Filters.eq("id", 1)).build().query();
+        // The raw fragment's trailing space is preserved verbatim; the comma is what matters here.
+        assertEquals("UPDATE users SET a = 1 , b = ? WHERE id = ?", sql);
+    }
+
+    /**
+     * Regression: normal chained set() behavior is unchanged.
+     */
+    @Test
+    public void testChainedSetWithoutTrailingWhitespaceUnchanged() {
+        String sql = PSC.update("users").set("a = 1").set("b").where(Filters.eq("id", 1)).build().query();
+        assertEquals("UPDATE users SET a = 1, b = ? WHERE id = ?", sql);
+    }
+
+    /**
+     * The dialect accessor follows the fluent lower-camel naming convention (was {@code SqlDialect()}).
+     */
+    @Test
+    public void testSqlDialectAccessor() {
+        SqlBuilder builder = PSC.select("id").from("users");
+
+        assertNotNull(builder.sqlDialect());
+        assertEquals(NamingPolicy.SNAKE_CASE, builder.sqlDialect().namingPolicy());
+        assertEquals(SqlDialect.SQLPolicy.PARAMETERIZED_SQL, builder.sqlDialect().sqlPolicy());
+
+        builder.build();
     }
 }
