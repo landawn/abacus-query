@@ -85,9 +85,6 @@ public class Criteria extends AbstractCondition {
     /** Lazily memoized hashCode (0 == not computed). */
     private transient int cachedHashCode;
 
-    /** Single-slot toString cache pairing a naming policy with its rendered string (performance only). */
-    private transient volatile CachedToString cachedTostring;
-
     /** Lazily memoized unmodifiable JOIN view (performance only). */
     private transient List<Join> cachedJoinsView;
 
@@ -474,20 +471,6 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        final CachedToString cache = cachedTostring;
-
-        if (cache != null && cache.namingPolicy == namingPolicy) {
-            return cache.value;
-        }
-
-        final String result = doToString(namingPolicy);
-
-        cachedTostring = new CachedToString(namingPolicy, result);
-
-        return result;
-    }
-
-    private String doToString(final NamingPolicy namingPolicy) {
         // Single pass into per-clause buffers, then assembled in SQL order
         // (selectModifier + join + where + groupBy + having + setOps + orderBy + limit).
         // Output is byte-identical to the previous O(n^2) string-concatenation version.

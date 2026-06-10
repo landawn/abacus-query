@@ -49,9 +49,6 @@ public abstract class Cell extends AbstractCondition {
     /** Lazily memoized hashCode (0 == not computed). */
     private transient int cachedHashCode;
 
-    /** Single-slot toString cache pairing a naming policy with its rendered string (performance only). */
-    private transient volatile CachedToString cachedTostring;
-
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized Cell instance and should not be used
@@ -183,20 +180,6 @@ public abstract class Cell extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        final CachedToString cache = cachedTostring;
-
-        if (cache != null && cache.namingPolicy == namingPolicy) {
-            return cache.value;
-        }
-
-        final String result = doToString(namingPolicy);
-
-        cachedTostring = new CachedToString(namingPolicy, result);
-
-        return result;
-    }
-
-    private String doToString(final NamingPolicy namingPolicy) {
         final Operator op = operator();
 
         // Note: unlike ComposableCell, the wrapped condition is NOT parenthesized and the naming

@@ -131,9 +131,6 @@ public class Expression extends ComposableCondition {
     // For Kryo
     final String literal;
 
-    /** Single-slot toString cache pairing a naming policy with its rendered string (performance only). */
-    private transient volatile CachedToString cachedTostring;
-
     /** Lazily memoized {@link SqlParser#parse(String)} result for {@link #literal} (performance only). */
     private transient List<String> cachedParsedLiteral;
 
@@ -1737,20 +1734,6 @@ public class Expression extends ComposableCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        final CachedToString cache = cachedTostring;
-
-        if (cache != null && cache.namingPolicy == namingPolicy) {
-            return cache.value;
-        }
-
-        final String result = doToString(namingPolicy);
-
-        cachedTostring = new CachedToString(namingPolicy, result);
-
-        return result;
-    }
-
-    private String doToString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
 
         if (literal == null) {

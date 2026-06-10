@@ -499,7 +499,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _namingPolicy = this.sqlDialect.namingPolicy() == null ? NamingPolicy.SNAKE_CASE : this.sqlDialect.namingPolicy();
         _sqlPolicy = this.sqlDialect.sqlPolicy() == null ? SQLPolicy.RAW_SQL : this.sqlDialect.sqlPolicy();
-        _identifierQuote = this.sqlDialect.identifierQuote() == IdentifierQuote.BACKTICK ? '`' : '"';
+        _identifierQuote = this.sqlDialect.identifierQuote() == IdentifierQuote.BACKTICK ? SK._BACKTICK : SK._DOUBLE_QUOTE;
 
         _handlerForNamedParameter = handlerForNamedParameter_TL.get();
 
@@ -1480,7 +1480,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         if (N.notEmpty(_propOrColumnNames)) {
             if (_entityClass != null && !withAlias && _propOrColumnNames == QueryUtil.getSelectPropNames(_entityClass, false, null)) { // NOSONAR
-                final Map<Class<?>, String> fullSelectPartsCache = (_identifierQuote == '`' ? fullSelectPartsPoolForBacktick : fullSelectPartsPool)
+                final Map<Class<?>, String> fullSelectPartsCache = (_identifierQuote == SK._BACKTICK ? fullSelectPartsPoolForBacktick : fullSelectPartsPool)
                         .get(_namingPolicy);
                 String fullSelectParts = fullSelectPartsCache.get(_entityClass);
 

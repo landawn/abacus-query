@@ -104,9 +104,6 @@ public class SubQuery extends AbstractCondition {
     /** Lazily memoized hashCode (0 == not computed). */
     private transient int cachedHashCode;
 
-    /** Single-slot toString cache pairing a naming policy with its rendered string (performance only). */
-    private transient volatile CachedToString cachedTostring;
-
     /** Lazily memoized unmodifiable view of {@link #propNames} (performance only). */
     private transient List<String> cachedPropNamesView;
 
@@ -531,20 +528,6 @@ public class SubQuery extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        final CachedToString cache = cachedTostring;
-
-        if (cache != null && cache.namingPolicy == namingPolicy) {
-            return cache.value;
-        }
-
-        final String result = doToString(namingPolicy);
-
-        cachedTostring = new CachedToString(namingPolicy, result);
-
-        return result;
-    }
-
-    private String doToString(final NamingPolicy namingPolicy) {
         if (sql == null) {
             final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
             final Map<String, String> prop2ColumnNameMap = entityClass == null ? null : QueryUtil.getProp2ColumnNameMap(entityClass, effectiveNamingPolicy);

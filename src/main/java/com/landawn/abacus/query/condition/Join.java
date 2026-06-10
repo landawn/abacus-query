@@ -104,9 +104,6 @@ public class Join extends AbstractCondition {
     /** Lazily memoized hashCode (0 == not computed). */
     private transient int cachedHashCode;
 
-    /** Single-slot toString cache pairing a naming policy with its rendered string (performance only). */
-    private transient volatile CachedToString cachedTostring;
-
     /** Lazily memoized unmodifiable view of {@link #joinEntities} (performance only). */
     private transient List<String> cachedJoinEntitiesView;
 
@@ -432,20 +429,6 @@ public class Join extends AbstractCondition {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        final CachedToString cache = cachedTostring;
-
-        if (cache != null && cache.namingPolicy == namingPolicy) {
-            return cache.value;
-        }
-
-        final String result = doToString(namingPolicy);
-
-        cachedTostring = new CachedToString(namingPolicy, result);
-
-        return result;
-    }
-
-    private String doToString(final NamingPolicy namingPolicy) {
         final Operator op = operator();
         final String entities = (joinEntities == null || joinEntities.isEmpty()) ? Strings.EMPTY : concatPropNames(joinEntities);
 

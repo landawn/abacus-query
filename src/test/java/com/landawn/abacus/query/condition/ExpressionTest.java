@@ -1529,7 +1529,7 @@ public class ExpressionTest extends TestBase {
     }
 
     /**
-     * Regression: the short-literal fast path in {@code doToString} must use a full-string
+     * Regression: the short-literal fast path in {@code toString(NamingPolicy)} must use a full-string
      * (anchored) match and not {@code Matcher.find()}. With {@code find()}, a short literal
      * containing a trailing line terminator such as {@code "col\n"} spuriously satisfies the
      * anchored pattern {@code ^[a-zA-Z0-9_-]+$} (because {@code $} matches before the final
@@ -1553,13 +1553,14 @@ public class ExpressionTest extends TestBase {
     }
 
     /**
-     * Regression: the single-slot {@code toString(NamingPolicy)} cache must return the value rendered
-     * for the <i>requested</i> policy, never a value cached for a different policy. {@link Expression#of}
-     * interns instances, so the same object is reused across calls and must answer each policy correctly
-     * even when callers alternate policies on it.
+     * {@code toString(NamingPolicy)} must return the value rendered for the <i>requested</i> policy.
+     * {@link Expression#of} interns instances, so the same object is reused across calls and must answer
+     * each policy correctly even when callers alternate policies on it. (Originally guarded the
+     * since-removed single-slot toString cache; kept because the contract must hold regardless of any
+     * internal memoization.)
      */
     @Test
-    public void testToStringCacheReturnsValuePerNamingPolicy() {
+    public void testToStringReturnsValuePerNamingPolicy() {
         Expression expr = Expression.of("firstName");
         assertSame(expr, Expression.of("firstName"), "Expression.of must intern instances");
 
@@ -1572,23 +1573,20 @@ public class ExpressionTest extends TestBase {
     }
 
     /**
-     * Regression for the toString-cache data race: the cache pairs a {@link NamingPolicy} with its rendered
-     * string in a single immutable holder published through one {@code volatile} reference. Previously the
-     * policy and string were two separate non-volatile fields; two threads rendering the same interned
-     * instance under different policies could interleave the two writes so a reader saw one field's policy
-     * paired with the other field's value, returning a string rendered for the wrong policy. This test hammers
-     * a single shared instance with three policies concurrently and asserts every call returns its own policy's
-     * value.
+     * {@code toString(NamingPolicy)} must be thread-safe on a shared interned instance: every call must
+     * return the value for its own policy. (Originally a regression test for a data race in the
+     * since-removed single-slot toString cache; kept — with a lighter workload — to catch any future
+     * reintroduction of unsafe per-instance memoization.)
      */
     @Test
-    public void testToStringCacheThreadSafeAcrossNamingPolicies() throws InterruptedException {
+    public void testToStringThreadSafeAcrossNamingPolicies() throws InterruptedException {
         final Expression expr = Expression.of("firstName");
 
         final NamingPolicy[] policies = { NamingPolicy.NO_CHANGE, NamingPolicy.SNAKE_CASE, NamingPolicy.SCREAMING_SNAKE_CASE };
         final String[] expected = { "firstName", "first_name", "FIRST_NAME" };
 
         final int threadCount = 12;
-        final int iterations = 50_000;
+        final int iterations = 5_000;
         final CountDownLatch start = new CountDownLatch(1);
         final AtomicReference<String> firstError = new AtomicReference<>();
         final Thread[] threads = new Thread[threadCount];

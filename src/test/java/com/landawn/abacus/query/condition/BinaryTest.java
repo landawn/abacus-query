@@ -666,12 +666,12 @@ public class BinaryTest extends TestBase {
     }
 
     /**
-     * Regression for the single-slot toString cache (shared {@code CachedToString} holder): rendering the
-     * same instance with alternating naming policies must always return the value for the requested policy,
-     * never a value cached for a previously-requested policy.
+     * Rendering the same instance with alternating naming policies must always return the value for the
+     * requested policy. (Originally guarded the since-removed single-slot toString cache; kept because the
+     * per-policy rendering contract must hold regardless of any internal memoization.)
      */
     @Test
-    public void testToStringCacheReturnsValuePerNamingPolicy() {
+    public void testToStringReturnsValuePerNamingPolicy() {
         Binary binary = Filters.binary("firstName", Operator.LIKE, "John%");
 
         for (int i = 0; i < 100; i++) {
