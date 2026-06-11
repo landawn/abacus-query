@@ -817,31 +817,41 @@ class SqlBuilder10Test extends TestBase {
     @Tag("2025")
     public void testSetOperationBuildersKeepNamedParameterNamesUnique() {
         assertEquals("SELECT id FROM users WHERE status = :status UNION SELECT id FROM archived_users WHERE status = :status_2",
-                NSC.select("id").from("users").where(Filters.eq("status", "ACTIVE"))
+                NSC.select("id")
+                        .from("users")
+                        .where(Filters.eq("status", "ACTIVE"))
                         .union(NSC.select("id").from("archived_users").where(Filters.eq("status", "INACTIVE")))
                         .build()
                         .query());
 
         assertEquals("SELECT id FROM users WHERE status = :status UNION ALL SELECT id FROM archived_users WHERE status = :status_2",
-                NSC.select("id").from("users").where(Filters.eq("status", "ACTIVE"))
+                NSC.select("id")
+                        .from("users")
+                        .where(Filters.eq("status", "ACTIVE"))
                         .unionAll(NSC.select("id").from("archived_users").where(Filters.eq("status", "INACTIVE")))
                         .build()
                         .query());
 
         assertEquals("SELECT id FROM users WHERE status = :status INTERSECT SELECT id FROM archived_users WHERE status = :status_2",
-                NSC.select("id").from("users").where(Filters.eq("status", "ACTIVE"))
+                NSC.select("id")
+                        .from("users")
+                        .where(Filters.eq("status", "ACTIVE"))
                         .intersect(NSC.select("id").from("archived_users").where(Filters.eq("status", "INACTIVE")))
                         .build()
                         .query());
 
         assertEquals("SELECT id FROM users WHERE status = :status EXCEPT SELECT id FROM archived_users WHERE status = :status_2",
-                NSC.select("id").from("users").where(Filters.eq("status", "ACTIVE"))
+                NSC.select("id")
+                        .from("users")
+                        .where(Filters.eq("status", "ACTIVE"))
                         .except(NSC.select("id").from("archived_users").where(Filters.eq("status", "INACTIVE")))
                         .build()
                         .query());
 
         assertEquals("SELECT id FROM users WHERE status = :status MINUS SELECT id FROM archived_users WHERE status = :status_2",
-                NSC.select("id").from("users").where(Filters.eq("status", "ACTIVE"))
+                NSC.select("id")
+                        .from("users")
+                        .where(Filters.eq("status", "ACTIVE"))
                         .minus(NSC.select("id").from("archived_users").where(Filters.eq("status", "INACTIVE")))
                         .build()
                         .query());
@@ -13260,8 +13270,7 @@ class SqlBuilder16Test extends TestBase {
                 .where(Filters.and(Filters.eq("status", "ACTIVE"), Filters.in("id", innerSubQuery), Filters.eq("status", "PENDING")))
                 .build();
 
-        assertEquals(
-                "SELECT id FROM users WHERE (status = :status) AND (id IN (SELECT user_id FROM orders WHERE status = :status_2)) AND (status = :status_3)",
+        assertEquals("SELECT id FROM users WHERE (status = :status) AND (id IN (SELECT user_id FROM orders WHERE status = :status_2)) AND (status = :status_3)",
                 sp.query());
         assertEquals(Arrays.asList("ACTIVE", "SHIPPED", "PENDING"), sp.parameters());
     }
@@ -13587,10 +13596,7 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
      */
     @Test
     public void testNamedParameterSuffixDoesNotCollideWithLiteralPropertyName() {
-        SP sp = NSC.select("*")
-                .from("users")
-                .where(Filters.and(Filters.eq("id", 1), Filters.eq("id", 2), Filters.eq("id_2", 3)))
-                .build();
+        SP sp = NSC.select("*").from("users").where(Filters.and(Filters.eq("id", 1), Filters.eq("id", 2), Filters.eq("id_2", 3))).build();
 
         assertEquals("SELECT * FROM users WHERE (id = :id) AND (id = :id_2) AND (id_2 = :id_2_2)", sp.query());
         assertEquals(Arrays.asList(1, 2, 3), sp.parameters());
@@ -13602,10 +13608,7 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
      */
     @Test
     public void testNamedParameterSuffixSkipsNameTakenByLiteralProperty() {
-        SP sp = NSC.select("*")
-                .from("users")
-                .where(Filters.and(Filters.eq("id_2", 3), Filters.eq("id", 1), Filters.eq("id", 2)))
-                .build();
+        SP sp = NSC.select("*").from("users").where(Filters.and(Filters.eq("id_2", 3), Filters.eq("id", 1), Filters.eq("id", 2))).build();
 
         assertEquals("SELECT * FROM users WHERE (id_2 = :id_2) AND (id = :id) AND (id = :id_3)", sp.query());
         assertEquals(Arrays.asList(3, 1, 2), sp.parameters());
@@ -13648,11 +13651,7 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
      */
     @Test
     public void testUnionNamedParameterRenamePlainCaseUnchanged() {
-        SP sp = NSC.select("id")
-                .from("users")
-                .where(Filters.eq("id", 1))
-                .union(NSC.select("id").from("archive").where(Filters.eq("id", 2)))
-                .build();
+        SP sp = NSC.select("id").from("users").where(Filters.eq("id", 1)).union(NSC.select("id").from("archive").where(Filters.eq("id", 2))).build();
 
         assertEquals("SELECT id FROM users WHERE id = :id UNION SELECT id FROM archive WHERE id = :id_2", sp.query());
         assertEquals(Arrays.asList(1, 2), sp.parameters());

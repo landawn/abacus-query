@@ -531,7 +531,6 @@ public class JunctionTest extends TestBase {
 
     @Test
     public void testConstructorRejectsConnectorOperand() {
-        Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new Junction(Operator.AND, Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
     }
 }

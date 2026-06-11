@@ -524,7 +524,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
          * // Output: INSERT INTO account (first_name, last_name) VALUES (?, ?)
          * }</pre>
          *
-         * @param sqlDialect the dialect (naming policy plus parameter style) the new DSL is bound to
+         * @param sqlDialect the dialect (naming policy, parameter style, identifier quote and optional product info) the new DSL is bound to
          * @return a new {@code Dsl} that produces {@link SqlBuilder} instances using the given dialect
          * @throws IllegalArgumentException if {@code sqlDialect} is {@code null}
          */

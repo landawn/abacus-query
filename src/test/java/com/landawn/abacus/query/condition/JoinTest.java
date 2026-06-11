@@ -143,8 +143,8 @@ class Join2025Test extends TestBase {
 
     @Test
     public void testConstructorRejectsNestedOnConnectorCondition() {
-        Condition nestedOn = new Junction(Operator.AND,
-                Arrays.asList(Filters.on("sales.product_id", "products.id"), Filters.eq("products.active", true)), true);
+        Condition nestedOn = new Junction(Operator.AND, Arrays.asList(Filters.on("sales.product_id", "products.id"), Filters.eq("products.active", true)),
+                true);
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("products", nestedOn));
     }
@@ -302,8 +302,8 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testConstructorRejectsNestedOnConnectorCondition() {
-        Condition nestedOn = new Junction(Operator.AND,
-                Arrays.asList(Filters.on("sales.product_id", "products.id"), Filters.eq("products.active", true)), true);
+        Condition nestedOn = new Junction(Operator.AND, Arrays.asList(Filters.on("sales.product_id", "products.id"), Filters.eq("products.active", true)),
+                true);
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("products", nestedOn));
     }

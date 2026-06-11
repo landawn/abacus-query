@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.annotation.Internal;
@@ -46,6 +48,7 @@ import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.query.SqlDialect.IdentifierQuote;
+import com.landawn.abacus.query.SqlDialect.ProductInfo;
 import com.landawn.abacus.query.SqlDialect.SQLPolicy;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
@@ -302,6 +305,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /** Char array for " ROWS". */
     protected static final char[] _SPACE_ROWS = (SK.SPACE + SK.ROWS).toCharArray();
 
+    /**
+     * Matches the generic limit expressions {@link Limit#Limit(String)} normalizes to
+     * {@code LIMIT count [OFFSET offset]}, where each token is an integer literal or a {@code ?} /
+     * {@code :name} / <code>#{name}</code> parameter placeholder. Deliberately product-specific
+     * expressions (e.g. {@code FETCH FIRST 10 ROWS ONLY} or MySQL's {@code LIMIT offset, count}) do
+     * not match and are emitted verbatim.
+     */
+    private static final Pattern GENERIC_LIMIT_EXPRESSION_PATTERN = Pattern
+            .compile("LIMIT\\s+(\\d+|\\?|:\\w+|#\\{[^}]+\\})(?:\\s+OFFSET\\s+(\\d+|\\?|:\\w+|#\\{[^}]+\\}))?", Pattern.CASE_INSENSITIVE);
+
     /** Char array for the "AND" keyword. */
     protected static final char[] _AND = SK.AND.toCharArray();
 
@@ -425,6 +438,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected final char _identifierQuote; //NOSONAR
 
+    final DialectFamily _dialectFamily; //NOSONAR
+
     protected final List<Object> _parameters = new ArrayList<>(); //NOSONAR
 
     protected final Map<String, Integer> _namedParameterNameOccurrences = new HashMap<>(); //NOSONAR
@@ -480,7 +495,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Constructs a new AbstractQueryBuilder with the specified SQL dialect.
      *
      * @param sqlDialect the SQL dialect supplying the naming and SQL policies; a {@code null} naming policy on the
-     *                   dialect defaults to {@code SNAKE_CASE}, and a {@code null} SQL policy defaults to {@code RAW_SQL}
+     *                   dialect defaults to {@code SNAKE_CASE}, and a {@code null} SQL policy defaults to {@code RAW_SQL}.
+     *                   A {@code null} identifier quote defaults to backtick when the dialect's product info names
+     *                   MySQL/MariaDB and to double quote otherwise, and the product info selects the dialect-specific
+     *                   pagination syntax used by {@link #limit(int)}, {@link #limit(int, int)} and {@link #offset(int)}
      */
     protected AbstractQueryBuilder(final SqlDialect sqlDialect) {
         final int activeBuilderCount = activeStringBuilderCounter.incrementAndGet();
@@ -499,13 +517,64 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _namingPolicy = this.sqlDialect.namingPolicy() == null ? NamingPolicy.SNAKE_CASE : this.sqlDialect.namingPolicy();
         _sqlPolicy = this.sqlDialect.sqlPolicy() == null ? SQLPolicy.RAW_SQL : this.sqlDialect.sqlPolicy();
-        _identifierQuote = this.sqlDialect.identifierQuote() == IdentifierQuote.BACKTICK ? SK._BACKTICK : SK._DOUBLE_QUOTE;
+        _dialectFamily = resolveDialectFamily(this.sqlDialect.productInfo());
+        _identifierQuote = this.sqlDialect.identifierQuote() == null //
+                ? (_dialectFamily == DialectFamily.MYSQL ? SK._BACKTICK : SK._DOUBLE_QUOTE)
+                : (this.sqlDialect.identifierQuote() == IdentifierQuote.BACKTICK ? SK._BACKTICK : SK._DOUBLE_QUOTE);
 
         _handlerForNamedParameter = handlerForNamedParameter_TL.get();
 
         if (logger.isDebugEnabled()) {
             logger.debug("SqlBuilder created. Active builders: {}", activeBuilderCount);
         }
+    }
+
+    /**
+     * Resolves the dialect family from the optional product info. The product name is matched
+     * case-insensitively as a substring, so raw JDBC names from
+     * {@code DatabaseMetaData.getDatabaseProductName()} such as {@code "Microsoft SQL Server"} or
+     * {@code "Oracle Database 19c"} are recognized. A {@code null} product info, blank name, or
+     * unrecognized name resolves to {@link DialectFamily#DEFAULT}.
+     *
+     * @param productInfo the dialect's product info, may be {@code null}
+     * @return the resolved dialect family, never {@code null}
+     */
+    static DialectFamily resolveDialectFamily(final ProductInfo productInfo) {
+        final String name = productInfo == null ? null : productInfo.name();
+
+        if (Strings.isBlank(name)) {
+            return DialectFamily.DEFAULT;
+        }
+
+        if (Strings.containsIgnoreCase(name, "oracle")) {
+            return DialectFamily.ORACLE;
+        }
+
+        if (Strings.containsIgnoreCase(name, "db2")) {
+            return DialectFamily.DB2;
+        }
+
+        if (Strings.containsIgnoreCase(name, "sql server") || Strings.containsIgnoreCase(name, "sqlserver")) {
+            return DialectFamily.SQL_SERVER;
+        }
+
+        if (Strings.containsIgnoreCase(name, "mysql") || Strings.containsIgnoreCase(name, "mariadb")) {
+            return DialectFamily.MYSQL;
+        }
+
+        if (Strings.containsIgnoreCase(name, "postgres") || Strings.containsIgnoreCase(name, "sqlite") || Strings.containsIgnoreCase(name, "h2")) {
+            return DialectFamily.LIMIT_STYLE;
+        }
+
+        return DialectFamily.DEFAULT;
+    }
+
+    /**
+     * Whether this builder's dialect paginates with SQL:2008 {@code OFFSET ... ROWS} /
+     * {@code FETCH ... ROWS ONLY} instead of {@code LIMIT}/{@code OFFSET}.
+     */
+    private boolean usesFetchPagination() {
+        return _dialectFamily == DialectFamily.ORACLE || _dialectFamily == DialectFamily.DB2 || _dialectFamily == DialectFamily.SQL_SERVER;
     }
 
     /**
@@ -2904,7 +2973,21 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Adds a LIMIT clause to restrict the number of rows returned.
+     * Adds a row-count restriction to the query, rendered in the dialect's pagination syntax.
+     *
+     * <p>The generated clause depends on the product named by {@link SqlDialect#productInfo()}:</p>
+     * <ul>
+     *   <li>Oracle, DB2: {@code FETCH FIRST count ROWS ONLY}</li>
+     *   <li>SQL Server: {@code OFFSET 0 ROWS FETCH NEXT count ROWS ONLY} (SQL Server only allows
+     *       {@code OFFSET ... FETCH} together with an {@code ORDER BY} clause); the {@code OFFSET 0 ROWS}
+     *       prefix is omitted when {@link #offset(int)} has already been called</li>
+     *   <li>any other product, or no product info: {@code LIMIT count}</li>
+     * </ul>
+     *
+     * <p>On the {@code FETCH}-style dialects (Oracle, DB2, SQL Server) this method also consumes the
+     * {@code OFFSET} and {@code FETCH} slots, because {@code OFFSET} must precede {@code FETCH}: call
+     * {@link #offset(int)} <i>before</i> this method, or prefer {@link #limit(int, int)}, which emits the
+     * combined clause in the correct order.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2913,26 +2996,94 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .limit(10)
      *                 .build().query();
      * // Output: SELECT * FROM users LIMIT 10
+     *
+     * SqlBuilder.Dsl oracleDsl = SqlBuilder.Dsl.forDialect(SqlDialect.builder()
+     *         .sqlPolicy(SqlDialect.SQLPolicy.PARAMETERIZED_SQL)
+     *         .productInfo(SqlDialect.ProductInfo.of("Oracle"))
+     *         .build());
+     * String oracleSql = oracleDsl.select("*").from("users").limit(10).build().query();
+     * // Output: SELECT * FROM users FETCH FIRST 10 ROWS ONLY
      * }</pre>
      *
      * @param count the maximum number of rows to return
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code count} is negative
-     * @throws IllegalStateException if {@code LIMIT} has already been set on this builder
+     * @throws IllegalStateException if {@code LIMIT} has already been set on this builder, or on a
+     *         {@code FETCH}-style dialect if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set
      */
     public This limit(final int count) {
         N.checkArgNotNegative(count, "count");
         checkIfAlreadyCalled(SK.LIMIT);
 
-        _sb.append(_SPACE_LIMIT_SPACE);
+        if (usesFetchPagination()) {
+            appendFetchFirst(String.valueOf(count));
+        } else {
+            _sb.append(_SPACE_LIMIT_SPACE);
 
-        _sb.append(count);
+            _sb.append(count);
+        }
 
         return (This) this;
     }
 
     /**
-     * Adds a LIMIT clause with count and offset for pagination.
+     * Emits a count-only restriction in the dialect's FETCH pagination syntax and consumes the related
+     * clause slots. Oracle/DB2 render {@code FETCH FIRST count ROWS ONLY}; SQL Server renders
+     * {@code OFFSET 0 ROWS FETCH NEXT count ROWS ONLY}, omitting the {@code OFFSET 0 ROWS} prefix when
+     * an {@code OFFSET} clause was already emitted. The caller must have consumed the {@code LIMIT} slot.
+     *
+     * @param countToken the row count as an integer literal or parameter placeholder
+     * @throws IllegalStateException if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set
+     */
+    private void appendFetchFirst(final String countToken) {
+        if (_dialectFamily == DialectFamily.SQL_SERVER) {
+            checkIfAlreadyCalled(SK.FETCH_NEXT);
+            calledOpSet.add(SK.FETCH_FIRST);
+
+            if (calledOpSet.add(SK.OFFSET)) {
+                _sb.append(" OFFSET 0 ROWS");
+            }
+
+            _sb.append(" FETCH NEXT ").append(countToken).append(" ROWS ONLY");
+        } else {
+            checkIfAlreadyCalled(SK.FETCH_FIRST);
+            calledOpSet.add(SK.FETCH_NEXT);
+            calledOpSet.add(SK.OFFSET);
+
+            _sb.append(" FETCH FIRST ").append(countToken).append(" ROWS ONLY");
+        }
+    }
+
+    /**
+     * Emits a count-plus-offset restriction in the dialect's FETCH pagination syntax
+     * ({@code OFFSET offset ROWS FETCH NEXT count ROWS ONLY}) and consumes the FETCH slots.
+     * The caller must have consumed the {@code LIMIT} and {@code OFFSET} slots already.
+     *
+     * @param countToken the row count as an integer literal or parameter placeholder
+     * @param offsetToken the offset as an integer literal or parameter placeholder
+     * @throws IllegalStateException if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set
+     */
+    private void appendOffsetFetchNext(final String countToken, final String offsetToken) {
+        checkIfAlreadyCalled(SK.FETCH_NEXT);
+        calledOpSet.add(SK.FETCH_FIRST);
+
+        _sb.append(_SPACE_OFFSET_SPACE).append(offsetToken).append(_SPACE_ROWS);
+
+        _sb.append(" FETCH NEXT ").append(countToken).append(" ROWS ONLY");
+    }
+
+    /**
+     * Adds a count-plus-offset pagination clause, rendered in the dialect's pagination syntax.
+     *
+     * <p>The generated clause depends on the product named by {@link SqlDialect#productInfo()}:</p>
+     * <ul>
+     *   <li>Oracle, DB2, SQL Server: {@code OFFSET offset ROWS FETCH NEXT count ROWS ONLY}
+     *       (SQL Server only allows {@code OFFSET ... FETCH} together with an {@code ORDER BY} clause)</li>
+     *   <li>any other product, or no product info: {@code LIMIT count OFFSET offset}</li>
+     * </ul>
+     *
+     * <p>The combined clause is emitted atomically in the order the dialect requires, so this method is
+     * the preferred way to paginate portably across dialects.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2941,13 +3092,21 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .limit(10, 20)  // limit 10, offset 20
      *                 .build().query();
      * // Output: SELECT * FROM users LIMIT 10 OFFSET 20
+     *
+     * SqlBuilder.Dsl oracleDsl = SqlBuilder.Dsl.forDialect(SqlDialect.builder()
+     *         .sqlPolicy(SqlDialect.SQLPolicy.PARAMETERIZED_SQL)
+     *         .productInfo(SqlDialect.ProductInfo.of("Oracle"))
+     *         .build());
+     * String oracleSql = oracleDsl.select("*").from("users").limit(10, 20).build().query();
+     * // Output: SELECT * FROM users OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY
      * }</pre>
      *
-     * @param count the maximum number of rows to return (appears as LIMIT in SQL)
-     * @param offset the number of rows to skip (appears as OFFSET in SQL)
+     * @param count the maximum number of rows to return
+     * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
-     * @throws IllegalStateException if {@code LIMIT} or {@code OFFSET} has already been set on this builder
+     * @throws IllegalStateException if {@code LIMIT} or {@code OFFSET} has already been set on this builder,
+     *         or on a {@code FETCH}-style dialect if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set
      */
     public This limit(final int count, final int offset) {
         N.checkArgNotNegative(count, "count");
@@ -2955,26 +3114,39 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         checkIfAlreadyCalled(SK.LIMIT);
         checkIfAlreadyCalled(SK.OFFSET);
 
-        _sb.append(_SPACE_LIMIT_SPACE);
+        if (usesFetchPagination()) {
+            appendOffsetFetchNext(String.valueOf(count), String.valueOf(offset));
+        } else {
+            _sb.append(_SPACE_LIMIT_SPACE);
 
-        _sb.append(count);
+            _sb.append(count);
 
-        _sb.append(_SPACE_OFFSET_SPACE);
+            _sb.append(_SPACE_OFFSET_SPACE);
 
-        _sb.append(offset);
+            _sb.append(offset);
+        }
 
         return (This) this;
     }
 
     /**
-     * Renders a {@link Limit} condition into the buffer: emits a raw limit expression when present,
-     * otherwise delegates to {@link #limit(int)} / {@link #limit(int, int)} based on the offset.
+     * Renders a {@link Limit} condition into the buffer. A numeric limit delegates to
+     * {@link #limit(int)} / {@link #limit(int, int)} based on the offset, so it is rendered in the
+     * dialect's pagination syntax. A raw limit expression is likewise re-rendered in the dialect's
+     * FETCH pagination syntax when this builder uses one (Oracle, DB2, SQL Server) and the expression
+     * is a generic {@code LIMIT count [OFFSET offset]} form with integer or placeholder tokens; any
+     * other expression (product-specific syntax such as {@code FETCH FIRST 10 ROWS ONLY} or MySQL's
+     * {@code LIMIT offset, count}) is emitted verbatim.
      * Shared by the {@link Criteria} and standalone-{@link Limit} branches of {@link #appendCondition(Condition)}.
      *
      * @param limit the limit condition to render (must not be {@code null})
      */
     private void appendLimit(final Limit limit) {
         if (Strings.isNotEmpty(limit.getExpression())) {
+            if (usesFetchPagination() && appendLimitExpressionInFetchSyntax(limit.getExpression())) {
+                return;
+            }
+
             checkIfAlreadyCalled(SK.LIMIT);
             _sb.append(_SPACE).append(limit.getExpression());
         } else if (limit.getOffset() > 0) {
@@ -2985,7 +3157,44 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Adds an OFFSET clause to skip a number of rows.
+     * Attempts to re-render a generic {@code LIMIT count [OFFSET offset]} expression in the dialect's
+     * FETCH pagination syntax, consuming the same clause slots as {@link #limit(int)} /
+     * {@link #limit(int, int)}. Returns {@code false} without emitting anything when the expression
+     * does not match {@link #GENERIC_LIMIT_EXPRESSION_PATTERN}, in which case the caller emits it
+     * verbatim.
+     *
+     * @param expression the normalized limit expression from {@link Limit#getExpression()}
+     * @return {@code true} if the expression was rendered in FETCH pagination syntax
+     */
+    private boolean appendLimitExpressionInFetchSyntax(final String expression) {
+        final Matcher matcher = GENERIC_LIMIT_EXPRESSION_PATTERN.matcher(expression);
+
+        if (!matcher.matches()) {
+            return false;
+        }
+
+        final String countToken = matcher.group(1);
+        final String offsetToken = matcher.group(2);
+
+        checkIfAlreadyCalled(SK.LIMIT);
+
+        if (offsetToken == null) {
+            appendFetchFirst(countToken);
+        } else {
+            checkIfAlreadyCalled(SK.OFFSET);
+            appendOffsetFetchNext(countToken, offsetToken);
+        }
+
+        return true;
+    }
+
+    /**
+     * Adds an OFFSET clause to skip a number of rows, rendered in the dialect's pagination syntax.
+     *
+     * <p>On Oracle, DB2 and SQL Server dialects (per {@link SqlDialect#productInfo()}) the clause is
+     * rendered as {@code OFFSET offset ROWS}; on those dialects call this method <i>before</i>
+     * {@link #limit(int)}, because {@code OFFSET} must precede {@code FETCH}. On all other dialects the
+     * clause is rendered as {@code OFFSET offset}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3008,6 +3217,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _sb.append(_SPACE_OFFSET_SPACE).append(offset);
 
+        if (usesFetchPagination()) {
+            _sb.append(_SPACE_ROWS);
+        }
+
         return (This) this;
     }
 
@@ -3029,6 +3242,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code offset} is negative
      * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
+     * @see #offset(int)
+     * @see #limit(int, int)
      */
     public This offsetRows(final int offset) {
         N.checkArgNotNegative(offset, "offset");
@@ -3059,6 +3274,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code rowCount} is negative
      * @throws IllegalStateException if {@code FETCH NEXT} or {@code FETCH FIRST} has already been set
+     * @see #limit(int)
+     * @see #limit(int, int)
      */
     public This fetchNextRows(final int rowCount) {
         N.checkArgNotNegative(rowCount, "rowCount");
@@ -3089,6 +3306,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code rowCount} is negative
      * @throws IllegalStateException if {@code FETCH FIRST} or {@code FETCH NEXT} has already been set
+     * @see #limit(int)
+     * @see #limit(int, int)
      */
     public This fetchFirstRows(final int rowCount) {
         N.checkArgNotNegative(rowCount, "rowCount");
@@ -5727,10 +5946,31 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Returns the {@link SqlDialect} this builder renders SQL with.
      *
-     * @return the dialect (naming policy, parameter style and identifier quote) bound to this builder
+     * @return the dialect (naming policy, parameter style, identifier quote and optional product info) bound to this builder
      */
     public SqlDialect sqlDialect() {
         return sqlDialect;
+    }
+
+    /**
+     * Database product family resolved once from {@link SqlDialect#productInfo()}. Drives the
+     * product-specific parts of SQL generation: the pagination syntax emitted by {@link #limit(int)},
+     * {@link #limit(int, int)} and {@link #offset(int)}, and the identifier quote used when the
+     * dialect leaves {@link SqlDialect#identifierQuote()} unset.
+     */
+    enum DialectFamily {
+        /** Oracle Database: pagination via {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY}. */
+        ORACLE,
+        /** IBM DB2: pagination via {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY}. */
+        DB2,
+        /** Microsoft SQL Server: pagination via {@code OFFSET ... ROWS FETCH NEXT ... ROWS ONLY}. */
+        SQL_SERVER,
+        /** MySQL/MariaDB: {@code LIMIT}/{@code OFFSET} pagination; unset identifier quote defaults to backtick. */
+        MYSQL,
+        /** Other products known to use {@code LIMIT}/{@code OFFSET} pagination (PostgreSQL, SQLite, H2). */
+        LIMIT_STYLE,
+        /** No product info, or an unrecognized product: default {@code LIMIT}/{@code OFFSET} pagination. */
+        DEFAULT
     }
 
     /**

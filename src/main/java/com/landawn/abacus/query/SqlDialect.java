@@ -17,7 +17,8 @@ import lombok.experimental.Accessors;
  *   <li>the {@link SQLPolicy} used to render values as raw literals, positional {@code ?} parameters,
  *       named {@code :name} parameters, or iBATIS/MyBatis {@code #{name}} parameters;</li>
  *   <li>the {@link IdentifierQuote} used when generated aliases or identifiers must be quoted; and</li>
- *   <li>optional product metadata, currently stored as {@link #productVersion}.</li>
+ *   <li>the optional {@link ProductInfo} identifying the target database product, which query builders
+ *       use to emit product-specific SQL such as pagination clauses.</li>
  * </ul>
  *
  * <p>The predefined {@link SqlBuilder} DSL constants, such as {@link SqlBuilder#PSC} and
@@ -34,8 +35,11 @@ import lombok.experimental.Accessors;
  * <p>Fields left unset on the builder remain {@code null}. When a dialect is used by
  * {@link AbstractQueryBuilder}, unset rendering choices are resolved to these defaults:
  * {@link NamingPolicy#SNAKE_CASE}, {@link SQLPolicy#RAW_SQL}, and
- * {@link IdentifierQuote#DOUBLE_QUOTE}. The {@link #productVersion} value is descriptive metadata only
- * and does not change SQL rendering.</p>
+ * {@link IdentifierQuote#DOUBLE_QUOTE} (or {@link IdentifierQuote#BACKTICK} when {@link #productInfo}
+ * names MySQL or MariaDB). When {@link #productInfo} is set, query builders also adapt
+ * product-specific SQL syntax such as pagination clauses; see {@link AbstractQueryBuilder#limit(int)}.
+ * When it is {@code null} or its name is not recognized, builders generate the default
+ * {@code LIMIT}/{@code OFFSET} syntax.</p>
  *
  * @see SqlBuilder.Dsl#forDialect(SqlDialect)
  * @see AbstractQueryBuilder
@@ -46,10 +50,14 @@ import lombok.experimental.Accessors;
 public class SqlDialect {
 
     /**
-     * Optional database product/version label, such as {@code "MySQL 9.7"} or {@code "PostgreSQL 18"}.
-     * This value is metadata for callers and diagnostics; query builders do not branch on it.
+     * Optional descriptor of the target database product. When set, query builders branch on
+     * {@link ProductInfo#name()} to emit product-specific SQL: Oracle, DB2 and SQL Server dialects
+     * render pagination with {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY} instead of
+     * {@code LIMIT}/{@code OFFSET}, and a {@code null} {@link #identifierQuote} defaults to
+     * {@link IdentifierQuote#BACKTICK} for MySQL/MariaDB. When {@code null}, builders use the default
+     * SQL syntax.
      */
-    private String productVersion;
+    private ProductInfo productInfo;
 
     /**
      * Naming policy used to translate Java property names into generated SQL identifiers. For example,
@@ -120,11 +128,14 @@ public class SqlDialect {
     }
 
     /**
-     * Immutable database product descriptor for callers that want to keep a product name and version
-     * separately.
+     * Immutable descriptor of a database product, holding the product name and version separately.
      *
-     * <p>This type is metadata only. SQL rendering is controlled by {@link SqlDialect}'s
-     * {@link #namingPolicy}, {@link #sqlPolicy}, and {@link #identifierQuote} values.</p>
+     * <p>When attached to a dialect via {@link SqlDialect#productInfo}, the {@link #name} drives
+     * product-specific SQL generation in query builders (for example, Oracle-style
+     * {@code FETCH FIRST ... ROWS ONLY} pagination). The name is matched case-insensitively as a
+     * substring, so raw JDBC values from {@code DatabaseMetaData.getDatabaseProductName()} such as
+     * {@code "Microsoft SQL Server"} or {@code "Oracle Database 19c"} are recognized. The
+     * {@link #version} is descriptive metadata only.</p>
      */
     @Builder
     @Value
@@ -139,5 +150,26 @@ public class SqlDialect {
          * Database product version, such as {@code "9.7"} or {@code "18"}.
          */
         private String version;
+
+        /**
+         * Creates a {@code ProductInfo} with the given product name and no version.
+         *
+         * @param name the database product name, such as {@code "Oracle"} or {@code "MySQL"}
+         * @return a new {@code ProductInfo} with the given name and a {@code null} version
+         */
+        public static ProductInfo of(final String name) {
+            return new ProductInfo(name, null);
+        }
+
+        /**
+         * Creates a {@code ProductInfo} with the given product name and version.
+         *
+         * @param name the database product name, such as {@code "Oracle"} or {@code "MySQL"}
+         * @param version the database product version, such as {@code "19c"} or {@code "9.7"}
+         * @return a new {@code ProductInfo} with the given name and version
+         */
+        public static ProductInfo of(final String name, final String version) {
+            return new ProductInfo(name, version);
+        }
     }
 }

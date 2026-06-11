@@ -2050,6 +2050,9 @@ public class Criteria extends AbstractCondition {
          * Sets or replaces the LIMIT clause using a string expression.
          * Allows for database-specific limit syntax.
          * If a LIMIT clause already exists, it will be replaced.
+         * When rendered by a SQL builder whose dialect paginates with {@code OFFSET}/{@code FETCH}
+         * (Oracle, DB2 or SQL Server), a generic {@code LIMIT count [OFFSET offset]} expression is
+         * re-rendered in that dialect's syntax; see {@link Limit#Limit(String)}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code

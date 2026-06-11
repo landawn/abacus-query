@@ -146,6 +146,13 @@ public class Limit extends Clause {
      * After this normalization, {@link #getExpression()} returns the prefixed form and
      * {@link #toString(NamingPolicy)} renders it directly without inserting an additional {@code LIMIT}.</p>
      *
+     * <p>Note: when this condition is rendered by a SQL builder whose dialect paginates with
+     * {@code OFFSET}/{@code FETCH} (Oracle, DB2 or SQL Server, per
+     * {@link com.landawn.abacus.query.SqlDialect#productInfo()}), a generic
+     * {@code LIMIT count [OFFSET offset]} expression with integer or placeholder tokens is re-rendered
+     * in that dialect's syntax; any other expression is emitted verbatim. {@link #toString(NamingPolicy)}
+     * itself is dialect-agnostic and always returns the normalized expression.</p>
+     *
      * <p>Note: {@link #getCount()} returns {@link Integer#MAX_VALUE} and {@link #getOffset()} returns
      * {@code 0} when the instance is constructed via this constructor, regardless of the expression contents.</p>
      *

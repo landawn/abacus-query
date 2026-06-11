@@ -203,8 +203,7 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testConstructorWithMultipleEntitiesAndCondition() {
         List<String> tables = Arrays.asList("categories", "subcategories");
-        On joinCondition = Filters
-                .on(Filters.expr("products.category_id = categories.id").and(Filters.expr("products.subcategory_id = subcategories.id")));
+        On joinCondition = Filters.on(Filters.expr("products.category_id = categories.id").and(Filters.expr("products.subcategory_id = subcategories.id")));
         RightJoin join = Filters.rightJoin(tables, joinCondition);
 
         Assertions.assertEquals(Operator.RIGHT_JOIN, join.operator());
@@ -334,8 +333,7 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testMultipleTablesJoin() {
         List<String> tables = Arrays.asList("departments", "locations");
-        On joinCondition = Filters
-                .on(Filters.expr("employees.dept_id = departments.id").and(Filters.expr("departments.location_id = locations.id")));
+        On joinCondition = Filters.on(Filters.expr("employees.dept_id = departments.id").and(Filters.expr("departments.location_id = locations.id")));
 
         RightJoin join = Filters.rightJoin(tables, joinCondition);
 
