@@ -68,8 +68,10 @@ public abstract class ComposableCondition extends AbstractCondition {
      * }</pre>
      *
      * @return a new {@link Not} condition wrapping this condition
-     * @throws IllegalArgumentException if this condition has a non-composable operator
-     *                                  (e.g., a clause, {@code ON}, or {@code USING} operator)
+     * @throws IllegalArgumentException if this condition is non-composable — a {@link Criteria}, a SQL clause,
+     *                                  an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
+     *                                  quantified-subquery operand, or an empty predicate (a blank {@link Expression}
+     *                                  or empty {@link Junction})
      */
     public Not not() {
         validateComposableOperand(this, "not");
@@ -90,9 +92,11 @@ public abstract class ComposableCondition extends AbstractCondition {
      *
      * @param cond the condition to AND with this condition (must not be {@code null})
      * @return a new {@link And} condition containing both conditions
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or
-     *                                  {@code cond} has a non-composable operator (e.g., a clause,
-     *                                  {@code ON}, or {@code USING} operator)
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or {@code cond}
+     *                                  is non-composable — a {@link Criteria}, a SQL clause, an
+     *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
+     *                                  quantified-subquery operand, or an empty predicate (a blank
+     *                                  {@link Expression} or empty {@link Junction})
      */
     public And and(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
@@ -116,9 +120,11 @@ public abstract class ComposableCondition extends AbstractCondition {
      *
      * @param cond the condition to OR with this condition (must not be {@code null})
      * @return a new {@link Or} condition containing both conditions
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or
-     *                                  {@code cond} has a non-composable operator (e.g., a clause,
-     *                                  {@code ON}, or {@code USING} operator)
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or {@code cond}
+     *                                  is non-composable — a {@link Criteria}, a SQL clause, an
+     *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
+     *                                  quantified-subquery operand, or an empty predicate (a blank
+     *                                  {@link Expression} or empty {@link Junction})
      */
     public Or or(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
@@ -149,9 +155,11 @@ public abstract class ComposableCondition extends AbstractCondition {
      *
      * @param cond the condition to XOR with this condition (must not be {@code null})
      * @return a new {@link Or} condition representing {@code (this AND NOT cond) OR (NOT this AND cond)}
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or
-     *                                  {@code cond} has a non-composable operator (e.g., a clause,
-     *                                  {@code ON}, or {@code USING} operator)
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or {@code cond}
+     *                                  is non-composable — a {@link Criteria}, a SQL clause, an
+     *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
+     *                                  quantified-subquery operand, or an empty predicate (a blank
+     *                                  {@link Expression} or empty {@link Junction})
      */
     public Or xor(final Condition cond) {
         N.checkArgNotNull(cond, "cond");

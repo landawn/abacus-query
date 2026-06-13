@@ -376,6 +376,13 @@ public class OnTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.using("id")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.expr("ON users.id = orders.user_id")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.expr("USING (id)")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.expr("   ")));
+    }
+
+    @Test
+    public void testConstructorRejectsBlankPropertyNames() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on("   ", "orders.user_id"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on("users.id", "   "));
     }
 
     @Test

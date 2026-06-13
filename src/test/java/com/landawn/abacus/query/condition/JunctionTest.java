@@ -533,4 +533,15 @@ public class JunctionTest extends TestBase {
     public void testConstructorRejectsConnectorOperand() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
     }
+
+    @Test
+    public void testConstructorRejectsQuantifiedSubqueryAndEmptyPredicates() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new And(Filters.all(subQuery)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Or(Filters.any(subQuery)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.some(subQuery)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new And()));
+    }
 }

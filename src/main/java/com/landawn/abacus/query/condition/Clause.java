@@ -112,8 +112,7 @@ public abstract class Clause extends Cell {
 
         final Operator condOperator = cond.operator();
 
-        if (cond instanceof Criteria || isClause(condOperator) || condOperator == Operator.ON || condOperator == Operator.USING
-                || isQuantifiedSubQueryOperand(cond)) {
+        if (cond instanceof Criteria || isClause(cond) || isOnOrUsing(cond) || isQuantifiedSubQueryOperand(cond) || isEmptyPredicate(cond)) {
             throw new IllegalArgumentException("Condition with operator '" + condOperator + "' cannot be nested inside a clause");
         }
 

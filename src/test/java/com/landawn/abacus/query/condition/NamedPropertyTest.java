@@ -788,6 +788,12 @@ public class NamedPropertyTest extends TestBase {
     }
 
     @Test
+    public void testConstructorAndFactoryRejectBlankPropertyName() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new NamedProperty("   "));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> NamedProperty.of("   "));
+    }
+
+    @Test
     public void testEq() {
         NamedProperty prop = NamedProperty.of("status");
         Equal condition = prop.eq("active");

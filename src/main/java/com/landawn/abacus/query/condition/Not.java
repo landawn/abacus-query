@@ -114,9 +114,10 @@ public class Not extends ComposableCell {
      *             including simple comparisons, logical junctions ({@link And}, {@link Or}),
      *             or subquery conditions. It should not be a clause condition (such as
      *             {@link Where} or {@link Having}), since those are not meant to be composed.
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond} has a
-     *             non-composable operator — a {@link Clause} condition (for example {@link Where},
-     *             {@link Having}, or {@link OrderBy}), or a condition whose operator is {@code ON} or {@code USING}
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond} is non-composable —
+     *             a {@link Criteria}, a {@link Clause} condition (for example {@link Where}, {@link Having}, or
+     *             {@link OrderBy}), an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
+     *             quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public Not(final Condition cond) {
         super(Operator.NOT, validateComposableOperand(cond, "not"));

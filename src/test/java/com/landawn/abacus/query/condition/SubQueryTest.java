@@ -547,6 +547,13 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsCriteriaConditionWithSelectModifier() {
+        Criteria criteria = Criteria.builder().distinct().where(Filters.eq("active", true)).build();
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList("id"), criteria));
+    }
+
+    @Test
     public void testConstructorWithNullEntityNameAndRawSqlUsesEmptyEntityName() {
         SubQuery subQuery = new SubQuery((String) null, "SELECT id FROM users");
         Assertions.assertEquals("", subQuery.getEntityName());

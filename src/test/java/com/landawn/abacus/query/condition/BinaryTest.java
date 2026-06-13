@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -472,6 +473,32 @@ public class BinaryTest extends TestBase {
         Assertions.assertEquals(Arrays.asList(1, 2, 3), in.getParameters());
         Assertions.assertEquals("prop NOT IN ('a', 'b')", notIn.toString());
         Assertions.assertEquals(Arrays.asList("a", "b"), notIn.getParameters());
+    }
+
+    @Test
+    public void testInCollectionValueDefensivelyCopied() {
+        final List<Integer> values = new ArrayList<>(Arrays.asList(1));
+        final Binary in = Filters.binary("id", Operator.IN, values);
+        final int hash = in.hashCode();
+
+        values.add(2);
+        values.clear();
+
+        assertEquals("id IN (1)", in.toString());
+        assertEquals(Arrays.asList(1), in.getParameters());
+        assertEquals(hash, in.hashCode());
+    }
+
+    @Test
+    public void testInArrayValueRendersAsListAndRejectsInvalidValues() {
+        final Binary in = Filters.binary("id", Operator.IN, new int[] { 1, 2 });
+
+        assertEquals("id IN (1, 2)", in.toString());
+        assertEquals(Arrays.asList(1, 2), in.getParameters());
+
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("id", Operator.IN, new int[0]));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("id", Operator.IN, 1));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("id", Operator.NOT_IN, null));
     }
 
     @Test

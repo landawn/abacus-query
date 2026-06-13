@@ -285,12 +285,15 @@ public class Filters {
      * // SQL fragment: price > 100
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the binary operator to use (must not be {@code null})
      * @param propValue the value to compare against; may be a literal, {@code null}, or another
-     *                  {@link Condition} such as a {@link SubQuery}
+     *                  {@link Condition} such as a {@link SubQuery}. For an {@code IN}/{@code NOT_IN}
+     *                  operator, a {@link Collection} or array value is copied defensively and must be non-empty.
      * @return a {@link Binary} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if, for an
+     *                                  {@code IN}/{@code NOT_IN} operator, {@code propValue} is not a non-empty
+     *                                  {@link Collection}, a non-empty array, or a {@link Condition}
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     public static Binary binary(final String propName, final Operator operator, final Object propValue) {
@@ -2060,8 +2063,6 @@ public class Filters {
      * Creates a {@link GroupBy} clause with the specified property names.
      * Groups results by the given columns. No explicit sort direction is appended
      * to the columns; the database default is used.
-     * <p>Note: unlike {@link #groupBy(Collection)}, which appends {@code ASC} to each column,
-     * this varargs overload appends no direction suffix.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2079,16 +2080,15 @@ public class Filters {
 
     /**
      * Creates a {@link GroupBy} clause with properties from a collection.
-     * Groups results by the given columns in ascending order (an explicit {@code ASC}
-     * is appended to each column).
-     * <p>Note: unlike {@link #groupBy(String...)}, which appends no sort direction,
-     * this overload appends {@code ASC} to every column.</p>
+     * Groups results by the given columns. No explicit sort direction is appended
+     * to the columns; the database default is used. To append a sort direction to
+     * every column, use {@link #groupBy(Collection, SortDirection)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> columns = Arrays.asList("country", "city");
      * GroupBy groupBy = Filters.groupBy(columns);
-     * // Results in SQL like: GROUP BY country ASC, city ASC
+     * // Results in SQL like: GROUP BY country, city
      * }</pre>
      *
      * @param propNames collection of property/column names to group by
@@ -2096,7 +2096,9 @@ public class Filters {
      * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
      */
     public static GroupBy groupBy(final Collection<String> propNames) {
-        return groupBy(propNames, SortDirection.ASC);
+        N.checkArgNotEmpty(propNames, "propNames");
+
+        return new GroupBy(propNames.toArray(new String[propNames.size()]));
     }
 
     /**

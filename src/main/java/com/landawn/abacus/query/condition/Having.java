@@ -133,7 +133,10 @@ public class Having extends Clause {
      * }</pre>
      *
      * @param cond the condition to apply in the HAVING clause. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a {@link Criteria}, another clause, or an {@code ON}/{@code USING} condition (cannot be nested inside a clause)
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a {@link Criteria}, another clause,
+     *             an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
+     *             operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which
+     *             can be nested inside a clause
      */
     public Having(final Condition cond) {
         super(Operator.HAVING, cond);

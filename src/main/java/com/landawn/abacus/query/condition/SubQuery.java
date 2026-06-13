@@ -208,8 +208,9 @@ public class SubQuery extends AbstractCondition {
      * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
      *             May be {@code null} to select without a WHERE clause.
      * @throws IllegalArgumentException if {@code entityName} is {@code null} or empty, if {@code propNames} is
-     *             {@code null} or empty, if {@code propNames} contains {@code null}/empty names, or if {@code cond}
-     *             uses an {@link Operator#ON ON}/{@link Operator#USING USING} operator (which is not valid here)
+     *             {@code null} or empty, if {@code propNames} contains {@code null}/empty names, if {@code cond}
+     *             uses an {@link Operator#ON ON}/{@link Operator#USING USING} operator, or if {@code cond} is a
+     *             {@link Criteria} that carries a SELECT modifier (e.g. {@code DISTINCT}) — none of which are valid here
      */
     public SubQuery(final String entityName, final Collection<String> propNames, final Condition cond) {
         super(Operator.EMPTY);
@@ -260,8 +261,9 @@ public class SubQuery extends AbstractCondition {
      * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
      *             May be {@code null} to select without a WHERE clause.
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propNames} is {@code null}
-     *             or empty, if {@code propNames} contains {@code null}/empty names, or if {@code cond} uses an
-     *             {@link Operator#ON ON}/{@link Operator#USING USING} operator (which is not valid here)
+     *             or empty, if {@code propNames} contains {@code null}/empty names, if {@code cond} uses an
+     *             {@link Operator#ON ON}/{@link Operator#USING USING} operator, or if {@code cond} is a
+     *             {@link Criteria} that carries a SELECT modifier (e.g. {@code DISTINCT}) — none of which are valid here
      */
     public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition cond) {
         super(Operator.EMPTY);
@@ -412,7 +414,15 @@ public class SubQuery extends AbstractCondition {
     }
 
     private static Condition normalizeCondition(final Condition cond) {
-        if (cond == null || cond instanceof Criteria || isClause(cond)) {
+        if (cond == null || isClause(cond)) {
+            return cond;
+        }
+
+        if (cond instanceof Criteria) {
+            if (!Strings.isBlank(((Criteria) cond).getSelectModifier())) {
+                throw new IllegalArgumentException("Subquery criteria cannot include a SELECT modifier");
+            }
+
             return cond;
         }
 

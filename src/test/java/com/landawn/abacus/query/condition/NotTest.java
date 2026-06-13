@@ -278,4 +278,14 @@ public class NotTest extends TestBase {
         Assertions.assertEquals(notCondition, doubleNot.getCondition());
         Assertions.assertEquals(Operator.NOT, doubleNot.operator());
     }
+
+    @Test
+    public void testConstructorRejectsStructuralAndEmptyOperands() {
+        Criteria criteria = Criteria.builder().where(Filters.eq("a", 1)).build();
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.not(criteria));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.not(Filters.expr("")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.not(Filters.expr("   ")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.not(new And()));
+    }
 }

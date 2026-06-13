@@ -30,7 +30,7 @@ import java.util.Collection;
  *   <li>Performs equality comparison on all matching columns</li>
  *   <li>Eliminates duplicate columns in the result</li>
  *   <li>No explicit join condition needed for matching columns</li>
- *   <li>Additional conditions act as filters after the natural join</li>
+ *   <li>Does not accept an explicit {@code ON}/{@code USING} or filter condition</li>
  * </ul>
  * 
  * <p>Important considerations:</p>
@@ -42,6 +42,12 @@ import java.util.Collection;
  *   <li>Best used when table relationships are well-defined and stable</li>
  * </ul>
  * 
+ * <p>Because the join predicate is implicit, a NATURAL JOIN does <b>not</b> accept an explicit
+ * {@code ON}/{@code USING} or filter condition. The condition-taking constructors exist only for
+ * API symmetry with the other {@link Join} subclasses and require {@code cond} to be {@code null};
+ * any non-{@code null} condition is rejected with an {@link IllegalArgumentException}. To apply an
+ * additional filter, place it in the enclosing query's {@code WHERE} clause instead.</p>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple natural join - automatically joins on common column names
@@ -49,24 +55,12 @@ import java.util.Collection;
  * // SQL: NATURAL JOIN employees
  * // Automatically joins on any columns with identical names
  *
- * // Natural join with additional filter condition
- * NaturalJoin join2 = new NaturalJoin("departments",
- *     Filters.equal("status", "active"));
- * // SQL: NATURAL JOIN departments ON status = 'active'
- * // Natural join on matching columns, then apply status filter
- *
- * // Natural join with Expression condition
- * NaturalJoin join3 = new NaturalJoin("orders",
- *     Filters.expr("order_date > '2024-01-01'"));
- * // SQL: NATURAL JOIN orders ON order_date > '2024-01-01'
- *
  * // Multiple tables natural join
  * List<String> tables = Arrays.asList("employees", "departments");
- * NaturalJoin multiJoin = new NaturalJoin(tables,
- *     Filters.equal("active", true));
- * // SQL: NATURAL JOIN (employees, departments) ON active = true
+ * NaturalJoin multiJoin = new NaturalJoin(tables, null);
+ * // SQL: NATURAL JOIN (employees, departments)
  * }</pre>
- * 
+ *
  * @see Join
  * @see InnerJoin
  * @see LeftJoin
@@ -110,40 +104,23 @@ public class NaturalJoin extends Join {
     }
 
     /**
-     * Creates a NATURAL JOIN clause with an additional condition.
-     * The natural join occurs on matching column names, with the condition as an extra filter.
+     * Creates a NATURAL JOIN clause for the specified table or entity.
+     * The join automatically uses all columns with matching names between the tables.
      *
-     * <p>The condition parameter acts as an additional filter after the natural join
-     * is performed. This is useful when you want to combine the automatic column matching
-     * of natural join with specific filtering criteria.
+     * <p>A NATURAL JOIN derives its join predicate implicitly and therefore does not accept an
+     * explicit condition. This constructor exists only for API symmetry with the other {@link Join}
+     * subclasses; {@code cond} must be {@code null}. To apply an additional filter, place it in the
+     * enclosing query's {@code WHERE} clause instead.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Natural join filtered by date using Filters.greaterThan()
-     * NaturalJoin join1 = new NaturalJoin("orders",
-     *     Filters.greaterThan("orderDate", "2024-01-01"));
-     * // SQL: NATURAL JOIN orders ON orderDate > '2024-01-01'
-     * // Natural join on matching columns, then filter by order date
-     *
-     * // Natural join with Expression condition
-     * NaturalJoin join2 = new NaturalJoin("products",
-     *     Filters.expr("price > 100 AND stock > 0"));
-     * // SQL: NATURAL JOIN products ON price > 100 AND stock > 0
-     *
-     * // Natural join with complex And condition
-     * NaturalJoin join3 = new NaturalJoin("employees",
-     *     new And(
-     *         Filters.equal("status", "active"),
-     *         Filters.greaterThan("hire_date", "2020-01-01")
-     *     ));
-     * // SQL: NATURAL JOIN employees ON ((status = 'active') AND (hire_date > '2020-01-01'))
+     * NaturalJoin join = new NaturalJoin("orders", null);
+     * // SQL: NATURAL JOIN orders
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond an additional condition appended after the natural join fragment. Use {@link On} or {@link Using} when the SQL should include those keywords; any other non-{@code null} condition is automatically prefixed with {@code ON}. Any non-clause {@link Condition} is allowed
-     *            and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
-     *                                  {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is non-{@code null}
      */
     public NaturalJoin(final String joinEntity, final Condition cond) {
         super(Operator.NATURAL_JOIN, joinEntity, validateNaturalJoinCondition(cond));
@@ -156,34 +133,22 @@ public class NaturalJoin extends Join {
      * form is rarely directly executable and is provided mainly for symmetry with the other join
      * subclasses. Prefer chaining individual {@link NaturalJoin} clauses for portable SQL.
      *
+     * <p>As with the other constructors, a NATURAL JOIN cannot carry an explicit condition, so
+     * {@code cond} must be {@code null}; it exists only for API symmetry with the other {@link Join}
+     * subclasses.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Join customers, orders, and products naturally with filter
+     * // Join customers, orders, and products naturally
      * List<String> tables = Arrays.asList("customers", "orders", "products");
-     * NaturalJoin join1 = new NaturalJoin(tables,
-     *     Filters.greaterThan("totalAmount", 1000));
-     * // SQL: NATURAL JOIN (customers, orders, products) ON totalAmount > 1000
-     * // Natural join across all tables on matching columns, filtered by amount
-     *
-     * // Natural join with Expression condition
-     * NaturalJoin join2 = new NaturalJoin(tables,
-     *     Filters.expr("status = 'active' AND verified = true"));
-     * // SQL: NATURAL JOIN (customers, orders, products) ON status = 'active' AND verified = true
-     *
-     * // Natural join with complex conditions
-     * NaturalJoin join3 = new NaturalJoin(tables,
-     *     new And(
-     *         Filters.equal("region", "US"),
-     *         Filters.greaterThan("created_date", "2024-01-01")
-     *     ));
-     * // SQL: NATURAL JOIN (customers, orders, products) ON ((region = 'US') AND (created_date > '2024-01-01'))
+     * NaturalJoin join = new NaturalJoin(tables, null);
+     * // SQL: NATURAL JOIN (customers, orders, products)
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param cond an additional condition appended after the natural join fragment. Use {@link On} or {@link Using} when the SQL should include those keywords; any other non-{@code null} condition is automatically prefixed with {@code ON}. Any non-clause {@link Condition} is allowed
-     *            and can be {@code null}.
+     * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
-     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  or if {@code cond} is non-{@code null}
      */
     public NaturalJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.NATURAL_JOIN, joinEntities, validateNaturalJoinCondition(cond));

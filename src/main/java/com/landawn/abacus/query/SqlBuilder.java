@@ -20,7 +20,9 @@ import static com.landawn.abacus.util.SK._PARENTHESIS_L;
 import static com.landawn.abacus.util.SK._PARENTHESIS_R;
 import static com.landawn.abacus.util.SK._SPACE;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -246,6 +248,15 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      */
     protected SqlBuilder(final SqlDialect sqlDialect) {
         super(sqlDialect);
+    }
+
+    private static void validateColumnAliases(final Map<String, String> propOrColumnNameAliases) {
+        for (final String alias : propOrColumnNameAliases.values()) {
+            if (Strings.isBlank(alias) || alias.indexOf('"') >= 0 || alias.indexOf('`') >= 0 || alias.indexOf('\r') >= 0 || alias.indexOf('\n') >= 0
+                    || alias.contains("--") || alias.contains("/*") || alias.contains("*/")) {
+                throw new IllegalArgumentException("Column alias must not be null, blank, quoted, or contain SQL comment tokens");
+            }
+        }
     }
 
     /**
@@ -617,7 +628,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             final SqlBuilder instance = createSqlBuilderInstance();
 
             instance._op = OperationType.ADD;
-            instance._propOrColumnNames = propOrColumnNames;
+            instance._propOrColumnNames = new ArrayList<>(propOrColumnNames);
 
             return instance;
         }
@@ -649,7 +660,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             final SqlBuilder instance = createSqlBuilderInstance();
 
             instance._op = OperationType.ADD;
-            instance._props = props;
+            instance._props = new LinkedHashMap<>(props);
 
             return instance;
         }
@@ -1170,7 +1181,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             final SqlBuilder instance = createSqlBuilderInstance();
 
             instance._op = OperationType.QUERY;
-            instance._propOrColumnNames = propOrColumnNames;
+            instance._propOrColumnNames = new ArrayList<>(propOrColumnNames);
 
             return instance;
         }
@@ -1197,15 +1208,17 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
          *
          * @param propOrColumnNameAliases map of property/column names to their aliases
          * @return a new SqlBuilder instance configured for SELECT operation
-         * @throws IllegalArgumentException if propOrColumnNameAliases is null or empty
+         * @throws IllegalArgumentException if {@code propOrColumnNameAliases} is null or empty, or if any alias is
+         *                                  blank, contains a quote character, a line break, or an SQL comment token
          */
         public SqlBuilder select(final Map<String, String> propOrColumnNameAliases) {
             N.checkArgNotEmpty(propOrColumnNameAliases, SELECTION_PART_MSG);
+            validateColumnAliases(propOrColumnNameAliases);
 
             final SqlBuilder instance = createSqlBuilderInstance();
 
             instance._op = OperationType.QUERY;
-            instance._propOrColumnNameAliases = propOrColumnNameAliases;
+            instance._propOrColumnNameAliases = new LinkedHashMap<>(propOrColumnNameAliases);
 
             return instance;
         }
@@ -1629,7 +1642,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
 
             instance._op = OperationType.QUERY;
             instance.setEntityClass(multiSelects.get(0).entityClass());
-            instance._multiSelects = multiSelects;
+            instance._multiSelects = new ArrayList<>(multiSelects);
 
             return instance;
         }

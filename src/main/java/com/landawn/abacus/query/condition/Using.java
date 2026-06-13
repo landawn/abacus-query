@@ -18,6 +18,7 @@ import java.util.Collection;
 
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.N;
+import com.landawn.abacus.util.Strings;
 
 /**
  * Represents a USING clause in SQL JOIN operations.
@@ -224,7 +225,9 @@ public class Using extends Cell {
     }
 
     private static void validateColumnName(final String columnName) {
-        N.checkArgNotEmpty(columnName, "columnName in columnNames");
+        if (Strings.isBlank(columnName)) {
+            throw new IllegalArgumentException("columnName in columnNames cannot be null or empty");
+        }
 
         if (columnName.indexOf('.') >= 0) {
             throw new IllegalArgumentException("USING column names must be unqualified: " + columnName);

@@ -20,6 +20,7 @@ import java.util.Map;
 
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.N;
+import com.landawn.abacus.util.Strings;
 
 /**
  * Represents an ON clause used in SQL JOIN operations.
@@ -135,7 +136,8 @@ public class On extends Cell {
      *            {@link Expression}, {@link Equal}, {@link And}, {@link Or}, or {@link Between}.
      *            Must not be {@code null}.
      * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond} is a {@link Criteria},
-     *                                  a SQL clause, or an {@code ON}/{@code USING} condition
+     *                                  a SQL clause, an {@code ON}/{@code USING} condition, or an empty predicate
+     *                                  (a blank {@link Expression} or empty {@link Junction})
      */
     public On(final Condition cond) {
         super(Operator.ON, validateOnCondition(cond));
@@ -144,7 +146,7 @@ public class On extends Cell {
     private static Condition validateOnCondition(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
 
-        if (cond instanceof Criteria || isClause(cond) || containsOnOrUsing(cond)) {
+        if (cond instanceof Criteria || isClause(cond) || containsOnOrUsing(cond) || isEmptyPredicate(cond)) {
             throw new IllegalArgumentException("ON condition cannot wrap a SQL clause or ON/USING connector: " + cond.operator());
         }
 
@@ -244,8 +246,13 @@ public class On extends Cell {
      * @throws IllegalArgumentException if {@code propName} or {@code anotherPropName} is {@code null} or empty
      */
     static Condition createOnCondition(final String propName, final String anotherPropName) {
-        N.checkArgNotEmpty(propName, "propName");
-        N.checkArgNotEmpty(anotherPropName, "anotherPropName");
+        if (Strings.isBlank(propName)) {
+            throw new IllegalArgumentException("propName cannot be null or empty");
+        }
+
+        if (Strings.isBlank(anotherPropName)) {
+            throw new IllegalArgumentException("anotherPropName cannot be null or empty");
+        }
 
         return new Equal(propName, Filters.expr(anotherPropName));
     }

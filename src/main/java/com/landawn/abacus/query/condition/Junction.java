@@ -165,7 +165,9 @@ public class Junction extends ComposableCondition {
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             or is an {@code ON}/{@code USING} condition that is not an {@link On} instance
+     *             is an {@code ON}/{@code USING} condition that is not an {@link On} instance, is an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
+     *             (a blank {@link Expression} or empty {@link Junction})
      */
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
@@ -202,7 +204,9 @@ public class Junction extends ComposableCondition {
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             or is an {@code ON}/{@code USING} condition that is not an {@link On} instance
+     *             is an {@code ON}/{@code USING} condition that is not an {@link On} instance, is an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
+     *             (a blank {@link Expression} or empty {@link Junction})
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);
@@ -272,7 +276,8 @@ public class Junction extends ComposableCondition {
     private static Condition validateConstructorOperand(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
 
-        if (condition instanceof Criteria || isClause(condition) || containsOnOrUsing(condition)) {
+        if (condition instanceof Criteria || isClause(condition) || containsOnOrUsing(condition) || isQuantifiedSubQueryOperand(condition)
+                || isEmptyPredicate(condition)) {
             throw new IllegalArgumentException("Condition with operator '" + condition.operator() + "' cannot be used in a junction constructor");
         }
 

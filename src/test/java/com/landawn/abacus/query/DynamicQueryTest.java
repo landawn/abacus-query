@@ -1278,6 +1278,33 @@ class DynamicQuery2026BatchTest extends TestBase {
     }
 
     @Test
+    public void testClauseBuildersRejectMutationAfterBuild() {
+        Builder builder = DynamicQuery.builder();
+        DynamicQuery.SelectClause select = builder.select();
+        DynamicQuery.FromClause from = builder.from();
+        DynamicQuery.WhereClause where = builder.where();
+        DynamicQuery.GroupByClause groupBy = builder.groupBy();
+        DynamicQuery.HavingClause having = builder.having();
+        DynamicQuery.OrderByClause orderBy = builder.orderBy();
+
+        select.append("*");
+        from.append("users");
+        where.append("active = true");
+        groupBy.append("region");
+        having.append("COUNT(*) > 0");
+        orderBy.append("id ASC");
+
+        builder.build();
+
+        assertThrows(IllegalStateException.class, () -> select.append("name"));
+        assertThrows(IllegalStateException.class, () -> from.append("orders"));
+        assertThrows(IllegalStateException.class, () -> where.and("id = 1"));
+        assertThrows(IllegalStateException.class, () -> groupBy.append("department"));
+        assertThrows(IllegalStateException.class, () -> having.or("COUNT(*) > 10"));
+        assertThrows(IllegalStateException.class, () -> orderBy.append("name ASC"));
+    }
+
+    @Test
     public void test2ndPass_placeholdersNegative_throwsIAE() {
         Builder b = DynamicQuery.builder();
         b.select().append("*");

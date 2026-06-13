@@ -688,8 +688,32 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
+     * Tests whether the given condition is an "empty predicate" — a condition that carries no actual
+     * filtering logic and therefore cannot meaningfully participate in composition, clauses, or joins.
+     * Specifically, this is a blank {@link Expression} (an empty or whitespace-only literal) or a
+     * {@link Junction} that contains no sub-conditions.
+     *
+     * @param cond the condition to test (may be {@code null})
+     * @return {@code true} if {@code cond} is a blank {@link Expression} or an empty {@link Junction};
+     *         {@code false} otherwise (including for a {@code null} {@code cond})
+     */
+    protected static boolean isEmptyPredicate(final Condition cond) {
+        if (cond instanceof Expression) {
+            return Strings.isBlank(((Expression) cond).getLiteral());
+        }
+
+        if (cond instanceof Junction) {
+            return N.isEmpty(((Junction) cond).getConditions());
+        }
+
+        return false;
+    }
+
+    /**
      * Validates that the given condition is a valid operand for composable operations (AND, OR, NOT, XOR).
-     * Conditions with clause operators (WHERE, ORDER BY, etc.), ON, USING, or {@code null} operators
+     * Conditions that are a {@link Criteria}, a SQL clause (WHERE, ORDER BY, etc.), an {@code ON}/{@code USING}
+     * connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, an empty predicate
+     * (a blank {@link Expression} or empty {@link Junction}), or that have a {@code null} operator
      * (including a {@code null} {@code cond}) cannot participate in logical composition.
      *
      * <p><b>Usage Examples:</b></p>
@@ -706,15 +730,18 @@ public abstract class AbstractCondition implements Condition {
      * @param cond the condition to validate; may be {@code null} (will trigger the exception)
      * @param methodName the name of the composable method being called (for error messages)
      * @return {@code cond} unchanged, after validation succeeds
-     * @throws IllegalArgumentException if {@code cond} is {@code null} or has a {@code null}, clause,
-     *                                  {@code ON}, or {@code USING} operator
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, has a {@code null} operator, or is a
+     *                                  {@link Criteria}, a SQL clause, an {@code ON}/{@code USING} connector,
+     *                                  an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
         N.checkArgNotNull(cond, "cond");
 
         final Operator operator = cond.operator();
 
-        if (operator == null || isClause(cond) || containsOnOrUsing(cond) || isQuantifiedSubQueryOperand(cond)) {
+        if (operator == null || cond instanceof Criteria || isClause(cond) || containsOnOrUsing(cond) || isQuantifiedSubQueryOperand(cond)
+                || isEmptyPredicate(cond)) {
             throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in composable method '" + methodName + "'");
         }
 

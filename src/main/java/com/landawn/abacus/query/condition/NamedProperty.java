@@ -100,15 +100,15 @@ public sealed class NamedProperty permits NP {
      * // However, prefer using: NamedProperty.of("age") for caching benefits
      * }</pre>
      *
-     * @param propName the property name; must not be {@code null} or empty
+     * @param propName the property name; must not be {@code null}, empty, or blank
      * @throws NullPointerException if {@code propName} is {@code null}
-     * @throws IllegalArgumentException if {@code propName} is empty
+     * @throws IllegalArgumentException if {@code propName} is empty or blank (whitespace-only)
      */
     public NamedProperty(final String propName) {
         this.propName = N.requireNonNull(propName, "propName");
 
-        if (Strings.isEmpty(this.propName)) {
-            throw new IllegalArgumentException("Property name cannot be null or empty");
+        if (Strings.isBlank(this.propName)) {
+            throw new IllegalArgumentException("Property name cannot be null, empty, or blank");
         }
     }
 
@@ -129,15 +129,15 @@ public sealed class NamedProperty permits NP {
      * }
      * }</pre>
      *
-     * @param propName the property name. Must not be null or empty.
+     * @param propName the property name. Must not be null, empty, or blank.
      *                 Note: unlike the constructor, a {@code null} argument causes an {@code IllegalArgumentException}
-     *                 (null is treated like the empty string by the internal {@code Strings.isEmpty} check).
+     *                 (null is treated like a blank string by the internal {@code Strings.isBlank} check).
      * @return a cached or new NamedProperty instance
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static NamedProperty of(final String propName) {
-        if (Strings.isEmpty(propName)) {
-            throw new IllegalArgumentException("Property name cannot be null or empty");
+        if (Strings.isBlank(propName)) {
+            throw new IllegalArgumentException("Property name cannot be null, empty, or blank");
         }
 
         return instancePool.computeIfAbsent(propName, NamedProperty::new);
@@ -1072,9 +1072,9 @@ public sealed class NamedProperty permits NP {
          * new NamedProperty.NP(null);      // throws NullPointerException (null name)
          * }</pre>
          *
-         * @param propName the property name; must not be {@code null} or empty
+         * @param propName the property name; must not be {@code null}, empty, or blank
          * @throws NullPointerException if {@code propName} is {@code null}
-         * @throws IllegalArgumentException if {@code propName} is empty
+         * @throws IllegalArgumentException if {@code propName} is empty or blank (whitespace-only)
          */
         public NP(final String propName) {
             super(propName);

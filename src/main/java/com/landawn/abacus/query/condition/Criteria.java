@@ -1350,7 +1350,8 @@ public class Criteria extends AbstractCondition {
          *             {@link Operator#WHERE} it is added directly, otherwise it is wrapped in a {@link Where}
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
-         *                                  uses {@code ON}/{@code USING}, or is a clause condition
+         *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
+         *                                  {@link Expression} or empty {@link Junction}), or is a clause condition
          *                                  with an operator other than {@code WHERE}
          */
         public Builder where(final Condition cond) {
@@ -1410,7 +1411,8 @@ public class Criteria extends AbstractCondition {
          *             {@link Operator#GROUP_BY} it is added directly, otherwise it is wrapped in a {@link GroupBy}
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
-         *                                  uses {@code ON}/{@code USING}, or is a clause condition
+         *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
+         *                                  {@link Expression} or empty {@link Junction}), or is a clause condition
          *                                  with an operator other than {@code GROUP_BY}
          */
         public Builder groupBy(final Condition cond) {
@@ -1624,7 +1626,8 @@ public class Criteria extends AbstractCondition {
          *             {@link Operator#HAVING} it is added directly, otherwise it is wrapped in a {@link Having}
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
-         *                                  uses {@code ON}/{@code USING}, or is a clause condition
+         *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
+         *                                  {@link Expression} or empty {@link Junction}), or is a clause condition
          *                                  with an operator other than {@code HAVING}
          */
         public Builder having(final Condition cond) {
@@ -1778,7 +1781,8 @@ public class Criteria extends AbstractCondition {
          *             {@link Operator#ORDER_BY} it is added directly, otherwise it is wrapped in an {@link OrderBy}
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
-         *                                  uses {@code ON}/{@code USING}, or is a clause condition
+         *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
+         *                                  {@link Expression} or empty {@link Junction}), or is a clause condition
          *                                  with an operator other than {@code ORDER_BY}
          */
         public Builder orderBy(final Condition cond) {
@@ -2207,11 +2211,15 @@ public class Criteria extends AbstractCondition {
                 throw new IllegalArgumentException("Invalid condition for " + methodName + ": nested Criteria is not supported");
             }
 
-            if (cond.operator() == Operator.ON || cond.operator() == Operator.USING) {
+            if (isOnOrUsing(cond)) {
                 throw new IllegalArgumentException("Invalid condition for " + methodName + ": ON/USING conditions are not supported");
             }
 
-            if (isClause(cond.operator())) {
+            if (isEmptyPredicate(cond)) {
+                throw new IllegalArgumentException("Invalid condition for " + methodName + ": empty predicates are not supported");
+            }
+
+            if (isClause(cond)) {
                 if (cond.operator() != expectedOperator) {
                     throw new IllegalArgumentException(
                             "Invalid condition for " + methodName + ": expected " + expectedOperator + " or non-clause condition, but got " + cond.operator());

@@ -13657,6 +13657,21 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
         assertEquals(Arrays.asList(1, 2), sp.parameters());
     }
 
+    @Test
+    public void testUnionNamedParameterRenameSkipsQuotedLiterals() {
+        SP sp = NSC.select("id")
+                .from("users")
+                .where(Filters.eq("id", 1))
+                .union(NSC.select("id").from("archive").where(Filters.eq("id", 2)).append(" AND note = ':id' AND quoted_name = \":id\""))
+                .build();
+
+        assertTrue(sp.query().contains("archive WHERE id = :id_2"), sp.query());
+        assertTrue(sp.query().contains("note = ':id'"), sp.query());
+        assertTrue(sp.query().contains("quoted_name = \":id\""), sp.query());
+        assertFalse(sp.query().contains("note = ':id_2'"), sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+    }
+
     /**
      * Bug: {@code union("SELECT 1")} (a valid FROM-less query) was treated as a column list and
      * silently dropped, emitting "... UNION " with nothing after the keyword.
@@ -13697,6 +13712,81 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
     public void testChainedSetWithoutTrailingWhitespaceUnchanged() {
         String sql = PSC.update("users").set("a = 1").set("b").where(Filters.eq("id", 1)).build().query();
         assertEquals("UPDATE users SET a = 1, b = ? WHERE id = ?", sql);
+    }
+
+    @Test
+    public void testBuilderInputsAreDefensivelyCopiedBeforeBuild() {
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("firstName", "John");
+        SqlBuilder insert = PSC.insert(props);
+        props.clear();
+
+        SP insertSp = insert.into("account").build();
+        assertEquals("INSERT INTO account (first_name) VALUES (?)", insertSp.query());
+        assertEquals(Arrays.asList("John"), insertSp.parameters());
+
+        Map<String, Object> entityProps = new LinkedHashMap<>();
+        entityProps.put("lastName", "Doe");
+        Object entity = entityProps;
+        SqlBuilder insertObject = PSC.insert(entity);
+        entityProps.clear();
+
+        SP insertObjectSp = insertObject.into("account").build();
+        assertEquals("INSERT INTO account (last_name) VALUES (?)", insertObjectSp.query());
+        assertEquals(Arrays.asList("Doe"), insertObjectSp.parameters());
+
+        List<String> columns = new ArrayList<>(Arrays.asList("firstName"));
+        SqlBuilder selectColumns = PSC.select(columns);
+        columns.add("lastName");
+        columns.clear();
+        assertEquals("SELECT first_name AS \"firstName\" FROM account", selectColumns.from("account").build().query());
+
+        Map<String, String> aliases = new LinkedHashMap<>();
+        aliases.put("firstName", "fname");
+        SqlBuilder selectAliases = PSC.select(aliases);
+        aliases.put("lastName", "lname");
+        aliases.clear();
+        assertEquals("SELECT first_name AS \"fname\" FROM account", selectAliases.from("account").build().query());
+    }
+
+    @Test
+    public void testBatchInsertMapRowsAreDefensivelyCopiedBeforeBuild() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("firstName", "Jane");
+        row2.put("lastName", "Smith");
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(row1);
+        rows.add(row2);
+
+        SqlBuilder builder = PSC.batchInsert(rows);
+        row1.clear();
+        row2.put("email", "jane@example.com");
+        rows.clear();
+
+        SP sp = builder.into("account").build();
+        assertEquals("INSERT INTO account (first_name, last_name) VALUES (?, ?), (?, ?)", sp.query());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
+    }
+
+    @Test
+    public void testSelectMapRejectsUnsafeAliases() {
+        Map<String, String> aliases = new LinkedHashMap<>();
+
+        aliases.put("firstName", "bad\"alias");
+        assertThrows(IllegalArgumentException.class, () -> PSC.select(aliases));
+
+        aliases.clear();
+        aliases.put("firstName", "bad`alias");
+        assertThrows(IllegalArgumentException.class, () -> PSC.select(aliases));
+
+        aliases.clear();
+        aliases.put("firstName", "bad--alias");
+        assertThrows(IllegalArgumentException.class, () -> PSC.select(aliases));
     }
 
     /**

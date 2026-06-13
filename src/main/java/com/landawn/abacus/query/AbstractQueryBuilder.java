@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -4237,6 +4238,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         int last = 0;
 
         for (int i = 0, len = sql.length(); i < len; i++) {
+            final int next = skipSqlQuotedOrComment(sql, i);
+
+            if (next != i) {
+                i = next - 1;
+                continue;
+            }
+
             if (sql.charAt(i) != ':' || i + 1 >= len || !isSqlParameterNameChar(sql.charAt(i + 1))) {
                 continue;
             }
@@ -4264,9 +4272,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private static String replaceIbatisParameterName(final String sql, final String oldName, final String newName) {
         StringBuilder sb = null;
         int last = 0;
-        int start = sql.indexOf("#{");
 
-        while (start >= 0) {
+        for (int start = 0, len = sql.length(); start < len; start++) {
+            final int next = skipSqlQuotedOrComment(sql, start);
+
+            if (next != start) {
+                start = next - 1;
+                continue;
+            }
+
+            if (sql.charAt(start) != '#' || start + 1 >= len || sql.charAt(start + 1) != '{') {
+                continue;
+            }
+
             final int end = sql.indexOf('}', start + 2);
 
             if (end < 0) {
@@ -4282,10 +4300,53 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 last = end;
             }
 
-            start = sql.indexOf("#{", end + 1);
+            start = end;
         }
 
         return sb == null ? sql : sb.append(sql, last, sql.length()).toString();
+    }
+
+    private static int skipSqlQuotedOrComment(final String sql, final int start) {
+        final int len = sql.length();
+        final char ch = sql.charAt(start);
+
+        if (ch == '\'' || ch == '"' || ch == '`') {
+            for (int i = start + 1; i < len; i++) {
+                final char current = sql.charAt(i);
+
+                if (current == ch) {
+                    if (ch == '\'' && i + 1 < len && sql.charAt(i + 1) == '\'') {
+                        i++;
+                        continue;
+                    }
+
+                    return i + 1;
+                }
+
+                if (ch == '\'' && current == '\\' && i + 1 < len) {
+                    i++;
+                }
+            }
+
+            return len;
+        }
+
+        if (ch == '-' && start + 1 < len && sql.charAt(start + 1) == '-') {
+            int i = start + 2;
+
+            while (i < len && sql.charAt(i) != '\r' && sql.charAt(i) != '\n') {
+                i++;
+            }
+
+            return i;
+        }
+
+        if (ch == '/' && start + 1 < len && sql.charAt(start + 1) == '*') {
+            final int end = sql.indexOf("*/", start + 2);
+            return end < 0 ? len : end + 2;
+        }
+
+        return start;
     }
 
     private static boolean isSqlParameterNameChar(final char ch) {
@@ -5681,16 +5742,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param instance the query builder instance to populate
      * @param entity the entity to parse (a column name String, a Map of properties, or a bean object)
      * @param excludedPropNames property names to exclude from the insert, or {@code null}
+     * @throws IllegalArgumentException if {@code entity} is an empty Map and no {@code excludedPropNames} are given
      */
     protected static void parseInsertEntity(@SuppressWarnings("rawtypes") final AbstractQueryBuilder instance, final Object entity,
             final Set<String> excludedPropNames) {
         if (entity instanceof String) {
             instance._propOrColumnNames = Array.asList((String) entity);
         } else if (entity instanceof Map) {
+            instance._props = new LinkedHashMap<>((Map<String, Object>) entity);
+
             if (N.isEmpty(excludedPropNames)) {
-                instance._props = (Map<String, Object>) entity;
+                N.checkArgument(!instance._props.isEmpty(), "entity map must not be empty");
             } else {
-                instance._props = new LinkedHashMap<>((Map<String, Object>) entity);
                 Maps.removeKeys(instance._props, excludedPropNames);
             }
         } else {
@@ -5733,7 +5796,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@code null} elements are skipped. The element type is determined by the first non-null element:
      * <ul>
      *   <li>If it is a {@link Map}, every other non-null element must also be a {@code Map} with the
-     *       exact same key set; the maps are used as-is (no property is removed).</li>
+     *       exact same key set; each row is defensively copied and no property is removed.</li>
      *   <li>If it is a bean, every other non-null element must have the same insertable property set;
      *       a property is removed from every row only when it is {@code null} (or a zero/default ID
      *       value) across <i>all</i> entities.</li>
@@ -5763,7 +5826,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 if (expectedKeys == null) {
                     N.checkArgument(!propsMap.isEmpty(), "Map at first non-null position in propsList must not be empty");
-                    expectedKeys = propsMap.keySet();
+                    expectedKeys = new LinkedHashSet<>(propsMap.keySet());
                 } else {
                     // All rows in a batch INSERT must share the same column set; otherwise extra keys are silently
                     // dropped and missing keys produce stray NULL parameters, leading to data loss / corruption.
@@ -5772,7 +5835,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                                     + propsMap.keySet());
                 }
 
-                newPropsList.add(propsMap);
+                newPropsList.add(new LinkedHashMap<>(propsMap));
             }
 
             N.checkArgument(N.notEmpty(newPropsList), "All elements in propsList are null");

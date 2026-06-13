@@ -200,6 +200,14 @@ public class JoinTest extends TestBase {
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Arrays.asList("orders o", null), condition));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Arrays.asList("orders o", ""), condition));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Arrays.asList("orders o", "   "), condition));
+    }
+
+    @Test
+    public void testConstructorRejectsBlankJoinEntitiesAndBlankExpressionCondition() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("   "));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", Filters.expr("   ")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Arrays.asList("orders", "   "), Filters.eq("a", "b")));
     }
 
     @Test

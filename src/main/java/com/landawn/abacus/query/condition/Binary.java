@@ -14,6 +14,7 @@
 
 package com.landawn.abacus.query.condition;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -100,26 +101,24 @@ public class Binary extends ComposableCondition {
      * // SQL: price >= (SELECT MIN(price) FROM products)
      * }</pre>
      * 
-     * @param propName the property name to compare (must not be {@code null} or empty)
+     * @param propName the property name to compare (must not be {@code null}, empty, or blank)
      * @param operator the comparison operator (must not be {@code null})
      * @param propValue the value to compare against; may be a literal value, {@code null}
      *                  (for equality operators, renders as {@code IS NULL} / {@code IS NOT NULL}),
-     *                  or a {@link Condition} such as a {@link SubQuery}
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code propValue}
-     *                                  is an empty {@link Collection} for an {@code IN}/{@code NOT_IN} operator
+     *                  or a {@link Condition} such as a {@link SubQuery}. For an {@code IN}/{@code NOT_IN}
+     *                  operator, a {@link Collection} or array value is copied defensively and must be non-empty.
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if, for an
+     *                                  {@code IN}/{@code NOT_IN} operator, {@code propValue} is not a non-empty
+     *                                  {@link Collection}, a non-empty array, or a {@link Condition}
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     public Binary(final String propName, final Operator operator, final Object propValue) {
         super(operator);
 
-        N.checkArgNotEmpty(propName, "propName");
-
-        if (isCollectionOperator(operator) && propValue instanceof final Collection<?> values) {
-            N.checkArgNotEmpty(values, "propValue");
-        }
+        checkPropName(propName);
 
         this.propName = propName;
-        this.propValue = propValue;
+        this.propValue = normalizePropValue(operator, propValue);
     }
 
     /**
@@ -305,6 +304,39 @@ public class Binary extends ComposableCondition {
 
     private static boolean isCollectionOperator(final Operator op) {
         return op == Operator.IN || op == Operator.NOT_IN;
+    }
+
+    private static Object normalizePropValue(final Operator op, final Object propValue) {
+        if (!isCollectionOperator(op)) {
+            return propValue;
+        }
+
+        if (propValue instanceof Condition) {
+            return propValue;
+        }
+
+        if (propValue instanceof final Collection<?> values) {
+            N.checkArgNotEmpty(values, "propValue");
+            return new ArrayList<>(values);
+        }
+
+        if (propValue != null && propValue.getClass().isArray()) {
+            final int len = Array.getLength(propValue);
+
+            if (len == 0) {
+                throw new IllegalArgumentException("propValue cannot be empty");
+            }
+
+            final List<Object> values = new ArrayList<>(len);
+
+            for (int i = 0; i < len; i++) {
+                values.add(Array.get(propValue, i));
+            }
+
+            return values;
+        }
+
+        throw new IllegalArgumentException("IN/NOT IN operator requires a non-empty collection, array, or condition value");
     }
 
     private static String formatCollection(final Collection<?> values, final NamingPolicy namingPolicy) {

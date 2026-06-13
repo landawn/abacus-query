@@ -304,6 +304,12 @@ public class UsingTest extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsBlankColumnNames() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.using("   "));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.using(Arrays.asList("id", "   ")));
+    }
+
+    @Test
     public void testCreateUsingConditionWithEmptyCollection() {
         List<String> emptyList = new ArrayList<>();
 

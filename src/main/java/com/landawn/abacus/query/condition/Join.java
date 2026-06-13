@@ -184,7 +184,9 @@ public class Join extends AbstractCondition {
      * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
      *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
-     *                                  {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with
+     *                                  {@code ON} or {@code USING}, or an empty predicate (a blank {@link Expression}
+     *                                  or empty {@link Junction})
      */
     public Join(final String joinEntity, final Condition cond) {
         this(Operator.JOIN, joinEntity, cond);
@@ -210,7 +212,9 @@ public class Join extends AbstractCondition {
      * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
      *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
-     *                                  {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with
+     *                                  {@code ON} or {@code USING}, or an empty predicate (a blank {@link Expression}
+     *                                  or empty {@link Junction})
      */
     protected Join(final Operator operator, final String joinEntity, final Condition cond) {
         this(operator, Collections.singletonList(joinEntity), cond);
@@ -242,7 +246,8 @@ public class Join extends AbstractCondition {
      * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
      *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
-     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins
+     *                                  with {@code ON} or {@code USING}, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public Join(final Collection<String> joinEntities, final Condition cond) {
         this(Operator.JOIN, joinEntities, cond);
@@ -269,7 +274,8 @@ public class Join extends AbstractCondition {
      *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains
      *                                  {@code null} or empty elements, or if {@code cond} is a {@link Criteria},
-     *                                  a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition cond) {
         super(operator);
@@ -284,7 +290,10 @@ public class Join extends AbstractCondition {
         final List<String> copy = new ArrayList<>(joinEntities.size());
 
         for (final String joinEntity : joinEntities) {
-            N.checkArgNotEmpty(joinEntity, "joinEntity in joinEntities");
+            if (Strings.isBlank(joinEntity)) {
+                throw new IllegalArgumentException("joinEntity in joinEntities cannot be null or empty");
+            }
+
             copy.add(joinEntity);
         }
 
@@ -292,7 +301,7 @@ public class Join extends AbstractCondition {
     }
 
     private static Condition validateJoinCondition(final Condition cond) {
-        if (cond != null && (cond instanceof Criteria || isClause(cond) || (cond instanceof Expression && isOnOrUsing(cond))
+        if (cond != null && (cond instanceof Criteria || isClause(cond) || isEmptyPredicate(cond) || (cond instanceof Expression && isOnOrUsing(cond))
                 || (!(cond instanceof On) && !(cond instanceof Using) && containsOnOrUsing(cond)))) {
             throw new IllegalArgumentException("Join condition cannot be a SQL clause or nested ON/USING connector: " + cond.operator());
         }

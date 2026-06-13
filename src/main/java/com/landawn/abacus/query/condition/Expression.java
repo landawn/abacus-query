@@ -58,8 +58,12 @@ import static com.landawn.abacus.util.SK.UPPER;
 import static com.landawn.abacus.util.SK.VERTICAL_BAR;
 import static com.landawn.abacus.util.SK._SINGLE_QUOTE;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.annotation.Beta;
@@ -127,6 +131,37 @@ public class Expression extends ComposableCondition {
     private static final String BLANK_KEYWORD = "BLANK";
 
     private static final Map<String, Expression> cachedExpression = new ConcurrentHashMap<>();
+
+    private static final Set<String> SQL_KEY_WORDS = N.newHashSet(1024);
+
+    static {
+        final Field[] fields = SK.class.getDeclaredFields();
+
+        for (final Field field : fields) {
+            final int modifiers = field.getModifiers();
+
+            if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers) && field.getType().equals(String.class)) {
+                try {
+                    final String value = (String) field.get(null);
+
+                    for (final String e : Strings.split(value, ' ', true)) {
+                        registerSqlKeyword(e);
+                    }
+                } catch (final Exception e) {
+                    // ignore, should never happen.
+                }
+            }
+        }
+
+        registerSqlKeyword("CURRENT_DATE");
+        registerSqlKeyword("CURRENT_TIME");
+        registerSqlKeyword("CURRENT_TIMESTAMP");
+        registerSqlKeyword("CURRENT_USER");
+        registerSqlKeyword("LOCALTIME");
+        registerSqlKeyword("LOCALTIMESTAMP");
+        registerSqlKeyword("SESSION_USER");
+        registerSqlKeyword("SYSTEM_USER");
+    }
 
     // For Kryo
     final String literal;
@@ -1713,6 +1748,18 @@ public class Expression extends ComposableCondition {
         }
     }
 
+    private static void registerSqlKeyword(final String keyword) {
+        if (Strings.isNotEmpty(keyword)) {
+            SQL_KEY_WORDS.add(keyword);
+            SQL_KEY_WORDS.add(keyword.toUpperCase(Locale.ROOT));
+            SQL_KEY_WORDS.add(keyword.toLowerCase(Locale.ROOT));
+        }
+    }
+
+    private static boolean isSqlKeyword(final String word) {
+        return SQL_KEY_WORDS.contains(word);
+    }
+
     /**
      * Returns the string form of this expression, with the naming policy applied to any
      * identifiers (column or property names) that can be detected within the literal.
@@ -1743,6 +1790,10 @@ public class Expression extends ComposableCondition {
         }
 
         if (literal.length() < 16 && QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(literal).matches()) {
+            if (isSqlKeyword(literal)) {
+                return literal;
+            }
+
             return effectiveNamingPolicy.convert(literal);
         }
 
@@ -1760,7 +1811,7 @@ public class Expression extends ComposableCondition {
             for (int i = 0, len = words.size(); i < len; i++) {
                 word = words.get(i);
 
-                if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SqlParser.isFunctionName(words, len, i)) {
+                if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SqlParser.isFunctionName(words, len, i) || isSqlKeyword(word)) {
                     sb.append(word);
                 } else {
                     sb.append(effectiveNamingPolicy.convert(word));

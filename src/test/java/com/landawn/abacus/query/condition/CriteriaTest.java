@@ -1645,6 +1645,15 @@ class CriteriaBugFixTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(java.util.Collections.<String> emptyList()));
     }
 
+    @Test
+    public void testBuilderRejectsClauseLikeConnectorAndEmptyWhereExpressions() {
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("WHERE active = true")));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where("WHERE active = true"));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("ON users.id = orders.user_id")));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("   ")));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where("   "));
+    }
+
     /**
      * Rendering the same Criteria with alternating naming policies must always return the value for the
      * requested policy. (Originally guarded the since-removed single-slot toString cache; kept because the

@@ -214,4 +214,15 @@ public class ClauseTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(new OrderBy("name")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Having(new Where(Filters.eq("a", 1))));
     }
+
+    @Test
+    public void testConstructorRejectsClauseLikeConnectorAndEmptyExpressions() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr("WHERE a = 1")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Having(Filters.expr("HAVING COUNT(*) > 1")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new GroupBy(Filters.expr("GROUP BY name")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new OrderBy(Filters.expr("ORDER BY name")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr("ON a.id = b.id")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr("")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(new And()));
+    }
 }

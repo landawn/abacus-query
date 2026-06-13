@@ -107,7 +107,9 @@ public class And extends Junction {
      * @param conditions the conditions to combine with AND logic; may be {@code null} or empty
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             or is an {@code ON}/{@code USING} condition that is not an {@link On} instance
+     *             is an {@code ON}/{@code USING} condition that is not an {@link On} instance, is an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
+     *             (a blank {@link Expression} or empty {@link Junction})
      */
     public And(final Condition... conditions) {
         super(Operator.AND, conditions);
@@ -136,7 +138,9 @@ public class And extends Junction {
      * @param conditions the collection of conditions to combine with AND logic; may be {@code null} or empty
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             or is an {@code ON}/{@code USING} condition that is not an {@link On} instance
+     *             is an {@code ON}/{@code USING} condition that is not an {@link On} instance, is an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
+     *             (a blank {@link Expression} or empty {@link Junction})
      */
     public And(final Collection<? extends Condition> conditions) {
         super(Operator.AND, conditions);

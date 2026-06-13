@@ -1448,6 +1448,13 @@ public class ExpressionTest extends TestBase {
         Assertions.assertEquals("SUM(totalAmount)", expr.toString(null));
     }
 
+    @Test
+    public void testToStringDoesNotConvertSqlKeywordLiterals() {
+        assertEquals("CURRENT_DATE", Expression.of("CURRENT_DATE").toString(NamingPolicy.CAMEL_CASE));
+        assertEquals("CURRENT_TIMESTAMP", Expression.of("CURRENT_TIMESTAMP").toString(NamingPolicy.CAMEL_CASE));
+        assertEquals("CURRENT_DATE = created_date", Expression.of("CURRENT_DATE = createdDate").toString(NamingPolicy.SNAKE_CASE));
+    }
+
     /**
      * Regression (Pass 2): operator-to-comparison method mapping is one-to-one and
      * uses the SQL token that matches the method name. Catches potential copy/paste
