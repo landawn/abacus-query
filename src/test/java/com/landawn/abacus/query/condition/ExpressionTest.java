@@ -1456,6 +1456,20 @@ public class ExpressionTest extends TestBase {
     }
 
     /**
+     * Lower-case identifiers that collide with a SQL keyword (e.g. a column literally named {@code order}
+     * or {@code count}) must still be converted by the naming policy. Only the canonical upper-case keyword
+     * form is preserved; the lower-case form is treated as an ordinary identifier.
+     */
+    @Test
+    public void testToStringConvertsLowercaseKeywordLikeColumnNames() {
+        assertEquals("ORDER", Expression.of("order").toString(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("COUNT", Expression.of("count").toString(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("ROWNUM", Expression.of("rownum").toString(NamingPolicy.SCREAMING_SNAKE_CASE));
+        // The upper-case keyword form is still preserved.
+        assertEquals("CURRENT_DATE", Expression.of("CURRENT_DATE").toString(NamingPolicy.CAMEL_CASE));
+    }
+
+    /**
      * Regression (Pass 2): operator-to-comparison method mapping is one-to-one and
      * uses the SQL token that matches the method name. Catches potential copy/paste
      * defects where {@code greaterThanOrEqual} could accidentally emit {@code <=}, etc.

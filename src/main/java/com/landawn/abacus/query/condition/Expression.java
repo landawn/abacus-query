@@ -1750,9 +1750,13 @@ public class Expression extends ComposableCondition {
 
     private static void registerSqlKeyword(final String keyword) {
         if (Strings.isNotEmpty(keyword)) {
+            // Register the keyword as-is and its upper-case (canonical) form only. The lower-case form is
+            // intentionally NOT registered: SQL keywords are conventionally upper-case, whereas a lower-case
+            // token is treated as an identifier and converted by the naming policy. Registering lower-case
+            // forms would wrongly suppress conversion of legitimate columns named like keywords
+            // (e.g. "order", "count", "min", "rownum").
             SQL_KEY_WORDS.add(keyword);
             SQL_KEY_WORDS.add(keyword.toUpperCase(Locale.ROOT));
-            SQL_KEY_WORDS.add(keyword.toLowerCase(Locale.ROOT));
         }
     }
 
@@ -1763,7 +1767,10 @@ public class Expression extends ComposableCondition {
     /**
      * Returns the string form of this expression, with the naming policy applied to any
      * identifiers (column or property names) that can be detected within the literal.
-     * Pure SQL tokens, function names, quoted strings, and numeric literals are left unchanged.
+     * Function names, quoted strings, and numeric literals are left unchanged. Recognized SQL
+     * keyword tokens are also left unchanged when written in their canonical upper-case form
+     * (for example {@code CURRENT_DATE}); a lower-case token is treated as an identifier and
+     * converted.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

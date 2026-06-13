@@ -4315,7 +4315,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 final char current = sql.charAt(i);
 
                 if (current == ch) {
-                    if (ch == '\'' && i + 1 < len && sql.charAt(i + 1) == '\'') {
+                    // A doubled quote ('', "" or ``) is an escaped quote, not the terminator.
+                    if (i + 1 < len && sql.charAt(i + 1) == ch) {
                         i++;
                         continue;
                     }
@@ -4323,6 +4324,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     return i + 1;
                 }
 
+                // Backslash escapes apply only inside single-quoted string literals (MySQL semantics);
+                // quoted identifiers ("..." / `...`) do not use backslash escaping.
                 if (ch == '\'' && current == '\\' && i + 1 < len) {
                     i++;
                 }

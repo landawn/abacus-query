@@ -13672,6 +13672,25 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
         assertEquals(Arrays.asList(1, 2), sp.parameters());
     }
 
+    @Test
+    public void testUnionNamedParameterRenameSkipsDoubledQuotesAndBackticks() {
+        SP sp = NSC.select("id")
+                .from("users")
+                .where(Filters.eq("id", 1))
+                .union(NSC.select("id").from("archive").where(Filters.eq("id", 2)).append(" AND a = \"x\"\":id\" AND b = `y``:id` AND c = ':id'"))
+                .build();
+
+        // The genuine parameter of the second query is renamed...
+        assertTrue(sp.query().contains("archive WHERE id = :id_2"), sp.query());
+        // ...while colon-tokens embedded inside double-quoted, backtick-quoted, and single-quoted
+        // literals (with doubled "" / `` escapes) are left intact.
+        assertTrue(sp.query().contains("a = \"x\"\":id\""), sp.query());
+        assertTrue(sp.query().contains("b = `y``:id`"), sp.query());
+        assertTrue(sp.query().contains("c = ':id'"), sp.query());
+        assertFalse(sp.query().contains(":id_2\""), sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+    }
+
     /**
      * Bug: {@code union("SELECT 1")} (a valid FROM-less query) was treated as a column list and
      * silently dropped, emitting "... UNION " with nothing after the keyword.

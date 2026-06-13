@@ -52,6 +52,7 @@ import java.util.Collection;
  * @see AbstractInSubQuery
  * @see NotInSubQuery
  * @see In
+ * @see Exists
  * @see SubQuery
  */
 public class InSubQuery extends AbstractInSubQuery {
