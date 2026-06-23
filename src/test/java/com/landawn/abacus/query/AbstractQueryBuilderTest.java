@@ -236,10 +236,8 @@ public class AbstractQueryBuilderTest extends TestBase {
         // A backslash before the closing quote of a double-quoted or backtick-quoted identifier does NOT escape
         // that quote (backslash escaping applies only inside single-quoted string literals), so the closing quote
         // terminates the identifier and the trailing "--" is a real SQL comment token that must be rejected.
-        assertThrows(IllegalArgumentException.class,
-                () -> SqlBuilder.PSC.select("*").from("users").join("orders").using("\"a\\\" -- x"));
-        assertThrows(IllegalArgumentException.class,
-                () -> SqlBuilder.PSC.select("*").from("users").join("orders").using("`a\\` -- x"));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").join("orders").using("\"a\\\" -- x"));
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.select("*").from("users").join("orders").using("`a\\` -- x"));
 
         // A comment-like token that is genuinely inside a quoted identifier is still allowed.
         final String sql = SqlBuilder.PSC.select("*").from("users").join("orders").using("\"a--b\"").build().query();
