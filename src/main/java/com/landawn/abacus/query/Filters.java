@@ -3885,7 +3885,7 @@ public class Filters {
      * otherwise the expression is used as-is. See {@link Limit#Limit(String)} for full details.
      *
      * <p>When the condition is rendered by a SQL builder whose dialect paginates with
-     * {@code OFFSET}/{@code FETCH} (Oracle, DB2 or SQL Server, per {@link SqlDialect#productInfo()}),
+     * {@code OFFSET}/{@code FETCH} (Oracle, DB2 or SQL Server, per {@link SqlDialect.ProductInfo}),
      * a generic {@code LIMIT count [OFFSET offset]} expression with integer or placeholder tokens is
      * re-rendered in that dialect's syntax; any other expression is emitted verbatim.</p>
      *

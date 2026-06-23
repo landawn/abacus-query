@@ -301,7 +301,8 @@ public final class DynamicQuery {
 
         /**
          * Adds a {@code LIMIT} clause with count and offset for pagination.
-         * Generates SQL standard syntax: {@code LIMIT count OFFSET offset}.
+         * Generates SQL standard syntax: {@code LIMIT count OFFSET offset}; the {@code OFFSET} portion is
+         * omitted when {@code offset} is {@code 0}, emitting just {@code LIMIT count}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code

@@ -148,7 +148,7 @@ public class Limit extends Clause {
      *
      * <p>Note: when this condition is rendered by a SQL builder whose dialect paginates with
      * {@code OFFSET}/{@code FETCH} (Oracle, DB2 or SQL Server, per
-     * {@link com.landawn.abacus.query.SqlDialect#productInfo()}), a generic
+     * {@link com.landawn.abacus.query.SqlDialect.ProductInfo}), a generic
      * {@code LIMIT count [OFFSET offset]} expression with integer or placeholder tokens is re-rendered
      * in that dialect's syntax; any other expression is emitted verbatim. {@link #toString(NamingPolicy)}
      * itself is dialect-agnostic and always returns the normalized expression.</p>
@@ -424,13 +424,13 @@ public class Limit extends Clause {
 
     private static String normalizeExpression(final String expr) {
         if (Strings.isEmpty(expr)) {
-            throw new IllegalArgumentException("Limit expression cannot be null or empty");
+            throw new IllegalArgumentException("Limit expression cannot be null, empty, or blank");
         }
 
         final String trimmed = expr.trim();
 
         if (Strings.isEmpty(trimmed)) {
-            throw new IllegalArgumentException("Limit expression cannot be null or empty");
+            throw new IllegalArgumentException("Limit expression cannot be null, empty, or blank");
         }
 
         return shouldPrefixLimit(trimmed) ? SK.LIMIT + _SPACE + trimmed : trimmed;

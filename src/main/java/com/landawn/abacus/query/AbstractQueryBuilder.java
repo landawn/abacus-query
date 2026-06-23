@@ -3080,7 +3080,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a row-count restriction to the query, rendered in the dialect's pagination syntax.
      *
-     * <p>The generated clause depends on the product named by {@link SqlDialect#productInfo()}:</p>
+     * <p>The generated clause depends on the product named by {@link SqlDialect.ProductInfo}:</p>
      * <ul>
      *   <li>Oracle, DB2: {@code FETCH FIRST count ROWS ONLY}</li>
      *   <li>SQL Server: {@code OFFSET 0 ROWS FETCH NEXT count ROWS ONLY} (SQL Server only allows
@@ -3180,7 +3180,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a count-plus-offset pagination clause, rendered in the dialect's pagination syntax.
      *
-     * <p>The generated clause depends on the product named by {@link SqlDialect#productInfo()}:</p>
+     * <p>The generated clause depends on the product named by {@link SqlDialect.ProductInfo}:</p>
      * <ul>
      *   <li>Oracle, DB2, SQL Server: {@code OFFSET offset ROWS FETCH NEXT count ROWS ONLY}
      *       (SQL Server only allows {@code OFFSET ... FETCH} together with an {@code ORDER BY} clause)</li>
@@ -3296,7 +3296,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds an OFFSET clause to skip a number of rows, rendered in the dialect's pagination syntax.
      *
-     * <p>On Oracle, DB2 and SQL Server dialects (per {@link SqlDialect#productInfo()}) the clause is
+     * <p>On Oracle, DB2 and SQL Server dialects (per {@link SqlDialect.ProductInfo}) the clause is
      * rendered as {@code OFFSET offset ROWS}; on those dialects call this method <i>before</i>
      * {@link #limit(int)}, because {@code OFFSET} must precede {@code FETCH}. On all other dialects the
      * clause is rendered as {@code OFFSET offset}.</p>
@@ -3811,9 +3811,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * appended verbatim after the {@code UNION} keyword (no following {@code from(...)} is required).
      * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
      * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
-     * {@code SELECT}, use {@link #union(Collection)} with a single-element collection is <i>not</i> a
-     * workaround (the same heuristic does not apply there): the collection form always treats its elements
-     * as a column list.</p>
+     * {@code SELECT}, use {@link #union(Collection)} with a single-element collection: the collection form
+     * always treats its elements as a column list (the sub-query heuristic does not apply there).</p>
      *
      * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
      * @return this SqlBuilder instance for method chaining
@@ -6181,7 +6180,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Database product family resolved once from {@link SqlDialect#productInfo()}. Drives the
+     * Database product family resolved once from {@link SqlDialect.ProductInfo}. Drives the
      * product-specific parts of SQL generation: the pagination syntax emitted by {@link #limit(int)},
      * {@link #limit(int, int)} and {@link #offset(int)}, and the identifier quote used when the
      * dialect leaves {@link SqlDialect#identifierQuote()} unset.
