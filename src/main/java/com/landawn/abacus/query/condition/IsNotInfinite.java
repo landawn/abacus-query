@@ -107,8 +107,8 @@ public class IsNotInfinite extends IsNot {
      * // SQL: calculation_result IS NOT INFINITE
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be {@code null} or empty)
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public IsNotInfinite(final String propName) {
         super(propName, INFINITE);

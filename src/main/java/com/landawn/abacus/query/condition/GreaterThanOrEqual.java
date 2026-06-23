@@ -95,11 +95,11 @@ public class GreaterThanOrEqual extends Binary {
      * // SQL: price >= (SELECT AVG(price) FROM products)
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the value to compare against (a literal value or a {@link SubQuery}); passing
      *                  {@code null} renders as {@code prop >= null}, which is not a meaningful SQL
      *                  comparison; do not pass {@code null} to this operator
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public GreaterThanOrEqual(final String propName, final Object propValue) {
         super(propName, Operator.GREATER_THAN_OR_EQUAL, propValue);

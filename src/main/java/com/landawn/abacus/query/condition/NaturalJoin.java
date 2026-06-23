@@ -127,8 +127,8 @@ public class NaturalJoin extends Join {
     }
 
     /**
-     * Creates a NATURAL JOIN clause with multiple tables/entities and a condition.
-     * The rendered SQL is {@code NATURAL JOIN (t1, t2, ...)} followed by the optional condition;
+     * Creates a NATURAL JOIN clause with multiple tables/entities.
+     * The rendered SQL is {@code NATURAL JOIN (t1, t2, ...)};
      * because most databases do not accept a comma-separated list after {@code NATURAL JOIN}, this
      * form is rarely directly executable and is provided mainly for symmetry with the other join
      * subclasses. Prefer chaining individual {@link NaturalJoin} clauses for portable SQL.

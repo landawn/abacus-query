@@ -95,7 +95,10 @@ public class OrderBy extends Clause {
      * }</pre>
      *
      * @param cond the ordering condition. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a {@link Criteria}, another clause, or an {@code ON}/{@code USING} condition (cannot be nested inside a clause)
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a {@link Criteria}, another clause,
+     *             an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
+     *             operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which
+     *             can be nested inside a clause
      * @see Filters#expr(String)
      */
     public OrderBy(final Condition cond) {
@@ -121,7 +124,7 @@ public class OrderBy extends Clause {
      * }</pre>
      *
      * @param propNames variable number of property names to sort by. Must not be {@code null} or empty.
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
     public OrderBy(final String... propNames) {
         this(Filters.expr(AbstractCondition.createSortExpression(propNames)));
@@ -142,9 +145,9 @@ public class OrderBy extends Clause {
      * // SQL: ORDER BY created_date ASC
      * }</pre>
      *
-     * @param propName the property name to sort by. Must not be {@code null} or empty.
+     * @param propName the property name to sort by. Must not be {@code null}, empty, or blank.
      * @param direction the sort direction (ASC or DESC). Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      */
     public OrderBy(final String propName, final SortDirection direction) {
         this(Filters.expr(AbstractCondition.createSortExpression(propName, direction)));
@@ -172,7 +175,7 @@ public class OrderBy extends Clause {
      *
      * @param propNames collection of property names to sort by. Must not be {@code null} or empty.
      * @param direction the sort direction to apply to all properties. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if {@code direction} is {@code null}, or if {@code propNames} contains {@code null} or empty elements
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if {@code direction} is {@code null}, or if {@code propNames} contains {@code null}, empty, or blank elements
      */
     public OrderBy(final Collection<String> propNames, final SortDirection direction) {
         this(Filters.expr(AbstractCondition.createSortExpression(propNames, direction)));
@@ -199,7 +202,7 @@ public class OrderBy extends Clause {
      * @param orders a map of property names to their respective sort directions; should be a
      *               {@code LinkedHashMap} (or another order-preserving map) so that the sort priority
      *               matches insertion order. Must not be {@code null} or empty.
-     * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, or contains {@code null} or empty keys
+     * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, or contains {@code null}, empty, or blank keys
      *                                  or {@code null} values
      */
     public OrderBy(final Map<String, SortDirection> orders) {

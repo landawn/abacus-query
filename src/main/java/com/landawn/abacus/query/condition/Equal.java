@@ -94,10 +94,10 @@ public class Equal extends Binary {
      * // SQL: salary = (SELECT AVG(salary) FROM employees)
      * }</pre>
      * 
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the value to compare against; may be {@code null} (renders as {@code IS NULL}),
      *                  a literal value, or a {@link SubQuery}
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public Equal(final String propName, final Object propValue) {
         super(propName, Operator.EQUAL, propValue);

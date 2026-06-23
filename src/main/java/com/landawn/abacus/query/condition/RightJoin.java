@@ -55,10 +55,10 @@ import java.util.Collection;
  * // Complex right join with multiple conditions
  * RightJoin complexJoin = new RightJoin("products p",
  *     new And(
- *         new On("order_items.product_id", "p.id"),
+ *         Filters.expr("order_items.product_id = p.id"),
  *         Filters.equal("p.active", true)
  *     ));
- * // SQL: RIGHT JOIN products p ON ((ON order_items.product_id = p.id) AND (p.active = true))
+ * // SQL: RIGHT JOIN products p ON ((order_items.product_id = p.id) AND (p.active = true))
  *
  * // Using Expression for custom join logic
  * RightJoin exprJoin = new RightJoin("departments",
@@ -127,14 +127,14 @@ public class RightJoin extends Join {
      *     new On("employees.dept_id", "d.id"));
      * // SQL: RIGHT JOIN departments d ON employees.dept_id = d.id
      *
-     * // Complex join with ON condition and filtering
+     * // Complex join with key comparison and filtering
      * RightJoin activeCategories = new RightJoin("categories c",
      *     new And(
-     *         new On("products.category_id", "c.id"),
+     *         Filters.expr("products.category_id = c.id"),
      *         Filters.equal("c.active", true),
      *         Filters.greaterThan("c.created_date", "2023-01-01")
      *     ));
-     * // SQL: RIGHT JOIN categories c ON ((ON products.category_id = c.id) AND (c.active = true) AND (c.created_date > '2023-01-01'))
+     * // SQL: RIGHT JOIN categories c ON ((products.category_id = c.id) AND (c.active = true) AND (c.created_date > '2023-01-01'))
      *
      * // Using Expression for custom join logic
      * RightJoin exprJoin = new RightJoin("products p",
@@ -146,7 +146,8 @@ public class RightJoin extends Join {
      * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should include
      *            those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
-     *                                  {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public RightJoin(final String joinEntity, final Condition cond) {
         super(Operator.RIGHT_JOIN, joinEntity, cond);
@@ -158,14 +159,14 @@ public class RightJoin extends Join {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Join multiple related tables with ON conditions
+     * // Join multiple related tables with predicates
      * List<String> tables = Arrays.asList("categories c", "subcategories sc");
      * RightJoin join = new RightJoin(tables,
      *     new And(
-     *         new On("p.category_id", "c.id"),
-     *         new On("p.subcategory_id", "sc.id")
+     *         Filters.expr("p.category_id = c.id"),
+     *         Filters.expr("p.subcategory_id = sc.id")
      *     ));
-     * // SQL: RIGHT JOIN (categories c, subcategories sc) ON ((ON p.category_id = c.id) AND (ON p.subcategory_id = sc.id))
+     * // SQL: RIGHT JOIN (categories c, subcategories sc) ON ((p.category_id = c.id) AND (p.subcategory_id = sc.id))
      *
      * // Using Expression for multiple tables
      * RightJoin exprJoin = new RightJoin(tables,
@@ -177,7 +178,8 @@ public class RightJoin extends Join {
      * @param cond the condition appended after the joined table list. Use {@link On} or {@link Using} when the SQL should include
      *            those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
-     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public RightJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.RIGHT_JOIN, joinEntities, cond);

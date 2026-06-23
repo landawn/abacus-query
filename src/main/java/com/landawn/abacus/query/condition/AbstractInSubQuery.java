@@ -66,10 +66,10 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * {@link SubQuery#getSelectPropNames()}), it must select exactly one column. Raw SQL subqueries
      * are not validated for column arity.</p>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param subQuery the subquery (must not be {@code null})
-     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty, if {@code subQuery} is
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code subQuery} is
      *             {@code null}, or if the subquery is structured and selects a number of columns other than 1
      * @throws NullPointerException if {@code operator} is {@code null}
      */
@@ -95,7 +95,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param subQuery the subquery (must not be {@code null})
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is
-     *             {@code null}/empty, if {@code subQuery} is {@code null}, or if the subquery is structured and
+     *             {@code null}, empty, or blank, if {@code subQuery} is {@code null}, or if the subquery is structured and
      *             its number of selected columns does not match {@code propNames.size()}
      * @throws NullPointerException if {@code operator} is {@code null}
      */

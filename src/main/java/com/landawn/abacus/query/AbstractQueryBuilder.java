@@ -4754,8 +4754,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * For parameterized SQL (using {@code ?}), this list contains the actual values in order.
      * For named SQL, this list contains the values corresponding to named parameters.
      *
-     * <p>This is a snapshot of the builder's internal parameter buffer; to retrieve the finished
-     * SQL and parameters together (after which the builder is closed), use {@link #build()}.</p>
+     * <p>This is a live, unmodifiable view of the builder's internal parameter buffer; to retrieve the
+     * finished SQL and parameters together (after which the builder is closed), use {@link #build()}.</p>
      *
      * @return an unmodifiable view of the parameter values
      */
@@ -5102,6 +5102,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Seeds a nested or sibling builder with this builder's named-parameter occurrence counts so the
      * child cannot generate placeholders that already exist in the surrounding SQL.
+     *
+     * @param childBuilder the nested or sibling builder to seed
      */
     protected final void seedNamedParameterOccurrences(final AbstractQueryBuilder<?> childBuilder) {
         if (N.isEmpty(_namedParameterNameOccurrences)) {
@@ -5117,6 +5119,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Copies back named-parameter occurrence counts after a nested or sibling builder has rendered.
+     *
+     * @param childBuilder the nested or sibling builder whose occurrence counts to adopt
      */
     protected final void adoptNamedParameterOccurrences(final AbstractQueryBuilder<?> childBuilder) {
         _namedParameterNameOccurrences.clear();
@@ -5401,7 +5405,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 if (ch == quoteChar) {
                     if (i < len - 1 && expr.charAt(i + 1) == quoteChar) {
                         i++;
-                    } else {
+                    } else if (quoteChar == SK._SINGLE_QUOTE) {
+                        // Backslash escapes apply only inside single-quoted string literals (MySQL semantics);
+                        // quoted identifiers ("..." / `...`) do not use backslash escaping, so a backslash
+                        // before the closing quote does not extend the quoted region.
                         int backslashCount = 0;
 
                         for (int k = i - 1; k >= 0 && expr.charAt(k) == '\\'; k--) {
@@ -5411,6 +5418,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         if (backslashCount % 2 == 0) {
                             quoteChar = 0;
                         }
+                    } else {
+                        quoteChar = 0;
                     }
                 }
 
@@ -5459,7 +5468,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param withClassAlias whether to prefix the alias with the class alias
      * @param classAlias the class alias to use when {@code withClassAlias} is {@code true}
      * @param isForSelect whether this column is being appended in a SELECT clause (adds AS alias)
-     * @param quotePropAlias whether to quote the property alias with double quotes
+     * @param quotePropAlias whether to wrap the property alias in the dialect's identifier quote
      */
     protected void appendColumnName(final Class<?> entityClass, final BeanInfo entityInfo,
             final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String tableAlias, final String propName, final String propAlias,

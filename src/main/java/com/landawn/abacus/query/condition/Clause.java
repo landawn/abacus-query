@@ -100,7 +100,9 @@ public abstract class Clause extends Cell {
      * @param cond the condition to wrap (must not be {@code null})
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a {@link Criteria}, another clause
-     *         (e.g. {@code WHERE}, {@code HAVING}), or an {@code ON}/{@code USING} condition (which cannot be nested inside a clause)
+     *         (e.g. {@code WHERE}, {@code HAVING}), an {@code ON}/{@code USING} condition, an
+     *         {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
+     *         (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public Clause(final Operator operator, final Condition cond) {
         super(operator, validateClauseOperand(operator, cond));

@@ -33,7 +33,7 @@ import com.landawn.abacus.util.Strings;
 /**
  * A container representing a complete SQL query structure composed of multiple clauses
  * ({@link Join}, {@link Where}, {@link GroupBy}, {@link Having}, {@link OrderBy}, {@link Limit},
- * and set operations like {@link Union}/{@link Intersect}/{@link Except}).
+ * and set operations like {@link Union}/{@link UnionAll}/{@link Intersect}/{@link Except}/{@link Minus}).
  *
  * <p>Instances are effectively immutable once built: the constituent conditions list is final
  * and never mutated post-construction, and all collection accessors ({@link #getConditions()},
@@ -1279,24 +1279,24 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Adds a NATURAL JOIN with a condition to this criteria.
+         * Adds a NATURAL JOIN to this criteria. A NATURAL JOIN derives its join predicate implicitly
+         * from columns with matching names, so it does <b>not</b> accept an explicit condition;
+         * {@code cond} must be {@code null}. This overload exists only for API symmetry with the other
+         * join methods. To apply an additional filter, place it in the {@code WHERE} clause instead.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * // On's second argument is treated as a property reference, so it renders unquoted.
-         * Criteria c = Criteria.builder()
-         *     .naturalJoin("employees", Filters.on("status", "active"))
-         *     .build();
-         * c.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees ON status = active"
+         * Criteria c = Criteria.builder().naturalJoin("employees", null).build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees"
          *
-         * // A non-On/Using condition (e.g. Equal) has the ON keyword prepended by the join.
-         * Criteria c2 = Criteria.builder().naturalJoin("employees", Filters.eq("status", "active")).build();
-         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees ON status = 'active'"
+         * // Any non-null condition is rejected.
+         * Criteria.builder().naturalJoin("employees", Filters.eq("status", "active"));   // throws IllegalArgumentException
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param cond the join condition
+         * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is non-{@code null}
          */
         public Builder naturalJoin(final String joinEntity, final Condition cond) {
             add(new NaturalJoin(joinEntity, cond));
@@ -1305,24 +1305,26 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Adds a NATURAL JOIN with multiple entities and a condition.
+         * Adds a NATURAL JOIN with multiple entities to this criteria.
          * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         * A NATURAL JOIN derives its join predicate implicitly, so it does <b>not</b> accept an explicit
+         * condition; {@code cond} must be {@code null}. This overload exists only for API symmetry with the
+         * other join methods.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria c = Criteria.builder()
-         *     .naturalJoin(Arrays.asList("a", "b"), Filters.on("x", "y"))
-         *     .build();
-         * c.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN (a, b) ON x = y"
+         * Criteria c = Criteria.builder().naturalJoin(Arrays.asList("a", "b"), null).build();
+         * c.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN (a, b)"
          *
          * // A single-element collection is rendered without parentheses.
-         * Criteria c2 = Criteria.builder().naturalJoin(Arrays.asList("a"), Filters.on("x", "y")).build();
-         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN a ON x = y"
+         * Criteria c2 = Criteria.builder().naturalJoin(Arrays.asList("a"), null).build();
+         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN a"
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param cond the join condition
+         * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is non-{@code null}
          */
         public Builder naturalJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new NaturalJoin(joinEntities, cond));
@@ -1383,9 +1385,9 @@ public class Criteria extends AbstractCondition {
          * Criteria.builder().where("");              // throws IllegalArgumentException
          * }</pre>
          *
-         * @param expr the WHERE condition as a string (must not be {@code null} or empty)
+         * @param expr the WHERE condition as a string (must not be {@code null}, empty, or blank)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public Builder where(final String expr) {
             N.checkArgNotEmpty(expr, "expr");
@@ -1661,9 +1663,9 @@ public class Criteria extends AbstractCondition {
          * Criteria.builder().having("");   // throws IllegalArgumentException
          * }</pre>
          *
-         * @param expr the HAVING condition as a string (must not be {@code null} or empty)
+         * @param expr the HAVING condition as a string (must not be {@code null}, empty, or blank)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public Builder having(final String expr) {
             N.checkArgNotEmpty(expr, "expr");

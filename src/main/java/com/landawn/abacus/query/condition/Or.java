@@ -106,7 +106,7 @@ public class Or extends Junction {
      * @param conditions the conditions to combine with OR logic; may be {@code null} or empty
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             is an {@code ON}/{@code USING} condition that is not an {@link On} instance, is an
+     *             is an {@code ON}/{@code USING} connector, is an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
      *             (a blank {@link Expression} or empty {@link Junction})
      */
@@ -143,7 +143,7 @@ public class Or extends Junction {
      * @param conditions the collection of conditions to combine with OR logic; may be {@code null} or empty
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             is an {@code ON}/{@code USING} condition that is not an {@link On} instance, is an
+     *             is an {@code ON}/{@code USING} connector, is an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
      *             (a blank {@link Expression} or empty {@link Junction})
      */
@@ -193,10 +193,13 @@ public class Or extends Junction {
      * }</pre>
      *
      * @param cond the condition to add to this OR. Must not be {@code null} and must be
-     *             composable (i.e. not a {@link Clause}, a {@link Join}, or an {@code ON}/{@code USING} condition).
-     * @return a new Or condition containing all existing conditions plus the new one
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond}
-     *             is a non-composable condition (a {@link Clause}, a {@link Join}, or an {@code ON}/{@code USING} condition)
+     *             composable (i.e. not a {@link Criteria}, a {@link Clause}, an {@code ON}/{@code USING} connector,
+     *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate).
+     * @return a new {@link Or} condition containing all existing conditions plus the new one
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond} is non-composable —
+     *             a {@link Criteria}, a {@link Clause} condition (such as {@link Where} or {@link OrderBy}),
+     *             an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
+     *             operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     @Override
     public Or or(final Condition cond) {

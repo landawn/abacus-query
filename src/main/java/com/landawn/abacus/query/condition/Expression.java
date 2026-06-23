@@ -903,6 +903,7 @@ public class Expression extends ComposableCondition {
      * @param literal the left-hand side literal
      * @param value the right-hand side value; may be {@code null}
      * @return a string representation of the linked expression
+     * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     static String link(final Operator operator, final String literal, final Object value) {
         if (value == null) {

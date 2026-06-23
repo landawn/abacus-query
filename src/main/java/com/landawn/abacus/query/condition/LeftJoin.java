@@ -57,14 +57,14 @@ import java.util.Collection;
  *     new On("c.id", "o.customer_id"));
  * // Use with WHERE o.customer_id IS NULL to find customers without orders
  *
- * // Complex left join with multiple ON conditions and filters
+ * // Complex left join with multiple predicates and filters
  * LeftJoin complexJoin = new LeftJoin("order_items oi",
  *     new And(
- *         new On("o.id", "oi.order_id"),
+ *         Filters.expr("o.id = oi.order_id"),
  *         Filters.equal("oi.status", "active"),
  *         Filters.greaterThan("oi.quantity", 0)
  *     ));
- * // SQL: LEFT JOIN order_items oi ON ((ON o.id = oi.order_id) AND (oi.status = 'active') AND (oi.quantity > 0))
+ * // SQL: LEFT JOIN order_items oi ON ((o.id = oi.order_id) AND (oi.status = 'active') AND (oi.quantity > 0))
  *
  * // Using Expression for custom join logic
  * LeftJoin exprJoin = new LeftJoin("orders o",
@@ -133,14 +133,14 @@ public class LeftJoin extends Join {
      *     new On("employees.dept_id", "d.id"));
      * // SQL: LEFT JOIN departments d ON employees.dept_id = d.id
      *
-     * // Complex join with ON condition and filtering
+     * // Complex join with key comparison and filtering
      * LeftJoin activeItems = new LeftJoin("order_items oi",
      *     new And(
-     *         new On("orders.id", "oi.order_id"),
+     *         Filters.expr("orders.id = oi.order_id"),
      *         Filters.equal("oi.status", "active"),
      *         Filters.greaterThan("oi.created_date", "2023-01-01")
      *     ));
-     * // SQL: LEFT JOIN order_items oi ON ((ON orders.id = oi.order_id) AND (oi.status = 'active') AND (oi.created_date > '2023-01-01'))
+     * // SQL: LEFT JOIN order_items oi ON ((orders.id = oi.order_id) AND (oi.status = 'active') AND (oi.created_date > '2023-01-01'))
      *
      * // Using Expression for custom join logic
      * LeftJoin exprJoin = new LeftJoin("orders o",
@@ -152,7 +152,8 @@ public class LeftJoin extends Join {
      * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should include
      *            those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
-     *                                  {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public LeftJoin(final String joinEntity, final Condition cond) {
         super(Operator.LEFT_JOIN, joinEntity, cond);
@@ -164,14 +165,14 @@ public class LeftJoin extends Join {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Join multiple related tables with ON conditions
+     * // Join multiple related tables with predicates
      * List<String> tables = Arrays.asList("orders o", "order_items oi");
      * LeftJoin join = new LeftJoin(tables,
      *     new And(
-     *         new On("c.id", "o.customer_id"),
-     *         new On("o.id", "oi.order_id")
+     *         Filters.expr("c.id = o.customer_id"),
+     *         Filters.expr("o.id = oi.order_id")
      *     ));
-     * // SQL: LEFT JOIN (orders o, order_items oi) ON ((ON c.id = o.customer_id) AND (ON o.id = oi.order_id))
+     * // SQL: LEFT JOIN (orders o, order_items oi) ON ((c.id = o.customer_id) AND (o.id = oi.order_id))
      *
      * // Using Expression for multiple tables
      * LeftJoin exprJoin = new LeftJoin(tables,
@@ -183,7 +184,8 @@ public class LeftJoin extends Join {
      * @param cond the condition appended after the joined table list. Use {@link On} or {@link Using} when the SQL should include
      *            those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
-     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public LeftJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.LEFT_JOIN, joinEntities, cond);

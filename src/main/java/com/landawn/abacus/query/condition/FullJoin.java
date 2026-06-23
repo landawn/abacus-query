@@ -53,10 +53,10 @@ import java.util.Collection;
  * // Complex full join with filtering
  * FullJoin complexJoin = new FullJoin("external_data e",
  *     new And(
- *         new On("internal_data.id", "e.id"),
+ *         Filters.expr("internal_data.id = e.id"),
  *         Filters.greaterThan("e.updated_date", "2024-01-01")
  *     ));
- * // SQL: FULL JOIN external_data e ON ((ON internal_data.id = e.id) AND (e.updated_date > '2024-01-01'))
+ * // SQL: FULL JOIN external_data e ON ((internal_data.id = e.id) AND (e.updated_date > '2024-01-01'))
  * }</pre>
  * 
  * @see Join
@@ -120,14 +120,14 @@ public class FullJoin extends Join {
      *     new On("users.id", "o.user_id"));
      * // SQL: FULL JOIN orders o ON users.id = o.user_id
      *
-     * // Complex join with ON condition and filtering
+     * // Complex join with key comparison and filtering
      * FullJoin reconcileData = new FullJoin("external_inventory ei",
      *     new And(
-     *         new On("internal_inventory.product_id", "ei.product_id"),
+     *         Filters.expr("internal_inventory.product_id = ei.product_id"),
      *         Filters.equal("ei.active", true),
      *         Filters.greaterThan("ei.updated_date", "2023-01-01")
      *     ));
-     * // SQL: FULL JOIN external_inventory ei ON ((ON internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01'))
+     * // SQL: FULL JOIN external_inventory ei ON ((internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01'))
      *
      * // Using Expression for custom join logic
      * FullJoin exprJoin = new FullJoin("departments d",
@@ -139,7 +139,8 @@ public class FullJoin extends Join {
      * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should include
      *            those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
-     *                                  {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public FullJoin(final String joinEntity, final Condition cond) {
         super(Operator.FULL_JOIN, joinEntity, cond);
@@ -151,14 +152,14 @@ public class FullJoin extends Join {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Join multiple related tables with ON conditions
+     * // Join multiple related tables with predicates
      * List<String> tables = Arrays.asList("employees e", "contractors c");
      * FullJoin join = new FullJoin(tables,
      *     new And(
-     *         new On("d.id", "e.dept_id"),
-     *         new On("d.id", "c.dept_id")
+     *         Filters.expr("d.id = e.dept_id"),
+     *         Filters.expr("d.id = c.dept_id")
      *     ));
-     * // SQL: FULL JOIN (employees e, contractors c) ON ((ON d.id = e.dept_id) AND (ON d.id = c.dept_id))
+     * // SQL: FULL JOIN (employees e, contractors c) ON ((d.id = e.dept_id) AND (d.id = c.dept_id))
      *
      * // Using Expression for multiple tables
      * FullJoin exprJoin = new FullJoin(tables,
@@ -170,7 +171,8 @@ public class FullJoin extends Join {
      * @param cond the condition appended after the joined table list. Use {@link On} or {@link Using} when the SQL should include
      *            those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
-     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public FullJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.FULL_JOIN, joinEntities, cond);

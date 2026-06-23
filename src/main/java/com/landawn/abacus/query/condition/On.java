@@ -179,7 +179,7 @@ public class On extends Cell {
      * @param leftPropName the column name from the first table (can include table name/alias)
      * @param rightPropName the column name from the second table (can include table name/alias). Treated as a
      *            column expression rather than a string literal.
-     * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null}, empty, or blank
      */
     public On(final String leftPropName, final String rightPropName) {
         this(createOnCondition(leftPropName, rightPropName));
@@ -243,7 +243,7 @@ public class On extends Cell {
      * @param anotherPropName the second column name (wrapped as an {@link Expression}, so it is rendered as a
      *            column reference rather than a quoted literal)
      * @return an {@link Equal} condition comparing the two columns
-     * @throws IllegalArgumentException if {@code propName} or {@code anotherPropName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} or {@code anotherPropName} is {@code null}, empty, or blank
      */
     static Condition createOnCondition(final String propName, final String anotherPropName) {
         if (Strings.isBlank(propName)) {

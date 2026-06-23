@@ -265,7 +265,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * <p>This is the concrete condition-rendering implementation for the SQL family of builders.
      * It dispatches on the runtime type of {@code cond} and handles {@link Binary}, {@link Between},
      * {@link NotBetween}, {@link In}, {@link InSubQuery}, {@link NotIn}, {@link NotInSubQuery},
-     * {@link Where}, {@link Having}, {@link Cell}, {@link ComposableCell}, {@link Junction},
+     * {@link Where}, {@link Having}, {@link Using}, {@link Cell}, {@link ComposableCell}, {@link Junction},
      * {@link SubQuery} and {@link Expression}. Binary conditions with a {@code null} value and an
      * {@code EQUAL}/{@code IS} (or {@code NOT_EQUAL}/{@code NOT_EQUAL_ANSI}/{@code IS_NOT}) operator
      * are rendered as {@code IS NULL}/{@code IS NOT NULL} respectively. Nested conditions and sub-queries
@@ -274,8 +274,6 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * @param cond the condition to render; must be one of the supported condition types
      * @throws IllegalArgumentException if {@code cond} is an unsupported condition type, or if a
      *         {@link Junction} contains no sub-conditions
-     * @throws UnsupportedOperationException if a {@link SubQuery} is encountered but the concrete
-     *         builder type does not support sub-query rendering
      */
     @Override
     protected void appendCondition(final Condition cond) {
@@ -642,7 +640,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Map<String, Object> props = new HashMap<>();
+         * Map<String, Object> props = new LinkedHashMap<>();
          * props.put("firstName", "John");
          * props.put("lastName", "Doe");
          * SP sqlPair = PSC.insert(props).into("account").build();
@@ -1195,7 +1193,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Map<String, String> columnAliases = new HashMap<>();
+         * Map<String, String> columnAliases = new LinkedHashMap<>();
          * columnAliases.put("firstName", "fname");
          * columnAliases.put("lastName", "lname");
          * columnAliases.put("emailAddress", "email");

@@ -165,7 +165,7 @@ public class Junction extends ComposableCondition {
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             is an {@code ON}/{@code USING} condition that is not an {@link On} instance, is an
+     *             is an {@code ON}/{@code USING} connector, is an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
      *             (a blank {@link Expression} or empty {@link Junction})
      */
@@ -204,7 +204,7 @@ public class Junction extends ComposableCondition {
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             is an {@code ON}/{@code USING} condition that is not an {@link On} instance, is an
+     *             is an {@code ON}/{@code USING} connector, is an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
      *             (a blank {@link Expression} or empty {@link Junction})
      */

@@ -208,6 +208,15 @@ public abstract class AbstractCondition implements Condition {
         return isClause(cond.operator());
     }
 
+    /**
+     * Checks whether the given condition is an {@code ON} or {@code USING} join connector.
+     * For an {@link Expression}, the first word of its (non-empty) literal is inspected; for any
+     * other condition, its {@link Condition#operator() operator} is checked.
+     *
+     * @param cond the condition to check (may be {@code null})
+     * @return {@code true} if {@code cond} is an {@code ON}/{@code USING} connector, {@code false}
+     *         otherwise (including for a {@code null} {@code cond})
+     */
     protected static boolean isOnOrUsing(final Condition cond) {
         if (cond == null) {
             return false;
@@ -226,22 +235,59 @@ public abstract class AbstractCondition implements Condition {
         return isOnOrUsing(cond.operator());
     }
 
+    /**
+     * Checks whether the given condition is a quantified-subquery operand, i.e. its operator is
+     * {@code ANY}, {@code ALL}, or {@code SOME}.
+     *
+     * @param cond the condition to check (may be {@code null})
+     * @return {@code true} if {@code cond} has an {@code ANY}/{@code ALL}/{@code SOME} operator,
+     *         {@code false} otherwise (including for a {@code null} {@code cond})
+     */
     protected static boolean isQuantifiedSubQueryOperand(final Condition cond) {
         return cond != null && isQuantifiedSubQueryOperator(cond.operator());
     }
 
+    /**
+     * Checks whether the given operator is a quantified-subquery operator
+     * ({@code ANY}, {@code ALL}, or {@code SOME}).
+     *
+     * @param operator the operator to check (may be {@code null})
+     * @return {@code true} if {@code operator} is {@code ALL}, {@code ANY}, or {@code SOME}; {@code false} otherwise
+     */
     protected static boolean isQuantifiedSubQueryOperator(final Operator operator) {
         return operator == Operator.ALL || operator == Operator.ANY || operator == Operator.SOME;
     }
 
+    /**
+     * Checks whether the given operator is an {@code ON} or {@code USING} join connector.
+     *
+     * @param operator the operator to check (may be {@code null})
+     * @return {@code true} if {@code operator} is {@code ON} or {@code USING}; {@code false} otherwise
+     */
     protected static boolean isOnOrUsing(final Operator operator) {
         return operator == Operator.ON || operator == Operator.USING;
     }
 
+    /**
+     * Checks whether the given word matches the {@code ON} or {@code USING} keyword, ignoring case.
+     *
+     * @param word the word to check (may be {@code null})
+     * @return {@code true} if {@code word} equals {@code "ON"} or {@code "USING"} (case-insensitive);
+     *         {@code false} otherwise (including for a {@code null} {@code word})
+     */
     protected static boolean isOnOrUsing(final String word) {
         return Operator.ON.toString().equalsIgnoreCase(word) || Operator.USING.toString().equalsIgnoreCase(word);
     }
 
+    /**
+     * Checks whether the given condition is, or recursively contains, an {@code ON}/{@code USING}
+     * join connector. The search descends into the children of a {@link Junction} and into the
+     * wrapped condition of a {@link Cell} or {@link ComposableCell}.
+     *
+     * @param cond the condition to check (may be {@code null})
+     * @return {@code true} if {@code cond} is or contains an {@code ON}/{@code USING} connector,
+     *         {@code false} otherwise (including for a {@code null} {@code cond})
+     */
     protected static boolean containsOnOrUsing(final Condition cond) {
         if (cond == null) {
             return false;
@@ -551,7 +597,7 @@ public abstract class AbstractCondition implements Condition {
      *
      * @param propNames the array of property names (must not be {@code null} or empty)
      * @return a comma-separated string of property names suitable for use in a sort/grouping clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}/empty elements
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
     protected static String createSortExpression(final String... propNames) {
         N.checkArgNotEmpty(propNames, "propNames");
@@ -584,10 +630,10 @@ public abstract class AbstractCondition implements Condition {
      * <p>This method is protected and not intended for direct use by application code.
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propName the property name (must not be {@code null} or empty)
+     * @param propName the property name (must not be {@code null}, empty, or blank)
      * @param direction the sort direction (must not be {@code null})
      * @return a string of the form {@code "propName direction"} suitable for a sort/grouping clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty or {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or {@code direction} is {@code null}
      */
     protected static String createSortExpression(final String propName, final SortDirection direction) {
         checkPropName(propName);
@@ -610,7 +656,7 @@ public abstract class AbstractCondition implements Condition {
      * @param direction the sort direction to apply to all properties (must not be {@code null})
      * @return a comma-separated string of {@code "propName direction"} entries
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, {@code direction} is {@code null},
-     *                                  or {@code propNames} contains {@code null}/empty elements
+     *                                  or {@code propNames} contains {@code null}, empty, or blank elements
      */
     protected static String createSortExpression(final Collection<String> propNames, final SortDirection direction) {
         N.checkArgNotEmpty(propNames, "propNames");
@@ -652,7 +698,7 @@ public abstract class AbstractCondition implements Condition {
      *
      * @param orders map of property names to their sort directions (must not be {@code null} or empty)
      * @return a comma-separated string of {@code "propName direction"} entries in map iteration order
-     * @throws IllegalArgumentException if {@code orders} is {@code null}/empty, or contains {@code null}/empty keys
+     * @throws IllegalArgumentException if {@code orders} is {@code null}/empty, or contains {@code null}, empty, or blank keys
      *                                  or {@code null} values
      */
     protected static String createSortExpression(final Map<String, SortDirection> orders) {
@@ -748,6 +794,13 @@ public abstract class AbstractCondition implements Condition {
         return cond;
     }
 
+    /**
+     * Validates that the given property name is non-{@code null}, non-empty, and not blank
+     * (whitespace-only). Used by subclass constructors to reject invalid property/column names.
+     *
+     * @param propName the property name to validate
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     */
     protected static void checkPropName(final String propName) {
         if (Strings.isEmpty(propName) || Strings.isBlank(propName)) {
             throw new IllegalArgumentException("Property name cannot be null, empty, or blank");

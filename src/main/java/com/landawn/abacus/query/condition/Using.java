@@ -116,8 +116,9 @@ public class Using extends Cell {
      *
      * @param columnNames variable number of column names to join on.
      *                    All columns must exist in both tables with identical names. Must not be {@code null} or empty,
-     *                    and individual names must not be {@code null} or empty.
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, or contains a {@code null} or empty entry
+     *                    and individual names must not be {@code null}, empty, or blank. Names must be unqualified (cannot contain a {@code .}).
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
+     *                                  or contains a qualified (dotted) column name
      */
     public Using(final String... columnNames) {
         super(Operator.USING, createUsingCondition(columnNames));
@@ -152,9 +153,10 @@ public class Using extends Cell {
      * }</pre>
      *
      * @param columnNames collection of column names to join on. Must not be {@code null} or empty, and individual
-     *                    names must not be {@code null} or empty. Order matters for some databases; use a
-     *                    {@code LinkedHashSet} or {@code List} to preserve insertion order.
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, or contains a {@code null} or empty entry
+     *                    names must not be {@code null}, empty, or blank. Names must be unqualified (cannot contain a {@code .}).
+     *                    Order matters for some databases; use a {@code LinkedHashSet} or {@code List} to preserve insertion order.
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
+     *                                  or contains a qualified (dotted) column name
      */
     public Using(final Collection<String> columnNames) {
         super(Operator.USING, createUsingCondition(columnNames));
@@ -177,9 +179,10 @@ public class Using extends Cell {
      * // Creates condition for: USING (customer_id, order_date)
      * }</pre>
      *
-     * @param columnNames array of column names. Must not be null or empty.
+     * @param columnNames array of column names. Must not be null or empty, and names must be unqualified (cannot contain a {@code .}).
      * @return a condition representing the USING clause
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, or contains a {@code null} or empty entry
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
+     *                                  or contains a qualified (dotted) column name
      */
     static Condition createUsingCondition(final String... columnNames) {
         N.checkArgNotEmpty(columnNames, "columnNames");
@@ -210,9 +213,10 @@ public class Using extends Cell {
      * // Creates condition for: USING (tenant_id, user_id)
      * }</pre>
      *
-     * @param columnNames collection of column names. Must not be null or empty.
+     * @param columnNames collection of column names. Must not be null or empty, and names must be unqualified (cannot contain a {@code .}).
      * @return a condition representing the USING clause
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, or contains a {@code null} or empty entry
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
+     *                                  or contains a qualified (dotted) column name
      */
     static Condition createUsingCondition(final Collection<String> columnNames) {
         N.checkArgNotEmpty(columnNames, "columnNames");

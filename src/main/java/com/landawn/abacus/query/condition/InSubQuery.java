@@ -83,10 +83,10 @@ public class InSubQuery extends AbstractInSubQuery {
      * // SQL: department_id IN (SELECT dept_id FROM departments WHERE budget > 1000000)
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param subQuery the subquery that returns the values to check against (must not be {@code null});
      *            if it is a structured subquery, it must select exactly one column
-     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty, if {@code subQuery} is
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code subQuery} is
      *             {@code null}, or if the subquery is structured and selects a number of columns other than 1
      */
     public InSubQuery(final String propName, final SubQuery subQuery) {
@@ -113,7 +113,7 @@ public class InSubQuery extends AbstractInSubQuery {
      *            column order in the subquery.
      * @param subQuery the subquery that returns the value combinations to check against (must not be {@code null}).
      *            If it is a structured subquery, it must select exactly {@code propNames.size()} columns.
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is {@code null}/empty,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is {@code null}, empty, or blank,
      *             if {@code subQuery} is {@code null}, or if the subquery is structured and its number of selected
      *             columns does not match {@code propNames.size()}
      */

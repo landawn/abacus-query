@@ -81,8 +81,8 @@ public class IsInfinite extends Is {
     /**
      * Shared Expression instance representing INFINITE.
      * This constant is used internally to represent the INFINITE value in SQL.
-     * It's shared across all instances to reduce memory overhead and ensure
-     * consistency in SQL generation.
+     * It is shared across instances and referenced by {@link IsNotInfinite} to reduce
+     * memory overhead and ensure consistency in SQL generation.
      */
     static final Expression INFINITE = Filters.expr("INFINITE");
 
@@ -114,8 +114,8 @@ public class IsInfinite extends Is {
      * // SQL: interest_rate IS INFINITE
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be {@code null} or empty)
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public IsInfinite(final String propName) {
         super(propName, INFINITE);

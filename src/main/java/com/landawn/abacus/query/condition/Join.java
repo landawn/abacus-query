@@ -171,12 +171,14 @@ public class Join extends AbstractCondition {
      * // SQL: JOIN orders o ON customers.id = o.customer_id
      *
      * // Join with complex condition using And
+     * // Note: an And/Or that wraps an On/Using instance is rejected; combine plain
+     * // predicates with Filters.expr(...) instead.
      * Join complexJoin = new Join("products p",
      *     new And(
-     *         new On("categories.id", "p.category_id"),
+     *         Filters.expr("categories.id = p.category_id"),
      *         Filters.equal("p.active", true)
      *     ));
-     * // SQL: JOIN products p ON ((ON categories.id = p.category_id) AND (p.active = true))
+     * // SQL: JOIN products p ON ((categories.id = p.category_id) AND (p.active = true))
      * // Note: And wraps each child in parentheses and the whole junction in outer parentheses
      * }</pre>
      *

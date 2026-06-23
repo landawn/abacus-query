@@ -499,6 +499,7 @@ public class Filters {
      * @param propName2 second property name
      * @param propValue2 second property value
      * @return an {@link Or} condition
+     * @throws IllegalArgumentException if any property name is {@code null} or empty
      */
     public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return equal(propName1, propValue1).or(equal(propName2, propValue2));
@@ -521,6 +522,7 @@ public class Filters {
      * @param propName3 third property name
      * @param propValue3 third property value
      * @return an {@link Or} condition
+     * @throws IllegalArgumentException if any property name is {@code null} or empty
      */
     public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
@@ -650,6 +652,7 @@ public class Filters {
      * @param propName2 second property name
      * @param propValue2 second property value
      * @return an {@link And} condition
+     * @throws IllegalArgumentException if any property name is {@code null} or empty
      */
     public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return equal(propName1, propValue1).and(equal(propName2, propValue2));
@@ -672,6 +675,7 @@ public class Filters {
      * @param propName3 third property name
      * @param propValue3 third property value
      * @return an {@link And} condition
+     * @throws IllegalArgumentException if any property name is {@code null} or empty
      */
     public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
@@ -2033,7 +2037,7 @@ public class Filters {
      *
      * @param cond the condition for the {@code WHERE} clause (must not be {@code null})
      * @return a {@link Where} clause
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, or an {@code ON}/{@code USING} condition (which cannot be nested inside a clause)
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public static Where where(final Condition cond) {
         return new Where(cond);
@@ -2214,7 +2218,7 @@ public class Filters {
      *
      * @param cond the grouping condition (must not be {@code null})
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, or an {@code ON}/{@code USING} condition (which cannot be nested inside a clause)
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public static GroupBy groupBy(final Condition cond) {
         return new GroupBy(cond);
@@ -2232,7 +2236,7 @@ public class Filters {
      *
      * @param cond the condition for the {@code HAVING} clause (must not be {@code null})
      * @return a {@link Having} clause
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, or an {@code ON}/{@code USING} condition (which cannot be nested inside a clause)
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public static Having having(final Condition cond) {
         return new Having(cond);
@@ -2479,7 +2483,7 @@ public class Filters {
      *
      * @param cond the ordering condition (must not be {@code null})
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, or an {@code ON}/{@code USING} condition (which cannot be nested inside a clause)
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public static OrderBy orderBy(final Condition cond) {
         return new OrderBy(cond);
@@ -2501,7 +2505,7 @@ public class Filters {
      *
      * @param cond the join condition (must not be {@code null})
      * @return an {@link On} clause
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, or an empty predicate (a blank {@link Expression} or empty junction)
      */
     public static On on(final Condition cond) {
         return new On(cond);
@@ -2519,9 +2523,9 @@ public class Filters {
      * // Results in SQL like: ON users.department_id = departments.id AND users.active = true
      * }</pre>
      *
-     * @param expr the join condition as a string (must not be {@code null}; may be empty)
+     * @param expr the join condition as a string (must not be {@code null}, empty, or blank)
      * @return an {@link On} clause
-     * @throws IllegalArgumentException if {@code expr} is {@code null}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public static On on(final String expr) {
         return new On(expr(expr));
@@ -2539,7 +2543,7 @@ public class Filters {
      * @param propName the first column name
      * @param anotherPropName the second column name to join with
      * @return an {@link On} clause
-     * @throws IllegalArgumentException if {@code propName} or {@code anotherPropName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} or {@code anotherPropName} is {@code null}, empty, or blank
      */
     public static On on(final String propName, final String anotherPropName) {
         return new On(propName, anotherPropName);
@@ -2563,7 +2567,7 @@ public class Filters {
      * @param propNamePair map of column name pairs for joining (should be a
      *                     {@link java.util.LinkedHashMap} to preserve order; must not be {@code null} or empty)
      * @return an {@link On} clause
-     * @throws IllegalArgumentException if {@code propNamePair} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNamePair} is {@code null}, empty, or contains a {@code null}, empty, or blank column name
      */
     public static On on(final Map<String, String> propNamePair) {
         return new On(propNamePair);
@@ -2581,7 +2585,7 @@ public class Filters {
      *
      * @param columnNames the column names used for joining
      * @return a {@link Using} clause
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, or contains a {@code null}/empty element
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank element, or contains a qualified (dotted) column name
      * @deprecated It's recommended to use {@link #on(Map)} or multiple {@link #on(String, String)} clauses instead of
      *             {@code Using} for better portability and clarity. Replace {@code using("col1", "col2")} with explicit
      *             {@code on(N.asMap("table1.col1", "table2.col1", "table1.col2", "table2.col2"))}.
@@ -2603,7 +2607,7 @@ public class Filters {
      *
      * @param columnNames collection of column names used for joining
      * @return a {@link Using} clause
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, or contains a {@code null}/empty element
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank element, or contains a qualified (dotted) column name
      * @deprecated It's recommended to use {@link #on(Map)} or multiple {@link #on(String, String)} clauses
      *             instead of {@code Using} for better portability and clarity. Replace {@code using(columnList)}
      *             with explicit {@code on()} conditions that specify the full column names with table prefixes.
@@ -2968,27 +2972,32 @@ public class Filters {
     }
 
     /**
-     * Creates a NATURAL JOIN clause with the specified entity and additional condition.
-     * Note: Traditional NATURAL JOIN doesn't use conditions, but some databases support it.
+     * Creates a NATURAL JOIN clause with the specified entity.
+     * A NATURAL JOIN derives its join predicate implicitly from columns with matching names and
+     * therefore does not accept an explicit condition: {@code cond} must be {@code null}. This
+     * overload exists only for API symmetry with the other join factories. To apply an additional
+     * filter, place it in the enclosing query's {@code WHERE} clause instead.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * NaturalJoin join = Filters.naturalJoin("departments", Filters.equal("active", true));
-     * // Results in SQL like: NATURAL JOIN departments ON active = true
-     * // (a non-ON condition is prefixed with the ON keyword when rendered)
+     * NaturalJoin join = Filters.naturalJoin("departments", null);
+     * // Results in SQL like: NATURAL JOIN departments
      * }</pre>
      *
      * @param joinEntity the entity/table name to natural join
-     * @param cond the additional join condition
+     * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
      * @return a {@link NaturalJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is non-{@code null}
      */
     public static NaturalJoin naturalJoin(final String joinEntity, final Condition cond) {
         return new NaturalJoin(joinEntity, cond);
     }
 
     /**
-     * Creates a NATURAL JOIN clause with multiple entities and additional condition.
+     * Creates a NATURAL JOIN clause with multiple entities.
+     * As with the single-entity overload, a NATURAL JOIN cannot carry an explicit condition, so
+     * {@code cond} must be {@code null}; this form exists only for API symmetry with the other
+     * join factories.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2997,9 +3006,9 @@ public class Filters {
      * }</pre>
      *
      * @param joinEntities collection of entity/table names to natural join
-     * @param cond the additional join condition
+     * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
      * @return a {@link NaturalJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty element
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty element, or if {@code cond} is non-{@code null}
      */
     public static NaturalJoin naturalJoin(final Collection<String> joinEntities, final Condition cond) {
         return new NaturalJoin(joinEntities, cond);

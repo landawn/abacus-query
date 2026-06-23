@@ -88,10 +88,10 @@ public class Is extends Binary {
      * // SQL: verification_status IS UNKNOWN
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be {@code null} or empty)
+     * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
      * @param propValue the right-hand value of the IS predicate; may be {@code null} (renders as
      *            {@code IS NULL}) or an {@link Expression} for a SQL keyword
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public Is(final String propName, final Object propValue) {
         super(propName, Operator.IS, propValue);

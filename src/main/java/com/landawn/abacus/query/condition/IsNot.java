@@ -85,10 +85,10 @@ public class IsNot extends Binary {
      * // SQL: verification_status IS NOT UNKNOWN
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be {@code null} or empty)
+     * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
      * @param propValue the right-hand value of the IS NOT predicate; may be {@code null} (renders as
      *            {@code IS NOT NULL}) or an {@link Expression} for a SQL keyword
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public IsNot(final String propName, final Object propValue) {
         super(propName, Operator.IS_NOT, propValue);

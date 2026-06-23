@@ -53,21 +53,23 @@ import java.util.Collection;
  * // SQL: INNER JOIN orders o ON customers.id = o.customer_id
  *
  * // Join customers with their orders (only customers who have orders)
+ * // Note: combine plain predicates with Filters.expr(...); an And/Or that wraps an
+ * // On/Using instance is rejected at construction.
  * InnerJoin customerOrders = new InnerJoin("orders o",
  *     new And(
- *         new On("c.id", "o.customer_id"),
+ *         Filters.expr("c.id = o.customer_id"),
  *         Filters.equal("o.status", "completed")
  *     ));
- * // SQL: INNER JOIN orders o ON ((ON c.id = o.customer_id) AND (o.status = 'completed'))
+ * // SQL: INNER JOIN orders o ON ((c.id = o.customer_id) AND (o.status = 'completed'))
  *
  * // Complex multi-condition join
  * InnerJoin complexJoin = new InnerJoin("inventory i",
  *     new And(
- *         new On("p.product_id", "i.product_id"),
- *         new On("p.warehouse_id", "i.warehouse_id"),
+ *         Filters.expr("p.product_id = i.product_id"),
+ *         Filters.expr("p.warehouse_id = i.warehouse_id"),
  *         Filters.greaterThan("i.quantity", 0)
  *     ));
- * // SQL: INNER JOIN inventory i ON ((ON p.product_id = i.product_id) AND (ON p.warehouse_id = i.warehouse_id) AND (i.quantity > 0))
+ * // SQL: INNER JOIN inventory i ON ((p.product_id = i.product_id) AND (p.warehouse_id = i.warehouse_id) AND (i.quantity > 0))
  *
  * // Using Expression for custom join logic
  * InnerJoin exprJoin = new InnerJoin("customers c",
@@ -131,22 +133,22 @@ public class InnerJoin extends Join {
      *     new On("orders.customer_id", "c.id"));
      * // SQL: INNER JOIN customers c ON orders.customer_id = c.id
      *
-     * // Join with composite key using multiple ON conditions
+     * // Join with composite key using multiple predicates
      * InnerJoin compositeJoin = new InnerJoin("order_items oi",
      *     new And(
-     *         new On("orders.id", "oi.order_id"),
-     *         new On("orders.version", "oi.order_version")
+     *         Filters.expr("orders.id = oi.order_id"),
+     *         Filters.expr("orders.version = oi.order_version")
      *     ));
-     * // SQL: INNER JOIN order_items oi ON ((ON orders.id = oi.order_id) AND (ON orders.version = oi.order_version))
+     * // SQL: INNER JOIN order_items oi ON ((orders.id = oi.order_id) AND (orders.version = oi.order_version))
      *
-     * // Join with ON condition and additional filter conditions
+     * // Join with key comparison and additional filter conditions
      * InnerJoin filteredJoin = new InnerJoin("products p",
      *     new And(
-     *         new On("order_items.product_id", "p.id"),
+     *         Filters.expr("order_items.product_id = p.id"),
      *         Filters.equal("p.active", true),
      *         Filters.greaterThan("p.stock", 0)
      *     ));
-     * // SQL: INNER JOIN products p ON ((ON order_items.product_id = p.id) AND (p.active = true) AND (p.stock > 0))
+     * // SQL: INNER JOIN products p ON ((order_items.product_id = p.id) AND (p.active = true) AND (p.stock > 0))
      *
      * // Using Expression for custom join logic
      * InnerJoin exprJoin = new InnerJoin("customers c",
@@ -158,7 +160,8 @@ public class InnerJoin extends Join {
      * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should include
      *            those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
-     *                                  {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public InnerJoin(final String joinEntity, final Condition cond) {
         super(Operator.INNER_JOIN, joinEntity, cond);
@@ -177,14 +180,14 @@ public class InnerJoin extends Join {
      *     new On("o.customer_id", "c.id"));
      * // SQL: INNER JOIN (orders o, customers c) ON o.customer_id = c.id
      *
-     * // Complex multi-table join with multiple ON conditions
+     * // Complex multi-table join with multiple predicates
      * List<String> entities = Arrays.asList("products p", "categories cat", "suppliers s");
      * InnerJoin complexMulti = new InnerJoin(entities,
      *     new And(
-     *         new On("p.category_id", "cat.id"),
-     *         new On("p.supplier_id", "s.id")
+     *         Filters.expr("p.category_id = cat.id"),
+     *         Filters.expr("p.supplier_id = s.id")
      *     ));
-     * // SQL: INNER JOIN (products p, categories cat, suppliers s) ON ((ON p.category_id = cat.id) AND (ON p.supplier_id = s.id))
+     * // SQL: INNER JOIN (products p, categories cat, suppliers s) ON ((p.category_id = cat.id) AND (p.supplier_id = s.id))
      *
      * // Using Expression for multiple tables
      * InnerJoin exprMulti = new InnerJoin(tables,
@@ -196,7 +199,8 @@ public class InnerJoin extends Join {
      * @param cond the condition appended after the joined table list. Use {@link On} or {@link Using} when the SQL should include
      *            those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
-     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public InnerJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.INNER_JOIN, joinEntities, cond);

@@ -35,9 +35,9 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>Tokenization details:</p>
  * <ul>
- *   <li>Single-quoted and double-quoted strings/identifiers are kept as a single token.
- *       Both doubled-quote ({@code ''}, {@code ""}) and backslash escaping are recognized
- *       as in-string escapes.</li>
+ *   <li>Single-quoted, double-quoted and backtick-quoted strings/identifiers are kept as a
+ *       single token. Both doubled-quote ({@code ''}, {@code ""}, {@code ``}) and backslash
+ *       escaping are recognized as in-string escapes.</li>
  *   <li>Comments are normally stripped: line comments ({@code -- ...}), MySQL hash comments
  *       ({@code # ...}), and block comments ({@code /* ... *}{@code /}) are discarded.
  *       Exception: block comments are retained as tokens when the SQL begins
@@ -325,7 +325,7 @@ public final class SqlParser {
             String temp = "";
             char quoteChar = 0;
             int keepComments = -1;
-            // Forward-running backslash parity: true iff the char at the current `index` is
+            // Forward-running backslash parity: true if the char at the current `index` is
             // immediately preceded by an ODD number of consecutive backslashes. Maintained while
             // consuming a quoted region so the closing-quote escape decision is identical to the
             // previous O(n) backward backslash scan, without the O(n^2) worst case.
@@ -534,7 +534,7 @@ public final class SqlParser {
                 final int startIndex = Math.max(0, fromIndex);
                 String temp = "";
                 char quoteChar = 0;
-                // Forward-running backslash parity (see parse()): true iff the char at the current
+                // Forward-running backslash parity (see parse()): true if the char at the current
                 // `index` is preceded by an ODD number of consecutive backslashes.
                 boolean bsEscaped = false;
 
@@ -761,7 +761,7 @@ public final class SqlParser {
         try {
             String temp = "";
             char quoteChar = 0;
-            // Forward-running backslash parity (see parse()): true iff the char at the current
+            // Forward-running backslash parity (see parse()): true if the char at the current
             // `index` is preceded by an ODD number of consecutive backslashes.
             boolean bsEscaped = false;
 

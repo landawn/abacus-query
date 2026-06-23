@@ -129,10 +129,10 @@ public class CrossJoin extends Join {
      * // Complex cross join with multiple conditions
      * CrossJoin complexCross = new CrossJoin("inventory i",
      *     new And(
-     *         new On("i.warehouse_id", "w.id"),
+     *         Filters.expr("i.warehouse_id = w.id"),
      *         Filters.equal("i.active", true)
      *     ));
-     * // SQL: CROSS JOIN inventory i ON ((ON i.warehouse_id = w.id) AND (i.active = true))
+     * // SQL: CROSS JOIN inventory i ON ((i.warehouse_id = w.id) AND (i.active = true))
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
@@ -140,7 +140,8 @@ public class CrossJoin extends Join {
      *            {@link On}) produces non-standard CROSS JOIN SQL, since a standard CROSS JOIN takes no
      *            {@code ON} clause. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
-     *                                  {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public CrossJoin(final String joinEntity, final Condition cond) {
         super(Operator.CROSS_JOIN, joinEntity, cond);
@@ -175,7 +176,8 @@ public class CrossJoin extends Join {
      *            {@link On}) produces non-standard CROSS JOIN SQL, since a standard CROSS JOIN takes no
      *            {@code ON} clause. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
-     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, or an {@link Expression} whose text begins with {@code ON} or {@code USING}
+     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public CrossJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.CROSS_JOIN, joinEntities, cond);

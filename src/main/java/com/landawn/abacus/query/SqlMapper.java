@@ -57,7 +57,7 @@ import com.landawn.abacus.util.XmlUtil;
  * <pre>{@code
  * <sqlMapper>
  *     <sql id="findAccountById">select * from account where id = ?</sql>
- *     <sql id="updateAccountNameById">update account set name  = ? where id = ?</sql>
+ *     <sql id="updateAccountNameById">update account set name = ? where id = ?</sql>
  *     <sql id="batchInsertAccounts" batchSize="100" fetchSize="50" timeout="30">
  *         insert into account (id, name, email) values (?, ?, ?)
  *     </sql>
@@ -491,7 +491,7 @@ public final class SqlMapper {
      * <pre>{@code
      * <sqlMapper>
      *     <sql id="findUser" fetchSize="100">select * from users where id = ?</sql>
-     *     <sql id="updateUser">update users set name                      = ? where id = ?</sql>
+     *     <sql id="updateUser">update users set name = ? where id = ?</sql>
      * </sqlMapper>
      * }</pre>
      *

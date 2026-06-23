@@ -107,8 +107,8 @@ public class IsNull extends Is {
      * // SQL: birth_date IS NULL
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be {@code null} or empty)
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public IsNull(final String propName) {
         super(propName, NULL);

@@ -82,8 +82,8 @@ public class IsNaN extends Is {
     /**
      * Shared Expression instance representing NAN.
      * This constant is used internally to represent the NAN value in SQL.
-     * It's shared across all instances to reduce memory overhead and ensure
-     * consistency in SQL generation.
+     * It is shared across instances and referenced by {@link IsNotNaN} to reduce
+     * memory overhead and ensure consistency in SQL generation.
      */
     static final Expression NAN = Filters.expr("NAN");
 
@@ -113,8 +113,8 @@ public class IsNaN extends Is {
      * // SQL: temperature IS NAN
      * }</pre>
      *
-     * @param propName the name of the property/column to check (must not be {@code null} or empty)
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public IsNaN(final String propName) {
         super(propName, NAN);
