@@ -185,7 +185,7 @@ public class ConditionTest extends TestBase {
         // XOR should produce (A AND NOT B) OR (NOT A AND B)
         ComposableCondition a = Filters.eq("x", 1);
         ComposableCondition b = Filters.eq("y", 2);
-        Or result = a.xor(b);
+        Or result = (Or) a.xor(b);
 
         // The result should be an Or with 2 conditions (each an And)
         assertEquals(2, result.getConditions().size());

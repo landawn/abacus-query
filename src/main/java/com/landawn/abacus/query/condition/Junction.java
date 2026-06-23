@@ -98,8 +98,8 @@ public class Junction extends ComposableCondition {
     /** Lazily memoized hashCode (0 == not computed). */
     private transient int cachedHashCode;
 
-    /** Lazily memoized unmodifiable view of {@link #conditions} (performance only). */
-    private transient List<Condition> cachedConditionsView;
+    /** Lazily memoized immutable view of {@link #conditions} (performance only). */
+    private transient ImmutableList<Condition> cachedConditionsView;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -160,10 +160,11 @@ public class Junction extends ComposableCondition {
      * Junction bad = new Junction(Operator.AND, new Equal("a", 1), (Condition) null);   // throws IllegalArgumentException
      * }</pre>
      *
-     * @param operator the composable operator to use (AND, OR, etc.)
+     * @param operator the composable operator to use; must be {@link Operator#AND} or {@link Operator#OR}
      * @param conditions the conditions to combine; may be {@code null} or empty (treated as no conditions)
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
+     * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
+     *             or if any element in {@code conditions} is {@code null}, or if any
      *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             is an {@code ON}/{@code USING} connector, is an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
@@ -171,6 +172,7 @@ public class Junction extends ComposableCondition {
      */
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
+        validateJunctionOperator(operator);
         this.conditions = new ArrayList<>();
         appendConditions(conditions);
     }
@@ -199,10 +201,11 @@ public class Junction extends ComposableCondition {
      * // empty.toString() returns ""
      * }</pre>
      *
-     * @param operator the composable operator to use (AND, OR, etc.)
+     * @param operator the composable operator to use; must be {@link Operator#AND} or {@link Operator#OR}
      * @param conditions the collection of conditions to combine; may be {@code null} or empty (treated as no conditions)
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
+     * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
+     *             or if any element in {@code conditions} is {@code null}, or if any
      *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             is an {@code ON}/{@code USING} connector, is an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
@@ -210,13 +213,14 @@ public class Junction extends ComposableCondition {
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);
+        validateJunctionOperator(operator);
         this.conditions = new ArrayList<>();
         appendConditions(conditions); // NOSONAR
     }
 
     /**
      * Gets the list of conditions contained in this junction.
-     * The returned list is an unmodifiable view; attempts to modify it
+     * The returned list is an immutable view; attempts to modify it
      * will throw {@link UnsupportedOperationException}.
      *
      * <p><b>Usage Examples:</b></p>
@@ -229,20 +233,20 @@ public class Junction extends ComposableCondition {
      * conditions.size();             // returns 2
      * conditions.get(0).toString();  // returns "status = 'active'"
      *
-     * // Edge: the returned view is unmodifiable
+     * // Edge: the returned view is immutable
      * conditions.add(new Equal("x", 1));   // throws UnsupportedOperationException
      *
      * // Edge: an empty junction returns an empty list
      * new Junction(Operator.AND).getConditions().isEmpty();   // returns true
      * }</pre>
      *
-     * @return an unmodifiable view of the list of conditions in this junction
+     * @return an immutable view of the list of conditions in this junction
      */
-    public List<Condition> getConditions() {
-        List<Condition> view = cachedConditionsView;
+    public ImmutableList<Condition> getConditions() {
+        ImmutableList<Condition> view = cachedConditionsView;
 
         if (view == null) {
-            view = Collections.unmodifiableList(conditions);
+            view = ImmutableList.wrap(conditions);
             cachedConditionsView = view;
         }
 
@@ -271,6 +275,12 @@ public class Junction extends ComposableCondition {
         }
 
         this.conditions.addAll(conditions);
+    }
+
+    private static void validateJunctionOperator(final Operator operator) {
+        if (operator != Operator.AND && operator != Operator.OR) {
+            throw new IllegalArgumentException("Junction operator must be " + Operator.AND + " or " + Operator.OR + ", but was: " + operator);
+        }
     }
 
     private static Condition validateConstructorOperand(final Condition condition) {

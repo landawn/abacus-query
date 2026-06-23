@@ -147,26 +147,17 @@ public class SqlDialect {
     /**
      * Immutable descriptor of a database product, holding the product name and version separately.
      *
-     * <p>When attached to a dialect via {@link SqlDialect#productInfo}, the {@link #name} drives
+     * <p>When attached to a dialect via {@link SqlDialect#productInfo}, the {@link #name()} drives
      * product-specific SQL generation in query builders (for example, Oracle-style
      * {@code FETCH FIRST ... ROWS ONLY} pagination). The name is matched case-insensitively as a
      * substring, so raw JDBC values from {@code DatabaseMetaData.getDatabaseProductName()} such as
      * {@code "Microsoft SQL Server"} or {@code "Oracle Database 19c"} are recognized. The
-     * {@link #version} is descriptive metadata only.</p>
+     * {@link #version()} is descriptive metadata only.</p>
+     *
+     * @param name the database product name, such as {@code "MySQL"} or {@code "PostgreSQL"}
+     * @param version the database product version, such as {@code "9.7"} or {@code "18"}; descriptive metadata only
      */
-    @Builder
-    @Value
-    @Accessors(fluent = true)
-    public static class ProductInfo {
-        /**
-         * Database product name, such as {@code "MySQL"} or {@code "PostgreSQL"}.
-         */
-        private String name;
-
-        /**
-         * Database product version, such as {@code "9.7"} or {@code "18"}.
-         */
-        private String version;
+    public record ProductInfo(String name, String version) {
 
         /**
          * Creates a {@code ProductInfo} with the given product name and no version.

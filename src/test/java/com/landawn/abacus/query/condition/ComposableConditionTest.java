@@ -84,7 +84,7 @@ public class ComposableConditionTest extends TestBase {
         final TestComposableCondition left = new TestComposableCondition("status", "ACTIVE");
         final TestComposableCondition right = new TestComposableCondition("type", "ADMIN");
 
-        final Or result = left.xor(right);
+        final Or result = (Or) left.xor(right);
 
         assertEquals(Operator.OR, result.operator());
         assertEquals(2, result.getConditions().size());

@@ -156,4 +156,26 @@ public class Union extends Clause {
     public Union(final SubQuery subQuery) {
         super(Operator.UNION, subQuery);
     }
+
+    /**
+     * Gets the subquery used by this UNION clause.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Retrieve the wrapped subquery
+     * SubQuery subQuery = Filters.subQuery("SELECT id, name FROM customers WHERE region = 'East'");
+     * Union union = new Union(subQuery);
+     * SubQuery retrieved = union.getSubQuery();
+     * // returns the subquery passed to the constructor
+     *
+     * // The wrapped subquery is also what getCondition() returns
+     * boolean sameAsCondition = union.getSubQuery() == union.getCondition();
+     * // returns true
+     * }</pre>
+     *
+     * @return the {@link SubQuery} supplied at construction time
+     */
+    public SubQuery getSubQuery() {
+        return (SubQuery) getCondition();
+    }
 }

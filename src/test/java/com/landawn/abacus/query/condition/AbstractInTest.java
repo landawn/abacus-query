@@ -123,7 +123,7 @@ public class AbstractInTest extends TestBase {
         final EmptyAbstractIn right = new EmptyAbstractIn();
 
         assertNull(left.getPropName());
-        assertNull(left.getValues());
+        assertTrue(left.getValues().isEmpty());
         assertTrue(left.getParameters().isEmpty());
         assertEquals(left, right);
         assertEquals(left.hashCode(), right.hashCode());

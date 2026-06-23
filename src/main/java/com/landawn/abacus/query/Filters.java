@@ -97,7 +97,9 @@ import com.landawn.abacus.util.SK;
  * <ul>
  *   <li><b>Comparison:</b> {@code equal/eq}, {@code notEqual/ne}, {@code greaterThan/gt}, {@code lessThan/lt},
  *       {@code greaterThanOrEqual/ge}, {@code lessThanOrEqual/le}</li>
- *   <li><b>Range/Collection:</b> {@code between}, {@code notBetween}, {@code in}, {@code notIn}</li>
+ *   <li><b>Range/Collection:</b> {@code between}, {@code notBetween}, {@code in}, {@code notIn}
+ *       (range/keyword factories intentionally have <b>no</b> short alias; the former {@code bt}
+ *       alias for {@code between} was removed)</li>
  *   <li><b>Pattern Matching:</b> {@code like}, {@code notLike}, {@code contains}, {@code startsWith}, {@code endsWith}</li>
  *   <li><b>Null Checks:</b> {@code isNull}, {@code isNotNull}</li>
  *   <li><b>Logical:</b> {@code and}, {@code or}, {@code not}</li>
@@ -138,7 +140,7 @@ public class Filters {
     /**
      * Expression representing a question mark literal ("?") for use in parameterized SQL queries.
      * This constant is used when creating conditions with placeholders for prepared statements.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a parameterized condition; the parameterless equal(String) overload uses QME internally
@@ -200,19 +202,19 @@ public class Filters {
      *
      * <p>This method creates a {@link Not} condition that inverts the result of the wrapped condition.
      * It can be used to negate any other condition type, such as {@link Equal}, {@link Like}, {@link In}, {@link Between}, etc.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Create a NOT LIKE condition
      * Like likeCondition = Filters.like("name", "%test%");
      * Not notLike = Filters.not(likeCondition);
-     * 
+     *
      * // Create a NOT IN condition
      * Not notIn = Filters.not(Filters.in("status", Arrays.asList("inactive", "deleted")));
-     * 
+     *
      * // Create a NOT BETWEEN condition
      * Not notBetween = Filters.not(Filters.between("age", 18, 65));
-     * 
+     *
      * // Create a complex negated condition
      * Not complexNot = Filters.not(Filters.and(
      *     Filters.equal("status", "active"),
@@ -220,7 +222,7 @@ public class Filters {
      *     Filters.like("email", "%@company.com")
      * ));
      * }</pre>
-     * 
+     *
      * @param cond the condition to negate (must not be {@code null} and must be a composable condition)
      * @return a {@link Not} condition that wraps and negates the provided condition
      * @throws IllegalArgumentException if {@code cond} is {@code null} or is a clause/join condition (e.g., {@code ON}/{@code USING}) that cannot be composed
@@ -275,9 +277,18 @@ public class Filters {
 
     /**
      * Creates a {@link Binary} condition with the specified property name, operator, and value.
-     * This is a general factory for creating conditions with any binary {@link Operator}, useful
-     * when one of the convenience factories (e.g. {@link #equal(String, Object)},
+     * This is a general factory for creating conditions with a binary comparison/membership
+     * {@link Operator}, useful when one of the convenience factories (e.g. {@link #equal(String, Object)},
      * {@link #greaterThan(String, Object)}) does not cover the desired operator.
+     *
+     * <p>The {@code operator} must be a valid binary comparison or membership operator: one of
+     * {@link Operator#EQUAL}, {@link Operator#NOT_EQUAL}, {@link Operator#NOT_EQUAL_ANSI},
+     * {@link Operator#GREATER_THAN}, {@link Operator#GREATER_THAN_OR_EQUAL}, {@link Operator#LESS_THAN},
+     * {@link Operator#LESS_THAN_OR_EQUAL}, {@link Operator#LIKE}, {@link Operator#NOT_LIKE},
+     * {@link Operator#IS}, {@link Operator#IS_NOT}, {@link Operator#IN}, or {@link Operator#NOT_IN}.
+     * Structural operators (such as {@code WHERE}, {@code JOIN}, {@code AND}, {@code OR},
+     * {@code UNION}, {@code BETWEEN}, {@code EXISTS}) are <b>not</b> binary {@code propName OP value}
+     * predicates and are rejected with an {@link IllegalArgumentException}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -286,14 +297,16 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
-     * @param operator the binary operator to use (must not be {@code null})
+     * @param operator the binary comparison/membership operator to use (must not be {@code null} and must be
+     *                 a valid binary operator; structural operators are rejected)
      * @param propValue the value to compare against; may be a literal, {@code null}, or another
      *                  {@link Condition} such as a {@link SubQuery}. For an {@code IN}/{@code NOT_IN}
      *                  operator, a {@link Collection} or array value is copied defensively and must be non-empty.
      * @return a {@link Binary} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if, for an
-     *                                  {@code IN}/{@code NOT_IN} operator, {@code propValue} is not a non-empty
-     *                                  {@link Collection}, a non-empty array, or a {@link Condition}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if {@code operator}
+     *                                  is not a valid binary comparison/membership operator (e.g. a structural
+     *                                  operator); or if, for an {@code IN}/{@code NOT_IN} operator, {@code propValue}
+     *                                  is not a non-empty {@link Collection}, a non-empty array, or a {@link Condition}
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     public static Binary binary(final String propName, final Operator operator, final Object propValue) {
@@ -322,7 +335,7 @@ public class Filters {
     /**
      * Creates a parameterized equality condition for use with prepared statements.
      * The value will be represented by a question mark ({@code ?}) placeholder.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Equal condition = Filters.equal("user_id");
@@ -340,7 +353,7 @@ public class Filters {
     /**
      * Creates an equality condition ({@code =}) for the specified property and value.
      * This is a shorthand alias for {@link #equal(String, Object)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Equal condition = Filters.eq("status", "active");
@@ -352,7 +365,6 @@ public class Filters {
      * @return an {@link Equal} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
-    @Beta
     public static Equal eq(final String propName, final Object propValue) {
         return equal(propName, propValue);
     }
@@ -360,7 +372,7 @@ public class Filters {
     /**
      * Creates a parameterized equality condition for use with prepared statements.
      * This is a shorthand alias for {@link #equal(String)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Equal condition = Filters.eq("email");
@@ -371,7 +383,6 @@ public class Filters {
      * @return an {@link Equal} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
-    @Beta
     public static Equal eq(final String propName) {
         return equal(propName);
     }
@@ -508,6 +519,11 @@ public class Filters {
     /**
      * Creates an {@code OR} condition with three property-value pairs
      * across <b>different</b> columns/properties.
+     *
+     * <p>This is the largest positional-pair overload. For more than three pairs, prefer the map-based
+     * {@link #anyEqual(Map)} form (using a {@link java.util.LinkedHashMap} to preserve order): pairing
+     * names and values positionally becomes increasingly error-prone as the argument count grows, since a
+     * transposed name/value is not caught by the compiler.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -662,6 +678,11 @@ public class Filters {
      * Creates an {@code AND} condition with three property-value pairs
      * across <b>different</b> columns/properties.
      *
+     * <p>This is the largest positional-pair overload. For more than three pairs, prefer the map-based
+     * {@link #allEqual(Map)} form (using a {@link java.util.LinkedHashMap} to preserve order): pairing
+     * names and values positionally becomes increasingly error-prone as the argument count grows, since a
+     * transposed name/value is not caught by the compiler.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * And condition = Filters.allEqual("status", "active", "type", "premium", "verified", true);
@@ -685,7 +706,7 @@ public class Filters {
     /**
      * Creates an {@code OR} condition where each element in the list represents an {@code AND} condition of property-value pairs.
      * This is useful for creating conditions like: {@code (a=1 AND b=2) OR (a=3 AND b=4)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Map<String, Object>> propsList = new ArrayList<>();
@@ -715,7 +736,7 @@ public class Filters {
     /**
      * Creates an {@code OR} condition from a collection of entities, where each entity forms an {@code AND} condition.
      * All properties of each entity will be used.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<User> users = Arrays.asList(
@@ -743,7 +764,7 @@ public class Filters {
     /**
      * Creates an {@code OR} condition from a collection of entities using only specified properties.
      * Each entity forms an {@code AND} condition with the selected properties.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<User> users = Arrays.asList(new User("John", "active"), new User("Jane", "trial"));
@@ -945,11 +966,11 @@ public class Filters {
     /**
      * Converts an {@link EntityId} to an {@link And} condition where each key-value pair becomes an equality check.
      * {@link EntityId} typically represents a composite primary key.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * EntityId id = EntityId.of("companyId", 1, "userId", 100);
-     * And condition = Filters.id2Cond(id);
+     * And condition = Filters.idToCond(id);
      * // SQL fragment: ((companyId = 1) AND (userId = 100))
      * // (EntityId orders its keys alphabetically, regardless of insertion order)
      * }</pre>
@@ -958,7 +979,7 @@ public class Filters {
      * @return an {@link And} condition
      * @throws IllegalArgumentException if {@code entityId} is null or contains no keys
      */
-    public static And id2Cond(final EntityId entityId) {
+    public static And idToCond(final EntityId entityId) {
         N.checkArgNotNull(entityId, "entityId");
 
         final Collection<String> selectPropNames = entityId.keySet();
@@ -995,7 +1016,7 @@ public class Filters {
      *     EntityId.of("companyId", 1, "userId", 100),
      *     EntityId.of("companyId", 2, "userId", 200)
      * );
-     * Or condition = Filters.id2Cond(ids);
+     * Or condition = Filters.idToCond(ids);
      * // Results in: ((((companyId = 1) AND (userId = 100))) OR (((companyId = 2) AND (userId = 200))))
      * }</pre>
      *
@@ -1004,17 +1025,48 @@ public class Filters {
      * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, or contains an
      *         {@link EntityId} with no keys
      */
-    public static Or id2Cond(final Collection<? extends EntityId> entityIds) {
+    public static Or idToCond(final Collection<? extends EntityId> entityIds) {
         N.checkArgNotEmpty(entityIds, "entityIds");
 
         final Iterator<? extends EntityId> iter = entityIds.iterator();
         final Condition[] conds = new Condition[entityIds.size()];
 
         for (int i = 0, size = entityIds.size(); i < size; i++) {
-            conds[i] = Filters.id2Cond(iter.next());
+            conds[i] = Filters.idToCond(iter.next());
         }
 
         return Filters.or(conds);
+    }
+
+    /**
+     * Converts an {@link EntityId} to an {@link And} condition where each key-value pair becomes an equality check.
+     * {@link EntityId} typically represents a composite primary key.
+     *
+     * @param entityId the {@link EntityId} containing key-value pairs (must not be null)
+     * @return an {@link And} condition
+     * @throws IllegalArgumentException if {@code entityId} is null or contains no keys
+     * @deprecated the digit-abbreviation name is inconsistent with this class's spelled-out naming
+     *             convention; use {@link #idToCond(EntityId)} instead
+     */
+    @Deprecated
+    public static And id2Cond(final EntityId entityId) {
+        return idToCond(entityId);
+    }
+
+    /**
+     * Converts a collection of {@link EntityId}s to an {@link Or} condition where each {@link EntityId} becomes an {@link And} condition.
+     * Useful for querying multiple entities by their composite keys.
+     *
+     * @param entityIds collection of {@link EntityId}s (must not be {@code null} or empty)
+     * @return an {@link Or} condition
+     * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, or contains an
+     *         {@link EntityId} with no keys
+     * @deprecated the digit-abbreviation name is inconsistent with this class's spelled-out naming
+     *             convention; use {@link #idToCond(Collection)} instead
+     */
+    @Deprecated
+    public static Or id2Cond(final Collection<? extends EntityId> entityIds) {
+        return idToCond(entityIds);
     }
 
     /**
@@ -1039,7 +1091,7 @@ public class Filters {
     /**
      * Creates a parameterized not-equal condition for use with prepared statements.
      * The value will be represented by a question mark ({@code ?}) placeholder.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotEqual condition = Filters.notEqual("user_type");
@@ -1057,7 +1109,7 @@ public class Filters {
     /**
      * Creates a not-equal condition ({@code !=}) for the specified property and value.
      * This is a shorthand alias for {@link #notEqual(String, Object)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotEqual condition = Filters.ne("status", "inactive");
@@ -1069,7 +1121,6 @@ public class Filters {
      * @return a {@link NotEqual} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
-    @Beta
     public static NotEqual ne(final String propName, final Object propValue) {
         return notEqual(propName, propValue);
     }
@@ -1077,7 +1128,7 @@ public class Filters {
     /**
      * Creates a parameterized not-equal condition for use with prepared statements.
      * This is a shorthand alias for {@link #notEqual(String)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotEqual condition = Filters.ne("category");
@@ -1088,14 +1139,13 @@ public class Filters {
      * @return a {@link NotEqual} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
-    @Beta
     public static NotEqual ne(final String propName) {
         return notEqual(propName);
     }
 
     /**
      * Creates a greater-than condition ({@code >}) for the specified property and value.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThan condition = Filters.greaterThan("age", 18);
@@ -1113,7 +1163,7 @@ public class Filters {
 
     /**
      * Creates a parameterized greater-than condition for use with prepared statements.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThan condition = Filters.greaterThan("salary");
@@ -1131,7 +1181,7 @@ public class Filters {
     /**
      * Creates a greater-than condition ({@code >}) for the specified property and value.
      * This is a shorthand alias for {@link #greaterThan(String, Object)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThan condition = Filters.gt("price", 100);
@@ -1143,7 +1193,6 @@ public class Filters {
      * @return a {@link GreaterThan} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
-    @Beta
     public static GreaterThan gt(final String propName, final Object propValue) {
         return greaterThan(propName, propValue);
     }
@@ -1151,7 +1200,7 @@ public class Filters {
     /**
      * Creates a parameterized greater-than condition for use with prepared statements.
      * This is a shorthand alias for {@link #greaterThan(String)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThan condition = Filters.gt("quantity");
@@ -1162,14 +1211,13 @@ public class Filters {
      * @return a {@link GreaterThan} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
-    @Beta
     public static GreaterThan gt(final String propName) {
         return greaterThan(propName);
     }
 
     /**
      * Creates a greater-than-or-equal condition ({@code >=}) for the specified property and value.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThanOrEqual condition = Filters.greaterThanOrEqual("score", 60);
@@ -1187,7 +1235,7 @@ public class Filters {
 
     /**
      * Creates a parameterized greater-than-or-equal condition for use with prepared statements.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThanOrEqual condition = Filters.greaterThanOrEqual("min_age");
@@ -1205,7 +1253,7 @@ public class Filters {
     /**
      * Creates a greater-than-or-equal condition ({@code >=}) for the specified property and value.
      * This is a shorthand alias for {@link #greaterThanOrEqual(String, Object)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThanOrEqual condition = Filters.ge("level", 5);
@@ -1217,7 +1265,6 @@ public class Filters {
      * @return a {@link GreaterThanOrEqual} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
-    @Beta
     public static GreaterThanOrEqual ge(final String propName, final Object propValue) {
         return greaterThanOrEqual(propName, propValue);
     }
@@ -1225,7 +1272,7 @@ public class Filters {
     /**
      * Creates a parameterized greater-than-or-equal condition for use with prepared statements.
      * This is a shorthand alias for {@link #greaterThanOrEqual(String)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * GreaterThanOrEqual condition = Filters.ge("rating");
@@ -1236,14 +1283,13 @@ public class Filters {
      * @return a {@link GreaterThanOrEqual} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
-    @Beta
     public static GreaterThanOrEqual ge(final String propName) {
         return greaterThanOrEqual(propName);
     }
 
     /**
      * Creates a less-than condition ({@code <}) for the specified property and value.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThan condition = Filters.lessThan("age", 65);
@@ -1261,7 +1307,7 @@ public class Filters {
 
     /**
      * Creates a parameterized less-than condition for use with prepared statements.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThan condition = Filters.lessThan("max_price");
@@ -1279,7 +1325,7 @@ public class Filters {
     /**
      * Creates a less-than condition ({@code <}) for the specified property and value.
      * This is a shorthand alias for {@link #lessThan(String, Object)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThan condition = Filters.lt("stock", 10);
@@ -1291,7 +1337,6 @@ public class Filters {
      * @return a {@link LessThan} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
-    @Beta
     public static LessThan lt(final String propName, final Object propValue) {
         return lessThan(propName, propValue);
     }
@@ -1299,7 +1344,7 @@ public class Filters {
     /**
      * Creates a parameterized less-than condition for use with prepared statements.
      * This is a shorthand alias for {@link #lessThan(String)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThan condition = Filters.lt("expiry_date");
@@ -1310,14 +1355,13 @@ public class Filters {
      * @return a {@link LessThan} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
-    @Beta
     public static LessThan lt(final String propName) {
         return lessThan(propName);
     }
 
     /**
      * Creates a less-than-or-equal condition ({@code <=}) for the specified property and value.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThanOrEqual condition = Filters.lessThanOrEqual("discount", 50);
@@ -1335,7 +1379,7 @@ public class Filters {
 
     /**
      * Creates a parameterized less-than-or-equal condition for use with prepared statements.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThanOrEqual condition = Filters.lessThanOrEqual("max_attempts");
@@ -1353,7 +1397,7 @@ public class Filters {
     /**
      * Creates a less-than-or-equal condition ({@code <=}) for the specified property and value.
      * This is a shorthand alias for {@link #lessThanOrEqual(String, Object)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThanOrEqual condition = Filters.le("priority", 3);
@@ -1365,7 +1409,6 @@ public class Filters {
      * @return a {@link LessThanOrEqual} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
-    @Beta
     public static LessThanOrEqual le(final String propName, final Object propValue) {
         return lessThanOrEqual(propName, propValue);
     }
@@ -1373,7 +1416,7 @@ public class Filters {
     /**
      * Creates a parameterized less-than-or-equal condition for use with prepared statements.
      * This is a shorthand alias for {@link #lessThanOrEqual(String)}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LessThanOrEqual condition = Filters.le("weight");
@@ -1384,7 +1427,6 @@ public class Filters {
      * @return a {@link LessThanOrEqual} condition with a parameter placeholder
      * @see com.landawn.abacus.query.SqlBuilder
      */
-    @Beta
     public static LessThanOrEqual le(final String propName) {
         return lessThanOrEqual(propName);
     }
@@ -1392,7 +1434,7 @@ public class Filters {
     /**
      * Creates a {@link Between} condition for the specified property and range values.
      * The condition is inclusive on both ends.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = Filters.between("age", 18, 65);
@@ -1411,7 +1453,7 @@ public class Filters {
 
     /**
      * Creates a parameterized {@link Between} condition for use with prepared statements.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between condition = Filters.between("price");
@@ -1452,7 +1494,7 @@ public class Filters {
 
     /**
      * Creates a parameterized {@link NotBetween} condition for use with prepared statements.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotBetween condition = Filters.notBetween("score");
@@ -1471,7 +1513,7 @@ public class Filters {
     /**
      * Creates a {@link Like} condition for pattern matching.
      * Use SQL wildcards ({@code %} for any characters, {@code _} for single character) in the pattern.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Like condition = Filters.like("email", "%@gmail.com");
@@ -1489,7 +1531,7 @@ public class Filters {
 
     /**
      * Creates a parameterized {@link Like} condition for use with prepared statements.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Like condition = Filters.like("name");
@@ -1507,7 +1549,7 @@ public class Filters {
     /**
      * Creates a {@link NotLike} condition for pattern matching exclusion.
      * Use SQL wildcards ({@code %} for any characters, {@code _} for single character) in the pattern.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotLike condition = Filters.notLike("filename", "%.tmp");
@@ -1525,7 +1567,7 @@ public class Filters {
 
     /**
      * Creates a parameterized {@link NotLike} condition for use with prepared statements.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotLike condition = Filters.notLike("description");
@@ -1543,7 +1585,7 @@ public class Filters {
     /**
      * Creates a {@link Like} condition that checks if the property contains the specified value.
      * Automatically wraps the value with {@code %} wildcards.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Like condition = Filters.contains("description", "java");
@@ -1563,7 +1605,7 @@ public class Filters {
     /**
      * Creates a {@link NotLike} condition that checks if the property does not contain the specified value.
      * Automatically wraps the value with {@code %} wildcards.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotLike condition = Filters.notContains("tags", "deprecated");
@@ -1583,7 +1625,7 @@ public class Filters {
     /**
      * Creates a {@link Like} condition that checks if the property starts with the specified value.
      * Automatically appends a {@code %} wildcard.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Like condition = Filters.startsWith("name", "John");
@@ -1603,7 +1645,7 @@ public class Filters {
     /**
      * Creates a {@link NotLike} condition that checks if the property does not start with the specified value.
      * Automatically appends a {@code %} wildcard.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotLike condition = Filters.notStartsWith("code", "TEST");
@@ -1623,7 +1665,7 @@ public class Filters {
     /**
      * Creates a {@link Like} condition that checks if the property ends with the specified value.
      * Automatically prepends a {@code %} wildcard.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Like condition = Filters.endsWith("email", "@company.com");
@@ -1643,7 +1685,7 @@ public class Filters {
     /**
      * Creates a {@link NotLike} condition that checks if the property does not end with the specified value.
      * Automatically prepends a {@code %} wildcard.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotLike condition = Filters.notEndsWith("filename", ".tmp");
@@ -1662,7 +1704,7 @@ public class Filters {
 
     /**
      * Creates an {@link IsNull} condition to check if a property value is null.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNull condition = Filters.isNull("deleted_at");
@@ -1680,7 +1722,7 @@ public class Filters {
     /**
      * Creates a condition to check if a property is null or empty string.
      * This combines {@code IS NULL} and {@code = ''} checks with {@code OR}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Or condition = Filters.isNullOrEmpty("description");
@@ -1698,7 +1740,7 @@ public class Filters {
     /**
      * Creates a condition to check if a property is null or zero.
      * This combines {@code IS NULL} and {@code = 0} checks with {@code OR}.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Or condition = Filters.isNullOrZero("quantity");
@@ -1715,7 +1757,7 @@ public class Filters {
 
     /**
      * Creates an {@link IsNotNull} condition to check if a property value is not null.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNotNull condition = Filters.isNotNull("created_at");
@@ -1767,7 +1809,7 @@ public class Filters {
     /**
      * Creates a condition to check if a numeric property value is {@code NaN} (Not a Number).
      * This is specific to floating-point columns.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNaN condition = Filters.isNaN("calculation_result");
@@ -1785,7 +1827,7 @@ public class Filters {
     /**
      * Creates a condition to check if a numeric property value is not {@code NaN}.
      * This is specific to floating-point columns.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNotNaN condition = Filters.isNotNaN("temperature");
@@ -1803,7 +1845,7 @@ public class Filters {
     /**
      * Creates a condition to check if a numeric property value is infinite.
      * This is specific to floating-point columns.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsInfinite condition = Filters.isInfinite("ratio");
@@ -1821,7 +1863,7 @@ public class Filters {
     /**
      * Creates a condition to check if a numeric property value is not infinite.
      * This is specific to floating-point columns.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNotInfinite condition = Filters.isNotInfinite("percentage");
@@ -2080,6 +2122,40 @@ public class Filters {
      */
     public static GroupBy groupBy(final String... propNames) {
         return new GroupBy(propNames);
+    }
+
+    /**
+     * Creates a {@link GroupBy} clause with ascending order for the specified properties.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * GroupBy groupBy = Filters.groupByAsc("department", "role");
+     * // Results in SQL like: GROUP BY department ASC, role ASC
+     * }</pre>
+     *
+     * @param propNames the property/column names to group by ascending
+     * @return a {@link GroupBy} clause
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     */
+    public static GroupBy groupByAsc(final String... propNames) {
+        return new GroupBy(Array.asList(propNames), SortDirection.ASC);
+    }
+
+    /**
+     * Creates a {@link GroupBy} clause with descending order for the specified properties.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * GroupBy groupBy = Filters.groupByDesc("sales", "region");
+     * // Results in SQL like: GROUP BY sales DESC, region DESC
+     * }</pre>
+     *
+     * @param propNames the property/column names to group by descending
+     * @return a {@link GroupBy} clause
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     */
+    public static GroupBy groupByDesc(final String... propNames) {
+        return new GroupBy(Array.asList(propNames), SortDirection.DESC);
     }
 
     /**
@@ -2676,7 +2752,7 @@ public class Filters {
     /**
      * Creates a LEFT JOIN clause for the specified entity/table.
      * Returns all records from the left table and matched records from the right table.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LeftJoin join = Filters.leftJoin("orders");
@@ -2693,7 +2769,7 @@ public class Filters {
 
     /**
      * Creates a LEFT JOIN clause with the specified entity and join condition.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LeftJoin join = Filters.leftJoin("orders",
@@ -2712,7 +2788,7 @@ public class Filters {
 
     /**
      * Creates a LEFT JOIN clause with multiple entities and a join condition.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * LeftJoin join = Filters.leftJoin(Arrays.asList("orders", "order_items"),
@@ -2732,7 +2808,7 @@ public class Filters {
     /**
      * Creates a RIGHT JOIN clause for the specified entity/table.
      * Returns all records from the right table and matched records from the left table.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * RightJoin join = Filters.rightJoin("users");
@@ -2749,7 +2825,7 @@ public class Filters {
 
     /**
      * Creates a RIGHT JOIN clause with the specified entity and join condition.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * RightJoin join = Filters.rightJoin("users",
@@ -2788,7 +2864,7 @@ public class Filters {
     /**
      * Creates a CROSS JOIN clause for the specified entity/table.
      * Returns the Cartesian product of both tables.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * CrossJoin join = Filters.crossJoin("colors");
@@ -2844,7 +2920,7 @@ public class Filters {
     /**
      * Creates a FULL JOIN clause for the specified entity/table.
      * Returns all records when there is a match in either table.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * FullJoin join = Filters.fullJoin("departments");
@@ -2861,7 +2937,7 @@ public class Filters {
 
     /**
      * Creates a FULL JOIN clause with the specified entity and join condition.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * FullJoin join = Filters.fullJoin("employees",
@@ -2900,7 +2976,7 @@ public class Filters {
     /**
      * Creates an INNER JOIN clause for the specified entity/table.
      * Returns records that have matching values in both tables.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * InnerJoin join = Filters.innerJoin("orders");
@@ -2917,7 +2993,7 @@ public class Filters {
 
     /**
      * Creates an INNER JOIN clause with the specified entity and join condition.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * InnerJoin join = Filters.innerJoin("products",
@@ -2956,7 +3032,7 @@ public class Filters {
     /**
      * Creates a NATURAL JOIN clause for the specified entity/table.
      * Automatically joins tables based on columns with the same name.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NaturalJoin join = Filters.naturalJoin("departments");
@@ -3015,8 +3091,80 @@ public class Filters {
     }
 
     /**
+     * Creates an IN condition with an array of boolean values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In condition = Filters.in("active", new boolean[] {true, false});
+     * // SQL fragment: active IN (true, false)
+     * }</pre>
+     *
+     * @param propName the property/column name
+     * @param values array of boolean values
+     * @return an {@link In} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     */
+    public static In in(final String propName, final boolean[] values) {
+        return in(propName, Array.box(values));
+    }
+
+    /**
+     * Creates an IN condition with an array of char values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In condition = Filters.in("grade", new char[] {'A', 'B', 'C'});
+     * // SQL fragment: grade IN ('A', 'B', 'C')
+     * }</pre>
+     *
+     * @param propName the property/column name
+     * @param values array of char values
+     * @return an {@link In} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     */
+    public static In in(final String propName, final char[] values) {
+        return in(propName, Array.box(values));
+    }
+
+    /**
+     * Creates an IN condition with an array of byte values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In condition = Filters.in("flag", new byte[] {0, 1, 2});
+     * // SQL fragment: flag IN (0, 1, 2)
+     * }</pre>
+     *
+     * @param propName the property/column name
+     * @param values array of byte values
+     * @return an {@link In} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     */
+    public static In in(final String propName, final byte[] values) {
+        return in(propName, Array.box(values));
+    }
+
+    /**
+     * Creates an IN condition with an array of short values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In condition = Filters.in("level", new short[] {1, 2, 3});
+     * // SQL fragment: level IN (1, 2, 3)
+     * }</pre>
+     *
+     * @param propName the property/column name
+     * @param values array of short values
+     * @return an {@link In} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     */
+    public static In in(final String propName, final short[] values) {
+        return in(propName, Array.box(values));
+    }
+
+    /**
      * Creates an IN condition with an array of integer values.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In condition = Filters.in("user_id", new int[] {1, 2, 3, 4});
@@ -3034,7 +3182,7 @@ public class Filters {
 
     /**
      * Creates an IN condition with an array of long values.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In condition = Filters.in("order_id", new long[] {1001L, 1002L, 1003L});
@@ -3051,8 +3199,26 @@ public class Filters {
     }
 
     /**
+     * Creates an IN condition with an array of float values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In condition = Filters.in("ratio", new float[] {0.25f, 0.5f, 0.75f});
+     * // SQL fragment: ratio IN (0.25, 0.5, 0.75)
+     * }</pre>
+     *
+     * @param propName the property/column name
+     * @param values array of float values
+     * @return an {@link In} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     */
+    public static In in(final String propName, final float[] values) {
+        return in(propName, Array.box(values));
+    }
+
+    /**
      * Creates an IN condition with an array of double values.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In condition = Filters.in("price", new double[] {9.99, 19.99, 29.99});
@@ -3070,7 +3236,7 @@ public class Filters {
 
     /**
      * Creates an IN condition with an array of object values.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In condition = Filters.in("status", new String[] {"active", "pending", "approved"});
@@ -3088,7 +3254,7 @@ public class Filters {
 
     /**
      * Creates an IN condition with a collection of values.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> categories = Arrays.asList("electronics", "books", "toys");
@@ -3108,7 +3274,7 @@ public class Filters {
     /**
      * Creates an IN condition with a subquery.
      * The property value must be in the result set of the subquery.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
@@ -3128,7 +3294,7 @@ public class Filters {
     /**
      * Creates an IN condition with multiple properties and a subquery.
      * Used for composite key comparisons.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT user_id, order_id FROM recent_orders");
@@ -3146,8 +3312,80 @@ public class Filters {
     }
 
     /**
+     * Creates a NOT IN condition with an array of boolean values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn condition = Filters.notIn("active", new boolean[] {false});
+     * // SQL fragment: active NOT IN (false)
+     * }</pre>
+     *
+     * @param propName the property/column name
+     * @param values array of boolean values to exclude
+     * @return a {@link NotIn} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     */
+    public static NotIn notIn(final String propName, final boolean[] values) {
+        return notIn(propName, Array.box(values));
+    }
+
+    /**
+     * Creates a NOT IN condition with an array of char values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn condition = Filters.notIn("grade", new char[] {'D', 'F'});
+     * // SQL fragment: grade NOT IN ('D', 'F')
+     * }</pre>
+     *
+     * @param propName the property/column name
+     * @param values array of char values to exclude
+     * @return a {@link NotIn} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     */
+    public static NotIn notIn(final String propName, final char[] values) {
+        return notIn(propName, Array.box(values));
+    }
+
+    /**
+     * Creates a NOT IN condition with an array of byte values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn condition = Filters.notIn("flag", new byte[] {0, 1});
+     * // SQL fragment: flag NOT IN (0, 1)
+     * }</pre>
+     *
+     * @param propName the property/column name
+     * @param values array of byte values to exclude
+     * @return a {@link NotIn} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     */
+    public static NotIn notIn(final String propName, final byte[] values) {
+        return notIn(propName, Array.box(values));
+    }
+
+    /**
+     * Creates a NOT IN condition with an array of short values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn condition = Filters.notIn("level", new short[] {0, 9});
+     * // SQL fragment: level NOT IN (0, 9)
+     * }</pre>
+     *
+     * @param propName the property/column name
+     * @param values array of short values to exclude
+     * @return a {@link NotIn} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     */
+    public static NotIn notIn(final String propName, final short[] values) {
+        return notIn(propName, Array.box(values));
+    }
+
+    /**
      * Creates a NOT IN condition with an array of integer values.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotIn condition = Filters.notIn("status_code", new int[] {404, 500, 503});
@@ -3165,7 +3403,7 @@ public class Filters {
 
     /**
      * Creates a NOT IN condition with an array of long values.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotIn condition = Filters.notIn("excluded_ids", new long[] {110L, 120L, 130L});
@@ -3182,8 +3420,26 @@ public class Filters {
     }
 
     /**
+     * Creates a NOT IN condition with an array of float values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn condition = Filters.notIn("ratio", new float[] {0.0f, 1.0f});
+     * // SQL fragment: ratio NOT IN (0.0, 1.0)
+     * }</pre>
+     *
+     * @param propName the property/column name
+     * @param values array of float values to exclude
+     * @return a {@link NotIn} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     */
+    public static NotIn notIn(final String propName, final float[] values) {
+        return notIn(propName, Array.box(values));
+    }
+
+    /**
      * Creates a NOT IN condition with an array of double values.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotIn condition = Filters.notIn("discount", new double[] {0.0, 100.0});
@@ -3201,7 +3457,7 @@ public class Filters {
 
     /**
      * Creates a NOT IN condition with an array of object values.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NotIn condition = Filters.notIn("role", new String[] {"guest", "banned"});
@@ -3219,7 +3475,7 @@ public class Filters {
 
     /**
      * Creates a NOT IN condition with a collection of values.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<String> excludedCountries = new HashSet<>(Arrays.asList("XX", "YY"));
@@ -3239,7 +3495,7 @@ public class Filters {
     /**
      * Creates a NOT IN condition with a subquery.
      * The property value must not be in the result set of the subquery.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM blacklisted_users");
@@ -3259,7 +3515,7 @@ public class Filters {
     /**
      * Creates a NOT IN condition with multiple properties and a subquery.
      * Used for composite key exclusions.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT user_id, product_id FROM returns");
@@ -3279,7 +3535,7 @@ public class Filters {
     /**
      * Creates an ALL condition for comparison with all values from a subquery.
      * The condition is true if the comparison is true for all values returned by the subquery.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE dept = 'IT'");
@@ -3299,7 +3555,7 @@ public class Filters {
     /**
      * Creates an ANY condition for comparison with any value from a subquery.
      * The condition is true if the comparison is true for at least one value returned by the subquery.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'electronics'");
@@ -3319,7 +3575,7 @@ public class Filters {
     /**
      * Creates a SOME condition for comparison with some values from a subquery.
      * SOME is functionally equivalent to ANY.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT score FROM exams WHERE student_id = 123");
@@ -3338,7 +3594,7 @@ public class Filters {
 
     /**
      * Creates an EXISTS condition to check if a subquery returns any rows.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.user_id = users.id");
@@ -3355,7 +3611,7 @@ public class Filters {
 
     /**
      * Creates a NOT EXISTS condition to check if a subquery returns no rows.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT 1 FROM archived_users WHERE archived_users.id = users.id");
@@ -3373,7 +3629,7 @@ public class Filters {
     /**
      * Creates a UNION clause to combine results from a subquery.
      * UNION removes duplicate rows from the combined result set.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM archived_users");
@@ -3391,7 +3647,7 @@ public class Filters {
     /**
      * Creates a UNION ALL clause to combine results from a subquery.
      * UNION ALL keeps all rows including duplicates.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT name FROM inactive_products");
@@ -3409,7 +3665,7 @@ public class Filters {
     /**
      * Creates an EXCEPT clause to subtract results from a subquery.
      * Returns rows from the first query that are not in the second query.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM blacklisted_customers");
@@ -3427,7 +3683,7 @@ public class Filters {
     /**
      * Creates an INTERSECT clause to find common results with a subquery.
      * Returns only rows that appear in both queries.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT product_id FROM discounted_items");
@@ -3445,7 +3701,7 @@ public class Filters {
     /**
      * Creates a MINUS clause to subtract results from a subquery.
      * MINUS is similar to EXCEPT but is used in some databases like Oracle.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("SELECT id FROM deleted_records");
@@ -3540,7 +3796,7 @@ public class Filters {
     /**
      * Creates a SubQuery from an entity name and raw SQL.
      * This method allows for complete control over the subquery SQL.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("orders",

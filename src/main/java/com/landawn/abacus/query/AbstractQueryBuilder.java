@@ -1237,9 +1237,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if the current operation is neither {@code ADD} nor {@code QUERY}, or if columns/values have not been set
      */
     public This into(final Class<?> entityClass) {
-        if (_entityClass == null) {
-            setEntityClass(entityClass);
-        }
+        setEntityClass(entityClass);
 
         return into(getTableName(entityClass, _namingPolicy));
     }
@@ -2219,6 +2217,42 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Adds an ON clause for a composite join condition, joining the given expressions with {@code AND}.
+     *
+     * <p>This is a convenience for multi-column ON conditions. Each element is rendered as a separate
+     * expression and the resulting fragments are combined with {@code AND}.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users u")
+     *                 .join("orders o")
+     *                 .on("u.id = o.user_id", "u.tenant_id = o.tenant_id")
+     *                 .build().query();
+     * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id AND u.tenant_id = o.tenant_id
+     * }</pre>
+     *
+     * @param exprs the join condition expressions (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code exprs} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     */
+    public This on(final String... exprs) {
+        checkSqlFragmentsNotBlank(exprs, "exprs");
+
+        _sb.append(_SPACE_ON_SPACE);
+
+        for (int i = 0, len = exprs.length; i < len; i++) {
+            if (i > 0) {
+                _sb.append(_SPACE_AND_SPACE);
+            }
+
+            appendStringExpr(exprs[i], false);
+        }
+
+        return (This) this;
+    }
+
+    /**
      * Adds an ON clause with a condition object for join conditions.
      *
      * <p><b>Usage Examples:</b></p>
@@ -2280,6 +2314,68 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             appendColumnName(trimmedExpr);
             _sb.append(SK._PARENTHESIS_R);
         }
+
+        return (This) this;
+    }
+
+    /**
+     * Adds a USING clause with multiple columns for join conditions.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("orders")
+     *                 .join("order_items")
+     *                 .using("order_id", "tenant_id")
+     *                 .build().query();
+     * // Output: SELECT * FROM orders JOIN order_items USING (order_id, tenant_id)
+     * }</pre>
+     *
+     * @param columnNames the column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     */
+    public This using(final String... columnNames) {
+        checkSqlFragmentsNotBlank(columnNames, "columnNames");
+
+        return using(Array.asList(columnNames));
+    }
+
+    /**
+     * Adds a USING clause with a collection of columns for join conditions.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("order_id", "tenant_id");
+     * String sql = PSC.select("*")
+     *                 .from("orders")
+     *                 .join("order_items")
+     *                 .using(columns)
+     *                 .build().query();
+     * // Output: SELECT * FROM orders JOIN order_items USING (order_id, tenant_id)
+     * }</pre>
+     *
+     * @param columnNames the collection of column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     */
+    public This using(final Collection<String> columnNames) {
+        checkSqlFragmentsNotBlank(columnNames, "columnNames");
+
+        _sb.append(_SPACE_USING_SPACE);
+
+        _sb.append(SK._PARENTHESIS_L);
+
+        int i = 0;
+        for (final String columnName : columnNames) {
+            if (i++ > 0) {
+                _sb.append(_COMMA_SPACE);
+            }
+
+            appendColumnName(columnName);
+        }
+
+        _sb.append(SK._PARENTHESIS_R);
 
         return (This) this;
     }
@@ -2532,6 +2628,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category ASC, brand DESC
      * }</pre>
+     *
+     * <p><b>Note:</b> The order of columns in the generated {@code GROUP BY} clause follows the map's
+     * iteration order. Pass a {@link java.util.LinkedHashMap} (or other insertion-ordered {@code Map})
+     * to guarantee deterministic clause order.</p>
      *
      * @param groupings map of columns to their sort directions
      * @return this SqlBuilder instance for method chaining
@@ -2812,6 +2912,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users ORDER BY last_name ASC, first_name DESC
      * }</pre>
+     *
+     * <p><b>Note:</b> The order of columns in the generated {@code ORDER BY} clause follows the map's
+     * iteration order. Pass a {@link java.util.LinkedHashMap} (or other insertion-ordered {@code Map})
+     * to guarantee deterministic clause order.</p>
      *
      * @param orders map of columns to their sort directions
      * @return this SqlBuilder instance for method chaining
@@ -3702,7 +3806,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
      *
-     * @param propOrColumnNames the columns for the union query
+     * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
+     * trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and
+     * appended verbatim after the {@code UNION} keyword (no following {@code from(...)} is required).
+     * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
+     * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
+     * {@code SELECT}, use {@link #union(Collection)} with a single-element collection is <i>not</i> a
+     * workaround (the same heuristic does not apply there): the collection form always treats its elements
+     * as a column list.</p>
+     *
+     * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
@@ -4370,8 +4483,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if {@code FOR UPDATE} has already been set on this builder
      */
     public This forUpdate() {
+        checkIfAlreadyCalled(SK.FOR_UPDATE);
+
         _sb.append(_SPACE_FOR_UPDATE);
 
         return (This) this;
@@ -4642,17 +4758,32 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.update("account")
-     *                 .set(accountEntity)
+     *                 .setEntity(accountEntity)
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * }</pre>
      *
      * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entity} is {@code null}
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, or if {@code entity} is a {@code Collection} or array
+     *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists)
      */
+    public This setEntity(final Object entity) {
+        return setEntity(entity, null);
+    }
+
+    /**
+     * Sets properties to update from an entity object, a {@code Map}, or a single column-name {@code String}.
+     *
+     * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, or if {@code entity} is a {@code Collection} or array
+     *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists)
+     * @deprecated use {@link #setEntity(Object)}
+     */
+    @Deprecated
     public This set(final Object entity) {
-        return set(entity, null);
+        return setEntity(entity, null);
     }
 
     /**
@@ -4664,7 +4795,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * Set<String> excluded = N.asSet("createdDate", "version");
      * String sql = PSC.update("account")
-     *                 .set(accountEntity, excluded)
+     *                 .setEntity(accountEntity, excluded)
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * }</pre>
@@ -4672,9 +4803,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
      * @param excludedPropNames property names to exclude from the update (may be {@code null})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entity} is {@code null}
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, or if {@code entity} is a {@code Collection} or array
+     *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists)
      */
-    public This set(final Object entity, final Set<String> excludedPropNames) {
+    public This setEntity(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, "entity");
 
         if (entity instanceof String) {
@@ -4689,6 +4821,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return set(localProps);
         }
 
+        if (entity instanceof Collection || entity.getClass().isArray()) {
+            throw new IllegalArgumentException(
+                    "A Collection or array is not a valid entity for setEntity(...). Use set(Collection<String>) or set(String...) for column lists.");
+        }
+
         final Class<?> entityClass = entity.getClass();
         setEntityClass(entityClass);
         final Collection<String> propNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
@@ -4699,6 +4836,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return set(localProps);
+    }
+
+    /**
+     * Sets properties to update from an entity object, a {@code Map}, or a single column-name {@code String},
+     * excluding the specified properties.
+     *
+     * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
+     * @param excludedPropNames property names to exclude from the update (may be {@code null})
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, or if {@code entity} is a {@code Collection} or array
+     *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists)
+     * @deprecated use {@link #setEntity(Object, Set)}
+     */
+    @Deprecated
+    public This set(final Object entity, final Set<String> excludedPropNames) {
+        return setEntity(entity, excludedPropNames);
     }
 
     /**

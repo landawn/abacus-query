@@ -142,4 +142,26 @@ public class UnionAll extends Clause {
     public UnionAll(final SubQuery subQuery) {
         super(Operator.UNION_ALL, subQuery);
     }
+
+    /**
+     * Gets the subquery used by this UNION ALL clause.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Retrieve the wrapped subquery
+     * SubQuery subQuery = Filters.subQuery("SELECT order_id, amount FROM orders WHERE region = 'EAST'");
+     * UnionAll unionAll = new UnionAll(subQuery);
+     * SubQuery retrieved = unionAll.getSubQuery();
+     * // returns the subquery passed to the constructor
+     *
+     * // The wrapped subquery is also what getCondition() returns
+     * boolean sameAsCondition = unionAll.getSubQuery() == unionAll.getCondition();
+     * // returns true
+     * }</pre>
+     *
+     * @return the {@link SubQuery} supplied at construction time
+     */
+    public SubQuery getSubQuery() {
+        return (SubQuery) getCondition();
+    }
 }

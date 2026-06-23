@@ -101,6 +101,19 @@ public final class SqlParser {
     private static volatile String[][] multiCharSeparatorsByLen = new String[1][0];
 
     static {
+        loadDefaultSeparators();
+    }
+
+    /**
+     * Clears the current separator set and repopulates it with the built-in default
+     * separators, then rebuilds all derived lookup tables ({@link #maxSeparatorLength},
+     * {@link #ASCII_SEPARATOR} and {@link #multiCharSeparatorsByLen}). Shared by the static
+     * initializer and {@link #resetSeparators()}.
+     */
+    private static void loadDefaultSeparators() {
+        separators.clear();
+        maxSeparatorLength.set(1);
+
         separators.add(TAB);
         separators.add(ENTER);
         separators.add(ENTER_2);
@@ -191,6 +204,24 @@ public final class SqlParser {
 
         rebuildAsciiSeparatorTable();
         rebuildMultiCharSeparatorTable();
+    }
+
+    /**
+     * Recomputes {@link #maxSeparatorLength} from the current contents of {@link #separators}.
+     * Unlike the incremental update in {@link #registerSeparator(String)} (which only ever
+     * grows the value), this scans every registered separator and resets the maximum to the
+     * longest one currently present, so it can shrink after separators are removed.
+     */
+    private static void recomputeMaxSeparatorLength() {
+        int max = 1;
+
+        for (final Object separator : separators) {
+            if (separator instanceof final String separatorStr && separatorStr.length() > max) {
+                max = separatorStr.length();
+            }
+        }
+
+        maxSeparatorLength.set(max);
     }
 
     private static void rebuildAsciiSeparatorTable() {
@@ -472,6 +503,61 @@ public final class SqlParser {
         } finally {
             Objectory.recycle(sb);
         }
+    }
+
+    /**
+     * Finds the index of a specific word within a SQL statement, searching from the beginning
+     * using case-insensitive matching. This is a convenience overload of
+     * {@link #indexOfWord(String, String, int, boolean)} equivalent to
+     * {@code indexOfWord(sql, word, 0, false)}.
+     *
+     * <p>Like the four-argument form, this method only reports positions where {@code word}
+     * appears as a complete SQL token (or composite token such as {@code "LEFT JOIN"}), not where
+     * it occurs as a substring of another identifier, and it skips matches inside line, hash and
+     * block comments.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
+     * int index = SqlParser.indexOfWord(sql, "ORDER BY");   // 40
+     * }</pre>
+     *
+     * @param sql the SQL statement to search within (must not be {@code null})
+     * @param word the word or composite keyword to find (must not be {@code null})
+     * @return the index of the word if found, or {@code -1} if not found
+     * @throws NullPointerException if {@code sql} or {@code word} is {@code null}
+     * @see #indexOfWord(String, String, int, boolean)
+     */
+    public static int indexOfWord(final String sql, final String word) {
+        return indexOfWord(sql, word, 0, false);
+    }
+
+    /**
+     * Finds the index of a specific word within a SQL statement, searching from the given position
+     * using case-insensitive matching. This is a convenience overload of
+     * {@link #indexOfWord(String, String, int, boolean)} equivalent to
+     * {@code indexOfWord(sql, word, fromIndex, false)}.
+     *
+     * <p>Like the four-argument form, this method only reports positions where {@code word}
+     * appears as a complete SQL token (or composite token such as {@code "LEFT JOIN"}), not where
+     * it occurs as a substring of another identifier, and it skips matches inside line, hash and
+     * block comments.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
+     * int whereIndex = SqlParser.indexOfWord(sql, "WHERE", 0);   // 20
+     * }</pre>
+     *
+     * @param sql the SQL statement to search within (must not be {@code null})
+     * @param word the word or composite keyword to find (must not be {@code null})
+     * @param fromIndex the earliest character position at which a match may be reported (0-based); scanning still begins at the start of {@code sql} for correct tokenization, but any match starting before {@code fromIndex} is skipped; negative values are treated as {@code 0}
+     * @return the index of the word if found, or {@code -1} if not found
+     * @throws NullPointerException if {@code sql} or {@code word} is {@code null}
+     * @see #indexOfWord(String, String, int, boolean)
+     */
+    public static int indexOfWord(final String sql, final String word, final int fromIndex) {
+        return indexOfWord(sql, word, fromIndex, false);
     }
 
     /**
@@ -859,6 +945,128 @@ public final class SqlParser {
     }
 
     /**
+     * Returns the position just past the next word or token in a SQL statement, scanning from
+     * the specified index. This is the position-returning companion to
+     * {@link #nextWord(String, int)}: it applies the identical scanning rules (skipping leading
+     * whitespace and comments, treating a quoted region or multi-character operator as one token)
+     * but returns the end index of that token instead of its text. A caller can therefore obtain
+     * the next token together with its bounds without re-scanning the string with
+     * {@link String#indexOf(int)}.
+     *
+     * <p>The returned index is the offset of the first character <em>after</em> the next token,
+     * suitable for passing back as the {@code fromIndex} of a subsequent call to advance through
+     * the SQL. Equivalently, {@code sql.substring(returnedStart, nextWordEnd(sql, fromIndex))}
+     * spans the same token returned by {@link #nextWord(String, int)} (where {@code returnedStart}
+     * is the index of that token's first character).</p>
+     *
+     * <p>If no further token exists (only trailing whitespace and/or comments remain), the length
+     * of {@code sql} is returned, consistent with {@link #nextWord(String, int)} returning an empty
+     * string in that case.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = "SELECT   name,   age FROM users";
+     * int end1 = SqlParser.nextWordEnd(sql, 6);    // 13 (just past "name")
+     * int end2 = SqlParser.nextWordEnd(sql, 13);   // 14 (just past ",")
+     * int end3 = SqlParser.nextWordEnd(sql, 14);   // 20 (just past "age")
+     * }</pre>
+     *
+     * @param sql the SQL statement to scan (must not be {@code null})
+     * @param fromIndex the starting position for scanning (0-based); negative values are treated as {@code 0}
+     * @return the index immediately after the next word or token, or the length of {@code sql} if no further token exists
+     * @throws NullPointerException if {@code sql} is {@code null}
+     * @see #nextWord(String, int)
+     */
+    public static int nextWordEnd(final String sql, final int fromIndex) {
+        final int sqlLength = sql.length();
+
+        // Mirrors nextWord's scan. `started` tracks whether any token character has been
+        // accumulated yet (the analogue of nextWord's `!sb.isEmpty()` guard).
+        boolean started = false;
+        char quoteChar = 0;
+        // Forward-running backslash parity (see parse()): true if the char at the current
+        // `index` is preceded by an ODD number of consecutive backslashes.
+        boolean bsEscaped = false;
+
+        for (int index = Math.max(0, fromIndex); index < sqlLength; index++) {
+            final char ch = sql.charAt(index);
+
+            // is it in a quoted identifier?
+            if (quoteChar != 0) {
+                // end in quote.
+                if (ch == quoteChar) {
+                    if (bsEscaped) {
+                        bsEscaped = false;
+                    } else if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+                        index++;
+                        bsEscaped = false;
+                    } else {
+                        return index + 1;
+                    }
+                } else if (ch == '\\') {
+                    bsEscaped = !bsEscaped;
+                } else {
+                    bsEscaped = false;
+                }
+            } else if (ch == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+                // Skip single-line comment (-- ...)
+                if (started) {
+                    return index;
+                }
+                while (++index < sqlLength) {
+                    final char cc = sql.charAt(index);
+                    if (cc == ENTER || cc == ENTER_2) {
+                        break;
+                    }
+                }
+            } else if (isHashCommentStart(sql, sqlLength, index)) {
+                // Skip MySQL single-line comment (# ...)
+                if (started) {
+                    return index;
+                }
+                while (++index < sqlLength) {
+                    final char cc = sql.charAt(index);
+                    if (cc == ENTER || cc == ENTER_2) {
+                        break;
+                    }
+                }
+            } else if (ch == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+                // Skip block comment (/* ... */)
+                if (started) {
+                    return index;
+                }
+                while (++index < sqlLength) {
+                    final char cc = sql.charAt(index);
+                    if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+                        index++;
+                        break;
+                    }
+                }
+            } else if (isSeparator(sql, sqlLength, index, ch)) {
+                if (started) {
+                    return index;
+                } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
+                    // skip white char
+                    continue;
+                }
+
+                final String temp = matchMultiCharSeparator(sql, sqlLength, index);
+
+                return temp != null ? index + temp.length() : index + 1;
+            } else {
+                started = true;
+
+                if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                    quoteChar = ch;
+                    bsEscaped = false;
+                }
+            }
+        }
+
+        return sqlLength;
+    }
+
+    /**
      * Registers a single character as a SQL separator.
      * Once registered, this character will be recognized as a token separator
      * during SQL parsing operations.
@@ -922,6 +1130,69 @@ public final class SqlParser {
     }
 
     /**
+     * Unregisters a previously registered separator, removing it from the recognized
+     * separator set. This is the inverse of {@link #registerSeparator(String)} and
+     * {@link #registerSeparator(char)} and can be used to undo a registration so the
+     * given token is no longer treated as a separator during parsing.
+     *
+     * <p>If {@code separator} is a single character, both its {@code String} and character
+     * forms are removed (mirroring the dual registration performed by
+     * {@link #registerSeparator(String)} for single-character separators). After removal,
+     * all derived lookup tables ({@link #maxSeparatorLength}, the ASCII lookup and the
+     * multi-character tables) are rebuilt so they cannot drift.</p>
+     *
+     * <p><b>Note:</b> This method does not distinguish between built-in default separators
+     * and user-registered ones; unregistering a default separator removes it just the same.
+     * To restore the original built-in set, use {@link #resetSeparators()}.</p>
+     *
+     * <p>Unregistering a separator that is not currently registered has no effect.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SqlParser.registerSeparator("::");     // Register PostgreSQL cast operator
+     * SqlParser.unregisterSeparator("::");   // ...then remove it again
+     * }</pre>
+     *
+     * @param separator the separator to unregister (must not be {@code null} or empty)
+     * @throws IllegalArgumentException if {@code separator} is {@code null} or empty
+     */
+    public static void unregisterSeparator(final String separator) {
+        N.checkArgNotEmpty(separator, "separator");
+
+        separators.remove(separator);
+
+        if (separator.length() == 1) {
+            separators.remove(separator.charAt(0));
+        }
+
+        recomputeMaxSeparatorLength();
+        rebuildAsciiSeparatorTable();
+        rebuildMultiCharSeparatorTable();
+    }
+
+    /**
+     * Restores the separator set to the built-in defaults, discarding every separator added
+     * via {@link #registerSeparator(char)} / {@link #registerSeparator(String)} and re-adding
+     * any default separator that was removed via {@link #unregisterSeparator(String)}.
+     *
+     * <p>This rebuilds the internal separator set and all derived lookup tables
+     * ({@link #maxSeparatorLength}, the ASCII lookup and the multi-character tables) to exactly
+     * the state established when the class was first loaded. It is primarily useful for
+     * undoing process-global separator customizations (for example, to isolate tests that
+     * register custom separators).</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SqlParser.registerSeparator("::");   // customize parsing globally
+     * // ... do work ...
+     * SqlParser.resetSeparators();         // restore the original built-in separators
+     * }</pre>
+     */
+    public static void resetSeparators() {
+        loadDefaultSeparators();
+    }
+
+    /**
      * Checks if a character at a specific position in a SQL string is a separator.
      * This method performs context-aware checking, handling special cases like
      * MyBatis/iBatis parameter markers (#{...}).
@@ -952,7 +1223,7 @@ public final class SqlParser {
      * @param ch the character to check; expected to equal {@code str.charAt(index)}
      * @return {@code true} if the character is a separator in this context, {@code false} otherwise
      */
-    public static boolean isSeparator(final String str, final int len, final int index, final char ch) {
+    static boolean isSeparator(final String str, final int len, final int index, final char ch) {
         // for Ibatis/Mybatis
         if (ch == '#' && index < len - 1 && str.charAt(index + 1) == '{') {
             return false;

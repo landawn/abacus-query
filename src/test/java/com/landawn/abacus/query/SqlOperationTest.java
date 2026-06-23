@@ -48,7 +48,7 @@ class SqlOperation2025Test extends TestBase {
 
     @Test
     public void testOf_NullInput() {
-        assertThrows(IllegalArgumentException.class, () -> SqlOperation.of(null));
+        assertNull(SqlOperation.of(null));
     }
 
     @Test

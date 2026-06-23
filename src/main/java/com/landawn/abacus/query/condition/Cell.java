@@ -173,18 +173,17 @@ public abstract class Cell extends AbstractCondition {
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names within the wrapped condition;
-     *                     unlike {@link ComposableCell#toString(NamingPolicy)}, a {@code null} policy is
-     *                     passed through directly to the wrapped condition — the resulting behavior depends
-     *                     on how that condition handles a {@code null} naming policy
+     *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a string representation of this Cell
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Operator op = operator();
 
-        // Note: unlike ComposableCell, the wrapped condition is NOT parenthesized and the naming
-        // policy is passed through as-is (a null policy is handled by the wrapped condition).
-        return (op == null ? Strings.NULL : op.toString()) + ((condition == null) ? Strings.EMPTY : SK._SPACE + condition.toString(namingPolicy));
+        // Note: unlike ComposableCell, the wrapped condition is NOT parenthesized; a null naming
+        // policy is normalized to NamingPolicy.NO_CHANGE before being applied to the wrapped condition.
+        return (op == null ? Strings.NULL : op.toString()) + ((condition == null) ? Strings.EMPTY : SK._SPACE + condition.toString(effectiveNamingPolicy));
     }
 
     /**

@@ -563,6 +563,20 @@ class Filters2025Test extends TestBase {
     }
 
     @Test
+    public void testGroupByAsc() {
+        GroupBy groupBy = Filters.groupByAsc("department", "year");
+        assertNotNull(groupBy);
+        assertEquals(Operator.GROUP_BY, groupBy.operator());
+    }
+
+    @Test
+    public void testGroupByDesc() {
+        GroupBy groupBy = Filters.groupByDesc("sales", "region");
+        assertNotNull(groupBy);
+        assertEquals(Operator.GROUP_BY, groupBy.operator());
+    }
+
+    @Test
     public void testGroupByCollection() {
         GroupBy groupBy = Filters.groupBy(Arrays.asList("region", "category"));
         assertNotNull(groupBy);
@@ -987,6 +1001,41 @@ class Filters2025Test extends TestBase {
     }
 
     @Test
+    public void testInFloatArray() {
+        com.landawn.abacus.query.condition.In in = Filters.in("ratio", new float[] { 0.25f, 0.5f, 0.75f });
+        assertNotNull(in);
+        assertEquals(3, in.getParameters().size());
+    }
+
+    @Test
+    public void testInShortArray() {
+        com.landawn.abacus.query.condition.In in = Filters.in("level", new short[] { 1, 2, 3 });
+        assertNotNull(in);
+        assertEquals(3, in.getParameters().size());
+    }
+
+    @Test
+    public void testInByteArray() {
+        com.landawn.abacus.query.condition.In in = Filters.in("flag", new byte[] { 0, 1, 2 });
+        assertNotNull(in);
+        assertEquals(3, in.getParameters().size());
+    }
+
+    @Test
+    public void testInBooleanArray() {
+        com.landawn.abacus.query.condition.In in = Filters.in("active", new boolean[] { true, false });
+        assertNotNull(in);
+        assertEquals(2, in.getParameters().size());
+    }
+
+    @Test
+    public void testInCharArray() {
+        com.landawn.abacus.query.condition.In in = Filters.in("grade", new char[] { 'A', 'B', 'C' });
+        assertNotNull(in);
+        assertEquals(3, in.getParameters().size());
+    }
+
+    @Test
     public void testInObjectArray() {
         com.landawn.abacus.query.condition.In in = Filters.in("status", new Object[] { "active", "pending" });
         assertNotNull(in);
@@ -1033,6 +1082,41 @@ class Filters2025Test extends TestBase {
     public void testNotInDoubleArray() {
         com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("score", new double[] { 1.5, 2.5, 3.5 });
         assertNotNull(notIn);
+    }
+
+    @Test
+    public void testNotInFloatArray() {
+        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("ratio", new float[] { 0.0f, 1.0f });
+        assertNotNull(notIn);
+        assertEquals(2, notIn.getParameters().size());
+    }
+
+    @Test
+    public void testNotInShortArray() {
+        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("level", new short[] { 0, 9 });
+        assertNotNull(notIn);
+        assertEquals(2, notIn.getParameters().size());
+    }
+
+    @Test
+    public void testNotInByteArray() {
+        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("flag", new byte[] { 0, 1 });
+        assertNotNull(notIn);
+        assertEquals(2, notIn.getParameters().size());
+    }
+
+    @Test
+    public void testNotInBooleanArray() {
+        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("active", new boolean[] { false });
+        assertNotNull(notIn);
+        assertEquals(1, notIn.getParameters().size());
+    }
+
+    @Test
+    public void testNotInCharArray() {
+        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("grade", new char[] { 'D', 'F' });
+        assertNotNull(notIn);
+        assertEquals(2, notIn.getParameters().size());
     }
 
     @Test
@@ -1272,6 +1356,50 @@ class Filters2026Test extends TestBase {
     @Test
     public void testId2Cond_CollectionEmpty() {
         assertThrows(IllegalArgumentException.class, () -> Filters.id2Cond(Arrays.<EntityId> asList()));
+    }
+
+    @Test
+    public void testIdToCond() {
+        final EntityId entityId = EntityId.of("userId", 1, "orderId", 100);
+
+        final And condition = Filters.idToCond(entityId);
+
+        assertEquals(Operator.AND, condition.operator());
+        assertEquals(2, condition.getConditions().size());
+        assertEquals(2, condition.getParameters().size());
+        Assertions.assertTrue(condition.getParameters().containsAll(Arrays.asList(1, 100)));
+    }
+
+    @Test
+    public void testIdToCond_SingleProperty() {
+        final EntityId entityId = EntityId.of("userId", 1);
+
+        final And condition = Filters.idToCond(entityId);
+
+        assertEquals(1, condition.getConditions().size());
+        assertEquals(Arrays.asList(1), condition.getParameters());
+    }
+
+    @Test
+    public void testIdToCond_NullEntityId() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.idToCond((EntityId) null));
+    }
+
+    @Test
+    public void testIdToCond_Collection() {
+        final List<EntityId> entityIds = Arrays.asList(EntityId.of("userId", 1, "orderId", 100), EntityId.of("userId", 2, "orderId", 200));
+
+        final Or condition = Filters.idToCond(entityIds);
+
+        assertEquals(Operator.OR, condition.operator());
+        assertEquals(2, condition.getConditions().size());
+        assertEquals(4, condition.getParameters().size());
+        Assertions.assertTrue(condition.getParameters().containsAll(Arrays.asList(1, 100, 2, 200)));
+    }
+
+    @Test
+    public void testIdToCond_CollectionEmpty() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.idToCond(Arrays.<EntityId> asList()));
     }
 
     // Exercise the size-specific overload branches for map/entity conversion helpers.

@@ -157,4 +157,26 @@ public class Intersect extends Clause {
     public Intersect(final SubQuery subQuery) {
         super(Operator.INTERSECT, subQuery);
     }
+
+    /**
+     * Gets the subquery used by this INTERSECT clause.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Retrieve the wrapped subquery
+     * SubQuery subQuery = Filters.subQuery("SELECT user_id FROM activity WHERE last_login > CURRENT_DATE - 30");
+     * Intersect intersect = new Intersect(subQuery);
+     * SubQuery retrieved = intersect.getSubQuery();
+     * // returns the subquery passed to the constructor
+     *
+     * // The wrapped subquery is also what getCondition() returns
+     * boolean sameAsCondition = intersect.getSubQuery() == intersect.getCondition();
+     * // returns true
+     * }</pre>
+     *
+     * @return the {@link SubQuery} supplied at construction time
+     */
+    public SubQuery getSubQuery() {
+        return (SubQuery) getCondition();
+    }
 }

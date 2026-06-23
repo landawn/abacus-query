@@ -16,7 +16,6 @@ package com.landawn.abacus.query.condition;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import com.landawn.abacus.util.ImmutableList;
@@ -51,8 +50,8 @@ public abstract class AbstractIn extends ComposableCondition {
     /** Lazily memoized hashCode (0 == not computed). */
     private transient int cachedHashCode;
 
-    /** Lazily memoized unmodifiable view of {@link #values} (performance only). */
-    private transient List<?> cachedValuesView;
+    /** Lazily memoized immutable view of {@link #values} (performance only). */
+    private transient ImmutableList<?> cachedValuesView;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -108,17 +107,17 @@ public abstract class AbstractIn extends ComposableCondition {
      * List<?> values = inCond.getValues();   // ["active", "pending"]
      * }</pre>
      *
-     * @return an unmodifiable view of the values list, or {@code null} for an uninitialized instance
+     * @return an immutable list of the values, or an empty immutable list for an uninitialized instance
      */
-    public List<?> getValues() { //NOSONAR
+    public ImmutableList<?> getValues() { //NOSONAR
         if (values == null) {
-            return null;
+            return ImmutableList.empty();
         }
 
-        List<?> view = cachedValuesView;
+        ImmutableList<?> view = cachedValuesView;
 
         if (view == null) {
-            view = Collections.unmodifiableList(values);
+            view = ImmutableList.wrap(values);
             cachedValuesView = view;
         }
 

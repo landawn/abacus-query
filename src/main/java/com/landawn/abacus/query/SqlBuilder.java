@@ -1795,7 +1795,8 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
          * Renders a condition as a standalone SQL fragment, using the given entity class for property-to-column mapping.
          *
          * <p>This method is useful for generating just the WHERE clause portion of a query
-         * with proper property-to-column name mapping.</p>
+         * with proper property-to-column name mapping. The resulting builder is condition-only:
+         * no {@code SELECT}, {@code FROM}, or other clause keyword is emitted, only the rendered condition.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1804,7 +1805,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
          *     Filters.like("email", "%@example.com")
          * );
          *
-         * String sql = PSC.fromCondition(cond, Account.class).build().query();
+         * String sql = PSC.renderCondition(cond, Account.class).build().query();
          * // Output: (first_name = ?) AND (email LIKE ?)
          * }</pre>
          *
@@ -1813,7 +1814,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
          * @return a new SqlBuilder instance containing the rendered condition SQL
          * @throws IllegalArgumentException if cond is null
          */
-        public SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
+        public SqlBuilder renderCondition(final Condition cond, final Class<?> entityClass) {
             N.checkArgNotNull(cond, "cond");
 
             final SqlBuilder instance = createSqlBuilderInstance();
@@ -1824,6 +1825,20 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             instance.append(cond);
 
             return instance;
+        }
+
+        /**
+         * Renders a condition as a standalone SQL fragment, using the given entity class for property-to-column mapping.
+         *
+         * @param cond the condition to render (must not be {@code null})
+         * @param entityClass the entity class used for property-to-column mapping (may be {@code null})
+         * @return a new SqlBuilder instance containing the rendered condition SQL
+         * @throws IllegalArgumentException if cond is null
+         * @deprecated use {@link #renderCondition(Condition, Class)} - this method does not build a {@code FROM} clause despite its name
+         */
+        @Deprecated
+        public SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
+            return renderCondition(cond, entityClass);
         }
 
     }

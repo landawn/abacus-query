@@ -318,9 +318,6 @@ public enum Operator {
     /**
      * FOR UPDATE clause operator.
      * Locks selected rows for update.
-     *
-     * <p><b>Note:</b> This operator is no longer actively supported.
-     * Apply row-level locking through native query mechanisms instead.</p>
      */
     FOR_UPDATE(SK.FOR_UPDATE),
 
@@ -424,16 +421,15 @@ public enum Operator {
      * // Edge cases
      * Operator unknown = Operator.of("UNKNOWN");    // null (not a known token or name)
      * Operator empty = Operator.of("");             // Operator.EMPTY (its SQL token is "")
-     * Operator nil = Operator.of(null);             // throws IllegalArgumentException
+     * Operator nil = Operator.of(null);             // null
      * }</pre>
      *
-     * @param name the string representation of the operator. Must not be {@code null}.
-     * @return the corresponding Operator enum value, or {@code null} if not found
-     * @throws IllegalArgumentException if {@code name} is {@code null}
+     * @param name the string representation of the operator. May be {@code null}.
+     * @return the corresponding Operator enum value, or {@code null} if {@code name} is {@code null} or not a known token/name
      */
     public static Operator of(final String name) {
         if (name == null) {
-            throw new IllegalArgumentException("Operator name cannot be null");
+            return null;
         }
 
         Operator value = operatorMap.get(name);

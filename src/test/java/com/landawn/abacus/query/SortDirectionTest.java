@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -180,5 +181,30 @@ class SortDirection2026Test extends TestBase {
     @Test
     public void testIsDescending_ASC() {
         assertFalse(SortDirection.ASC.isDescending());
+    }
+
+    @Test
+    public void testOpposite() {
+        assertEquals(SortDirection.DESC, SortDirection.ASC.opposite());
+        assertEquals(SortDirection.ASC, SortDirection.DESC.opposite());
+        assertEquals(SortDirection.ASC, SortDirection.ASC.opposite().opposite());
+    }
+
+    @Test
+    public void testOf() {
+        assertEquals(SortDirection.ASC, SortDirection.of("ASC"));
+        assertEquals(SortDirection.ASC, SortDirection.of("asc"));
+        assertEquals(SortDirection.ASC, SortDirection.of("Asc"));
+        assertEquals(SortDirection.DESC, SortDirection.of("DESC"));
+        assertEquals(SortDirection.DESC, SortDirection.of("desc"));
+        assertEquals(SortDirection.DESC, SortDirection.of("Desc"));
+    }
+
+    @Test
+    public void testOf_Unrecognized() {
+        assertNull(SortDirection.of("up"));
+        assertNull(SortDirection.of(""));
+        assertNull(SortDirection.of("ASC "));
+        assertNull(SortDirection.of(null));
     }
 }

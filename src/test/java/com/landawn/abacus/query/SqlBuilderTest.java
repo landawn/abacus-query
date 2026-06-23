@@ -2802,6 +2802,22 @@ class SqlBuilder11Test extends TestBase {
         }
 
         @Test
+        public void testRenderCondition_equivalentToDeprecatedFromCondition() {
+            Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000));
+
+            String viaRender = SCSB.renderCondition(cond, Account.class).build().query();
+            String viaFrom = SCSB.fromCondition(cond, Account.class).build().query();
+
+            Assertions.assertEquals(viaFrom, viaRender);
+            Assertions.assertTrue(viaRender.contains("AND"));
+        }
+
+        @Test
+        public void testRenderCondition_nullCondition() {
+            Assertions.assertThrows(IllegalArgumentException.class, () -> SCSB.renderCondition(null, Account.class));
+        }
+
+        @Test
         public void testParseNullCondition() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> SCSB.fromCondition(null, Account.class));
         }

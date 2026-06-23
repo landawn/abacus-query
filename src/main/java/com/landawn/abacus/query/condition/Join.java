@@ -104,8 +104,8 @@ public class Join extends AbstractCondition {
     /** Lazily memoized hashCode (0 == not computed). */
     private transient int cachedHashCode;
 
-    /** Lazily memoized unmodifiable view of {@link #joinEntities} (performance only). */
-    private transient List<String> cachedJoinEntitiesView;
+    /** Lazily memoized immutable view of {@link #joinEntities} (performance only). */
+    private transient ImmutableList<String> cachedJoinEntitiesView;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -313,7 +313,7 @@ public class Join extends AbstractCondition {
 
     /**
      * Gets the list of tables or entities involved in this join.
-     * Returns an unmodifiable view of the tables that are being joined, including any aliases.
+     * Returns an immutable list of the tables that are being joined, including any aliases.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -328,21 +328,21 @@ public class Join extends AbstractCondition {
      * List<String> multiEntities = multiJoin.getJoinEntities();
      * // multiEntities = ["orders o", "order_items oi"]
      *
-     * // Edge: the returned view is unmodifiable
+     * // Edge: the returned list is immutable
      * entities.add("more");   // throws UnsupportedOperationException
      * }</pre>
      *
-     * @return an unmodifiable view of the list of join entities
+     * @return an immutable list of join entities
      */
-    public List<String> getJoinEntities() {
+    public ImmutableList<String> getJoinEntities() {
         if (joinEntities == null) {
-            return N.emptyList();
+            return ImmutableList.empty();
         }
 
-        List<String> view = cachedJoinEntitiesView;
+        ImmutableList<String> view = cachedJoinEntitiesView;
 
         if (view == null) {
-            view = Collections.unmodifiableList(joinEntities);
+            view = ImmutableList.wrap(joinEntities);
             cachedJoinEntitiesView = view;
         }
 

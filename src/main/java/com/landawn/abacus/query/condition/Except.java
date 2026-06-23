@@ -163,4 +163,26 @@ public class Except extends Clause {
     public Except(final SubQuery subQuery) {
         super(Operator.EXCEPT, subQuery);
     }
+
+    /**
+     * Gets the subquery used by this EXCEPT clause.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Retrieve the wrapped subquery
+     * SubQuery subQuery = Filters.subQuery("SELECT employee_id FROM employees WHERE is_manager = true");
+     * Except except = new Except(subQuery);
+     * SubQuery retrieved = except.getSubQuery();
+     * // returns the subquery passed to the constructor
+     *
+     * // The wrapped subquery is also what getCondition() returns
+     * boolean sameAsCondition = except.getSubQuery() == except.getCondition();
+     * // returns true
+     * }</pre>
+     *
+     * @return the {@link SubQuery} supplied at construction time
+     */
+    public SubQuery getSubQuery() {
+        return (SubQuery) getCondition();
+    }
 }

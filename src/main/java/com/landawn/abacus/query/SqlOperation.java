@@ -21,13 +21,12 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import com.landawn.abacus.annotation.Internal;
 import com.landawn.abacus.util.SK;
 
 /**
  * Enumeration representing SQL operation types.
  * This enum provides a list of SQL operations including DML, DDL, and TCL commands.
- * It's primarily used internally for SQL parsing and operation identification.
+ * It is used for SQL parsing and operation identification.
  *
  * <p>Supported operations include:</p>
  * <ul>
@@ -53,7 +52,6 @@ import com.landawn.abacus.util.SK;
  * @see SqlParser
  * @see ParsedSql
  */
-@Internal
 public enum SqlOperation {
     /**
      * SELECT operation for data retrieval.
@@ -181,16 +179,16 @@ public enum SqlOperation {
      * // Edge cases
      * SqlOperation unsupported = SqlOperation.of("TRUNCATE");   // returns null (not supported)
      * SqlOperation blank = SqlOperation.of("");                 // returns null
-     * SqlOperation nil = SqlOperation.of(null);                 // throws IllegalArgumentException
+     * SqlOperation nil = SqlOperation.of(null);                 // returns null
      * }</pre>
      *
      * @param name the SQL operation name to look up (case-insensitive)
-     * @return the corresponding {@code SqlOperation} enum value, or {@code null} if no matching operation is found
-     * @throws IllegalArgumentException if {@code name} is {@code null}
+     * @return the corresponding {@code SqlOperation} enum value, or {@code null} if {@code name} is
+     *         {@code null} or no matching operation is found
      */
     public static SqlOperation of(final String name) {
         if (name == null) {
-            throw new IllegalArgumentException("SqlOperation name cannot be null");
+            return null;
         }
 
         SqlOperation value = operationMap.get(name);

@@ -17,7 +17,9 @@ package com.landawn.abacus.query.condition;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -65,6 +67,19 @@ import com.landawn.abacus.util.Strings;
  */
 public class Binary extends ComposableCondition {
 
+    /**
+     * The operators valid for a binary {@code propName OP value} condition. This covers the operators
+     * used by the concrete {@link Binary} subclasses ({@link Equal}, {@link NotEqual}, {@link GreaterThan},
+     * {@link GreaterThanOrEqual}, {@link LessThan}, {@link LessThanOrEqual}, {@link Like}, {@link NotLike},
+     * {@link Is}, {@link IsNot}) plus the ANSI not-equal token ({@link Operator#NOT_EQUAL_ANSI}) and the
+     * membership operators ({@link Operator#IN}, {@link Operator#NOT_IN}) that {@code Binary} renders
+     * directly when constructed via {@link com.landawn.abacus.query.Filters#binary}. Structural operators
+     * (clauses, junctions, joins, set operations, quantifiers, {@code BETWEEN}/{@code EXISTS}) are rejected.
+     */
+    private static final Set<Operator> COMPARISON_OPERATORS = EnumSet.of(Operator.EQUAL, Operator.NOT_EQUAL, Operator.NOT_EQUAL_ANSI, Operator.GREATER_THAN,
+            Operator.GREATER_THAN_OR_EQUAL, Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL, Operator.LIKE, Operator.NOT_LIKE, Operator.IS, Operator.IS_NOT,
+            Operator.IN, Operator.NOT_IN);
+
     // For Kryo
     final String propName;
 
@@ -102,20 +117,31 @@ public class Binary extends ComposableCondition {
      * }</pre>
      * 
      * @param propName the property name to compare (must not be {@code null}, empty, or blank)
-     * @param operator the comparison operator (must not be {@code null})
+     * @param operator the comparison operator (must not be {@code null}); must be an operator valid for a
+     *                 binary {@code propName OP value} condition, i.e. one of {@link Operator#EQUAL},
+     *                 {@link Operator#NOT_EQUAL}, {@link Operator#NOT_EQUAL_ANSI}, {@link Operator#GREATER_THAN},
+     *                 {@link Operator#GREATER_THAN_OR_EQUAL}, {@link Operator#LESS_THAN},
+     *                 {@link Operator#LESS_THAN_OR_EQUAL}, {@link Operator#LIKE}, {@link Operator#NOT_LIKE},
+     *                 {@link Operator#IS}, {@link Operator#IS_NOT}, {@link Operator#IN}, or {@link Operator#NOT_IN}
      * @param propValue the value to compare against; may be a literal value, {@code null}
      *                  (for equality operators, renders as {@code IS NULL} / {@code IS NOT NULL}),
      *                  or a {@link Condition} such as a {@link SubQuery}. For an {@code IN}/{@code NOT_IN}
      *                  operator, a {@link Collection} or array value is copied defensively and must be non-empty.
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if, for an
-     *                                  {@code IN}/{@code NOT_IN} operator, {@code propValue} is not a non-empty
-     *                                  {@link Collection}, a non-empty array, or a {@link Condition}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if {@code operator}
+     *                                  is not one of the operators listed above; or if, for an {@code IN}/{@code NOT_IN}
+     *                                  operator, {@code propValue} is not a non-empty {@link Collection}, a non-empty
+     *                                  array, or a {@link Condition}
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     public Binary(final String propName, final Operator operator, final Object propValue) {
         super(operator);
 
         checkPropName(propName);
+
+        if (!COMPARISON_OPERATORS.contains(operator)) {
+            throw new IllegalArgumentException(
+                    "Binary condition operator must be a comparison operator (one of " + COMPARISON_OPERATORS + "), but was: " + operator);
+        }
 
         this.propName = propName;
         this.propValue = normalizePropValue(operator, propValue);

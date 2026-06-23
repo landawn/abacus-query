@@ -2,9 +2,16 @@ package com.landawn.abacus.query;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.util.ImmutableMap;
+import com.landawn.abacus.util.ImmutableSet;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -1076,5 +1083,287 @@ class SqlMapper2026Test extends TestBase {
 
         SqlMapper reloaded = SqlMapper.load(output.getAbsolutePath());
         assertEquals("SELECT * FROM t WHERE a < 10 AND b > 5 AND c = 'a&b'", reloaded.get("findGreater").originalSql());
+    }
+}
+
+class SqlMapperApiReviewTest extends TestBase {
+
+    @TempDir
+    File tempDir;
+
+    // ----- containsId -----
+
+    @Test
+    public void testContainsId() {
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("findById", ParsedSql.parse("SELECT 1"));
+
+        assertTrue(mapper.containsId("findById"));
+        assertFalse(mapper.containsId("nonExistent"));
+    }
+
+    @Test
+    public void testContainsId_invalidIdsReturnFalseWithoutThrowing() {
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("findById", ParsedSql.parse("SELECT 1"));
+
+        assertFalse(mapper.containsId(null));
+        assertFalse(mapper.containsId(""));
+
+        String longId = "a".repeat(SqlMapper.MAX_ID_LENGTH + 1);
+        assertFalse(mapper.containsId(longId));
+    }
+
+    // ----- size -----
+
+    @Test
+    public void testSize() {
+        SqlMapper mapper = new SqlMapper();
+        assertEquals(0, mapper.size());
+
+        mapper.add("query1", ParsedSql.parse("SELECT 1"));
+        assertEquals(1, mapper.size());
+
+        mapper.add("query2", ParsedSql.parse("SELECT 2"));
+        assertEquals(2, mapper.size());
+
+        mapper.remove("query1");
+        assertEquals(1, mapper.size());
+    }
+
+    // ----- sqlIds snapshot semantics -----
+
+    @Test
+    public void testSqlIds_isImmutableSnapshot() {
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("query1", ParsedSql.parse("SELECT 1"));
+
+        ImmutableSet<String> snapshot = mapper.sqlIds();
+        assertEquals(1, snapshot.size());
+        assertTrue(snapshot.contains("query1"));
+
+        // Mutating the mapper after taking the snapshot must NOT affect the snapshot.
+        mapper.add("query2", ParsedSql.parse("SELECT 2"));
+        assertEquals(1, snapshot.size());
+        assertFalse(snapshot.contains("query2"));
+
+        // But a freshly requested snapshot reflects the new state.
+        assertEquals(2, mapper.sqlIds().size());
+    }
+
+    @Test
+    public void testSqlIds_isUnmodifiable() {
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("query1", ParsedSql.parse("SELECT 1"));
+
+        ImmutableSet<String> snapshot = mapper.sqlIds();
+        assertThrows(UnsupportedOperationException.class, () -> snapshot.add("query2"));
+    }
+
+    // ----- add(String, ParsedSql, Map) -----
+
+    @Test
+    public void testAddParsedSqlWithAttrs() {
+        SqlMapper mapper = new SqlMapper();
+        Map<String, String> attrs = new HashMap<>();
+        attrs.put("batchSize", "100");
+
+        mapper.add("insertUser", ParsedSql.parse("INSERT INTO users VALUES (?)"), attrs);
+
+        assertNotNull(mapper.get("insertUser"));
+        assertEquals("100", mapper.getAttributes("insertUser").get("batchSize"));
+    }
+
+    @Test
+    public void testAddParsedSqlWithNullAttrs() {
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("query1", ParsedSql.parse("SELECT 1"), null);
+
+        ImmutableMap<String, String> attrs = mapper.getAttributes("query1");
+        assertNotNull(attrs);
+        assertTrue(attrs.isEmpty());
+    }
+
+    @Test
+    public void testAddParsedSqlWithAttrs_validation() {
+        SqlMapper mapper = new SqlMapper();
+        assertThrows(IllegalArgumentException.class, () -> mapper.add("id", (ParsedSql) null, new HashMap<>()));
+        assertThrows(IllegalArgumentException.class, () -> mapper.add(null, ParsedSql.parse("SELECT 1"), new HashMap<>()));
+
+        mapper.add("dup", ParsedSql.parse("SELECT 1"), new HashMap<>());
+        assertThrows(IllegalArgumentException.class, () -> mapper.add("dup", ParsedSql.parse("SELECT 2"), new HashMap<>()));
+    }
+
+    // ----- add(String, String) -----
+
+    @Test
+    public void testAddSqlStringNoAttrs() {
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("findAll", "SELECT * FROM users");
+
+        ParsedSql sql = mapper.get("findAll");
+        assertNotNull(sql);
+        assertEquals("SELECT * FROM users", sql.originalSql());
+
+        ImmutableMap<String, String> attrs = mapper.getAttributes("findAll");
+        assertNotNull(attrs);
+        assertTrue(attrs.isEmpty());
+    }
+
+    @Test
+    public void testAddSqlStringNoAttrs_validation() {
+        SqlMapper mapper = new SqlMapper();
+        assertThrows(IllegalArgumentException.class, () -> mapper.add("id", (String) null));
+        assertThrows(IllegalArgumentException.class, () -> mapper.add(null, "SELECT 1"));
+
+        mapper.add("dup", "SELECT 1");
+        assertThrows(IllegalArgumentException.class, () -> mapper.add("dup", "SELECT 2"));
+    }
+
+    // ----- load(File...) -----
+
+    @Test
+    public void testLoadFromFiles() throws IOException {
+        File f1 = new File(tempDir, "users.xml");
+        try (FileWriter w = new FileWriter(f1)) {
+            w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sqlMapper>\n  <sql id=\"findUser\">SELECT * FROM users</sql>\n</sqlMapper>\n");
+        }
+        File f2 = new File(tempDir, "orders.xml");
+        try (FileWriter w = new FileWriter(f2)) {
+            w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sqlMapper>\n  <sql id=\"findOrder\">SELECT * FROM orders</sql>\n</sqlMapper>\n");
+        }
+
+        SqlMapper mapper = SqlMapper.load(f1, f2);
+        assertEquals(2, mapper.size());
+        assertTrue(mapper.containsId("findUser"));
+        assertTrue(mapper.containsId("findOrder"));
+    }
+
+    @Test
+    public void testLoadFromSingleFile() throws IOException {
+        File f1 = new File(tempDir, "single.xml");
+        try (FileWriter w = new FileWriter(f1)) {
+            w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sqlMapper>\n  <sql id=\"findUser\" fetchSize=\"10\">SELECT * FROM users</sql>\n</sqlMapper>\n");
+        }
+
+        SqlMapper mapper = SqlMapper.load(f1);
+        assertEquals(1, mapper.size());
+        assertEquals("10", mapper.getAttributes("findUser").get("fetchSize"));
+    }
+
+    @Test
+    public void testLoadFromFiles_emptyArrayThrows() {
+        assertThrows(IllegalArgumentException.class, () -> SqlMapper.load(new File[0]));
+    }
+
+    @Test
+    public void testLoadFromFiles_nullElementThrows() throws IOException {
+        File f1 = new File(tempDir, "users2.xml");
+        try (FileWriter w = new FileWriter(f1)) {
+            w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sqlMapper>\n  <sql id=\"findUser\">SELECT 1</sql>\n</sqlMapper>\n");
+        }
+        assertThrows(IllegalArgumentException.class, () -> SqlMapper.load(f1, (File) null));
+    }
+
+    @Test
+    public void testLoadFromFiles_duplicateIdAcrossFilesThrows() throws IOException {
+        File f1 = new File(tempDir, "a.xml");
+        try (FileWriter w = new FileWriter(f1)) {
+            w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sqlMapper>\n  <sql id=\"dup\">SELECT 1</sql>\n</sqlMapper>\n");
+        }
+        File f2 = new File(tempDir, "b.xml");
+        try (FileWriter w = new FileWriter(f2)) {
+            w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sqlMapper>\n  <sql id=\"dup\">SELECT 2</sql>\n</sqlMapper>\n");
+        }
+        assertThrows(IllegalArgumentException.class, () -> SqlMapper.load(f1, f2));
+    }
+
+    // ----- load(InputStream) -----
+
+    @Test
+    public void testLoadFromInputStream() {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sqlMapper><sql id=\"findUser\" timeout=\"5\">SELECT * FROM users</sql></sqlMapper>";
+        InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
+
+        SqlMapper mapper = SqlMapper.load(is);
+        assertEquals(1, mapper.size());
+        assertEquals("SELECT * FROM users", mapper.get("findUser").originalSql());
+        assertEquals("5", mapper.getAttributes("findUser").get("timeout"));
+    }
+
+    @Test
+    public void testLoadFromInputStream_nullThrows() {
+        assertThrows(IllegalArgumentException.class, () -> SqlMapper.load((InputStream) null));
+    }
+
+    @Test
+    public void testLoadFromInputStream_noSqlMapperElementThrows() {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root></root>";
+        InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
+        assertThrows(com.landawn.abacus.exception.ParsingException.class, () -> SqlMapper.load(is));
+    }
+
+    @Test
+    public void testLoadFromInputStream_callerCanCloseInTryWithResources() throws IOException {
+        // The caller opens the stream and closes it via try-with-resources; load() must not
+        // throw or interfere with that (the underlying parser may consume/close the stream).
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sqlMapper><sql id=\"q\">SELECT 1</sql></sqlMapper>";
+        try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
+            SqlMapper mapper = SqlMapper.load(is);
+            assertEquals(1, mapper.size());
+            assertEquals("SELECT 1", mapper.get("q").originalSql());
+        }
+    }
+
+    // ----- saveTo(OutputStream) -----
+
+    @Test
+    public void testSaveToOutputStream_roundTrip() {
+        SqlMapper mapper = new SqlMapper();
+        Map<String, String> attrs = new HashMap<>();
+        attrs.put("batchSize", "100");
+        mapper.add("findUser", "SELECT * FROM users WHERE id = ?", attrs);
+        mapper.add("updateUser", "UPDATE users SET name = ? WHERE id = ?");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        mapper.saveTo(baos);
+
+        SqlMapper loaded = SqlMapper.load(new ByteArrayInputStream(baos.toByteArray()));
+        assertEquals(mapper.sqlIds(), loaded.sqlIds());
+        assertEquals("SELECT * FROM users WHERE id = ?", loaded.get("findUser").originalSql());
+        assertEquals("100", loaded.getAttributes("findUser").get("batchSize"));
+    }
+
+    @Test
+    public void testSaveToOutputStream_doesNotCloseStream() {
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("q", ParsedSql.parse("SELECT 1"));
+
+        final boolean[] closed = { false };
+        ByteArrayOutputStream baos = new ByteArrayOutputStream() {
+            @Override
+            public void close() throws IOException {
+                closed[0] = true;
+                super.close();
+            }
+        };
+
+        mapper.saveTo((OutputStream) baos);
+        assertFalse(closed[0]);
+    }
+
+    @Test
+    public void testSaveToFileStillWorksViaDelegation() throws IOException {
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("q", "SELECT 1");
+
+        File out = new File(tempDir, "delegated.xml");
+        mapper.saveTo(out);
+        assertTrue(out.exists());
+
+        try (InputStream is = new FileInputStream(out)) {
+            SqlMapper loaded = SqlMapper.load(is);
+            assertEquals("SELECT 1", loaded.get("q").originalSql());
+        }
     }
 }

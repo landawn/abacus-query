@@ -19,6 +19,7 @@ import java.util.Map;
 
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
+import com.landawn.abacus.util.N;
 
 /**
  * Represents a GROUP BY clause in SQL queries.
@@ -135,6 +136,34 @@ public class GroupBy extends Clause {
      */
     public GroupBy(final String... propNames) {
         this(Filters.expr(AbstractCondition.createSortExpression(propNames)));
+    }
+
+    /**
+     * Creates a new GROUP BY clause with the property names supplied as a collection.
+     * The columns will be grouped in iteration order, with no explicit sort direction,
+     * matching the behavior of {@link #GroupBy(String...)}.
+     *
+     * <p>Use an order-preserving collection (such as {@code List} or {@code LinkedHashSet})
+     * to guarantee a predictable grouping order, since the order of columns in a
+     * {@code GROUP BY} clause can affect performance and results.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Group by department and location
+     * GroupBy byDeptLoc = new GroupBy(Arrays.asList("department", "location"));
+     * // SQL: GROUP BY department, location
+     *
+     * // Group by multiple dimensions for analysis
+     * List<String> dims = Arrays.asList("region", "product_category", "year");
+     * GroupBy byDimensions = new GroupBy(dims);
+     * // SQL: GROUP BY region, product_category, year
+     * }</pre>
+     *
+     * @param propNames the collection of property names to group by, in iteration order. Must not be {@code null} or empty.
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
+     */
+    public GroupBy(final Collection<String> propNames) {
+        this(N.checkArgNotEmpty(propNames, "propNames").toArray(new String[0]));
     }
 
     /**

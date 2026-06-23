@@ -18,20 +18,20 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.DynamicQuery.Builder;
+import com.landawn.abacus.query.DynamicQuery.DynamicSqlBuilder;
 
 @Tag("2025")
 public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testCreate() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         assertNotNull(builder);
     }
 
     @Test
     public void testSelectAppendSingleColumn() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("id");
         builder.from().append("users");
         String sql = builder.build();
@@ -40,7 +40,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testSelectAppendMultipleColumns() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("id").append("name").append("email");
         builder.from().append("users");
         String sql = builder.build();
@@ -49,7 +49,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testSelectAppendWithAlias() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("first_name", "fname").append("last_name", "lname");
         builder.from().append("users");
         String sql = builder.build();
@@ -58,7 +58,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testSelectAppendCollection() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append(Arrays.asList("id", "name", "email"));
         builder.from().append("users");
         String sql = builder.build();
@@ -67,7 +67,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testSelectAppendEmptyCollectionDoesNotCreateSkeleton() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append(Arrays.asList());
         builder.from().append("users");
         String sql = builder.build();
@@ -80,7 +80,7 @@ public class DynamicQueryTest extends TestBase {
         columns.put("user_id", "uid");
         columns.put("user_name", "uname");
 
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append(columns);
         builder.from().append("users");
         String sql = builder.build();
@@ -92,7 +92,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testSelectAppendIf() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("id").appendIf(true, "name").appendIf(false, "email");
         builder.from().append("users");
         String sql = builder.build();
@@ -101,13 +101,13 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testSelectAppendIfOrElse() {
-        Builder builder1 = DynamicQuery.builder();
+        DynamicSqlBuilder builder1 = DynamicQuery.builder();
         builder1.select().appendIfOrElse(true, "full_name", "first_name");
         builder1.from().append("users");
         String sql1 = builder1.build();
         assertEquals("SELECT full_name FROM users", sql1);
 
-        Builder builder2 = DynamicQuery.builder();
+        DynamicSqlBuilder builder2 = DynamicQuery.builder();
         builder2.select().appendIfOrElse(false, "full_name", "first_name");
         builder2.from().append("users");
         String sql2 = builder2.build();
@@ -116,7 +116,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testFromAppendTable() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         String sql = builder.build();
@@ -125,7 +125,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testFromAppendTableWithAlias() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("u.id");
         builder.from().append("users", "u");
         String sql = builder.build();
@@ -134,7 +134,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testFromAppendMultipleTables() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users", "u").append("orders", "o");
         String sql = builder.build();
@@ -143,7 +143,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testFromJoin() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users", "u").join("orders o", "u.id = o.user_id");
         String sql = builder.build();
@@ -152,14 +152,14 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testFromJoin_ThrowsWhenFromNotInitialized() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         assertThrows(IllegalStateException.class, () -> builder.from().join("orders o", "u.id = o.user_id"));
     }
 
     @Test
     public void testFromInnerJoin() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users", "u").innerJoin("orders o", "u.id = o.user_id");
         String sql = builder.build();
@@ -168,7 +168,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testFromLeftJoin() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
         String sql = builder.build();
@@ -177,7 +177,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testFromRightJoin() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users", "u").rightJoin("orders o", "u.id = o.user_id");
         String sql = builder.build();
@@ -186,7 +186,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testFromFullJoin() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users", "u").fullJoin("departments d", "u.dept_id = d.id");
         String sql = builder.build();
@@ -195,7 +195,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testFromAppendIf() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users").appendIf(true, "active_users").appendIf(false, "deleted_users");
         String sql = builder.build();
@@ -204,13 +204,13 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testFromAppendIfOrElse() {
-        Builder builder1 = DynamicQuery.builder();
+        DynamicSqlBuilder builder1 = DynamicQuery.builder();
         builder1.select().append("*");
         builder1.from().appendIfOrElse(true, "active_users", "all_users");
         String sql1 = builder1.build();
         assertEquals("SELECT * FROM active_users", sql1);
 
-        Builder builder2 = DynamicQuery.builder();
+        DynamicSqlBuilder builder2 = DynamicQuery.builder();
         builder2.select().append("*");
         builder2.from().appendIfOrElse(false, "active_users", "all_users");
         String sql2 = builder2.build();
@@ -219,7 +219,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testWhereAppend() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.where().append("age > 18");
@@ -229,7 +229,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testWhereAnd() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.where().append("age > 18").and("status = 'active'");
@@ -239,7 +239,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testWhereOr() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.where().append("role = 'admin'").or("role = 'moderator'");
@@ -249,7 +249,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testWhereRepeatQuestionMark() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.where().append("id IN (").placeholders(3).append(")");
@@ -259,7 +259,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testWhereRepeatQuestionMarkWithPrefixPostfix() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.where().append("status IN ").placeholders(2, "(", ")");
@@ -269,7 +269,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testWhereAppendIf() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.where().append("age > 18").appendIf(true, "AND status = 'active'");
@@ -279,7 +279,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testWhereAppendIfOrElse() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.where().appendIfOrElse(true, "status = 'active'", "status = 'inactive'");
@@ -289,7 +289,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testGroupByAppend() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("department, COUNT(*)");
         builder.from().append("employees");
         builder.groupBy().append("department");
@@ -299,7 +299,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testGroupByAppendMultiple() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("year, month, COUNT(*)");
         builder.from().append("sales");
         builder.groupBy().append("year").append("month");
@@ -309,7 +309,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testGroupByAppendCollection() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("sales");
         builder.groupBy().append(Arrays.asList("year", "quarter", "region"));
@@ -319,7 +319,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testGroupByAppendEmptyCollectionNoOp() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("sales");
         builder.groupBy().append(Collections.emptyList());
@@ -329,7 +329,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testGroupByAppendIf() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("sales");
         builder.groupBy().append("product").appendIf(true, "region");
@@ -339,7 +339,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testGroupByAppendIfOrElse() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("sales");
         builder.groupBy().appendIfOrElse(true, "year, month", "year");
@@ -349,7 +349,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testHavingAppend() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("department, COUNT(*)");
         builder.from().append("employees");
         builder.groupBy().append("department");
@@ -360,7 +360,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testHavingAnd() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("sales");
         builder.groupBy().append("region");
@@ -371,7 +371,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testHavingOr() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("sales");
         builder.groupBy().append("product");
@@ -382,7 +382,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testHavingAppendIf() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("sales");
         builder.groupBy().append("region");
@@ -393,7 +393,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testHavingAppendIfOrElse() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("sales");
         builder.groupBy().append("region");
@@ -403,8 +403,54 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
+    public void testHavingPlaceholders() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("region");
+        builder.from().append("sales");
+        builder.groupBy().append("region");
+        builder.having().append("COUNT(*) IN (").placeholders(3).append(")");
+        String sql = builder.build();
+        assertEquals("SELECT region FROM sales GROUP BY region HAVING COUNT(*) IN (?, ?, ? )", sql);
+    }
+
+    @Test
+    public void testHavingPlaceholdersWithPrefixPostfix() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("region");
+        builder.from().append("sales");
+        builder.groupBy().append("region");
+        builder.having().append("COUNT(*) IN ").placeholders(2, "(", ")");
+        String sql = builder.build();
+        assertEquals("SELECT region FROM sales GROUP BY region HAVING COUNT(*) IN (?, ?)", sql);
+    }
+
+    @Test
+    public void testHavingPlaceholdersZeroEmitsNothing() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.having().append("x").placeholders(0, "(", ")");
+        String sql = builder.build();
+        assertEquals("HAVING x", sql);
+    }
+
+    @Test
+    public void testHavingPlaceholdersNegativeThrows() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        DynamicQuery.HavingClause having = builder.having();
+        assertThrows(IllegalArgumentException.class, () -> having.placeholders(-1));
+        assertThrows(IllegalArgumentException.class, () -> having.placeholders(-1, "(", ")"));
+    }
+
+    @Test
+    public void testHavingPlaceholdersNullPrefixOrPostfixThrows() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        DynamicQuery.HavingClause having = builder.having();
+        assertThrows(IllegalArgumentException.class, () -> having.placeholders(3, null, ")"));
+        assertThrows(IllegalArgumentException.class, () -> having.placeholders(3, "(", null));
+    }
+
+    @Test
     public void testOrderByAppend() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.orderBy().append("created_date DESC");
@@ -414,7 +460,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testOrderByAppendMultiple() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.orderBy().append("last_name ASC").append("first_name ASC");
@@ -424,7 +470,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testOrderByAppendCollection() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("products");
         builder.orderBy().append(Arrays.asList("category", "price DESC", "name"));
@@ -434,7 +480,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testOrderByAppendEmptyCollectionNoOp() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("products");
         builder.orderBy().append(Collections.emptyList());
@@ -444,7 +490,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testOrderByAppendIf() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.orderBy().append("name").appendIf(true, "age DESC");
@@ -454,7 +500,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testOrderByAppendIfOrElse() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.orderBy().appendIfOrElse(true, "created_date DESC", "created_date ASC");
@@ -463,18 +509,18 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
-    public void testLimitString() {
-        Builder builder = DynamicQuery.builder();
+    public void testAppendRawClause() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
-        builder.limit("LIMIT 10 OFFSET 20");
+        builder.append("LIMIT 10 OFFSET 20");
         String sql = builder.build();
         assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
     }
 
     @Test
     public void testLimitInt() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.limit(10);
@@ -484,7 +530,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testLimitWithOffset() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.limit(10, 20);
@@ -494,7 +540,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testOffsetRows() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.offsetRows(20);
@@ -503,8 +549,99 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
+    public void testOffset() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.limit(10).offset(20);
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
+    }
+
+    @Test
+    public void testOffsetNoRowsKeyword() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.offset(20);
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users OFFSET 20", sql);
+    }
+
+    @Test
+    public void testOffsetNegativeThrows() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        assertThrows(IllegalArgumentException.class, () -> builder.offset(-1));
+    }
+
+    @Test
+    public void testAppendRawFetchClause() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.append("FETCH FIRST 10 ROWS ONLY");
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users FETCH FIRST 10 ROWS ONLY", sql);
+    }
+
+    @Test
+    public void testAppendBlankThrows() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        assertThrows(IllegalArgumentException.class, () -> builder.append("   "));
+    }
+
+    @Test
+    public void testAppendIfTrueAppends() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.appendIf(true, "LIMIT 10 OFFSET 20");
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
+    }
+
+    @Test
+    public void testAppendIfFalseSkips() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.appendIf(false, "LIMIT 10 OFFSET 20");
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users", sql);
+    }
+
+    @Test
+    public void testAppendIfReturnsSameBuilderForChaining() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.appendIf(true, "FOR UPDATE").appendIf(false, "LIMIT 5");
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users FOR UPDATE", sql);
+    }
+
+    @Test
+    public void testAppendIfTrueBlankThrows() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        assertThrows(IllegalArgumentException.class, () -> builder.appendIf(true, "   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.appendIf(true, null));
+    }
+
+    @Test
+    public void testAppendIfFalseBlankDoesNotThrow() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        // When the condition is false the fragment is never inspected (consistent with the clause-level appendIf).
+        builder.appendIf(false, "   ");
+        builder.appendIf(false, null);
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users", sql);
+    }
+
+    @Test
     public void testFetchNextNRowsOnly() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.offsetRows(20);
@@ -515,7 +652,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testFetchFirstNRowsOnly() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.fetchFirstRows(50);
@@ -525,7 +662,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testUnion() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("id, name");
         builder.from().append("active_users");
         builder.union("SELECT id, name FROM inactive_users");
@@ -537,7 +674,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testUnionAll() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("table1");
         builder.unionAll("SELECT * FROM table2");
@@ -547,7 +684,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testIntersect() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("user_id");
         builder.from().append("orders");
         builder.intersect("SELECT user_id FROM premium_members");
@@ -557,7 +694,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testExcept() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("user_id");
         builder.from().append("all_users");
         builder.except("SELECT user_id FROM blocked_users");
@@ -567,7 +704,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testMinus() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("id");
         builder.from().append("table1");
         builder.minus("SELECT id FROM table2");
@@ -577,7 +714,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testComplexQuery() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("u.id").append("u.name").append("COUNT(o.id)", "order_count");
         builder.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
         builder.where().append("u.status = ?").and("u.created_date > ?");
@@ -599,7 +736,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testMultipleJoins() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from()
                 .append("users", "u")
@@ -619,7 +756,7 @@ public class DynamicQueryTest extends TestBase {
         boolean filterByAge = false;
         boolean orderByName = true;
 
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("id").append("name").appendIf(includeEmail, "email");
         builder.from().append("users");
         builder.where().append("status = 'active'").appendIf(filterByAge, "AND age > 18");
@@ -634,7 +771,7 @@ public class DynamicQueryTest extends TestBase {
     @Test
     public void testWhereRepeatQuestionMarkZero() {
         assertThrows(IllegalArgumentException.class, () -> {
-            Builder builder = DynamicQuery.builder();
+            DynamicSqlBuilder builder = DynamicQuery.builder();
             builder.select().append("*");
             builder.from().append("users");
             builder.where().append("id IN (").placeholders(-1).append(")");
@@ -644,7 +781,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testStringInputsRejectNullInsteadOfRenderingLiteralNull() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
 
         assertThrows(IllegalArgumentException.class, () -> builder.select().append((String) null));
         assertThrows(IllegalArgumentException.class, () -> builder.select().append("id", null));
@@ -666,15 +803,15 @@ public class DynamicQueryTest extends TestBase {
 }
 
 /**
- * Simple unit tests for Builder functionality.
+ * Simple unit tests for DynamicSqlBuilder functionality.
  * Tests basic factory method and builder creation.
  */
 class SimpleDynamicQueryBuilderTest extends TestBase {
 
     @Test
     void testCreate() {
-        Builder builder1 = DynamicQuery.builder();
-        Builder builder2 = DynamicQuery.builder();
+        DynamicSqlBuilder builder1 = DynamicQuery.builder();
+        DynamicSqlBuilder builder2 = DynamicQuery.builder();
 
         assertNotNull(builder1);
         assertNotNull(builder2);
@@ -683,7 +820,7 @@ class SimpleDynamicQueryBuilderTest extends TestBase {
 
     @Test
     void testClauseBuilders() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
 
         assertNotNull(builder.select());
         assertNotNull(builder.from());
@@ -695,7 +832,7 @@ class SimpleDynamicQueryBuilderTest extends TestBase {
 
     @Test
     void testBasicBuilding() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
 
         // Test basic build - should not throw exception
         String sql = builder.build();
@@ -710,7 +847,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_classLevelExample() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("id", "user_id").append("name");
         b.from().append("users", "u");
         b.where().append("u.active = ?").and("u.age > ?");
@@ -722,7 +859,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_selectAppend() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("id").append("name", "user_name");
         b.from().append("users");
         String sql = b.build();
@@ -731,7 +868,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_fromWithJoin() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
         String sql = b.build();
@@ -740,7 +877,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_where() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.where().append("status = ?").and("created_date > ?");
@@ -750,7 +887,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_groupBy() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("department").append("COUNT(*)");
         b.from().append("employees");
         b.groupBy().append("department");
@@ -760,7 +897,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_having() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("department").append("COUNT(*)");
         b.from().append("employees");
         b.groupBy().append("department");
@@ -771,7 +908,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_orderBy() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.orderBy().append("created_date DESC").append("name ASC");
@@ -781,7 +918,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_limitIntInt() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.limit(10, 20);
@@ -791,7 +928,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_offsetAndFetch() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.offsetRows(20).fetchNextRows(10);
@@ -801,7 +938,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_fetchFirst() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.fetchFirstRows(10);
@@ -811,7 +948,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_union() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("id").append("name");
         b.from().append("active_users");
         b.union("SELECT id, name FROM archived_users");
@@ -821,7 +958,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_unionAll() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("id").append("name");
         b.from().append("users");
         b.unionAll("SELECT id, name FROM temp_users");
@@ -831,7 +968,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_build() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.where().append("active = true");
@@ -841,7 +978,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_selectAppendCollection() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append(Arrays.asList("id", "name", "email"));
         b.from().append("users");
         String sql = b.build();
@@ -852,7 +989,7 @@ class DynamicQueryJavadocExamples extends TestBase {
     public void testDynamicQueryBuilder_selectAppendIf() {
         boolean includeSalary = true;
         boolean includeBonus = false;
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("id").appendIf(includeSalary, "salary").appendIf(includeBonus, "bonus");
         b.from().append("employees");
         String sql = b.build();
@@ -862,7 +999,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_intersect() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("user_id");
         b.from().append("all_users");
         b.intersect("SELECT user_id FROM premium_users");
@@ -872,7 +1009,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_except() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("user_id");
         b.from().append("all_users");
         b.except("SELECT user_id FROM blocked_users");
@@ -882,7 +1019,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_minus() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("user_id");
         b.from().append("all_users");
         b.minus("SELECT user_id FROM inactive_users");
@@ -892,7 +1029,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_fromAppendWithAlias() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users", "u");
         String sql = b.build();
@@ -901,7 +1038,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_fromInnerJoin() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("u.id").append("p.name");
         b.from().append("users", "u").innerJoin("products p", "u.id = p.user_id");
         String sql = b.build();
@@ -910,7 +1047,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_fromRightJoin() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users", "u").rightJoin("orders o", "u.id = o.user_id");
         String sql = b.build();
@@ -919,7 +1056,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_fromFullJoin() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users", "u").fullJoin("orders o", "u.id = o.user_id");
         String sql = b.build();
@@ -928,13 +1065,13 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_selectAppendIfOrElse() {
-        Builder b1 = DynamicQuery.builder();
+        DynamicSqlBuilder b1 = DynamicQuery.builder();
         b1.select().appendIfOrElse(true, "first_name || ' ' || last_name AS full_name", "first_name");
         b1.from().append("users");
         String sql1 = b1.build();
         assertTrue(sql1.contains("first_name || ' ' || last_name AS full_name"));
 
-        Builder b2 = DynamicQuery.builder();
+        DynamicSqlBuilder b2 = DynamicQuery.builder();
         b2.select().appendIfOrElse(false, "first_name || ' ' || last_name AS full_name", "first_name");
         b2.from().append("users");
         String sql2 = b2.build();
@@ -944,7 +1081,7 @@ class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_whereOr() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.where().append("status = 'active'").or("role = 'admin'");
@@ -956,7 +1093,7 @@ class DynamicQueryJavadocExamples extends TestBase {
     public void testDynamicQueryBuilder_whereAppendIf() {
         boolean filterByStatus = true;
         boolean filterByRole = false;
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("users");
         b.where().append("1 = 1").appendIf(filterByStatus, "AND status = 'active'").appendIf(filterByRole, "AND role = 'admin'");
@@ -971,7 +1108,7 @@ class DynamicQuery2026BatchTest extends TestBase {
     // Covers clause builders when the conditional branch is the first text appended.
     @Test
     public void testConditionalClauseBuilders_EmptyInitialState() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().appendIfOrElse(false, "id", "user_id");
         builder.from().appendIfOrElse(false, "archived_users", "active_users");
         builder.where().appendIfOrElse(false, "status = 'archived'", "status = 'active'");
@@ -991,7 +1128,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void testSelectClause_appendMapAndCollectionAfterExistingContent() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("id").append(Map.of("first_name", "firstName", "last_name", "lastName")).append(Arrays.asList("email", "status"));
         builder.from().append("users");
 
@@ -1005,7 +1142,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void testWhereClause_andOrFromEmpty() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.where().and("status = 'active'").or("role = 'admin'");
@@ -1017,7 +1154,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void testWhereClause_appendIf_FalseOnEmpty() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.where().appendIf(false, "status = 'active'");
@@ -1027,7 +1164,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void testGroupByClause_appendCollectionThenAppendIf() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("sales");
         builder.groupBy().append(Arrays.asList("year", "quarter")).appendIf(true, "region");
@@ -1039,7 +1176,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void testHavingClause_andOrFromEmpty() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("sales");
         builder.groupBy().append("region");
@@ -1052,7 +1189,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void testOrderByClause_appendCollectionThenAppendIf() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         builder.orderBy().append(Arrays.asList("created_at DESC", "id ASC")).appendIf(true, "name ASC");
@@ -1075,7 +1212,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void selectClause_rejectsEmptyAlias() {
-        final Builder builder = DynamicQuery.builder();
+        final DynamicSqlBuilder builder = DynamicQuery.builder();
 
         assertThrows(IllegalArgumentException.class, () -> builder.select().append("id", ""));
         assertThrows(IllegalArgumentException.class, () -> builder.select().append("id", "   "));
@@ -1083,7 +1220,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void selectClause_rejectsBlankConditionalAndCollectionFragments() {
-        final Builder builder = DynamicQuery.builder();
+        final DynamicSqlBuilder builder = DynamicQuery.builder();
         final Map<String, String> columnsAndAliasMap = new LinkedHashMap<>();
         columnsAndAliasMap.put("id", "   ");
 
@@ -1096,7 +1233,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void fromClause_rejectsEmptyAliasAndBlankJoinFragments() {
-        final Builder builder = DynamicQuery.builder();
+        final DynamicSqlBuilder builder = DynamicQuery.builder();
 
         assertThrows(IllegalArgumentException.class, () -> builder.from().append("users", ""));
         assertThrows(IllegalArgumentException.class, () -> builder.from().append("users", "   "));
@@ -1109,9 +1246,9 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void builder_rejectsBlankSetOperationAndLimitFragments() {
-        final Builder builder = DynamicQuery.builder();
+        final DynamicSqlBuilder builder = DynamicQuery.builder();
 
-        assertThrows(IllegalArgumentException.class, () -> builder.limit("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.append("   "));
         assertThrows(IllegalArgumentException.class, () -> builder.union("   "));
         assertThrows(IllegalArgumentException.class, () -> builder.unionAll("   "));
         assertThrows(IllegalArgumentException.class, () -> builder.intersect("   "));
@@ -1121,7 +1258,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void whereClause_rejectsBlankConditions() {
-        final Builder builder = DynamicQuery.builder();
+        final DynamicSqlBuilder builder = DynamicQuery.builder();
 
         assertThrows(IllegalArgumentException.class, () -> builder.where().append(""));
         assertThrows(IllegalArgumentException.class, () -> builder.where().append("   "));
@@ -1134,7 +1271,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void groupByClause_rejectsBlankColumns() {
-        final Builder builder = DynamicQuery.builder();
+        final DynamicSqlBuilder builder = DynamicQuery.builder();
 
         assertThrows(IllegalArgumentException.class, () -> builder.groupBy().append("   "));
         assertThrows(IllegalArgumentException.class, () -> builder.groupBy().append(Arrays.asList("year", "   ")));
@@ -1145,7 +1282,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void havingClause_rejectsBlankConditions() {
-        final Builder builder = DynamicQuery.builder();
+        final DynamicSqlBuilder builder = DynamicQuery.builder();
 
         assertThrows(IllegalArgumentException.class, () -> builder.having().append("   "));
         assertThrows(IllegalArgumentException.class, () -> builder.having().and("   "));
@@ -1157,7 +1294,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void orderByClause_rejectsBlankColumns() {
-        final Builder builder = DynamicQuery.builder();
+        final DynamicSqlBuilder builder = DynamicQuery.builder();
 
         assertThrows(IllegalArgumentException.class, () -> builder.orderBy().append("   "));
         assertThrows(IllegalArgumentException.class, () -> builder.orderBy().append(Arrays.asList("id ASC", "   ")));
@@ -1172,7 +1309,7 @@ class DynamicQuery2026BatchTest extends TestBase {
     public void test2ndPass_buildClauseOrder_isSelectFromWhereGroupByHavingOrderByLimit() {
         // Order must be: SELECT -> FROM -> WHERE -> GROUP BY -> HAVING -> ORDER BY -> LIMIT
         // Even if the builder methods are called in a different order.
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.limit(5); // LIMIT first (in user code order)
         b.orderBy().append("name"); // ORDER BY second
         b.having().append("COUNT(*) > 0");
@@ -1202,7 +1339,7 @@ class DynamicQuery2026BatchTest extends TestBase {
     @Test
     public void test2ndPass_whereCalledTwice_returnsSameInstance_andAppends() {
         // Repeated .where() should return the same WhereClause, and successive .append() calls accumulate.
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
 
@@ -1218,7 +1355,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void test2ndPass_orderByCalledTwice_returnsSameInstance() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         var o1 = b.orderBy();
         var o2 = b.orderBy();
         assertSame(o1, o2);
@@ -1227,7 +1364,7 @@ class DynamicQuery2026BatchTest extends TestBase {
     @Test
     public void test2ndPass_placeholders_nZero_emitsNothing() {
         // placeholders(0) should write nothing to the buffer.
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
         b.where().append("id IN (").placeholders(0); // adds nothing after "("
@@ -1239,7 +1376,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void test2ndPass_placeholders_nOne_emitsSingleQuestionMark_noTrailingComma() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
         b.where().append("id IN ").placeholders(1, "(", ")");
@@ -1249,7 +1386,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void test2ndPass_placeholders_nThree_emitsCorrectSeparators() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
         b.where().append("id IN ").placeholders(3, "(", ")");
@@ -1260,7 +1397,7 @@ class DynamicQuery2026BatchTest extends TestBase {
     @Test
     public void test2ndPass_placeholdersWithPrefixPostfix_nZero_emitsNeitherPrefixNorPostfix() {
         // Documented: "If placeholderCount is 0, neither prefix nor postfix is appended."
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
         b.where().append("x").placeholders(0, "(", ")");
@@ -1270,7 +1407,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void test2ndPass_buildTwice_secondCallThrowsISE() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
         b.build();
@@ -1279,7 +1416,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void testClauseBuildersRejectMutationAfterBuild() {
-        Builder builder = DynamicQuery.builder();
+        DynamicSqlBuilder builder = DynamicQuery.builder();
         DynamicQuery.SelectClause select = builder.select();
         DynamicQuery.FromClause from = builder.from();
         DynamicQuery.WhereClause where = builder.where();
@@ -1306,7 +1443,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void test2ndPass_placeholdersNegative_throwsIAE() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
         var w = b.where().append("x");
@@ -1316,7 +1453,7 @@ class DynamicQuery2026BatchTest extends TestBase {
 
     @Test
     public void test2ndPass_placeholdersNullPrefixOrPostfix_throws() {
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
         var w = b.where().append("x");
@@ -1327,7 +1464,7 @@ class DynamicQuery2026BatchTest extends TestBase {
     @Test
     public void test2ndPass_joinBeforeFromAppend_throwsIllegalState() {
         // requireFromInitialized: join methods must be preceded by from().append(...)
-        Builder b = DynamicQuery.builder();
+        DynamicSqlBuilder b = DynamicQuery.builder();
         b.select().append("*");
         var f = b.from();
         assertThrows(IllegalStateException.class, () -> f.leftJoin("orders o", "u.id = o.uid"));

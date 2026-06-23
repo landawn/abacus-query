@@ -580,6 +580,82 @@ public sealed class NamedProperty permits NP {
     }
 
     /**
+     * Creates an IS NAN condition for this property.
+     * This generates a condition that checks if the floating-point property value is {@code NaN}
+     * (Not-a-Number). This is specific to floating-point columns.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("calculation_result").isNaN();   // calculation_result IS NAN
+     * NamedProperty.of("ratio").isNaN();                 // ratio IS NAN
+     * }</pre>
+     *
+     * @return an IsNaN condition for this property
+     * @see IsNaN
+     * @see Filters#isNaN(String)
+     */
+    public IsNaN isNaN() {
+        return Filters.isNaN(propName);
+    }
+
+    /**
+     * Creates an IS NOT NAN condition for this property.
+     * This generates a condition that checks if the floating-point property value is not {@code NaN}
+     * (Not-a-Number). This is specific to floating-point columns.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("temperature").isNotNaN();   // temperature IS NOT NAN
+     * NamedProperty.of("ratio").isNotNaN();         // ratio IS NOT NAN
+     * }</pre>
+     *
+     * @return an IsNotNaN condition for this property
+     * @see IsNotNaN
+     * @see Filters#isNotNaN(String)
+     */
+    public IsNotNaN isNotNaN() {
+        return Filters.isNotNaN(propName);
+    }
+
+    /**
+     * Creates an IS INFINITE condition for this property.
+     * This generates a condition that checks if the floating-point property value is infinite.
+     * This is specific to floating-point columns.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("ratio").isInfinite();     // ratio IS INFINITE
+     * NamedProperty.of("balance").isInfinite();   // balance IS INFINITE
+     * }</pre>
+     *
+     * @return an IsInfinite condition for this property
+     * @see IsInfinite
+     * @see Filters#isInfinite(String)
+     */
+    public IsInfinite isInfinite() {
+        return Filters.isInfinite(propName);
+    }
+
+    /**
+     * Creates an IS NOT INFINITE condition for this property.
+     * This generates a condition that checks if the floating-point property value is not infinite.
+     * This is specific to floating-point columns.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("percentage").isNotInfinite();   // percentage IS NOT INFINITE
+     * NamedProperty.of("balance").isNotInfinite();      // balance IS NOT INFINITE
+     * }</pre>
+     *
+     * @return an IsNotInfinite condition for this property
+     * @see IsNotInfinite
+     * @see Filters#isNotInfinite(String)
+     */
+    public IsNotInfinite isNotInfinite() {
+        return Filters.isNotInfinite(propName);
+    }
+
+    /**
      * Creates a BETWEEN condition for this property.
      * This generates a condition that checks if the property value falls within the specified range (inclusive).
      *
@@ -891,6 +967,28 @@ public sealed class NamedProperty permits NP {
     }
 
     /**
+     * Creates an IN condition for this property with a subquery.
+     * This generates a condition that checks if the property value is contained in the
+     * result set returned by the specified subquery.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
+     * NamedProperty.of("user_id").in(subQuery);
+     * // SQL: user_id IN (SELECT id FROM active_users)
+     * }</pre>
+     *
+     * @param subQuery the subquery to check membership against (must not be {@code null})
+     * @return an InSubQuery condition for this property
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
+     * @see InSubQuery
+     * @see Filters#in(String, SubQuery)
+     */
+    public InSubQuery in(final SubQuery subQuery) {
+        return Filters.in(propName, subQuery);
+    }
+
+    /**
      * Creates a NOT IN condition for this property with an array of values.
      * This generates a condition that checks if the property value does not match any of the specified values.
      *
@@ -994,6 +1092,28 @@ public sealed class NamedProperty permits NP {
      */
     public NotIn notIn(final Collection<?> values) {
         return Filters.notIn(propName, values);
+    }
+
+    /**
+     * Creates a NOT IN condition for this property with a subquery.
+     * This generates a condition that checks if the property value is not contained in the
+     * result set returned by the specified subquery.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = Filters.subQuery("SELECT id FROM blacklisted_users");
+     * NamedProperty.of("user_id").notIn(subQuery);
+     * // SQL: user_id NOT IN (SELECT id FROM blacklisted_users)
+     * }</pre>
+     *
+     * @param subQuery the subquery to check non-membership against (must not be {@code null})
+     * @return a NotInSubQuery condition for this property
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
+     * @see NotInSubQuery
+     * @see Filters#notIn(String, SubQuery)
+     */
+    public NotInSubQuery notIn(final SubQuery subQuery) {
+        return Filters.notIn(propName, subQuery);
     }
 
     /**

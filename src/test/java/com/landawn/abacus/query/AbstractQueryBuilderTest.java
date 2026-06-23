@@ -10,7 +10,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -824,6 +827,100 @@ class AbstractQueryBuilder2026Test extends TestBase {
         final String sql = SqlBuilder.PSC.select("*").from("users").forUpdate().build().query();
 
         assertTrue(sql.contains("FOR UPDATE"));
+    }
+
+    @Test
+    public void testForUpdate_idempotencyGuard() {
+        // Calling forUpdate() twice must not produce "FOR UPDATE FOR UPDATE".
+        assertThrows(IllegalStateException.class, () -> SqlBuilder.PSC.select("*").from("users").forUpdate().forUpdate());
+    }
+
+    @Test
+    public void testSetEntity_equivalentToDeprecatedSet() {
+        final Account a = new Account();
+        a.setFirstName("F");
+        a.setLastName("L");
+
+        final String viaSetEntity = SqlBuilder.PSC.update("account").setEntity(a).where(Filters.eq("id", 1)).build().query();
+        final String viaSet = SqlBuilder.PSC.update("account").set(a).where(Filters.eq("id", 1)).build().query();
+
+        assertEquals(viaSet, viaSetEntity);
+        assertTrue(viaSetEntity.contains("first_name = ?"));
+    }
+
+    @Test
+    public void testSetEntity_excludedPropNames() {
+        final Account a = new Account();
+        a.setFirstName("F");
+        a.setLastName("L");
+
+        final Set<String> excluded = java.util.Set.of("lastName");
+        final String sql = SqlBuilder.PSC.update("account").setEntity(a, excluded).where(Filters.eq("id", 1)).build().query();
+
+        assertTrue(sql.contains("first_name = ?"));
+        assertFalse(sql.contains("last_name = ?"));
+    }
+
+    @Test
+    public void testSetEntity_rejectsCollection() {
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.update("account").setEntity(Arrays.asList("firstName", "lastName")));
+    }
+
+    @Test
+    public void testSetEntity_rejectsArray() {
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.PSC.update("account").setEntity(new String[] { "firstName", "lastName" }));
+    }
+
+    @Test
+    public void testIntoClass_alwaysSetsEntityClass() {
+        // into(Class) should map property names to columns (entity class always set), matching from(...).
+        final String sql = SqlBuilder.PSC.insert("firstName", "lastName").into(Account.class).build().query();
+
+        assertTrue(sql.contains("first_name"));
+        assertTrue(sql.contains("last_name"));
+    }
+
+    @Test
+    public void testUsing_varargs() {
+        final String sql = SqlBuilder.PSC.select("*").from("orders").join("order_items").using("order_id", "tenant_id").build().query();
+
+        assertTrue(sql.contains("USING (order_id, tenant_id)"), sql);
+    }
+
+    @Test
+    public void testUsing_collection() {
+        final String sql = SqlBuilder.PSC.select("*").from("orders").join("order_items").using(Arrays.asList("order_id", "tenant_id")).build().query();
+
+        assertTrue(sql.contains("USING (order_id, tenant_id)"), sql);
+    }
+
+    @Test
+    public void testOn_varargsComposite() {
+        final String sql = SqlBuilder.PSC.select("*").from("users u").join("orders o").on("u.id = o.user_id", "u.tenant_id = o.tenant_id").build().query();
+
+        assertTrue(sql.contains("ON u.id = o.user_id AND u.tenant_id = o.tenant_id"), sql);
+    }
+
+    @Test
+    public void testGroupBy_mapIterationOrder() {
+        final Map<String, SortDirection> groupings = new LinkedHashMap<>();
+        groupings.put("category", SortDirection.ASC);
+        groupings.put("brand", SortDirection.DESC);
+
+        final String sql = SqlBuilder.PSC.select("category", "brand").from("products").groupBy(groupings).build().query();
+
+        assertTrue(sql.indexOf("category ASC") < sql.indexOf("brand DESC"), sql);
+    }
+
+    @Test
+    public void testOrderBy_mapIterationOrder() {
+        final Map<String, SortDirection> orders = new LinkedHashMap<>();
+        orders.put("lastName", SortDirection.ASC);
+        orders.put("firstName", SortDirection.DESC);
+
+        final String sql = SqlBuilder.PSC.select("*").from("users").orderBy(orders).build().query();
+
+        assertTrue(sql.indexOf("ASC") < sql.indexOf("DESC"), sql);
     }
 
     @Test

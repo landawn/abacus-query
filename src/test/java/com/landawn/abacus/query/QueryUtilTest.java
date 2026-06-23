@@ -9,6 +9,7 @@ import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
@@ -962,6 +963,95 @@ public class QueryUtilTest extends TestBase {
 
         assertTrue(sql.contains("FROM self_referential_entity"));
         assertTrue(sql.contains("WHERE id = ?"));
+    }
+
+    // --- 2026-06-22 API review: get*PropNames now return immutable lists on BOTH paths ---
+
+    @Test
+    public void testGetInsertPropNames_ReturnsImmutableListBothPaths() {
+        // no-exclusion path
+        ImmutableList<String> noExcl = QueryUtil.getInsertPropNames(TestUser.class, null);
+        assertThrows(UnsupportedOperationException.class, () -> noExcl.add("x"));
+
+        // exclusion path
+        ImmutableList<String> withExcl = QueryUtil.getInsertPropNames(TestUser.class, new HashSet<>(Arrays.asList("email")));
+        assertThrows(UnsupportedOperationException.class, () -> withExcl.add("x"));
+
+        // entity-based no-exclusion path
+        ImmutableList<String> entityNoExcl = QueryUtil.getInsertPropNames(new TestUser(), null);
+        assertThrows(UnsupportedOperationException.class, () -> entityNoExcl.add("x"));
+    }
+
+    @Test
+    public void testGetSelectPropNames_ReturnsImmutableListBothPaths() {
+        ImmutableList<String> noExcl = QueryUtil.getSelectPropNames(TestUser.class, false, null);
+        assertThrows(UnsupportedOperationException.class, () -> noExcl.add("x"));
+
+        ImmutableList<String> withExcl = QueryUtil.getSelectPropNames(TestUser.class, false, new HashSet<>(Arrays.asList("email")));
+        assertThrows(UnsupportedOperationException.class, () -> withExcl.add("x"));
+    }
+
+    @Test
+    public void testGetUpdatePropNames_ReturnsImmutableListBothPaths() {
+        ImmutableList<String> noExcl = QueryUtil.getUpdatePropNames(TestUser.class, null);
+        assertThrows(UnsupportedOperationException.class, () -> noExcl.add("x"));
+
+        ImmutableList<String> withExcl = QueryUtil.getUpdatePropNames(TestUser.class, new HashSet<>(Arrays.asList("email")));
+        assertThrows(UnsupportedOperationException.class, () -> withExcl.add("x"));
+    }
+
+    @Test
+    public void testGetSelectPropNames_NoExclusionReturnsStableInstance() {
+        // The no-exclusion path is memoized, so repeated calls return the same instance
+        // (this identity is relied upon by the builders' == fast paths).
+        ImmutableList<String> first = QueryUtil.getSelectPropNames(TestUser.class, false, null);
+        ImmutableList<String> second = QueryUtil.getSelectPropNames(TestUser.class, false, null);
+        assertSame(first, second);
+
+        // Sub-entity variant uses a different slot, so it is a different (but also stable) instance.
+        ImmutableList<String> withSub = QueryUtil.getSelectPropNames(TestUser.class, true, null);
+        assertSame(withSub, QueryUtil.getSelectPropNames(TestUser.class, true, null));
+    }
+
+    @Test
+    public void testGetInsertUpdatePropNames_NoExclusionReturnStableInstance() {
+        assertSame(QueryUtil.getInsertPropNames(TestUser.class, null), QueryUtil.getInsertPropNames(TestUser.class, null));
+        assertSame(QueryUtil.getUpdatePropNames(TestUser.class, null), QueryUtil.getUpdatePropNames(TestUser.class, null));
+    }
+
+    @Test
+    public void testGetSelectPropNames_InstanceOverloadDelegatesToClass() {
+        TestUser user = new TestUser();
+        ImmutableList<String> viaInstance = QueryUtil.getSelectPropNames(user, false, null);
+        ImmutableList<String> viaClass = QueryUtil.getSelectPropNames(TestUser.class, false, null);
+        assertEquals(viaClass, viaInstance);
+        assertTrue(viaInstance.contains("name"));
+        assertFalse(viaInstance.contains("email"));
+    }
+
+    @Test
+    public void testGetSelectPropNames_InstanceOverloadNullCheck() {
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.getSelectPropNames((Object) null, false, null));
+    }
+
+    @Test
+    public void testGetUpdatePropNames_InstanceOverloadDelegatesToClass() {
+        TestUser user = new TestUser();
+        ImmutableList<String> viaInstance = QueryUtil.getUpdatePropNames(user, null);
+        ImmutableList<String> viaClass = QueryUtil.getUpdatePropNames(TestUser.class, null);
+        assertEquals(viaClass, viaInstance);
+        assertTrue(viaInstance.contains("name"));
+        assertFalse(viaInstance.contains("email"));
+    }
+
+    @Test
+    public void testGetUpdatePropNames_InstanceOverloadNullCheck() {
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.getUpdatePropNames((Object) null, null));
+    }
+
+    @Test
+    public void testIsNonColumn_NullPropInfoThrowsIllegalArgument() {
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.isNonColumn(Collections.emptySet(), Collections.emptySet(), null));
     }
 }
 

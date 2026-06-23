@@ -98,6 +98,44 @@ public final class QueryUtil {
     private static final Map<Class<?>, PropInfo[]> idPropInfosPool = new ConcurrentHashMap<>();
 
     /**
+     * Caches, per entity class, the immutable {@code ImmutableList} returned for the
+     * no-exclusion ({@code excludedPropNames} null/empty) paths of the {@code get*PropNames}
+     * methods. Index by the column slot of {@code SqlBuilder.loadPropNamesByClass(Class)}
+     * ({@code 0}: select incl. sub-entities, {@code 1}: select top-level only, {@code 2}: insert,
+     * {@code 4}: update). Returning a single stable instance per (class, slot) preserves the
+     * reference-identity fast paths in the builders (which compare the stored prop-name list with
+     * {@code ==} against a fresh no-exclusion call) while still handing back an immutable list.
+     */
+    private static final Map<Class<?>, ImmutableList<String>[]> noExclusionPropNamesPool = new ConcurrentHashMap<>();
+
+    /**
+     * Returns the cached immutable, no-exclusion property-name list for the given entity class and
+     * {@code SqlBuilder.loadPropNamesByClass(Class)} slot, building (and memoizing) it on first use.
+     * The cached list is a defensive immutable copy of the corresponding cached prop-name set, so a
+     * single stable instance is returned for every no-exclusion call.
+     *
+     * @param entityClass the entity class whose prop-name list is requested
+     * @param slot the {@code loadPropNamesByClass} array index (0, 1, 2, or 4)
+     * @return the memoized immutable list for that (class, slot)
+     */
+    @SuppressWarnings("unchecked")
+    private static ImmutableList<String> getNoExclusionPropNames(final Class<?> entityClass, final int slot) {
+        final ImmutableList<String>[] cache = noExclusionPropNamesPool.computeIfAbsent(entityClass, cls -> new ImmutableList[5]);
+
+        ImmutableList<String> result = cache[slot];
+
+        if (result == null) {
+            // Defensive immutable copy of the cached prop-name set (order preserved from the
+            // backing LinkedHashSet). Benign if two threads race: both build equal lists and the
+            // last write wins; callers always observe a fully-built immutable list.
+            result = ImmutableList.copyOf(SqlBuilder.loadPropNamesByClass(entityClass)[slot]);
+            cache[slot] = result;
+        }
+
+        return result;
+    }
+
+    /**
      * Returns a mapping of property names to their corresponding column names and a flag indicating if it's a simple property.
      * This method is for internal use only and provides detailed mapping information including whether properties
      * contain dots (indicating nested properties).
@@ -189,6 +227,7 @@ public final class QueryUtil {
      * @return an immutable map of column names (including upper- and lower-case variations) to property names
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
+    @Internal
     public static ImmutableMap<String, String> getColumn2PropNameMap(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
@@ -239,6 +278,7 @@ public final class QueryUtil {
      * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
      * @return an immutable map of property names to column names, or an empty immutable map if {@code entityClass} is {@code null} or is a {@link Map} type
      */
+    @Internal
     public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
         if (entityClass == null || Map.class.isAssignableFrom(entityClass)) {
@@ -382,11 +422,11 @@ public final class QueryUtil {
      *
      * @param entity the entity instance to analyze (must not be {@code null})
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
-     * @return collection of property names suitable for INSERT operations
+     * @return an immutable list of property names suitable for INSERT operations
      * @throws IllegalArgumentException if {@code entity} is {@code null}
      */
     @Internal
-    public static Collection<String> getInsertPropNames(final Object entity, final Set<String> excludedPropNames) {
+    public static ImmutableList<String> getInsertPropNames(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, "entity");
 
         final Class<?> entityClass = entity.getClass();
@@ -412,7 +452,7 @@ public final class QueryUtil {
 
         // Determine the base property names based on whether ID fields have default values.
         // val[2] includes ID fields, val[3] excludes them.
-        Collection<String> basePropNames = val[2];
+        int baseSlot = 2;
 
         if (idPropInfos.length > 0) {
             boolean allDefault = true;
@@ -428,15 +468,19 @@ public final class QueryUtil {
             }
 
             if (allDefault) {
-                basePropNames = val[3];
+                baseSlot = 3;
             }
         }
 
         if (!N.isEmpty(excludedPropNames)) {
-            return N.excludeAll(basePropNames, excludedPropNames);
+            // N.excludeAll returns a freshly-built mutable ArrayList; wrap it (no extra copy) so the
+            // exclusion path returns an immutable list, matching the no-exclusion path below.
+            return ImmutableList.wrap(N.excludeAll(val[baseSlot], excludedPropNames));
         }
 
-        return basePropNames;
+        // Return the memoized immutable list for this (class, slot) so both paths return an
+        // ImmutableList<String> while preserving reference identity for the builders' == fast paths.
+        return getNoExclusionPropNames(entityClass, baseSlot);
     }
 
     /**
@@ -460,21 +504,24 @@ public final class QueryUtil {
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
-     * @return collection of property names suitable for INSERT operations
+     * @return an immutable list of property names suitable for INSERT operations
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     @Internal
-    public static Collection<String> getInsertPropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
+    public static ImmutableList<String> getInsertPropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
-        final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
-        final Collection<String> propNames = val[2];
-
         if (N.isEmpty(excludedPropNames)) {
-            return propNames;
+            // Return the memoized immutable list (slot 2: insert with id) so both paths return an
+            // ImmutableList<String> while preserving reference identity for the builders' == fast paths.
+            return getNoExclusionPropNames(entityClass, 2);
         }
 
-        return N.excludeAll(propNames, excludedPropNames);
+        final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
+
+        // N.excludeAll returns a freshly-built mutable ArrayList; wrap it (no extra copy) so the
+        // exclusion path also returns an immutable list.
+        return ImmutableList.wrap(N.excludeAll(val[2], excludedPropNames));
     }
 
     /**
@@ -504,22 +551,53 @@ public final class QueryUtil {
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @param includeSubEntityProperties {@code true} to include nested entity properties, {@code false} for top-level only
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
-     * @return collection of property names suitable for SELECT operations
+     * @return an immutable list of property names suitable for SELECT operations
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     @Internal
-    public static Collection<String> getSelectPropNames(final Class<?> entityClass, final boolean includeSubEntityProperties,
+    public static ImmutableList<String> getSelectPropNames(final Class<?> entityClass, final boolean includeSubEntityProperties,
             final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
-        final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
-        final Collection<String> propNames = includeSubEntityProperties ? val[0] : val[1];
+        final int slot = includeSubEntityProperties ? 0 : 1;
 
         if (N.isEmpty(excludedPropNames)) {
-            return propNames;
+            // Return the memoized immutable list for this (class, slot) so both paths return an
+            // ImmutableList<String> while preserving reference identity for the builders' == fast paths.
+            return getNoExclusionPropNames(entityClass, slot);
         }
 
-        return N.excludeAll(propNames, excludedPropNames);
+        final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
+
+        // N.excludeAll returns a freshly-built mutable ArrayList; wrap it (no extra copy) so the
+        // exclusion path also returns an immutable list.
+        return ImmutableList.wrap(N.excludeAll(val[slot], excludedPropNames));
+    }
+
+    /**
+     * Gets the property names to be used for SELECT operations on the given entity instance.
+     * This is an instance-based convenience overload that derives the entity class via
+     * {@code entity.getClass()} and delegates to {@link #getSelectPropNames(Class, boolean, Set)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * User user = new User();
+     * Collection<String> selectProps = QueryUtil.getSelectPropNames(user, false, null);
+     * // Returns: ["id", "name", "email", ...]
+     * }</pre>
+     *
+     * @param entity the entity instance to analyze (must not be {@code null})
+     * @param includeSubEntityProperties {@code true} to include nested entity properties, {@code false} for top-level only
+     * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
+     * @return an immutable list of property names suitable for SELECT operations
+     * @throws IllegalArgumentException if {@code entity} is {@code null}
+     * @see #getSelectPropNames(Class, boolean, Set)
+     */
+    @Internal
+    public static ImmutableList<String> getSelectPropNames(final Object entity, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
+        N.checkArgNotNull(entity, "entity");
+
+        return getSelectPropNames(entity.getClass(), includeSubEntityProperties, excludedPropNames);
     }
 
     /**
@@ -550,21 +628,49 @@ public final class QueryUtil {
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
-     * @return collection of property names suitable for UPDATE operations
+     * @return an immutable list of property names suitable for UPDATE operations
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     @Internal
-    public static Collection<String> getUpdatePropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
+    public static ImmutableList<String> getUpdatePropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
-        final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
-        final Collection<String> propNames = val[4];
-
         if (N.isEmpty(excludedPropNames)) {
-            return propNames;
+            // Return the memoized immutable list (slot 4: update) so both paths return an
+            // ImmutableList<String> while preserving reference identity for the builders' == fast paths.
+            return getNoExclusionPropNames(entityClass, 4);
         }
 
-        return N.excludeAll(propNames, excludedPropNames);
+        final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
+
+        // N.excludeAll returns a freshly-built mutable ArrayList; wrap it (no extra copy) so the
+        // exclusion path also returns an immutable list.
+        return ImmutableList.wrap(N.excludeAll(val[4], excludedPropNames));
+    }
+
+    /**
+     * Gets the property names to be used for UPDATE operations on the given entity instance.
+     * This is an instance-based convenience overload that derives the entity class via
+     * {@code entity.getClass()} and delegates to {@link #getUpdatePropNames(Class, Set)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Account account = new Account();
+     * Collection<String> updateProps = QueryUtil.getUpdatePropNames(account, null);
+     * // Returns the same names as getUpdatePropNames(Account.class, null)
+     * }</pre>
+     *
+     * @param entity the entity instance to analyze (must not be {@code null})
+     * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
+     * @return an immutable list of property names suitable for UPDATE operations
+     * @throws IllegalArgumentException if {@code entity} is {@code null}
+     * @see #getUpdatePropNames(Class, Set)
+     */
+    @Internal
+    public static ImmutableList<String> getUpdatePropNames(final Object entity, final Set<String> excludedPropNames) {
+        N.checkArgNotNull(entity, "entity");
+
+        return getUpdatePropNames(entity.getClass(), excludedPropNames);
     }
 
     /**
@@ -592,9 +698,7 @@ public final class QueryUtil {
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @return an immutable list of ID field names, or an empty list if no ID fields are defined
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @deprecated for internal use only. No public replacement is provided.
      */
-    @Deprecated
     @Internal
     @Immutable
     public static ImmutableList<String> getIdPropNames(final Class<?> entityClass) {
@@ -630,9 +734,12 @@ public final class QueryUtil {
      *                        {@link Table#nonColumnFields()}; may be {@code null} or empty for no blacklist)
      * @param propInfo the property information to check (must not be {@code null})
      * @return {@code true} if the property should not be mapped to a database column
-     * @throws NullPointerException if {@code propInfo} is {@code null} (thrown by dereference; this method performs no explicit null-check)
+     * @throws IllegalArgumentException if {@code propInfo} is {@code null}
      */
+    @Internal
     public static boolean isNonColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
+        N.checkArgNotNull(propInfo, "propInfo");
+
         return propInfo.isTransient || propInfo.isAnnotationPresent(NonColumn.class) || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))
                 || (N.notEmpty(nonColumnFields) && nonColumnFields.contains(propInfo.name));
     }
@@ -738,6 +845,7 @@ public final class QueryUtil {
      * @return the table alias if defined in {@code @Table} annotation, empty string if {@code @Table} is present but alias is not set, or {@code null} if no {@code @Table} annotation exists
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
+    @Internal
     public static String getTableAlias(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
@@ -772,6 +880,7 @@ public final class QueryUtil {
      * @return the table name, optionally followed by space and alias
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
+    @Internal
     public static String getTableNameAndAlias(final Class<?> entityClass) {
         return getTableNameAndAlias(entityClass, NamingPolicy.SNAKE_CASE);
     }
@@ -805,6 +914,7 @@ public final class QueryUtil {
      * @return the table name, optionally followed by space and alias
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
+    @Internal
     public static String getTableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;

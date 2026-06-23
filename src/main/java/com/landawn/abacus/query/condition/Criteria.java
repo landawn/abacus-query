@@ -91,6 +91,9 @@ public class Criteria extends AbstractCondition {
     /** Lazily memoized unmodifiable set-operations view (performance only). */
     private transient List<Clause> cachedSetOperationsView;
 
+    /** Lazily memoized immutable conditions view (performance only). */
+    private transient ImmutableList<Condition> cachedConditionsView;
+
     /**
      * Creates a new Criteria instance with the specified select modifier and condition list.
      * This constructor is package-private; use {@link #builder()} to construct instances.
@@ -178,10 +181,10 @@ public class Criteria extends AbstractCondition {
      * c.getWhere().operator();                 // returns Operator.WHERE
      * }</pre>
      *
-     * @return the {@link Where} clause as a {@link Clause}, or {@code null}
+     * @return the {@link Where} clause, or {@code null}
      */
-    public Clause getWhere() {
-        return (Clause) find(Operator.WHERE);
+    public Where getWhere() {
+        return (Where) find(Operator.WHERE);
     }
 
     /**
@@ -195,10 +198,10 @@ public class Criteria extends AbstractCondition {
      * c.getGroupBy().operator();                 // returns Operator.GROUP_BY
      * }</pre>
      *
-     * @return the {@link GroupBy} clause as a {@link Clause}, or {@code null}
+     * @return the {@link GroupBy} clause, or {@code null}
      */
-    public Clause getGroupBy() {
-        return (Clause) find(Operator.GROUP_BY);
+    public GroupBy getGroupBy() {
+        return (GroupBy) find(Operator.GROUP_BY);
     }
 
     /**
@@ -212,10 +215,10 @@ public class Criteria extends AbstractCondition {
      * c.getHaving().operator();                 // returns Operator.HAVING
      * }</pre>
      *
-     * @return the {@link Having} clause as a {@link Clause}, or {@code null}
+     * @return the {@link Having} clause, or {@code null}
      */
-    public Clause getHaving() {
-        return (Clause) find(Operator.HAVING);
+    public Having getHaving() {
+        return (Having) find(Operator.HAVING);
     }
 
     /**
@@ -265,10 +268,10 @@ public class Criteria extends AbstractCondition {
      * c.getOrderBy().operator();                 // returns Operator.ORDER_BY
      * }</pre>
      *
-     * @return the {@link OrderBy} clause as a {@link Clause}, or {@code null}
+     * @return the {@link OrderBy} clause, or {@code null}
      */
-    public Clause getOrderBy() {
-        return (Clause) find(Operator.ORDER_BY);
+    public OrderBy getOrderBy() {
+        return (OrderBy) find(Operator.ORDER_BY);
     }
 
     /**
@@ -300,10 +303,17 @@ public class Criteria extends AbstractCondition {
      * c.getConditions().clear();                     // throws UnsupportedOperationException (unmodifiable view)
      * }</pre>
      *
-     * @return an unmodifiable list of all conditions
+     * @return an immutable list of all conditions
      */
-    public List<Condition> getConditions() {
-        return Collections.unmodifiableList(conditions);
+    public ImmutableList<Condition> getConditions() {
+        ImmutableList<Condition> view = cachedConditionsView;
+
+        if (view == null) {
+            view = ImmutableList.wrap(conditions);
+            cachedConditionsView = view;
+        }
+
+        return view;
     }
 
     /**

@@ -130,8 +130,8 @@ public interface Condition {
      * String upper = eq.toString(NamingPolicy.SCREAMING_SNAKE_CASE);   // "FIRST_NAME = 'John'"
      * }</pre>
      *
-     * @param namingPolicy the policy for formatting property names; implementations typically treat
-     *                     {@code null} as {@link NamingPolicy#NO_CHANGE}
+     * @param namingPolicy the policy for formatting property names; a {@code null} naming policy is
+     *                     treated as {@link NamingPolicy#NO_CHANGE} by the standard implementations
      * @return a string representation of this condition
      */
     String toString(NamingPolicy namingPolicy);

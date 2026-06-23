@@ -182,4 +182,25 @@ public class CrossJoin extends Join {
     public CrossJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.CROSS_JOIN, joinEntities, cond);
     }
+
+    /**
+     * Creates a CROSS JOIN clause with multiple tables/entities and no join condition.
+     * This produces the Cartesian product of the listed tables. The rendered SQL is
+     * {@code CROSS JOIN (t1, t2, ...)}. This is a convenience equivalent to
+     * {@code new CrossJoin(joinEntities, null)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // All combinations of sizes, colors, and styles
+     * List<String> tables = Arrays.asList("sizes s", "colors c", "styles st");
+     * CrossJoin join = new CrossJoin(tables);
+     * // SQL: CROSS JOIN (sizes s, colors c, styles st)
+     * }</pre>
+     *
+     * @param joinEntities the collection of tables or entities to join with.
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
+     */
+    public CrossJoin(final Collection<String> joinEntities) {
+        super(Operator.CROSS_JOIN, joinEntities, null);
+    }
 }

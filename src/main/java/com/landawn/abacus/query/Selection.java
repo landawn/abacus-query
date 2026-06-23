@@ -16,14 +16,16 @@ package com.landawn.abacus.query;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
 import com.landawn.abacus.annotation.Beta;
+import com.landawn.abacus.util.ImmutableList;
+import com.landawn.abacus.util.ImmutableSet;
 import com.landawn.abacus.util.N;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -66,7 +68,6 @@ import lombok.experimental.Accessors;
  */
 @Data
 @Accessors(fluent = true)
-@AllArgsConstructor
 public final class Selection {
 
     /**
@@ -91,6 +92,84 @@ public final class Selection {
     private Collection<String> selectPropNames;
     private boolean includeSubEntityProperties;
     private Set<String> excludedPropNames;
+
+    /**
+     * Creates a fully populated {@code Selection} from the given values.
+     *
+     * <p>This all-args constructor is intentionally package-private and defensively copies the
+     * {@code selectPropNames} and {@code excludedPropNames} collections so that the {@code Selection}
+     * does not retain a reference to (or share mutable state with) the caller-supplied collections.
+     * External code should use the no-arg constructor with the fluent setters, or
+     * {@link #builder()}.</p>
+     *
+     * @param entityClass the entity class to select from
+     * @param tableAlias the alias to use for the table in SQL (can be {@code null})
+     * @param classAlias the alias to use for result mapping (can be {@code null})
+     * @param selectPropNames the property names to include; copied defensively, {@code null} is preserved as {@code null}
+     * @param includeSubEntityProperties whether to include properties from sub-entities
+     * @param excludedPropNames the property names to exclude; copied defensively, {@code null} is preserved as {@code null}
+     */
+    Selection(final Class<?> entityClass, final String tableAlias, final String classAlias, final Collection<String> selectPropNames,
+            final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
+        this.entityClass = entityClass;
+        this.tableAlias = tableAlias;
+        this.classAlias = classAlias;
+        this.selectPropNames = selectPropNames == null ? null : new ArrayList<>(selectPropNames);
+        this.includeSubEntityProperties = includeSubEntityProperties;
+        this.excludedPropNames = excludedPropNames == null ? null : new LinkedHashSet<>(excludedPropNames);
+    }
+
+    /**
+     * Sets the property names to include in this selection.
+     *
+     * <p>The supplied collection is copied defensively, so subsequent mutations of the argument do not
+     * affect this {@code Selection}. Passing {@code null} clears the selection (meaning "all properties").</p>
+     *
+     * @param selectPropNames the property names to include; {@code null} means all properties
+     * @return this {@code Selection} instance for method chaining
+     */
+    public Selection selectPropNames(final Collection<String> selectPropNames) {
+        this.selectPropNames = selectPropNames == null ? null : new ArrayList<>(selectPropNames);
+        return this;
+    }
+
+    /**
+     * Returns the property names to include in this selection.
+     *
+     * <p>The returned collection is an immutable view; attempts to modify it throw
+     * {@link UnsupportedOperationException}. Returns {@code null} when no specific properties have been set.</p>
+     *
+     * @return an immutable view of the selected property names, or {@code null} if none was set
+     */
+    public Collection<String> selectPropNames() {
+        return selectPropNames == null ? null : ImmutableList.wrap((List<String>) selectPropNames);
+    }
+
+    /**
+     * Sets the property names to exclude from this selection.
+     *
+     * <p>The supplied set is copied defensively, so subsequent mutations of the argument do not affect
+     * this {@code Selection}. Passing {@code null} clears the exclusion set.</p>
+     *
+     * @param excludedPropNames the property names to exclude; can be {@code null}
+     * @return this {@code Selection} instance for method chaining
+     */
+    public Selection excludedPropNames(final Set<String> excludedPropNames) {
+        this.excludedPropNames = excludedPropNames == null ? null : new LinkedHashSet<>(excludedPropNames);
+        return this;
+    }
+
+    /**
+     * Returns the property names to exclude from this selection.
+     *
+     * <p>The returned set is an immutable view; attempts to modify it throw
+     * {@link UnsupportedOperationException}. Returns {@code null} when no exclusions have been set.</p>
+     *
+     * @return an immutable view of the excluded property names, or {@code null} if none was set
+     */
+    public Set<String> excludedPropNames() {
+        return excludedPropNames == null ? null : ImmutableSet.wrap(excludedPropNames);
+    }
 
     /**
      * Creates a new {@link MultiSelectionBuilder} for building complex multi-table selections.
@@ -254,6 +333,37 @@ public final class Selection {
                 final Set<String> excludedPropNames) {
             selections.add(new Selection(entityClass, tableAlias, classAlias, null, includeSubEntityProperties,
                     excludedPropNames == null ? null : N.newHashSet(excludedPropNames)));
+
+            return this;
+        }
+
+        /**
+         * Adds a selection with the full set of configuration options, combining specific property
+         * selection, sub-entity handling, and property exclusion in a single call.
+         *
+         * <p>This is the most complete {@code add} overload: it lets you set {@code selectPropNames},
+         * {@code includeSubEntityProperties}, and {@code excludedPropNames} together. The supplied
+         * collections are copied defensively into the resulting {@link Selection}.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<Selection> selections = Selection.builder()
+         *     .add(User.class, "u", "user", Arrays.asList("id", "name", "address"), true, Set.of("password"))
+         *     .build();
+         * }</pre>
+         *
+         * @param entityClass the entity class to select from
+         * @param tableAlias the alias to use for the table in SQL (can be {@code null})
+         * @param classAlias the alias to use for result mapping (can be {@code null})
+         * @param selectPropNames the property names to include in the selection ({@code null} means all properties)
+         * @param includeSubEntityProperties whether to include properties from sub-entities
+         * @param excludedPropNames property names to exclude from the selection (may be {@code null})
+         * @return this builder instance for method chaining
+         */
+        public MultiSelectionBuilder add(final Class<?> entityClass, final String tableAlias, final String classAlias, final Collection<String> selectPropNames,
+                final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
+            selections.add(new Selection(entityClass, tableAlias, classAlias, selectPropNames == null ? null : N.newArrayList(selectPropNames),
+                    includeSubEntityProperties, excludedPropNames == null ? null : N.newHashSet(excludedPropNames)));
 
             return this;
         }

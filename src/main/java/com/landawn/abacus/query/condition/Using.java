@@ -14,9 +14,12 @@
 
 package com.landawn.abacus.query.condition;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Strings;
 
@@ -82,6 +85,15 @@ import com.landawn.abacus.util.Strings;
 public class Using extends Cell {
 
     /**
+     * The validated, unqualified column names this USING clause joins on. Stored separately from the
+     * wrapped {@link Expression} so the original column list is recoverable via {@link #getColumnNames()}.
+     * May be {@code null} for uninitialized instances produced by the package-private default constructor
+     * (e.g., during Kryo deserialization). Not part of {@link #equals(Object)}/{@link #hashCode()}, which
+     * already account for these columns through the wrapped condition.
+     */
+    private List<String> columnNames;
+
+    /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized Using instance and should not be used
      * directly in application code. It exists solely for serialization/deserialization purposes.
@@ -119,9 +131,15 @@ public class Using extends Cell {
      *                    and individual names must not be {@code null}, empty, or blank. Names must be unqualified (cannot contain a {@code .}).
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
      *                                  or contains a qualified (dotted) column name
+     * @deprecated It's recommended to use {@link Filters#on(java.util.Map)} or multiple {@code Filters.on(String, String)} clauses
+     *             instead of {@code Using} for better portability and clarity. Replace {@code new Using("col1", "col2")} with explicit
+     *             {@code Filters.on(N.asMap("table1.col1", "table2.col1", "table1.col2", "table2.col2"))}.
      */
+    @Deprecated
     public Using(final String... columnNames) {
         super(Operator.USING, createUsingCondition(columnNames));
+
+        this.columnNames = copyColumnNames(columnNames);
     }
 
     /**
@@ -157,9 +175,55 @@ public class Using extends Cell {
      *                    Order matters for some databases; use a {@code LinkedHashSet} or {@code List} to preserve insertion order.
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
      *                                  or contains a qualified (dotted) column name
+     * @deprecated It's recommended to use {@link Filters#on(java.util.Map)} or multiple {@code Filters.on(String, String)} clauses
+     *             instead of {@code Using} for better portability and clarity. Replace {@code new Using(columnList)} with explicit
+     *             {@code Filters.on()} conditions that specify the full column names with table prefixes.
      */
+    @Deprecated
     public Using(final Collection<String> columnNames) {
         super(Operator.USING, createUsingCondition(columnNames));
+
+        this.columnNames = copyColumnNames(columnNames);
+    }
+
+    /**
+     * Gets the validated column names this USING clause joins on, in the order they were supplied.
+     * The returned list contains the unqualified column names (no table prefixes) that were passed to
+     * the constructor, after validation. This is a convenient structured alternative to inspecting the
+     * rendered {@code USING (...)} expression returned by {@link #getCondition()}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Using using = new Using("company_id", "branch_id");
+     * List<String> cols = using.getColumnNames();
+     * // cols = ["company_id", "branch_id"]
+     *
+     * // Edge: the returned list is immutable
+     * cols.add("extra");   // throws UnsupportedOperationException
+     *
+     * // Edge: an uninitialized instance (created only via the package-private default
+     * // constructor, e.g. during Kryo deserialization) returns an empty list
+     * }</pre>
+     *
+     * @return an immutable list of the unqualified column names in supplied order, or an empty immutable
+     *         list for an uninitialized instance produced by the package-private default constructor
+     */
+    public ImmutableList<String> getColumnNames() {
+        return columnNames == null ? ImmutableList.empty() : ImmutableList.wrap(columnNames);
+    }
+
+    private static List<String> copyColumnNames(final String... columnNames) {
+        final List<String> copy = new ArrayList<>(columnNames.length);
+
+        for (final String columnName : columnNames) {
+            copy.add(columnName);
+        }
+
+        return copy;
+    }
+
+    private static List<String> copyColumnNames(final Collection<String> columnNames) {
+        return new ArrayList<>(columnNames);
     }
 
     /**

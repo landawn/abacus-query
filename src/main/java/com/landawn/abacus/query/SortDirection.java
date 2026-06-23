@@ -88,4 +88,47 @@ public enum SortDirection {
     public boolean isDescending() {
         return this == SortDirection.DESC;
     }
+
+    /**
+     * Returns the opposite sort direction.
+     * {@link #ASC} maps to {@link #DESC} and {@link #DESC} maps to {@link #ASC}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SortDirection reversed = SortDirection.ASC.opposite();    // DESC
+     * SortDirection original = reversed.opposite();             // ASC
+     * }</pre>
+     *
+     * @return {@link #DESC} if this is {@link #ASC}, otherwise {@link #ASC}
+     */
+    public SortDirection opposite() {
+        return this == SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC;
+    }
+
+    /**
+     * Returns the {@code SortDirection} corresponding to the given name.
+     * The lookup is case-insensitive, so {@code "asc"}, {@code "ASC"}, {@code "desc"} and
+     * {@code "DESC"} are all recognized. Surrounding whitespace is not trimmed.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SortDirection asc = SortDirection.of("asc");     // ASC
+     * SortDirection desc = SortDirection.of("DESC");   // DESC
+     * SortDirection none = SortDirection.of("up");     // null (not recognized)
+     * SortDirection nil = SortDirection.of(null);      // null
+     * }</pre>
+     *
+     * @param name the sort direction name to look up (case-insensitive); may be {@code null}
+     * @return the matching {@code SortDirection}, or {@code null} if {@code name} is {@code null}
+     *         or does not name a recognized direction
+     */
+    public static SortDirection of(final String name) {
+        if ("ASC".equalsIgnoreCase(name)) {
+            return SortDirection.ASC;
+        } else if ("DESC".equalsIgnoreCase(name)) {
+            return SortDirection.DESC;
+        }
+
+        return null;
+    }
 }

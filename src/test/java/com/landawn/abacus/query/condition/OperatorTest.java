@@ -172,7 +172,8 @@ class Operator2025Test extends TestBase {
 
     @Test
     public void testGetOperator_NullInput() {
-        assertThrows(IllegalArgumentException.class, () -> Operator.of(null));
+        // of(null) returns null (uniform "null for any non-match"), consistent with an unknown token
+        assertNull(Operator.of(null));
     }
 
     @Test

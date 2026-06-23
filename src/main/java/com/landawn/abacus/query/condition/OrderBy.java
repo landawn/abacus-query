@@ -19,6 +19,7 @@ import java.util.Map;
 
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
+import com.landawn.abacus.util.N;
 
 /**
  * Represents an ORDER BY clause in SQL queries, used to specify the sort order of query results.
@@ -128,6 +129,35 @@ public class OrderBy extends Clause {
      */
     public OrderBy(final String... propNames) {
         this(Filters.expr(AbstractCondition.createSortExpression(propNames)));
+    }
+
+    /**
+     * Creates an ORDER BY clause with multiple property names supplied as a collection.
+     * All properties will be sorted in ascending order by default, matching the behavior
+     * of {@link #OrderBy(String...)} (no explicit direction keyword is emitted).
+     *
+     * <p>The iteration order of the collection determines the sort priority. The first
+     * property has the highest priority, followed by subsequent properties. Use an
+     * order-preserving collection (such as {@code List} or {@code LinkedHashSet}) to
+     * guarantee a predictable ordering.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Multi-level sort with default ASC direction
+     * OrderBy orderBy = new OrderBy(Arrays.asList("country", "state", "city"));
+     * // SQL: ORDER BY country, state, city
+     *
+     * // Hierarchical sorting
+     * List<String> cols = Arrays.asList("department", "team", "lastName", "firstName");
+     * OrderBy hierarchical = new OrderBy(cols);
+     * // SQL: ORDER BY department, team, lastName, firstName
+     * }</pre>
+     *
+     * @param propNames the collection of property names to sort by, in iteration order. Must not be {@code null} or empty.
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
+     */
+    public OrderBy(final Collection<String> propNames) {
+        this(N.checkArgNotEmpty(propNames, "propNames").toArray(new String[0]));
     }
 
     /**
