@@ -959,7 +959,7 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testSqlBuilder_FromSelfReferentialEntityDoesNotFail() {
-        String sql = SqlBuilder.PSC.select("id").from(SelfReferentialEntity.class).where(Filters.eq("id", 1L)).build().query();
+        String sql = Dsl.PSC.select("id").from(SelfReferentialEntity.class).where(Filters.eq("id", 1L)).build().query();
 
         assertTrue(sql.contains("FROM self_referential_entity"));
         assertTrue(sql.contains("WHERE id = ?"));

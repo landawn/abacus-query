@@ -1,9 +1,8 @@
 package com.landawn.abacus.query.condition;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Dsl;
 import com.landawn.abacus.query.Filters;
-import static com.landawn.abacus.query.SqlBuilder.NSC;
-
 import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.query.condition.Criteria.Builder;
 import com.landawn.abacus.query.entity.Account;
@@ -814,7 +813,7 @@ public class CriteriaTest extends TestBase {
         Assertions.assertTrue(result.contains("first_name = 'John'"));
         Assertions.assertTrue(result.contains("last_name"));
 
-        String sql = NSC.selectFrom(Account.class).where(Filters.eq("firstName", "John")).orderBy("lastName").build().query();
+        String sql = Dsl.NSC.selectFrom(Account.class).where(Filters.eq("firstName", "John")).orderBy("lastName").build().query();
         Assertions.assertTrue(sql.contains("first_name"));
         Assertions.assertTrue(sql.contains("last_name"));
     }

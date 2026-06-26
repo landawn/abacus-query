@@ -1,6 +1,5 @@
 package com.landawn.abacus.query;
 
-import static com.landawn.abacus.query.SqlBuilder.PSC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -20,8 +19,8 @@ import com.landawn.abacus.util.NamingPolicy;
  */
 public class SqlDialectPaginationTest extends TestBase {
 
-    private static SqlBuilder.Dsl dslFor(final String productName) {
-        return SqlBuilder.Dsl.forDialect(SqlDialect.builder()
+    private static Dsl dslFor(final String productName) {
+        return Dsl.forDialect(SqlDialect.builder()
                 .namingPolicy(NamingPolicy.SNAKE_CASE)
                 .sqlPolicy(SQLPolicy.PARAMETERIZED_SQL)
                 .productInfo(ProductInfo.of(productName))
@@ -132,7 +131,7 @@ public class SqlDialectPaginationTest extends TestBase {
         assertEquals("SELECT * FROM users LIMIT 10", sql);
 
         // Predefined DSL constants carry no product info and are unchanged.
-        sql = PSC.select("*").from("users").limit(10).offset(20).build().query();
+        sql = Dsl.PSC.select("*").from("users").limit(10).offset(20).build().query();
         assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
 
         // Blank product name is treated the same as no product info.
@@ -195,7 +194,7 @@ public class SqlDialectPaginationTest extends TestBase {
 
     @Test
     public void testMySqlProductInfoDefaultsToBacktickQuote() {
-        final SqlBuilder.Dsl mysqlDsl = dslFor("MySQL");
+        final Dsl mysqlDsl = dslFor("MySQL");
 
         final String sql = mysqlDsl.selectFrom(QdpUser.class).build().query();
         assertEquals("SELECT id AS `id`, first_name AS `firstName` FROM qdp_user", sql);
@@ -203,7 +202,7 @@ public class SqlDialectPaginationTest extends TestBase {
 
     @Test
     public void testExplicitIdentifierQuoteWinsOverProductInfo() {
-        final SqlBuilder.Dsl mysqlDoubleQuoteDsl = SqlBuilder.Dsl.forDialect(SqlDialect.builder()
+        final Dsl mysqlDoubleQuoteDsl = Dsl.forDialect(SqlDialect.builder()
                 .namingPolicy(NamingPolicy.SNAKE_CASE)
                 .sqlPolicy(SQLPolicy.PARAMETERIZED_SQL)
                 .identifierQuote(IdentifierQuote.DOUBLE_QUOTE)

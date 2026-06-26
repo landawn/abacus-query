@@ -23,7 +23,7 @@ import lombok.Value;
 import lombok.experimental.Accessors;
 
 /**
- * Immutable configuration object used by {@link SqlBuilder.Dsl} to render generated SQL.
+ * Immutable configuration object used by {@link Dsl} to render generated SQL.
  *
  * <p>A {@code SqlDialect} is not a complete database grammar. It captures the rendering choices that
  * query builders need while composing SQL:</p>
@@ -37,11 +37,11 @@ import lombok.experimental.Accessors;
  *       use to emit product-specific SQL such as pagination clauses.</li>
  * </ul>
  *
- * <p>The predefined {@link SqlBuilder} DSL constants, such as {@link SqlBuilder#PSC} and
- * {@link SqlBuilder#NSC}, are each backed by a distinct dialect. Custom DSLs can be created with
- * {@link SqlBuilder.Dsl#forDialect(SqlDialect)}:</p>
+ * <p>The predefined {@link Dsl} constants, such as {@link Dsl#PSC} and
+ * {@link Dsl#NSC}, are each backed by a distinct dialect. Custom DSLs can be created with
+ * {@link Dsl#forDialect(SqlDialect)}:</p>
  * <pre>{@code
- * SqlBuilder.Dsl myDsl = SqlBuilder.Dsl.forDialect(SqlDialect.builder()
+ * Dsl myDsl = Dsl.forDialect(SqlDialect.builder()
  *         .namingPolicy(NamingPolicy.SNAKE_CASE)
  *         .sqlPolicy(SqlDialect.SQLPolicy.PARAMETERIZED_SQL)
  *         .identifierQuote(SqlDialect.IdentifierQuote.DOUBLE_QUOTE)
@@ -57,7 +57,7 @@ import lombok.experimental.Accessors;
  * When it is {@code null} or its name is not recognized, builders generate the default
  * {@code LIMIT}/{@code OFFSET} syntax.</p>
  *
- * @see SqlBuilder.Dsl#forDialect(SqlDialect)
+ * @see Dsl#forDialect(SqlDialect)
  * @see AbstractQueryBuilder
  */
 @Builder

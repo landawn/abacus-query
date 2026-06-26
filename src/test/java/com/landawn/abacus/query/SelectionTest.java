@@ -605,7 +605,7 @@ public class SelectionTest extends TestBase {
             // Capture selections for verification
             assertNotNull(selections);
             assertEquals(2, selections.size());
-            return SqlBuilder.PSC.select("*");
+            return Dsl.PSC.select("*");
         });
 
         assertNotNull(result);

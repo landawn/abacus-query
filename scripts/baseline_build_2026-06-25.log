@@ -1,0 +1,60 @@
+[ERROR]   Run 3: AbacusQueryTestSuite.testUpdateWithMap » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   Run 4: AbacusQueryTestSuite.testUpdateWithMap » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   Run 5: AbacusQueryTestSuite.testUpdateWithMap » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testUpdateWithMultipleSet » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testUpdateWithSet » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testUpdateWithoutSet » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR] com.landawn.abacus.AbacusQueryTestSuite.testUpdate_EntityClass
+[ERROR]   Run 1: AbacusQueryTestSuite.testUpdate_EntityClass » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   Run 2: AbacusQueryTestSuite.testUpdate_EntityClass » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   Run 3: AbacusQueryTestSuite.testUpdate_EntityClass » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   Run 4: AbacusQueryTestSuite.testUpdate_EntityClass » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR] com.landawn.abacus.AbacusQueryTestSuite.testUpdate_EntityClassWithExcludedProps
+[ERROR]   Run 1: AbacusQueryTestSuite.testUpdate_EntityClassWithExcludedProps » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   Run 2: AbacusQueryTestSuite.testUpdate_EntityClassWithExcludedProps » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR] com.landawn.abacus.AbacusQueryTestSuite.testUpdate_TableName
+[ERROR]   Run 1: AbacusQueryTestSuite.testUpdate_TableName » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   Run 2: AbacusQueryTestSuite.testUpdate_TableName » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   Run 3: AbacusQueryTestSuite.testUpdate_TableName » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   Run 4: AbacusQueryTestSuite.testUpdate_TableName » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR] com.landawn.abacus.AbacusQueryTestSuite.testUpdate_TableNameWithEntityClass
+[ERROR]   Run 1: AbacusQueryTestSuite.testUpdate_TableNameWithEntityClass » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   Run 2: AbacusQueryTestSuite.testUpdate_TableNameWithEntityClass » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR] com.landawn.abacus.AbacusQueryTestSuite.testUsing
+[ERROR]   Run 1: AbacusQueryTestSuite.testUsing » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   Run 2: AbacusQueryTestSuite.testUsing » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testUsing_collection » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testUsing_varargs » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testVeryLongColumnList » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR] com.landawn.abacus.AbacusQueryTestSuite.testWhere
+[ERROR]   Run 2: AbacusQueryTestSuite.testWhere » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereAndHavingNestedInJunction » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereBetween » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereClause » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereEqual » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereGreaterThan » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereGreaterThanOrEqual » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereIn » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereIsNotNull » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereIsNotWithNullValue » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereIsNull » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereIsWithNullValue » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereLessThan » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereLessThanOrEqual » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereLike » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereMultipleConditions » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereNotEqual » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereNullCheck » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereOperations » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR] com.landawn.abacus.AbacusQueryTestSuite.testWhereOr
+[ERROR]   Run 1: AbacusQueryTestSuite.testWhereOr » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereWithNestedAndOr » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   AbacusQueryTestSuite.testWhereWithOr » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR] com.landawn.abacus.AbacusQueryTestSuite.testWindowFunctions
+[ERROR]   Run 1: AbacusQueryTestSuite.testWindowFunctions » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR]   Run 2: AbacusQueryTestSuite.testWindowFunctions » NoClassDefFound Could not initialize class com.landawn.abacus.query.Dsl
+[ERROR] Tests run: 4044, Failures: 46, Errors: 537, Skipped: 0
+[ERROR] There are test failures.
+
+See C:\Users\haiyangl\Landawn\abacus-query\target\surefire-reports for the individual test results.
+See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.

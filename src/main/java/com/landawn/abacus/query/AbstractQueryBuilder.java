@@ -115,14 +115,14 @@ import com.landawn.abacus.util.stream.Stream;
  *                  .build().query();
  * }</pre>
  *
- * <p>The builder supports different naming policies through the predefined {@link SqlBuilder.Dsl} constants:</p>
+ * <p>The builder supports different naming policies through the predefined {@link Dsl} constants:</p>
  * <ul>
- *   <li>{@link SqlBuilder#PSC} - Parameterized SQL with snake_case naming</li>
- *   <li>{@link SqlBuilder#PAC} - Parameterized SQL with SCREAMING_SNAKE_CASE naming</li>
- *   <li>{@link SqlBuilder#PLC} - Parameterized SQL with camelCase naming</li>
- *   <li>{@link SqlBuilder#NSC} - Named SQL with snake_case naming</li>
- *   <li>{@link SqlBuilder#NAC} - Named SQL with SCREAMING_SNAKE_CASE naming</li>
- *   <li>{@link SqlBuilder#NLC} - Named SQL with camelCase naming</li>
+ *   <li>{@link Dsl#PSC} - Parameterized SQL with snake_case naming</li>
+ *   <li>{@link Dsl#PAC} - Parameterized SQL with SCREAMING_SNAKE_CASE naming</li>
+ *   <li>{@link Dsl#PLC} - Parameterized SQL with camelCase naming</li>
+ *   <li>{@link Dsl#NSC} - Named SQL with snake_case naming</li>
+ *   <li>{@link Dsl#NAC} - Named SQL with SCREAMING_SNAKE_CASE naming</li>
+ *   <li>{@link Dsl#NLC} - Named SQL with camelCase naming</li>
  * </ul>
  *
  * @param <This> the concrete subclass type, used as the return type for chained calls (CRTP/self-type)
@@ -1065,6 +1065,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         for (final Map.Entry<String, ?> entry : values.entrySet()) {
             checkSqlFragmentNotBlank(entry.getKey(), "Key in " + argName);
         }
+    }
+
+    /**
+     * Returns the {@link SqlDialect} this builder renders SQL with.
+     *
+     * @return the dialect (naming policy, parameter style, identifier quote and optional product info) bound to this builder
+     */
+    public SqlDialect sqlDialect() {
+        return sqlDialect;
     }
 
     /**
@@ -3102,7 +3111,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users LIMIT 10
      *
-     * SqlBuilder.Dsl oracleDsl = SqlBuilder.Dsl.forDialect(SqlDialect.builder()
+     * Dsl oracleDsl = Dsl.forDialect(SqlDialect.builder()
      *         .sqlPolicy(SqlDialect.SQLPolicy.PARAMETERIZED_SQL)
      *         .productInfo(SqlDialect.ProductInfo.of("Oracle"))
      *         .build());
@@ -3198,7 +3207,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * // Output: SELECT * FROM users LIMIT 10 OFFSET 20
      *
-     * SqlBuilder.Dsl oracleDsl = SqlBuilder.Dsl.forDialect(SqlDialect.builder()
+     * Dsl oracleDsl = Dsl.forDialect(SqlDialect.builder()
      *         .sqlPolicy(SqlDialect.SQLPolicy.PARAMETERIZED_SQL)
      *         .productInfo(SqlDialect.ProductInfo.of("Oracle"))
      *         .build());
@@ -6168,15 +6177,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return false;
-    }
-
-    /**
-     * Returns the {@link SqlDialect} this builder renders SQL with.
-     *
-     * @return the dialect (naming policy, parameter style, identifier quote and optional product info) bound to this builder
-     */
-    public SqlDialect sqlDialect() {
-        return sqlDialect;
     }
 
     /**

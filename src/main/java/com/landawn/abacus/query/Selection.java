@@ -182,7 +182,7 @@ public final class Selection {
      * SqlBuilder sqlBuilder = Selection.builder()
      *     .add(User.class, "u", "user")
      *     .add(Order.class, "o", "order", Arrays.asList("id", "orderDate", "total"))
-     *     .apply(SqlBuilder.PSC::selectFrom);
+     *     .apply(Dsl.PSC::selectFrom);
      *
      * // Or build and use separately
      * List<Selection> selections = Selection.builder()
@@ -396,20 +396,20 @@ public final class Selection {
          * SqlBuilder query = Selection.builder()
          *     .add(User.class, "u", "user")
          *     .add(Order.class, "o", "order")
-         *     .apply(SqlBuilder.PSC::selectFrom);
+         *     .apply(Dsl.PSC::selectFrom);
          *
          * // Using with named-parameter snake_case builder (NSC)
          * SqlBuilder namedQuery = Selection.builder()
          *     .add(Product.class, "p", "product")
          *     .add(Category.class, "c", "category")
-         *     .apply(SqlBuilder.NSC::select);
+         *     .apply(Dsl.NSC::select);
          * }</pre>
          *
-         * @param func the function to apply the built selections to (e.g., {@code SqlBuilder.PSC::selectFrom}, {@code SqlBuilder.NSC::select}); must not be {@code null}
+         * @param func the function to apply the built selections to (e.g., {@code Dsl.PSC::selectFrom}, {@code Dsl.NSC::select}); must not be {@code null}
          * @return the SqlBuilder instance returned by the function
          * @throws IllegalArgumentException if {@code func} is {@code null}
-         * @see SqlBuilder.Dsl#select(List)
-         * @see SqlBuilder.Dsl#selectFrom(List)
+         * @see Dsl#select(List)
+         * @see Dsl#selectFrom(List)
          */
         @Beta
         public SqlBuilder apply(final Function<? super List<Selection>, SqlBuilder> func) {

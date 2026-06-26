@@ -54,7 +54,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * Condition combined = Filters.and(ageCondition, statusCondition);
  *
  * // Use in queries
- * SqlBuilder builder = SqlBuilder.PSC.select("*")
+ * SqlBuilder builder = Dsl.PSC.select("*")
  *     .from("users")
  *     .where(combined);
  *
