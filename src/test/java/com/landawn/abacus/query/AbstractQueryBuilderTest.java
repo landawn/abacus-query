@@ -248,6 +248,20 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    public void testCommentTokenAfterBackslashEscapedQuoteInsideSingleQuotedLiteralIsRejected() {
+        // Inside a single-quoted string literal a backslash DOES escape the following quote (\'), so the next
+        // quote closes the string and a trailing comment token (-- or /* */) must be rejected.
+        // Regression: the scanner previously misread "\''" as a doubled-quote ('') escape and stayed "inside"
+        // the string, hiding the trailing comment token from the guard.
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("note = '\\'' -- x").from("docs").build().query());
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("note = '\\'' /* x */").from("docs").build().query());
+
+        // The backslash-escaped-quote literal on its own (no trailing comment) is still accepted.
+        final String okSql = Dsl.PSC.select("note = '\\''").from("docs").build().query();
+        assertNotNull(okSql);
+    }
+
+    @Test
     public void testOrderByRejectsEmptyInputs() {
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy().build().query());
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy(Collections.emptyList()).build().query());

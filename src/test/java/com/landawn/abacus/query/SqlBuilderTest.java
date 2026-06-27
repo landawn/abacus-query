@@ -1590,7 +1590,7 @@ class SqlBuilder10Test extends TestBase {
     }
 
     @Test
-    public void testIbatisSQLPolicy() {
+    public void testIbatisSqlPolicy() {
         SP sp = Dsl.MSC.update("users").set(Map.of("name", "Alice")).where(Filters.eq("id", 1)).build();
 
         assertEquals("UPDATE users SET name = #{name} WHERE id = #{id}", sp.query());
@@ -13486,7 +13486,7 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
     public void testFullSelectPartsCacheIsDialectQuoteAware() {
         Dsl backtickDsl = Dsl.forDialect(SqlDialect.builder()
                 .namingPolicy(NamingPolicy.SNAKE_CASE)
-                .sqlPolicy(SqlDialect.SQLPolicy.PARAMETERIZED_SQL)
+                .sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL)
                 .identifierQuote(SqlDialect.IdentifierQuote.BACKTICK)
                 .build());
 
@@ -13818,7 +13818,7 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
 
         assertNotNull(builder.sqlDialect());
         assertEquals(NamingPolicy.SNAKE_CASE, builder.sqlDialect().namingPolicy());
-        assertEquals(SqlDialect.SQLPolicy.PARAMETERIZED_SQL, builder.sqlDialect().sqlPolicy());
+        assertEquals(SqlDialect.SqlPolicy.PARAMETERIZED_SQL, builder.sqlDialect().sqlPolicy());
 
         builder.build();
     }
@@ -13842,13 +13842,13 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
         }
 
         // forDialect returns the canonical cached instance for a dialect equal to a predefined one...
-        final SqlDialect pscDialect = SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SqlDialect.SQLPolicy.PARAMETERIZED_SQL).build();
+        final SqlDialect pscDialect = SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL).build();
         Assertions.assertSame(Dsl.PSC, Dsl.forDialect(pscDialect));
 
         // ...and a fresh, non-null instance for a dialect that is not predefined.
         final SqlDialect customDialect = SqlDialect.builder()
                 .namingPolicy(NamingPolicy.SNAKE_CASE)
-                .sqlPolicy(SqlDialect.SQLPolicy.PARAMETERIZED_SQL)
+                .sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL)
                 .identifierQuote(SqlDialect.IdentifierQuote.BACKTICK)
                 .build();
         final Dsl custom = Dsl.forDialect(customDialect);

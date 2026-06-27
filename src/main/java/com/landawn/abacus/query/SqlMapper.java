@@ -184,7 +184,7 @@ public final class SqlMapper {
      * @return a new SqlMapper instance loaded with SQL definitions from the specified files
      * @throws IllegalArgumentException if {@code filePath} is {@code null}, empty, or resolves to no non-empty paths
      *         after splitting, or if a loaded {@code <sql>} element has an invalid id (empty, containing whitespace,
-     *         exceeding {@link #MAX_ID_LENGTH} characters, or duplicated)
+     *         exceeding {@link #MAX_ID_LENGTH} characters, or duplicated) or a blank SQL body
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid, or if any of the loaded files does not contain a {@code <sqlMapper>} element
      */
@@ -227,6 +227,7 @@ public final class SqlMapper {
      * @return a new SqlMapper instance loaded with SQL definitions from the specified files
      * @throws IllegalArgumentException if {@code files} is {@code null} or empty, or if a loaded {@code <sql>} element
      *         has an invalid id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated)
+     *         or a blank SQL body
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid, or if any of the loaded files does not contain a {@code <sqlMapper>} element
      */
@@ -259,7 +260,7 @@ public final class SqlMapper {
      * @param is the input stream to read the XML SQL definitions from (must not be {@code null})
      * @return a new SqlMapper instance loaded with SQL definitions from the stream
      * @throws IllegalArgumentException if {@code is} is {@code null}, or if a loaded {@code <sql>} element has an invalid
-     *         id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated)
+     *         id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated) or a blank SQL body
      * @throws UncheckedIOException if an I/O error occurs reading the stream
      * @throws ParsingException if the XML content is invalid, or does not contain a {@code <sqlMapper>} element
      */

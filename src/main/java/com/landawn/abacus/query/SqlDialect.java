@@ -30,7 +30,7 @@ import lombok.experimental.Accessors;
  * <ul>
  *   <li>the {@link NamingPolicy} used to translate Java property names into SQL identifiers, such as
  *       {@code firstName} to {@code first_name};</li>
- *   <li>the {@link SQLPolicy} used to render values as raw literals, positional {@code ?} parameters,
+ *   <li>the {@link SqlPolicy} used to render values as raw literals, positional {@code ?} parameters,
  *       named {@code :name} parameters, or iBATIS/MyBatis {@code #{name}} parameters;</li>
  *   <li>the {@link IdentifierQuote} used when generated aliases or identifiers must be quoted; and</li>
  *   <li>the optional {@link ProductInfo} identifying the target database product, which query builders
@@ -43,14 +43,14 @@ import lombok.experimental.Accessors;
  * <pre>{@code
  * Dsl myDsl = Dsl.forDialect(SqlDialect.builder()
  *         .namingPolicy(NamingPolicy.SNAKE_CASE)
- *         .sqlPolicy(SqlDialect.SQLPolicy.PARAMETERIZED_SQL)
+ *         .sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL)
  *         .identifierQuote(SqlDialect.IdentifierQuote.DOUBLE_QUOTE)
  *         .build());
  * }</pre>
  *
  * <p>Fields left unset on the builder remain {@code null}. When a dialect is used by
  * {@link AbstractQueryBuilder}, unset rendering choices are resolved to these defaults:
- * {@link NamingPolicy#SNAKE_CASE}, {@link SQLPolicy#RAW_SQL}, and
+ * {@link NamingPolicy#SNAKE_CASE}, {@link SqlPolicy#RAW_SQL}, and
  * {@link IdentifierQuote#DOUBLE_QUOTE} (or {@link IdentifierQuote#BACKTICK} when {@link #productInfo}
  * names MySQL or MariaDB). When {@link #productInfo} is set, query builders also adapt
  * product-specific SQL syntax such as pagination clauses; see {@link AbstractQueryBuilder#limit(int)}.
@@ -84,9 +84,9 @@ public class SqlDialect {
 
     /**
      * Parameter rendering policy for values supplied to builder operations. When {@code null}, builders
-     * use {@link SQLPolicy#RAW_SQL}.
+     * use {@link SqlPolicy#RAW_SQL}.
      */
-    private SqlDialect.SQLPolicy sqlPolicy;
+    private SqlDialect.SqlPolicy sqlPolicy;
 
     /**
      * Quote style used for generated aliases and identifiers that need quoting. When {@code null},
@@ -120,7 +120,7 @@ public class SqlDialect {
      * <p>This setting controls value placeholders only. It does not change table/column naming,
      * identifier quoting, or database-specific SQL syntax.</p>
      */
-    public static enum SQLPolicy {
+    public static enum SqlPolicy {
         /**
          * Inline values directly into the SQL string as literals.
          *

@@ -336,7 +336,8 @@ public final class DynamicQuery {
 
         /**
          * Adds a plain {@code OFFSET} clause to skip the given number of leading rows.
-         * Generates: {@code OFFSET n} (without the trailing {@code ROWS} keyword).
+         * Generates: {@code OFFSET n} (without the trailing {@code ROWS} keyword). When {@code offset}
+         * is {@code 0}, nothing is appended.
          *
          * <p>Use {@link #offsetRows(int)} instead when you need the SQL:2008 {@code OFFSET n ROWS}
          * form (typically paired with {@link #fetchNextRows(int)} or {@link #fetchFirstRows(int)}).</p>
@@ -365,6 +366,7 @@ public final class DynamicQuery {
         /**
          * Adds an {@code OFFSET} clause for SQL:2008 standard pagination.
          * Typically used with {@link #fetchNextRows(int)} or {@link #fetchFirstRows(int)}.
+         * When {@code offset} is {@code 0}, nothing is appended.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code

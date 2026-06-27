@@ -2023,23 +2023,25 @@ public class Filters {
     }
 
     /**
-     * Creates a {@link Junction} with a custom operator combining multiple conditions.
-     * This allows for junction types beyond the convenience {@link #and(Condition...)} / {@link #or(Condition...)} factories
-     * (e.g., {@link Operator#XOR}).
+     * Creates a {@link Junction} combining multiple conditions with the given operator, which must be
+     * {@link Operator#AND} or {@link Operator#OR}. This is useful when the operator is chosen at runtime;
+     * for a fixed operator prefer {@link #and(Condition...)} or {@link #or(Condition...)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Junction condition = Filters.junction(Operator.XOR,
+     * Junction condition = Filters.junction(Operator.OR,
      *     Filters.equal("flag1", true),
      *     Filters.equal("flag2", true)
      * );
-     * // Results in: ((flag1 = true) XOR (flag2 = true))
+     * // Results in: ((flag1 = true) OR (flag2 = true))
      * }</pre>
      *
-     * @param operator the junction operator to use
+     * @param operator the junction operator; must be {@link Operator#AND} or {@link Operator#OR}
      * @param conditions the array of conditions to combine
      * @return a {@link Junction} with the specified operator
      * @throws NullPointerException if {@code operator} is {@code null}
+     * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
+     *             or if any element of {@code conditions} is {@code null}
      */
     @Beta
     public static Junction junction(final Operator operator, final Condition... conditions) {
@@ -2047,21 +2049,23 @@ public class Filters {
     }
 
     /**
-     * Creates a {@link Junction} with a custom operator combining conditions from a collection.
-     * This allows for junction types beyond the convenience {@link #and(Collection)} / {@link #or(Collection)} factories
-     * (e.g., {@link Operator#XOR}).
+     * Creates a {@link Junction} combining conditions from a collection with the given operator, which must be
+     * {@link Operator#AND} or {@link Operator#OR}. This is useful when the operator is chosen at runtime;
+     * for a fixed operator prefer {@link #and(Collection)} or {@link #or(Collection)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Condition> conditionsList = Arrays.asList(Filters.equal("flag1", true), Filters.equal("flag2", true));
-     * Junction condition = Filters.junction(Operator.XOR, conditionsList);
-     * // Results in: ((flag1 = true) XOR (flag2 = true))
+     * Junction condition = Filters.junction(Operator.OR, conditionsList);
+     * // Results in: ((flag1 = true) OR (flag2 = true))
      * }</pre>
      *
-     * @param operator the junction operator to use
+     * @param operator the junction operator; must be {@link Operator#AND} or {@link Operator#OR}
      * @param conditions the collection of conditions to combine
      * @return a {@link Junction} with the specified operator
      * @throws NullPointerException if {@code operator} is {@code null}
+     * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
+     *             or if any element of {@code conditions} is {@code null}
      */
     @Beta
     public static Junction junction(final Operator operator, final Collection<? extends Condition> conditions) {

@@ -50,7 +50,7 @@ import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.query.SqlDialect.IdentifierQuote;
 import com.landawn.abacus.query.SqlDialect.ProductInfo;
-import com.landawn.abacus.query.SqlDialect.SQLPolicy;
+import com.landawn.abacus.query.SqlDialect.SqlPolicy;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
@@ -435,7 +435,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected final NamingPolicy _namingPolicy; //NOSONAR
 
-    protected final SQLPolicy _sqlPolicy; //NOSONAR
+    protected final SqlPolicy _sqlPolicy; //NOSONAR
 
     protected final char _identifierQuote; //NOSONAR
 
@@ -495,8 +495,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Constructs a new AbstractQueryBuilder with the specified SQL dialect.
      *
-     * @param sqlDialect the SQL dialect supplying the naming and SQL policies; a {@code null} naming policy on the
-     *                   dialect defaults to {@code SNAKE_CASE}, and a {@code null} SQL policy defaults to {@code RAW_SQL}.
+     * @param sqlDialect the SQL dialect supplying the naming and SQL policies; a {@code null} dialect is treated as an
+     *                   all-defaults dialect. A {@code null} naming policy on the dialect defaults to {@code SNAKE_CASE},
+     *                   and a {@code null} SQL policy defaults to {@code RAW_SQL}.
      *                   A {@code null} identifier quote defaults to backtick when the dialect's product info names
      *                   MySQL/MariaDB and to double quote otherwise, and the product info selects the dialect-specific
      *                   pagination syntax used by {@link #limit(int)}, {@link #limit(int, int)} and {@link #offset(int)}
@@ -512,12 +513,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     activeBuilderCount);
         }
 
-        this.sqlDialect = sqlDialect == null ? SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SQLPolicy.RAW_SQL).build() : sqlDialect;
+        this.sqlDialect = sqlDialect == null ? SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SqlPolicy.RAW_SQL).build() : sqlDialect;
 
         _sb = Objectory.createStringBuilder();
 
         _namingPolicy = this.sqlDialect.namingPolicy() == null ? NamingPolicy.SNAKE_CASE : this.sqlDialect.namingPolicy();
-        _sqlPolicy = this.sqlDialect.sqlPolicy() == null ? SQLPolicy.RAW_SQL : this.sqlDialect.sqlPolicy();
+        _sqlPolicy = this.sqlDialect.sqlPolicy() == null ? SqlPolicy.RAW_SQL : this.sqlDialect.sqlPolicy();
         _dialectFamily = resolveDialectFamily(this.sqlDialect.productInfo());
         _identifierQuote = this.sqlDialect.identifierQuote() == null //
                 ? (_dialectFamily == DialectFamily.MYSQL ? SK._BACKTICK : SK._DOUBLE_QUOTE)
@@ -579,12 +580,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Checks if this SQL builder generates named SQL (with named parameters).
+     * Checks whether this builder generates named SQL with {@code :name}-style parameters, i.e. uses the
+     * {@link SqlPolicy#NAMED_SQL} policy. Returns {@code false} for the iBATIS {@code #{name}} policy
+     * ({@link SqlPolicy#IBATIS_SQL}).
      *
-     * @return {@code true} if this builder generates named SQL, {@code false} otherwise
+     * @return {@code true} if this builder uses the {@link SqlPolicy#NAMED_SQL} policy, {@code false} otherwise
      */
     protected boolean isNamedSql() {
-        return _sqlPolicy == SQLPolicy.NAMED_SQL;
+        return _sqlPolicy == SqlPolicy.NAMED_SQL;
     }
 
     /**
@@ -3112,7 +3115,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users LIMIT 10
      *
      * Dsl oracleDsl = Dsl.forDialect(SqlDialect.builder()
-     *         .sqlPolicy(SqlDialect.SQLPolicy.PARAMETERIZED_SQL)
+     *         .sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL)
      *         .productInfo(SqlDialect.ProductInfo.of("Oracle"))
      *         .build());
      * String oracleSql = oracleDsl.select("*").from("users").limit(10).build().query();
@@ -3208,7 +3211,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users LIMIT 10 OFFSET 20
      *
      * Dsl oracleDsl = Dsl.forDialect(SqlDialect.builder()
-     *         .sqlPolicy(SqlDialect.SQLPolicy.PARAMETERIZED_SQL)
+     *         .sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL)
      *         .productInfo(SqlDialect.ProductInfo.of("Oracle"))
      *         .build());
      * String oracleSql = oracleDsl.select("*").from("users").limit(10, 20).build().query();
@@ -4300,7 +4303,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     private String uniquifySetOperationNamedParameters(final String sql, final Map<String, Integer> childOccurrences,
             final Map<String, Integer> parentOccurrences, final Set<String> childParameterNames) {
-        if ((_sqlPolicy != SQLPolicy.NAMED_SQL && _sqlPolicy != SQLPolicy.IBATIS_SQL) || N.isEmpty(childOccurrences) || N.isEmpty(parentOccurrences)) {
+        if ((_sqlPolicy != SqlPolicy.NAMED_SQL && _sqlPolicy != SqlPolicy.IBATIS_SQL) || N.isEmpty(childOccurrences) || N.isEmpty(parentOccurrences)) {
             return sql;
         }
 
@@ -4329,7 +4332,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     newName = indexedNamedParameterName(name, ++suffix);
                 }
 
-                result = _sqlPolicy == SQLPolicy.NAMED_SQL ? replaceNamedParameterName(result, oldName, newName)
+                result = _sqlPolicy == SqlPolicy.NAMED_SQL ? replaceNamedParameterName(result, oldName, newName)
                         : replaceIbatisParameterName(result, oldName, newName);
 
                 childParameterNames.remove(oldName);
@@ -5564,24 +5567,30 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (quoteChar != 0) {
                 if (ch == quoteChar) {
-                    if (i < len - 1 && expr.charAt(i + 1) == quoteChar) {
-                        i++;
-                    } else if (quoteChar == SK._SINGLE_QUOTE) {
-                        // Backslash escapes apply only inside single-quoted string literals (MySQL semantics);
-                        // quoted identifiers ("..." / `...`) do not use backslash escaping, so a backslash
-                        // before the closing quote does not extend the quoted region.
-                        int backslashCount = 0;
+                    // Backslash escapes apply only inside single-quoted string literals (MySQL semantics);
+                    // quoted identifiers ("..." / `...`) do not use backslash escaping. Count the backslashes
+                    // immediately preceding this quote BEFORE the doubled-quote ('') check: an odd count means
+                    // the quote is escaped (\') and is a literal character that stays in the string. Doing the
+                    // doubled-quote check first would misread "\''" as a '' escape, treat the string as never
+                    // closing, and hide any trailing comment token from the guard.
+                    int backslashCount = 0;
 
+                    if (quoteChar == SK._SINGLE_QUOTE) {
                         for (int k = i - 1; k >= 0 && expr.charAt(k) == '\\'; k--) {
                             backslashCount++;
                         }
+                    }
 
-                        if (backslashCount % 2 == 0) {
+                    if (backslashCount % 2 == 0) {
+                        // Not a backslash-escaped quote: a doubled quote ('' / "" / ``) is an escaped literal
+                        // quote that stays in the string; otherwise this is the closing quote.
+                        if (i < len - 1 && expr.charAt(i + 1) == quoteChar) {
+                            i++;
+                        } else {
                             quoteChar = 0;
                         }
-                    } else {
-                        quoteChar = 0;
                     }
+                    // else: odd backslash count -> escaped quote (\'), a literal character; stays in the string.
                 }
 
                 continue;

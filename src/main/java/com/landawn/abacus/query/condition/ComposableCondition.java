@@ -139,9 +139,8 @@ public abstract class ComposableCondition extends AbstractCondition {
      * Exactly one of the two conditions must be true for the result to be true.
      *
      * <p>XOR has no direct SQL equivalent, so it is expanded to its composable definition:
-     * {@code (A AND NOT B) OR (NOT A AND B)}. The declared return type is
-     * {@link ComposableCondition} so the concrete desugaring type is not baked into the public
-     * signature; the actual object returned is the outer {@link Or} of the flattened expression.</p>
+     * {@code (A AND NOT B) OR (NOT A AND B)}. The object returned is the outer {@link Or} of that
+     * flattened expression.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

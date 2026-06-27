@@ -25,7 +25,7 @@ import java.util.List;
 
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
-import com.landawn.abacus.query.SqlDialect.SQLPolicy;
+import com.landawn.abacus.query.SqlDialect.SqlPolicy;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
 import com.landawn.abacus.query.condition.Cell;
@@ -286,7 +286,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         _sb.append(SK.SPACE_PARENTHESIS_L);
 
         if (values != null) {
-            final boolean indexedParamName = _sqlPolicy == SQLPolicy.NAMED_SQL || _sqlPolicy == SQLPolicy.IBATIS_SQL;
+            final boolean indexedParamName = _sqlPolicy == SqlPolicy.NAMED_SQL || _sqlPolicy == SqlPolicy.IBATIS_SQL;
 
             for (int i = 0, len = values.size(); i < len; i++) {
                 if (i > 0) {

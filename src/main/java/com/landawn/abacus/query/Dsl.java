@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.annotation.Beta;
-import com.landawn.abacus.query.SqlDialect.SQLPolicy;
+import com.landawn.abacus.query.SqlDialect.SqlPolicy;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.Beans;
@@ -54,36 +54,36 @@ public final class Dsl {
     /**
      * Parameterized-SQL DSL ({@code ?} placeholders) that leaves property/column names unchanged.
      */
-    public static final Dsl PSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.NO_CHANGE).sqlPolicy(SQLPolicy.PARAMETERIZED_SQL).build());
+    public static final Dsl PSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.NO_CHANGE).sqlPolicy(SqlPolicy.PARAMETERIZED_SQL).build());
     /**
      * Parameterized-SQL DSL ({@code ?} placeholders) with {@code snake_case} naming.
      */
-    public static final Dsl PSC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SQLPolicy.PARAMETERIZED_SQL).build());
+    public static final Dsl PSC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SqlPolicy.PARAMETERIZED_SQL).build());
     /**
      * Parameterized-SQL DSL ({@code ?} placeholders) with {@code UPPER_CASE_WITH_UNDERSCORE} naming.
      */
     public static final Dsl PAC = forDialect(
-            SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SQLPolicy.PARAMETERIZED_SQL).build());
+            SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SqlPolicy.PARAMETERIZED_SQL).build());
     /**
      * Parameterized-SQL DSL ({@code ?} placeholders) with {@code lowerCamelCase} naming.
      */
-    public static final Dsl PLC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SQLPolicy.PARAMETERIZED_SQL).build());
+    public static final Dsl PLC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SqlPolicy.PARAMETERIZED_SQL).build());
     /**
      * Named-SQL DSL ({@code :name} placeholders) that leaves property/column names unchanged.
      */
-    public static final Dsl NSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.NO_CHANGE).sqlPolicy(SQLPolicy.NAMED_SQL).build());
+    public static final Dsl NSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.NO_CHANGE).sqlPolicy(SqlPolicy.NAMED_SQL).build());
     /**
      * Named-SQL DSL ({@code :name} placeholders) with {@code snake_case} naming.
      */
-    public static final Dsl NSC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SQLPolicy.NAMED_SQL).build());
+    public static final Dsl NSC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SqlPolicy.NAMED_SQL).build());
     /**
      * Named-SQL DSL ({@code :name} placeholders) with {@code UPPER_CASE_WITH_UNDERSCORE} naming.
      */
-    public static final Dsl NAC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SQLPolicy.NAMED_SQL).build());
+    public static final Dsl NAC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SqlPolicy.NAMED_SQL).build());
     /**
      * Named-SQL DSL ({@code :name} placeholders) with {@code lowerCamelCase} naming.
      */
-    public static final Dsl NLC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SQLPolicy.NAMED_SQL).build());
+    public static final Dsl NLC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SqlPolicy.NAMED_SQL).build());
     /**
      * Raw-SQL DSL with {@code snake_case} naming; values are inlined as SQL literals rather than parameterized.
      *
@@ -91,7 +91,7 @@ public final class Dsl {
      *             Un-parameterized SQL is vulnerable to SQL injection attacks.
      */
     @Deprecated
-    public static final Dsl SCSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SQLPolicy.RAW_SQL).build());
+    public static final Dsl SCSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SqlPolicy.RAW_SQL).build());
     /**
      * Raw-SQL DSL with {@code UPPER_CASE_WITH_UNDERSCORE} naming; values are inlined as SQL literals rather than parameterized.
      *
@@ -99,7 +99,7 @@ public final class Dsl {
      *             Un-parameterized SQL is vulnerable to SQL injection attacks.
      */
     @Deprecated
-    public static final Dsl ACSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SQLPolicy.RAW_SQL).build());
+    public static final Dsl ACSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SqlPolicy.RAW_SQL).build());
     /**
      * Raw-SQL DSL with {@code lowerCamelCase} naming; values are inlined as SQL literals rather than parameterized.
      *
@@ -107,7 +107,7 @@ public final class Dsl {
      *             Un-parameterized SQL is vulnerable to SQL injection attacks.
      */
     @Deprecated
-    public static final Dsl LCSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SQLPolicy.RAW_SQL).build());
+    public static final Dsl LCSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SqlPolicy.RAW_SQL).build());
     /**
      * iBATIS/MyBatis-SQL DSL ({@code #{name}} placeholders) that leaves property/column names unchanged.
      *
@@ -115,7 +115,7 @@ public final class Dsl {
      *             Note: Switching from MSB to NSB changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
-    public static final Dsl MSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.NO_CHANGE).sqlPolicy(SQLPolicy.IBATIS_SQL).build());
+    public static final Dsl MSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.NO_CHANGE).sqlPolicy(SqlPolicy.IBATIS_SQL).build());
     /**
      * iBATIS/MyBatis-SQL DSL ({@code #{name}} placeholders) with {@code snake_case} naming.
      *
@@ -123,7 +123,7 @@ public final class Dsl {
      *             Note: Switching from MSC to NSC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
-    public static final Dsl MSC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SQLPolicy.IBATIS_SQL).build());
+    public static final Dsl MSC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SqlPolicy.IBATIS_SQL).build());
     /**
      * iBATIS/MyBatis-SQL DSL ({@code #{name}} placeholders) with {@code UPPER_CASE_WITH_UNDERSCORE} naming.
      *
@@ -131,7 +131,7 @@ public final class Dsl {
      *             Note: Switching from MAC to NAC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
-    public static final Dsl MAC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SQLPolicy.IBATIS_SQL).build());
+    public static final Dsl MAC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SqlPolicy.IBATIS_SQL).build());
 
     /**
      * iBATIS/MyBatis-SQL DSL ({@code #{name}} placeholders) with {@code lowerCamelCase} naming.
@@ -140,7 +140,7 @@ public final class Dsl {
      *             Note: Switching from MLC to NLC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
      */
     @Deprecated
-    public static final Dsl MLC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SQLPolicy.IBATIS_SQL).build());
+    public static final Dsl MLC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SqlPolicy.IBATIS_SQL).build());
 
     static {
         dslCache.put(Dsl.PSB.sqlDialect, Dsl.PSB);
@@ -182,7 +182,7 @@ public final class Dsl {
      * <pre>{@code
      * static final Dsl MY_DSL = Dsl.forDialect(SqlDialect.builder()
      *         .namingPolicy(NamingPolicy.SNAKE_CASE)
-     *         .sqlPolicy(SQLPolicy.PARAMETERIZED_SQL)
+     *         .sqlPolicy(SqlPolicy.PARAMETERIZED_SQL)
      *         .build());
      *
      * String sql = MY_DSL.insert("firstName", "lastName").into("account").build().query();

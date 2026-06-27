@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.SqlDialect.IdentifierQuote;
 import com.landawn.abacus.query.SqlDialect.ProductInfo;
-import com.landawn.abacus.query.SqlDialect.SQLPolicy;
+import com.landawn.abacus.query.SqlDialect.SqlPolicy;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -22,7 +22,7 @@ public class SqlDialectPaginationTest extends TestBase {
     private static Dsl dslFor(final String productName) {
         return Dsl.forDialect(SqlDialect.builder()
                 .namingPolicy(NamingPolicy.SNAKE_CASE)
-                .sqlPolicy(SQLPolicy.PARAMETERIZED_SQL)
+                .sqlPolicy(SqlPolicy.PARAMETERIZED_SQL)
                 .productInfo(ProductInfo.of(productName))
                 .build());
     }
@@ -204,7 +204,7 @@ public class SqlDialectPaginationTest extends TestBase {
     public void testExplicitIdentifierQuoteWinsOverProductInfo() {
         final Dsl mysqlDoubleQuoteDsl = Dsl.forDialect(SqlDialect.builder()
                 .namingPolicy(NamingPolicy.SNAKE_CASE)
-                .sqlPolicy(SQLPolicy.PARAMETERIZED_SQL)
+                .sqlPolicy(SqlPolicy.PARAMETERIZED_SQL)
                 .identifierQuote(IdentifierQuote.DOUBLE_QUOTE)
                 .productInfo(ProductInfo.of("MySQL"))
                 .build());
