@@ -17,13 +17,12 @@ package com.landawn.abacus.query.condition;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.condition.NamedProperty.NP;
 import com.landawn.abacus.util.N;
+import com.landawn.abacus.util.ObjectPool;
 import com.landawn.abacus.util.Strings;
 
 /**
@@ -83,9 +82,10 @@ import com.landawn.abacus.util.Strings;
  * @see Condition
  * @see Filters
  */
+@Beta
 public sealed class NamedProperty permits NP {
 
-    private static final Map<String, NamedProperty> instancePool = new ConcurrentHashMap<>();
+    private static final ObjectPool<String, NamedProperty> instancePool = new ObjectPool<>(1024);
 
     // for Kryo
     final String propName;
@@ -1179,6 +1179,7 @@ public sealed class NamedProperty permits NP {
      * <p>This type is kept for compatibility with existing user code that explicitly
      * references {@code NamedProperty.NP}.</p>
      */
+    @Beta
     public static final class NP extends NamedProperty {
 
         /**

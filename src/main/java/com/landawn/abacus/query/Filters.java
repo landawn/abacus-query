@@ -3404,6 +3404,7 @@ public class Filters {
      * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
      *                                  if {@code values} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
+     * @see Array#box(int[])
      */
     public static In in(final Collection<String> propNames, final Collection<?> values) {
         return new In(propNames, values);
@@ -3655,6 +3656,7 @@ public class Filters {
      * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
      *                                  if {@code values} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
+     * @see Array#box(int[])
      */
     public static NotIn notIn(final Collection<String> propNames, final Collection<?> values) {
         return new NotIn(propNames, values);
