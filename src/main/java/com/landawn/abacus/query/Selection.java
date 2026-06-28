@@ -55,13 +55,31 @@ import lombok.experimental.Accessors;
  *     .includeSubEntityProperties(true)
  *     .excludedPropNames(Set.of("internalNotes"));
  *
- * // Multi-table selection using builder
- * List<Selection> selections = Selection.builder()
- *     .add(User.class, "u", "user", Arrays.asList("id", "name"))
- *     .add(Order.class, "o", "order")
- *     .add(Product.class, "p", "product", true, Set.of("cost"))
+ * // Single selection via the generated builder
+ * Selection productSelection = Selection.builder()
+ *     .entityClass(Product.class)
+ *     .tableAlias("p")
+ *     .classAlias("product")
+ *     .includeSubEntityProperties(true)
+ *     .excludedPropNames(Set.of("cost"))
  *     .build();
+ *
+ * // Multi-table selection: build one Selection per table and collect them into a List
+ * List<Selection> selections = List.of(
+ *     Selection.builder().entityClass(User.class).tableAlias("u").classAlias("user")
+ *         .selectPropNames(Arrays.asList("id", "name")).build(),
+ *     Selection.builder().entityClass(Order.class).tableAlias("o").classAlias("order").build());
+ * // ... then pass to Dsl.PSC.select(selections) / selectFrom(selections)
  * }</pre>
+ *
+ * <p>Note: {@code entityClass}, {@code tableAlias}, {@code classAlias}, and
+ * {@code includeSubEntityProperties} use Lombok-generated fluent accessors (a no-arg getter and a
+ * single-arg setter sharing the field name), while {@code selectPropNames} and {@code excludedPropNames}
+ * have hand-written accessors that defensively copy on write and return immutable views on read.</p>
+ *
+ * @see Dsl#select(List)
+ * @see Dsl#selectFrom(List)
+ * @see SqlBuilder
  */
 @Builder
 @Data

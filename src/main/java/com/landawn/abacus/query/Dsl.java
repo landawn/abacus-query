@@ -1228,7 +1228,12 @@ public final class Dsl {
      * @param classAliasB property prefix for second entity results
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
+     * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
+     *             entities. Build a {@link Selection} per table (e.g. with {@link Selection#builder()})
+     *             and pass them to {@link #select(List)}, which is self-documenting and supports any
+     *             number of tables.
      */
+    @Deprecated
     public SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
             final String tableAliasB, final String classAliasB) {
         return select(entityClassA, tableAliasA, classAliasA, null, entityClassB, tableAliasB, classAliasB, null);
@@ -1263,7 +1268,12 @@ public final class Dsl {
      * @param excludedPropNamesB excluded properties for second entity
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if entityClassA or entityClassB is null
+     * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
+     *             entities. Build a {@link Selection} per table (e.g. with {@link Selection#builder()})
+     *             and pass them to {@link #select(List)}, which is self-documenting and supports any
+     *             number of tables.
      */
+    @Deprecated
     public SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
             final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
         N.checkArgNotNull(entityClassA, SqlBuilder.SELECTION_PART_MSG);
@@ -1272,6 +1282,36 @@ public final class Dsl {
                 new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
         return select(multiSelects);
+    }
+
+    /**
+     * Creates a SELECT statement from a single {@link Selection} descriptor.
+     *
+     * <p>This is the singular companion to {@link #select(List)}: it wraps the given {@code selection}
+     * in a one-element list. Prefer it over the positional {@code select(Class, ...)} overloads when you
+     * need full control (table alias, class alias, sub-entity inclusion, property exclusion) over a
+     * single entity, because each attribute is set through a named {@link Selection} setter rather than
+     * by argument position.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SqlBuilder sql = PSC.select(new Selection()
+     *         .entityClass(Account.class)
+     *         .tableAlias("a")
+     *         .classAlias("account")
+     *         .excludedPropNames(N.asSet("password")));
+     * }</pre>
+     *
+     * @param selection the selection descriptor defining the entity, aliases, and property filtering; must not be {@code null}
+     * @return a new SqlBuilder instance configured for SELECT operation
+     * @throws IllegalArgumentException if {@code selection} is {@code null}
+     * @see #select(List)
+     * @see Selection
+     */
+    public SqlBuilder select(final Selection selection) {
+        N.checkArgNotNull(selection, "selection");
+
+        return select(N.asList(selection));
     }
 
     /**
@@ -1337,7 +1377,12 @@ public final class Dsl {
      * @param classAliasB property prefix for second entity
      * @return a new SqlBuilder instance with SELECT and FROM configured
      * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
+     * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
+     *             entities. Build a {@link Selection} per table (e.g. with {@link Selection#builder()})
+     *             and pass them to {@link #selectFrom(List)}, which is self-documenting and supports any
+     *             number of tables.
      */
+    @Deprecated
     public SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB,
             final String tableAliasB, final String classAliasB) {
         return selectFrom(entityClassA, tableAliasA, classAliasA, null, entityClassB, tableAliasB, classAliasB, null);
@@ -1368,7 +1413,12 @@ public final class Dsl {
      * @param excludedPropNamesB excluded properties for second entity
      * @return a new SqlBuilder instance with SELECT and FROM configured
      * @throws IllegalArgumentException if entityClassA or entityClassB is null
+     * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
+     *             entities. Build a {@link Selection} per table (e.g. with {@link Selection#builder()})
+     *             and pass them to {@link #selectFrom(List)}, which is self-documenting and supports any
+     *             number of tables.
      */
+    @Deprecated
     public SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
             final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
         N.checkArgNotNull(entityClassA, SqlBuilder.SELECTION_PART_MSG);
@@ -1377,6 +1427,35 @@ public final class Dsl {
                 new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
 
         return selectFrom(multiSelects);
+    }
+
+    /**
+     * Creates a SELECT ... FROM statement from a single {@link Selection} descriptor.
+     *
+     * <p>This is the singular companion to {@link #selectFrom(List)}: it wraps the given {@code selection}
+     * in a one-element list and auto-generates the FROM clause. Prefer it over the positional
+     * {@code selectFrom(Class, ...)} overloads when configuring a single entity, since each attribute is
+     * set through a named {@link Selection} setter rather than by argument position.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SqlBuilder sql = PSC.selectFrom(new Selection()
+     *         .entityClass(Account.class)
+     *         .tableAlias("a")
+     *         .classAlias("account")
+     *         .includeSubEntityProperties(true));
+     * }</pre>
+     *
+     * @param selection the selection descriptor defining the entity, aliases, and property filtering; must not be {@code null}
+     * @return a new SqlBuilder instance with SELECT and FROM configured
+     * @throws IllegalArgumentException if {@code selection} is {@code null}
+     * @see #selectFrom(List)
+     * @see Selection
+     */
+    public SqlBuilder selectFrom(final Selection selection) {
+        N.checkArgNotNull(selection, "selection");
+
+        return selectFrom(N.asList(selection));
     }
 
     /**
