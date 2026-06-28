@@ -246,7 +246,7 @@ public class Expression extends ComposableCondition {
      */
     public static Expression of(final String literal) {
         if (literal == null) {
-            throw new IllegalArgumentException("literal cannot be null");
+            throw new IllegalArgumentException("literal must not be null");
         }
 
         return cachedExpression.computeIfAbsent(literal, Expression::new);

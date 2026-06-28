@@ -1040,7 +1040,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     private static void checkSqlFragmentNotBlank(final String value, final String argName) {
         if (Strings.isBlank(value)) {
-            throw new IllegalArgumentException(argName + " cannot be null, empty, or blank");
+            throw new IllegalArgumentException(argName + " must not be null, empty, or blank");
         }
     }
 

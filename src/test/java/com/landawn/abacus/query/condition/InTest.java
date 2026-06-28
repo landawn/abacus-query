@@ -433,4 +433,86 @@ public class InTest extends TestBase {
         Assertions.assertEquals(3, condition.getValues().size());
         Assertions.assertTrue(condition.getValues().contains(null));
     }
+
+    // --- Multi-column (row value constructor) IN ---
+
+    @Test
+    public void testMultiColumn_PropNamesAndValues() {
+        In condition = new In(Arrays.asList("first_name", "last_name"), Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
+
+        assertEquals(Arrays.asList("first_name", "last_name"), new ArrayList<>(condition.getPropNames()));
+        assertEquals("first_name", condition.getPropName());
+        assertEquals(2, condition.getValues().size());
+        assertEquals(Operator.IN, condition.operator());
+    }
+
+    @Test
+    public void testMultiColumn_ToString() {
+        In condition = new In(Arrays.asList("first_name", "last_name"), Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
+
+        assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testMultiColumn_ToString_SnakeCase() {
+        In condition = new In(Arrays.asList("firstName", "lastName"), Arrays.asList(Arrays.asList("John", "Doe")));
+
+        assertEquals("(first_name, last_name) IN (('John', 'Doe'))", condition.toString(NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    public void testMultiColumn_GetParameters_FlattensRowMajor() {
+        In condition = new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(3, 4)));
+
+        assertEquals(Arrays.asList(1, 2, 3, 4), condition.getParameters());
+    }
+
+    @Test
+    public void testMultiColumn_DefensiveCopy() {
+        List<List<Object>> tuples = new ArrayList<>();
+        tuples.add(new ArrayList<>(Arrays.asList(1, 2)));
+        In condition = new In(Arrays.asList("a", "b"), tuples);
+
+        tuples.get(0).set(0, 99);
+        tuples.clear();
+
+        assertEquals(Arrays.asList(1, 2), condition.getValues().get(0));
+    }
+
+    @Test
+    public void testMultiColumn_EqualsAndHashCode() {
+        In a = new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(3, 4)));
+        In b = new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(3, 4)));
+
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
+
+        In c = new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2)));
+        assertNotEquals(a, c);
+
+        // Single-column and multi-column are never equal even with overlapping names
+        In single = new In("a", Arrays.asList(1, 2));
+        assertNotEquals(single, a);
+    }
+
+    @Test
+    public void testMultiColumn_RejectsTupleSizeMismatch() {
+        assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(3))));
+    }
+
+    @Test
+    public void testMultiColumn_RejectsSinglePropName() {
+        assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a"), Arrays.asList(Arrays.asList(1))));
+    }
+
+    @Test
+    public void testMultiColumn_RejectsNullOrBlankPropName() {
+        assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", null), Arrays.asList(Arrays.asList(1, 2))));
+        assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "  "), Arrays.asList(Arrays.asList(1, 2))));
+    }
+
+    @Test
+    public void testMultiColumn_RejectsEmptyValues() {
+        assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "b"), Collections.<List<?>> emptyList()));
+    }
 }

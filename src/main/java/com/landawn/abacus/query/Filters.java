@@ -3380,6 +3380,31 @@ public class Filters {
     }
 
     /**
+     * Creates a multi-column (row value constructor) IN condition.
+     * The tuple of property values must match one of the supplied value tuples.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In condition = Filters.in(Arrays.asList("first_name", "last_name"),
+     *         Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
+     * // SQL fragment: (first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))
+     * }</pre>
+     *
+     * <p><b>Portability note:</b> the multi-column value-list form is supported by MySQL, PostgreSQL,
+     * Oracle and DB2, but <i>not</i> by SQL Server (use {@link #in(Collection, SubQuery)} there).</p>
+     *
+     * @param propNames the property/column names (must contain at least two non-{@code null}/non-blank names)
+     * @param values collection of value tuples; each tuple must have exactly {@code propNames.size()} elements
+     * @return an {@link In} condition
+     * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
+     *                                  if {@code values} is {@code null} or empty, or if any tuple is {@code null} or its
+     *                                  size does not match {@code propNames.size()}
+     */
+    public static In in(final Collection<String> propNames, final Collection<? extends Collection<?>> values) {
+        return new In(propNames, values);
+    }
+
+    /**
      * Creates an IN condition with a subquery.
      * The property value must be in the result set of the subquery.
      *
@@ -3598,6 +3623,31 @@ public class Filters {
      */
     public static NotIn notIn(final String propName, final Collection<?> values) {
         return new NotIn(propName, values);
+    }
+
+    /**
+     * Creates a multi-column (row value constructor) NOT IN condition.
+     * The tuple of property values must not match any of the supplied value tuples.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NotIn condition = Filters.notIn(Arrays.asList("first_name", "last_name"),
+     *         Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
+     * // SQL fragment: (first_name, last_name) NOT IN (('John', 'Doe'), ('Jane', 'Roe'))
+     * }</pre>
+     *
+     * <p><b>Portability note:</b> the multi-column value-list form is supported by MySQL, PostgreSQL,
+     * Oracle and DB2, but <i>not</i> by SQL Server (use {@link #notIn(Collection, SubQuery)} there).</p>
+     *
+     * @param propNames the property/column names (must contain at least two non-{@code null}/non-blank names)
+     * @param values collection of value tuples to exclude; each tuple must have exactly {@code propNames.size()} elements
+     * @return a {@link NotIn} condition
+     * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
+     *                                  if {@code values} is {@code null} or empty, or if any tuple is {@code null} or its
+     *                                  size does not match {@code propNames.size()}
+     */
+    public static NotIn notIn(final Collection<String> propNames, final Collection<? extends Collection<?>> values) {
+        return new NotIn(propNames, values);
     }
 
     /**

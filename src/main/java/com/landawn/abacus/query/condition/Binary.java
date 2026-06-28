@@ -350,7 +350,7 @@ public class Binary extends ComposableCondition {
             final int len = Array.getLength(propValue);
 
             if (len == 0) {
-                throw new IllegalArgumentException("propValue cannot be empty");
+                throw new IllegalArgumentException("propValue must not be empty");
             }
 
             final List<Object> values = new ArrayList<>(len);

@@ -108,7 +108,7 @@ public sealed class NamedProperty permits NP {
         this.propName = N.requireNonNull(propName, "propName");
 
         if (Strings.isBlank(this.propName)) {
-            throw new IllegalArgumentException("Property name cannot be null, empty, or blank");
+            throw new IllegalArgumentException("Property name must not be null, empty, or blank");
         }
     }
 
@@ -137,7 +137,7 @@ public sealed class NamedProperty permits NP {
      */
     public static NamedProperty of(final String propName) {
         if (Strings.isBlank(propName)) {
-            throw new IllegalArgumentException("Property name cannot be null, empty, or blank");
+            throw new IllegalArgumentException("Property name must not be null, empty, or blank");
         }
 
         return instancePool.computeIfAbsent(propName, NamedProperty::new);

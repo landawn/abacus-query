@@ -294,7 +294,7 @@ public class Using extends Cell {
 
     private static void validateColumnName(final String columnName) {
         if (Strings.isBlank(columnName)) {
-            throw new IllegalArgumentException("columnName in columnNames cannot be null or empty");
+            throw new IllegalArgumentException("columnName in columnNames must not be null or empty");
         }
 
         if (columnName.indexOf('.') >= 0) {

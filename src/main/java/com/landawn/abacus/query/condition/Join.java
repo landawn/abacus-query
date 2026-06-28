@@ -293,7 +293,7 @@ public class Join extends AbstractCondition {
 
         for (final String joinEntity : joinEntities) {
             if (Strings.isBlank(joinEntity)) {
-                throw new IllegalArgumentException("joinEntity in joinEntities cannot be null or empty");
+                throw new IllegalArgumentException("joinEntity in joinEntities must not be null or empty");
             }
 
             copy.add(joinEntity);

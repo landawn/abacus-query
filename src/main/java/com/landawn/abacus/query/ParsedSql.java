@@ -280,7 +280,7 @@ public final class ParsedSql {
      */
     public static ParsedSql parse(final String sql) {
         if (Strings.isBlank(sql)) {
-            throw new IllegalArgumentException("sql cannot be null, empty, or blank");
+            throw new IllegalArgumentException("sql must not be null, empty, or blank");
         }
 
         ParsedSql result = null;

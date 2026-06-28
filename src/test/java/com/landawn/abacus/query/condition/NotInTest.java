@@ -367,4 +367,21 @@ public class NotInTest extends TestBase {
         Assertions.assertEquals(1000, notIn.getValues().size());
         Assertions.assertEquals(1000, notIn.getParameters().size());
     }
+
+    // --- Multi-column (row value constructor) NOT IN ---
+
+    @Test
+    public void testMultiColumn_ToStringAndParameters() {
+        NotIn condition = new NotIn(Arrays.asList("first_name", "last_name"), Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
+
+        assertEquals("(first_name, last_name) NOT IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.NO_CHANGE));
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), condition.getParameters());
+        assertEquals(Arrays.asList("first_name", "last_name"), new ArrayList<>(condition.getPropNames()));
+        assertEquals(Operator.NOT_IN, condition.operator());
+    }
+
+    @Test
+    public void testMultiColumn_RejectsTupleSizeMismatch() {
+        assertThrows(IllegalArgumentException.class, () -> new NotIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1))));
+    }
 }

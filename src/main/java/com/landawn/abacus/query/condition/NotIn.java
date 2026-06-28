@@ -96,4 +96,32 @@ public class NotIn extends AbstractIn {
     public NotIn(final String propName, final Collection<?> values) {
         super(propName, Operator.NOT_IN, values);
     }
+
+    /**
+     * Creates a new multi-column (row value constructor) NOT IN condition. The condition matches records
+     * whose tuple of property values does not match any of the supplied value tuples. Each element of
+     * {@code values} must have exactly {@code propNames.size()} elements.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Exclude specific (first_name, last_name) pairs
+     * NotIn nameFilter = new NotIn(Arrays.asList("first_name", "last_name"),
+     *         Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
+     * // SQL: (first_name, last_name) NOT IN (('John', 'Doe'), ('Jane', 'Roe'))
+     * }</pre>
+     *
+     * <p><b>Portability note:</b> the multi-column value-list form is supported by MySQL, PostgreSQL,
+     * Oracle and DB2, but <i>not</i> by SQL Server (use {@link NotInSubQuery} there).</p>
+     *
+     * @param propNames the property/column names (must not be {@code null} and must contain at least two
+     *                  non-{@code null}/non-blank names; for a single column use {@link #NotIn(String, Collection)})
+     * @param values the collection of value tuples (must not be {@code null} or empty); each tuple must be
+     *               non-{@code null} and have exactly {@code propNames.size()} elements
+     * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
+     *                                  if {@code values} is {@code null}/empty, or if any tuple is {@code null} or its
+     *                                  size does not match {@code propNames.size()}
+     */
+    public NotIn(final Collection<String> propNames, final Collection<? extends Collection<?>> values) {
+        super(propNames, Operator.NOT_IN, values);
+    }
 }

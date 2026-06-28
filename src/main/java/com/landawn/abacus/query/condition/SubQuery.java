@@ -176,7 +176,7 @@ public class SubQuery extends AbstractCondition {
         entityClass = null;
 
         if (Strings.isBlank(sql)) {
-            throw new IllegalArgumentException("SQL statement cannot be null, empty, or blank");
+            throw new IllegalArgumentException("SQL statement must not be null, empty, or blank");
         }
 
         propNames = null;
@@ -216,7 +216,7 @@ public class SubQuery extends AbstractCondition {
         super(Operator.EMPTY);
 
         if (Strings.isBlank(entityName)) {
-            throw new IllegalArgumentException("Entity name cannot be null, empty, or blank");
+            throw new IllegalArgumentException("Entity name must not be null, empty, or blank");
         }
 
         this.entityName = entityName;
@@ -269,7 +269,7 @@ public class SubQuery extends AbstractCondition {
         super(Operator.EMPTY);
 
         if (entityClass == null) {
-            throw new IllegalArgumentException("Entity class cannot be null");
+            throw new IllegalArgumentException("Entity class must not be null");
         }
 
         this.entityName = ClassUtil.getSimpleClassName(entityClass);
@@ -393,18 +393,18 @@ public class SubQuery extends AbstractCondition {
 
     private static List<String> copyAndValidatePropNames(final Collection<String> propNames) {
         if (propNames == null) {
-            throw new IllegalArgumentException("Property names cannot be null");
+            throw new IllegalArgumentException("Property names must not be null");
         }
 
         if (propNames.isEmpty()) {
-            throw new IllegalArgumentException("Property names cannot be empty");
+            throw new IllegalArgumentException("Property names must not be empty");
         }
 
         final List<String> result = new ArrayList<>(propNames.size());
 
         for (final String propName : propNames) {
             if (Strings.isBlank(propName)) {
-                throw new IllegalArgumentException("Property name in propNames cannot be null, empty, or blank");
+                throw new IllegalArgumentException("Property name in propNames must not be null, empty, or blank");
             }
 
             result.add(propName);

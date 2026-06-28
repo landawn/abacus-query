@@ -1404,6 +1404,50 @@ class SqlBuilder10Test extends TestBase {
     }
 
     @Test
+    public void testMultiColumnInCondition_Parameterized() {
+        AbstractQueryBuilder.SP sp = Dsl.PSC.select("*")
+                .from("users")
+                .where(Filters.in(Arrays.asList("firstName", "lastName"), Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe"))))
+                .build();
+
+        assertEquals("SELECT * FROM users WHERE (first_name, last_name) IN ((?, ?), (?, ?))", sp.query());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), sp.parameters());
+    }
+
+    @Test
+    public void testMultiColumnNotInCondition_Parameterized() {
+        String sql = Dsl.PSC.select("*")
+                .from("users")
+                .where(Filters.notIn(Arrays.asList("firstName", "lastName"), Arrays.asList(Arrays.asList("John", "Doe"))))
+                .build()
+                .query();
+
+        assertEquals("SELECT * FROM users WHERE (first_name, last_name) NOT IN ((?, ?))", sql);
+    }
+
+    @Test
+    public void testMultiColumnInCondition_Named() {
+        String sql = Dsl.NSC.select("*")
+                .from("users")
+                .where(Filters.in(Arrays.asList("firstName", "lastName"), Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe"))))
+                .build()
+                .query();
+
+        assertEquals("SELECT * FROM users WHERE (first_name, last_name) IN ((:firstName1, :lastName1), (:firstName2, :lastName2))", sql);
+    }
+
+    @Test
+    public void testMultiColumnInCondition_Raw() {
+        String sql = Dsl.SCSB.select("*")
+                .from("users")
+                .where(Filters.in(Arrays.asList("firstName", "lastName"), Arrays.asList(Arrays.asList("John", "Doe"))))
+                .build()
+                .query();
+
+        assertEquals("SELECT * FROM users WHERE (first_name, last_name) IN (('John', 'Doe'))", sql);
+    }
+
+    @Test
     public void testIsNullCondition() {
         String sql = Dsl.PSC.select("*").from("users").where(Filters.isNull("deletedDate")).build().query();
 

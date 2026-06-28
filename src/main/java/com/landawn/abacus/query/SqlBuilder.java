@@ -176,11 +176,11 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         } else if (cond instanceof final NotBetween nbt) {
             appendBetweenClause(nbt.getPropName(), nbt.operator(), nbt.getMinValue(), nbt.getMaxValue());
         } else if (cond instanceof final In in) {
-            appendInClause(in.getPropName(), in.operator(), in.getValues());
+            appendInClause(in.getPropNames(), in.operator(), in.getValues());
         } else if (cond instanceof final InSubQuery inSubQuery) {
             appendInSubQueryClause(inSubQuery.getPropNames(), inSubQuery.operator(), inSubQuery.getSubQuery());
         } else if (cond instanceof final NotIn notIn) {
-            appendInClause(notIn.getPropName(), notIn.operator(), notIn.getValues());
+            appendInClause(notIn.getPropNames(), notIn.operator(), notIn.getValues());
         } else if (cond instanceof final NotInSubQuery notInSubQuery) {
             appendInSubQueryClause(notInSubQuery.getPropNames(), notInSubQuery.operator(), notInSubQuery.getSubQuery());
         } else if (cond instanceof Where || cond instanceof Having) {
@@ -278,7 +278,13 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         setParameter("max" + cap, maxValue);
     }
 
-    private void appendInClause(final String propName, final Operator operator, final List<?> values) {
+    private void appendInClause(final Collection<String> propNames, final Operator operator, final List<?> values) {
+        if (propNames.size() > 1) {
+            appendMultiColumnInClause(propNames, operator, values);
+            return;
+        }
+
+        final String propName = propNames.iterator().next();
         appendColumnName(propName);
 
         _sb.append(_SPACE);
@@ -298,6 +304,65 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                 } else {
                     setParameter(propName, values.get(i));
                 }
+            }
+        }
+
+        _sb.append(SK._PARENTHESIS_R);
+    }
+
+    /**
+     * Renders a multi-column (row value constructor) IN / NOT IN clause, e.g.
+     * {@code (p1, p2) IN ((?, ?), (?, ?))}. Each element of {@code values} is a tuple whose size
+     * matches {@code propNames.size()}.
+     *
+     * @param propNames the property/column names (size {@code > 1})
+     * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
+     * @param values the value tuples; each element is a {@link Collection} of the row's values
+     */
+    private void appendMultiColumnInClause(final Collection<String> propNames, final Operator operator, final List<?> values) {
+        final String[] colNames = propNames.toArray(new String[0]);
+
+        _sb.append(SK._PARENTHESIS_L);
+
+        for (int c = 0; c < colNames.length; c++) {
+            if (c > 0) {
+                _sb.append(_COMMA_SPACE);
+            }
+
+            appendColumnName(colNames[c]);
+        }
+
+        _sb.append(SK._PARENTHESIS_R);
+        _sb.append(_SPACE);
+        _sb.append(operator.toString());
+        _sb.append(SK.SPACE_PARENTHESIS_L);
+
+        if (values != null) {
+            final boolean indexedParamName = _sqlPolicy == SqlPolicy.NAMED_SQL || _sqlPolicy == SqlPolicy.IBATIS_SQL;
+
+            for (int i = 0, len = values.size(); i < len; i++) {
+                if (i > 0) {
+                    _sb.append(_COMMA_SPACE);
+                }
+
+                _sb.append(SK._PARENTHESIS_L);
+
+                int c = 0;
+                for (final Object value : (Collection<?>) values.get(i)) {
+                    if (c > 0) {
+                        _sb.append(_COMMA_SPACE);
+                    }
+
+                    if (indexedParamName) {
+                        setParameter(colNames[c] + (i + 1), value);
+                    } else {
+                        setParameter(colNames[c], value);
+                    }
+
+                    c++;
+                }
+
+                _sb.append(SK._PARENTHESIS_R);
             }
         }
 

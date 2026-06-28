@@ -98,4 +98,32 @@ public class In extends AbstractIn {
     public In(final String propName, final Collection<?> values) {
         super(propName, Operator.IN, values);
     }
+
+    /**
+     * Creates a new multi-column (row value constructor) IN condition. The condition checks whether the
+     * tuple of property values matches any of the supplied value tuples. Each element of {@code values}
+     * must have exactly {@code propNames.size()} elements.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Match (first_name, last_name) pairs
+     * In nameFilter = new In(Arrays.asList("first_name", "last_name"),
+     *         Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
+     * // SQL: (first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))
+     * }</pre>
+     *
+     * <p><b>Portability note:</b> the multi-column value-list form is supported by MySQL, PostgreSQL,
+     * Oracle and DB2, but <i>not</i> by SQL Server (use {@link InSubQuery} there).</p>
+     *
+     * @param propNames the property/column names (must not be {@code null} and must contain at least two
+     *                  non-{@code null}/non-blank names; for a single column use {@link #In(String, Collection)})
+     * @param values the collection of value tuples (must not be {@code null} or empty); each tuple must be
+     *               non-{@code null} and have exactly {@code propNames.size()} elements
+     * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
+     *                                  if {@code values} is {@code null}/empty, or if any tuple is {@code null} or its
+     *                                  size does not match {@code propNames.size()}
+     */
+    public In(final Collection<String> propNames, final Collection<? extends Collection<?>> values) {
+        super(propNames, Operator.IN, values);
+    }
 }

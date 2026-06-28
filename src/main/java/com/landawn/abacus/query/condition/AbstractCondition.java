@@ -639,7 +639,7 @@ public abstract class AbstractCondition implements Condition {
         checkPropName(propName);
 
         if (direction == null) {
-            throw new IllegalArgumentException("direction cannot be null");
+            throw new IllegalArgumentException("direction must not be null");
         }
         return propName + SPACE + direction;
     }
@@ -662,7 +662,7 @@ public abstract class AbstractCondition implements Condition {
         N.checkArgNotEmpty(propNames, "propNames");
 
         if (direction == null) {
-            throw new IllegalArgumentException("direction cannot be null");
+            throw new IllegalArgumentException("direction must not be null");
         }
 
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -715,7 +715,7 @@ public abstract class AbstractCondition implements Condition {
                 checkPropName(propName);
 
                 if (direction == null) {
-                    throw new IllegalArgumentException("SortDirection in orders cannot be null");
+                    throw new IllegalArgumentException("SortDirection in orders must not be null");
                 }
 
                 if (i++ > 0) {
@@ -803,7 +803,7 @@ public abstract class AbstractCondition implements Condition {
      */
     protected static void checkPropName(final String propName) {
         if (Strings.isEmpty(propName) || Strings.isBlank(propName)) {
-            throw new IllegalArgumentException("Property name cannot be null, empty, or blank");
+            throw new IllegalArgumentException("Property name must not be null, empty, or blank");
         }
     }
 

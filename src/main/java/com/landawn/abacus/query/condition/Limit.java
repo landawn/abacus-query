@@ -424,13 +424,13 @@ public class Limit extends Clause {
 
     private static String normalizeExpression(final String expr) {
         if (Strings.isEmpty(expr)) {
-            throw new IllegalArgumentException("Limit expression cannot be null, empty, or blank");
+            throw new IllegalArgumentException("Limit expression must not be null, empty, or blank");
         }
 
         final String trimmed = expr.trim();
 
         if (Strings.isEmpty(trimmed)) {
-            throw new IllegalArgumentException("Limit expression cannot be null, empty, or blank");
+            throw new IllegalArgumentException("Limit expression must not be null, empty, or blank");
         }
 
         return shouldPrefixLimit(trimmed) ? SK.LIMIT + _SPACE + trimmed : trimmed;
