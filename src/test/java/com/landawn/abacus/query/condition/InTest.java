@@ -2,12 +2,17 @@ package com.landawn.abacus.query.condition;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -514,5 +519,99 @@ public class InTest extends TestBase {
     @Test
     public void testMultiColumn_RejectsEmptyValues() {
         assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "b"), Collections.<List<?>> emptyList()));
+    }
+
+    // --- Multi-column rows supplied as forms other than List ---
+
+    @Test
+    public void testMultiColumn_FromSetRows() {
+        // A Set is an Iterable/Collection; insertion order is preserved with LinkedHashSet.
+        Set<String> row1 = new LinkedHashSet<>(Arrays.asList("John", "Doe"));
+        In condition = new In(Arrays.asList("first_name", "last_name"), Arrays.asList(row1));
+
+        assertEquals(1, condition.getValues().size());
+        assertEquals(Arrays.asList("John", "Doe"), condition.getValues().get(0));
+        assertEquals("(first_name, last_name) IN (('John', 'Doe'))", condition.toString(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testMultiColumn_FromArrayRows() {
+        In condition = new In(Arrays.asList("first_name", "last_name"), Arrays.asList(new Object[] { "John", "Doe" }, new Object[] { "Jane", "Roe" }));
+
+        assertEquals(2, condition.getValues().size());
+        assertEquals(Arrays.asList("John", "Doe"), condition.getValues().get(0));
+        assertEquals(Arrays.asList("Jane", "Roe"), condition.getValues().get(1));
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), condition.getParameters());
+        assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testMultiColumn_FromMapRows() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("firstName", "Jane");
+        row2.put("lastName", "Roe");
+
+        In condition = new In(Arrays.asList("firstName", "lastName"), Arrays.asList(row1, row2));
+
+        assertEquals(2, condition.getValues().size());
+        assertEquals(Arrays.asList("John", "Doe"), condition.getValues().get(0));
+        assertEquals(Arrays.asList("Jane", "Roe"), condition.getValues().get(1));
+        // Values are extracted in propNames order regardless of map iteration order.
+        assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    public void testMultiColumn_FromMapRows_MissingKeyYieldsNull() {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("firstName", "John");
+        // "lastName" intentionally absent
+
+        In condition = new In(Arrays.asList("firstName", "lastName"), Arrays.asList(row));
+
+        assertEquals(Arrays.asList("John", null), condition.getValues().get(0));
+    }
+
+    @Test
+    public void testMultiColumn_FromBeanRows() {
+        Account a1 = new Account().setFirstName("John").setLastName("Doe");
+        Account a2 = new Account().setFirstName("Jane").setLastName("Roe");
+
+        In condition = new In(Arrays.asList("firstName", "lastName"), Arrays.asList(a1, a2));
+
+        assertEquals(2, condition.getValues().size());
+        assertEquals(Arrays.asList("John", "Doe"), condition.getValues().get(0));
+        assertEquals(Arrays.asList("Jane", "Roe"), condition.getValues().get(1));
+        assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    public void testMultiColumn_MixedRowForms() {
+        Map<String, Object> mapRow = N.asMap("firstName", "Jane", "lastName", "Roe");
+        Account beanRow = new Account().setFirstName("Sam").setLastName("Poe");
+
+        In condition = new In(Arrays.asList("firstName", "lastName"),
+                Arrays.asList(Arrays.asList("John", "Doe"), new Object[] { "Max", "Coe" }, mapRow, beanRow));
+
+        assertEquals(4, condition.getValues().size());
+        assertEquals(Arrays.asList("John", "Doe", "Max", "Coe", "Jane", "Roe", "Sam", "Poe"), condition.getParameters());
+    }
+
+    @Test
+    public void testMultiColumn_RejectsUnsupportedRowType() {
+        // A scalar (String) is not a valid row representation for a multi-column IN.
+        assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "b"), Arrays.asList("John")));
+    }
+
+    @Test
+    public void testMultiColumn_RejectsArrayWidthMismatch() {
+        assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "b"), Arrays.asList(new Object[] { 1, 2 }, new Object[] { 3 })));
+    }
+
+    @Test
+    public void testMultiColumn_RejectsNullRow() {
+        assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), null)));
     }
 }

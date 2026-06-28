@@ -18,7 +18,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
+import com.landawn.abacus.util.Beans;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -35,10 +37,12 @@ import com.landawn.abacus.util.Strings;
  *   <li><b>Single-column</b> ({@link #AbstractIn(String, Operator, Collection)}): each value is a
  *       scalar, rendered as {@code propName IN (v1, v2, ...)}.</li>
  *   <li><b>Multi-column / row value constructor</b>
- *       ({@link #AbstractIn(Collection, Operator, Collection)}): each value is itself a tuple whose
- *       size matches the number of property names, rendered as
+ *       ({@link #AbstractIn(Collection, Operator, Collection)}): each value is itself a row whose
+ *       width matches the number of property names, rendered as
  *       {@code (p1, p2) IN ((v1a, v1b), (v2a, v2b), ...)}. This mirrors the multi-column subquery
- *       form provided by {@link AbstractInSubQuery}.</li>
+ *       form provided by {@link AbstractInSubQuery}. A row may be supplied as a {@link Collection} or
+ *       other {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean
+ *       (read by property name); see {@link #AbstractIn(Collection, Operator, Collection)} for details.</li>
  * </ul>
  *
  * <p><b>Portability note:</b> the multi-column value-list form is supported by MySQL, PostgreSQL,
@@ -102,44 +106,104 @@ public abstract class AbstractIn extends ComposableCondition {
 
     /**
      * Creates a new multi-column (row value constructor) IN or NOT IN condition, rendered as
-     * {@code (p1, p2) IN ((v1a, v1b), (v2a, v2b), ...)}. Each element of {@code values} is a tuple
-     * whose size must equal {@code propNames.size()}. Both the property names and each value tuple
-     * are copied internally, so later mutations to the supplied collections do not affect this
-     * condition. Individual tuple elements may be literal values or {@link Condition} instances; the
-     * latter have their parameters spliced into {@link #getParameters()}.
+     * {@code (p1, p2) IN ((v1a, v1b), (v2a, v2b), ...)}. Each element of {@code values} is a row whose
+     * width must equal {@code propNames.size()}. A row may be supplied in any of the following forms:
+     * <ul>
+     *   <li>a {@link Collection} or other {@link Iterable} of exactly {@code propNames.size()} elements,
+     *       taken positionally;</li>
+     *   <li>an object array ({@code Object[]}) of exactly {@code propNames.size()} elements, taken
+     *       positionally;</li>
+     *   <li>a {@link Map} whose values are looked up by property name (a missing key yields {@code null});
+     *       or</li>
+     *   <li>a bean whose property values are read by property name.</li>
+     * </ul>
+     * Both the property names and each row are copied internally, so later mutations to the supplied
+     * collections do not affect this condition. Individual row values may be literal values or
+     * {@link Condition} instances; the latter have their parameters spliced into {@link #getParameters()}.
      *
      * @param propNames the property/column names (must not be {@code null} and must contain at least two
      *                  non-{@code null}/non-blank names; for a single column use
      *                  {@link #AbstractIn(String, Operator, Collection)})
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
-     * @param values the collection of value tuples (must not be {@code null} or empty); each tuple must be
-     *               non-{@code null} and have exactly {@code propNames.size()} elements (which may be {@code null})
+     * @param values the collection of value rows (must not be {@code null} or empty); each row must be
+     *               non-{@code null} and resolve to exactly {@code propNames.size()} values (which may be
+     *               {@code null}). A row may be a {@link Collection}, {@link Iterable}, object array,
+     *               {@link Map} or bean
      * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
-     *                                  if {@code values} is {@code null}/empty, or if any tuple is {@code null} or its
-     *                                  size does not match {@code propNames.size()}
+     *                                  if {@code values} is {@code null}/empty, if any row is {@code null} or of an
+     *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      * @throws NullPointerException if {@code operator} is {@code null}
      */
-    protected AbstractIn(final Collection<String> propNames, final Operator operator, final Collection<? extends Collection<?>> values) {
+    protected AbstractIn(final Collection<String> propNames, final Operator operator, final Collection<?> values) {
         super(operator);
 
         this.propNames = copyAndValidatePropNames(propNames);
         N.checkArgNotEmpty(values, "values");
 
         final int arity = this.propNames.size();
-        final List<Collection<?>> copy = new ArrayList<>(values.size());
+        final List<List<Object>> copy = new ArrayList<>(values.size());
 
-        for (final Collection<?> tuple : values) {
-            N.checkArgNotNull(tuple, "value tuple");
+        for (final Object row : values) {
+            N.checkArgNotNull(row, "value row");
 
-            if (tuple.size() != arity) {
-                throw new IllegalArgumentException(
-                        "Each value tuple must have exactly " + arity + " element(s) to match the number of property names, but found " + tuple.size());
-            }
-
-            copy.add(new ArrayList<>(tuple));
+            copy.add(toRowTuple(row, this.propNames, arity));
         }
 
         this.values = copy;
+    }
+
+    /**
+     * Normalizes a single multi-column value row into a list of exactly {@code arity} values, ordered to
+     * match {@code propNames}. See {@link #AbstractIn(Collection, Operator, Collection)} for the accepted
+     * row forms.
+     */
+    private static List<Object> toRowTuple(final Object row, final Collection<String> propNames, final int arity) {
+        if (row instanceof Map) {
+            final Map<?, ?> map = (Map<?, ?>) row;
+            final List<Object> tuple = new ArrayList<>(arity);
+
+            for (final String propName : propNames) {
+                tuple.add(map.get(propName));
+            }
+
+            return tuple;
+        } else if (row instanceof Object[]) {
+            final Object[] array = (Object[]) row;
+            checkRowWidth(array.length, arity);
+
+            final List<Object> tuple = new ArrayList<>(arity);
+            Collections.addAll(tuple, array);
+
+            return tuple;
+        } else if (row instanceof Iterable) {
+            final List<Object> tuple = new ArrayList<>(arity);
+
+            for (final Object element : (Iterable<?>) row) {
+                tuple.add(element);
+            }
+
+            checkRowWidth(tuple.size(), arity);
+
+            return tuple;
+        } else if (Beans.isBeanClass(row.getClass())) {
+            final List<Object> tuple = new ArrayList<>(arity);
+
+            for (final String propName : propNames) {
+                tuple.add(Beans.getPropValue(row, propName));
+            }
+
+            return tuple;
+        } else {
+            throw new IllegalArgumentException(
+                    "Each multi-column value row must be a Collection, Iterable, array, Map or bean, but found: " + row.getClass().getName());
+        }
+    }
+
+    private static void checkRowWidth(final int actual, final int arity) {
+        if (actual != arity) {
+            throw new IllegalArgumentException(
+                    "Each value row must have exactly " + arity + " element(s) to match the number of property names, but found " + actual);
+        }
     }
 
     private static Collection<String> copyAndValidatePropNames(final Collection<String> propNames) {
@@ -384,7 +448,7 @@ public abstract class AbstractIn extends ComposableCondition {
      * boolean diff = a.hashCode() == c.hashCode();   // false
      * }</pre>
      *
-     * @return the hash code based on property name, operator, and values
+     * @return the hash code based on property name(s), operator, and values
      */
     @Override
     public int hashCode() {
@@ -408,7 +472,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
     /**
      * Checks if this condition is equal to another object.
-     * Two conditions are equal if they have the same property name,
+     * Two conditions are equal if they have the same property name(s),
      * operator, and values list.
      *
      * <p><b>Usage Examples:</b></p>

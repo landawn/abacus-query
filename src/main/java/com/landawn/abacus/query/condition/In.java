@@ -15,6 +15,7 @@
 package com.landawn.abacus.query.condition;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Represents an IN condition in SQL-like queries.
@@ -101,15 +102,21 @@ public class In extends AbstractIn {
 
     /**
      * Creates a new multi-column (row value constructor) IN condition. The condition checks whether the
-     * tuple of property values matches any of the supplied value tuples. Each element of {@code values}
-     * must have exactly {@code propNames.size()} elements.
+     * tuple of property values matches any of the supplied value rows. Each element of {@code values}
+     * must resolve to exactly {@code propNames.size()} values. A row may be supplied as a {@link Collection}
+     * or other {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean
+     * (read by property name).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Match (first_name, last_name) pairs
+     * // Match (first_name, last_name) pairs supplied as lists
      * In nameFilter = new In(Arrays.asList("first_name", "last_name"),
      *         Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
      * // SQL: (first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))
+     *
+     * // The same rows supplied as maps keyed by property name
+     * In fromMaps = new In(Arrays.asList("first_name", "last_name"),
+     *         Arrays.asList(N.asMap("first_name", "John", "last_name", "Doe")));
      * }</pre>
      *
      * <p><b>Portability note:</b> the multi-column value-list form is supported by MySQL, PostgreSQL,
@@ -117,13 +124,14 @@ public class In extends AbstractIn {
      *
      * @param propNames the property/column names (must not be {@code null} and must contain at least two
      *                  non-{@code null}/non-blank names; for a single column use {@link #In(String, Collection)})
-     * @param values the collection of value tuples (must not be {@code null} or empty); each tuple must be
-     *               non-{@code null} and have exactly {@code propNames.size()} elements
+     * @param values the collection of value rows (must not be {@code null} or empty); each row must be
+     *               non-{@code null} and resolve to exactly {@code propNames.size()} values. A row may be a
+     *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
-     *                                  if {@code values} is {@code null}/empty, or if any tuple is {@code null} or its
-     *                                  size does not match {@code propNames.size()}
+     *                                  if {@code values} is {@code null}/empty, if any row is {@code null} or of an
+     *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      */
-    public In(final Collection<String> propNames, final Collection<? extends Collection<?>> values) {
+    public In(final Collection<String> propNames, final Collection<?> values) {
         super(propNames, Operator.IN, values);
     }
 }

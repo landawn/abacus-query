@@ -1229,7 +1229,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
-     *             entities. Build a {@link Selection} per table (e.g. with {@link Selection#builder()})
+     *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder()})
      *             and pass them to {@link #select(List)}, which is self-documenting and supports any
      *             number of tables.
      */
@@ -1269,7 +1269,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if entityClassA or entityClassB is null
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
-     *             entities. Build a {@link Selection} per table (e.g. with {@link Selection#builder()})
+     *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder()})
      *             and pass them to {@link #select(List)}, which is self-documenting and supports any
      *             number of tables.
      */
@@ -1378,7 +1378,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance with SELECT and FROM configured
      * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
-     *             entities. Build a {@link Selection} per table (e.g. with {@link Selection#builder()})
+     *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder()})
      *             and pass them to {@link #selectFrom(List)}, which is self-documenting and supports any
      *             number of tables.
      */
@@ -1414,7 +1414,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance with SELECT and FROM configured
      * @throws IllegalArgumentException if entityClassA or entityClassB is null
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
-     *             entities. Build a {@link Selection} per table (e.g. with {@link Selection#builder()})
+     *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder()})
      *             and pass them to {@link #selectFrom(List)}, which is self-documenting and supports any
      *             number of tables.
      */

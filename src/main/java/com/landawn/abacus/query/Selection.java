@@ -116,7 +116,7 @@ public final class Selection {
      * {@code selectPropNames} and {@code excludedPropNames} collections so that the {@code Selection}
      * does not retain a reference to (or share mutable state with) the caller-supplied collections.
      * External code should use the no-arg constructor with the fluent setters, or
-     * {@link #builder()}.</p>
+     * {@code builder()}.</p>
      *
      * @param entityClass the entity class to select from
      * @param tableAlias the alias to use for the table in SQL (can be {@code null})

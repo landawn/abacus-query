@@ -1448,6 +1448,30 @@ class SqlBuilder10Test extends TestBase {
     }
 
     @Test
+    public void testMultiColumnInCondition_MapRows() {
+        AbstractQueryBuilder.SP sp = Dsl.PSC.select("*")
+                .from("users")
+                .where(Filters.in(Arrays.asList("firstName", "lastName"),
+                        Arrays.asList(N.asMap("firstName", "John", "lastName", "Doe"), N.asMap("firstName", "Jane", "lastName", "Roe"))))
+                .build();
+
+        assertEquals("SELECT * FROM users WHERE (first_name, last_name) IN ((?, ?), (?, ?))", sp.query());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), sp.parameters());
+    }
+
+    @Test
+    public void testMultiColumnInCondition_BeanRows() {
+        Account row = new Account();
+        row.setFirstName("John");
+        row.setLastName("Doe");
+
+        AbstractQueryBuilder.SP sp = Dsl.PSC.select("*").from("users").where(Filters.in(Arrays.asList("firstName", "lastName"), Arrays.asList(row))).build();
+
+        assertEquals("SELECT * FROM users WHERE (first_name, last_name) IN ((?, ?))", sp.query());
+        assertEquals(Arrays.asList("John", "Doe"), sp.parameters());
+    }
+
+    @Test
     public void testIsNullCondition() {
         String sql = Dsl.PSC.select("*").from("users").where(Filters.isNull("deletedDate")).build().query();
 

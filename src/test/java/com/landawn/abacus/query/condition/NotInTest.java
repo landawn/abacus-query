@@ -2,11 +2,14 @@ package com.landawn.abacus.query.condition;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -383,5 +386,21 @@ public class NotInTest extends TestBase {
     @Test
     public void testMultiColumn_RejectsTupleSizeMismatch() {
         assertThrows(IllegalArgumentException.class, () -> new NotIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1))));
+    }
+
+    @Test
+    public void testMultiColumn_FromMapAndBeanRows() {
+        Map<String, Object> mapRow = N.asMap("firstName", "John", "lastName", "Doe");
+        Account beanRow = new Account().setFirstName("Jane").setLastName("Roe");
+
+        NotIn condition = new NotIn(Arrays.asList("firstName", "lastName"), Arrays.asList(mapRow, beanRow));
+
+        assertEquals("(first_name, last_name) NOT IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.SNAKE_CASE));
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), condition.getParameters());
+    }
+
+    @Test
+    public void testMultiColumn_RejectsUnsupportedRowType() {
+        assertThrows(IllegalArgumentException.class, () -> new NotIn(Arrays.asList("a", "b"), Arrays.asList(42)));
     }
 }

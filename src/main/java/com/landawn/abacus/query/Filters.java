@@ -3381,7 +3381,11 @@ public class Filters {
 
     /**
      * Creates a multi-column (row value constructor) IN condition.
-     * The tuple of property values must match one of the supplied value tuples.
+     * The tuple of property values must match one of the supplied value rows.
+     *
+     * <p>Each element of {@code values} is one row and may be supplied as a {@link Collection} or other
+     * {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean (read by
+     * property name).</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3394,13 +3398,14 @@ public class Filters {
      * Oracle and DB2, but <i>not</i> by SQL Server (use {@link #in(Collection, SubQuery)} there).</p>
      *
      * @param propNames the property/column names (must contain at least two non-{@code null}/non-blank names)
-     * @param values collection of value tuples; each tuple must have exactly {@code propNames.size()} elements
+     * @param values collection of value rows; each row must resolve to exactly {@code propNames.size()} values.
+     *               A row may be a {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @return an {@link In} condition
      * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
-     *                                  if {@code values} is {@code null} or empty, or if any tuple is {@code null} or its
-     *                                  size does not match {@code propNames.size()}
+     *                                  if {@code values} is {@code null} or empty, if any row is {@code null} or of an
+     *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      */
-    public static In in(final Collection<String> propNames, final Collection<? extends Collection<?>> values) {
+    public static In in(final Collection<String> propNames, final Collection<?> values) {
         return new In(propNames, values);
     }
 
@@ -3627,7 +3632,11 @@ public class Filters {
 
     /**
      * Creates a multi-column (row value constructor) NOT IN condition.
-     * The tuple of property values must not match any of the supplied value tuples.
+     * The tuple of property values must not match any of the supplied value rows.
+     *
+     * <p>Each element of {@code values} is one row and may be supplied as a {@link Collection} or other
+     * {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean (read by
+     * property name).</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3640,13 +3649,14 @@ public class Filters {
      * Oracle and DB2, but <i>not</i> by SQL Server (use {@link #notIn(Collection, SubQuery)} there).</p>
      *
      * @param propNames the property/column names (must contain at least two non-{@code null}/non-blank names)
-     * @param values collection of value tuples to exclude; each tuple must have exactly {@code propNames.size()} elements
+     * @param values collection of value rows to exclude; each row must resolve to exactly {@code propNames.size()}
+     *               values. A row may be a {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @return a {@link NotIn} condition
      * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
-     *                                  if {@code values} is {@code null} or empty, or if any tuple is {@code null} or its
-     *                                  size does not match {@code propNames.size()}
+     *                                  if {@code values} is {@code null} or empty, if any row is {@code null} or of an
+     *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      */
-    public static NotIn notIn(final Collection<String> propNames, final Collection<? extends Collection<?>> values) {
+    public static NotIn notIn(final Collection<String> propNames, final Collection<?> values) {
         return new NotIn(propNames, values);
     }
 
