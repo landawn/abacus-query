@@ -1034,19 +1034,19 @@ public final class DynamicQuery {
          * // Generates: FROM users u JOIN orders o ON u.id = o.user_id
          * }</pre>
          *
-         * @param table the table to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param joinEntity the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinEntity} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
-        public FromClause join(final String table, final String on) {
+        public FromClause join(final String joinEntity, final String on) {
             checkOpen();
-            checkSqlFragmentNotBlank(table, "table");
+            checkSqlFragmentNotBlank(joinEntity, "joinEntity");
             checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
-            sb.append(" JOIN ").append(table).append(" ON ").append(on);
+            sb.append(" JOIN ").append(joinEntity).append(" ON ").append(on);
 
             return this;
         }
@@ -1061,19 +1061,19 @@ public final class DynamicQuery {
          * // Generates: FROM users u INNER JOIN orders o ON u.id = o.user_id
          * }</pre>
          *
-         * @param table the table to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param joinEntity the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinEntity} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
-        public FromClause innerJoin(final String table, final String on) {
+        public FromClause innerJoin(final String joinEntity, final String on) {
             checkOpen();
-            checkSqlFragmentNotBlank(table, "table");
+            checkSqlFragmentNotBlank(joinEntity, "joinEntity");
             checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
-            sb.append(" INNER JOIN ").append(table).append(" ON ").append(on);
+            sb.append(" INNER JOIN ").append(joinEntity).append(" ON ").append(on);
 
             return this;
         }
@@ -1088,19 +1088,19 @@ public final class DynamicQuery {
          * // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
          * }</pre>
          *
-         * @param table the table to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param joinEntity the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinEntity} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
-        public FromClause leftJoin(final String table, final String on) {
+        public FromClause leftJoin(final String joinEntity, final String on) {
             checkOpen();
-            checkSqlFragmentNotBlank(table, "table");
+            checkSqlFragmentNotBlank(joinEntity, "joinEntity");
             checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
-            sb.append(" LEFT JOIN ").append(table).append(" ON ").append(on);
+            sb.append(" LEFT JOIN ").append(joinEntity).append(" ON ").append(on);
 
             return this;
         }
@@ -1115,19 +1115,19 @@ public final class DynamicQuery {
          * // Generates: FROM orders o RIGHT JOIN users u ON o.user_id = u.id
          * }</pre>
          *
-         * @param table the table to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param joinEntity the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinEntity} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
-        public FromClause rightJoin(final String table, final String on) {
+        public FromClause rightJoin(final String joinEntity, final String on) {
             checkOpen();
-            checkSqlFragmentNotBlank(table, "table");
+            checkSqlFragmentNotBlank(joinEntity, "joinEntity");
             checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
-            sb.append(" RIGHT JOIN ").append(table).append(" ON ").append(on);
+            sb.append(" RIGHT JOIN ").append(joinEntity).append(" ON ").append(on);
 
             return this;
         }
@@ -1143,19 +1143,19 @@ public final class DynamicQuery {
          * // Generates: FROM employees e FULL JOIN departments d ON e.dept_id = d.id
          * }</pre>
          *
-         * @param table the table to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param joinEntity the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code table} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinEntity} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
-        public FromClause fullJoin(final String table, final String on) {
+        public FromClause fullJoin(final String joinEntity, final String on) {
             checkOpen();
-            checkSqlFragmentNotBlank(table, "table");
+            checkSqlFragmentNotBlank(joinEntity, "joinEntity");
             checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
-            sb.append(" FULL JOIN ").append(table).append(" ON ").append(on);
+            sb.append(" FULL JOIN ").append(joinEntity).append(" ON ").append(on);
 
             return this;
         }

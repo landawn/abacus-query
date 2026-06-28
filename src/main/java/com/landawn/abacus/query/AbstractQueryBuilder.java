@@ -1767,16 +1767,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
-     * @param expr the join expression, e.g. {@code "orders o ON u.id = o.user_id"} (must not be {@code null}, empty, or blank)
+     * @param joinExpr the full join expression, including the {@code ON} clause if present, e.g. {@code "orders o ON u.id = o.user_id"} (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
      */
-    public This join(final String expr) {
-        checkSqlFragmentNotBlank(expr, "expr");
+    public This join(final String joinExpr) {
+        checkSqlFragmentNotBlank(joinExpr, "joinExpr");
 
         _sb.append(_SPACE_JOIN_SPACE);
 
-        _sb.append(expr);
+        _sb.append(joinExpr);
 
         return (This) this;
     }
@@ -1859,16 +1859,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
-     * @param expr the join expression (must not be {@code null}, empty, or blank)
+     * @param joinExpr the full join expression, including the {@code ON} clause if present (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
      */
-    public This innerJoin(final String expr) {
-        checkSqlFragmentNotBlank(expr, "expr");
+    public This innerJoin(final String joinExpr) {
+        checkSqlFragmentNotBlank(joinExpr, "joinExpr");
 
         _sb.append(_SPACE_INNER_JOIN_SPACE);
 
-        _sb.append(expr);
+        _sb.append(joinExpr);
 
         return (This) this;
     }
@@ -1918,16 +1918,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
-     * @param expr the join expression (must not be {@code null}, empty, or blank)
+     * @param joinExpr the full join expression, including the {@code ON} clause if present (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
      */
-    public This leftJoin(final String expr) {
-        checkSqlFragmentNotBlank(expr, "expr");
+    public This leftJoin(final String joinExpr) {
+        checkSqlFragmentNotBlank(joinExpr, "joinExpr");
 
         _sb.append(_SPACE_LEFT_JOIN_SPACE);
 
-        _sb.append(expr);
+        _sb.append(joinExpr);
 
         return (This) this;
     }
@@ -1977,16 +1977,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
-     * @param expr the join expression (must not be {@code null}, empty, or blank)
+     * @param joinExpr the full join expression, including the {@code ON} clause if present (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
      */
-    public This rightJoin(final String expr) {
-        checkSqlFragmentNotBlank(expr, "expr");
+    public This rightJoin(final String joinExpr) {
+        checkSqlFragmentNotBlank(joinExpr, "joinExpr");
 
         _sb.append(_SPACE_RIGHT_JOIN_SPACE);
 
-        _sb.append(expr);
+        _sb.append(joinExpr);
 
         return (This) this;
     }
@@ -2036,16 +2036,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users u FULL JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
-     * @param expr the join expression (must not be {@code null}, empty, or blank)
+     * @param joinExpr the full join expression, including the {@code ON} clause if present (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
      */
-    public This fullJoin(final String expr) {
-        checkSqlFragmentNotBlank(expr, "expr");
+    public This fullJoin(final String joinExpr) {
+        checkSqlFragmentNotBlank(joinExpr, "joinExpr");
 
         _sb.append(_SPACE_FULL_JOIN_SPACE);
 
-        _sb.append(expr);
+        _sb.append(joinExpr);
 
         return (This) this;
     }
@@ -2095,16 +2095,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users CROSS JOIN orders
      * }</pre>
      *
-     * @param expr the join expression (must not be {@code null}, empty, or blank)
+     * @param joinExpr the join expression (a table reference, optionally with alias; a {@code CROSS JOIN} takes no {@code ON} clause) (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
      */
-    public This crossJoin(final String expr) {
-        checkSqlFragmentNotBlank(expr, "expr");
+    public This crossJoin(final String joinExpr) {
+        checkSqlFragmentNotBlank(joinExpr, "joinExpr");
 
         _sb.append(_SPACE_CROSS_JOIN_SPACE);
 
-        _sb.append(expr);
+        _sb.append(joinExpr);
 
         return (This) this;
     }
@@ -2154,16 +2154,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users NATURAL JOIN orders
      * }</pre>
      *
-     * @param expr the join expression (must not be {@code null}, empty, or blank)
+     * @param joinExpr the join expression (a table reference, optionally with alias; a {@code NATURAL JOIN} takes no {@code ON} clause) (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
      */
-    public This naturalJoin(final String expr) {
-        checkSqlFragmentNotBlank(expr, "expr");
+    public This naturalJoin(final String joinExpr) {
+        checkSqlFragmentNotBlank(joinExpr, "joinExpr");
 
         _sb.append(_SPACE_NATURAL_JOIN_SPACE);
 
-        _sb.append(expr);
+        _sb.append(joinExpr);
 
         return (This) this;
     }
@@ -3752,14 +3752,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE age > ?
      * }</pre>
      *
-     * @param condition if true, the condition will be appended
+     * @param b if true, the condition will be appended
      * @param cond the condition to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code b} is {@code true} and {@code cond} is {@code null}
      */
     @Beta
-    public This appendIf(final boolean condition, final Condition cond) {
-        if (condition) {
+    public This appendIf(final boolean b, final Condition cond) {
+        if (b) {
             append(cond);
         }
 
@@ -3781,14 +3781,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE id = ? FOR UPDATE
      * }</pre>
      *
-     * @param condition if true, the expression will be appended
+     * @param b if true, the expression will be appended
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code b} is {@code true} and {@code expr} is {@code null}, empty, or blank
      */
     @Beta
-    public This appendIf(final boolean condition, final String expr) {
-        if (condition) {
+    public This appendIf(final boolean b, final String expr) {
+        if (b) {
             append(expr);
         }
 
@@ -3810,13 +3810,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE age > ? ORDER BY name
      * }</pre>
      *
-     * @param condition if true, the consumer will be executed
+     * @param b if true, the consumer will be executed
      * @param append the consumer function to execute
      * @return this SqlBuilder instance for method chaining
      */
     @Beta
-    public This appendIf(final boolean condition, final java.util.function.Consumer<? super This> append) {
-        if (condition) {
+    public This appendIf(final boolean b, final java.util.function.Consumer<? super This> append) {
+        if (b) {
             append.accept((This) this);
         }
 
@@ -3838,16 +3838,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE status = ?
      * }</pre>
      *
-     * @param condition if true, append condToAppendForTrue; otherwise append condToAppendForFalse
-     * @param condToAppendForTrue the condition to append if condition is true
-     * @param condToAppendForFalse the condition to append if condition is false
+     * @param b if true, append condToAppendForTrue; otherwise append condToAppendForFalse
+     * @param condToAppendForTrue the condition to append if b is true
+     * @param condToAppendForFalse the condition to append if b is false
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if the selected condition (the one chosen by {@code condition}) is {@code null}
+     * @throws IllegalArgumentException if the selected condition (the one chosen by {@code b}) is {@code null}
      * @throws IllegalStateException if a clause emitted by the selected condition has already been set
      */
     @Beta
-    public This appendIfOrElse(final boolean condition, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
-        if (condition) {
+    public This appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
+        if (b) {
             append(condToAppendForTrue);
         } else {
             append(condToAppendForFalse);
@@ -3872,15 +3872,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users ORDER BY name ASC
      * }</pre>
      *
-     * @param condition if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
-     * @param exprToAppendForTrue the expression to append if condition is true
-     * @param exprToAppendForFalse the expression to append if condition is false
+     * @param b if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
+     * @param exprToAppendForTrue the expression to append if b is true
+     * @param exprToAppendForFalse the expression to append if b is false
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if the selected expression (the one chosen by {@code condition}) is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if the selected expression (the one chosen by {@code b}) is {@code null}, empty, or blank
      */
     @Beta
-    public This appendIfOrElse(final boolean condition, final String exprToAppendForTrue, final String exprToAppendForFalse) {
-        if (condition) {
+    public This appendIfOrElse(final boolean b, final String exprToAppendForTrue, final String exprToAppendForFalse) {
+        if (b) {
             append(exprToAppendForTrue);
         } else {
             append(exprToAppendForFalse);
