@@ -577,6 +577,53 @@ class Filters2025Test extends TestBase {
     }
 
     @Test
+    public void testGroupByAscSingleColumn() {
+        GroupBy groupBy = Filters.groupByAsc("department");
+        assertNotNull(groupBy);
+        assertEquals(Operator.GROUP_BY, groupBy.operator());
+        assertTrue(groupBy.toString().contains("department ASC"), groupBy.toString());
+    }
+
+    @Test
+    public void testGroupByAscCollection() {
+        GroupBy collForm = Filters.groupByAsc(Arrays.asList("department", "year"));
+        GroupBy varargForm = Filters.groupByAsc("department", "year");
+        assertNotNull(collForm);
+        assertEquals(Operator.GROUP_BY, collForm.operator());
+        assertEquals(varargForm.toString(), collForm.toString(), "groupByAsc(Collection) must match groupByAsc(String...)");
+    }
+
+    @Test
+    public void testGroupByDescSingleColumn() {
+        GroupBy groupBy = Filters.groupByDesc("sales");
+        assertNotNull(groupBy);
+        assertEquals(Operator.GROUP_BY, groupBy.operator());
+        assertTrue(groupBy.toString().contains("sales DESC"), groupBy.toString());
+    }
+
+    @Test
+    public void testGroupByDescCollection() {
+        GroupBy collForm = Filters.groupByDesc(Arrays.asList("sales", "region"));
+        GroupBy varargForm = Filters.groupByDesc("sales", "region");
+        assertNotNull(collForm);
+        assertEquals(Operator.GROUP_BY, collForm.operator());
+        assertEquals(varargForm.toString(), collForm.toString(), "groupByDesc(Collection) must match groupByDesc(String...)");
+    }
+
+    @Test
+    public void testOrderByAscDescSingleColumn() {
+        OrderBy asc = Filters.orderByAsc("created_date");
+        assertNotNull(asc);
+        assertEquals(Operator.ORDER_BY, asc.operator());
+        assertTrue(asc.toString().contains("created_date ASC"), asc.toString());
+
+        OrderBy desc = Filters.orderByDesc("score");
+        assertNotNull(desc);
+        assertEquals(Operator.ORDER_BY, desc.operator());
+        assertTrue(desc.toString().contains("score DESC"), desc.toString());
+    }
+
+    @Test
     public void testGroupByCollection() {
         GroupBy groupBy = Filters.groupBy(Arrays.asList("region", "category"));
         assertNotNull(groupBy);

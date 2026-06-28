@@ -140,12 +140,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testPSCWithHaving() {
-        String sql = Dsl.PSC.select("department", "COUNT(*)")
-                .from("employees")
-                .groupBy("department")
-                .having(Filters.expr("COUNT(*) > 5"))
-                .build()
-                .query();
+        String sql = Dsl.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("HAVING"));
     }
@@ -438,13 +433,11 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").where("   "));
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy("   "));
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy(Arrays.asList("id", "   ")));
-        assertThrows(IllegalArgumentException.class,
-                () -> Dsl.PSC.select("*").from("users").groupBy(Collections.singletonMap("   ", SortDirection.ASC)));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy(Collections.singletonMap("   ", SortDirection.ASC)));
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy("id").having("   "));
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy("   "));
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy(Arrays.asList("id", "   ")));
-        assertThrows(IllegalArgumentException.class,
-                () -> Dsl.PSC.select("*").from("users").orderBy(Collections.singletonMap("   ", SortDirection.ASC)));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy(Collections.singletonMap("   ", SortDirection.ASC)));
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").append("   "));
     }
 
@@ -470,10 +463,8 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testFetchNextRowsAndFetchFirstRowsAreMutuallyExclusive() {
-        assertThrows(IllegalStateException.class,
-                () -> Dsl.PSC.select("*").from("users").orderBy("id").fetchNextRows(10).fetchFirstRows(5).build().query());
-        assertThrows(IllegalStateException.class,
-                () -> Dsl.PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).fetchNextRows(5).build().query());
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("*").from("users").orderBy("id").fetchNextRows(10).fetchFirstRows(5).build().query());
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).fetchNextRows(5).build().query());
     }
 
     @Test

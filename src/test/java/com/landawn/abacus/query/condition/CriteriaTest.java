@@ -1205,6 +1205,30 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
+    public void testGroupByAsc() {
+        Criteria criteria = Criteria.builder().groupByAsc("department", "location").build();
+
+        Clause groupBy = criteria.getGroupBy();
+        Assertions.assertNotNull(groupBy);
+        Assertions.assertEquals(Operator.GROUP_BY, groupBy.operator());
+
+        criteria = Criteria.builder().groupByAsc(Arrays.asList("department", "location")).build();
+        Assertions.assertNotNull(criteria.getGroupBy());
+    }
+
+    @Test
+    public void testGroupByDesc() {
+        Criteria criteria = Criteria.builder().groupByDesc("salary", "id").build();
+
+        Clause groupBy = criteria.getGroupBy();
+        Assertions.assertNotNull(groupBy);
+        Assertions.assertEquals(Operator.GROUP_BY, groupBy.operator());
+
+        criteria = Criteria.builder().groupByDesc(Arrays.asList("salary", "id")).build();
+        Assertions.assertNotNull(criteria.getGroupBy());
+    }
+
+    @Test
     public void testOrderBy() {
         Criteria criteria = Criteria.builder().orderBy("name", SortDirection.ASC).build();
 
@@ -1620,6 +1644,44 @@ class CriteriaBugFixTest extends TestBase {
         String collectionSql = Criteria.builder().orderBy(cols).build().toString();
         String varargsSql = Criteria.builder().orderBy("country", "state", "city").build().toString();
         assertEquals(varargsSql, collectionSql, "orderBy(Collection) and orderBy(String...) must produce identical SQL");
+    }
+
+    @Test
+    public void testGroupByAscRendersAscDirection() {
+        String varargsSql = Criteria.builder().groupByAsc("region", "product_type").build().toString();
+        assertTrue(varargsSql.contains("region ASC"), varargsSql);
+        assertTrue(varargsSql.contains("product_type ASC"), varargsSql);
+
+        String collectionSql = Criteria.builder().groupByAsc(Arrays.asList("region", "product_type")).build().toString();
+        assertEquals(varargsSql, collectionSql, "groupByAsc(Collection) must match groupByAsc(String...) output");
+    }
+
+    @Test
+    public void testGroupByDescRendersDescDirection() {
+        String varargsSql = Criteria.builder().groupByDesc("sales", "region").build().toString();
+        assertTrue(varargsSql.contains("sales DESC"), varargsSql);
+        assertTrue(varargsSql.contains("region DESC"), varargsSql);
+
+        String collectionSql = Criteria.builder().groupByDesc(Arrays.asList("sales", "region")).build().toString();
+        assertEquals(varargsSql, collectionSql, "groupByDesc(Collection) must match groupByDesc(String...) output");
+    }
+
+    @Test
+    public void testGroupByAscDescSingleColumn() {
+        String ascSql = Criteria.builder().groupByAsc("category").build().toString();
+        assertTrue(ascSql.contains("category ASC"), ascSql);
+
+        String descSql = Criteria.builder().groupByDesc("sales").build().toString();
+        assertTrue(descSql.contains("sales DESC"), descSql);
+    }
+
+    @Test
+    public void testOrderByAscDescSingleColumn() {
+        String ascSql = Criteria.builder().orderByAsc("lastName").build().toString();
+        assertTrue(ascSql.contains("lastName ASC"), ascSql);
+
+        String descSql = Criteria.builder().orderByDesc("score").build().toString();
+        assertTrue(descSql.contains("score DESC"), descSql);
     }
 
     // --- Bug fixes: Builder.groupBy/orderBy(Collection) must reject null with IAE (previously NPE'd) ---

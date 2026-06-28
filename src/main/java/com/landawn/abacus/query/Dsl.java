@@ -48,6 +48,10 @@ import com.landawn.abacus.util.u.Optional;
  */
 public final class Dsl {
 
+    // Declared before the predefined constants below so it is non-null when their initializers call
+    // forDialect(...); the canonical instances are registered into it by the static block that follows them.
+    private static final Map<SqlDialect, Dsl> dslCache = new ConcurrentHashMap<>();
+
     /**
      * Parameterized-SQL DSL ({@code ?} placeholders) that leaves property/column names unchanged.
      */
@@ -138,10 +142,6 @@ public final class Dsl {
      */
     @Deprecated
     public static final Dsl MLC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.CAMEL_CASE).sqlPolicy(SqlPolicy.IBATIS_SQL).build());
-
-    // Declared before the predefined constants below so it is non-null when their initializers call
-    // forDialect(...); the canonical instances are registered into it by the static block that follows them.
-    private static final Map<SqlDialect, Dsl> dslCache = new ConcurrentHashMap<>();
 
     static {
         dslCache.put(Dsl.PSB.sqlDialect, Dsl.PSB);

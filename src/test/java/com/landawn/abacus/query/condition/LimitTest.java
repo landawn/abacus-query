@@ -25,7 +25,7 @@ class Limit2025Test extends TestBase {
         assertNotNull(limit);
         assertEquals(10, limit.getCount());
         assertEquals(0, limit.getOffset());
-        assertNull(limit.getExpression());
+        assertNull(limit.getLiteral());
     }
 
     @Test
@@ -35,7 +35,7 @@ class Limit2025Test extends TestBase {
         assertNotNull(limit);
         assertEquals(10, limit.getCount());
         assertEquals(20, limit.getOffset());
-        assertNull(limit.getExpression());
+        assertNull(limit.getLiteral());
     }
 
     @Test
@@ -43,7 +43,7 @@ class Limit2025Test extends TestBase {
         Limit limit = new Limit("10 OFFSET 20");
 
         assertNotNull(limit);
-        assertEquals(SK.LIMIT + SK.SPACE + "10 OFFSET 20", limit.getExpression());
+        assertEquals(SK.LIMIT + SK.SPACE + "10 OFFSET 20", limit.getLiteral());
         assertEquals(Integer.MAX_VALUE, limit.getCount());
         assertEquals(0, limit.getOffset());
     }
@@ -64,17 +64,17 @@ class Limit2025Test extends TestBase {
     }
 
     @Test
-    public void testGetExpr() {
+    public void testGetLiteral() {
         Limit limit = new Limit("FIRST 10 ROWS");
 
-        assertEquals("FIRST 10 ROWS", limit.getExpression());
+        assertEquals("FIRST 10 ROWS", limit.getLiteral());
     }
 
     @Test
-    public void testGetExprWithoutExpression() {
+    public void testGetLiteralWithoutExpression() {
         Limit limit = new Limit(10);
 
-        assertNull(limit.getExpression());
+        assertNull(limit.getLiteral());
     }
 
     @Test
@@ -254,10 +254,10 @@ class Limit2025Test extends TestBase {
     @Test
     public void testCustomExpressionFormats() {
         Limit mysqlStyle = new Limit("10, 20");
-        assertEquals(SK.LIMIT + SK.SPACE + "10, 20", mysqlStyle.getExpression());
+        assertEquals(SK.LIMIT + SK.SPACE + "10, 20", mysqlStyle.getLiteral());
 
         Limit standardStyle = new Limit("20 OFFSET 10");
-        assertEquals(SK.LIMIT + SK.SPACE + "20 OFFSET 10", standardStyle.getExpression());
+        assertEquals(SK.LIMIT + SK.SPACE + "20 OFFSET 10", standardStyle.getLiteral());
     }
 
     @Test
@@ -341,7 +341,7 @@ public class LimitTest extends TestBase {
         Limit limit = Filters.limit(10);
         Assertions.assertEquals(10, limit.getCount());
         Assertions.assertEquals(0, limit.getOffset());
-        Assertions.assertNull(limit.getExpression());
+        Assertions.assertNull(limit.getLiteral());
     }
 
     @Test
@@ -349,14 +349,14 @@ public class LimitTest extends TestBase {
         Limit limit = Filters.limit(50, 20);
         Assertions.assertEquals(50, limit.getCount());
         Assertions.assertEquals(20, limit.getOffset());
-        Assertions.assertNull(limit.getExpression());
+        Assertions.assertNull(limit.getLiteral());
     }
 
     @Test
     public void testConstructorWithExpression() {
         String expr = "10 OFFSET 20";
         Limit limit = Filters.limit(expr);
-        Assertions.assertEquals(SK.LIMIT + SK.SPACE + expr, limit.getExpression());
+        Assertions.assertEquals(SK.LIMIT + SK.SPACE + expr, limit.getLiteral());
         Assertions.assertEquals(Integer.MAX_VALUE, limit.getCount());
         Assertions.assertEquals(0, limit.getOffset());
     }
@@ -365,13 +365,13 @@ public class LimitTest extends TestBase {
     public void testConstructorWithExpressionTrims() {
         String expr = "  10 OFFSET 20  ";
         Limit limit = Filters.limit(expr);
-        Assertions.assertEquals(SK.LIMIT + SK.SPACE + "10 OFFSET 20", limit.getExpression());
+        Assertions.assertEquals(SK.LIMIT + SK.SPACE + "10 OFFSET 20", limit.getLiteral());
     }
 
     @Test
     public void testConstructorWithPlaceholderExpression() {
         Limit limit = Filters.limit("? OFFSET ?");
-        Assertions.assertEquals(SK.LIMIT + SK.SPACE + "? OFFSET ?", limit.getExpression());
+        Assertions.assertEquals(SK.LIMIT + SK.SPACE + "? OFFSET ?", limit.getLiteral());
     }
 
     @Test
@@ -474,7 +474,7 @@ class Limit2026Batch2Test extends TestBase {
         Limit limit = new Limit();
         Limit same = new Limit();
 
-        Assertions.assertNull(limit.getExpression());
+        Assertions.assertNull(limit.getLiteral());
         Assertions.assertEquals(0, limit.getCount());
         Assertions.assertEquals(0, limit.getOffset());
         Assertions.assertTrue(limit.getParameters().isEmpty());
@@ -491,7 +491,7 @@ class Limit2026Batch2Test extends TestBase {
     public void testConstructorWithExpression_MybatisPlaceholder() {
         Limit limit = new Limit("#{limit} OFFSET #{offset}");
 
-        Assertions.assertEquals("LIMIT #{limit} OFFSET #{offset}", limit.getExpression());
+        Assertions.assertEquals("LIMIT #{limit} OFFSET #{offset}", limit.getLiteral());
         Assertions.assertEquals("#{limit} OFFSET #{offset}", limit.getCondition().toString());
     }
 

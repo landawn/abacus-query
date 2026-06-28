@@ -65,7 +65,7 @@ public class Limit extends Clause {
 
     private int offset;
 
-    private String expr;
+    private String literal;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -143,7 +143,7 @@ public class Limit extends Clause {
      *
      * <p>If the expression starts with a digit, {@code '?'}, {@code ':'}, or <code>"#{"</code>, the literal
      * {@code "LIMIT "} prefix is added automatically; otherwise the expression is used as-is.
-     * After this normalization, {@link #getExpression()} returns the prefixed form and
+     * After this normalization, {@link #getLiteral()} returns the prefixed form and
      * {@link #toString(NamingPolicy)} renders it directly without inserting an additional {@code LIMIT}.</p>
      *
      * <p>Note: when this condition is rendered by a SQL builder whose dialect paginates with
@@ -186,14 +186,14 @@ public class Limit extends Clause {
     private Limit(final String normalizedExpr, @SuppressWarnings("unused") final boolean normalized) {
         super(Operator.LIMIT, Expression.of(conditionExprFromNormalized(normalizedExpr)));
 
-        this.expr = normalizedExpr;
+        this.literal = normalizedExpr;
         this.count = Integer.MAX_VALUE;
         this.offset = 0;
     }
 
     /**
-     * Returns the custom expression string if one was provided.
-     * This method returns the normalized expression string from the string constructor
+     * Returns the custom LIMIT literal string if one was provided.
+     * This method returns the normalized literal string from the string constructor
      * (which may have {@code "LIMIT "} prepended if the input starts with a digit, {@code '?'},
      * {@code ':'}, or <code>"#{"</code>), or {@code null} if the Limit was created with
      * count/offset parameters.
@@ -202,19 +202,19 @@ public class Limit extends Clause {
      * <pre>{@code
      * // Limit created with a custom expression
      * Limit customLimit = new Limit("10 OFFSET 20");
-     * String expr = customLimit.getExpression();
+     * String literal = customLimit.getLiteral();
      * // Returns: "LIMIT 10 OFFSET 20"
      *
      * // Limit created with count/offset returns null
      * Limit numericLimit = new Limit(20, 10);
-     * String noExpr = numericLimit.getExpression();
+     * String noLiteral = numericLimit.getLiteral();
      * // Returns: null
      * }</pre>
      *
-     * @return the custom expression string, or {@code null} if constructed with count/offset parameters
+     * @return the custom LIMIT literal string, or {@code null} if constructed with count/offset parameters
      */
-    public String getExpression() {
-        return expr;
+    public String getLiteral() {
+        return literal;
     }
 
     /**
@@ -304,7 +304,7 @@ public class Limit extends Clause {
      * Converts this LIMIT clause to its string representation according to the specified naming policy.
      * The output format depends on how the Limit was constructed:
      * <ul>
-     *   <li>Custom expression (non-empty {@code expr}): returns the normalized expression as-is (which may
+     *   <li>Custom expression (non-empty {@code literal}): returns the normalized literal as-is (which may
      *       have {@code "LIMIT "} prepended, per {@link #Limit(String)})</li>
      *   <li>Uninitialized instance (no expression and {@code null} operator, e.g. produced by the
      *       package-private default constructor during Kryo deserialization): returns the literal
@@ -332,8 +332,8 @@ public class Limit extends Clause {
      */
     @Override
     public String toString(final NamingPolicy namingPolicy) {
-        if (Strings.isNotEmpty(expr)) {
-            return expr;
+        if (Strings.isNotEmpty(literal)) {
+            return literal;
         }
 
         // Uninitialized instance (e.g., from Kryo default constructor): render the operator
@@ -360,15 +360,15 @@ public class Limit extends Clause {
      * new Limit(10).hashCode() == new Limit(20).hashCode();   // (typically) false
      * }</pre>
      *
-     * @return the hash code based on expr if present, otherwise based on count and offset
+     * @return the hash code based on literal if present, otherwise based on count and offset
      */
     @Override
     public int hashCode() {
         int h = 17;
         h = (h * 31) + ((operator() == null) ? 0 : operator().hashCode());
 
-        if (Strings.isNotEmpty(expr)) {
-            return (h * 31) + expr.hashCode();
+        if (Strings.isNotEmpty(literal)) {
+            return (h * 31) + literal.hashCode();
         } else {
             h = (h * 31) + count;
             return (h * 31) + offset;
@@ -399,7 +399,7 @@ public class Limit extends Clause {
      * }</pre>
      *
      * @param obj the object to compare with
-     * @return {@code true} if the object is a Limit with the same {@code expr} or matching count/offset values
+     * @return {@code true} if the object is a Limit with the same {@code literal} or matching count/offset values
      */
     @Override
     public boolean equals(final Object obj) {
@@ -412,10 +412,10 @@ public class Limit extends Clause {
                 return false;
             }
 
-            if (Strings.isNotEmpty(expr)) {
-                return Strings.isNotEmpty(other.expr) && expr.equals(other.expr);
+            if (Strings.isNotEmpty(literal)) {
+                return Strings.isNotEmpty(other.literal) && literal.equals(other.literal);
             } else {
-                return Strings.isEmpty(other.expr) && (count == other.count) && (offset == other.offset);
+                return Strings.isEmpty(other.literal) && (count == other.count) && (offset == other.offset);
             }
         }
 

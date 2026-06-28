@@ -1408,6 +1408,136 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
+         * Sets or replaces the GROUP BY clause with a single column in ascending order.
+         * If a GROUP BY clause already exists, it will be replaced.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria.Builder builder = Criteria.builder()
+         *     .groupByAsc("category");
+         * // SQL: GROUP BY category ASC
+         * }</pre>
+         *
+         * @param propName the property name to group by ascending
+         * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+         */
+        public Builder groupByAsc(final String propName) {
+            add(Filters.groupByAsc(propName));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause with ascending order.
+         * Convenience method that groups by all specified columns in ascending order.
+         * If a GROUP BY clause already exists, it will be replaced.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria.Builder builder = Criteria.builder()
+         *     .groupByAsc("category", "brand");
+         * // SQL: GROUP BY category ASC, brand ASC
+         * }</pre>
+         *
+         * @param propNames the property names to group by ascending
+         * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         */
+        public Builder groupByAsc(final String... propNames) {
+            add(Filters.groupByAsc(propNames));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause with ascending order.
+         * If a GROUP BY clause already exists, it will be replaced.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<String> groupCols = Arrays.asList("category", "brand");
+         * Criteria.Builder builder = Criteria.builder()
+         *     .groupByAsc(groupCols);
+         * // SQL: GROUP BY category ASC, brand ASC
+         * }</pre>
+         *
+         * @param propNames the collection of property names to group by ascending
+         *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
+         *                  to preserve the column order)
+         * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         */
+        public Builder groupByAsc(final Collection<String> propNames) {
+            return groupBy(propNames, SortDirection.ASC);
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause with a single column in descending order.
+         * If a GROUP BY clause already exists, it will be replaced.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria.Builder builder = Criteria.builder()
+         *     .groupByDesc("sales");
+         * // SQL: GROUP BY sales DESC
+         * }</pre>
+         *
+         * @param propName the property name to group by descending
+         * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+         */
+        public Builder groupByDesc(final String propName) {
+            add(Filters.groupByDesc(propName));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause with descending order.
+         * Convenience method that groups by all specified columns in descending order.
+         * If a GROUP BY clause already exists, it will be replaced.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria.Builder builder = Criteria.builder()
+         *     .groupByDesc("sales", "region");
+         * // SQL: GROUP BY sales DESC, region DESC
+         * }</pre>
+         *
+         * @param propNames the property names to group by descending
+         * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         */
+        public Builder groupByDesc(final String... propNames) {
+            add(Filters.groupByDesc(propNames));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the GROUP BY clause with descending order.
+         * If a GROUP BY clause already exists, it will be replaced.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * List<String> groupCols = Arrays.asList("sales", "region");
+         * Criteria.Builder builder = Criteria.builder()
+         *     .groupByDesc(groupCols);
+         * // SQL: GROUP BY sales DESC, region DESC
+         * }</pre>
+         *
+         * @param propNames the collection of property names to group by descending
+         *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
+         *                  to preserve the column order)
+         * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         */
+        public Builder groupByDesc(final Collection<String> propNames) {
+            return groupBy(propNames, SortDirection.DESC);
+        }
+
+        /**
          * Sets or replaces the GROUP BY clause.
          * If a GROUP BY clause already exists, it will be replaced.
          *
@@ -1686,6 +1816,27 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
+         * Sets or replaces the ORDER BY clause with a single column in ascending order.
+         * If an ORDER BY clause already exists, it will be replaced.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria.Builder builder = Criteria.builder()
+         *     .orderByAsc("lastName");
+         * // SQL: ORDER BY lastName ASC
+         * }</pre>
+         *
+         * @param propName the property name to order by ascending
+         * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+         */
+        public Builder orderByAsc(final String propName) {
+            add(Filters.orderByAsc(propName));
+
+            return this;
+        }
+
+        /**
          * Sets or replaces the ORDER BY clause with ascending order.
          * Convenience method that sorts all specified columns in ascending order.
          * If an ORDER BY clause already exists, it will be replaced.
@@ -1727,6 +1878,27 @@ public class Criteria extends AbstractCondition {
          */
         public Builder orderByAsc(final Collection<String> propNames) {
             add(Filters.orderByAsc(propNames));
+
+            return this;
+        }
+
+        /**
+         * Sets or replaces the ORDER BY clause with a single column in descending order.
+         * If an ORDER BY clause already exists, it will be replaced.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria.Builder builder = Criteria.builder()
+         *     .orderByDesc("score");
+         * // SQL: ORDER BY score DESC
+         * }</pre>
+         *
+         * @param propName the property name to order by descending
+         * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+         */
+        public Builder orderByDesc(final String propName) {
+            add(Filters.orderByDesc(propName));
 
             return this;
         }

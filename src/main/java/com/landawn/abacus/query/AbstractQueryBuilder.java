@@ -2456,6 +2456,134 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Adds a GROUP BY ASC clause with a single column.
+     * Convenience method equivalent to {@code groupBy(expr, SortDirection.ASC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("category", "COUNT(*)")
+     *                 .from("products")
+     *                 .groupByAsc("category")
+     *                 .build().query();
+     * // Output: SELECT category, COUNT(*) FROM products GROUP BY category ASC
+     * }</pre>
+     *
+     * @param expr the column to group by ascending
+     * @return this SqlBuilder instance for method chaining
+     */
+    @Beta
+    public This groupByAsc(final String expr) {
+        return groupBy(expr, SortDirection.ASC);
+    }
+
+    /**
+     * Adds a GROUP BY ASC clause with multiple columns.
+     * Convenience method equivalent to {@code groupBy(propOrColumnNames, SortDirection.ASC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("category", "brand", "COUNT(*)")
+     *                 .from("products")
+     *                 .groupByAsc("category", "brand")
+     *                 .build().query();
+     * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category ASC, brand ASC
+     * }</pre>
+     *
+     * @param propOrColumnNames the columns to group by ascending
+     * @return this SqlBuilder instance for method chaining
+     */
+    @Beta
+    public This groupByAsc(final String... propOrColumnNames) {
+        return groupBy(N.toList(propOrColumnNames), SortDirection.ASC);
+    }
+
+    /**
+     * Adds a GROUP BY ASC clause with a collection of columns.
+     * Convenience method equivalent to {@code groupBy(propOrColumnNames, SortDirection.ASC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("category", "brand");
+     * String sql = PSC.select("category", "brand", "COUNT(*)")
+     *                 .from("products")
+     *                 .groupByAsc(columns)
+     *                 .build().query();
+     * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category ASC, brand ASC
+     * }</pre>
+     *
+     * @param propOrColumnNames the collection of columns to group by ascending
+     * @return this SqlBuilder instance for method chaining
+     */
+    @Beta
+    public This groupByAsc(final Collection<String> propOrColumnNames) {
+        return groupBy(propOrColumnNames, SortDirection.ASC);
+    }
+
+    /**
+     * Adds a GROUP BY DESC clause with a single column.
+     * Convenience method equivalent to {@code groupBy(expr, SortDirection.DESC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("category", "COUNT(*)")
+     *                 .from("products")
+     *                 .groupByDesc("category")
+     *                 .build().query();
+     * // Output: SELECT category, COUNT(*) FROM products GROUP BY category DESC
+     * }</pre>
+     *
+     * @param expr the column to group by descending
+     * @return this SqlBuilder instance for method chaining
+     */
+    @Beta
+    public This groupByDesc(final String expr) {
+        return groupBy(expr, SortDirection.DESC);
+    }
+
+    /**
+     * Adds a GROUP BY DESC clause with multiple columns.
+     * Convenience method equivalent to {@code groupBy(propOrColumnNames, SortDirection.DESC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("category", "brand", "COUNT(*)")
+     *                 .from("products")
+     *                 .groupByDesc("category", "brand")
+     *                 .build().query();
+     * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category DESC, brand DESC
+     * }</pre>
+     *
+     * @param propOrColumnNames the columns to group by descending
+     * @return this SqlBuilder instance for method chaining
+     */
+    @Beta
+    public This groupByDesc(final String... propOrColumnNames) {
+        return groupBy(N.toList(propOrColumnNames), SortDirection.DESC);
+    }
+
+    /**
+     * Adds a GROUP BY DESC clause with a collection of columns.
+     * Convenience method equivalent to {@code groupBy(propOrColumnNames, SortDirection.DESC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("category", "brand");
+     * String sql = PSC.select("category", "brand", "COUNT(*)")
+     *                 .from("products")
+     *                 .groupByDesc(columns)
+     *                 .build().query();
+     * // Output: SELECT category, brand, COUNT(*) FROM products GROUP BY category DESC, brand DESC
+     * }</pre>
+     *
+     * @param propOrColumnNames the collection of columns to group by descending
+     * @return this SqlBuilder instance for method chaining
+     */
+    @Beta
+    public This groupByDesc(final Collection<String> propOrColumnNames) {
+        return groupBy(propOrColumnNames, SortDirection.DESC);
+    }
+
+    /**
      * Adds a GROUP BY clause with a single column.
      *
      * <p><b>Usage Examples:</b></p>
@@ -2739,6 +2867,134 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Adds an ORDER BY ASC clause with a single column.
+     * Convenience method equivalent to {@code orderBy(expr, SortDirection.ASC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderByAsc("name")
+     *                 .build().query();
+     * // Output: SELECT * FROM users ORDER BY name ASC
+     * }</pre>
+     *
+     * @param expr the column to order by ascending
+     * @return this SqlBuilder instance for method chaining
+     */
+    @Beta
+    public This orderByAsc(final String expr) {
+        return orderBy(expr, SortDirection.ASC);
+    }
+
+    /**
+     * Adds an ORDER BY ASC clause with multiple columns.
+     * Convenience method equivalent to {@code orderBy(propOrColumnNames, SortDirection.ASC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderByAsc("lastName", "firstName")
+     *                 .build().query();
+     * // Output: SELECT * FROM users ORDER BY last_name ASC, first_name ASC
+     * }</pre>
+     *
+     * @param propOrColumnNames the columns to order by ascending
+     * @return this SqlBuilder instance for method chaining
+     */
+    @Beta
+    public This orderByAsc(final String... propOrColumnNames) {
+        return orderBy(N.toList(propOrColumnNames), SortDirection.ASC);
+    }
+
+    /**
+     * Adds an ORDER BY ASC clause with a collection of columns.
+     * Convenience method equivalent to {@code orderBy(propOrColumnNames, SortDirection.ASC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("lastName", "firstName");
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderByAsc(columns)
+     *                 .build().query();
+     * // Output: SELECT * FROM users ORDER BY last_name ASC, first_name ASC
+     * }</pre>
+     *
+     * @param propOrColumnNames the collection of columns to order by ascending
+     * @return this SqlBuilder instance for method chaining
+     */
+    @Beta
+    public This orderByAsc(final Collection<String> propOrColumnNames) {
+        return orderBy(propOrColumnNames, SortDirection.ASC);
+    }
+
+    /**
+     * Adds an ORDER BY DESC clause with a single column.
+     * Convenience method equivalent to {@code orderBy(expr, SortDirection.DESC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderByDesc("createdDate")
+     *                 .build().query();
+     * // Output: SELECT * FROM users ORDER BY created_date DESC
+     * }</pre>
+     *
+     * @param expr the column to order by descending
+     * @return this SqlBuilder instance for method chaining
+     */
+    @Beta
+    public This orderByDesc(final String expr) {
+        return orderBy(expr, SortDirection.DESC);
+    }
+
+    /**
+     * Adds an ORDER BY DESC clause with multiple columns.
+     * Convenience method equivalent to {@code orderBy(propOrColumnNames, SortDirection.DESC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderByDesc("createdDate", "id")
+     *                 .build().query();
+     * // Output: SELECT * FROM users ORDER BY created_date DESC, id DESC
+     * }</pre>
+     *
+     * @param propOrColumnNames the columns to order by descending
+     * @return this SqlBuilder instance for method chaining
+     */
+    @Beta
+    public This orderByDesc(final String... propOrColumnNames) {
+        return orderBy(N.toList(propOrColumnNames), SortDirection.DESC);
+    }
+
+    /**
+     * Adds an ORDER BY DESC clause with a collection of columns.
+     * Convenience method equivalent to {@code orderBy(propOrColumnNames, SortDirection.DESC)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("createdDate", "id");
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .orderByDesc(columns)
+     *                 .build().query();
+     * // Output: SELECT * FROM users ORDER BY created_date DESC, id DESC
+     * }</pre>
+     *
+     * @param propOrColumnNames the collection of columns to order by descending
+     * @return this SqlBuilder instance for method chaining
+     */
+    @Beta
+    public This orderByDesc(final Collection<String> propOrColumnNames) {
+        return orderBy(propOrColumnNames, SortDirection.DESC);
+    }
+
+    /**
      * Adds an ORDER BY clause with a single column.
      *
      * <p><b>Usage Examples:</b></p>
@@ -2962,134 +3218,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Adds an ORDER BY ASC clause with a single column.
-     * Convenience method equivalent to {@code orderBy(expr, SortDirection.ASC)}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("*")
-     *                 .from("users")
-     *                 .orderByAsc("name")
-     *                 .build().query();
-     * // Output: SELECT * FROM users ORDER BY name ASC
-     * }</pre>
-     *
-     * @param expr the column to order by ascending
-     * @return this SqlBuilder instance for method chaining
-     */
-    @Beta
-    public This orderByAsc(final String expr) {
-        return orderBy(expr, SortDirection.ASC);
-    }
-
-    /**
-     * Adds an ORDER BY ASC clause with multiple columns.
-     * Convenience method equivalent to {@code orderBy(propOrColumnNames, SortDirection.ASC)}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("*")
-     *                 .from("users")
-     *                 .orderByAsc("lastName", "firstName")
-     *                 .build().query();
-     * // Output: SELECT * FROM users ORDER BY last_name ASC, first_name ASC
-     * }</pre>
-     *
-     * @param propOrColumnNames the columns to order by ascending
-     * @return this SqlBuilder instance for method chaining
-     */
-    @Beta
-    public This orderByAsc(final String... propOrColumnNames) {
-        return orderBy(N.toList(propOrColumnNames), SortDirection.ASC);
-    }
-
-    /**
-     * Adds an ORDER BY ASC clause with a collection of columns.
-     * Convenience method equivalent to {@code orderBy(propOrColumnNames, SortDirection.ASC)}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<String> columns = Arrays.asList("lastName", "firstName");
-     * String sql = PSC.select("*")
-     *                 .from("users")
-     *                 .orderByAsc(columns)
-     *                 .build().query();
-     * // Output: SELECT * FROM users ORDER BY last_name ASC, first_name ASC
-     * }</pre>
-     *
-     * @param propOrColumnNames the collection of columns to order by ascending
-     * @return this SqlBuilder instance for method chaining
-     */
-    @Beta
-    public This orderByAsc(final Collection<String> propOrColumnNames) {
-        return orderBy(propOrColumnNames, SortDirection.ASC);
-    }
-
-    /**
-     * Adds an ORDER BY DESC clause with a single column.
-     * Convenience method equivalent to {@code orderBy(expr, SortDirection.DESC)}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("*")
-     *                 .from("users")
-     *                 .orderByDesc("createdDate")
-     *                 .build().query();
-     * // Output: SELECT * FROM users ORDER BY created_date DESC
-     * }</pre>
-     *
-     * @param expr the column to order by descending
-     * @return this SqlBuilder instance for method chaining
-     */
-    @Beta
-    public This orderByDesc(final String expr) {
-        return orderBy(expr, SortDirection.DESC);
-    }
-
-    /**
-     * Adds an ORDER BY DESC clause with multiple columns.
-     * Convenience method equivalent to {@code orderBy(propOrColumnNames, SortDirection.DESC)}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("*")
-     *                 .from("users")
-     *                 .orderByDesc("createdDate", "id")
-     *                 .build().query();
-     * // Output: SELECT * FROM users ORDER BY created_date DESC, id DESC
-     * }</pre>
-     *
-     * @param propOrColumnNames the columns to order by descending
-     * @return this SqlBuilder instance for method chaining
-     */
-    @Beta
-    public This orderByDesc(final String... propOrColumnNames) {
-        return orderBy(N.toList(propOrColumnNames), SortDirection.DESC);
-    }
-
-    /**
-     * Adds an ORDER BY DESC clause with a collection of columns.
-     * Convenience method equivalent to {@code orderBy(propOrColumnNames, SortDirection.DESC)}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * List<String> columns = Arrays.asList("createdDate", "id");
-     * String sql = PSC.select("*")
-     *                 .from("users")
-     *                 .orderByDesc(columns)
-     *                 .build().query();
-     * // Output: SELECT * FROM users ORDER BY created_date DESC, id DESC
-     * }</pre>
-     *
-     * @param propOrColumnNames the collection of columns to order by descending
-     * @return this SqlBuilder instance for method chaining
-     */
-    @Beta
-    public This orderByDesc(final Collection<String> propOrColumnNames) {
-        return orderBy(propOrColumnNames, SortDirection.DESC);
-    }
-
-    /**
      * Adds a row-count restriction to the query, rendered in the dialect's pagination syntax.
      *
      * <p>The generated clause depends on the product named by {@link SqlDialect.ProductInfo}:</p>
@@ -3259,13 +3387,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param limit the limit condition to render (must not be {@code null})
      */
     private void appendLimit(final Limit limit) {
-        if (Strings.isNotEmpty(limit.getExpression())) {
-            if (usesFetchPagination() && appendLimitExpressionInFetchSyntax(limit.getExpression())) {
+        if (Strings.isNotEmpty(limit.getLiteral())) {
+            if (usesFetchPagination() && appendLimitExpressionInFetchSyntax(limit.getLiteral())) {
                 return;
             }
 
             checkIfAlreadyCalled(SK.LIMIT);
-            _sb.append(_SPACE).append(limit.getExpression());
+            _sb.append(_SPACE).append(limit.getLiteral());
         } else if (limit.getOffset() > 0) {
             limit(limit.getCount(), limit.getOffset());
         } else {
@@ -3280,7 +3408,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * does not match {@link #GENERIC_LIMIT_EXPRESSION_PATTERN}, in which case the caller emits it
      * verbatim.
      *
-     * @param expression the normalized limit expression from {@link Limit#getExpression()}
+     * @param expression the normalized limit expression from {@link Limit#getLiteral()}
      * @return {@code true} if the expression was rendered in FETCH pagination syntax
      */
     private boolean appendLimitExpressionInFetchSyntax(final String expression) {

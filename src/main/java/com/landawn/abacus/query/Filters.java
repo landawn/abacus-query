@@ -2110,22 +2110,20 @@ public class Filters {
     }
 
     /**
-     * Creates a {@link GroupBy} clause with the specified property names.
-     * Groups results by the given columns. No explicit sort direction is appended
-     * to the columns; the database default is used.
+     * Creates a {@link GroupBy} clause with ascending order for a single property.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * GroupBy groupBy = Filters.groupBy("department", "role");
-     * // Results in SQL like: GROUP BY department, role
+     * GroupBy groupBy = Filters.groupByAsc("department");
+     * // Results in SQL like: GROUP BY department ASC
      * }</pre>
      *
-     * @param propNames the property/column names to group by
+     * @param propName the property/column name to group by ascending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
-    public static GroupBy groupBy(final String... propNames) {
-        return new GroupBy(propNames);
+    public static GroupBy groupByAsc(final String propName) {
+        return new GroupBy(propName, SortDirection.ASC);
     }
 
     /**
@@ -2146,6 +2144,41 @@ public class Filters {
     }
 
     /**
+     * Creates a {@link GroupBy} clause with ascending order for properties from a collection.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("department", "role");
+     * GroupBy groupBy = Filters.groupByAsc(columns);
+     * // Results in SQL like: GROUP BY department ASC, role ASC
+     * }</pre>
+     *
+     * @param propNames collection of property/column names to group by ascending
+     * @return a {@link GroupBy} clause
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     */
+    public static GroupBy groupByAsc(final Collection<String> propNames) {
+        return new GroupBy(propNames, SortDirection.ASC);
+    }
+
+    /**
+     * Creates a {@link GroupBy} clause with descending order for a single property.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * GroupBy groupBy = Filters.groupByDesc("sales");
+     * // Results in SQL like: GROUP BY sales DESC
+     * }</pre>
+     *
+     * @param propName the property/column name to group by descending
+     * @return a {@link GroupBy} clause
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     */
+    public static GroupBy groupByDesc(final String propName) {
+        return new GroupBy(propName, SortDirection.DESC);
+    }
+
+    /**
      * Creates a {@link GroupBy} clause with descending order for the specified properties.
      *
      * <p><b>Usage Examples:</b></p>
@@ -2160,6 +2193,43 @@ public class Filters {
      */
     public static GroupBy groupByDesc(final String... propNames) {
         return new GroupBy(Array.asList(propNames), SortDirection.DESC);
+    }
+
+    /**
+     * Creates a {@link GroupBy} clause with descending order for properties from a collection.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * List<String> columns = Arrays.asList("sales", "region");
+     * GroupBy groupBy = Filters.groupByDesc(columns);
+     * // Results in SQL like: GROUP BY sales DESC, region DESC
+     * }</pre>
+     *
+     * @param propNames collection of property/column names to group by descending
+     * @return a {@link GroupBy} clause
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     */
+    public static GroupBy groupByDesc(final Collection<String> propNames) {
+        return new GroupBy(propNames, SortDirection.DESC);
+    }
+
+    /**
+     * Creates a {@link GroupBy} clause with the specified property names.
+     * Groups results by the given columns. No explicit sort direction is appended
+     * to the columns; the database default is used.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * GroupBy groupBy = Filters.groupBy("department", "role");
+     * // Results in SQL like: GROUP BY department, role
+     * }</pre>
+     *
+     * @param propNames the property/column names to group by
+     * @return a {@link GroupBy} clause
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     */
+    public static GroupBy groupBy(final String... propNames) {
+        return new GroupBy(propNames);
     }
 
     /**
@@ -2343,21 +2413,20 @@ public class Filters {
     }
 
     /**
-     * Creates an {@link OrderBy} clause with the specified property names.
-     * Orders results by the given columns in the database default order.
+     * Creates an {@link OrderBy} clause with ascending order for a single property.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * OrderBy orderBy = Filters.orderBy("last_name", "first_name");
-     * // Results in SQL like: ORDER BY last_name, first_name
+     * OrderBy orderBy = Filters.orderByAsc("created_date");
+     * // Results in SQL like: ORDER BY created_date ASC
      * }</pre>
      *
-     * @param propNames the property/column names to order by
+     * @param propName the property/column name to order by ascending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
      */
-    public static OrderBy orderBy(final String... propNames) {
-        return new OrderBy(propNames);
+    public static OrderBy orderByAsc(final String propName) {
+        return new OrderBy(propName, SortDirection.ASC);
     }
 
     /**
@@ -2396,6 +2465,23 @@ public class Filters {
     }
 
     /**
+     * Creates an {@link OrderBy} clause with descending order for a single property.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * OrderBy orderBy = Filters.orderByDesc("score");
+     * // Results in SQL like: ORDER BY score DESC
+     * }</pre>
+     *
+     * @param propName the property/column name to order by descending
+     * @return an {@link OrderBy} clause
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     */
+    public static OrderBy orderByDesc(final String propName) {
+        return new OrderBy(propName, SortDirection.DESC);
+    }
+
+    /**
      * Creates an {@link OrderBy} clause with descending order for the specified properties.
      *
      * <p><b>Usage Examples:</b></p>
@@ -2428,6 +2514,24 @@ public class Filters {
      */
     public static OrderBy orderByDesc(final Collection<String> propNames) {
         return new OrderBy(propNames, SortDirection.DESC);
+    }
+
+    /**
+     * Creates an {@link OrderBy} clause with the specified property names.
+     * Orders results by the given columns in the database default order.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * OrderBy orderBy = Filters.orderBy("last_name", "first_name");
+     * // Results in SQL like: ORDER BY last_name, first_name
+     * }</pre>
+     *
+     * @param propNames the property/column names to order by
+     * @return an {@link OrderBy} clause
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     */
+    public static OrderBy orderBy(final String... propNames) {
+        return new OrderBy(propNames);
     }
 
     /**

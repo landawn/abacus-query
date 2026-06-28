@@ -556,6 +556,36 @@ class SqlBuilder10Test extends TestBase {
     }
 
     @Test
+    public void testGroupByAsc() {
+        String sql = Dsl.PSC.select("category", "COUNT(*)").from("products").groupByAsc("category").build().query();
+
+        assertEquals("SELECT category, COUNT(*) FROM products GROUP BY category ASC", sql);
+
+        sql = Dsl.PSC.select("category", "brand", "COUNT(*)").from("products").groupByAsc("category", "brand").build().query();
+
+        assertEquals("SELECT category, brand, COUNT(*) FROM products GROUP BY category ASC, brand ASC", sql);
+
+        sql = Dsl.PSC.select("category", "brand", "COUNT(*)").from("products").groupByAsc(Arrays.asList("category", "brand")).build().query();
+
+        assertEquals("SELECT category, brand, COUNT(*) FROM products GROUP BY category ASC, brand ASC", sql);
+    }
+
+    @Test
+    public void testGroupByDesc() {
+        String sql = Dsl.PSC.select("category", "COUNT(*)").from("products").groupByDesc("category").build().query();
+
+        assertEquals("SELECT category, COUNT(*) FROM products GROUP BY category DESC", sql);
+
+        sql = Dsl.PSC.select("category", "brand", "COUNT(*)").from("products").groupByDesc("category", "brand").build().query();
+
+        assertEquals("SELECT category, brand, COUNT(*) FROM products GROUP BY category DESC, brand DESC", sql);
+
+        sql = Dsl.PSC.select("category", "brand", "COUNT(*)").from("products").groupByDesc(Arrays.asList("category", "brand")).build().query();
+
+        assertEquals("SELECT category, brand, COUNT(*) FROM products GROUP BY category DESC, brand DESC", sql);
+    }
+
+    @Test
     public void testHaving() {
         String sql = Dsl.PSC.select("category", "COUNT(*) as count").from("products").groupBy("category").having("COUNT(*) > 10").build().query();
 
@@ -6698,7 +6728,12 @@ class SqlBuilder13Test extends TestBase {
 
         @Test
         public void testGroupByHaving() {
-            String sql = Dsl.NSB.select("department", "COUNT(*) as count").from("users").groupBy("department").having(Filters.gt("COUNT(*)", 5)).build().query();
+            String sql = Dsl.NSB.select("department", "COUNT(*) as count")
+                    .from("users")
+                    .groupBy("department")
+                    .having(Filters.gt("COUNT(*)", 5))
+                    .build()
+                    .query();
 
             Assertions.assertTrue(sql.contains("GROUP BY department"));
             Assertions.assertTrue(sql.contains("HAVING"));
@@ -8107,7 +8142,10 @@ class SqlBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFromMultipleEntities() {
-            String sql = Dsl.NAC.selectFrom(Account.class, "a", "account", Account.class, "o", "order").where(Filters.eq("a.ID", "o.ACCOUNT_ID")).build().query();
+            String sql = Dsl.NAC.selectFrom(Account.class, "a", "account", Account.class, "o", "order")
+                    .where(Filters.eq("a.ID", "o.ACCOUNT_ID"))
+                    .build()
+                    .query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -8388,7 +8426,12 @@ class SqlBuilder13Test extends TestBase {
 
         @Test
         public void testGroupByHaving() {
-            String sql = Dsl.NAC.select("DEPARTMENT", "COUNT(*) AS CNT").from("EMPLOYEE").groupBy("DEPARTMENT").having(Filters.gt("COUNT(*)", 5)).build().query();
+            String sql = Dsl.NAC.select("DEPARTMENT", "COUNT(*) AS CNT")
+                    .from("EMPLOYEE")
+                    .groupBy("DEPARTMENT")
+                    .having(Filters.gt("COUNT(*)", 5))
+                    .build()
+                    .query();
 
             Assertions.assertTrue(sql.contains("GROUP BY DEPARTMENT"));
             Assertions.assertTrue(sql.contains("HAVING"));
@@ -8891,7 +8934,10 @@ class SqlBuilder13Test extends TestBase {
 
         @Test
         public void testSelectFromMultipleEntities() {
-            String sql = Dsl.NLC.selectFrom(Account.class, "a", "account", Account.class, "o", "order").where(Filters.eq("a.id", "o.accountId")).build().query();
+            String sql = Dsl.NLC.selectFrom(Account.class, "a", "account", Account.class, "o", "order")
+                    .where(Filters.eq("a.id", "o.accountId"))
+                    .build()
+                    .query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
         }
@@ -9163,7 +9209,12 @@ class SqlBuilder13Test extends TestBase {
 
         @Test
         public void testGroupByHaving() {
-            String sql = Dsl.NLC.select("department", "COUNT(*) as cnt").from("employee").groupBy("department").having(Filters.gt("COUNT(*)", 5)).build().query();
+            String sql = Dsl.NLC.select("department", "COUNT(*) as cnt")
+                    .from("employee")
+                    .groupBy("department")
+                    .having(Filters.gt("COUNT(*)", 5))
+                    .build()
+                    .query();
 
             Assertions.assertTrue(sql.contains("GROUP BY department"));
             Assertions.assertTrue(sql.contains("HAVING"));
@@ -10049,7 +10100,12 @@ class SqlBuilder13Test extends TestBase {
 
         @Test
         public void testGroupByHaving() {
-            String sql = Dsl.PSC.select("department", "COUNT(*) as count").from("users").groupBy("department").having(Filters.gt("COUNT(*)", 5)).build().query();
+            String sql = Dsl.PSC.select("department", "COUNT(*) as count")
+                    .from("users")
+                    .groupBy("department")
+                    .having(Filters.gt("COUNT(*)", 5))
+                    .build()
+                    .query();
 
             Assertions.assertTrue(sql.contains("GROUP BY department"));
             Assertions.assertTrue(sql.contains("HAVING"));
@@ -10828,7 +10884,10 @@ class SqlBuilder14Test extends TestBase {
         @Test
         public void testSelectMultipleEntitiesWithExclusions() {
             Set<String> exclude = new HashSet<>(Arrays.asList("password", "emailAddress"));
-            String sql = Dsl.MSC.select(User.class, "u", "user", exclude, User.class, "u2", "user2", exclude).from("test_users u, test_users u2").build().query();
+            String sql = Dsl.MSC.select(User.class, "u", "user", exclude, User.class, "u2", "user2", exclude)
+                    .from("test_users u, test_users u2")
+                    .build()
+                    .query();
             Assertions.assertTrue(sql.contains("user."));
             Assertions.assertTrue(sql.contains("user2."));
             Assertions.assertFalse(sql.contains("password"));
@@ -11128,7 +11187,12 @@ class SqlBuilder14Test extends TestBase {
 
         @Test
         public void testUpdateEntityClass() {
-            String sql = Dsl.MAC.update(Account.class).set("status", "ACTIVE").set(Map.of("lastLoginDate", new Date())).where(Filters.eq("id", 1)).build().query();
+            String sql = Dsl.MAC.update(Account.class)
+                    .set("status", "ACTIVE")
+                    .set(Map.of("lastLoginDate", new Date()))
+                    .where(Filters.eq("id", 1))
+                    .build()
+                    .query();
             Assertions.assertTrue(sql.contains("UPDATE ACCOUNT"));
             Assertions.assertTrue(sql.contains("STATUS = #{status}"));
             Assertions.assertTrue(sql.contains("LAST_LOGIN_DATE = #{lastLoginDate}"));
@@ -11250,7 +11314,12 @@ class SqlBuilder14Test extends TestBase {
         @Test
         public void testSelectEntityClassWithSubEntitiesAndExclusions() {
             Set<String> excludes = new HashSet<>(Arrays.asList("internalNotes"));
-            String sql = Dsl.MAC.select(Account.class, true, excludes).from("ACCOUNT").innerJoin("PROFILE").on("ACCOUNT.PROFILE_ID = PROFILE.ID").build().query();
+            String sql = Dsl.MAC.select(Account.class, true, excludes)
+                    .from("ACCOUNT")
+                    .innerJoin("PROFILE")
+                    .on("ACCOUNT.PROFILE_ID = PROFILE.ID")
+                    .build()
+                    .query();
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertFalse(sql.contains("internalNotes"));
         }
@@ -11723,7 +11792,12 @@ class SqlBuilder14Test extends TestBase {
         @Test
         public void testSelectEntityClassWithSubEntitiesAndExclusions() {
             Set<String> excludes = new HashSet<>(Arrays.asList("internalNotes"));
-            String sql = Dsl.MLC.select(Account.class, true, excludes).from("account").innerJoin("profile").on("account.profileId = profile.id").build().query();
+            String sql = Dsl.MLC.select(Account.class, true, excludes)
+                    .from("account")
+                    .innerJoin("profile")
+                    .on("account.profileId = profile.id")
+                    .build()
+                    .query();
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertFalse(sql.contains("internalNotes"));
         }
@@ -11887,7 +11961,11 @@ class SqlBuilder14Test extends TestBase {
 
         @Test
         public void testNamedHavingFunctionExpressionUsesValidPlaceholder() {
-            AbstractQueryBuilder.SP sp = Dsl.NLC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.gt("COUNT(*)", 5)).build();
+            AbstractQueryBuilder.SP sp = Dsl.NLC.select("department", "COUNT(*)")
+                    .from("employees")
+                    .groupBy("department")
+                    .having(Filters.gt("COUNT(*)", 5))
+                    .build();
 
             Assertions.assertEquals("SELECT department, COUNT(*) FROM employees GROUP BY department HAVING COUNT(*) > :COUNT", sp.query());
             Assertions.assertEquals(Arrays.asList(5), sp.parameters());
@@ -12105,12 +12183,7 @@ public class SqlBuilderTest extends TestBase {
     // HAVING tests
     @Test
     public void testHaving() {
-        String sql = Dsl.PSC.select("department", "COUNT(*)")
-                .from("employees")
-                .groupBy("department")
-                .having(Filters.expr("COUNT(*) > 5"))
-                .build()
-                .query();
+        String sql = Dsl.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).build().query();
         assertTrue(sql.contains("HAVING"));
     }
 
@@ -12454,14 +12527,7 @@ public class SqlBuilderTest extends TestBase {
     // Multiple table sources
     @Test
     public void testFromMultipleTablesWithJoin() {
-        String sql = Dsl.PSC.select("*")
-                .from("users u")
-                .join("orders o")
-                .on("u.id = o.user_id")
-                .join("products p")
-                .on("o.product_id = p.id")
-                .build()
-                .query();
+        String sql = Dsl.PSC.select("*").from("users u").join("orders o").on("u.id = o.user_id").join("products p").on("o.product_id = p.id").build().query();
         assertTrue(sql.contains("users u"));
         assertTrue(sql.contains("orders o"));
         assertTrue(sql.contains("products p"));
@@ -12748,7 +12814,12 @@ class SqlBuilderJavadocExamples extends TestBase {
 
     @Test
     public void testSqlBuilder_PSC_selectWithHaving() {
-        String sql = Dsl.PSC.select("department", "COUNT(*) AS cnt").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).build().query();
+        String sql = Dsl.PSC.select("department", "COUNT(*) AS cnt")
+                .from("employees")
+                .groupBy("department")
+                .having(Filters.expr("COUNT(*) > 5"))
+                .build()
+                .query();
         assertNotNull(sql);
         assertTrue(sql.contains("HAVING"));
     }
@@ -12897,8 +12968,9 @@ class SqlBuilder16Test extends TestBase {
         List<Map<String, Object>> rows = batchRows();
 
         List<SP> results = Arrays.asList(Dsl.SCSB.batchInsert(rows).into("users").build(), Dsl.ACSB.batchInsert(rows).into("users").build(),
-                Dsl.PSB.batchInsert(rows).into("users").build(), Dsl.PSC.batchInsert(rows).into("users").build(), Dsl.NSB.batchInsert(rows).into("users").build(),
-                Dsl.NSC.batchInsert(rows).into("users").build(), Dsl.NAC.batchInsert(rows).into("users").build(), Dsl.NLC.batchInsert(rows).into("users").build(),
+                Dsl.PSB.batchInsert(rows).into("users").build(), Dsl.PSC.batchInsert(rows).into("users").build(),
+                Dsl.NSB.batchInsert(rows).into("users").build(), Dsl.NSC.batchInsert(rows).into("users").build(),
+                Dsl.NAC.batchInsert(rows).into("users").build(), Dsl.NLC.batchInsert(rows).into("users").build(),
                 Dsl.MSC.batchInsert(rows).into("users").build(), Dsl.MLC.batchInsert(rows).into("users").build());
 
         for (SP sp : results) {
@@ -13835,8 +13907,8 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
     @Test
     public void testPredefinedDslConstantsInitializeAndForDialectCaches() {
         // Touch every predefined constant: each must initialize (non-null) and be usable.
-        for (final Dsl dsl : new Dsl[] { Dsl.PSB, Dsl.PSC, Dsl.PAC, Dsl.PLC, Dsl.NSB, Dsl.NSC, Dsl.NAC, Dsl.NLC, Dsl.SCSB, Dsl.ACSB, Dsl.LCSB,
-                Dsl.MSB, Dsl.MSC, Dsl.MAC, Dsl.MLC }) {
+        for (final Dsl dsl : new Dsl[] { Dsl.PSB, Dsl.PSC, Dsl.PAC, Dsl.PLC, Dsl.NSB, Dsl.NSC, Dsl.NAC, Dsl.NLC, Dsl.SCSB, Dsl.ACSB, Dsl.LCSB, Dsl.MSB, Dsl.MSC,
+                Dsl.MAC, Dsl.MLC }) {
             assertNotNull(dsl);
             assertNotNull(dsl.sqlDialect());
         }
