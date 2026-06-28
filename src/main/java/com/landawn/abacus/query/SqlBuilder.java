@@ -26,6 +26,8 @@ import java.util.List;
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
 import com.landawn.abacus.query.SqlDialect.SqlPolicy;
+import com.landawn.abacus.query.condition.AbstractIn;
+import com.landawn.abacus.query.condition.AbstractInSubQuery;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
 import com.landawn.abacus.query.condition.Cell;
@@ -175,14 +177,12 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             appendBetweenClause(bt.getPropName(), bt.operator(), bt.getMinValue(), bt.getMaxValue());
         } else if (cond instanceof final NotBetween nbt) {
             appendBetweenClause(nbt.getPropName(), nbt.operator(), nbt.getMinValue(), nbt.getMaxValue());
-        } else if (cond instanceof final In in) {
-            appendInClause(in.getPropNames(), in.operator(), in.getValues());
-        } else if (cond instanceof final InSubQuery inSubQuery) {
-            appendInSubQueryClause(inSubQuery.getPropNames(), inSubQuery.operator(), inSubQuery.getSubQuery());
-        } else if (cond instanceof final NotIn notIn) {
-            appendInClause(notIn.getPropNames(), notIn.operator(), notIn.getValues());
-        } else if (cond instanceof final NotInSubQuery notInSubQuery) {
-            appendInSubQueryClause(notInSubQuery.getPropNames(), notInSubQuery.operator(), notInSubQuery.getSubQuery());
+        } else if (cond instanceof final AbstractIn anyIn) {
+            // Handles both In and NotIn; the IN / NOT IN operator is carried by anyIn.operator().
+            appendInClause(anyIn.getPropNames(), anyIn.operator(), anyIn.getValues());
+        } else if (cond instanceof final AbstractInSubQuery anyInSubQuery) {
+            // Handles both InSubQuery and NotInSubQuery; the IN / NOT IN operator is carried by anyInSubQuery.operator().
+            appendInSubQueryClause(anyInSubQuery.getPropNames(), anyInSubQuery.operator(), anyInSubQuery.getSubQuery());
         } else if (cond instanceof Where || cond instanceof Having) {
             final Clause clause = (Clause) cond;
 
