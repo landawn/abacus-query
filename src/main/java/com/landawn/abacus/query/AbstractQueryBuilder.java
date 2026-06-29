@@ -5946,6 +5946,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             int index = Strings.indexOfIgnoreCase(propName, " AS ");
 
             if (index > 0) {
+                Dsl.validateColumnAlias(propName.substring(0, index).trim(), propName.substring(index + 4).trim());
                 //noinspection ConstantValue
                 appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, propName.substring(0, index).trim(),
                         propName.substring(index + 4).trim(), withClassAlias, classAlias, isForSelect, false);

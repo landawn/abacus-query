@@ -13949,6 +13949,13 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(aliases));
     }
 
+    @Test
+    public void testSelectExpressionRejectsUnsafeInlineAlias() {
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("firstName AS bad--alias").from("account").build());
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("firstName AS bad/*alias").from("account").build());
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("firstName AS bad*/alias").from("account").build());
+    }
+
     /**
      * The dialect accessor follows the fluent lower-camel naming convention (was {@code SqlDialect()}).
      */

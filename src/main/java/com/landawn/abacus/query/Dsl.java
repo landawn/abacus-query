@@ -1590,11 +1590,16 @@ public final class Dsl {
     }
 
     static void validateColumnAliases(final Map<String, String> propOrColumnNameAliases) {
-        for (final String alias : propOrColumnNameAliases.values()) {
-            if (Strings.isBlank(alias) || alias.indexOf('"') >= 0 || alias.indexOf('`') >= 0 || alias.indexOf('\r') >= 0 || alias.indexOf('\n') >= 0
-                    || alias.contains("--") || alias.contains("/*") || alias.contains("*/")) {
-                throw new IllegalArgumentException("Column alias must not be null, blank, quoted, or contain SQL comment tokens");
-            }
+        for (final Map.Entry<String, String> entry : propOrColumnNameAliases.entrySet()) {
+            validateColumnAlias(entry.getKey(), entry.getValue());
+        }
+    }
+
+    static void validateColumnAlias(final String propOrColumnName, final String alias) {
+        if (Strings.isBlank(alias) || alias.indexOf('"') >= 0 || alias.indexOf('`') >= 0 || alias.indexOf('\r') >= 0 || alias.indexOf('\n') >= 0
+                || alias.contains("--") || alias.contains("/*") || alias.contains("*/")) {
+            throw new IllegalArgumentException("Column alias for '" + propOrColumnName + "' must not be null, blank, quoted, or contain SQL comment tokens: "
+                    + alias);
         }
     }
 
