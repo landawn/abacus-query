@@ -3,8 +3,10 @@ package com.landawn.abacus.query;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
@@ -150,6 +152,7 @@ public class SqlParserCoverageTest extends TestBase {
         assertNextWordConsistency("SELECT   name,   age FROM users");
         assertNextWordConsistency("WHERE a >= b AND c != d");
         assertNextWordConsistency("SELECT 'a b', \"q\" FROM t -- tail\n");
+        assertNextWordConsistency("SELECT [a]]b], [--] FROM [t]");
         assertNextWordConsistency("SELECT /* c */ x FROM #tmp");
         assertNextWordConsistency("a||b->>c");
         assertNextWordConsistency("");
@@ -610,6 +613,26 @@ public class SqlParserCoverageTest extends TestBase {
         assertTrue(afterTempTableWords.contains("WHERE"));
     }
 
+    @Test
+    public void testParse_hashTempTableAfterQuotedCommentMarkers() {
+        assertTrue(SqlParser.parse("SELECT '--' FROM #tmp WHERE id = 1").contains("#tmp"));
+        assertTrue(SqlParser.parse("SELECT '# not comment' FROM #tmp WHERE id = 1").contains("#tmp"));
+        assertTrue(SqlParser.parse("SELECT [--] FROM #tmp WHERE id = 1").contains("#tmp"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT '--' FROM #tmp; DELETE FROM users"));
+    }
+
+    @Test
+    public void testParseAndNextWord_bracketQuotedIdentifierIsSingleToken() {
+        final String sql = "SELECT [a]]b], [--] FROM [table]";
+        final List<String> words = SqlParser.parse(sql);
+
+        assertTrue(words.contains("[a]]b]"));
+        assertTrue(words.contains("[--]"));
+        assertEquals("[a]]b]", SqlParser.nextWord(sql, "SELECT".length()));
+        assertEquals(sql.indexOf("[a]]b]") + "[a]]b]".length(), SqlParser.nextWordEnd(sql, "SELECT".length()));
+        assertEquals(sql.indexOf("FROM"), SqlParser.indexOfWord(sql, "FROM", 0, false));
+    }
+
     // ----------------------------------------------------------------------------------------------
     // nextWord / nextWordEnd -- MyBatis #{...} stays one token
     // ----------------------------------------------------------------------------------------------
@@ -706,7 +729,12 @@ public class SqlParserCoverageTest extends TestBase {
         assertTrue(SqlParser.isReadOnlyQuery("SELECT into$ FROM t"));
         assertTrue(SqlParser.isReadOnlyQuery("SELECT $into FROM t"));
         assertTrue(SqlParser.isReadOnlyQuery("SELECT [into] FROM t"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT t.into FROM t"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT * FROM $into"));
         assertFalse(SqlParser.isReadOnlyQuery("SELECT a INTO new_table FROM t"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT t.from, a INTO new_table FROM t"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT t. /* c */ into FROM t"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; SELECT a INTO new_table FROM t"));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -747,7 +775,12 @@ public class SqlParserCoverageTest extends TestBase {
     public void testIsNoUpdateQuery_selectIntoSubstringInIdentifierIsAllowed() {
         assertTrue(SqlParser.isNoUpdateQuery("SELECT into$ FROM t"));
         assertTrue(SqlParser.isNoUpdateQuery("SELECT $into FROM t"));
+        assertTrue(SqlParser.isNoUpdateQuery("SELECT t.into FROM t"));
+        assertTrue(SqlParser.isNoUpdateQuery("SELECT * FROM $into"));
         assertFalse(SqlParser.isNoUpdateQuery("SELECT a INTO new_table FROM t"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT t.from, a INTO new_table FROM t"));
+        assertTrue(SqlParser.isNoUpdateQuery("SELECT t. /* c */ into FROM t"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; SELECT a INTO new_table FROM t"));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -885,5 +918,104 @@ public class SqlParserCoverageTest extends TestBase {
 
         assertTrue(words.contains("FROM"));
         assertTrue(words.stream().noneMatch(w -> w.contains("trailing")));
+    }
+
+    // ----------------------------------------------------------------------------------------------
+    // SELECT ... INTO detection: only an INTO in the SELECT list (before that query's FROM) counts.
+    // Table names after FROM, qualified names such as t.into, and identifiers merely containing
+    // "into" do not. ('$' is an identifier char and must not spin the INTO scan.)
+    // ----------------------------------------------------------------------------------------------
+
+    @Test
+    public void testSelectInto_realSelectIntoIsNotReadOnly() {
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT * INTO newt FROM t"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT a, b INTO newt FROM t"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT * INTO newt FROM t"));
+        // Outer SELECT ... INTO even when a derived table follows.
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT a INTO #t1 FROM (SELECT b FROM s) x"));
+    }
+
+    @Test
+    public void testSelectInto_intoAfterFromIsReadOnly() {
+        // A table named like the keyword, appearing after FROM, is not a SELECT ... INTO.
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT a FROM into_table"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT a FROM t JOIN into2 ON t.id = into2.id"));
+    }
+
+    @Test
+    public void testSelectInto_qualifiedAndContainingIdentifiersAreReadOnly() {
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT t.into FROM t"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT into_col FROM t"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT into$ FROM t"));
+    }
+
+    @Test
+    public void testSelectInto_inSubquerySelectListIsDetected() {
+        // SELECT ... INTO inside a subquery still creates a table -> not read-only / not no-update.
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT a FROM t WHERE x IN (SELECT id INTO #tmp FROM s)"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT a FROM t WHERE x IN (SELECT id INTO #tmp FROM s)"));
+    }
+
+    @Test
+    public void testSelectInto_intoInWhereSubqueryAfterFromIsReadOnly() {
+        // A correlated subquery with no INTO in its select list -> read-only.
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT a FROM t WHERE x IN (SELECT id FROM s WHERE s.into = 1)"));
+    }
+
+    @Test
+    public void testSelectInto_insertIntoSelectStaysNoUpdate() {
+        // "INSERT INTO ... SELECT ..." is a plain insert; the INTO belongs to INSERT, not a SELECT INTO.
+        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t (a) SELECT a FROM s"));
+    }
+
+    @Test
+    public void testSelectInto_qualifierDotSeparatedByCommentsOrWhitespaceIsReadOnly() {
+        // A qualifier dot may be separated from the identifier by whitespace or a comment; such a
+        // qualified column (a.into / into.x) must not be read as the SELECT ... INTO keyword.
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT a . into FROM t"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT a./* x */into FROM t"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT into/* */.x FROM t"));
+    }
+
+    @Test
+    public void testSelectInto_qualifiedColumnNamedFromIsReadOnly() {
+        // A qualified column named like the FROM keyword must not end the SELECT-list scan early.
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT a.from FROM t"));
+    }
+
+    @Test
+    public void testSelectInto_dollarIdentifierDoesNotHang() {
+        // Regression guard: '$' is an identifier char; the INTO scan must advance past it, not spin.
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            assertTrue(SqlParser.isReadOnlyQuery("SELECT a$ FROM t"));
+            assertTrue(SqlParser.isReadOnlyQuery("SELECT $ FROM t"));
+            assertTrue(SqlParser.isReadOnlyQuery("SELECT a$b, c$ FROM t$x WHERE y$ = 1"));
+        });
+    }
+
+    @Test
+    public void testSelectInto_scalarSubqueryInSelectListThenIntoIsDetected() {
+        // A scalar subquery in the select list closes its own depth; the outer INTO (before the
+        // outer FROM) must still be detected at depth 0.
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT (SELECT max(x) FROM y) INTO #t FROM z"));
+    }
+
+    @Test
+    public void testSelectInto_secondStatementSelectIntoAfterSemicolonIsDetected() {
+        // ';' resets the depth-0 select-list state; a SELECT ... INTO in the next statement counts.
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; SELECT a INTO #t FROM b"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; SELECT a INTO #t FROM b"));
+    }
+
+    @Test
+    public void testSelectInto_derivedTableSelectIntoIsDetected() {
+        // SELECT ... INTO inside a derived table (depth 1) is still a table-creating statement.
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT a FROM (SELECT b INTO #t FROM c) x"));
+    }
+
+    @Test
+    public void testIsNoUpdateQuery_mergeAfterSemicolonRejected() {
+        // Mirror of the isReadOnlyQuery MERGE-after-';' case for the no-update gate.
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; MERGE INTO t USING s ON (t.id = s.id) WHEN MATCHED THEN UPDATE SET t.x = s.x"));
     }
 }

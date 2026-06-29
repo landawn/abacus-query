@@ -35,9 +35,10 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>Tokenization details:</p>
  * <ul>
- *   <li>Single-quoted, double-quoted and backtick-quoted strings/identifiers are kept as a
- *       single token. Both doubled-quote ({@code ''}, {@code ""}, {@code ``}) and backslash
- *       escaping are recognized as in-string escapes.</li>
+ *   <li>Single-quoted, double-quoted, backtick-quoted and square-bracket-quoted
+ *       strings/identifiers are kept as a single token. Doubled-quote escapes ({@code ''},
+ *       {@code ""}, {@code ``}, {@code ]]}) and backslash escaping are recognized inside quoted
+ *       regions.</li>
  *   <li>Comments are normally stripped: line comments ({@code -- ...}), MySQL hash comments
  *       ({@code # ...}), and block comments ({@code /* ... *}{@code /}) are discarded.
  *       Exception: block comments are retained as tokens when the SQL begins
@@ -493,8 +494,8 @@ public final class SqlParser {
                 } else {
                     sb.append(ch);
 
-                    if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
-                        quoteChar = ch;
+                    if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+                        quoteChar = ch == '[' ? ']' : ch;
                         // Opening quote char is non-backslash -> first content char has even parity.
                         bsEscaped = false;
                     }
@@ -762,8 +763,8 @@ public final class SqlParser {
                     } else {
                         sb.append(ch);
 
-                        if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
-                            quoteChar = ch;
+                        if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+                            quoteChar = ch == '[' ? ']' : ch;
                             bsEscaped = false;
                         }
                     }
@@ -944,8 +945,8 @@ public final class SqlParser {
                 } else {
                     sb.append(ch);
 
-                    if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
-                        quoteChar = ch;
+                    if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+                        quoteChar = ch == '[' ? ']' : ch;
                         bsEscaped = false;
                     }
                 }
@@ -1072,8 +1073,8 @@ public final class SqlParser {
             } else {
                 started = true;
 
-                if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
-                    quoteChar = ch;
+                if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+                    quoteChar = ch == '[' ? ']' : ch;
                     bsEscaped = false;
                 }
             }
@@ -1388,20 +1389,57 @@ public final class SqlParser {
     }
 
     private static int lastLineCommentStart(final String str, final int fromIndex, final int toIndex) {
-        int result = -1;
+        char quoteChar = 0;
+        boolean bsEscaped = false;
+        boolean inBracketQuotedIdentifier = false;
 
         for (int i = fromIndex; i <= toIndex; i++) {
             final char ch = str.charAt(i);
 
-            if (ch == '-' && i < toIndex && str.charAt(i + 1) == '-') {
-                result = i;
-                i++;
+            if (quoteChar != 0) {
+                if (ch == quoteChar) {
+                    if (bsEscaped) {
+                        bsEscaped = false;
+                    } else if (i < toIndex && str.charAt(i + 1) == quoteChar) {
+                        i++;
+                        bsEscaped = false;
+                    } else {
+                        quoteChar = 0;
+                    }
+                } else if (ch == '\\') {
+                    bsEscaped = !bsEscaped;
+                } else {
+                    bsEscaped = false;
+                }
+
+                continue;
+            }
+
+            if (inBracketQuotedIdentifier) {
+                if (ch == ']') {
+                    if (i < toIndex && str.charAt(i + 1) == ']') {
+                        i++;
+                    } else {
+                        inBracketQuotedIdentifier = false;
+                    }
+                }
+
+                continue;
+            }
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                quoteChar = ch;
+                bsEscaped = false;
+            } else if (ch == '[') {
+                inBracketQuotedIdentifier = true;
+            } else if (ch == '-' && i < toIndex && str.charAt(i + 1) == '-') {
+                return i;
             } else if (ch == '#' && isHashLineCommentStartForBackwardScan(str, i)) {
-                result = i;
+                return i;
             }
         }
 
-        return result;
+        return -1;
     }
 
     private static boolean isHashLineCommentStartForBackwardScan(final String str, final int index) {
@@ -1587,13 +1625,16 @@ public final class SqlParser {
      * A statement is considered read-only only if its leading keyword is {@code SELECT}
      * (see {@link #isSelectQuery(String)}) <i>and</i> it contains no top-level mutation keyword
      * ({@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE}) and no standalone
-     * {@code SELECT ... INTO ...} clause. Keyword matching ignores occurrences inside quoted string
-     * literals, quoted identifiers, SQL comments and larger identifier tokens, so a SELECT that
-     * merely returns the literal text {@code 'DELETE'} or a column named {@code into$} is still
-     * treated as read-only, whereas a data-changing CTE such as {@code WITH t AS (...) DELETE ...}
-     * is not. For multi-statement SQL, a later statement that starts with {@code INSERT},
-     * {@code UPDATE}, {@code DELETE} or {@code MERGE} also makes the SQL non-read-only, including
-     * when that later statement starts with a {@code WITH} clause or leading parentheses.
+     * {@code SELECT ... INTO ...} clause. The {@code INTO} check is limited to the SELECT list
+     * before that SELECT's {@code FROM}; table names after {@code FROM} and qualified identifiers
+     * such as {@code t.into} do not count as {@code SELECT ... INTO}. Keyword matching ignores
+     * occurrences inside quoted string literals, quoted identifiers, SQL comments and larger
+     * identifier tokens, so a SELECT that merely returns the literal text {@code 'DELETE'} or a
+     * column named {@code into$} is still treated as read-only, whereas a data-changing CTE such as
+     * {@code WITH t AS (...) DELETE ...} is not. For multi-statement SQL, a later statement that
+     * starts with {@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE} also makes the
+     * SQL non-read-only, including when that later statement starts with a {@code WITH} clause or
+     * leading parentheses.
      * </p>
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
@@ -1722,10 +1763,11 @@ public final class SqlParser {
      * <p>
      * A plain {@code INSERT}, and an {@code INSERT ... ON CONFLICT ... DO NOTHING}, are therefore
      * accepted, since they never overwrite existing rows. Clause and keyword scans use token
-     * boundaries, so identifiers such as {@code into$}, {@code update_time} or bracket/quoted
-     * identifiers named like keywords are ignored. A {@code null} or empty statement does not lead
-     * with {@code SELECT} or {@code INSERT}, so it returns {@code false}. For multi-statement SQL,
-     * a later top-level update/delete/merge statement makes this method return {@code false}.
+     * boundaries, so identifiers such as {@code into$}, qualified names such as {@code t.into},
+     * {@code update_time} or bracket/quoted identifiers named like keywords are ignored. A
+     * {@code null} or empty statement does not lead with {@code SELECT} or {@code INSERT}, so it
+     * returns {@code false}. For multi-statement SQL, a later top-level update/delete/merge
+     * statement makes this method return {@code false}.
      * </p>
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
@@ -1840,15 +1882,17 @@ public final class SqlParser {
     }
 
     private static boolean containsSelectIntoClause(final String sql) {
-        return isSelectQuery(sql) && containsToken(sql, "INTO");
+        return isSelectQuery(sql) && containsSelectListIntoToken(sql);
     }
 
-    private static boolean containsToken(final String sql, final String tokenToFind) {
+    private static boolean containsSelectListIntoToken(final String sql) {
         if (Strings.isEmpty(sql)) {
             return false;
         }
 
+        final List<Boolean> selectBeforeFromByDepth = new ArrayList<>(4);
         int index = 0;
+        int depth = 0;
 
         while (index < sql.length()) {
             index = skipLeadingWhitespaceAndComments(sql, index);
@@ -1865,12 +1909,39 @@ public final class SqlParser {
             } else if (ch == '[') {
                 index = skipBracketQuotedIdentifier(sql, index);
                 continue;
+            } else if (ch == '(') {
+                depth++;
+                index++;
+                continue;
+            } else if (ch == ')') {
+                clearSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth);
+
+                if (depth > 0) {
+                    depth--;
+                }
+
+                index++;
+                continue;
+            } else if (ch == ';') {
+                if (depth == 0) {
+                    selectBeforeFromByDepth.clear();
+                }
+
+                index++;
+                continue;
             }
 
             if (isIdentifierChar(ch)) {
                 final String token = readIdentifierToken(sql, index);
 
-                if (tokenToFind.equalsIgnoreCase(token)) {
+                if ("SELECT".equalsIgnoreCase(token)) {
+                    setSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth, true);
+                } else if ("FROM".equalsIgnoreCase(token) && !isDotQualifiedToken(sql, index, index + token.length())) {
+                    if (isSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth)) {
+                        setSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth, false);
+                    }
+                } else if ("INTO".equalsIgnoreCase(token) && isSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth)
+                        && !isDotQualifiedToken(sql, index, index + token.length())) {
                     return true;
                 }
 
@@ -1882,6 +1953,36 @@ public final class SqlParser {
         }
 
         return false;
+    }
+
+    private static boolean isSelectBeforeFromAtDepth(final List<Boolean> selectBeforeFromByDepth, final int depth) {
+        return depth < selectBeforeFromByDepth.size() && Boolean.TRUE.equals(selectBeforeFromByDepth.get(depth));
+    }
+
+    private static void setSelectBeforeFromAtDepth(final List<Boolean> selectBeforeFromByDepth, final int depth, final boolean value) {
+        while (selectBeforeFromByDepth.size() <= depth) {
+            selectBeforeFromByDepth.add(Boolean.FALSE);
+        }
+
+        selectBeforeFromByDepth.set(depth, value);
+    }
+
+    private static void clearSelectBeforeFromAtDepth(final List<Boolean> selectBeforeFromByDepth, final int depth) {
+        if (depth < selectBeforeFromByDepth.size()) {
+            selectBeforeFromByDepth.set(depth, Boolean.FALSE);
+        }
+    }
+
+    private static boolean isDotQualifiedToken(final String sql, final int startIndex, final int endIndex) {
+        final int previousIndex = skipBackwardWhitespaceAndComments(sql, startIndex - 1);
+
+        if (previousIndex >= 0 && sql.charAt(previousIndex) == '.') {
+            return true;
+        }
+
+        final int nextIndex = skipLeadingWhitespaceAndComments(sql, endIndex);
+
+        return nextIndex < sql.length() && sql.charAt(nextIndex) == '.';
     }
 
     private static boolean containsTokenSequence(final String sql, final String... tokens) {
