@@ -4042,7 +4042,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
      *
-     * @param propOrColumnNames the columns for the union all query
+     * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
+     * trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and
+     * appended verbatim after the {@code UNION ALL} keyword (no following {@code from(...)} is required).
+     * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
+     * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
+     * {@code SELECT}, use {@link #unionAll(Collection)} with a single-element collection: the collection form
+     * always treats its elements as a column list (the sub-query heuristic does not apply there).</p>
+     *
+     * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
@@ -4130,7 +4138,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
      * }</pre>
      *
-     * @param propOrColumnNames the columns for the intersect query
+     * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
+     * trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and
+     * appended verbatim after the {@code INTERSECT} keyword (no following {@code from(...)} is required).
+     * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
+     * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
+     * {@code SELECT}, use {@link #intersect(Collection)} with a single-element collection: the collection form
+     * always treats its elements as a column list (the sub-query heuristic does not apply there).</p>
+     *
+     * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
@@ -4218,7 +4234,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * @param propOrColumnNames the columns for the except query
+     * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
+     * trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and
+     * appended verbatim after the {@code EXCEPT} keyword (no following {@code from(...)} is required).
+     * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
+     * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
+     * {@code SELECT}, use {@link #except(Collection)} with a single-element collection: the collection form
+     * always treats its elements as a column list (the sub-query heuristic does not apply there).</p>
+     *
+     * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
@@ -4307,7 +4331,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * @param propOrColumnNames the columns for the minus query
+     * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
+     * trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and
+     * appended verbatim after the {@code MINUS} keyword (no following {@code from(...)} is required).
+     * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
+     * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
+     * {@code SELECT}, use {@link #minus(Collection)} with a single-element collection: the collection form
+     * always treats its elements as a column list (the sub-query heuristic does not apply there).</p>
+     *
+     * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */

@@ -580,7 +580,7 @@ public final class DynamicQuery {
          * When {@code condition} is {@code true} this behaves exactly like {@link #append(String)}
          * (the text is emitted unchanged, preceded by a single space, with no validation, escaping,
          * or interpretation); when {@code condition} is {@code false} the builder is left unchanged
-         * and {@code rawClause} is not inspected.
+         * and {@code textToAppend} is not inspected.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
