@@ -1344,8 +1344,9 @@ public final class SqlParser {
 
     /**
      * Determines if a word at a specific position in a parsed word list represents a function name.
-     * A word is considered a function name if it is followed by an opening parenthesis,
-     * either immediately or after whitespace.
+     * A word is considered a function name if it is followed by the opening parenthesis token,
+     * either immediately or after whitespace. Multi-character separators that merely start with
+     * {@code '('}, such as Oracle's outer-join marker {@code (+)}, are not function-call markers.
      *
      * <p>This method is useful for identifying SQL function calls during parsing or analysis.</p>
      *
@@ -1362,7 +1363,8 @@ public final class SqlParser {
      *            at {@code words.size()}
      * @param index the index of the word to check; invalid indices return {@code false}
      * @return {@code true} if the word at {@code index} is followed (after zero or more space tokens)
-     *         by a token beginning with {@code '('}; {@code false} otherwise
+     *         by the {@code "("} token; {@code false} otherwise
+     * @throws NullPointerException if {@code words} is {@code null}
      */
     public static boolean isFunctionName(final List<String> words, final int len, final int index) {
         final int upperBound = Math.min(len, words.size());
@@ -1373,14 +1375,14 @@ public final class SqlParser {
 
         if (index < upperBound - 1) {
             String nextWord = words.get(index + 1);
-            if (!nextWord.isEmpty() && nextWord.charAt(0) == SK._PARENTHESIS_L) {
+            if (SK.PARENTHESIS_L.equals(nextWord)) {
                 return true;
             }
         }
 
         for (int i = index + 1; i < upperBound; i++) {
             String word = words.get(i);
-            if (!word.isEmpty() && word.charAt(0) == SK._PARENTHESIS_L) {
+            if (SK.PARENTHESIS_L.equals(word)) {
                 return true;
             } else if (!SK.SPACE.equals(word)) {
                 return false;
@@ -1442,7 +1444,10 @@ public final class SqlParser {
      * ({@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE}). Keyword matching ignores
      * occurrences inside quoted string literals and SQL comments, so a SELECT that merely returns
      * the literal text {@code 'DELETE'} is still treated as read-only, whereas a data-changing
-     * CTE such as {@code WITH t AS (...) DELETE ...} is not.
+     * CTE such as {@code WITH t AS (...) DELETE ...} is not. For multi-statement SQL, a later
+     * statement that starts with {@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE}
+     * also makes the SQL non-read-only, including when that later statement starts with a
+     * {@code WITH} clause or leading parentheses.
      * </p>
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
@@ -1570,17 +1575,20 @@ public final class SqlParser {
      * </ul>
      * <p>
      * A plain {@code INSERT}, and an {@code INSERT ... ON CONFLICT ... DO NOTHING}, are therefore
-     * accepted, since they never overwrite existing rows.
+     * accepted, since they never overwrite existing rows. A {@code null} or empty statement does not
+     * lead with {@code SELECT} or {@code INSERT}, so it returns {@code false}. For multi-statement
+     * SQL, a later top-level update/delete/merge statement makes this method return {@code false}.
      * </p>
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
      * @return {@code true} if the SQL neither updates nor deletes existing rows, {@code false} otherwise
+     *         (including for a {@code null} or empty statement)
      * @see #isSelectQuery(String)
      * @see #isInsertQuery(String)
      */
     public static boolean isNoUpdateQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
-            return true;
+            return false;
         }
 
         if (!(isSelectQuery(sql) || isInsertQuery(sql))) {
@@ -1670,6 +1678,9 @@ public final class SqlParser {
             }
 
             if (matched == 1) {
+                matched = 0;
+                conflictClauseDepth = 0;
+            } else if (matched == 3) {
                 matched = 0;
                 conflictClauseDepth = 0;
             }
@@ -1807,6 +1818,14 @@ public final class SqlParser {
             if (Character.isLetter(ch)) {
                 final String token = readKeyword(sql, index);
 
+                if (canStartQueryKeyword && "WITH".equalsIgnoreCase(token)) {
+                    final int queryKeywordIndex = findKeywordIndexAfterWithClause(sql, index + token.length());
+
+                    if (queryKeywordIndex >= 0 && keywordToFind.equalsIgnoreCase(readKeyword(sql, queryKeywordIndex))) {
+                        return true;
+                    }
+                }
+
                 if (canStartQueryKeyword && keywordToFind.equalsIgnoreCase(token)) {
                     return true;
                 }
@@ -1820,7 +1839,7 @@ public final class SqlParser {
             if (ch == ';') {
                 canStartQueryKeyword = true;
             } else if (ch == '(') {
-                canStartQueryKeyword = "AS".equalsIgnoreCase(previousKeyword) || "MATERIALIZED".equalsIgnoreCase(previousKeyword);
+                canStartQueryKeyword = canStartQueryKeyword || "AS".equalsIgnoreCase(previousKeyword) || "MATERIALIZED".equalsIgnoreCase(previousKeyword);
             } else if (!Character.isWhitespace(ch)) {
                 canStartQueryKeyword = false;
             }

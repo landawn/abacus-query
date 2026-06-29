@@ -456,8 +456,10 @@ public class SqlParserCoverageTest extends TestBase {
 
     @Test
     public void testIsNoUpdateQuery_nullAndEmpty() {
-        assertTrue(SqlParser.isNoUpdateQuery(null));
-        assertTrue(SqlParser.isNoUpdateQuery(""));
+        // Empty/null does not lead with SELECT or INSERT, so it is not a no-update query
+        // (consistent with isReadOnlyQuery/isSelectQuery/isInsertQuery).
+        assertFalse(SqlParser.isNoUpdateQuery(null));
+        assertFalse(SqlParser.isNoUpdateQuery(""));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -501,6 +503,16 @@ public class SqlParserCoverageTest extends TestBase {
         assertFalse(SqlParser.isFunctionName(words, words.size(), -1));
         assertFalse(SqlParser.isFunctionName(words, 1, 2));
         assertTrue(SqlParser.isFunctionName(words, words.size() + 10, 2));
+        assertThrows(NullPointerException.class, () -> SqlParser.isFunctionName(null, 0, 0));
+    }
+
+    @Test
+    public void testIsFunctionName_oracleOuterJoinMarkerIsNotFunctionCall() {
+        List<String> words = SqlParser.parse("SELECT a.id(+) FROM a");
+        int idIndex = words.indexOf("id");
+
+        assertTrue(words.contains("(+)"));
+        assertFalse(SqlParser.isFunctionName(words, words.size(), idIndex));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -608,6 +620,17 @@ public class SqlParserCoverageTest extends TestBase {
     }
 
     @Test
+    public void testIsReadOnlyQuery_mutationAfterSemicolonWithCteRejected() {
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; WITH doomed AS (SELECT 1) DELETE FROM t"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; WITH changed AS (UPDATE t SET x = 1 RETURNING *) SELECT * FROM changed"));
+    }
+
+    @Test
+    public void testIsReadOnlyQuery_parenthesizedMutationAfterSemicolonRejected() {
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; (DELETE FROM t)"));
+    }
+
+    @Test
     public void testIsReadOnlyQuery_identifierContainingKeywordIsReadOnly() {
         // readKeyword reads whole identifiers, so these column/table names are NOT mutation keywords.
         assertTrue(SqlParser.isReadOnlyQuery("SELECT * FROM update_log"));
@@ -624,6 +647,11 @@ public class SqlParserCoverageTest extends TestBase {
     }
 
     @Test
+    public void testIsNoUpdateQuery_mutationAfterSemicolonWithCteRejected() {
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; WITH doomed AS (SELECT 1) UPDATE t SET x = 1"));
+    }
+
+    @Test
     public void testIsNoUpdateQuery_onConflictNoTargetDoUpdateRejected() {
         assertFalse(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT DO UPDATE SET x = 1"));
     }
@@ -631,6 +659,11 @@ public class SqlParserCoverageTest extends TestBase {
     @Test
     public void testIsNoUpdateQuery_onConflictNamedConstraintDoNothingAllowed() {
         assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT ON CONSTRAINT uq DO NOTHING"));
+    }
+
+    @Test
+    public void testIsNoUpdateQuery_onConflictPredicateDoTokenWithPunctuationAllowed() {
+        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) WHERE do = update DO NOTHING"));
     }
 
     @Test
