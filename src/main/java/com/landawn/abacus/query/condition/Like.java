@@ -105,7 +105,9 @@ public class Like extends Binary {
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the pattern to match (typically a {@link String} containing {@code %} and/or
      *                  {@code _} wildcards; may also be a {@link SubQuery}). Use {@code %} to match
-     *                  any sequence of characters and {@code _} to match a single character.
+     *                  any sequence of characters and {@code _} to match a single character. Passing
+     *                  {@code null} renders as {@code prop LIKE null}, which is not a meaningful SQL
+     *                  comparison; do not pass {@code null} to this operator.
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public Like(final String propName, final Object propValue) {

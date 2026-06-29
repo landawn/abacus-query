@@ -100,7 +100,8 @@ public class NotLike extends Binary {
      * @param propValue the pattern to match against (typically a {@link String} containing
      *                  {@code %} and/or {@code _} wildcards; may also be a {@link SubQuery}).
      *                  Use {@code %} to match any sequence of characters and {@code _} to match
-     *                  a single character.
+     *                  a single character. Passing {@code null} renders as {@code prop NOT LIKE null},
+     *                  which is not a meaningful SQL comparison; do not pass {@code null} to this operator.
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public NotLike(final String propName, final Object propValue) {

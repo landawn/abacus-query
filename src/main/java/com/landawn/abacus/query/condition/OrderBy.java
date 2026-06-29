@@ -108,7 +108,7 @@ public class OrderBy extends Clause {
 
     /**
      * Creates an ORDER BY clause with multiple property names.
-     * All properties will be sorted in ascending order by default.
+     * All properties will be sorted in ascending order by default (no explicit direction keyword is emitted).
      *
      * <p>The order of properties in the parameter list determines the sort priority.
      * The first property has the highest priority, followed by subsequent properties.</p>

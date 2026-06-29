@@ -190,8 +190,9 @@ public final class Dsl {
      * // Output: INSERT INTO account (first_name, last_name) VALUES (?, ?)
      * }</pre>
      *
-     * @param sqlDialect the dialect (naming policy, parameter style, identifier quote and optional product info) the new DSL is bound to
-     * @return a new {@code Dsl} that produces {@link SqlBuilder} instances using the given dialect
+     * @param sqlDialect the dialect (naming policy, parameter style, identifier quote and optional product info) the DSL is bound to
+     * @return a {@code Dsl} that produces {@link SqlBuilder} instances using the given dialect; a shared
+     *         cached instance is returned for the predefined dialect combinations, otherwise a new instance
      * @throws IllegalArgumentException if {@code sqlDialect} is {@code null}
      */
     public static Dsl forDialect(final SqlDialect sqlDialect) {

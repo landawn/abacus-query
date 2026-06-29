@@ -147,7 +147,7 @@ public class On extends Cell {
         N.checkArgNotNull(cond, "cond");
 
         if (cond instanceof Criteria || isClause(cond) || containsOnOrUsing(cond) || isEmptyPredicate(cond)) {
-            throw new IllegalArgumentException("ON condition cannot wrap a SQL clause or ON/USING connector: " + cond.operator());
+            throw new IllegalArgumentException("ON condition cannot be a SQL clause, Criteria, empty predicate, or ON/USING connector: " + cond.operator());
         }
 
         return cond;

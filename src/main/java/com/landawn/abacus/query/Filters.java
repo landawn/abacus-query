@@ -756,8 +756,7 @@ public class Filters {
     public static Or anyOfAllEqual(final Collection<?> entities) {
         N.checkArgNotEmpty(entities, "entities");
 
-        final Object firstNonNull = N.firstNonNull(entities)
-                .orElseThrow(() -> new IllegalArgumentException("All elements in the specified entities are null."));
+        final Object firstNonNull = N.firstNonNull(entities).orElseThrow(() -> new IllegalArgumentException("All specified entities are null."));
 
         return anyOfAllEqual(entities, QueryUtil.getSelectPropNames(firstNonNull.getClass(), false, null));
     }
@@ -783,7 +782,7 @@ public class Filters {
     public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> selectPropNames) {
         N.checkArgNotEmpty(entities, "entities");
         N.checkArgNotEmpty(selectPropNames, "selectPropNames");
-        N.checkArgument(!N.allNull(entities), "All specified entities are null");
+        N.checkArgument(!N.allNull(entities), "All specified entities are null.");
 
         final List<Condition> condList = new ArrayList<>(entities.size());
 
@@ -3405,7 +3404,6 @@ public class Filters {
      * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
      *                                  if {@code values} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
-     * @see Array#box(int[])
      */
     public static In in(final Collection<String> propNames, final Collection<?> values) {
         return new In(propNames, values);
@@ -3657,7 +3655,6 @@ public class Filters {
      * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
      *                                  if {@code values} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
-     * @see Array#box(int[])
      */
     public static NotIn notIn(final Collection<String> propNames, final Collection<?> values) {
         return new NotIn(propNames, values);

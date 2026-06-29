@@ -1758,7 +1758,10 @@ public final class SqlParser {
      *   <li>an upsert clause that can modify existing rows, namely {@code INSERT OR REPLACE},
      *       {@code ON DUPLICATE KEY UPDATE} (MySQL) or {@code ON CONFLICT ... DO UPDATE}
      *       (PostgreSQL/SQLite). These clauses are recognized outside quoted literals,
-     *       quoted identifiers and comments.</li>
+     *       quoted identifiers and comments; or</li>
+     *   <li>a table-creating or table-overwriting clause, namely a standalone
+     *       {@code SELECT ... INTO ...} (a {@code SELECT} whose select list contains the
+     *       {@code INTO} keyword) or an {@code INSERT OVERWRITE} (Hive).</li>
      * </ul>
      * <p>
      * A plain {@code INSERT}, and an {@code INSERT ... ON CONFLICT ... DO NOTHING}, are therefore

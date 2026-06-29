@@ -641,8 +641,10 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Checks if this subquery is equal to another object.
-     * Two subqueries are equal if they have the same SQL (for raw queries) or the same
-     * entity name/class, properties, and condition (for structured queries).
+     * Two subqueries are equal only when all of their identity fields are equal: the entity name, the
+     * entity class, the selected properties, the raw SQL string, and the condition. The entity name
+     * participates even for raw-SQL subqueries, so two raw subqueries are equal only when both their
+     * SQL and their entity name match.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

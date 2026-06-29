@@ -3947,7 +3947,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
-     * trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and
+     * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
+     * {@code FROM} keyword), it is treated as a complete sub-query and
      * appended verbatim after the {@code UNION} keyword (no following {@code from(...)} is required).
      * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
      * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
@@ -4043,7 +4044,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
-     * trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and
+     * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
+     * {@code FROM} keyword), it is treated as a complete sub-query and
      * appended verbatim after the {@code UNION ALL} keyword (no following {@code from(...)} is required).
      * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
      * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
@@ -4139,7 +4141,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
-     * trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and
+     * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
+     * {@code FROM} keyword), it is treated as a complete sub-query and
      * appended verbatim after the {@code INTERSECT} keyword (no following {@code from(...)} is required).
      * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
      * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
@@ -4235,7 +4238,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
-     * trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and
+     * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
+     * {@code FROM} keyword), it is treated as a complete sub-query and
      * appended verbatim after the {@code EXCEPT} keyword (no following {@code from(...)} is required).
      * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
      * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
@@ -4332,7 +4336,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
-     * trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and
+     * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
+     * {@code FROM} keyword), it is treated as a complete sub-query and
      * appended verbatim after the {@code MINUS} keyword (no following {@code from(...)} is required).
      * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
      * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with

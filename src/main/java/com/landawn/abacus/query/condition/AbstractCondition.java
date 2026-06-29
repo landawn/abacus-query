@@ -61,7 +61,7 @@ public abstract class AbstractCondition implements Condition {
 
     static {
         final Set<Operator> set = N.newLinkedHashSet();
-        // it has order, don't change the order.
+        // Membership set used only by isClause(Operator) via contains(); insertion order is not behaviorally significant.
         set.add(Operator.JOIN);
         set.add(Operator.LEFT_JOIN);
         set.add(Operator.RIGHT_JOIN);
@@ -76,8 +76,7 @@ public abstract class AbstractCondition implements Condition {
         set.add(Operator.LIMIT);
         set.add(Operator.OFFSET);
         set.add(Operator.FOR_UPDATE);
-        // Notice: If there are several connection operators,
-        // this is their order.
+        // Set-operation connectors.
         set.add(Operator.UNION_ALL);
         set.add(Operator.UNION);
         set.add(Operator.INTERSECT);

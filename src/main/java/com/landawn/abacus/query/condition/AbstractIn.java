@@ -208,7 +208,8 @@ public abstract class AbstractIn extends ComposableCondition {
 
     private static Collection<String> copyAndValidatePropNames(final Collection<String> propNames) {
         if (N.size(propNames) < 2) {
-            throw new IllegalArgumentException("Multi-column IN requires at least two property names; use the single-property constructor for one column");
+            throw new IllegalArgumentException(
+                    "Multi-column IN/NOT IN requires at least two property names; use the single-property constructor for one column");
         }
 
         final List<String> copy = new ArrayList<>(propNames.size());
@@ -290,9 +291,11 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     /**
-     * Gets the parameter values for this condition. Any element of {@link #getValues()} that is
-     * itself a {@link Condition} has its parameters spliced into the result in place of the
-     * element; non-{@code Condition} elements are included as-is.
+     * Gets the parameter values for this condition, flattened in declaration order. For a single-column
+     * condition the parameters are the values from {@link #getValues()}; for a multi-column row-value
+     * condition they are the row tuples flattened row by row, column within row. Any individual value
+     * that is itself a {@link Condition} (a nested sub-condition) has its parameters spliced into the
+     * result in place of that value; non-{@code Condition} values are included as-is.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
