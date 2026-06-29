@@ -589,17 +589,17 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param condition the condition to check
-         * @param rawClause the raw SQL clause to append verbatim if {@code condition} is {@code true}
+         * @param textToAppend the raw SQL clause to append verbatim if {@code condition} is {@code true}
          *                  (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code rawClause} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          * @see #append(String)
          */
-        public DynamicSqlBuilder appendIf(final boolean condition, final String rawClause) {
+        public DynamicSqlBuilder appendIf(final boolean condition, final String textToAppend) {
             if (condition) {
-                checkSqlFragmentNotBlank(rawClause, "rawClause");
+                checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                getStringBuilderForMoreParts().append(" ").append(rawClause);
+                getStringBuilderForMoreParts().append(" ").append(textToAppend);
             }
 
             return this;

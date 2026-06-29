@@ -38,6 +38,11 @@ class NotBetween2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructor_BlankPropName() {
+        assertThrows(IllegalArgumentException.class, () -> new NotBetween("   ", 1, 10));
+    }
+
+    @Test
     public void testConstructor_NumericRange() {
         NotBetween condition = new NotBetween("price", 10.0, 100.0);
 

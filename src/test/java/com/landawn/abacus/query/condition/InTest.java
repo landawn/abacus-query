@@ -48,6 +48,11 @@ class In2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructor_BlankPropName() {
+        assertThrows(IllegalArgumentException.class, () -> new In("   ", Arrays.asList("active")));
+    }
+
+    @Test
     public void testConstructor_Set() {
         Set<Integer> values = new HashSet<>(Arrays.asList(1, 2, 3, 5, 8));
         In condition = new In("user_id", values);

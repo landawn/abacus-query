@@ -777,17 +777,17 @@ public final class Dsl {
      * // Output: SELECT firstName || ' ' || lastName AS fullName FROM account
      * }</pre>
      *
-     * @param selectPart the select expression
+     * @param expr the select expression
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if selectPart is null or empty
+     * @throws IllegalArgumentException if expr is null or empty
      */
-    public SqlBuilder select(final String selectPart) {
-        N.checkArgNotEmpty(selectPart, SqlBuilder.SELECTION_PART_MSG);
+    public SqlBuilder select(final String expr) {
+        N.checkArgNotEmpty(expr, SqlBuilder.SELECTION_PART_MSG);
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.QUERY;
-        instance._propOrColumnNames = Array.asList(selectPart);
+        instance._propOrColumnNames = Array.asList(expr);
         return instance;
     }
 

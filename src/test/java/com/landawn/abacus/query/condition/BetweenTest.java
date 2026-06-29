@@ -40,6 +40,11 @@ class Between2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructor_BlankPropertyName() {
+        assertThrows(IllegalArgumentException.class, () -> new Between("   ", 10, 20));
+    }
+
+    @Test
     public void testGetPropName() {
         Between condition = new Between("salary", 50000, 100000);
         assertEquals("salary", condition.getPropName());

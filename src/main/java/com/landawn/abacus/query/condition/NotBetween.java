@@ -93,10 +93,10 @@ public class NotBetween extends AbstractBetween {
      * // Matches: Sunday (1) and Saturday (7)
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param minValue the lower bound of the range to exclude; may be a literal value, a {@link SubQuery}, or any other {@link Condition} (may be {@code null})
      * @param maxValue the upper bound of the range to exclude; may be a literal value, a {@link SubQuery}, or any other {@link Condition} (may be {@code null})
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public NotBetween(final String propName, final Object minValue, final Object maxValue) {
         super(propName, Operator.NOT_BETWEEN, minValue, maxValue);

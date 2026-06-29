@@ -45,6 +45,11 @@ class NotIn2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructor_BlankPropName() {
+        assertThrows(IllegalArgumentException.class, () -> new NotIn("   ", Arrays.asList("active")));
+    }
+
+    @Test
     public void testConstructor_Set() {
         Set<Integer> excludedDepts = new HashSet<>(Arrays.asList(10, 20, 30));
         NotIn condition = new NotIn("department_id", excludedDepts);

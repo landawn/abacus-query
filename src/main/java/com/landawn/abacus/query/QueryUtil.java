@@ -778,7 +778,7 @@ public final class QueryUtil {
     }
 
     /**
-     * Generates a string of question marks ({@code ?}) repeated {@code n} times with comma-space delimiter ({@code ", "}).
+     * Generates a string of question marks ({@code ?}) repeated {@code placeholderCount} times with comma-space delimiter ({@code ", "}).
      * This is commonly used for building parameterized SQL queries with multiple placeholders.
      * Common values are pre-cached for performance optimization.
      *
@@ -792,18 +792,18 @@ public final class QueryUtil {
      * // Result: "INSERT INTO users (name, email, age) VALUES (?, ?, ?)"
      * }</pre>
      *
-     * @param n the number of question marks to generate (must not be negative)
-     * @return a string containing {@code n} question marks separated by {@code ", "}, or empty string if {@code n} is 0
-     * @throws IllegalArgumentException if {@code n} is negative
+     * @param placeholderCount the number of question marks to generate (must not be negative)
+     * @return a string containing {@code placeholderCount} question marks separated by {@code ", "}, or empty string if {@code placeholderCount} is 0
+     * @throws IllegalArgumentException if {@code placeholderCount} is negative
      */
-    public static String placeholders(final int n) {
-        N.checkArgNotNegative(n, "n");
+    public static String placeholders(final int placeholderCount) {
+        N.checkArgNotNegative(placeholderCount, "placeholderCount");
 
-        if (n < QM_CACHE.length) {
-            return QM_CACHE[n];
+        if (placeholderCount < QM_CACHE.length) {
+            return QM_CACHE[placeholderCount];
         }
 
-        switch (n) {
+        switch (placeholderCount) {
             case 100:
                 return QM_100;
             case 200:
@@ -815,7 +815,7 @@ public final class QueryUtil {
             case 1000:
                 return QM_1000;
             default:
-                return Strings.repeat("?", n, ", ");
+                return Strings.repeat("?", placeholderCount, ", ");
         }
     }
 

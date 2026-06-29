@@ -91,10 +91,10 @@ public class In extends AbstractIn {
      * // SQL: priority IN ('HIGH', 'CRITICAL')
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param values the collection of values to check against (must not be {@code null} or empty);
      *               the collection is copied internally to prevent external modifications
-     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty, or if {@code values} is {@code null}/empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, or if {@code values} is {@code null}/empty
      */
     public In(final String propName, final Collection<?> values) {
         super(propName, Operator.IN, values);

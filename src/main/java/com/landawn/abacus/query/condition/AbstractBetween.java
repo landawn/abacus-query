@@ -61,7 +61,7 @@ public abstract class AbstractBetween extends ComposableCondition {
     /**
      * Creates a new BETWEEN or NOT BETWEEN condition.
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the operator ({@link Operator#BETWEEN} or {@link Operator#NOT_BETWEEN})
      * @param minValue the lower bound of the range; inclusive for {@code BETWEEN}, and the lower edge of the
      *                 excluded range for {@code NOT_BETWEEN} (values strictly below it match); may be a
@@ -71,13 +71,13 @@ public abstract class AbstractBetween extends ComposableCondition {
      *                 excluded range for {@code NOT_BETWEEN} (values strictly above it match); may be a
      *                 literal value, a {@link SubQuery}, or any other {@link Condition} whose
      *                 parameters will be spliced into {@link #getParameters()}; may be {@code null}
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractBetween(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
         super(operator);
 
-        N.checkArgNotEmpty(propName, "propName");
+        checkPropName(propName);
 
         this.propName = propName;
         this.minValue = minValue;

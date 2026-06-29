@@ -1125,11 +1125,11 @@ public class Expression extends ComposableCondition {
      * String expr3 = Expression.count("DISTINCT department");   // Returns: "COUNT(DISTINCT department)"
      * }</pre>
      *
-     * @param expression the expression to count
+     * @param expr the expression to count
      * @return a COUNT function string
      */
-    public static String count(final String expression) {
-        return function(COUNT, expression);
+    public static String count(final String expr) {
+        return function(COUNT, expr);
     }
 
     /**
@@ -1142,11 +1142,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.avg("age");     // Returns: "AVG(age)"
      * }</pre>
      *
-     * @param expression the expression to average
+     * @param expr the expression to average
      * @return an AVG function string
      */
-    public static String avg(final String expression) {
-        return function(AVG, expression);
+    public static String avg(final String expr) {
+        return function(AVG, expr);
     }
 
     /**
@@ -1159,11 +1159,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.sum("quantity * price");   // Returns: "SUM(quantity * price)"
      * }</pre>
      *
-     * @param expression the expression to sum
+     * @param expr the expression to sum
      * @return a SUM function string
      */
-    public static String sum(final String expression) {
-        return function(SUM, expression);
+    public static String sum(final String expr) {
+        return function(SUM, expr);
     }
 
     /**
@@ -1176,11 +1176,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.min("created_date");   // Returns: "MIN(created_date)"
      * }</pre>
      *
-     * @param expression the expression to find minimum
+     * @param expr the expression to find minimum
      * @return a MIN function string
      */
-    public static String min(final String expression) {
-        return function(MIN, expression);
+    public static String min(final String expr) {
+        return function(MIN, expr);
     }
 
     /**
@@ -1193,11 +1193,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.max("last_login");   // Returns: "MAX(last_login)"
      * }</pre>
      *
-     * @param expression the expression to find maximum
+     * @param expr the expression to find maximum
      * @return a MAX function string
      */
-    public static String max(final String expression) {
-        return function(MAX, expression);
+    public static String max(final String expr) {
+        return function(MAX, expr);
     }
 
     /**
@@ -1210,11 +1210,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.abs("temperature");   // Returns: "ABS(temperature)"
      * }</pre>
      *
-     * @param expression the expression to get absolute value of
+     * @param expr the expression to get absolute value of
      * @return an ABS function string
      */
-    public static String abs(final String expression) {
-        return function(ABS, expression);
+    public static String abs(final String expr) {
+        return function(ABS, expr);
     }
 
     /**
@@ -1227,11 +1227,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.acos("cosine_value");   // Returns: "ACOS(cosine_value)"
      * }</pre>
      *
-     * @param expression the expression to calculate arc cosine of
+     * @param expr the expression to calculate arc cosine of
      * @return an ACOS function string
      */
-    public static String acos(final String expression) {
-        return function(ACOS, expression);
+    public static String acos(final String expr) {
+        return function(ACOS, expr);
     }
 
     /**
@@ -1244,11 +1244,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.asin("sine_value");   // Returns: "ASIN(sine_value)"
      * }</pre>
      *
-     * @param expression the expression to calculate arc sine of
+     * @param expr the expression to calculate arc sine of
      * @return an ASIN function string
      */
-    public static String asin(final String expression) {
-        return function(ASIN, expression);
+    public static String asin(final String expr) {
+        return function(ASIN, expr);
     }
 
     /**
@@ -1261,11 +1261,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.atan("tangent_value");   // Returns: "ATAN(tangent_value)"
      * }</pre>
      *
-     * @param expression the expression to calculate arc tangent of
+     * @param expr the expression to calculate arc tangent of
      * @return an ATAN function string
      */
-    public static String atan(final String expression) {
-        return function(ATAN, expression);
+    public static String atan(final String expr) {
+        return function(ATAN, expr);
     }
 
     /**
@@ -1278,11 +1278,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.ceil("price");   // Returns: "CEIL(price)"
      * }</pre>
      *
-     * @param expression the expression to round up
+     * @param expr the expression to round up
      * @return a CEIL function string
      */
-    public static String ceil(final String expression) {
-        return function(CEIL, expression);
+    public static String ceil(final String expr) {
+        return function(CEIL, expr);
     }
 
     /**
@@ -1295,11 +1295,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.cos("angle");    // Returns: "COS(angle)"
      * }</pre>
      *
-     * @param expression the expression to calculate cosine of
+     * @param expr the expression to calculate cosine of
      * @return a COS function string
      */
-    public static String cos(final String expression) {
-        return function(COS, expression);
+    public static String cos(final String expr) {
+        return function(COS, expr);
     }
 
     /**
@@ -1312,11 +1312,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.exp("growth_rate");   // Returns: "EXP(growth_rate)"
      * }</pre>
      *
-     * @param expression the expression to calculate exponential of
+     * @param expr the expression to calculate exponential of
      * @return an EXP function string
      */
-    public static String exp(final String expression) {
-        return function(EXP, expression);
+    public static String exp(final String expr) {
+        return function(EXP, expr);
     }
 
     /**
@@ -1329,11 +1329,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.floor("average");   // Returns: "FLOOR(average)"
      * }</pre>
      *
-     * @param expression the expression to round down
+     * @param expr the expression to round down
      * @return a FLOOR function string
      */
-    public static String floor(final String expression) {
-        return function(FLOOR, expression);
+    public static String floor(final String expr) {
+        return function(FLOOR, expr);
     }
 
     /**
@@ -1364,11 +1364,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.ln("value");   // Returns: "LN(value)"
      * }</pre>
      *
-     * @param expression the expression to calculate natural logarithm of
+     * @param expr the expression to calculate natural logarithm of
      * @return an LN function string
      */
-    public static String ln(final String expression) {
-        return function(LN, expression);
+    public static String ln(final String expr) {
+        return function(LN, expr);
     }
 
     /**
@@ -1417,11 +1417,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.sign("balance");   // Returns: "SIGN(balance)"
      * }</pre>
      *
-     * @param expression the expression to get sign of
+     * @param expr the expression to get sign of
      * @return a SIGN function string
      */
-    public static String sign(final String expression) {
-        return function(SIGN, expression);
+    public static String sign(final String expr) {
+        return function(SIGN, expr);
     }
 
     /**
@@ -1434,11 +1434,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.sin("angle");   // Returns: "SIN(angle)"
      * }</pre>
      *
-     * @param expression the expression to calculate sine of
+     * @param expr the expression to calculate sine of
      * @return a SIN function string
      */
-    public static String sin(final String expression) {
-        return function(SIN, expression);
+    public static String sin(final String expr) {
+        return function(SIN, expr);
     }
 
     /**
@@ -1451,11 +1451,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.sqrt("area");   // Returns: "SQRT(area)"
      * }</pre>
      *
-     * @param expression the expression to calculate square root of
+     * @param expr the expression to calculate square root of
      * @return a SQRT function string
      */
-    public static String sqrt(final String expression) {
-        return function(SQRT, expression);
+    public static String sqrt(final String expr) {
+        return function(SQRT, expr);
     }
 
     /**
@@ -1468,11 +1468,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.tan("angle");   // Returns: "TAN(angle)"
      * }</pre>
      *
-     * @param expression the expression to calculate tangent of
+     * @param expr the expression to calculate tangent of
      * @return a TAN function string
      */
-    public static String tan(final String expression) {
-        return function(TAN, expression);
+    public static String tan(final String expr) {
+        return function(TAN, expr);
     }
 
     /**

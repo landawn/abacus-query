@@ -87,17 +87,17 @@ public abstract class AbstractIn extends ComposableCondition {
      * condition. Individual elements may be literal values or {@link Condition} instances; the
      * latter have their parameters spliced into {@link #getParameters()}.
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param values the collection of values to check membership against (must not be {@code null} or empty);
      *               elements may be {@code null}
-     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty or {@code values} is {@code null}/empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank or {@code values} is {@code null}/empty
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final String propName, final Operator operator, final Collection<?> values) {
         super(operator);
 
-        N.checkArgNotEmpty(propName, "propName");
+        checkPropName(propName);
         N.checkArgNotEmpty(values, "values");
 
         this.propNames = Collections.singletonList(propName);

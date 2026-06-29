@@ -198,6 +198,49 @@ public class Filters {
     }
 
     /**
+     * Creates (or returns a cached) {@link NamedProperty} instance representing a property/column name.
+     * This is used to reference database columns through a dedicated value object that exposes a
+     * fluent condition-building API. Instances are pooled by {@link NamedProperty#of(String)} so
+     * repeated calls with the same name return the same instance.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty prop = Filters.namedProperty("user_name");
+     * // Renders as: user_name
+     * }</pre>
+     *
+     * @param propName the name of the property/column (must not be {@code null} or empty)
+     * @return a {@link NamedProperty} instance
+     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     */
+    @Beta
+    public static NamedProperty namedProperty(final String propName) {
+        return NamedProperty.of(propName);
+    }
+
+    /**
+     * Creates an {@link Expression} from a string literal.
+     * This allows for custom SQL expressions to be included in queries.
+     *
+     * <p><b>Warning:</b> The literal is appended verbatim into the generated SQL. Do not pass
+     * unsanitized user input — use parameterized condition factories (e.g. {@link #equal(String, Object)})
+     * instead to avoid SQL injection.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Expression expr = Filters.expr("UPPER(name) = 'JOHN'");
+     * // SQL fragment: UPPER(name) = 'JOHN'
+     * }</pre>
+     *
+     * @param literal the SQL expression as a string (must not be {@code null})
+     * @return an {@link Expression} instance
+     * @throws IllegalArgumentException if {@code literal} is {@code null}
+     */
+    public static Expression expr(final String literal) {
+        return Expression.of(literal);
+    }
+
+    /**
      * Creates a negation condition that represents the logical {@code NOT} of the provided condition.
      *
      * <p>This method creates a {@link Not} condition that inverts the result of the wrapped condition.
@@ -231,48 +274,6 @@ public class Filters {
      */
     public static Not not(final Condition cond) {
         return new Not(cond);
-    }
-
-    /**
-     * Creates (or returns a cached) {@link NamedProperty} instance representing a property/column name.
-     * This is used to reference database columns through a dedicated value object that exposes a
-     * fluent condition-building API. Instances are pooled by {@link NamedProperty#of(String)} so
-     * repeated calls with the same name return the same instance.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NamedProperty prop = Filters.namedProperty("user_name");
-     * // Renders as: user_name
-     * }</pre>
-     *
-     * @param propName the name of the property/column (must not be {@code null} or empty)
-     * @return a {@link NamedProperty} instance
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
-     */
-    public static NamedProperty namedProperty(final String propName) {
-        return NamedProperty.of(propName);
-    }
-
-    /**
-     * Creates an {@link Expression} from a string literal.
-     * This allows for custom SQL expressions to be included in queries.
-     *
-     * <p><b>Warning:</b> The literal is appended verbatim into the generated SQL. Do not pass
-     * unsanitized user input — use parameterized condition factories (e.g. {@link #equal(String, Object)})
-     * instead to avoid SQL injection.</p>
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Expression expr = Filters.expr("UPPER(name) = 'JOHN'");
-     * // SQL fragment: UPPER(name) = 'JOHN'
-     * }</pre>
-     *
-     * @param literal the SQL expression as a string (must not be {@code null})
-     * @return an {@link Expression} instance
-     * @throws IllegalArgumentException if {@code literal} is {@code null}
-     */
-    public static Expression expr(final String literal) {
-        return Expression.of(literal);
     }
 
     /**
@@ -2724,13 +2725,13 @@ public class Filters {
      * // Results in SQL like: ON user_id = id
      * }</pre>
      *
-     * @param propName the first column name
-     * @param anotherPropName the second column name to join with
+     * @param leftPropName the first column name
+     * @param rightPropName the second column name to join with
      * @return an {@link On} clause
-     * @throws IllegalArgumentException if {@code propName} or {@code anotherPropName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null}, empty, or blank
      */
-    public static On on(final String propName, final String anotherPropName) {
-        return new On(propName, anotherPropName);
+    public static On on(final String leftPropName, final String rightPropName) {
+        return new On(leftPropName, rightPropName);
     }
 
     /**

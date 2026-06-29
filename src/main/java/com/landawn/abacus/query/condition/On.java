@@ -239,22 +239,22 @@ public class On extends Cell {
      * // Creates: Equal("users.id", Expression("posts.user_id"))
      * }</pre>
      *
-     * @param propName the first column name (used as the property side of the Equal)
-     * @param anotherPropName the second column name (wrapped as an {@link Expression}, so it is rendered as a
+     * @param leftPropName the first column name (used as the property side of the Equal)
+     * @param rightPropName the second column name (wrapped as an {@link Expression}, so it is rendered as a
      *            column reference rather than a quoted literal)
      * @return an {@link Equal} condition comparing the two columns
-     * @throws IllegalArgumentException if {@code propName} or {@code anotherPropName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null}, empty, or blank
      */
-    static Condition createOnCondition(final String propName, final String anotherPropName) {
-        if (Strings.isBlank(propName)) {
-            throw new IllegalArgumentException("propName must not be null or empty");
+    static Condition createOnCondition(final String leftPropName, final String rightPropName) {
+        if (Strings.isBlank(leftPropName)) {
+            throw new IllegalArgumentException("leftPropName must not be null or empty");
         }
 
-        if (Strings.isBlank(anotherPropName)) {
-            throw new IllegalArgumentException("anotherPropName must not be null or empty");
+        if (Strings.isBlank(rightPropName)) {
+            throw new IllegalArgumentException("rightPropName must not be null or empty");
         }
 
-        return new Equal(propName, Filters.expr(anotherPropName));
+        return new Equal(leftPropName, Filters.expr(rightPropName));
     }
 
     /**
