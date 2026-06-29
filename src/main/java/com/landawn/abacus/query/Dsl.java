@@ -220,7 +220,7 @@ public final class Dsl {
     }
 
     /**
-     * Creates an INSERT statement for a single column expression.
+     * Creates an INSERT statement for a single column.
      *
      * <p>This method creates an INSERT statement template with a single column. The actual value
      * will be provided as a parameter when executing the query.</p>
@@ -231,14 +231,14 @@ public final class Dsl {
      * // Output: INSERT INTO account (first_name) VALUES (?)
      * }</pre>
      *
-     * @param expr the column name or expression to insert
+     * @param propOrColumnName the property or column name to insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if expr is null or empty
+     * @throws IllegalArgumentException if propOrColumnName is null or empty
      */
-    public SqlBuilder insert(final String expr) {
-        N.checkArgNotEmpty(expr, SqlBuilder.INSERTION_PART_MSG);
+    public SqlBuilder insert(final String propOrColumnName) {
+        N.checkArgNotEmpty(propOrColumnName, SqlBuilder.INSERTION_PART_MSG);
 
-        return insert(N.asArray(expr));
+        return insert(N.asArray(propOrColumnName));
     }
 
     /**

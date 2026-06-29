@@ -102,7 +102,7 @@ public class In extends AbstractIn {
 
     /**
      * Creates a new multi-column (row value constructor) IN condition. The condition checks whether the
-     * tuple of property values matches any of the supplied value rows. Each element of {@code values}
+     * tuple of property values matches any of the supplied value rows. Each element of {@code valueRows}
      * must resolve to exactly {@code propNames.size()} values. A row may be supplied as a {@link Collection}
      * or other {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean
      * (read by property name).
@@ -124,14 +124,14 @@ public class In extends AbstractIn {
      *
      * @param propNames the property/column names (must not be {@code null} and must contain at least two
      *                  non-{@code null}/non-blank names; for a single column use {@link #In(String, Collection)})
-     * @param values the collection of value rows (must not be {@code null} or empty); each row must be
+     * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be
      *               non-{@code null} and resolve to exactly {@code propNames.size()} values. A row may be a
      *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
-     *                                  if {@code values} is {@code null}/empty, if any row is {@code null} or of an
+     *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      */
-    public In(final Collection<String> propNames, final Collection<?> values) {
-        super(propNames, Operator.IN, values);
+    public In(final Collection<String> propNames, final Collection<?> valueRows) {
+        super(propNames, Operator.IN, valueRows);
     }
 }

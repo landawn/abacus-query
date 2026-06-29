@@ -192,7 +192,7 @@ class SqlMapper2025Test extends TestBase {
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
         mapper.remove("nonExistent");
         assertNotNull(mapper.get("query1"));
-        assertEquals(1, mapper.sqlIds().size());
+        assertEquals(1, mapper.ids().size());
     }
 
     @Test
@@ -201,7 +201,7 @@ class SqlMapper2025Test extends TestBase {
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
         mapper.remove("");
         assertNotNull(mapper.get("query1"));
-        assertEquals(1, mapper.sqlIds().size());
+        assertEquals(1, mapper.ids().size());
     }
 
     @Test
@@ -210,7 +210,7 @@ class SqlMapper2025Test extends TestBase {
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
         mapper.remove(null);
         assertNotNull(mapper.get("query1"));
-        assertEquals(1, mapper.sqlIds().size());
+        assertEquals(1, mapper.ids().size());
     }
 
     @Test
@@ -219,9 +219,9 @@ class SqlMapper2025Test extends TestBase {
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
         mapper.add("query2", ParsedSql.parse("SELECT * FROM orders"));
 
-        assertEquals(2, mapper.sqlIds().size());
-        assertTrue(mapper.sqlIds().contains("query1"));
-        assertTrue(mapper.sqlIds().contains("query2"));
+        assertEquals(2, mapper.ids().size());
+        assertTrue(mapper.ids().contains("query1"));
+        assertTrue(mapper.ids().contains("query2"));
     }
 
     @Test
@@ -353,8 +353,8 @@ class SqlMapper2025Test extends TestBase {
     @Test
     public void testKeySetEmpty() {
         SqlMapper mapper = new SqlMapper();
-        assertNotNull(mapper.sqlIds());
-        assertTrue(mapper.sqlIds().isEmpty());
+        assertNotNull(mapper.ids());
+        assertTrue(mapper.ids().isEmpty());
     }
 
     @Test
@@ -398,7 +398,7 @@ class SqlMapper2025Test extends TestBase {
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
         mapper.remove(longId);
         assertNotNull(mapper.get("query1"));
-        assertEquals(1, mapper.sqlIds().size());
+        assertEquals(1, mapper.ids().size());
     }
 
     @Test
@@ -417,7 +417,7 @@ class SqlMapper2025Test extends TestBase {
         mapper.add("query2", ParsedSql.parse("SELECT * FROM products"));
 
         // LinkedHashMap preserves insertion order
-        assertEquals(3, mapper.sqlIds().size());
+        assertEquals(3, mapper.ids().size());
     }
 
     @Test
@@ -535,7 +535,7 @@ public class SqlMapperTest extends TestBase {
         SqlMapper mapper = new SqlMapper();
         assertNotNull(mapper);
         assertTrue(mapper.isEmpty());
-        assertTrue(mapper.sqlIds().isEmpty());
+        assertTrue(mapper.ids().isEmpty());
     }
 
     @Test
@@ -557,10 +557,10 @@ public class SqlMapperTest extends TestBase {
         assertFalse(mapper.isEmpty());
 
         // Verify loaded SQLs
-        assertEquals(3, mapper.sqlIds().size());
-        assertTrue(mapper.sqlIds().contains("findById"));
-        assertTrue(mapper.sqlIds().contains("updateName"));
-        assertTrue(mapper.sqlIds().contains("deleteById"));
+        assertEquals(3, mapper.ids().size());
+        assertTrue(mapper.ids().contains("findById"));
+        assertTrue(mapper.ids().contains("updateName"));
+        assertTrue(mapper.ids().contains("deleteById"));
 
         // Check SQL content
         ParsedSql findById = mapper.get("findById");
@@ -599,7 +599,7 @@ public class SqlMapperTest extends TestBase {
         String paths = xmlFile1.getAbsolutePath() + "," + xmlFile2.getAbsolutePath();
         SqlMapper mapper = SqlMapper.load(paths);
 
-        assertEquals(2, mapper.sqlIds().size());
+        assertEquals(2, mapper.ids().size());
         assertNotNull(mapper.get("findUser"));
         assertNotNull(mapper.get("findOrder"));
 
@@ -607,7 +607,7 @@ public class SqlMapperTest extends TestBase {
         paths = xmlFile1.getAbsolutePath() + ";" + xmlFile2.getAbsolutePath();
         mapper = SqlMapper.load(paths);
 
-        assertEquals(2, mapper.sqlIds().size());
+        assertEquals(2, mapper.ids().size());
         assertNotNull(mapper.get("findUser"));
         assertNotNull(mapper.get("findOrder"));
     }
@@ -629,7 +629,7 @@ public class SqlMapperTest extends TestBase {
         mapper.add("query1", ParsedSql.parse("SELECT * FROM table1"));
         mapper.add("query2", ParsedSql.parse("SELECT * FROM table2"));
 
-        Set<String> keys = mapper.sqlIds();
+        Set<String> keys = mapper.ids();
         assertEquals(2, keys.size());
         assertTrue(keys.contains("query1"));
         assertTrue(keys.contains("query2"));
@@ -738,9 +738,9 @@ public class SqlMapperTest extends TestBase {
         mapper.add("query1", ParsedSql.parse("SELECT * FROM users"));
 
         // Test valid remove
-        assertTrue(mapper.sqlIds().contains("query1"));
+        assertTrue(mapper.ids().contains("query1"));
         mapper.remove("query1");
-        assertFalse(mapper.sqlIds().contains("query1"));
+        assertFalse(mapper.ids().contains("query1"));
 
         // Test remove non-existent (should not throw)
         mapper.remove("nonExistent");
@@ -766,15 +766,15 @@ public class SqlMapperTest extends TestBase {
         SqlMapper copy = mapper.copy();
 
         // Verify copy has same content
-        assertEquals(mapper.sqlIds(), copy.sqlIds());
+        assertEquals(mapper.ids(), copy.ids());
         assertEquals(mapper.get("query1"), copy.get("query1"));
         assertEquals(mapper.get("query2"), copy.get("query2"));
         assertEquals(mapper.getAttributes("query1"), copy.getAttributes("query1"));
 
         // Verify copy is independent
         copy.add("query3", ParsedSql.parse("SELECT * FROM products"));
-        assertFalse(mapper.sqlIds().contains("query3"));
-        assertTrue(copy.sqlIds().contains("query3"));
+        assertFalse(mapper.ids().contains("query3"));
+        assertTrue(copy.ids().contains("query3"));
     }
 
     @Test
@@ -794,7 +794,7 @@ public class SqlMapperTest extends TestBase {
 
         // Load saved file and verify
         SqlMapper loaded = SqlMapper.load(outputFile.getAbsolutePath());
-        assertEquals(mapper.sqlIds(), loaded.sqlIds());
+        assertEquals(mapper.ids(), loaded.ids());
         assertEquals(mapper.get("findUser").originalSql(), loaded.get("findUser").originalSql());
         assertEquals(mapper.get("updateUser").originalSql(), loaded.get("updateUser").originalSql());
 
@@ -978,14 +978,14 @@ class SqlMapperJavadocExamples extends TestBase {
     }
 
     @Test
-    public void testSqlMapper_sqlIds() {
+    public void testSqlMapper_ids() {
         SqlMapper mapper = new SqlMapper();
         mapper.add("findUser", "select * from users where id = ?", null);
         mapper.add("updateUser", "update users set name = ? where id = ?", null);
-        Set<String> sqlIds = mapper.sqlIds();
-        assertTrue(sqlIds.contains("findUser"));
-        assertTrue(sqlIds.contains("updateUser"));
-        assertEquals(2, sqlIds.size());
+        Set<String> ids = mapper.ids();
+        assertTrue(ids.contains("findUser"));
+        assertTrue(ids.contains("updateUser"));
+        assertEquals(2, ids.size());
     }
 }
 
@@ -1131,14 +1131,14 @@ class SqlMapperApiReviewTest extends TestBase {
         assertEquals(1, mapper.size());
     }
 
-    // ----- sqlIds snapshot semantics -----
+    // ----- ids snapshot semantics -----
 
     @Test
-    public void testSqlIds_isImmutableSnapshot() {
+    public void testIds_isImmutableSnapshot() {
         SqlMapper mapper = new SqlMapper();
         mapper.add("query1", ParsedSql.parse("SELECT 1"));
 
-        ImmutableSet<String> snapshot = mapper.sqlIds();
+        ImmutableSet<String> snapshot = mapper.ids();
         assertEquals(1, snapshot.size());
         assertTrue(snapshot.contains("query1"));
 
@@ -1148,15 +1148,15 @@ class SqlMapperApiReviewTest extends TestBase {
         assertFalse(snapshot.contains("query2"));
 
         // But a freshly requested snapshot reflects the new state.
-        assertEquals(2, mapper.sqlIds().size());
+        assertEquals(2, mapper.ids().size());
     }
 
     @Test
-    public void testSqlIds_isUnmodifiable() {
+    public void testIds_isUnmodifiable() {
         SqlMapper mapper = new SqlMapper();
         mapper.add("query1", ParsedSql.parse("SELECT 1"));
 
-        ImmutableSet<String> snapshot = mapper.sqlIds();
+        ImmutableSet<String> snapshot = mapper.ids();
         assertThrows(UnsupportedOperationException.class, () -> snapshot.add("query2"));
     }
 
@@ -1329,7 +1329,7 @@ class SqlMapperApiReviewTest extends TestBase {
         mapper.saveTo(baos);
 
         SqlMapper loaded = SqlMapper.load(new ByteArrayInputStream(baos.toByteArray()));
-        assertEquals(mapper.sqlIds(), loaded.sqlIds());
+        assertEquals(mapper.ids(), loaded.ids());
         assertEquals("SELECT * FROM users WHERE id = ?", loaded.get("findUser").originalSql());
         assertEquals("100", loaded.getAttributes("findUser").get("batchSize"));
     }

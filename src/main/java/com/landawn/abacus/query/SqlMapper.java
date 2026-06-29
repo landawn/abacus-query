@@ -338,13 +338,13 @@ public final class SqlMapper {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SqlMapper mapper = SqlMapper.load("sql/queries.xml");
-     * ImmutableSet<String> sqlIds = mapper.sqlIds();
-     * sqlIds.forEach(id -> System.out.println("Available SQL: " + id));
+     * ImmutableSet<String> ids = mapper.ids();
+     * ids.forEach(id -> System.out.println("Available SQL: " + id));
      * }</pre>
      *
      * @return an immutable snapshot of all SQL identifiers in this mapper, maintaining insertion order
      */
-    public ImmutableSet<String> sqlIds() {
+    public ImmutableSet<String> ids() {
         return ImmutableSet.copyOf(sqlMap.keySet());
     }
 
@@ -797,7 +797,7 @@ public final class SqlMapper {
      * Compares this {@code SqlMapper} to another object for equality.
      * Two {@code SqlMapper} instances are considered equal if they contain the same id-to-SQL mappings
      * and id-to-attributes mappings (order-independent, per {@link Map#equals(Object)}).
-     * Note: equality ignores entry order, although {@link #sqlIds()} and {@link #toString()} reflect insertion order.
+     * Note: equality ignores entry order, although {@link #ids()} and {@link #toString()} reflect insertion order.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

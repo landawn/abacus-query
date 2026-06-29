@@ -106,7 +106,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
     /**
      * Creates a new multi-column (row value constructor) IN or NOT IN condition, rendered as
-     * {@code (p1, p2) IN ((v1a, v1b), (v2a, v2b), ...)}. Each element of {@code values} is a row whose
+     * {@code (p1, p2) IN ((v1a, v1b), (v2a, v2b), ...)}. Each element of {@code valueRows} is a row whose
      * width must equal {@code propNames.size()}. A row may be supplied in any of the following forms:
      * <ul>
      *   <li>a {@link Collection} or other {@link Iterable} of exactly {@code propNames.size()} elements,
@@ -125,25 +125,25 @@ public abstract class AbstractIn extends ComposableCondition {
      *                  non-{@code null}/non-blank names; for a single column use
      *                  {@link #AbstractIn(String, Operator, Collection)})
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
-     * @param values the collection of value rows (must not be {@code null} or empty); each row must be
+     * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be
      *               non-{@code null} and resolve to exactly {@code propNames.size()} values (which may be
      *               {@code null}). A row may be a {@link Collection}, {@link Iterable}, object array,
      *               {@link Map} or bean
      * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
-     *                                  if {@code values} is {@code null}/empty, if any row is {@code null} or of an
+     *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      * @throws NullPointerException if {@code operator} is {@code null}
      */
-    protected AbstractIn(final Collection<String> propNames, final Operator operator, final Collection<?> values) {
+    protected AbstractIn(final Collection<String> propNames, final Operator operator, final Collection<?> valueRows) {
         super(operator);
 
         this.propNames = copyAndValidatePropNames(propNames);
-        N.checkArgNotEmpty(values, "values");
+        N.checkArgNotEmpty(valueRows, "valueRows");
 
         final int arity = this.propNames.size();
-        final List<List<Object>> copy = new ArrayList<>(values.size());
+        final List<List<Object>> copy = new ArrayList<>(valueRows.size());
 
-        for (final Object row : values) {
+        for (final Object row : valueRows) {
             N.checkArgNotNull(row, "value row");
 
             copy.add(toRowTuple(row, this.propNames, arity));

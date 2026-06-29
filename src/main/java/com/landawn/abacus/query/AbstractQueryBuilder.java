@@ -3515,19 +3515,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
      * }</pre>
      *
-     * @param rowCount the number of rows to fetch
+     * @param count the number of rows to fetch
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code rowCount} is negative
+     * @throws IllegalArgumentException if {@code count} is negative
      * @throws IllegalStateException if {@code FETCH NEXT} or {@code FETCH FIRST} has already been set
      * @see #limit(int)
      * @see #limit(int, int)
      */
-    public This fetchNextRows(final int rowCount) {
-        N.checkArgNotNegative(rowCount, "rowCount");
+    public This fetchNextRows(final int count) {
+        N.checkArgNotNegative(count, "count");
         checkIfAlreadyCalled(SK.FETCH_NEXT);
         calledOpSet.add(SK.FETCH_FIRST);
 
-        _sb.append(" FETCH NEXT ").append(rowCount).append(" ROWS ONLY");
+        _sb.append(" FETCH NEXT ").append(count).append(" ROWS ONLY");
 
         return (This) this;
     }
@@ -3547,19 +3547,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users ORDER BY id FETCH FIRST 10 ROWS ONLY
      * }</pre>
      *
-     * @param rowCount the number of rows to fetch
+     * @param count the number of rows to fetch
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code rowCount} is negative
+     * @throws IllegalArgumentException if {@code count} is negative
      * @throws IllegalStateException if {@code FETCH FIRST} or {@code FETCH NEXT} has already been set
      * @see #limit(int)
      * @see #limit(int, int)
      */
-    public This fetchFirstRows(final int rowCount) {
-        N.checkArgNotNegative(rowCount, "rowCount");
+    public This fetchFirstRows(final int count) {
+        N.checkArgNotNegative(count, "count");
         checkIfAlreadyCalled(SK.FETCH_FIRST);
         calledOpSet.add(SK.FETCH_NEXT);
 
-        _sb.append(" FETCH FIRST ").append(rowCount).append(" ROWS ONLY");
+        _sb.append(" FETCH FIRST ").append(count).append(" ROWS ONLY");
 
         return (This) this;
     }

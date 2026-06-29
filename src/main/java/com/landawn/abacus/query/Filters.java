@@ -2749,13 +2749,13 @@ public class Filters {
      * // Generates: ON ((orders.user_id = users.id) AND (orders.product_id = products.id))
      * }</pre>
      *
-     * @param propNamePair map of column name pairs for joining (should be a
+     * @param propNamePairs map of column name pairs for joining (should be a
      *                     {@link java.util.LinkedHashMap} to preserve order; must not be {@code null} or empty)
      * @return an {@link On} clause
-     * @throws IllegalArgumentException if {@code propNamePair} is {@code null}, empty, or contains a {@code null}, empty, or blank column name
+     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains a {@code null}, empty, or blank column name
      */
-    public static On on(final Map<String, String> propNamePair) {
-        return new On(propNamePair);
+    public static On on(final Map<String, String> propNamePairs) {
+        return new On(propNamePairs);
     }
 
     /**
