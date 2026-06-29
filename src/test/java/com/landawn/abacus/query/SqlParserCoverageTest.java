@@ -519,6 +519,13 @@ public class SqlParserCoverageTest extends TestBase {
     }
 
     @Test
+    public void testIsFunctionName_spaceBeforeParenthesisIsNotFunctionName() {
+        List<String> words = SqlParser.parse("SELECT (1)");
+
+        assertFalse(SqlParser.isFunctionName(words, words.size(), words.indexOf(" ")));
+    }
+
+    @Test
     public void testIsFunctionName_oracleOuterJoinMarkerIsNotFunctionCall() {
         List<String> words = SqlParser.parse("SELECT a.id(+) FROM a");
         int idIndex = words.indexOf("id");
@@ -590,6 +597,17 @@ public class SqlParserCoverageTest extends TestBase {
         assertTrue(tightBlockCommentWords.contains("WHERE"));
         assertTrue(lineCommentWords.contains("#tmp"));
         assertTrue(lineCommentWords.contains("WHERE"));
+    }
+
+    @Test
+    public void testParse_hashCommentAfterHashLikeTokenIsStripped() {
+        List<String> afterMyBatisWords = SqlParser.parse("SELECT * FROM #{table} #comment\nWHERE id = 1");
+        List<String> afterTempTableWords = SqlParser.parse("SELECT * FROM #tmp\n#comment\nWHERE id = 1");
+
+        assertFalse(afterMyBatisWords.contains("#comment"));
+        assertTrue(afterMyBatisWords.contains("WHERE"));
+        assertFalse(afterTempTableWords.contains("#comment"));
+        assertTrue(afterTempTableWords.contains("WHERE"));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -683,6 +701,14 @@ public class SqlParserCoverageTest extends TestBase {
         assertTrue(SqlParser.isReadOnlyQuery("SELECT delete_flag, merge_count FROM t"));
     }
 
+    @Test
+    public void testIsReadOnlyQuery_selectIntoSubstringInIdentifierIsReadOnly() {
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT into$ FROM t"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT $into FROM t"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT [into] FROM t"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT a INTO new_table FROM t"));
+    }
+
     // ----------------------------------------------------------------------------------------------
     // isNoUpdateQuery -- ON CONFLICT shapes and plain-insert variants
     // ----------------------------------------------------------------------------------------------
@@ -715,6 +741,13 @@ public class SqlParserCoverageTest extends TestBase {
     @Test
     public void testIsNoUpdateQuery_plainInsertWithReturningAllowed() {
         assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t (a) VALUES (1) RETURNING id"));
+    }
+
+    @Test
+    public void testIsNoUpdateQuery_selectIntoSubstringInIdentifierIsAllowed() {
+        assertTrue(SqlParser.isNoUpdateQuery("SELECT into$ FROM t"));
+        assertTrue(SqlParser.isNoUpdateQuery("SELECT $into FROM t"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT a INTO new_table FROM t"));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -765,5 +798,92 @@ public class SqlParserCoverageTest extends TestBase {
     public void testIsReadOnlyQuery_postCteInsertAfterSemicolonRejected() {
         // The WITH look-ahead must detect a post-CTE INSERT that follows a leading SELECT + ';'.
         assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; WITH x AS (SELECT 1) INSERT INTO t VALUES (1)"));
+    }
+
+    // ----------------------------------------------------------------------------------------------
+    // Block comment whose body starts with '/' (e.g. "/*/x*/") must NOT end one char early: the
+    // opening '*' must not be reused as the closing '*'. Regression for all four char scanners.
+    // ----------------------------------------------------------------------------------------------
+
+    @Test
+    public void testParse_blockCommentBodyStartingWithSlashIsFullyConsumed() {
+        // The whole "/*/x*/" is a single comment -> nothing is emitted.
+        assertTrue(SqlParser.parse("/*/x*/").isEmpty());
+        // "b" is inside an unterminated comment (opened by "/*/ b"), so only "a" + space remain.
+        assertEquals(Arrays.asList("a", " "), SqlParser.parse("a /*/ b"));
+        // The comment is stripped and the surrounding tokens survive (no stray "path", "*", "/").
+        assertEquals("SELECT 1 FROM t", String.join("", SqlParser.parse("SELECT 1 /*/path*/ FROM t")));
+    }
+
+    @Test
+    public void testParse_keepCommentsRetainsSlashBodyBlockCommentAsOneToken() {
+        final List<String> words = SqlParser.parse("-- Keep comments\nSELECT /*/x*/ FROM t");
+
+        assertTrue(words.contains("/*/x*/"), "the whole /*/x*/ must be kept as a single comment token: " + words);
+    }
+
+    @Test
+    public void testNextWord_skipsBlockCommentWithSlashBody() {
+        assertEquals("name", SqlParser.nextWord("/*/x*/ name", 0));
+    }
+
+    @Test
+    public void testNextWordEnd_skipsBlockCommentWithSlashBody() {
+        final String sql = "/*/x*/ name";
+
+        assertEquals(sql.indexOf("name") + "name".length(), SqlParser.nextWordEnd(sql, 0));
+    }
+
+    @Test
+    public void testIndexOfWord_doesNotMatchKeywordInsideSlashBodyComment() {
+        // FROM is inside the "/*/FROM*/" comment; the only real keyword is the trailing SELECT.
+        final String sql = "/*/FROM*/ SELECT 1";
+
+        assertEquals(-1, SqlParser.indexOfWord(sql, "FROM", 0, false));
+        assertEquals(sql.indexOf("SELECT"), SqlParser.indexOfWord(sql, "SELECT", 0, false));
+    }
+
+    // ----------------------------------------------------------------------------------------------
+    // A non-comment '#' earlier on the line (MyBatis #{...}, a #>/#>> operator, or an earlier
+    // #temp identifier) must NOT cause a later hash-prefixed temp table to be dropped as a comment.
+    // ----------------------------------------------------------------------------------------------
+
+    @Test
+    public void testParse_myBatisMarkerBeforeHashTempTableKeepsTempTable() {
+        assertTrue(SqlParser.parse("SELECT #{x} FROM #tmp").contains("#tmp"));
+    }
+
+    @Test
+    public void testParse_jsonOperatorBeforeHashTempTableKeepsTempTable() {
+        assertTrue(SqlParser.parse("SELECT a #> b FROM #tmp").contains("#tmp"));
+    }
+
+    @Test
+    public void testParse_earlierHashTempTableDoesNotHideLaterHashTempTable() {
+        final List<String> words = SqlParser.parse("UPDATE #t1 SET x = 1 FROM #t2");
+
+        assertTrue(words.contains("#t1"), words.toString());
+        assertTrue(words.contains("#t2"), words.toString());
+    }
+
+    @Test
+    public void testParse_hashTempTableAfterBlockCommentFollowingKeyword() {
+        // The keyword may be separated from the #temp identifier by a block comment.
+        assertTrue(SqlParser.parse("SELECT * FROM /* c */ #tmp").contains("#tmp"));
+    }
+
+    @Test
+    public void testParse_hashTempTableAfterLineCommentFollowingKeyword() {
+        // ...or by a line comment ending in a newline.
+        assertTrue(SqlParser.parse("SELECT * FROM -- pick one\n#tmp").contains("#tmp"));
+    }
+
+    @Test
+    public void testParse_realHashCommentStillStripped() {
+        // A genuine MySQL '#' comment must still be stripped (the fix must not over-correct).
+        final List<String> words = SqlParser.parse("SELECT 1 # trailing comment\nFROM t");
+
+        assertTrue(words.contains("FROM"));
+        assertTrue(words.stream().noneMatch(w -> w.contains("trailing")));
     }
 }

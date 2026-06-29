@@ -439,6 +439,9 @@ public final class SqlParser {
 
                     if (keepComments == 1) {
                         sb.append(ch);
+                        // Consume the opening '*' so a comment body that starts with '/'
+                        // (e.g. "/*/path*/") is not mistaken for the closing "*/".
+                        sb.append(sql.charAt(++index));
 
                         while (++index < sqlLength) {
                             ch = sql.charAt(index);
@@ -454,6 +457,10 @@ public final class SqlParser {
                             }
                         }
                     } else {
+                        // Consume the opening '*' so a comment body that starts with '/'
+                        // (e.g. "/*/path*/") is not mistaken for the closing "*/".
+                        index++;
+
                         while (++index < sqlLength) {
                             ch = sql.charAt(index);
 
@@ -710,6 +717,9 @@ public final class SqlParser {
                             }
                             sb.setLength(0);
                         }
+                        // Consume the opening '*' so a comment body that starts with '/'
+                        // (e.g. "/*/x*/") is not mistaken for the closing "*/".
+                        index++;
                         while (++index < sqlLength) {
                             final char cc = sql.charAt(index);
                             if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
@@ -904,6 +914,9 @@ public final class SqlParser {
                     if (!sb.isEmpty()) {
                         break;
                     }
+                    // Consume the opening '*' so a comment body that starts with '/'
+                    // (e.g. "/*/x*/") is not mistaken for the closing "*/".
+                    index++;
                     while (++index < sqlLength) {
                         final char cc = sql.charAt(index);
                         if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
@@ -1035,6 +1048,9 @@ public final class SqlParser {
                 if (started) {
                     return index;
                 }
+                // Consume the opening '*' so a comment body that starts with '/'
+                // (e.g. "/*/x*/") is not mistaken for the closing "*/".
+                index++;
                 while (++index < sqlLength) {
                     final char cc = sql.charAt(index);
                     if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
@@ -1310,6 +1326,31 @@ public final class SqlParser {
         do {
             skipped = false;
 
+            final int beforeWhitespaceAndBlockComments = left;
+            left = skipBackwardWhitespaceAndBlockComments(str, left);
+
+            if (left != beforeWhitespaceAndBlockComments) {
+                skipped = true;
+            }
+
+            final int lineStart = lastLineStart(str, left);
+            final int commentIndex = lastLineCommentStart(str, lineStart, left);
+
+            if (commentIndex >= 0) {
+                left = commentIndex - 1;
+                skipped = true;
+            }
+        } while (skipped);
+
+        return left;
+    }
+
+    private static int skipBackwardWhitespaceAndBlockComments(final String str, int left) {
+        boolean skipped;
+
+        do {
+            skipped = false;
+
             while (left >= 0 && Character.isWhitespace(str.charAt(left))) {
                 left--;
                 skipped = true;
@@ -1323,15 +1364,6 @@ public final class SqlParser {
                 }
 
                 left = left >= 1 ? left - 2 : -1;
-                skipped = true;
-                continue;
-            }
-
-            final int lineStart = lastLineStart(str, left);
-            final int commentIndex = lastLineCommentStart(str, lineStart, left);
-
-            if (commentIndex >= 0) {
-                left = commentIndex - 1;
                 skipped = true;
             }
         } while (skipped);
@@ -1364,12 +1396,56 @@ public final class SqlParser {
             if (ch == '-' && i < toIndex && str.charAt(i + 1) == '-') {
                 result = i;
                 i++;
-            } else if (ch == '#') {
+            } else if (ch == '#' && isHashLineCommentStartForBackwardScan(str, i)) {
                 result = i;
             }
         }
 
         return result;
+    }
+
+    private static boolean isHashLineCommentStartForBackwardScan(final String str, final int index) {
+        if (index < str.length() - 1 && str.charAt(index + 1) == '{') {
+            return false;
+        }
+
+        final String multiCharSeparator = matchMultiCharSeparator(str, str.length(), index);
+        if (multiCharSeparator != null && multiCharSeparator.length() > 1) {
+            return false;
+        }
+
+        return !isLikelyHashPrefixedIdentifierAfterWhitespaceAndBlockComments(str, str.length(), index);
+    }
+
+    private static boolean isLikelyHashPrefixedIdentifierAfterWhitespaceAndBlockComments(final String str, final int len, final int index) {
+        if (index >= len - 1) {
+            return false;
+        }
+
+        final char next = str.charAt(index + 1);
+
+        if (!isIdentifierChar(next)) {
+            return false;
+        }
+
+        int left = skipBackwardWhitespaceAndBlockComments(str, index - 1);
+
+        if (left < 0) {
+            return false;
+        }
+
+        int end = left;
+
+        while (left >= 0 && isIdentifierChar(str.charAt(left))) {
+            left--;
+        }
+
+        if (end < left + 1) {
+            return false;
+        }
+
+        final String prevWord = str.substring(left + 1, end + 1).toUpperCase(Locale.ROOT);
+        return hashIdentifierContextKeywords.contains(prevWord);
     }
 
     private static boolean isIdentifierChar(final char ch) {
@@ -1411,6 +1487,7 @@ public final class SqlParser {
      * A word is considered a function name if it is followed by the opening parenthesis token,
      * either immediately or after whitespace. Multi-character separators that merely start with
      * {@code '('}, such as Oracle's outer-join marker {@code (+)}, are not function-call markers.
+     * Space tokens and invalid indices are never considered function names.
      *
      * <p>This method is useful for identifying SQL function calls during parsing or analysis.</p>
      *
@@ -1434,6 +1511,10 @@ public final class SqlParser {
         final int upperBound = Math.min(len, words.size());
 
         if (index < 0 || index >= upperBound) {
+            return false;
+        }
+
+        if (SK.SPACE.equals(words.get(index))) {
             return false;
         }
 
@@ -1505,13 +1586,14 @@ public final class SqlParser {
      * <p>
      * A statement is considered read-only only if its leading keyword is {@code SELECT}
      * (see {@link #isSelectQuery(String)}) <i>and</i> it contains no top-level mutation keyword
-     * ({@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE}). Keyword matching ignores
-     * occurrences inside quoted string literals and SQL comments, so a SELECT that merely returns
-     * the literal text {@code 'DELETE'} is still treated as read-only, whereas a data-changing
-     * CTE such as {@code WITH t AS (...) DELETE ...} is not. For multi-statement SQL, a later
-     * statement that starts with {@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE}
-     * also makes the SQL non-read-only, including when that later statement starts with a
-     * {@code WITH} clause or leading parentheses.
+     * ({@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE}) and no standalone
+     * {@code SELECT ... INTO ...} clause. Keyword matching ignores occurrences inside quoted string
+     * literals, quoted identifiers, SQL comments and larger identifier tokens, so a SELECT that
+     * merely returns the literal text {@code 'DELETE'} or a column named {@code into$} is still
+     * treated as read-only, whereas a data-changing CTE such as {@code WITH t AS (...) DELETE ...}
+     * is not. For multi-statement SQL, a later statement that starts with {@code INSERT},
+     * {@code UPDATE}, {@code DELETE} or {@code MERGE} also makes the SQL non-read-only, including
+     * when that later statement starts with a {@code WITH} clause or leading parentheses.
      * </p>
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
@@ -1639,9 +1721,11 @@ public final class SqlParser {
      * </ul>
      * <p>
      * A plain {@code INSERT}, and an {@code INSERT ... ON CONFLICT ... DO NOTHING}, are therefore
-     * accepted, since they never overwrite existing rows. A {@code null} or empty statement does not
-     * lead with {@code SELECT} or {@code INSERT}, so it returns {@code false}. For multi-statement
-     * SQL, a later top-level update/delete/merge statement makes this method return {@code false}.
+     * accepted, since they never overwrite existing rows. Clause and keyword scans use token
+     * boundaries, so identifiers such as {@code into$}, {@code update_time} or bracket/quoted
+     * identifiers named like keywords are ignored. A {@code null} or empty statement does not lead
+     * with {@code SELECT} or {@code INSERT}, so it returns {@code false}. For multi-statement SQL,
+     * a later top-level update/delete/merge statement makes this method return {@code false}.
      * </p>
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
@@ -1783,7 +1867,7 @@ public final class SqlParser {
                 continue;
             }
 
-            if (Character.isLetter(ch)) {
+            if (isIdentifierChar(ch)) {
                 final String token = readIdentifierToken(sql, index);
 
                 if (tokenToFind.equalsIgnoreCase(token)) {
@@ -2132,7 +2216,7 @@ public final class SqlParser {
         while (fromIndex < sql.length()) {
             final char ch = sql.charAt(fromIndex);
 
-            if (!(Character.isLetterOrDigit(ch) || ch == '_')) {
+            if (!isIdentifierChar(ch)) {
                 break;
             }
 
