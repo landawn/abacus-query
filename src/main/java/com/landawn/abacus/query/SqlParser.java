@@ -52,9 +52,9 @@ import com.landawn.abacus.util.Strings;
  *       {@link #registerSeparator(String)} / {@link #registerSeparator(char)}.</li>
  *   <li>iBatis/MyBatis {@code #{...}} markers are not split on {@code #}.</li>
  *   <li>{@code #} that opens a hash-prefixed identifier (e.g. a temp table name appearing
- *       immediately after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or
- *       {@code TABLE}) is treated as part of the identifier, not as a hash comment or
- *       separator.</li>
+ *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE},
+ *       allowing intervening whitespace or comments) is treated as part of the identifier,
+ *       not as a hash comment or separator.</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -1201,8 +1201,8 @@ public final class SqlParser {
      * <ul>
      *   <li>{@code #} followed by <code>{</code> is not considered a separator (MyBatis/iBatis {@code #{...}} syntax)</li>
      *   <li>{@code #} that starts a hash-prefixed identifier (e.g. a temp table name appearing
-     *       right after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE})
-     *       is not considered a separator</li>
+     *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE},
+     *       with optional whitespace/comments in between) is not considered a separator</li>
      *   <li>All registered single-character and multi-character separators are checked</li>
      * </ul>
      *
@@ -1284,11 +1284,7 @@ public final class SqlParser {
             return false;
         }
 
-        int left = index - 1;
-
-        while (left >= 0 && Character.isWhitespace(str.charAt(left))) {
-            left--;
-        }
+        int left = skipBackwardWhitespaceAndComments(str, index - 1);
 
         if (left < 0) {
             return false;
@@ -1306,6 +1302,74 @@ public final class SqlParser {
 
         final String prevWord = str.substring(left + 1, end + 1).toUpperCase(Locale.ROOT);
         return hashIdentifierContextKeywords.contains(prevWord);
+    }
+
+    private static int skipBackwardWhitespaceAndComments(final String str, int left) {
+        boolean skipped;
+
+        do {
+            skipped = false;
+
+            while (left >= 0 && Character.isWhitespace(str.charAt(left))) {
+                left--;
+                skipped = true;
+            }
+
+            if (left >= 1 && str.charAt(left) == '/' && str.charAt(left - 1) == '*') {
+                left -= 2;
+
+                while (left >= 1 && !(str.charAt(left) == '*' && str.charAt(left - 1) == '/')) {
+                    left--;
+                }
+
+                left = left >= 1 ? left - 2 : -1;
+                skipped = true;
+                continue;
+            }
+
+            final int lineStart = lastLineStart(str, left);
+            final int commentIndex = lastLineCommentStart(str, lineStart, left);
+
+            if (commentIndex >= 0) {
+                left = commentIndex - 1;
+                skipped = true;
+            }
+        } while (skipped);
+
+        return left;
+    }
+
+    private static int lastLineStart(final String str, final int fromIndex) {
+        int index = fromIndex;
+
+        while (index >= 0) {
+            final char ch = str.charAt(index);
+
+            if (ch == ENTER || ch == ENTER_2) {
+                return index + 1;
+            }
+
+            index--;
+        }
+
+        return 0;
+    }
+
+    private static int lastLineCommentStart(final String str, final int fromIndex, final int toIndex) {
+        int result = -1;
+
+        for (int i = fromIndex; i <= toIndex; i++) {
+            final char ch = str.charAt(i);
+
+            if (ch == '-' && i < toIndex && str.charAt(i + 1) == '-') {
+                result = i;
+                i++;
+            } else if (ch == '#') {
+                result = i;
+            }
+        }
+
+        return result;
     }
 
     private static boolean isIdentifierChar(final char ch) {

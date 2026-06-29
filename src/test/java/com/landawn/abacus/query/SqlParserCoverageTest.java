@@ -410,6 +410,12 @@ public class SqlParserCoverageTest extends TestBase {
     }
 
     @Test
+    public void testIsReadOnlyQuery_hashIdentifierAfterCommentsDoesNotHideMutation() {
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT * FROM /* temp */ #tmp; DELETE FROM users"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT * FROM -- temp\n#tmp; DELETE FROM users"));
+    }
+
+    @Test
     public void testIsReadOnlyQuery_identifierKeywordPrefixesIgnored() {
         assertTrue(SqlParser.isReadOnlyQuery("SELECT update_time FROM t"));
         assertTrue(SqlParser.isReadOnlyQuery("SELECT merge_value FROM t"));
@@ -452,6 +458,12 @@ public class SqlParserCoverageTest extends TestBase {
         assertFalse(SqlParser.isNoUpdateQuery("MERGE INTO t USING s ON (t.id = s.id) WHEN MATCHED THEN UPDATE SET t.x = s.x"));
         assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; DELETE FROM t"));
         assertFalse(SqlParser.isNoUpdateQuery("SELECT * FROM #tmp; DELETE FROM t"));
+    }
+
+    @Test
+    public void testIsNoUpdateQuery_hashIdentifierAfterCommentsDoesNotHideMutation() {
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT * FROM /* temp */ #tmp; DELETE FROM users"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT * FROM -- temp\n#tmp; DELETE FROM users"));
     }
 
     @Test
@@ -566,6 +578,20 @@ public class SqlParserCoverageTest extends TestBase {
         assertFalse(words.stream().anyMatch(w -> w.contains("gone")));
     }
 
+    @Test
+    public void testParse_hashPrefixedIdentifierAfterComments() {
+        List<String> blockCommentWords = SqlParser.parse("SELECT * FROM /* temp */ #tmp WHERE id = 1");
+        List<String> tightBlockCommentWords = SqlParser.parse("SELECT * FROM/* temp */#tmp WHERE id = 1");
+        List<String> lineCommentWords = SqlParser.parse("SELECT * FROM -- temp\n#tmp WHERE id = 1");
+
+        assertTrue(blockCommentWords.contains("#tmp"));
+        assertTrue(blockCommentWords.contains("WHERE"));
+        assertTrue(tightBlockCommentWords.contains("#tmp"));
+        assertTrue(tightBlockCommentWords.contains("WHERE"));
+        assertTrue(lineCommentWords.contains("#tmp"));
+        assertTrue(lineCommentWords.contains("WHERE"));
+    }
+
     // ----------------------------------------------------------------------------------------------
     // nextWord / nextWordEnd -- MyBatis #{...} stays one token
     // ----------------------------------------------------------------------------------------------
@@ -575,6 +601,26 @@ public class SqlParserCoverageTest extends TestBase {
         assertEquals("#{userId}", SqlParser.nextWord("WHERE id = #{userId}", 10));
         assertNextWordConsistency("a #{x} b");
         assertNextWordConsistency("SELECT #{p} FROM #tmp WHERE c #>> d");
+    }
+
+    @Test
+    public void testNextWord_hashPrefixedIdentifierAfterComments() {
+        assertEquals("#tmp", SqlParser.nextWord("FROM /* temp */ #tmp", "FROM".length()));
+        assertEquals("#tmp", SqlParser.nextWord("FROM/* temp */#tmp", "FROM".length()));
+        assertEquals("#tmp", SqlParser.nextWord("FROM -- temp\n#tmp", "FROM".length()));
+    }
+
+    @Test
+    public void testIsSeparator_hashPrefixedIdentifierAfterComments() {
+        String sql = "FROM /* temp */ #tmp";
+        int hashIndex = sql.indexOf('#');
+
+        assertFalse(SqlParser.isSeparator(sql, sql.length(), hashIndex, '#'));
+
+        sql = "FROM -- temp\n#tmp";
+        hashIndex = sql.indexOf('#');
+
+        assertFalse(SqlParser.isSeparator(sql, sql.length(), hashIndex, '#'));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -695,5 +741,29 @@ public class SqlParserCoverageTest extends TestBase {
     public void testIsSelectQuery_selectIntoBracketTargetIsNotReadOnly() {
         // SQL Server SELECT ... INTO with a bracket-quoted target table.
         assertFalse(SqlParser.isReadOnlyQuery("SELECT a, b INTO [new table] FROM t"));
+    }
+
+    // ----------------------------------------------------------------------------------------------
+    // keyword detection ignores bracket-quoted identifiers, quoted literals, and finds post-CTE
+    // mutations after a statement separator (exercises the skip-bracket / token-sequence / WITH
+    // look-ahead branches of containsQueryKeyword / containsTokenSequence)
+    // ----------------------------------------------------------------------------------------------
+
+    @Test
+    public void testIsReadOnlyQuery_mutationKeywordInBracketIdentifierIsIgnored() {
+        // SQL Server bracket-quoted identifiers named like keywords must not count as mutations.
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT [delete], [update] FROM [merge]"));
+    }
+
+    @Test
+    public void testIsNoUpdateQuery_overwriteInsideStringLiteralIsAllowed() {
+        // "OVERWRITE" appears only inside a string literal, so it is not an INSERT OVERWRITE clause.
+        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES ('OVERWRITE')"));
+    }
+
+    @Test
+    public void testIsReadOnlyQuery_postCteInsertAfterSemicolonRejected() {
+        // The WITH look-ahead must detect a post-CTE INSERT that follows a leading SELECT + ';'.
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; WITH x AS (SELECT 1) INSERT INTO t VALUES (1)"));
     }
 }
