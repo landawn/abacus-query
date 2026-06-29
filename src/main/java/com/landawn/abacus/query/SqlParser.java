@@ -1358,20 +1358,27 @@ public final class SqlParser {
      *
      * @param words the list of parsed SQL words/tokens (typically the result of {@link #parse(String)})
      * @param len the exclusive upper bound to search within {@code words} (usually {@code words.size()};
-     *            indices {@code >= len} are not examined)
-     * @param index the index of the word to check
+     *            indices {@code >= len} are not examined; values above {@code words.size()} are capped
+     *            at {@code words.size()}
+     * @param index the index of the word to check; invalid indices return {@code false}
      * @return {@code true} if the word at {@code index} is followed (after zero or more space tokens)
      *         by a token beginning with {@code '('}; {@code false} otherwise
      */
     public static boolean isFunctionName(final List<String> words, final int len, final int index) {
-        if (index < len - 1) {
+        final int upperBound = Math.min(len, words.size());
+
+        if (index < 0 || index >= upperBound) {
+            return false;
+        }
+
+        if (index < upperBound - 1) {
             String nextWord = words.get(index + 1);
             if (!nextWord.isEmpty() && nextWord.charAt(0) == SK._PARENTHESIS_L) {
                 return true;
             }
         }
 
-        for (int i = index + 1; i < len; i++) {
+        for (int i = index + 1; i < upperBound; i++) {
             String word = words.get(i);
             if (!word.isEmpty() && word.charAt(0) == SK._PARENTHESIS_L) {
                 return true;
@@ -1418,6 +1425,10 @@ public final class SqlParser {
      * @return {@code true} if the SQL is a SELECT query, {@code false} otherwise
      */
     public static boolean isSelectQuery(final String sql) {
+        if (Strings.isEmpty(sql)) {
+            return false;
+        }
+
         return "SELECT".equalsIgnoreCase(getLeadingQueryKeyword(sql));
     }
 
@@ -1439,6 +1450,10 @@ public final class SqlParser {
      * @see #isSelectQuery(String)
      */
     public static boolean isReadOnlyQuery(final String sql) {
+        if (Strings.isEmpty(sql)) {
+            return false;
+        }
+
         return isSelectQuery(sql) && !containsMutationQueryKeyword(sql) && !containsSelectIntoClause(sql);
     }
 
@@ -1476,6 +1491,10 @@ public final class SqlParser {
      * @return {@code true} if the SQL is an INSERT query, {@code false} otherwise
      */
     public static boolean isInsertQuery(final String sql) {
+        if (Strings.isEmpty(sql)) {
+            return false;
+        }
+
         return "INSERT".equalsIgnoreCase(getLeadingQueryKeyword(sql));
     }
 
@@ -1485,10 +1504,11 @@ public final class SqlParser {
      * violated).
      * <p>
      * Only the leading keywords are examined, after skipping any leading whitespace, line comments
-     * ({@code --}/{@code #}) and block comments ({@code /}{@code * ... *}{@code /}); the three
-     * keywords {@code INSERT}, {@code OR} and {@code REPLACE} must appear (case-insensitively) in
-     * that order at the start of the statement. A plain {@code INSERT}, a SQL Server / Oracle
-     * standalone {@code REPLACE}, or any other leading keyword returns {@code false}.
+     * ({@code --}/{@code #}), block comments ({@code /}{@code * ... *}{@code /}) and any leading
+     * {@code WITH} clause; the three keywords {@code INSERT}, {@code OR} and {@code REPLACE} must
+     * appear (case-insensitively) in that order at the start of the actual statement. A plain
+     * {@code INSERT}, a SQL Server / Oracle standalone {@code REPLACE}, or any other leading
+     * keyword returns {@code false}.
      * </p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -1508,7 +1528,12 @@ public final class SqlParser {
             return false;
         }
 
-        int index = skipLeadingWhitespaceAndComments(sql, 0);
+        int index = getLeadingQueryKeywordIndex(sql);
+
+        if (index < 0) {
+            return false;
+        }
+
         String keyword = readKeyword(sql, index);
 
         if (!"INSERT".equalsIgnoreCase(keyword)) {
@@ -1540,7 +1565,8 @@ public final class SqlParser {
      *   <li>an {@code UPDATE}, {@code DELETE} or {@code MERGE} keyword; or</li>
      *   <li>an upsert clause that can modify existing rows, namely {@code INSERT OR REPLACE},
      *       {@code ON DUPLICATE KEY UPDATE} (MySQL) or {@code ON CONFLICT ... DO UPDATE}
-     *       (PostgreSQL/SQLite).</li>
+     *       (PostgreSQL/SQLite). These clauses are recognized outside quoted literals,
+     *       quoted identifiers and comments.</li>
      * </ul>
      * <p>
      * A plain {@code INSERT}, and an {@code INSERT ... ON CONFLICT ... DO NOTHING}, are therefore
@@ -1553,6 +1579,10 @@ public final class SqlParser {
      * @see #isInsertQuery(String)
      */
     public static boolean isNoUpdateQuery(final String sql) {
+        if (Strings.isEmpty(sql)) {
+            return true;
+        }
+
         if (!(isSelectQuery(sql) || isInsertQuery(sql))) {
             return false;
         }
@@ -1567,7 +1597,87 @@ public final class SqlParser {
     }
 
     private static boolean containsInsertUpdateClause(final String sql) {
-        return isInsertOrReplaceQuery(sql) || containsTokenSequence(sql, "DUPLICATE", "KEY", "UPDATE") || containsTokenSequence(sql, "DO", "UPDATE");
+        return isInsertOrReplaceQuery(sql) || containsTokenSequence(sql, "ON", "DUPLICATE", "KEY", "UPDATE") || containsOnConflictDoUpdateClause(sql);
+    }
+
+    private static boolean containsOnConflictDoUpdateClause(final String sql) {
+        if (Strings.isEmpty(sql)) {
+            return false;
+        }
+
+        int index = 0;
+        int matched = 0; // 0: seek ON, 1: expect CONFLICT, 2: seek DO, 3: expect UPDATE.
+        int conflictClauseDepth = 0;
+
+        while (index < sql.length()) {
+            index = skipLeadingWhitespaceAndComments(sql, index);
+
+            if (index >= sql.length()) {
+                break;
+            }
+
+            final char ch = sql.charAt(index);
+
+            if (ch == '\'' || ch == '"' || ch == '`') {
+                index = skipQuotedLiteral(sql, index, ch);
+                continue;
+            } else if (ch == '[') {
+                index = skipBracketQuotedIdentifier(sql, index);
+                continue;
+            } else if (ch == ';') {
+                matched = 0;
+                conflictClauseDepth = 0;
+                index++;
+                continue;
+            }
+
+            if (Character.isLetter(ch)) {
+                final String token = readKeyword(sql, index);
+
+                if (matched == 0) {
+                    matched = "ON".equalsIgnoreCase(token) ? 1 : 0;
+                } else if (matched == 1) {
+                    if ("CONFLICT".equalsIgnoreCase(token)) {
+                        matched = 2;
+                    } else {
+                        matched = "ON".equalsIgnoreCase(token) ? 1 : 0;
+                    }
+
+                    conflictClauseDepth = 0;
+                } else if (matched == 2) {
+                    if (conflictClauseDepth == 0 && "DO".equalsIgnoreCase(token)) {
+                        matched = 3;
+                    }
+                } else if (matched == 3) {
+                    if ("UPDATE".equalsIgnoreCase(token)) {
+                        return true;
+                    }
+
+                    matched = "ON".equalsIgnoreCase(token) ? 1 : 0;
+                    conflictClauseDepth = 0;
+                }
+
+                index += token.length();
+                continue;
+            }
+
+            if (matched == 2) {
+                if (ch == '(') {
+                    conflictClauseDepth++;
+                } else if (ch == ')' && conflictClauseDepth > 0) {
+                    conflictClauseDepth--;
+                }
+            }
+
+            if (matched == 1) {
+                matched = 0;
+                conflictClauseDepth = 0;
+            }
+
+            index++;
+        }
+
+        return false;
     }
 
     private static boolean containsSelectIntoClause(final String sql) {
@@ -1722,8 +1832,13 @@ public final class SqlParser {
     }
 
     private static String getLeadingQueryKeyword(final String sql) {
+        final int index = getLeadingQueryKeywordIndex(sql);
+        return index >= 0 ? readKeyword(sql, index) : "";
+    }
+
+    private static int getLeadingQueryKeywordIndex(final String sql) {
         if (Strings.isEmpty(sql)) {
-            return "";
+            return -1;
         }
 
         int index = skipLeadingWhitespaceAndComments(sql, 0);
@@ -1736,17 +1851,17 @@ public final class SqlParser {
         }
 
         if (index >= sql.length()) {
-            return "";
+            return -1;
         }
 
         String keyword = readKeyword(sql, index);
 
         if (Strings.isEmpty(keyword)) {
-            return "";
+            return -1;
         }
 
         if (!"WITH".equalsIgnoreCase(keyword)) {
-            return keyword;
+            return index;
         }
 
         index += keyword.length();
@@ -1758,10 +1873,10 @@ public final class SqlParser {
             index += keyword.length();
         }
 
-        return findKeywordAfterWithClause(sql, index);
+        return findKeywordIndexAfterWithClause(sql, index);
     }
 
-    private static String findKeywordAfterWithClause(final String sql, int fromIndex) {
+    private static int findKeywordIndexAfterWithClause(final String sql, int fromIndex) {
         int depth = 0;
 
         while (fromIndex < sql.length()) {
@@ -1800,7 +1915,7 @@ public final class SqlParser {
                 final String token = readKeyword(sql, fromIndex);
 
                 if (depth == 0 && isQueryKeyword(token)) {
-                    return token;
+                    return fromIndex;
                 }
 
                 fromIndex += token.length();
@@ -1810,7 +1925,7 @@ public final class SqlParser {
             fromIndex++;
         }
 
-        return "";
+        return -1;
     }
 
     private static boolean isQueryKeyword(final String token) {
@@ -1849,7 +1964,7 @@ public final class SqlParser {
                 continue;
             }
 
-            if (sql.charAt(fromIndex) == '#') {
+            if (sql.charAt(fromIndex) == '#' && isHashCommentStart(sql, sql.length(), fromIndex)) {
                 do {
                     fromIndex++;
                 } while (fromIndex < sql.length() && sql.charAt(fromIndex) != '\n' && sql.charAt(fromIndex) != '\r');
@@ -1913,9 +2028,13 @@ public final class SqlParser {
     private static String readKeyword(final String sql, int fromIndex) {
         fromIndex = skipLeadingWhitespaceAndComments(sql, fromIndex);
 
+        if (fromIndex >= sql.length() || !Character.isLetter(sql.charAt(fromIndex))) {
+            return "";
+        }
+
         final int startIndex = fromIndex;
 
-        while (fromIndex < sql.length() && Character.isLetter(sql.charAt(fromIndex))) {
+        while (fromIndex < sql.length() && isIdentifierChar(sql.charAt(fromIndex))) {
             fromIndex++;
         }
 
