@@ -209,9 +209,9 @@ public class Filters {
      * // Renders as: user_name
      * }</pre>
      *
-     * @param propName the name of the property/column (must not be {@code null} or empty)
+     * @param propName the name of the property/column (must not be {@code null}, empty, or blank)
      * @return a {@link NamedProperty} instance
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     @Beta
     public static NamedProperty namedProperty(final String propName) {
@@ -323,11 +323,11 @@ public class Filters {
      * // SQL fragment: username = 'john_doe'
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the value to compare for equality; may be a literal, {@code null}
      *                  (renders as {@code IS NULL}), or another {@link Condition} such as a {@link SubQuery}
      * @return an {@link Equal} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static Equal equal(final String propName, final Object propValue) { //NOSONAR
         return new Equal(propName, propValue);
@@ -345,6 +345,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link Equal} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static Equal equal(final String propName) {//NOSONAR
@@ -364,7 +365,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare for equality
      * @return an {@link Equal} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static Equal eq(final String propName, final Object propValue) {
         return equal(propName, propValue);
@@ -382,6 +383,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link Equal} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static Equal eq(final String propName) {
@@ -1078,11 +1080,11 @@ public class Filters {
      * // SQL fragment: status != 'deleted'
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the value to compare for inequality; may be a literal, {@code null}
      *                  (renders as {@code IS NOT NULL}), or another {@link Condition} such as a {@link SubQuery}
      * @return a {@link NotEqual} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static NotEqual notEqual(final String propName, final Object propValue) {
         return new NotEqual(propName, propValue);
@@ -1100,6 +1102,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link NotEqual} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static NotEqual notEqual(final String propName) {
@@ -1119,7 +1122,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare for inequality
      * @return a {@link NotEqual} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static NotEqual ne(final String propName, final Object propValue) {
         return notEqual(propName, propValue);
@@ -1137,6 +1140,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link NotEqual} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static NotEqual ne(final String propName) {
@@ -1152,10 +1156,10 @@ public class Filters {
      * // SQL fragment: age > 18
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the value to compare against
      * @return a {@link GreaterThan} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static GreaterThan greaterThan(final String propName, final Object propValue) {
         return new GreaterThan(propName, propValue);
@@ -1172,6 +1176,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link GreaterThan} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static GreaterThan greaterThan(final String propName) {
@@ -1191,7 +1196,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a {@link GreaterThan} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static GreaterThan gt(final String propName, final Object propValue) {
         return greaterThan(propName, propValue);
@@ -1209,6 +1214,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link GreaterThan} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static GreaterThan gt(final String propName) {
@@ -1224,10 +1230,10 @@ public class Filters {
      * // SQL fragment: score >= 60
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the value to compare against
      * @return a {@link GreaterThanOrEqual} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static GreaterThanOrEqual greaterThanOrEqual(final String propName, final Object propValue) {
         return new GreaterThanOrEqual(propName, propValue);
@@ -1244,6 +1250,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link GreaterThanOrEqual} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static GreaterThanOrEqual greaterThanOrEqual(final String propName) {
@@ -1263,7 +1270,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a {@link GreaterThanOrEqual} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static GreaterThanOrEqual ge(final String propName, final Object propValue) {
         return greaterThanOrEqual(propName, propValue);
@@ -1281,6 +1288,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link GreaterThanOrEqual} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static GreaterThanOrEqual ge(final String propName) {
@@ -1296,10 +1304,10 @@ public class Filters {
      * // SQL fragment: age < 65
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the value to compare against
      * @return a {@link LessThan} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static LessThan lessThan(final String propName, final Object propValue) {
         return new LessThan(propName, propValue);
@@ -1316,6 +1324,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link LessThan} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static LessThan lessThan(final String propName) {
@@ -1335,7 +1344,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a {@link LessThan} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static LessThan lt(final String propName, final Object propValue) {
         return lessThan(propName, propValue);
@@ -1353,6 +1362,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link LessThan} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static LessThan lt(final String propName) {
@@ -1368,10 +1378,10 @@ public class Filters {
      * // SQL fragment: discount <= 50
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the value to compare against
      * @return a {@link LessThanOrEqual} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static LessThanOrEqual lessThanOrEqual(final String propName, final Object propValue) {
         return new LessThanOrEqual(propName, propValue);
@@ -1388,6 +1398,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link LessThanOrEqual} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static LessThanOrEqual lessThanOrEqual(final String propName) {
@@ -1407,7 +1418,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to compare against
      * @return a {@link LessThanOrEqual} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static LessThanOrEqual le(final String propName, final Object propValue) {
         return lessThanOrEqual(propName, propValue);
@@ -1425,6 +1436,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link LessThanOrEqual} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static LessThanOrEqual le(final String propName) {
@@ -1445,7 +1457,7 @@ public class Filters {
      * @param minValue the minimum value (inclusive)
      * @param maxValue the maximum value (inclusive)
      * @return a {@link Between} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static Between between(final String propName, final Object minValue, final Object maxValue) {
         return new Between(propName, minValue, maxValue);
@@ -1462,7 +1474,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link Between} condition with parameter placeholders
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static Between between(final String propName) {
@@ -1486,7 +1498,7 @@ public class Filters {
      * @param minValue the minimum value of the excluded range (inclusive)
      * @param maxValue the maximum value of the excluded range (inclusive)
      * @return a {@link NotBetween} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static NotBetween notBetween(final String propName, final Object minValue, final Object maxValue) {
         return new NotBetween(propName, minValue, maxValue);
@@ -1503,7 +1515,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link NotBetween} condition with parameter placeholders
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static NotBetween notBetween(final String propName) {
@@ -1523,7 +1535,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the pattern to match (can include SQL wildcards)
      * @return a {@link Like} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static Like like(final String propName, final String propValue) {
         return new Like(propName, propValue);
@@ -1540,6 +1552,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link Like} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static Like like(final String propName) {
@@ -1559,7 +1572,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the pattern to exclude (can include SQL wildcards)
      * @return a {@link NotLike} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static NotLike notLike(final String propName, final String propValue) {
         return new NotLike(propName, propValue);
@@ -1576,6 +1589,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return a {@link NotLike} condition with a parameter placeholder
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      * @see com.landawn.abacus.query.SqlBuilder
      */
     public static NotLike notLike(final String propName) {
@@ -1595,7 +1609,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to search for (must not be {@code null})
      * @return a {@link Like} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code propValue} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static Like contains(final String propName, final String propValue) {
         N.checkArgNotNull(propValue, "propValue");
@@ -1615,7 +1629,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the value to exclude (must not be {@code null})
      * @return a {@link NotLike} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code propValue} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static NotLike notContains(final String propName, final String propValue) {
         N.checkArgNotNull(propValue, "propValue");
@@ -1635,7 +1649,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the prefix to search for (must not be {@code null})
      * @return a {@link Like} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code propValue} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static Like startsWith(final String propName, final String propValue) {
         N.checkArgNotNull(propValue, "propValue");
@@ -1655,7 +1669,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the prefix to exclude (must not be {@code null})
      * @return a {@link NotLike} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code propValue} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static NotLike notStartsWith(final String propName, final String propValue) {
         N.checkArgNotNull(propValue, "propValue");
@@ -1675,7 +1689,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the suffix to search for (must not be {@code null})
      * @return a {@link Like} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code propValue} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static Like endsWith(final String propName, final String propValue) {
         N.checkArgNotNull(propValue, "propValue");
@@ -1695,7 +1709,7 @@ public class Filters {
      * @param propName the property/column name
      * @param propValue the suffix to exclude (must not be {@code null})
      * @return a {@link NotLike} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code propValue} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static NotLike notEndsWith(final String propName, final String propValue) {
         N.checkArgNotNull(propValue, "propValue");
@@ -1713,7 +1727,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link IsNull} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static IsNull isNull(final String propName) {
         return new IsNull(propName);
@@ -1766,7 +1780,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link IsNotNull} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static IsNotNull isNotNull(final String propName) {
         return new IsNotNull(propName);
@@ -1818,7 +1832,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link IsNaN} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static IsNaN isNaN(final String propName) {
         return new IsNaN(propName);
@@ -1836,7 +1850,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link IsNotNaN} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static IsNotNaN isNotNaN(final String propName) {
         return new IsNotNaN(propName);
@@ -1854,7 +1868,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link IsInfinite} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static IsInfinite isInfinite(final String propName) {
         return new IsInfinite(propName);
@@ -1872,7 +1886,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link IsNotInfinite} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static IsNotInfinite isNotInfinite(final String propName) {
         return new IsNotInfinite(propName);
@@ -1893,11 +1907,11 @@ public class Filters {
      * // SQL fragment: status IS UNKNOWN
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the right-hand value (typically an {@link Expression}); may be {@code null}
      *                  (renders as {@code IS NULL})
      * @return an {@link Is} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static Is is(final String propName, final Object propValue) {
         return new Is(propName, propValue);
@@ -1920,11 +1934,11 @@ public class Filters {
      * // SQL fragment: status IS NOT UNKNOWN
      * }</pre>
      *
-     * @param propName the property/column name (must not be {@code null} or empty)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the right-hand value (typically an {@link Expression}); may be {@code null}
      *                  (renders as {@code IS NOT NULL})
      * @return an {@link IsNot} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static IsNot isNot(final String propName, final Object propValue) {
         return new IsNot(propName, propValue);
@@ -2120,7 +2134,7 @@ public class Filters {
      *
      * @param propName the property/column name to group by ascending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static GroupBy groupByAsc(final String propName) {
         return new GroupBy(propName, SortDirection.ASC);
@@ -2172,7 +2186,7 @@ public class Filters {
      *
      * @param propName the property/column name to group by descending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static GroupBy groupByDesc(final String propName) {
         return new GroupBy(propName, SortDirection.DESC);
@@ -2285,7 +2299,7 @@ public class Filters {
      * @param propName the property/column name to group by
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      */
     public static GroupBy groupBy(final String propName, final SortDirection direction) {
         return new GroupBy(propName, direction);
@@ -2423,7 +2437,7 @@ public class Filters {
      *
      * @param propName the property/column name to order by ascending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static OrderBy orderByAsc(final String propName) {
         return new OrderBy(propName, SortDirection.ASC);
@@ -2475,7 +2489,7 @@ public class Filters {
      *
      * @param propName the property/column name to order by descending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static OrderBy orderByDesc(final String propName) {
         return new OrderBy(propName, SortDirection.DESC);
@@ -2582,7 +2596,7 @@ public class Filters {
      * @param propName the property/column name to order by
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      */
     public static OrderBy orderBy(final String propName, final SortDirection direction) {
         return new OrderBy(propName, direction);
@@ -3210,7 +3224,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of boolean values
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static In in(final String propName, final boolean[] values) {
         return in(propName, Array.box(values));
@@ -3228,7 +3242,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of char values
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static In in(final String propName, final char[] values) {
         return in(propName, Array.box(values));
@@ -3246,7 +3260,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of byte values
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static In in(final String propName, final byte[] values) {
         return in(propName, Array.box(values));
@@ -3264,7 +3278,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of short values
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static In in(final String propName, final short[] values) {
         return in(propName, Array.box(values));
@@ -3282,7 +3296,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of integer values
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static In in(final String propName, final int[] values) {
         return in(propName, Array.box(values));
@@ -3300,7 +3314,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of long values
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static In in(final String propName, final long[] values) {
         return in(propName, Array.box(values));
@@ -3318,7 +3332,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of float values
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static In in(final String propName, final float[] values) {
         return in(propName, Array.box(values));
@@ -3336,7 +3350,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of double values
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static In in(final String propName, final double[] values) {
         return in(propName, Array.box(values));
@@ -3354,7 +3368,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of values
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static In in(final String propName, final Object[] values) {
         return in(propName, values == null ? (Collection<?>) null : Arrays.asList(values));
@@ -3373,7 +3387,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values collection of values
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static In in(final String propName, final Collection<?> values) {
         return new In(propName, values);
@@ -3423,7 +3437,7 @@ public class Filters {
      * @param propName the property/column name
      * @param subQuery the subquery to check against
      * @return an {@link InSubQuery} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code subQuery} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code subQuery} is {@code null}
      */
     public static InSubQuery in(final String propName, final SubQuery subQuery) {
         return new InSubQuery(propName, subQuery);
@@ -3461,7 +3475,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of boolean values to exclude
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static NotIn notIn(final String propName, final boolean[] values) {
         return notIn(propName, Array.box(values));
@@ -3479,7 +3493,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of char values to exclude
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static NotIn notIn(final String propName, final char[] values) {
         return notIn(propName, Array.box(values));
@@ -3497,7 +3511,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of byte values to exclude
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static NotIn notIn(final String propName, final byte[] values) {
         return notIn(propName, Array.box(values));
@@ -3515,7 +3529,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of short values to exclude
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static NotIn notIn(final String propName, final short[] values) {
         return notIn(propName, Array.box(values));
@@ -3533,7 +3547,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of integer values to exclude
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static NotIn notIn(final String propName, final int[] values) {
         return notIn(propName, Array.box(values));
@@ -3551,7 +3565,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of long values to exclude
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static NotIn notIn(final String propName, final long[] values) {
         return notIn(propName, Array.box(values));
@@ -3569,7 +3583,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of float values to exclude
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static NotIn notIn(final String propName, final float[] values) {
         return notIn(propName, Array.box(values));
@@ -3587,7 +3601,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of double values to exclude
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static NotIn notIn(final String propName, final double[] values) {
         return notIn(propName, Array.box(values));
@@ -3605,7 +3619,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values array of values to exclude
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static NotIn notIn(final String propName, final Object[] values) {
         return notIn(propName, values == null ? (Collection<?>) null : Arrays.asList(values));
@@ -3624,7 +3638,7 @@ public class Filters {
      * @param propName the property/column name
      * @param values collection of values to exclude
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code values} is {@code null} or empty
      */
     public static NotIn notIn(final String propName, final Collection<?> values) {
         return new NotIn(propName, values);
@@ -3674,7 +3688,7 @@ public class Filters {
      * @param propName the property/column name
      * @param subQuery the subquery to check against
      * @return a {@link NotInSubQuery} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code subQuery} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code subQuery} is {@code null}
      */
     public static NotInSubQuery notIn(final String propName, final SubQuery subQuery) {
         return new NotInSubQuery(propName, subQuery);
@@ -3899,11 +3913,13 @@ public class Filters {
      * }</pre>
      *
      * @param entityClass the entity class representing the table (must not be {@code null})
-     * @param propNames collection of property names to select (must not be {@code null} or empty)
+     * @param propNames collection of property names to select (must not be {@code null} or empty, and must not contain
+     *                  {@code null}, empty, or blank elements)
      * @param cond the WHERE condition for the subquery; may be {@code null} for no WHERE clause
      * @return a {@link SubQuery}
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, or if {@code propNames} is
-     *         {@code null} or empty, or if {@code cond} uses an {@code ON}/{@code USING} operator
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propNames} is
+     *         {@code null} or empty, contains a {@code null}, empty, or blank element, or if {@code cond}
+     *         uses an {@code ON}/{@code USING} operator
      */
     public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition cond) {
         return new SubQuery(entityClass, propNames, cond);
@@ -3923,13 +3939,14 @@ public class Filters {
      * // Generates: SELECT id, email FROM users WHERE email LIKE '%@company.com'
      * }</pre>
      *
-     * @param entityName the entity/table name (must not be {@code null} or empty)
-     * @param propNames collection of property names to select (must not be {@code null} or empty)
+     * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
+     * @param propNames collection of property names to select (must not be {@code null} or empty, and must not contain
+     *                  {@code null}, empty, or blank elements)
      * @param cond the WHERE condition for the subquery; may be {@code null} for no WHERE clause
      * @return a {@link SubQuery}
-     * @throws IllegalArgumentException if {@code entityName} is {@code null} or empty, or if
-     *         {@code propNames} is {@code null} or empty, or if {@code cond} uses an
-     *         {@code ON}/{@code USING} operator
+     * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank, if
+     *         {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
+     *         or if {@code cond} uses an {@code ON}/{@code USING} operator
      */
     public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final Condition cond) {
         return new SubQuery(entityName, propNames, cond);
@@ -3950,12 +3967,14 @@ public class Filters {
      * // Generates: SELECT id, price FROM products WHERE category = 'electronics' AND in_stock = true
      * }</pre>
      *
-     * @param entityName the entity/table name (must not be {@code null} or empty)
-     * @param propNames collection of property names to select (must not be {@code null} or empty)
+     * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
+     * @param propNames collection of property names to select (must not be {@code null} or empty, and must not contain
+     *                  {@code null}, empty, or blank elements)
      * @param expr the WHERE condition as a raw SQL string (must not be {@code null}; may be empty for no filter condition)
      * @return a {@link SubQuery}
-     * @throws IllegalArgumentException if {@code entityName} is {@code null} or empty,
-     *         if {@code propNames} is {@code null} or empty, or if {@code expr} is {@code null}
+     * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank,
+     *         if {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
+     *         or if {@code expr} is {@code null}
      */
     public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final String expr) {
         return new SubQuery(entityName, propNames, expr(expr));

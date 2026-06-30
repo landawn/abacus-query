@@ -243,7 +243,7 @@ public class Using extends Cell {
      * // Creates condition for: USING (customer_id, order_date)
      * }</pre>
      *
-     * @param columnNames array of column names. Must not be null or empty, and names must be unqualified (cannot contain a {@code .}).
+     * @param columnNames array of column names. Must not be null or empty, and names must not be blank or qualified (cannot contain a {@code .}).
      * @return a condition representing the USING clause
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
      *                                  or contains a qualified (dotted) column name
@@ -277,7 +277,7 @@ public class Using extends Cell {
      * // Creates condition for: USING (tenant_id, user_id)
      * }</pre>
      *
-     * @param columnNames collection of column names. Must not be null or empty, and names must be unqualified (cannot contain a {@code .}).
+     * @param columnNames collection of column names. Must not be null or empty, and names must not be blank or qualified (cannot contain a {@code .}).
      * @return a condition representing the USING clause
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
      *                                  or contains a qualified (dotted) column name
@@ -294,7 +294,7 @@ public class Using extends Cell {
 
     private static void validateColumnName(final String columnName) {
         if (Strings.isBlank(columnName)) {
-            throw new IllegalArgumentException("columnName in columnNames must not be null or empty");
+            throw new IllegalArgumentException("columnName in columnNames must not be null, empty, or blank");
         }
 
         if (columnName.indexOf('.') >= 0) {

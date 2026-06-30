@@ -2272,9 +2272,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * String sql = PSC.select("*")
      *                 .from("users u")
      *                 .join("orders o")
-     *                 .on(Filters.equal("u.id", "o.user_id"))
+     *                 .on(Filters.expr("u.id = o.user_id"))
      *                 .build().query();
-     * // Output: SELECT * FROM users u JOIN orders o ON u.id = ?
+     * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
      * @param cond the join condition (must not be {@code null})

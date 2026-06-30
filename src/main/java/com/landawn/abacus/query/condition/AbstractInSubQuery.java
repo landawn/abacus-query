@@ -91,7 +91,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * {@link SubQuery#getSelectPropNames()}), the number of selected columns must match
      * {@code propNames.size()}. Raw SQL subqueries are not validated for column arity.</p>
      *
-     * @param propNames the property/column names (must not be {@code null} or empty)
+     * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param subQuery the subquery (must not be {@code null})
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is

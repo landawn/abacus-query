@@ -102,7 +102,7 @@ public class CrossJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public CrossJoin(final String joinEntity) {
         super(Operator.CROSS_JOIN, joinEntity);
@@ -139,7 +139,7 @@ public class CrossJoin extends Join {
      * @param cond the condition appended after the join target. Supplying any condition (including an
      *            {@link On}) produces non-standard CROSS JOIN SQL, since a standard CROSS JOIN takes no
      *            {@code ON} clause. Any non-clause {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is a
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
      *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
@@ -175,7 +175,7 @@ public class CrossJoin extends Join {
      * @param cond the condition appended after the joined table list. Supplying any condition (including an
      *            {@link On}) produces non-standard CROSS JOIN SQL, since a standard CROSS JOIN takes no
      *            {@code ON} clause. Any non-clause {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
      *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
@@ -198,7 +198,7 @@ public class CrossJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements
      */
     public CrossJoin(final Collection<String> joinEntities) {
         super(Operator.CROSS_JOIN, joinEntities, null);

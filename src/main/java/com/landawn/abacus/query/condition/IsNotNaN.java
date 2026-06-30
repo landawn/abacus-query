@@ -17,27 +17,27 @@ package com.landawn.abacus.query.condition;
 /**
  * Represents a condition that checks if a numeric property value is NOT NaN (Not a Number).
  * This class extends {@link IsNot} to provide a specialized condition for checking that
- * floating-point values are valid numbers (not NaN). This is essential for ensuring
- * data quality and preventing NaN values from propagating through calculations.
+ * floating-point values are not NaN. This predicate does not exclude positive or negative
+ * infinity; combine it with {@link IsNotInfinite} when finite numeric validation is required.
  * 
  * <p>NaN (Not a Number) values can severely impact data analysis and calculations because:</p>
  * <ul>
  *   <li>NaN propagates through calculations (any arithmetic operation with NaN returns NaN)</li>
  *   <li>Standard SQL comparisons against NaN evaluate to UNKNOWN (and behave as {@code false} in
  *       WHERE clauses), so ordinary equality and inequality operators cannot reliably test
- *       whether a value is or is not NaN — making {@code IS NOT NAN} the only dependable way
- *       to filter for valid numbers</li>
+ *       whether a value is or is not NaN, making {@code IS NOT NAN} the dependable way
+ *       to filter out NaN values</li>
  *   <li>Aggregate functions may produce unexpected results with NaN values</li>
  *   <li>Statistical analyses require valid numeric data</li>
  * </ul>
  * 
  * <p>This condition is useful for:</p>
  * <ul>
- *   <li>Filtering out invalid numeric values before calculations</li>
- *   <li>Ensuring data quality in numeric columns</li>
+ *   <li>Filtering out NaN values before calculations</li>
+ *   <li>Ensuring numeric columns are NaN-free</li>
  *   <li>Preparing data for statistical analysis</li>
  *   <li>Validating calculation results</li>
- *   <li>Implementing business rules that require valid numbers</li>
+ *   <li>Implementing business rules that must reject NaN values</li>
  * </ul>
  *
  * <p><b>SQL portability note:</b> {@code IS NOT NAN} is not standard ANSI SQL. Support for this
@@ -46,16 +46,16 @@ package com.landawn.abacus.query.condition;
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
- * // Check if a calculation result is a valid number
- * IsNotNaN validResult = new IsNotNaN("calculation_result");
+ * // Check if a calculation result is not NaN
+ * IsNotNaN nonNaNResult = new IsNotNaN("calculation_result");
  * // SQL: calculation_result IS NOT NAN
  * 
- * // Filter for rows with valid profit ratios
- * IsNotNaN validRatio = new IsNotNaN("profit_ratio");
+ * // Filter for rows with NaN-free profit ratios
+ * IsNotNaN nonNaNRatio = new IsNotNaN("profit_ratio");
  * // SQL: profit_ratio IS NOT NAN
  * 
- * // Ensure sensor readings are valid
- * IsNotNaN validReading = new IsNotNaN("temperature");
+ * // Ensure sensor readings are not NaN
+ * IsNotNaN nonNaNReading = new IsNotNaN("temperature");
  * // SQL: temperature IS NOT NAN
  * 
  * // Combine with other validations for complete numeric validation
@@ -96,15 +96,14 @@ public class IsNotNaN extends IsNot {
     /**
      * Creates a new IsNotNaN condition for the specified property.
      * This condition generates an {@code IS NOT NAN} SQL clause to check if the property's
-     * numeric value is NOT NaN (i.e., is a valid number). This is essential for filtering
-     * out invalid data and ensuring that only valid numeric values are processed in
-     * calculations and analyses.
+     * numeric value is NOT NaN. It does not exclude infinities; combine it with
+     * {@link IsNotInfinite} when finite numeric values are required.
      *
      * <p>The generated SQL uses the {@code IS NOT NAN} operator because NaN has special comparison
      * semantics in SQL: any comparison with NaN (including {@code = NAN} or {@code != NAN})
      * evaluates to UNKNOWN and therefore behaves as {@code false} in WHERE clauses. Normal
      * comparison operators thus cannot reliably test for the absence of NaN; {@code IS NOT NAN}
-     * is the correct way to verify that a value is a valid number.</p>
+     * is the correct way to verify that a value is not NaN.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

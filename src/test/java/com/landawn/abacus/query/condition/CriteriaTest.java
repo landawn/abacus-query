@@ -1628,6 +1628,30 @@ class Criteria2026Batch2Test extends TestBase {
 
 class CriteriaBugFixTest extends TestBase {
 
+    private static final class CustomWhereClause extends Clause {
+        CustomWhereClause() {
+            super(Operator.WHERE, Filters.eq("id", 1));
+        }
+    }
+
+    private static final class CustomGroupByClause extends Clause {
+        CustomGroupByClause() {
+            super(Operator.GROUP_BY, Filters.expr("department"));
+        }
+    }
+
+    private static final class CustomHavingClause extends Clause {
+        CustomHavingClause() {
+            super(Operator.HAVING, Filters.gt("COUNT(*)", 1));
+        }
+    }
+
+    private static final class CustomOrderByClause extends Clause {
+        CustomOrderByClause() {
+            super(Operator.ORDER_BY, Filters.expr("name"));
+        }
+    }
+
     @Test
     public void testGroupByCollectionDoesNotAppendAscDirection() {
         List<String> cols = Arrays.asList("region", "product_type");
@@ -1713,6 +1737,14 @@ class CriteriaBugFixTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("ON users.id = orders.user_id")));
         assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("   ")));
         assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where("   "));
+    }
+
+    @Test
+    public void testBuilderRejectsCustomClauseSubclassesForTypedSingletonClauses() {
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(new CustomWhereClause()).build());
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy(new CustomGroupByClause()).build());
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having(new CustomHavingClause()).build());
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(new CustomOrderByClause()).build());
     }
 
     /**

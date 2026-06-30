@@ -17,8 +17,8 @@ package com.landawn.abacus.query.condition;
 /**
  * Represents a condition that checks if a numeric property value is NOT infinite.
  * This class extends {@link IsNot} to provide a specialized condition for checking that
- * floating-point values are finite (not positive or negative infinity). This condition
- * is essential for data validation and ensuring numeric calculations remain within bounds.
+ * floating-point values are non-infinite (not positive or negative infinity). This predicate
+ * does not exclude NaN; combine it with {@link IsNotNaN} when finite numeric validation is required.
  * 
  * <p>In floating-point arithmetic, infinity values can result from various operations:</p>
  * <ul>
@@ -30,10 +30,10 @@ package com.landawn.abacus.query.condition;
  *
  * <p>This condition helps filter out such infinite values to:</p>
  * <ul>
- *   <li>Ensure data quality and validity</li>
+ *   <li>Exclude positive and negative infinity from numeric data</li>
  *   <li>Prevent propagation of infinity in calculations</li>
  *   <li>Maintain meaningful numeric ranges</li>
- *   <li>Support statistical analysis that requires finite values</li>
+ *   <li>Support finite-value validation when combined with a NaN check</li>
  * </ul>
  *
  * <p><b>SQL portability note:</b> {@code IS NOT INFINITE} is not standard ANSI SQL. Support for
@@ -42,16 +42,16 @@ package com.landawn.abacus.query.condition;
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
- * // Check if a calculated ratio is finite
- * IsNotInfinite finiteRatio = new IsNotInfinite("price_ratio");
+ * // Check if a calculated ratio is not infinite
+ * IsNotInfinite nonInfiniteRatio = new IsNotInfinite("price_ratio");
  * // SQL: price_ratio IS NOT INFINITE
  * 
- * // Ensure measurement values are within finite range
- * IsNotInfinite validMeasurement = new IsNotInfinite("sensor_reading");
+ * // Ensure measurement values are not positive or negative infinity
+ * IsNotInfinite nonInfiniteMeasurement = new IsNotInfinite("sensor_reading");
  * // SQL: sensor_reading IS NOT INFINITE
  * 
- * // Filter for valid growth rates
- * IsNotInfinite validGrowth = new IsNotInfinite("growth_rate");
+ * // Filter for non-infinite growth rates
+ * IsNotInfinite nonInfiniteGrowth = new IsNotInfinite("growth_rate");
  * // SQL: growth_rate IS NOT INFINITE
  * 
  * // Combine with other conditions for complete validation
@@ -93,13 +93,12 @@ public class IsNotInfinite extends IsNot {
      * Creates a new IsNotInfinite condition for the specified property.
      * This condition generates an {@code IS NOT INFINITE} SQL clause to check if the property's
      * numeric value is NOT infinite (neither positive infinity nor negative infinity).
-     * This ensures that values are within the finite range of floating-point numbers
-     * and is essential for data validation before performing calculations or analysis.
+     * It does not exclude NaN; combine it with {@link IsNotNaN} before relying on a value as finite.
      *
-     * <p>The generated SQL uses the {@code IS NOT INFINITE} operator to properly verify finite
+     * <p>The generated SQL uses the {@code IS NOT INFINITE} operator to properly verify non-infinite
      * values. Standard comparison operators cannot reliably test for the absence of
      * infinity because infinity has special arithmetic properties. {@code IS NOT INFINITE} is
-     * the correct way to filter for finite numeric values.</p>
+     * the correct way to filter out infinite numeric values.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

@@ -188,6 +188,7 @@ public final class SqlParser {
         separators.add("(+)");
         separators.add("?#");
         separators.add("?-");
+        separators.add("?&");
         separators.add("?|");
         separators.add("?-|");
         separators.add("?||");

@@ -124,7 +124,7 @@ public class OrderBy extends Clause {
      * // SQL: ORDER BY department, team, lastName, firstName
      * }</pre>
      *
-     * @param propNames variable number of property names to sort by. Must not be {@code null} or empty.
+     * @param propNames variable number of property names to sort by. Must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements.
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
     public OrderBy(final String... propNames) {
@@ -153,7 +153,8 @@ public class OrderBy extends Clause {
      * // SQL: ORDER BY department, team, lastName, firstName
      * }</pre>
      *
-     * @param propNames the collection of property names to sort by, in iteration order. Must not be {@code null} or empty.
+     * @param propNames the collection of property names to sort by, in iteration order. Must not be {@code null} or empty and must not contain {@code null},
+     *                  empty, or blank elements.
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
     public OrderBy(final Collection<String> propNames) {
@@ -203,7 +204,7 @@ public class OrderBy extends Clause {
      * // SQL: ORDER BY lastName ASC, firstName ASC, middleName ASC
      * }</pre>
      *
-     * @param propNames collection of property names to sort by. Must not be {@code null} or empty.
+     * @param propNames collection of property names to sort by. Must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements.
      * @param direction the sort direction to apply to all properties. Must not be {@code null}.
      * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if {@code direction} is {@code null}, or if {@code propNames} contains {@code null}, empty, or blank elements
      */
@@ -231,7 +232,8 @@ public class OrderBy extends Clause {
      *
      * @param orders a map of property names to their respective sort directions; should be a
      *               {@code LinkedHashMap} (or another order-preserving map) so that the sort priority
-     *               matches insertion order. Must not be {@code null} or empty.
+     *               matches insertion order. Must not be {@code null} or empty; keys must not be {@code null}, empty, or blank and values must not be
+     *               {@code null}.
      * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, or contains {@code null}, empty, or blank keys
      *                                  or {@code null} values
      */

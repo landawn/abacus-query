@@ -1318,6 +1318,20 @@ class SqlMapperApiReviewTest extends TestBase {
     // ----- saveTo(OutputStream) -----
 
     @Test
+    public void testSaveToFile_nullThrowsIllegalArgumentException() {
+        SqlMapper mapper = new SqlMapper();
+
+        assertThrows(IllegalArgumentException.class, () -> mapper.saveTo((File) null));
+    }
+
+    @Test
+    public void testSaveToOutputStream_nullThrowsIllegalArgumentException() {
+        SqlMapper mapper = new SqlMapper();
+
+        assertThrows(IllegalArgumentException.class, () -> mapper.saveTo((OutputStream) null));
+    }
+
+    @Test
     public void testSaveToOutputStream_roundTrip() {
         SqlMapper mapper = new SqlMapper();
         Map<String, String> attrs = new HashMap<>();

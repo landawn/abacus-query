@@ -42,11 +42,13 @@ import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.Having;
+import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.Array;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.ImmutableSet;
 import com.landawn.abacus.util.N;
@@ -13954,6 +13956,35 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("firstName AS bad--alias").from("account").build());
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("firstName AS bad/*alias").from("account").build());
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("firstName AS bad*/alias").from("account").build());
+    }
+
+    @Test
+    public void testUnsupportedConditionMessageUsesConditionClass() {
+        final Condition unsupported = new Condition() {
+            @Override
+            public Operator operator() {
+                return Operator.EQUAL;
+            }
+
+            @Override
+            public ImmutableList<Object> getParameters() {
+                return ImmutableList.empty();
+            }
+
+            @Override
+            public String toString(final NamingPolicy namingPolicy) {
+                throw new AssertionError("toString(NamingPolicy) should not be used for unsupported condition messages");
+            }
+
+            @Override
+            public String toString() {
+                throw new AssertionError("toString() should not be used for unsupported condition messages");
+            }
+        };
+
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").where(unsupported).build());
+
+        assertTrue(ex.getMessage().contains(unsupported.getClass().getName()));
     }
 
     /**

@@ -97,7 +97,7 @@ public class NaturalJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public NaturalJoin(final String joinEntity) {
         super(Operator.NATURAL_JOIN, joinEntity);
@@ -120,7 +120,7 @@ public class NaturalJoin extends Join {
      *
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is non-{@code null}
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is non-{@code null}
      */
     public NaturalJoin(final String joinEntity, final Condition cond) {
         super(Operator.NATURAL_JOIN, joinEntity, validateNaturalJoinCondition(cond));
@@ -147,7 +147,7 @@ public class NaturalJoin extends Join {
      *
      * @param joinEntities the collection of tables or entities to join with.
      * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements,
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code cond} is non-{@code null}
      */
     public NaturalJoin(final Collection<String> joinEntities, final Condition cond) {
@@ -173,7 +173,7 @@ public class NaturalJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null} or empty elements
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements
      */
     public NaturalJoin(final Collection<String> joinEntities) {
         super(Operator.NATURAL_JOIN, joinEntities, null);

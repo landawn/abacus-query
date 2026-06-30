@@ -109,8 +109,8 @@ public class InSubQuery extends AbstractInSubQuery {
      * // SQL: (dept_id, loc_id) IN (SELECT department_id, location_id FROM dept_locations WHERE active = 'Y')
      * }</pre>
      *
-     * @param propNames the property names to check (must not be {@code null} or empty). Their order must match the
-     *            column order in the subquery.
+     * @param propNames the property names to check (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements).
+     *            Their order must match the column order in the subquery.
      * @param subQuery the subquery that returns the value combinations to check against (must not be {@code null}).
      *            If it is a structured subquery, it must select exactly {@code propNames.size()} columns.
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is {@code null}, empty, or blank,

@@ -803,6 +803,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joins the JOIN clauses to add
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joins} is {@code null} or contains {@code null}
          */
         public Builder join(final Join... joins) {
             add(joins);
@@ -829,6 +830,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joins the collection of JOIN clauses to add
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joins} is {@code null} or contains {@code null}
          */
         public Builder join(final Collection<Join> joins) {
             add(joins);
@@ -850,6 +852,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder join(final String joinEntity) {
             add(new Join(joinEntity));
@@ -872,6 +875,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond}
+         *                                  is not valid for a JOIN
          */
         public Builder join(final String joinEntity, final Condition cond) {
             add(new Join(joinEntity, cond));
@@ -899,6 +904,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
+         *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
          */
         public Builder join(final Collection<String> joinEntities, final Condition cond) {
             add(new Join(joinEntities, cond));
@@ -923,6 +930,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder innerJoin(final String joinEntity) {
             add(new InnerJoin(joinEntity));
@@ -948,6 +956,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond}
+         *                                  is not valid for a JOIN
          */
         public Builder innerJoin(final String joinEntity, final Condition cond) {
             add(new InnerJoin(joinEntity, cond));
@@ -974,6 +984,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
+         *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
          */
         public Builder innerJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new InnerJoin(joinEntities, cond));
@@ -995,6 +1007,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder leftJoin(final String joinEntity) {
             add(new LeftJoin(joinEntity));
@@ -1019,6 +1032,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond}
+         *                                  is not valid for a JOIN
          */
         public Builder leftJoin(final String joinEntity, final Condition cond) {
             add(new LeftJoin(joinEntity, cond));
@@ -1045,6 +1060,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
+         *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
          */
         public Builder leftJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new LeftJoin(joinEntities, cond));
@@ -1066,6 +1083,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder rightJoin(final String joinEntity) {
             add(new RightJoin(joinEntity));
@@ -1090,6 +1108,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond}
+         *                                  is not valid for a JOIN
          */
         public Builder rightJoin(final String joinEntity, final Condition cond) {
             add(new RightJoin(joinEntity, cond));
@@ -1116,6 +1136,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
+         *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
          */
         public Builder rightJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new RightJoin(joinEntities, cond));
@@ -1137,6 +1159,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder fullJoin(final String joinEntity) {
             add(new FullJoin(joinEntity));
@@ -1161,6 +1184,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond}
+         *                                  is not valid for a JOIN
          */
         public Builder fullJoin(final String joinEntity, final Condition cond) {
             add(new FullJoin(joinEntity, cond));
@@ -1187,6 +1212,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
+         *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
          */
         public Builder fullJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new FullJoin(joinEntities, cond));
@@ -1208,6 +1235,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder crossJoin(final String joinEntity) {
             add(new CrossJoin(joinEntity));
@@ -1234,6 +1262,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond}
+         *                                  is not valid for a JOIN
          */
         public Builder crossJoin(final String joinEntity, final Condition cond) {
             add(new CrossJoin(joinEntity, cond));
@@ -1260,6 +1290,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntities the collection of tables/entities to join
          * @param cond the join condition
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
+         *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
          */
         public Builder crossJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new CrossJoin(joinEntities, cond));
@@ -1281,6 +1313,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder naturalJoin(final String joinEntity) {
             add(new NaturalJoin(joinEntity));
@@ -1306,7 +1339,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is non-{@code null}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is non-{@code null}
          */
         public Builder naturalJoin(final String joinEntity, final Condition cond) {
             add(new NaturalJoin(joinEntity, cond));
@@ -1334,7 +1367,8 @@ public class Criteria extends AbstractCondition {
          * @param joinEntities the collection of tables/entities to join
          * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is non-{@code null}
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
+         *                                  {@code null}, empty, or blank elements, or if {@code cond} is non-{@code null}
          */
         public Builder naturalJoin(final Collection<String> joinEntities, final Condition cond) {
             add(new NaturalJoin(joinEntities, cond));
@@ -1420,7 +1454,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propName the property name to group by ascending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
          */
         public Builder groupByAsc(final String propName) {
             add(Filters.groupByAsc(propName));
@@ -1442,7 +1476,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propNames the property names to group by ascending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder groupByAsc(final String... propNames) {
             add(Filters.groupByAsc(propNames));
@@ -1466,7 +1500,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder groupByAsc(final Collection<String> propNames) {
             return groupBy(propNames, SortDirection.ASC);
@@ -1485,7 +1519,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propName the property name to group by descending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
          */
         public Builder groupByDesc(final String propName) {
             add(Filters.groupByDesc(propName));
@@ -1507,7 +1541,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propNames the property names to group by descending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder groupByDesc(final String... propNames) {
             add(Filters.groupByDesc(propNames));
@@ -1531,7 +1565,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder groupByDesc(final Collection<String> propNames) {
             return groupBy(propNames, SortDirection.DESC);
@@ -1585,7 +1619,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propNames the property names to group by
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null} or empty element
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
          */
         public Builder groupBy(final String... propNames) {
             add(new GroupBy(propNames));
@@ -1607,7 +1641,7 @@ public class Criteria extends AbstractCondition {
          * @param propName the property name to group by
          * @param direction the sort direction
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code direction} is {@code null}
+         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
          */
         public Builder groupBy(final String propName, final SortDirection direction) {
             add(new GroupBy(propName, direction));
@@ -1631,7 +1665,7 @@ public class Criteria extends AbstractCondition {
          * @param propName2 the second property name to group by
          * @param direction2 the sort direction for the second property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if any property name is {@code null} or empty, or if any sort direction is {@code null}
+         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
          */
         public Builder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
             groupBy(N.asMap(propName, direction, propName2, direction2));
@@ -1657,7 +1691,7 @@ public class Criteria extends AbstractCondition {
          * @param propName3 the third property name to group by
          * @param direction3 the sort direction for the third property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if any property name is {@code null} or empty, or if any sort direction is {@code null}
+         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
          */
         public Builder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
                 final String propName3, final SortDirection direction3) {
@@ -1684,7 +1718,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order; must not be {@code null} or empty)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null} or empty element
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
          */
         public Builder groupBy(final Collection<String> propNames) {
             N.checkArgNotEmpty(propNames, "propNames");
@@ -1711,7 +1745,7 @@ public class Criteria extends AbstractCondition {
          *                  to preserve the column order)
          * @param direction the sort direction for all properties
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
          *                                  or if {@code direction} is {@code null}
          */
         public Builder groupBy(final Collection<String> propNames, final SortDirection direction) {
@@ -1738,7 +1772,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param groupings a map of property names to sort directions
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code groupings} is {@code null}, empty, or contains {@code null} or empty keys
+         * @throws IllegalArgumentException if {@code groupings} is {@code null}, empty, or contains {@code null}, empty, or blank keys
          *                                  or {@code null} values
          */
         public Builder groupBy(final Map<String, SortDirection> groupings) {
@@ -1828,7 +1862,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propName the property name to order by ascending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
          */
         public Builder orderByAsc(final String propName) {
             add(Filters.orderByAsc(propName));
@@ -1850,7 +1884,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propNames the property names to order by ascending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder orderByAsc(final String... propNames) {
             add(Filters.orderByAsc(propNames));
@@ -1874,7 +1908,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder orderByAsc(final Collection<String> propNames) {
             add(Filters.orderByAsc(propNames));
@@ -1895,7 +1929,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propName the property name to order by descending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propName} is {@code null} or empty
+         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
          */
         public Builder orderByDesc(final String propName) {
             add(Filters.orderByDesc(propName));
@@ -1917,7 +1951,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propNames the property names to order by descending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder orderByDesc(final String... propNames) {
             add(Filters.orderByDesc(propNames));
@@ -1941,7 +1975,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder orderByDesc(final Collection<String> propNames) {
             add(Filters.orderByDesc(propNames));
@@ -1998,7 +2032,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propNames the property names to order by
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null} or empty element
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
          */
         public Builder orderBy(final String... propNames) {
             add(new OrderBy(propNames));
@@ -2020,7 +2054,7 @@ public class Criteria extends AbstractCondition {
          * @param propName the property name to order by
          * @param direction the sort direction
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propName} is {@code null} or empty, or if {@code direction} is {@code null}
+         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
          */
         public Builder orderBy(final String propName, final SortDirection direction) {
             add(new OrderBy(propName, direction));
@@ -2044,7 +2078,7 @@ public class Criteria extends AbstractCondition {
          * @param propName2 the second property name to order by
          * @param direction2 the sort direction for the second property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if any property name is {@code null} or empty, or if any sort direction is {@code null}
+         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
          */
         public Builder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
             orderBy(N.asMap(propName, direction, propName2, direction2));
@@ -2070,7 +2104,7 @@ public class Criteria extends AbstractCondition {
          * @param propName3 the third property name to order by
          * @param direction3 the sort direction for the third property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if any property name is {@code null} or empty, or if any sort direction is {@code null}
+         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
          */
         public Builder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
                 final String propName3, final SortDirection direction3) {
@@ -2098,7 +2132,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order; must not be {@code null} or empty)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null} or empty element
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
          */
         public Builder orderBy(final Collection<String> propNames) {
             N.checkArgNotEmpty(propNames, "propNames");
@@ -2125,7 +2159,7 @@ public class Criteria extends AbstractCondition {
          *                  to preserve the column order)
          * @param direction the sort direction for all properties
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null} or empty elements,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
          *                                  or if {@code direction} is {@code null}
          */
         public Builder orderBy(final Collection<String> propNames, final SortDirection direction) {
@@ -2152,7 +2186,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param orders a map of property names to sort directions
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, or contains {@code null} or empty keys
+         * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, or contains {@code null}, empty, or blank keys
          *                                  or {@code null} values
          */
         public Builder orderBy(final Map<String, SortDirection> orders) {
@@ -2412,7 +2446,28 @@ public class Criteria extends AbstractCondition {
                 if (!(cond instanceof Clause)) {
                     throw new IllegalArgumentException("Invalid condition for " + methodName + ": operator " + expectedOperator + " requires a Clause");
                 }
+
+                final Class<? extends Clause> expectedClauseType = expectedClauseType(expectedOperator);
+
+                if (expectedClauseType != null && !expectedClauseType.isInstance(cond)) {
+                    throw new IllegalArgumentException("Invalid condition for " + methodName + ": operator " + expectedOperator + " requires "
+                            + expectedClauseType.getSimpleName() + ", but got " + cond.getClass().getName());
+                }
             }
+        }
+
+        private static Class<? extends Clause> expectedClauseType(final Operator operator) {
+            if (operator == Operator.WHERE) {
+                return Where.class;
+            } else if (operator == Operator.GROUP_BY) {
+                return GroupBy.class;
+            } else if (operator == Operator.HAVING) {
+                return Having.class;
+            } else if (operator == Operator.ORDER_BY) {
+                return OrderBy.class;
+            }
+
+            return null;
         }
 
         /**

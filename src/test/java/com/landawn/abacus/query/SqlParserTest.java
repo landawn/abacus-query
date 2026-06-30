@@ -139,6 +139,13 @@ class SqlParser2025Test extends TestBase {
     }
 
     @Test
+    public void testParseWithPostgresJsonQuestionAndOperator() {
+        List<String> words = SqlParser.parse("SELECT * FROM events WHERE payload ?& array['a']");
+        assertTrue(words.contains("?&"), "PostgreSQL JSONB ?& operator must stay a single token: " + words);
+        assertFalse(words.contains("?"), "PostgreSQL JSONB ?& operator must not be split into a JDBC placeholder: " + words);
+    }
+
+    @Test
     public void testParseEmptyString() {
         String sql = "";
         List<String> words = SqlParser.parse(sql);

@@ -659,10 +659,13 @@ public final class SqlMapper {
      * }</pre>
      *
      * @param file the file to write to (will be created if it doesn't exist; parent directories will be created if needed)
+     * @throws IllegalArgumentException if {@code file} is {@code null}
      * @throws UncheckedIOException if an I/O error occurs while creating or writing to the file
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void saveTo(final File file) {
+        N.checkArgNotNull(file, "file");
+
         final File parent = file.getParentFile();
 
         if (parent != null && !parent.exists() && !parent.mkdirs()) {
@@ -695,10 +698,13 @@ public final class SqlMapper {
      * }
      * }</pre>
      *
-     * @param os the output stream to write to (must not be {@code null}; not closed by this method)
+     * @param os the output stream to write to (not closed by this method)
+     * @throws IllegalArgumentException if {@code os} is {@code null}
      * @throws UncheckedIOException if an I/O error occurs while writing to the stream
      */
     public void saveTo(final OutputStream os) {
+        N.checkArgNotNull(os, "os");
+
         try {
             final Document doc = XmlUtil.createDOMParser(true, true).newDocument();
             final Element sqlMapperNode = doc.createElement(SqlMapper.SQL_MAPPER);

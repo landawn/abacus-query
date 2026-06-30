@@ -246,7 +246,7 @@ public final class Dsl {
      * Creates an INSERT statement for multiple columns.
      *
      * <p>This method creates an INSERT statement template with multiple columns. Property names
-     * are automatically converted to snake_case format. Values will be provided as parameters
+     * are rendered according to this DSL's naming policy. Values will be provided as parameters
      * when executing the query.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -276,7 +276,7 @@ public final class Dsl {
      * Creates an INSERT statement for a collection of columns.
      *
      * <p>This method provides flexibility when column names are dynamically generated or come from
-     * a collection. Property names are automatically converted to snake_case format.</p>
+     * a collection. Property names are rendered according to this DSL's naming policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -304,7 +304,7 @@ public final class Dsl {
      * Creates an INSERT statement from a map of property names and values.
      *
      * <p>This method generates an INSERT statement where map keys represent property names
-     * (converted to snake_case) and values are used to generate parameter placeholders.
+     * rendered according to this DSL's naming policy and values are used to generate parameter placeholders.
      * The actual values can be retrieved using the {@code build()} method.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -337,7 +337,7 @@ public final class Dsl {
      *
      * <p>This method inspects the entity object and includes all insertable properties of the entity
      * (those not marked with {@code @Transient}, {@code @ReadOnly}, or {@code @ReadOnlyId}).
-     * Property names are converted to snake_case format.</p>
+     * Property names are rendered according to this DSL's naming policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -403,7 +403,7 @@ public final class Dsl {
      *
      * <p>This method generates an INSERT statement template based on the entity class structure.
      * All properties suitable for insertion (excluding those marked with @Transient, @ReadOnly,
-     * or @ReadOnlyId) are included. Property names are converted to snake_case format.</p>
+     * or @ReadOnlyId) are included. Property names are rendered according to this DSL's naming policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -455,7 +455,7 @@ public final class Dsl {
      *
      * <p>This is a convenience method that combines insert() and into() operations.
      * The table name is automatically derived from the entity class name or @Table annotation.
-     * Property names are converted to snake_case format.</p>
+     * Property names are rendered according to this DSL's naming policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -544,7 +544,7 @@ public final class Dsl {
      * <p>This method starts building an UPDATE statement. Use the {@code set(String...)} method
      * to specify which columns to update (each column gets a {@code ?} placeholder), or use
      * {@code set(Map)} to specify column names together with their values. Property names are
-     * converted to snake_case format.</p>
+     * rendered according to this DSL's naming policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -574,8 +574,8 @@ public final class Dsl {
      * Creates an UPDATE statement for a table with entity class mapping.
      *
      * <p>This method creates an UPDATE statement where the entity class provides property-to-column
-     * name mapping information. This ensures proper snake_case conversion for all property names
-     * used in the update operation. Use {@code set(String...)} to specify the column names to
+     * name mapping information. This ensures property names are rendered according to this DSL's
+     * naming policy in the update operation. Use {@code set(String...)} to specify the column names to
      * update (each gets a {@code ?} placeholder), or {@code set(Map)} to supply names and values
      * together.</p>
      *
@@ -668,8 +668,8 @@ public final class Dsl {
      * Creates a DELETE FROM statement for a table.
      *
      * <p>This method starts building a DELETE statement. Typically followed by WHERE conditions
-     * to specify which rows to delete. Property names in WHERE conditions will be converted
-     * to snake_case format if an entity class is associated.</p>
+     * to specify which rows to delete. Property names in WHERE conditions will be rendered
+     * according to this DSL's naming policy if an entity class is associated.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -698,8 +698,8 @@ public final class Dsl {
      * Creates a DELETE FROM statement for a table with entity class mapping.
      *
      * <p>This method creates a DELETE statement where the entity class provides property-to-column
-     * name mapping for WHERE conditions. This ensures proper snake_case conversion for property
-     * names used in conditions.</p>
+     * name mapping for WHERE conditions. This ensures property names in conditions are rendered
+     * according to this DSL's naming policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -731,8 +731,8 @@ public final class Dsl {
      * Creates a DELETE FROM statement for an entity class.
      *
      * <p>This method creates a DELETE statement where the table name is derived from the entity
-     * class name or @Table annotation. Property names in WHERE conditions will be automatically
-     * converted to snake_case format.</p>
+     * class name or @Table annotation. Property names in WHERE conditions will be rendered
+     * according to this DSL's naming policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -796,7 +796,7 @@ public final class Dsl {
      * Creates a SELECT statement with multiple columns.
      *
      * <p>This method creates a SELECT statement for multiple columns. Property names are
-     * converted to snake_case format and aliased back to their original camelCase names
+     * rendered according to this DSL's naming policy and aliased back to their original names
      * to maintain proper object mapping.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -827,7 +827,7 @@ public final class Dsl {
      * Creates a SELECT statement with a collection of columns.
      *
      * <p>This method provides flexibility when column names are dynamically generated. Property
-     * names are converted to snake_case format with appropriate aliases.</p>
+     * names are rendered according to this DSL's naming policy with appropriate aliases.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -857,7 +857,7 @@ public final class Dsl {
      * Creates a SELECT statement with column aliases.
      *
      * <p>This method allows specifying custom aliases for selected columns. The map keys are
-     * property names (converted to snake_case) and values are their desired aliases in the
+     * property names rendered according to this DSL's naming policy and values are their desired aliases in the
      * result set.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -894,8 +894,8 @@ public final class Dsl {
      * Creates a SELECT statement for all properties of an entity class.
      *
      * <p>This method generates a SELECT statement including all properties from the entity class
-     * that are not marked with @Transient. Property names are converted to snake_case with
-     * appropriate aliases.</p>
+     * that are not marked with @Transient. Property names are rendered according to this DSL's
+     * naming policy with appropriate aliases.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1004,7 +1004,7 @@ public final class Dsl {
      *
      * <p>This is a convenience method that combines select() and from() operations.
      * The table name is automatically derived from the entity class name or @Table annotation.
-     * All property names are converted to snake_case with appropriate aliases.</p>
+     * All property names are rendered according to this DSL's naming policy with appropriate aliases.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1208,7 +1208,7 @@ public final class Dsl {
      *
      * <p>This method is designed for queries that need to select from multiple tables,
      * typically used with joins. Each entity gets both a table alias and a class alias
-     * for proper result mapping. Property names are converted to snake_case.</p>
+     * for proper result mapping. Property names are rendered according to this DSL's naming policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1325,9 +1325,11 @@ public final class Dsl {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Selection> selections = Arrays.asList(
-     *     new Selection(Account.class, "a", "account", null, false, null),
-     *     new Selection(Order.class, "o", "order", Arrays.asList("id", "total"), false, null),
-     *     new Selection(Product.class, "p", "product", null, false, N.asSet("description"))
+     *     Selection.builder().entityClass(Account.class).tableAlias("a").classAlias("account").build(),
+     *     Selection.builder().entityClass(Order.class).tableAlias("o").classAlias("order")
+     *         .selectPropNames(Arrays.asList("id", "total")).build(),
+     *     Selection.builder().entityClass(Product.class).tableAlias("p").classAlias("product")
+     *         .excludedPropNames(N.asSet("description")).build()
      * );
      *
      * String sql = PSC.select(selections)
@@ -1468,9 +1470,11 @@ public final class Dsl {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Selection> selections = Arrays.asList(
-     *     new Selection(Account.class, "a", "account", null, false, null),
-     *     new Selection(Order.class, "o", "order", null, true, null),  // include sub-entities
-     *     new Selection(Product.class, "p", "product", null, false, N.asSet("details"))
+     *     Selection.builder().entityClass(Account.class).tableAlias("a").classAlias("account").build(),
+     *     Selection.builder().entityClass(Order.class).tableAlias("o").classAlias("order")
+     *         .includeSubEntityProperties(true).build(),
+     *     Selection.builder().entityClass(Product.class).tableAlias("p").classAlias("product")
+     *         .excludedPropNames(N.asSet("details")).build()
      * );
      *
      * String sql = PSC.selectFrom(selections)
@@ -1598,8 +1602,8 @@ public final class Dsl {
     static void validateColumnAlias(final String propOrColumnName, final String alias) {
         if (Strings.isBlank(alias) || alias.indexOf('"') >= 0 || alias.indexOf('`') >= 0 || alias.indexOf('\r') >= 0 || alias.indexOf('\n') >= 0
                 || alias.contains("--") || alias.contains("/*") || alias.contains("*/")) {
-            throw new IllegalArgumentException("Column alias for '" + propOrColumnName + "' must not be null, blank, quoted, or contain SQL comment tokens: "
-                    + alias);
+            throw new IllegalArgumentException(
+                    "Column alias for '" + propOrColumnName + "' must not be null, blank, quoted, or contain SQL comment tokens: " + alias);
         }
     }
 

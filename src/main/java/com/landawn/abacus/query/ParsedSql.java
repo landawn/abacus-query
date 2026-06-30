@@ -186,28 +186,35 @@ public final class ParsedSql {
 
                         rebuilt.append(word);
                         word = rebuilt.toString();
-                    } else if (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))) {
-                        // Bug fix: a single tokenized word may contain multiple ':named' markers
-                        // (e.g. ":a:b") because ':' is not a token separator. The previous code
-                        // extracted only the leading ":named" marker and silently embedded any
-                        // subsequent markers into the parameterized SQL as literal text, losing
-                        // those parameter bindings entirely. We now iteratively extract every
-                        // leading ":named" marker, mirroring the iBatis "#{...}" handling above.
-                        // This stays correct for PostgreSQL casts such as ":a::int": after
-                        // extracting "a", the remaining "::int" begins with ':' followed by ':'
-                        // (not a valid parameter char), so the loop stops and "::int" is preserved.
+                    } else if (mayContainNamedParameter(word)) {
+                        // A single tokenized word may contain one or more ':named' markers because
+                        // ':' is not a token separator. Extract markers at safe boundaries so
+                        // constructs such as ":a:b" and "array[:ids]" are parameterized, while
+                        // PostgreSQL casts such as "::int" and quoted literal tokens are preserved.
                         final StringBuilder rebuilt = new StringBuilder(word.length() + 4);
+                        int copiedFrom = 0;
+                        int searchFrom = 0;
 
-                        while (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))) {
-                            final int parameterEndIndex = findNamedParameterEndIndex(word, 1);
-                            namedParameterList.add(word.substring(1, parameterEndIndex));
+                        while (true) {
+                            final int parameterStartIndex = findNextNamedParameterStartIndex(word, searchFrom);
+
+                            if (parameterStartIndex < 0) {
+                                break;
+                            }
+
+                            rebuilt.append(word, copiedFrom, parameterStartIndex);
+
+                            final int parameterEndIndex = findNamedParameterEndIndex(word, parameterStartIndex + 1);
+                            namedParameterList.add(word.substring(parameterStartIndex + 1, parameterEndIndex));
                             rebuilt.append(SK.QUESTION_MARK);
-                            word = word.substring(parameterEndIndex);
                             paramCount++;
                             type |= NAMED_PARAMETER_TYPE;
+
+                            copiedFrom = parameterEndIndex;
+                            searchFrom = parameterEndIndex;
                         }
 
-                        rebuilt.append(word);
+                        rebuilt.append(word, copiedFrom, word.length());
                         word = rebuilt.toString();
                     }
 
@@ -455,6 +462,35 @@ public final class ParsedSql {
         }
 
         return index;
+    }
+
+    private static boolean mayContainNamedParameter(final String token) {
+        return token.length() >= 2 && token.indexOf(_PREFIX_OF_NAMED_PARAMETER) >= 0 && !isQuotedToken(token);
+    }
+
+    private static boolean isQuotedToken(final String token) {
+        return token.indexOf('\'') >= 0 || token.indexOf('"') >= 0 || token.indexOf('`') >= 0;
+    }
+
+    private static int findNextNamedParameterStartIndex(final String token, final int fromIndex) {
+        for (int index = fromIndex, len = token.length() - 1; index < len; index++) {
+            if (token.charAt(index) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(token.charAt(index + 1))
+                    && isNamedParameterStartBoundary(token, index, fromIndex)) {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    private static boolean isNamedParameterStartBoundary(final String token, final int parameterStartIndex, final int fromIndex) {
+        if (parameterStartIndex == 0 || parameterStartIndex == fromIndex) {
+            return true;
+        }
+
+        final char previousChar = token.charAt(parameterStartIndex - 1);
+
+        return previousChar != _PREFIX_OF_NAMED_PARAMETER && !isValidNamedParameterChar(previousChar);
     }
 
     private static int nextNonCommentWord(final List<String> words, final int fromIndex) {

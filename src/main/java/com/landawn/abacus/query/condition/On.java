@@ -247,11 +247,11 @@ public class On extends Cell {
      */
     static Condition createOnCondition(final String leftPropName, final String rightPropName) {
         if (Strings.isBlank(leftPropName)) {
-            throw new IllegalArgumentException("leftPropName must not be null or empty");
+            throw new IllegalArgumentException("leftPropName must not be null, empty, or blank");
         }
 
         if (Strings.isBlank(rightPropName)) {
-            throw new IllegalArgumentException("rightPropName must not be null or empty");
+            throw new IllegalArgumentException("rightPropName must not be null, empty, or blank");
         }
 
         return new Equal(leftPropName, Filters.expr(rightPropName));

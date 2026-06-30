@@ -254,7 +254,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         } else if (cond instanceof Expression) {
             appendStringExpr(((Expression) cond).getLiteral(), false);
         } else {
-            throw new IllegalArgumentException("Unsupported condition type: " + cond);
+            throw new IllegalArgumentException("Unsupported condition type: " + cond.getClass().getName());
         }
     }
 

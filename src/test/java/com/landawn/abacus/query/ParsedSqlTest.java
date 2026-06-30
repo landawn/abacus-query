@@ -1218,6 +1218,14 @@ class ParsedSql2026BatchTest extends TestBase {
     }
 
     @Test
+    public void testParse_PostgresJsonQuestionAndOperatorWithNamedParameters() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM events WHERE payload ?& array[:keys] AND id = :id");
+        Assertions.assertEquals("SELECT * FROM events WHERE payload ?& array[?] AND id = ?", parsed.parameterizedSql());
+        Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertEquals(Arrays.asList("keys", "id"), parsed.namedParameters());
+    }
+
+    @Test
     public void testParse_PostgresJsonQuestionOperatorWithJdbcParameterRhs() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM events WHERE payload ? ? AND tenant_id = ?");
         Assertions.assertEquals("SELECT * FROM events WHERE payload ? ? AND tenant_id = ?", parsed.parameterizedSql());

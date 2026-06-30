@@ -594,7 +594,7 @@ public abstract class AbstractCondition implements Condition {
      * <p>This method is protected and not intended for direct use by application code.
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propNames the array of property names (must not be {@code null} or empty)
+     * @param propNames the array of property names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements)
      * @return a comma-separated string of property names suitable for use in a sort/grouping clause
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
@@ -651,7 +651,7 @@ public abstract class AbstractCondition implements Condition {
      * <p>This method is protected and not intended for direct use by application code.
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propNames collection of property names (must not be {@code null} or empty)
+     * @param propNames collection of property names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements)
      * @param direction the sort direction to apply to all properties (must not be {@code null})
      * @return a comma-separated string of {@code "propName direction"} entries
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, {@code direction} is {@code null},
@@ -695,7 +695,8 @@ public abstract class AbstractCondition implements Condition {
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.
      * Use a {@link java.util.LinkedHashMap} to preserve the desired column order.</p>
      *
-     * @param orders map of property names to their sort directions (must not be {@code null} or empty)
+     * @param orders map of property names to their sort directions (must not be {@code null} or empty; keys must not be {@code null}, empty, or blank
+     *               and values must not be {@code null})
      * @return a comma-separated string of {@code "propName direction"} entries in map iteration order
      * @throws IllegalArgumentException if {@code orders} is {@code null}/empty, or contains {@code null}, empty, or blank keys
      *                                  or {@code null} values

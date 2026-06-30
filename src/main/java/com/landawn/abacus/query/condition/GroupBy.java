@@ -131,7 +131,7 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY region, product_category, year
      * }</pre>
      *
-     * @param propNames the property names to group by, in order. Must not be {@code null} or empty.
+     * @param propNames the property names to group by, in order. Must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements.
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
     public GroupBy(final String... propNames) {
@@ -159,7 +159,8 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY region, product_category, year
      * }</pre>
      *
-     * @param propNames the collection of property names to group by, in iteration order. Must not be {@code null} or empty.
+     * @param propNames the collection of property names to group by, in iteration order. Must not be {@code null} or empty and must not contain {@code null},
+     *                  empty, or blank elements.
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
     public GroupBy(final Collection<String> propNames) {
@@ -207,7 +208,7 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY type ASC, subtype ASC (order preserved)
      * }</pre>
      *
-     * @param propNames the collection of property names to group by. Must not be {@code null} or empty.
+     * @param propNames the collection of property names to group by. Must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements.
      * @param direction the sort direction to apply to all properties. Must not be {@code null}.
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code direction} is {@code null}
@@ -242,7 +243,8 @@ public class GroupBy extends Clause {
      * }</pre>
      *
      * @param groupings a map of property names to their sort directions. Should be a {@code LinkedHashMap}
-     *                  to maintain order. Must not be {@code null} or empty.
+     *                  to maintain order. Must not be {@code null} or empty; keys must not be {@code null}, empty, or blank and values must not be
+     *                  {@code null}.
      * @throws IllegalArgumentException if {@code groupings} is {@code null}, empty, or contains {@code null}, empty, or blank keys
      *                                  or {@code null} values
      */

@@ -204,7 +204,7 @@ public class SubQuery extends AbstractCondition {
      * }</pre>
      *
      * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
-     * @param propNames collection of property names to select (must not be {@code null} or empty)
+     * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
      * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
      *             May be {@code null} to select without a WHERE clause.
      * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank, if {@code propNames} is
@@ -257,7 +257,7 @@ public class SubQuery extends AbstractCondition {
      * }</pre>
      *
      * @param entityClass the entity class (must not be {@code null})
-     * @param propNames collection of property names to select (must not be {@code null} or empty)
+     * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
      * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
      *             May be {@code null} to select without a WHERE clause.
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propNames} is {@code null}
