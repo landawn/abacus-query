@@ -307,11 +307,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected static final char[] _SPACE_ROWS = (SK.SPACE + SK.ROWS).toCharArray();
 
     /**
-     * Matches the generic limit expressions {@link Limit#Limit(String)} normalizes to
-     * {@code LIMIT count [OFFSET offset]}, where each token is an integer literal or a {@code ?} /
-     * {@code :name} / <code>#{name}</code> parameter placeholder. Deliberately product-specific
-     * expressions (e.g. {@code FETCH FIRST 10 ROWS ONLY} or MySQL's {@code LIMIT offset, count}) do
-     * not match and are emitted verbatim.
+     * Matches the generic {@code LIMIT count [OFFSET offset]} expressions that reach the builder as an
+     * unparsed {@link Limit#getLiteral() literal}, where each token is an integer literal or a {@code ?} /
+     * {@code :name} / <code>#{name}</code> parameter placeholder. In practice the integer-only forms are
+     * parsed into concrete count/offset by {@link Limit#Limit(String)} and rendered via {@link #limit(int)} /
+     * {@link #limit(int, int)}, so this pattern normally handles the placeholder-bearing forms. Deliberately
+     * product-specific expressions that are not recognized (e.g. a vendor function) do not match and are
+     * emitted verbatim.
      */
     private static final Pattern GENERIC_LIMIT_EXPRESSION_PATTERN = Pattern
             .compile("LIMIT\\s+(\\d+|\\?|:\\w+|#\\{[^}]+\\})(?:\\s+OFFSET\\s+(\\d+|\\?|:\\w+|#\\{[^}]+\\}))?", Pattern.CASE_INSENSITIVE);
@@ -3375,19 +3377,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Renders a {@link Limit} condition into the buffer. A numeric limit delegates to
-     * {@link #limit(int)} / {@link #limit(int, int)} based on the offset, so it is rendered in the
-     * dialect's pagination syntax. A raw limit expression is likewise re-rendered in the dialect's
-     * FETCH pagination syntax when this builder uses one (Oracle, DB2, SQL Server) and the expression
-     * is a generic {@code LIMIT count [OFFSET offset]} form with integer or placeholder tokens; any
-     * other expression (product-specific syntax such as {@code FETCH FIRST 10 ROWS ONLY} or MySQL's
-     * {@code LIMIT offset, count}) is emitted verbatim.
+     * Renders a {@link Limit} condition into the buffer. A numeric limit — from the numeric constructors
+     * or from a string expression that {@link Limit#Limit(String)} parsed into a concrete count/offset
+     * (the {@code LIMIT}-family and SQL:2008 {@code FETCH}-family integer forms) — delegates to
+     * {@link #limit(int)} / {@link #limit(int, int)} based on the offset, so it is rendered in the dialect's
+     * pagination syntax. An <i>unparsed</i> expression (one carrying a {@code ?} / {@code :name} /
+     * <code>#{name}</code> placeholder, or product-specific syntax not otherwise recognized) is re-rendered
+     * in the dialect's FETCH pagination syntax when this builder uses one (Oracle, DB2, SQL Server) and the
+     * expression is a generic {@code LIMIT count [OFFSET offset]} form with placeholder tokens; any other
+     * unparsed expression is emitted verbatim.
      * Shared by the {@link Criteria} and standalone-{@link Limit} branches of {@link #appendCondition(Condition)}.
      *
      * @param limit the limit condition to render (must not be {@code null})
      */
     private void appendLimit(final Limit limit) {
-        if (Strings.isNotEmpty(limit.getLiteral())) {
+        // An unparsed string expression (placeholder or product-specific/opaque syntax) is signalled by
+        // the sentinel count == MAX_VALUE / offset == 0; render it from its literal. Everything else —
+        // the numeric constructors and string expressions parsed into concrete count/offset — is emitted
+        // in the dialect's pagination syntax via limit(int) / limit(int, int).
+        if (Strings.isNotEmpty(limit.getLiteral()) && limit.getCount() == Integer.MAX_VALUE && limit.getOffset() == 0) {
             if (usesFetchPagination() && appendLimitExpressionInFetchSyntax(limit.getLiteral())) {
                 return;
             }

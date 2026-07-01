@@ -1,5 +1,22 @@
 package com.landawn.abacus.query;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.All;
 import com.landawn.abacus.query.condition.And;
@@ -60,20 +77,6 @@ import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.EntityId;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("2025")
 class Filters2025Test extends TestBase {
@@ -1356,6 +1359,18 @@ class Filters2025Test extends TestBase {
     public void testCBLimit() {
         Criteria criteria = Criteria.builder().limit(10).build();
         assertNotNull(criteria);
+    }
+
+    @Test
+    public void testLimit_002() {
+        String literal = "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY";
+
+        Limit limit = Filters.limit(literal);
+
+        // The SQL:2008 FETCH form is parsed into concrete count/offset while its literal is retained.
+        assertEquals(literal, limit.getLiteral());
+        assertEquals(20, limit.getCount());
+        assertEquals(5, limit.getOffset());
     }
 }
 

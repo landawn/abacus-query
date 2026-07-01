@@ -1,8 +1,8 @@
 {
   "library": {
     "name": "abacus-query",
-    "version": "4.8.4",
-    "generated_at": "2026-06-28",
+    "version": "4.8.6",
+    "generated_at": "2026-06-30",
     "java_target": "17",
     "source": {
       "git_sha": "unknown"
@@ -2124,7 +2124,7 @@
               "throws": [],
               "javadoc_summary": "Starts a new SELECT query for UNION operation.",
               "contract": [
-                "sub-query heuristic: </b> if exactly one argument is supplied and, after trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and appended verbatim after the {@code UNION} keyword (no following {@code from(...)} is required)."
+                "sub-query heuristic: </b> if exactly one argument is supplied and, after trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a {@code FROM} keyword), it is treated as a complete sub-query and appended verbatim after the {@code UNION} keyword (no following {@code from(...)} is required)."
               ],
               "examples": [],
               "see_also": []
@@ -2218,7 +2218,7 @@
               "throws": [],
               "javadoc_summary": "Starts a new SELECT query for UNION ALL operation.",
               "contract": [
-                "sub-query heuristic: </b> if exactly one argument is supplied and, after trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and appended verbatim after the {@code UNION ALL} keyword (no following {@code from(...)} is required)."
+                "sub-query heuristic: </b> if exactly one argument is supplied and, after trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a {@code FROM} keyword), it is treated as a complete sub-query and appended verbatim after the {@code UNION ALL} keyword (no following {@code from(...)} is required)."
               ],
               "examples": [],
               "see_also": []
@@ -2312,7 +2312,7 @@
               "throws": [],
               "javadoc_summary": "Starts a new SELECT query for INTERSECT operation.",
               "contract": [
-                "sub-query heuristic: </b> if exactly one argument is supplied and, after trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and appended verbatim after the {@code INTERSECT} keyword (no following {@code from(...)} is required)."
+                "sub-query heuristic: </b> if exactly one argument is supplied and, after trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a {@code FROM} keyword), it is treated as a complete sub-query and appended verbatim after the {@code INTERSECT} keyword (no following {@code from(...)} is required)."
               ],
               "examples": [],
               "see_also": []
@@ -2406,7 +2406,7 @@
               "throws": [],
               "javadoc_summary": "Starts a new SELECT query for EXCEPT operation.",
               "contract": [
-                "sub-query heuristic: </b> if exactly one argument is supplied and, after trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and appended verbatim after the {@code EXCEPT} keyword (no following {@code from(...)} is required)."
+                "sub-query heuristic: </b> if exactly one argument is supplied and, after trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a {@code FROM} keyword), it is treated as a complete sub-query and appended verbatim after the {@code EXCEPT} keyword (no following {@code from(...)} is required)."
               ],
               "examples": [],
               "see_also": []
@@ -2500,7 +2500,7 @@
               "throws": [],
               "javadoc_summary": "Starts a new SELECT query for MINUS operation (Oracle syntax).",
               "contract": [
-                "sub-query heuristic: </b> if exactly one argument is supplied and, after trimming, it begins with the {@code SELECT} keyword, it is treated as a complete sub-query and appended verbatim after the {@code MINUS} keyword (no following {@code from(...)} is required)."
+                "sub-query heuristic: </b> if exactly one argument is supplied and, after trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a {@code FROM} keyword), it is treated as a complete sub-query and appended verbatim after the {@code MINUS} keyword (no following {@code from(...)} is required)."
               ],
               "examples": [],
               "see_also": []
@@ -3147,7 +3147,7 @@
                 {
                   "name": "sqlDialect",
                   "type": "SqlDialect",
-                  "javadoc": "the dialect (naming policy, parameter style, identifier quote and optional product info) the new DSL is bound to",
+                  "javadoc": "the dialect (naming policy, parameter style, identifier quote and optional product info) the DSL is bound to",
                   "nullability": "unspecified"
                 }
               ],
@@ -3580,7 +3580,7 @@
               "throws": [],
               "javadoc_summary": "Creates a DELETE FROM statement for a table.",
               "contract": [
-                "Property names in WHERE conditions will be converted to snake_case format if an entity class is associated."
+                "Property names in WHERE conditions will be rendered according to this DSL's naming policy if an entity class is associated."
               ],
               "examples": [],
               "see_also": []
@@ -6482,7 +6482,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the name of the property/column (must not be {@code null} or empty)",
+                  "javadoc": "the name of the property/column (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 }
               ],
@@ -6596,7 +6596,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property/column name (must not be {@code null} or empty)",
+                  "javadoc": "the property/column name (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 },
                 {
@@ -7480,7 +7480,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property/column name (must not be {@code null} or empty)",
+                  "javadoc": "the property/column name (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 },
                 {
@@ -7592,7 +7592,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property/column name (must not be {@code null} or empty)",
+                  "javadoc": "the property/column name (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 },
                 {
@@ -7704,7 +7704,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property/column name (must not be {@code null} or empty)",
+                  "javadoc": "the property/column name (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 },
                 {
@@ -7816,7 +7816,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property/column name (must not be {@code null} or empty)",
+                  "javadoc": "the property/column name (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 },
                 {
@@ -7928,7 +7928,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property/column name (must not be {@code null} or empty)",
+                  "javadoc": "the property/column name (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 },
                 {
@@ -8726,7 +8726,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property/column name (must not be {@code null} or empty)",
+                  "javadoc": "the property/column name (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 },
                 {
@@ -8758,7 +8758,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property/column name (must not be {@code null} or empty)",
+                  "javadoc": "the property/column name (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 },
                 {
@@ -10928,9 +10928,7 @@
                 "The tuple of property values must match one of the supplied value rows."
               ],
               "examples": [],
-              "see_also": [
-                "Array#box(int[])"
-              ]
+              "see_also": []
             },
             {
               "name": "in",
@@ -11324,9 +11322,7 @@
                 "The tuple of property values must not match any of the supplied value rows."
               ],
               "examples": [],
-              "see_also": [
-                "Array#box(int[])"
-              ]
+              "see_also": []
             },
             {
               "name": "notIn",
@@ -11662,7 +11658,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "collection of property names to select (must not be {@code null} or empty)",
+                  "javadoc": "collection of property names to select (must not be {@code null} or empty, and must not contain {@code null} , empty, or blank elements)",
                   "nullability": "unspecified"
                 },
                 {
@@ -11694,13 +11690,13 @@
                 {
                   "name": "entityName",
                   "type": "String",
-                  "javadoc": "the entity/table name (must not be {@code null} or empty)",
+                  "javadoc": "the entity/table name (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "collection of property names to select (must not be {@code null} or empty)",
+                  "javadoc": "collection of property names to select (must not be {@code null} or empty, and must not contain {@code null} , empty, or blank elements)",
                   "nullability": "unspecified"
                 },
                 {
@@ -11732,13 +11728,13 @@
                 {
                   "name": "entityName",
                   "type": "String",
-                  "javadoc": "the entity/table name (must not be {@code null} or empty)",
+                  "javadoc": "the entity/table name (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "collection of property names to select (must not be {@code null} or empty)",
+                  "javadoc": "collection of property names to select (must not be {@code null} or empty, and must not contain {@code null} , empty, or blank elements)",
                   "nullability": "unspecified"
                 },
                 {
@@ -11887,15 +11883,17 @@
                 {
                   "name": "expr",
                   "type": "String",
-                  "javadoc": "the limit expression as a string (must not be {@code null} , empty, or blank)",
+                  "javadoc": "the limit expression as a string (must not be {@code null} , empty, or blank, and must match one of the accepted forms)",
                   "nullability": "unspecified"
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a LIMIT clause from a string expression.",
+              "javadoc_summary": "Creates a LIMIT clause from a string expression, formatting and validating it against a fixed grammar.",
               "contract": [
-                "If {@code expr} begins with a digit, {@code '?'} , {@code ':'} , or <code> \"#{\" </code> , the literal {@code \"LIMIT \"} prefix is prepended automatically; otherwise the expression is used as-is.",
-                "<p> When the condition is rendered by a SQL builder whose dialect paginates with {@code OFFSET} / {@code FETCH} (Oracle, DB2 or SQL Server, per {@link SqlDialect.ProductInfo} ), a generic {@code LIMIT count [OFFSET offset]} expression with integer or placeholder tokens is re-rendered in that dialect's syntax; any other expression is emitted verbatim."
+                "The expression is trimmed, its internal whitespace collapsed, and its SQL keywords upper-cased (parameter names left intact); a {@code \"LIMIT \"} prefix is prepended when it begins with a digit, {@code '?'} , {@code ':'} , or <code> \"#{\" </code> .",
+                "It must be one of {@code LIMIT count} , {@code LIMIT count OFFSET offset} , MySQL's {@code LIMIT offset, count} , or the SQL:2008 {@code [OFFSET offset ROWS] FETCH NEXT/FIRST count ROWS ONLY} forms \\u2014 where each number is an integer or a {@code ?} / {@code :name} / <code> #{name} </code> placeholder \\u2014 otherwise an {@link IllegalArgumentException} is thrown.",
+                "<p> When the condition is rendered by a SQL builder, a parsed expression is emitted in the target dialect's pagination syntax (so MySQL's comma form and the {@code FETCH} forms are re-rendered per dialect).",
+                "An opaque (placeholder) expression is re-rendered in the dialect's {@code FETCH} syntax only when the dialect paginates with {@code OFFSET} / {@code FETCH} (Oracle, DB2 or SQL Server, per {@link SqlDialect.ProductInfo} ) and it is a generic {@code LIMIT count [OFFSET offset]} form; otherwise it is emitted verbatim."
               ],
               "examples": [],
               "see_also": []
@@ -13471,7 +13469,7 @@
                 {
                   "name": "os",
                   "type": "OutputStream",
-                  "javadoc": "the output stream to write to (must not be {@code null} ; not closed by this method)",
+                  "javadoc": "the output stream to write to (not closed by this method)",
                   "nullability": "unspecified"
                 }
               ],
@@ -14269,13 +14267,13 @@
                 {
                   "name": "len",
                   "type": "int",
-                  "javadoc": "the exclusive upper bound to search within {@code words} (usually {@code words.size()} ; indices {@code >= len} are not examined)",
+                  "javadoc": "the exclusive upper bound to search within {@code words} (usually {@code words.size()} ; indices {@code >= len} are not examined; values above {@code words.size()} are capped at {@code words.size()}",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "index",
                   "type": "int",
-                  "javadoc": "the index of the word to check",
+                  "javadoc": "the index of the word to check; invalid indices return {@code false}",
                   "nullability": "unspecified"
                 }
               ],
@@ -14283,10 +14281,147 @@
               "javadoc_summary": "Determines if a word at a specific position in a parsed word list represents a function name.",
               "contract": [
                 "Determines if a word at a specific position in a parsed word list represents a function name.",
-                "A word is considered a function name if it is followed by an opening parenthesis, either immediately or after whitespace."
+                "A word is considered a function name if it is followed by the opening parenthesis token, either immediately or after whitespace."
               ],
               "examples": [],
               "see_also": []
+            },
+            {
+              "name": "isSelectQuery",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static boolean isSelectQuery(final String sql)",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to check; may be empty or {@code null}",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Checks if the given SQL statement is a SELECT query.",
+              "contract": [
+                "Checks if the given SQL statement is a SELECT query."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isReadOnlyQuery",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static boolean isReadOnlyQuery(final String sql)",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to check; may be empty or {@code null}",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Checks whether the given SQL statement is read-only, i.e.",
+              "contract": [
+                "<p> A statement is considered read-only only if its leading keyword is {@code SELECT} (see {@link #isSelectQuery(String)} ) <i> and </i> it contains no top-level mutation keyword ( {@code INSERT} , {@code UPDATE} , {@code DELETE} or {@code MERGE} ) and no standalone {@code SELECT ...",
+                "For multi-statement SQL, a later statement that starts with {@code INSERT} , {@code UPDATE} , {@code DELETE} or {@code MERGE} also makes the SQL non-read-only, including when that later statement starts with a {@code WITH} clause or leading parentheses."
+              ],
+              "examples": [],
+              "see_also": [
+                "#isSelectQuery(String)"
+              ]
+            },
+            {
+              "name": "isInsertQuery",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static boolean isInsertQuery(final String sql)",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to check; may be empty or {@code null}",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Checks if the given SQL statement is an INSERT query.",
+              "contract": [
+                "Checks if the given SQL statement is an INSERT query."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isInsertOrReplaceQuery",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static boolean isInsertOrReplaceQuery(final String sql)",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to check; may be empty or {@code null}",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Checks whether the given SQL statement begins with an {@code INSERT OR REPLACE} clause (the SQLite upsert form that overwrites an existing row when a uniqueness constraint is violated).",
+              "contract": [
+                "Checks whether the given SQL statement begins with an {@code INSERT OR REPLACE} clause (the SQLite upsert form that overwrites an existing row when a uniqueness constraint is violated).",
+                "*} {@code /} ) and any leading {@code WITH} clause; the three keywords {@code INSERT} , {@code OR} and {@code REPLACE} must appear (case-insensitively) in that order at the start of the actual statement."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isNoUpdateQuery",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static boolean isNoUpdateQuery(final String sql)",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to check; may be empty or {@code null}",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Checks whether the given SQL statement neither updates nor deletes existing rows.",
+              "contract": [
+                "<p> A statement qualifies as \"no-update\" only if its leading keyword is {@code SELECT} or {@code INSERT} <i> and </i> it contains none of the following (matching outside of quoted string literals and SQL comments): </p> <ul> <li> an {@code UPDATE} , {@code DELETE} or {@code MERGE} keyword; or </li> <li> an upsert clause that can modify existing rows, namely {@code INSERT OR REPLACE} , {@code ON DUPLICATE KEY UPDATE} (MySQL) or {@code ON CONFLICT ..."
+              ],
+              "examples": [],
+              "see_also": [
+                "#isSelectQuery(String)",
+                "#isInsertQuery(String)"
+              ]
             }
           ],
           "fields": []
@@ -14582,7 +14717,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the parameter values for this condition.",
+              "javadoc_summary": "Gets the parameter values for this condition, flattened in declaration order.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -17827,7 +17962,7 @@
               "javadoc_summary": "Sets or replaces the LIMIT clause using a string expression.",
               "contract": [
                 "If a LIMIT clause already exists, it will be replaced.",
-                "When rendered by a SQL builder whose dialect paginates with {@code OFFSET} / {@code FETCH} (Oracle, DB2 or SQL Server), a generic {@code LIMIT count [OFFSET offset]} expression is re-rendered in that dialect's syntax; see {@link Limit#Limit(String)} ."
+                "When rendered by a SQL builder whose dialect paginates with {@code OFFSET} / {@code FETCH} (Oracle, DB2 or SQL Server), a generic {@code LIMIT count [OFFSET offset]} expression is re-rendered in that dialect's syntax."
               ],
               "examples": [],
               "see_also": []
@@ -17943,6 +18078,29 @@
               ],
               "throws": [],
               "javadoc_summary": "Adds a MINUS operation with a subquery.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "add",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public Builder add(final Condition cond)",
+              "return_type": "Builder",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "cond",
+                  "type": "Condition",
+                  "javadoc": "the condition to add (must not be {@code null} )",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Adds a condition to this builder, routing it to the appropriate clause based on its operator.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -20407,7 +20565,7 @@
                 {
                   "name": "propNames",
                   "type": "String[]",
-                  "javadoc": "the property names to group by, in order. Must not be {@code null} or empty.",
+                  "javadoc": "the property names to group by, in order. Must not be {@code null} or empty and must not contain {@code null} , empty, or blank elements.",
                   "nullability": "unspecified"
                 }
               ],
@@ -20430,7 +20588,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "the collection of property names to group by, in iteration order. Must not be {@code null} or empty.",
+                  "javadoc": "the collection of property names to group by, in iteration order. Must not be {@code null} or empty and must not contain {@code null} , empty, or blank elements.",
                   "nullability": "unspecified"
                 }
               ],
@@ -20482,7 +20640,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "the collection of property names to group by. Must not be {@code null} or empty.",
+                  "javadoc": "the collection of property names to group by. Must not be {@code null} or empty and must not contain {@code null} , empty, or blank elements.",
                   "nullability": "unspecified"
                 },
                 {
@@ -20513,7 +20671,7 @@
                 {
                   "name": "groupings",
                   "type": "Map<String, SortDirection>",
-                  "javadoc": "a map of property names to their sort directions. Should be a {@code LinkedHashMap} to maintain order. Must not be {@code null} or empty.",
+                  "javadoc": "a map of property names to their sort directions. Should be a {@code LinkedHashMap} to maintain order. Must not be {@code null} or empty; keys must not be {@code null} , empty, or blank and values must not be {@code null} .",
                   "nullability": "unspecified"
                 }
               ],
@@ -20703,7 +20861,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "the property names to check (must not be {@code null} or empty). Their order must match the column order in the subquery.",
+                  "javadoc": "the property names to check (must not be {@code null} or empty and must not contain {@code null} , empty, or blank elements). Their order must match the column order in the subquery.",
                   "nullability": "unspecified"
                 },
                 {
@@ -21136,7 +21294,8 @@
               "throws": [],
               "javadoc_summary": "Creates a new IsNotNaN condition for the specified property.",
               "contract": [
-                "This condition generates an {@code IS NOT NAN} SQL clause to check if the property's numeric value is NOT NaN (i.e., is a valid number)."
+                "This condition generates an {@code IS NOT NAN} SQL clause to check if the property's numeric value is NOT NaN.",
+                "It does not exclude infinities; combine it with {@link IsNotInfinite} when finite numeric values are required."
               ],
               "examples": [],
               "see_also": []
@@ -21842,7 +22001,7 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the pattern to match (typically a {@link String} containing {@code %} and/or {@code _} wildcards; may also be a {@link SubQuery} ). Use {@code %} to match any sequence of characters and {@code _} to match a single character.",
+                  "javadoc": "the pattern to match (typically a {@link String} containing {@code %} and/or {@code _} wildcards; may also be a {@link SubQuery} ). Use {@code %} to match any sequence of characters and {@code _} to match a single character. Passing {@code null} renders as {@code prop LIKE null} , which is not a meaningful SQL comparison; do not pass {@code null} to this operator.",
                   "nullability": "unspecified"
                 }
               ],
@@ -21939,16 +22098,18 @@
                 {
                   "name": "expr",
                   "type": "String",
-                  "javadoc": "the custom LIMIT expression as a string. Must not be {@code null} , empty, or blank.",
+                  "javadoc": "the LIMIT expression as a string. Must not be {@code null} , empty, or blank, and must match one of the accepted forms.",
                   "nullability": "unspecified"
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a LIMIT clause from a string expression.",
+              "javadoc_summary": "Creates a LIMIT clause from a string expression, formatting and validating it against a fixed grammar.",
               "contract": [
-                "<p> If the expression starts with a digit, {@code '?'} , {@code ':'} , or <code> \"#{\" </code> , the literal {@code \"LIMIT \"} prefix is added automatically; otherwise the expression is used as-is.",
-                "</p> <p> Note: when this condition is rendered by a SQL builder whose dialect paginates with {@code OFFSET} / {@code FETCH} (Oracle, DB2 or SQL Server, per {@link com.landawn.abacus.query.SqlDialect.ProductInfo} ), a generic {@code LIMIT count [OFFSET offset]} expression with integer or placeholder tokens is re-rendered in that dialect's syntax; any other expression is emitted verbatim.",
-                "</p> <p> Note: {@link #getCount()} returns {@link Integer#MAX_VALUE} and {@link #getOffset()} returns {@code 0} when the instance is constructed via this constructor, regardless of the expression contents."
+                "If the expression starts with a digit, {@code '?'} , {@code ':'} , or <code> \"#{\" </code> , a {@code \"LIMIT \"} prefix is added automatically; otherwise it is used as-is.",
+                "</b> When every number slot is an integer literal, {@link #getCount()} and {@link #getOffset()} return their concrete values.",
+                "When a slot is a placeholder (or an integer literal that overflows {@code int} ), the value stays unresolved and opaque: {@link #getCount()} returns {@link Integer#MAX_VALUE} and {@link #getOffset()} returns {@code 0} .",
+                "</p> <p> Note: when this condition is rendered by a SQL builder, a parsed expression is emitted in the target dialect's pagination syntax from its {@code count} / {@code offset} (so, e.g., MySQL's comma form and the {@code FETCH} forms are re-rendered per dialect).",
+                "An opaque (placeholder) expression is re-rendered in the dialect's {@code FETCH} syntax only when the dialect paginates with {@code OFFSET} / {@code FETCH} (Oracle, DB2 or SQL Server, per {@link com.landawn.abacus.query.SqlDialect.ProductInfo} ) and it is a generic {@code LIMIT count [OFFSET offset]} form; otherwise it is emitted verbatim."
               ],
               "examples": [],
               "see_also": []
@@ -21964,10 +22125,11 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Returns the custom LIMIT literal string if one was provided.",
+              "javadoc_summary": "Returns the LIMIT literal string if one was provided.",
               "contract": [
-                "Returns the custom LIMIT literal string if one was provided.",
-                "This method returns the normalized literal string from the string constructor (which may have {@code \"LIMIT \"} prepended if the input starts with a digit, {@code '?'} , {@code ':'} , or <code> \"#{\" </code> ), or {@code null} if the Limit was created with count/offset parameters."
+                "Returns the LIMIT literal string if one was provided.",
+                "This method returns the formatted literal from the string constructor \\u2014 trimmed, with internal whitespace collapsed and SQL keywords upper-cased, and possibly with a {@code \"LIMIT \"} prefix added (when the input starts with a digit, {@code '?'} , {@code ':'} , or <code> \"#{\" </code> ) \\u2014 or {@code null} if the Limit was created with count/offset parameters.",
+                "The literal is retained even when the expression was parsed into concrete {@code count} / {@code offset} values."
               ],
               "examples": [],
               "see_also": []
@@ -22041,7 +22203,9 @@
               ],
               "throws": [],
               "javadoc_summary": "Converts this LIMIT clause to its string representation according to the specified naming policy.",
-              "contract": [],
+              "contract": [
+                "The output format depends on how the Limit was constructed: <ul> <li> String expression (non-empty {@code literal} ): returns the formatted literal as-is (whitespace collapsed and keywords upper-cased, possibly with {@code \"LIMIT \"} prepended, per {@link #Limit(String)} ), even when it was parsed into concrete count/offset </li> <li> Uninitialized instance (no expression and {@code null} operator, e.g."
+              ],
               "examples": [],
               "see_also": []
             },
@@ -24014,7 +24178,7 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the pattern to match against (typically a {@link String} containing {@code %} and/or {@code _} wildcards; may also be a {@link SubQuery} ). Use {@code %} to match any sequence of characters and {@code _} to match a single character.",
+                  "javadoc": "the pattern to match against (typically a {@link String} containing {@code %} and/or {@code _} wildcards; may also be a {@link SubQuery} ). Use {@code %} to match any sequence of characters and {@code _} to match a single character. Passing {@code null} renders as {@code prop NOT LIKE null} , which is not a meaningful SQL comparison; do not pass {@code null} to this operator.",
                   "nullability": "unspecified"
                 }
               ],
@@ -24879,7 +25043,7 @@
                 {
                   "name": "propNames",
                   "type": "String[]",
-                  "javadoc": "variable number of property names to sort by. Must not be {@code null} or empty.",
+                  "javadoc": "variable number of property names to sort by. Must not be {@code null} or empty and must not contain {@code null} , empty, or blank elements.",
                   "nullability": "unspecified"
                 }
               ],
@@ -24902,7 +25066,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "the collection of property names to sort by, in iteration order. Must not be {@code null} or empty.",
+                  "javadoc": "the collection of property names to sort by, in iteration order. Must not be {@code null} or empty and must not contain {@code null} , empty, or blank elements.",
                   "nullability": "unspecified"
                 }
               ],
@@ -24954,7 +25118,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "collection of property names to sort by. Must not be {@code null} or empty.",
+                  "javadoc": "collection of property names to sort by. Must not be {@code null} or empty and must not contain {@code null} , empty, or blank elements.",
                   "nullability": "unspecified"
                 },
                 {
@@ -24985,7 +25149,7 @@
                 {
                   "name": "orders",
                   "type": "Map<String, SortDirection>",
-                  "javadoc": "a map of property names to their respective sort directions; should be a {@code LinkedHashMap} (or another order-preserving map) so that the sort priority matches insertion order. Must not be {@code null} or empty.",
+                  "javadoc": "a map of property names to their respective sort directions; should be a {@code LinkedHashMap} (or another order-preserving map) so that the sort priority matches insertion order. Must not be {@code null} or empty; keys must not be {@code null} , empty, or blank and values must not be {@code null} .",
                   "nullability": "unspecified"
                 }
               ],
@@ -25240,7 +25404,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "collection of property names to select (must not be {@code null} or empty)",
+                  "javadoc": "collection of property names to select (must not be {@code null} or empty and must not contain {@code null} , empty, or blank names)",
                   "nullability": "unspecified"
                 },
                 {
@@ -25277,7 +25441,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "collection of property names to select (must not be {@code null} or empty)",
+                  "javadoc": "collection of property names to select (must not be {@code null} or empty and must not contain {@code null} , empty, or blank names)",
                   "nullability": "unspecified"
                 },
                 {
@@ -25459,7 +25623,8 @@
               "javadoc_summary": "Checks if this subquery is equal to another object.",
               "contract": [
                 "Checks if this subquery is equal to another object.",
-                "Two subqueries are equal if they have the same SQL (for raw queries) or the same entity name/class, properties, and condition (for structured queries)."
+                "Two subqueries are equal only when all of their identity fields are equal: the entity name, the entity class, the selected properties, the raw SQL string, and the condition.",
+                "The entity name participates even for raw-SQL subqueries, so two raw subqueries are equal only when both their SQL and their entity name match."
               ],
               "examples": [],
               "see_also": []

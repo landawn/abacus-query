@@ -16,6 +16,11 @@ package com.landawn.abacus.query.condition;
 
 import static com.landawn.abacus.util.SK._SPACE;
 
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -25,7 +30,7 @@ import com.landawn.abacus.util.Strings;
 /**
  * Represents a LIMIT clause in SQL queries to restrict the number of rows returned.
  * This class supports a simple LIMIT (count only), LIMIT with OFFSET for pagination,
- * and a custom expression form for database-specific syntax. The LIMIT clause is essential
+ * and a string expression form covering the standard pagination syntaxes. The LIMIT clause is essential
  * for controlling result set size and implementing efficient data retrieval strategies,
  * especially for large datasets.
  *
@@ -33,7 +38,13 @@ import com.landawn.abacus.util.Strings;
  * <ul>
  *   <li>Simple limit with count only — produces {@code LIMIT n}</li>
  *   <li>Limit with count and offset for pagination — produces {@code LIMIT n OFFSET m}</li>
- *   <li>Custom expression for database-specific syntax (e.g., MySQL's {@code LIMIT offset, count}) via {@link #Limit(String)}</li>
+ *   <li>String expression via {@link #Limit(String)}, which is formatted (whitespace collapsed, keywords
+ *       upper-cased) and validated against a fixed grammar — {@code LIMIT n}, {@code LIMIT n OFFSET m},
+ *       MySQL's {@code LIMIT offset, count}, and the SQL:2008
+ *       {@code OFFSET m ROWS FETCH NEXT/FIRST n ROWS ONLY} / {@code FETCH FIRST/NEXT n ROWS ONLY} forms,
+ *       where each number may be an integer or a {@code ?} / {@code :name} / <code>#{name}</code> placeholder.
+ *       Integer forms are parsed into concrete {@code count}/{@code offset} (the original literal is retained);
+ *       placeholder forms stay opaque; any other input is rejected with an {@link IllegalArgumentException}</li>
  * </ul>
  *
  * <p>All numeric APIs consistently use {@code (count, offset)} parameter order:
@@ -51,7 +62,7 @@ import com.landawn.abacus.util.Strings;
  * Limit limit2 = new Limit(20, 50);
  * // SQL: LIMIT 20 OFFSET 50
  *
- * // Custom expression for specific databases
+ * // String expression (parsed into count=10, offset=20)
  * Limit limit3 = new Limit("10 OFFSET 20");
  * // SQL: LIMIT 10 OFFSET 20
  * }</pre>
@@ -69,7 +80,7 @@ public class Limit extends Clause {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor creates an uninitialized Limit instance and should not be used 
+     * This constructor creates an uninitialized Limit instance and should not be used
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     Limit() {
@@ -137,73 +148,152 @@ public class Limit extends Clause {
     }
 
     /**
-     * Creates a LIMIT clause from a string expression.
-     * This constructor allows for custom LIMIT expressions to accommodate database-specific
-     * syntax or complex limit scenarios that can't be expressed with simple count/offset.
+     * Creates a LIMIT clause from a string expression, formatting and validating it against a fixed grammar.
      *
-     * <p>If the expression starts with a digit, {@code '?'}, {@code ':'}, or <code>"#{"</code>, the literal
-     * {@code "LIMIT "} prefix is added automatically; otherwise the expression is used as-is.
-     * After this normalization, {@link #getLiteral()} returns the prefixed form and
-     * {@link #toString(NamingPolicy)} renders it directly without inserting an additional {@code LIMIT}.</p>
+     * <p><b>Formatting.</b> The expression is trimmed, its internal whitespace runs are collapsed to a single
+     * space, and its SQL keywords ({@code LIMIT}, {@code OFFSET}, {@code FETCH}, {@code FIRST}, {@code NEXT},
+     * {@code ROW}/{@code ROWS}, {@code ONLY}) are upper-cased (parameter names inside {@code #{...}} or after
+     * {@code :} keep their original case). If the expression starts with a digit, {@code '?'}, {@code ':'}, or
+     * <code>"#{"</code>, a {@code "LIMIT "} prefix is added automatically; otherwise it is used as-is. This
+     * formatted string is what {@link #getLiteral()} and {@link #toString(NamingPolicy)} return.</p>
      *
-     * <p>Note: when this condition is rendered by a SQL builder whose dialect paginates with
+     * <p><b>Accepted grammar.</b> Each number slot below is either an integer literal or a {@code ?} /
+     * {@code :name} / <code>#{name}</code> placeholder:</p>
+     * <ul>
+     *   <li>{@code LIMIT count}</li>
+     *   <li>{@code LIMIT count OFFSET offset}</li>
+     *   <li>MySQL's {@code LIMIT offset, count}</li>
+     *   <li>SQL:2008 {@code OFFSET offset ROW[S] FETCH NEXT/FIRST count ROW[S] ONLY}</li>
+     *   <li>SQL:2008 {@code FETCH FIRST/NEXT count ROW[S] ONLY} (offset {@code 0})</li>
+     * </ul>
+     *
+     * <p><b>Parsing.</b> When every number slot is an integer literal, {@link #getCount()} and
+     * {@link #getOffset()} return their concrete values. When a slot is a placeholder (or an integer literal
+     * that overflows {@code int}), the value stays unresolved and opaque: {@link #getCount()} returns
+     * {@link Integer#MAX_VALUE} and {@link #getOffset()} returns {@code 0}. Anything that does not match the
+     * grammar — including a float or negative number, a keyword typo, or unrelated syntax — is rejected with
+     * an {@link IllegalArgumentException}.</p>
+     *
+     * <p>Note: when this condition is rendered by a SQL builder, a parsed expression is emitted in the
+     * target dialect's pagination syntax from its {@code count}/{@code offset} (so, e.g., MySQL's comma
+     * form and the {@code FETCH} forms are re-rendered per dialect). An opaque (placeholder) expression is
+     * re-rendered in the dialect's {@code FETCH} syntax only when the dialect paginates with
      * {@code OFFSET}/{@code FETCH} (Oracle, DB2 or SQL Server, per
-     * {@link com.landawn.abacus.query.SqlDialect.ProductInfo}), a generic
-     * {@code LIMIT count [OFFSET offset]} expression with integer or placeholder tokens is re-rendered
-     * in that dialect's syntax; any other expression is emitted verbatim. {@link #toString(NamingPolicy)}
-     * itself is dialect-agnostic and always returns the normalized expression.</p>
-     *
-     * <p>Note: {@link #getCount()} returns {@link Integer#MAX_VALUE} and {@link #getOffset()} returns
-     * {@code 0} when the instance is constructed via this constructor, regardless of the expression contents.</p>
+     * {@link com.landawn.abacus.query.SqlDialect.ProductInfo}) and it is a generic
+     * {@code LIMIT count [OFFSET offset]} form; otherwise it is emitted verbatim.
+     * {@link #toString(NamingPolicy)} itself is dialect-agnostic and always returns the formatted literal.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Standard LIMIT with OFFSET (numeric prefix triggers automatic "LIMIT " prepend)
      * Limit standard = new Limit("10 OFFSET 20");
+     * // toString() -> "LIMIT 10 OFFSET 20"; getCount() -> 10; getOffset() -> 20
+     *
+     * // Case-insensitive input with collapsed whitespace
+     * Limit lower = new Limit("limit 10   offset 20");
      * // toString() -> "LIMIT 10 OFFSET 20"
      *
      * // MySQL-style limit (offset, count)
      * Limit mysql = new Limit("20, 10");
-     * // toString() -> "LIMIT 20, 10"
+     * // toString() -> "LIMIT 20, 10"; getCount() -> 10; getOffset() -> 20
      *
-     * // Non-numeric prefix is kept verbatim (no automatic "LIMIT " prepend)
-     * Limit custom = new Limit("FETCH FIRST 10 ROWS ONLY");
-     * // toString() -> "FETCH FIRST 10 ROWS ONLY"
+     * // SQL:2008 FETCH form (offset, count parsed; literal kept verbatim)
+     * Limit fetch = new Limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY");
+     * // toString() -> "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY"; getCount() -> 20; getOffset() -> 5
+     *
+     * // Placeholder expression stays opaque
+     * Limit ph = new Limit("? OFFSET ?");
+     * // toString() -> "LIMIT ? OFFSET ?"; getCount() -> Integer.MAX_VALUE; getOffset() -> 0
      *
      * // Edge: a null, empty, or blank expression is rejected
      * Limit bad1 = new Limit((String) null);   // throws IllegalArgumentException
      * Limit bad2 = new Limit("");              // throws IllegalArgumentException
-     * Limit bad3 = new Limit("   ");           // throws IllegalArgumentException
+     *
+     * // Edge: a float, negative, or otherwise malformed expression is rejected
+     * Limit bad3 = new Limit("LIMIT 1.0");                       // throws IllegalArgumentException
+     * Limit bad4 = new Limit("LIMIT -1");                        // throws IllegalArgumentException
+     * Limit bad5 = new Limit("OFFSET 5 ROWS NEXT 20 ROWS ONLY"); // throws IllegalArgumentException (missing FETCH)
      * }</pre>
      *
-     * @param expr the custom LIMIT expression as a string. Must not be {@code null}, empty, or blank.
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @param expr the LIMIT expression as a string. Must not be {@code null}, empty, or blank, and must
+     *             match one of the accepted forms.
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or not an accepted limit form
      */
     public Limit(final String expr) {
-        this(normalizeExpression(expr), true);
+        this(prepare(expr));
     }
 
-    private Limit(final String normalizedExpr, @SuppressWarnings("unused") final boolean normalized) {
-        super(Operator.LIMIT, Expression.of(conditionExprFromNormalized(normalizedExpr)));
+    private Limit(final Prepared prepared) {
+        super(Operator.LIMIT, Expression.of(prepared.conditionExpr));
 
-        this.literal = normalizedExpr;
-        this.count = Integer.MAX_VALUE;
-        this.offset = 0;
+        this.literal = prepared.literal;
+        this.count = prepared.count;
+        this.offset = prepared.offset;
     }
 
     /**
-     * Returns the custom LIMIT literal string if one was provided.
-     * This method returns the normalized literal string from the string constructor
-     * (which may have {@code "LIMIT "} prepended if the input starts with a digit, {@code '?'},
-     * {@code ':'}, or <code>"#{"</code>), or {@code null} if the Limit was created with
-     * count/offset parameters.
+     * Immutable carrier for the values a {@link #Limit(String)} needs, computed once by {@link #prepare(String)}
+     * so they can be handed to the private constructor before its mandatory {@code super(...)} call.
+     */
+    private record Prepared(String conditionExpr, String literal, int count, int offset) {
+    }
+
+    /**
+     * Formats {@code expr} (see {@link #normalizeAndFormat(String)}), validates it against the accepted
+     * grammar, and, when every number slot is an integer literal, parses its {@code count}/{@code offset}.
+     * The wrapped-condition expression is built from the count/offset slot tokens in canonical
+     * {@code count [OFFSET offset]} order (so it always starts with a number slot and never collides with a
+     * clause keyword such as {@code OFFSET}).
+     *
+     * @param expr the raw expression passed to {@link #Limit(String)}
+     * @return the prepared values for the private constructor
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or is not one of the
+     *         accepted limit forms
+     */
+    private static Prepared prepare(final String expr) {
+        final String literal = normalizeAndFormat(expr);
+        final String[] slots = matchSlots(literal);
+
+        if (slots == null) {
+            throw new IllegalArgumentException("Invalid LIMIT expression: \"" + expr + "\". Supported forms are"
+                    + " 'LIMIT n', 'LIMIT n OFFSET m', 'LIMIT offset, count' and '[OFFSET m ROWS] FETCH FIRST|NEXT n ROWS ONLY',"
+                    + " where each number may be an integer literal or a '?', ':name' or '#{name}' placeholder");
+        }
+
+        final String countToken = slots[0];
+        final String offsetToken = slots[1];
+        final String conditionExpr = offsetToken == null ? countToken : countToken + _SPACE + SK.OFFSET + _SPACE + offsetToken;
+
+        final Integer count = toInt(countToken);
+        final Integer offset = offsetToken == null ? Integer.valueOf(0) : toInt(offsetToken);
+
+        // A placeholder slot (or an integer literal that overflows int) leaves the value unresolved: the
+        // expression is accepted but stays opaque (count == MAX_VALUE, offset == 0), rendered from its literal.
+        if (count == null || offset == null) {
+            return new Prepared(conditionExpr, literal, Integer.MAX_VALUE, 0);
+        }
+
+        return new Prepared(conditionExpr, literal, count, offset);
+    }
+
+    /**
+     * Returns the LIMIT literal string if one was provided.
+     * This method returns the formatted literal from the string constructor — trimmed, with internal
+     * whitespace collapsed and SQL keywords upper-cased, and possibly with a {@code "LIMIT "} prefix added
+     * (when the input starts with a digit, {@code '?'}, {@code ':'}, or <code>"#{"</code>) — or {@code null}
+     * if the Limit was created with count/offset parameters. The literal is retained even when the expression
+     * was parsed into concrete {@code count}/{@code offset} values.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Limit created with a custom expression
+     * // Limit created with a string expression (retained even though it is parsed)
      * Limit customLimit = new Limit("10 OFFSET 20");
      * String literal = customLimit.getLiteral();
      * // Returns: "LIMIT 10 OFFSET 20"
+     *
+     * // A FETCH-style expression keeps its verbatim literal
+     * Limit fetch = new Limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY");
+     * // fetch.getLiteral() returns: "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY"
      *
      * // Limit created with count/offset returns null
      * Limit numericLimit = new Limit(20, 10);
@@ -211,7 +301,7 @@ public class Limit extends Clause {
      * // Returns: null
      * }</pre>
      *
-     * @return the custom LIMIT literal string, or {@code null} if constructed with count/offset parameters
+     * @return the LIMIT literal string, or {@code null} if constructed with count/offset parameters
      */
     public String getLiteral() {
         return literal;
@@ -219,7 +309,9 @@ public class Limit extends Clause {
 
     /**
      * Gets the maximum number of rows to return.
-     * For Limit instances created with a custom expression, this returns {@link Integer#MAX_VALUE}.
+     * For a string expression that was parsed (see {@link #Limit(String)}), this returns the parsed count.
+     * For a string expression that stayed opaque (a placeholder slot, or an integer literal that overflows
+     * {@code int}), this returns {@link Integer#MAX_VALUE}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -233,13 +325,18 @@ public class Limit extends Clause {
      * int pageCount = paged.getCount();
      * // Returns: 50
      *
-     * // Custom expression limit
+     * // Parsed string expression
      * Limit custom = new Limit("10 OFFSET 20");
      * int customCount = custom.getCount();
+     * // Returns: 10
+     *
+     * // Opaque (placeholder) expression
+     * Limit opaque = new Limit("? OFFSET ?");
+     * int opaqueCount = opaque.getCount();
      * // Returns: Integer.MAX_VALUE
      * }</pre>
      *
-     * @return the row count limit, or {@link Integer#MAX_VALUE} if constructed with a custom expression
+     * @return the row count limit, or {@link Integer#MAX_VALUE} for an opaque (unparsed) string expression
      */
     public int getCount() {
         return count;
@@ -248,7 +345,9 @@ public class Limit extends Clause {
     /**
      * Gets the number of rows to skip before returning results.
      * For Limit instances created with only a count, this returns 0.
-     * For Limit instances created with a custom expression, this also returns 0.
+     * For a string expression that was parsed (see {@link #Limit(String)}), this returns the parsed offset.
+     * For a string expression that stayed opaque (a placeholder slot, or an integer literal that overflows
+     * {@code int}), this returns 0.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -262,13 +361,18 @@ public class Limit extends Clause {
      * int noOffset = simple.getOffset();
      * // Returns: 0
      *
-     * // Custom expression limit
+     * // Parsed string expression
      * Limit custom = new Limit("10 OFFSET 20");
      * int customOffset = custom.getOffset();
+     * // Returns: 20
+     *
+     * // Opaque (placeholder) expression
+     * Limit opaque = new Limit("? OFFSET ?");
+     * int opaqueOffset = opaque.getOffset();
      * // Returns: 0
      * }</pre>
      *
-     * @return the offset value, or 0 if constructed with only count or with a custom expression
+     * @return the offset value, or 0 if constructed with only count or with an opaque (unparsed) string expression
      */
     public int getOffset() {
         return offset;
@@ -304,8 +408,9 @@ public class Limit extends Clause {
      * Converts this LIMIT clause to its string representation according to the specified naming policy.
      * The output format depends on how the Limit was constructed:
      * <ul>
-     *   <li>Custom expression (non-empty {@code literal}): returns the normalized literal as-is (which may
-     *       have {@code "LIMIT "} prepended, per {@link #Limit(String)})</li>
+     *   <li>String expression (non-empty {@code literal}): returns the formatted literal as-is (whitespace
+     *       collapsed and keywords upper-cased, possibly with {@code "LIMIT "} prepended, per
+     *       {@link #Limit(String)}), even when it was parsed into concrete count/offset</li>
      *   <li>Uninitialized instance (no expression and {@code null} operator, e.g. produced by the
      *       package-private default constructor during Kryo deserialization): returns the literal
      *       {@code "null"} (consistent with {@link Cell#toString(NamingPolicy)}), not {@code "LIMIT 0"}</li>
@@ -422,7 +527,96 @@ public class Limit extends Clause {
         return false;
     }
 
-    private static String normalizeExpression(final String expr) {
+    /** SQL keywords upper-cased by {@link #normalizeAndFormat(String)} (parameter names are left untouched). */
+    private static final Set<String> KEYWORDS = Set.of("LIMIT", "OFFSET", "FETCH", "FIRST", "NEXT", "ROW", "ROWS", "ONLY");
+
+    /** A number slot: an integer literal, or a {@code ?} / {@code :name} / <code>#{name}</code> parameter placeholder. */
+    private static final String SLOT = "(?:\\d+|\\?|:\\w+|#\\{[^}]+\\})";
+
+    /**
+     * Matches the {@code LIMIT}-family forms: {@code LIMIT count}, {@code LIMIT count OFFSET offset}, and
+     * MySQL's {@code LIMIT offset, count}. Group 1 is the leading slot, group 2 the MySQL trailing count
+     * slot, group 3 the {@code OFFSET} slot; each slot is an integer or a placeholder (see {@link #SLOT}).
+     */
+    private static final Pattern LIMIT_FAMILY_PATTERN = Pattern.compile("LIMIT\\s+(" + SLOT + ")(?:\\s*,\\s*(" + SLOT + ")|\\s+OFFSET\\s+(" + SLOT + "))?",
+            Pattern.CASE_INSENSITIVE);
+
+    /**
+     * Matches the SQL:2008 {@code FETCH}-family forms: {@code FETCH FIRST|NEXT count ROW[S] ONLY} optionally
+     * preceded by {@code OFFSET offset ROW[S]}. Group 1 is the optional {@code OFFSET} slot, group 2 the
+     * {@code FETCH} count slot; each slot is an integer or a placeholder (see {@link #SLOT}).
+     */
+    private static final Pattern FETCH_FAMILY_PATTERN = Pattern
+            .compile("(?:OFFSET\\s+(" + SLOT + ")\\s+ROWS?\\s+)?FETCH\\s+(?:FIRST|NEXT)\\s+(" + SLOT + ")\\s+ROWS?\\s+ONLY", Pattern.CASE_INSENSITIVE);
+
+    /**
+     * Validates {@code expr} against the accepted grammar and, on success, returns its count/offset slot
+     * tokens as {@code [countToken, offsetToken]} (where {@code offsetToken} is {@code null} when no offset
+     * is present). Returns {@code null} when {@code expr} matches none of the accepted forms.
+     *
+     * @param expr the normalized, formatted expression
+     * @return the {@code [countToken, offsetToken]} slot tokens, or {@code null} if the form is not recognized
+     */
+    private static String[] matchSlots(final String expr) {
+        final Matcher limitMatcher = LIMIT_FAMILY_PATTERN.matcher(expr);
+
+        if (limitMatcher.matches()) {
+            final String first = limitMatcher.group(1);
+
+            if (limitMatcher.group(2) != null) {
+                // MySQL "LIMIT offset, count".
+                return new String[] { limitMatcher.group(2), first };
+            } else if (limitMatcher.group(3) != null) {
+                // "LIMIT count OFFSET offset".
+                return new String[] { first, limitMatcher.group(3) };
+            } else {
+                // "LIMIT count".
+                return new String[] { first, null };
+            }
+        }
+
+        final Matcher fetchMatcher = FETCH_FAMILY_PATTERN.matcher(expr);
+
+        if (fetchMatcher.matches()) {
+            // "[OFFSET offset ROWS] FETCH FIRST|NEXT count ROWS ONLY".
+            return new String[] { fetchMatcher.group(2), fetchMatcher.group(1) };
+        }
+
+        return null;
+    }
+
+    /**
+     * Parses a slot token as a non-negative {@code int}, or returns {@code null} when it is a parameter
+     * placeholder or an integer literal that overflows {@code int} (in which case the value stays unresolved).
+     *
+     * @param token a non-null count/offset slot token
+     * @return the parsed value, or {@code null} if the token is not a resolvable integer
+     */
+    private static Integer toInt(final String token) {
+        for (int i = 0, len = token.length(); i < len; i++) {
+            if (!Character.isDigit(token.charAt(i))) {
+                return null;
+            }
+        }
+
+        try {
+            return Integer.parseInt(token);
+        } catch (final NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Normalizes and formats a raw limit expression: trims it, collapses internal whitespace runs to a single
+     * space, prepends {@code "LIMIT "} when it starts with a bare number or placeholder, and upper-cases the
+     * SQL keywords ({@code LIMIT}, {@code OFFSET}, {@code FETCH}, {@code FIRST}, {@code NEXT}, {@code ROW[S]},
+     * {@code ONLY}) while leaving parameter names inside {@code #{...}} / after {@code :} untouched.
+     *
+     * @param expr the raw expression
+     * @return the normalized, formatted expression
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     */
+    private static String normalizeAndFormat(final String expr) {
         if (Strings.isEmpty(expr)) {
             throw new IllegalArgumentException("Limit expression must not be null, empty, or blank");
         }
@@ -433,15 +627,28 @@ public class Limit extends Clause {
             throw new IllegalArgumentException("Limit expression must not be null, empty, or blank");
         }
 
-        return shouldPrefixLimit(trimmed) ? SK.LIMIT + _SPACE + trimmed : trimmed;
+        final String collapsed = trimmed.replaceAll("\\s+", " ");
+        final String prefixed = shouldPrefixLimit(collapsed) ? SK.LIMIT + _SPACE + collapsed : collapsed;
+
+        return upperCaseKeywords(prefixed);
     }
 
-    private static String conditionExprFromNormalized(final String normalizedExpr) {
-        if (Strings.startsWithIgnoreCase(normalizedExpr, SK.LIMIT + _SPACE)) {
-            return normalizedExpr.substring(SK.LIMIT.length() + 1).trim();
+    private static String upperCaseKeywords(final String expr) {
+        final String[] tokens = expr.split(" ");
+        final StringBuilder sb = new StringBuilder(expr.length());
+
+        for (int i = 0; i < tokens.length; i++) {
+            if (i > 0) {
+                sb.append(' ');
+            }
+
+            final String token = tokens[i];
+            final String upper = token.toUpperCase(Locale.ROOT);
+
+            sb.append(KEYWORDS.contains(upper) ? upper : token);
         }
 
-        return normalizedExpr;
+        return sb.toString();
     }
 
     private static boolean shouldPrefixLimit(final String expr) {

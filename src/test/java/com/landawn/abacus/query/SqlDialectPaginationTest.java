@@ -176,20 +176,41 @@ public class SqlDialectPaginationTest extends TestBase {
         sql = dslFor("Microsoft SQL Server").select("*").from("users").orderBy("id").append(Filters.limit("10")).build().query();
         assertEquals("SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
 
-        // LIMIT-style dialects keep the expression as-is.
+        // On LIMIT-style dialects the parsed count/offset render back to the same LIMIT/OFFSET text.
         sql = dslFor("MySQL").select("*").from("users").append(Filters.limit("10 OFFSET 20")).build().query();
         assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
     }
 
     @Test
-    public void testProductSpecificExpressionLimitStaysVerbatim() {
-        // A non-generic expression is deliberate product-specific syntax and is never re-rendered.
-        String sql = dslFor("Oracle").select("*").from("users").append(Filters.limit("FETCH FIRST 5 ROWS ONLY")).build().query();
+    public void testOpaqueExpressionLimitStaysVerbatim() {
+        // A truly opaque expression — here a placeholder form on a LIMIT-style dialect — is not parsed
+        // into count/offset and is emitted verbatim.
+        String sql = dslFor("MySQL").select("*").from("users").append(Filters.limit("? OFFSET ?")).build().query();
+        assertEquals("SELECT * FROM users LIMIT ? OFFSET ?", sql);
+    }
+
+    @Test
+    public void testParsedExpressionLimitRerenderedPerDialect() {
+        // MySQL's comma form (offset, count) is now parsed and re-rendered in the target dialect's syntax.
+        String sql = dslFor("Oracle").select("*").from("users").append(Filters.limit("20, 10")).build().query();
+        assertEquals("SELECT * FROM users OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+
+        sql = dslFor("MySQL").select("*").from("users").append(Filters.limit("20, 10")).build().query();
+        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
+
+        // A SQL:2008 OFFSET/FETCH form is parsed too: Oracle renders it equivalently, MySQL as LIMIT/OFFSET.
+        sql = dslFor("Oracle").select("*").from("users").append(Filters.limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY")).build().query();
+        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY", sql);
+
+        sql = dslFor("MySQL").select("*").from("users").append(Filters.limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY")).build().query();
+        assertEquals("SELECT * FROM users LIMIT 20 OFFSET 5", sql);
+
+        // FETCH FIRST count ROWS ONLY (no offset).
+        sql = dslFor("Oracle").select("*").from("users").append(Filters.limit("FETCH FIRST 5 ROWS ONLY")).build().query();
         assertEquals("SELECT * FROM users FETCH FIRST 5 ROWS ONLY", sql);
 
-        // MySQL's comma form (offset, count) does not match the generic pattern.
-        sql = dslFor("Oracle").select("*").from("users").append(Filters.limit("20, 10")).build().query();
-        assertEquals("SELECT * FROM users LIMIT 20, 10", sql);
+        sql = dslFor("MySQL").select("*").from("users").append(Filters.limit("FETCH FIRST 5 ROWS ONLY")).build().query();
+        assertEquals("SELECT * FROM users LIMIT 5", sql);
     }
 
     @Test

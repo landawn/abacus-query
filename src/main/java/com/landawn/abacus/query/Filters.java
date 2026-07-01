@@ -4066,15 +4066,22 @@ public class Filters {
     }
 
     /**
-     * Creates a LIMIT clause from a string expression.
-     * Allows for database-specific limit syntax. If {@code expr} begins with a digit, {@code '?'},
-     * {@code ':'}, or <code>"#{"</code>, the literal {@code "LIMIT "} prefix is prepended automatically;
-     * otherwise the expression is used as-is. See {@link Limit#Limit(String)} for full details.
+     * Creates a LIMIT clause from a string expression, formatting and validating it against a fixed grammar.
+     * The expression is trimmed, its internal whitespace collapsed, and its SQL keywords upper-cased (parameter
+     * names left intact); a {@code "LIMIT "} prefix is prepended when it begins with a digit, {@code '?'},
+     * {@code ':'}, or <code>"#{"</code>. It must be one of {@code LIMIT count}, {@code LIMIT count OFFSET offset},
+     * MySQL's {@code LIMIT offset, count}, or the SQL:2008
+     * {@code [OFFSET offset ROWS] FETCH NEXT/FIRST count ROWS ONLY} forms — where each number is an integer or a
+     * {@code ?} / {@code :name} / <code>#{name}</code> placeholder — otherwise an {@link IllegalArgumentException}
+     * is thrown. Integer forms are parsed into concrete count/offset; placeholder forms stay opaque. See
+     * {@link Limit#Limit(String)} for full details.
      *
-     * <p>When the condition is rendered by a SQL builder whose dialect paginates with
-     * {@code OFFSET}/{@code FETCH} (Oracle, DB2 or SQL Server, per {@link SqlDialect.ProductInfo}),
-     * a generic {@code LIMIT count [OFFSET offset]} expression with integer or placeholder tokens is
-     * re-rendered in that dialect's syntax; any other expression is emitted verbatim.</p>
+     * <p>When the condition is rendered by a SQL builder, a parsed expression is emitted in the target
+     * dialect's pagination syntax (so MySQL's comma form and the {@code FETCH} forms are re-rendered per
+     * dialect). An opaque (placeholder) expression is re-rendered in the dialect's {@code FETCH} syntax only
+     * when the dialect paginates with {@code OFFSET}/{@code FETCH} (Oracle, DB2 or SQL Server, per
+     * {@link SqlDialect.ProductInfo}) and it is a generic {@code LIMIT count [OFFSET offset]} form; otherwise
+     * it is emitted verbatim.</p>
      *
      * <p><b>Warning:</b> {@code expr} is included verbatim in the generated SQL. Do not build it
      * from untrusted input.</p>
@@ -4085,9 +4092,10 @@ public class Filters {
      * // Renders as: LIMIT 10 OFFSET 20
      * }</pre>
      *
-     * @param expr the limit expression as a string (must not be {@code null}, empty, or blank)
+     * @param expr the limit expression as a string (must not be {@code null}, empty, or blank, and must match
+     *             one of the accepted forms)
      * @return a {@link Limit} clause
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or not an accepted limit form
      */
     public static Limit limit(final String expr) {
         return new Limit(expr);

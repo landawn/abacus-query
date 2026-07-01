@@ -1,19 +1,23 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.SK;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.SK;
 
 @Tag("2025")
 class Limit2025Test extends TestBase {
@@ -44,8 +48,129 @@ class Limit2025Test extends TestBase {
 
         assertNotNull(limit);
         assertEquals(SK.LIMIT + SK.SPACE + "10 OFFSET 20", limit.getLiteral());
+        // The recognized integer form is parsed into concrete count/offset (literal is still retained).
+        assertEquals(10, limit.getCount());
+        assertEquals(20, limit.getOffset());
+    }
+
+    @Test
+    public void testConstructorWithExpression_ParsesMySqlCommaForm() {
+        Limit limit = new Limit("20, 10");
+
+        // MySQL "LIMIT offset, count" -> offset=20, count=10; literal kept verbatim.
+        assertEquals(SK.LIMIT + SK.SPACE + "20, 10", limit.getLiteral());
+        assertEquals(10, limit.getCount());
+        assertEquals(20, limit.getOffset());
+    }
+
+    @Test
+    public void testConstructorWithExpression_ParsesFetchForms() {
+        Limit offsetFetch = new Limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY");
+        assertEquals("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY", offsetFetch.getLiteral());
+        assertEquals(20, offsetFetch.getCount());
+        assertEquals(5, offsetFetch.getOffset());
+
+        Limit fetchFirst = new Limit("FETCH FIRST 15 ROWS ONLY");
+        assertEquals("FETCH FIRST 15 ROWS ONLY", fetchFirst.getLiteral());
+        assertEquals(15, fetchFirst.getCount());
+        assertEquals(0, fetchFirst.getOffset());
+    }
+
+    @Test
+    public void testConstructorWithExpression_PlaceholderStaysOpaque() {
+        Limit limit = new Limit("? OFFSET ?");
+
+        // A placeholder-bearing expression cannot be parsed to integers: it stays opaque.
+        assertEquals(SK.LIMIT + SK.SPACE + "? OFFSET ?", limit.getLiteral());
         assertEquals(Integer.MAX_VALUE, limit.getCount());
         assertEquals(0, limit.getOffset());
+    }
+
+    @Test
+    public void testConstructorWithExpression_CaseInsensitiveUpcasesKeywords() {
+        Limit limit = new Limit("limit 10 offset 20");
+        assertEquals("LIMIT 10 OFFSET 20", limit.getLiteral());
+        assertEquals(10, limit.getCount());
+        assertEquals(20, limit.getOffset());
+
+        Limit fetch = new Limit("offset 5 rows fetch next 20 rows only");
+        assertEquals("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY", fetch.getLiteral());
+        assertEquals(20, fetch.getCount());
+        assertEquals(5, fetch.getOffset());
+    }
+
+    @Test
+    public void testConstructorWithExpression_CollapsesWhitespace() {
+        // Leading/trailing trimmed; internal runs collapsed to a single space.
+        assertEquals("LIMIT 10 OFFSET 20", new Limit("   10    OFFSET    20   ").getLiteral());
+        assertEquals("FETCH FIRST 5 ROWS ONLY", new Limit("FETCH   FIRST  5   ROWS   ONLY").getLiteral());
+    }
+
+    @Test
+    public void testConstructorWithExpression_PreservesParameterNameCase() {
+        // Keywords are upper-cased, but named-parameter tokens keep their original case.
+        Limit mybatis = new Limit("#{maxRows} offset #{startRow}");
+        assertEquals("LIMIT #{maxRows} OFFSET #{startRow}", mybatis.getLiteral());
+        assertEquals(Integer.MAX_VALUE, mybatis.getCount());
+
+        Limit named = new Limit(":Cnt");
+        assertEquals("LIMIT :Cnt", named.getLiteral());
+    }
+
+    @Test
+    public void testConstructorWithExpression_RowSingular() {
+        Limit fetchOnly = new Limit("FETCH NEXT 5 ROW ONLY");
+        assertEquals("FETCH NEXT 5 ROW ONLY", fetchOnly.getLiteral());
+        assertEquals(5, fetchOnly.getCount());
+        assertEquals(0, fetchOnly.getOffset());
+
+        Limit offsetFetch = new Limit("OFFSET 3 ROW FETCH FIRST 7 ROW ONLY");
+        assertEquals(7, offsetFetch.getCount());
+        assertEquals(3, offsetFetch.getOffset());
+    }
+
+    @Test
+    public void testConstructorWithExpression_FetchNextWithoutOffset() {
+        Limit limit = new Limit("FETCH NEXT 8 ROWS ONLY");
+        assertEquals("FETCH NEXT 8 ROWS ONLY", limit.getLiteral());
+        assertEquals(8, limit.getCount());
+        assertEquals(0, limit.getOffset());
+    }
+
+    @Test
+    public void testConstructorWithExpression_IntegerOverflowStaysOpaque() {
+        // A well-formed LIMIT whose number overflows int is accepted but left opaque (no exception).
+        Limit limit = new Limit("LIMIT 9999999999");
+        assertEquals("LIMIT 9999999999", limit.getLiteral());
+        assertEquals(Integer.MAX_VALUE, limit.getCount());
+        assertEquals(0, limit.getOffset());
+    }
+
+    @Test
+    public void testConstructorWithExpression_FloatThrows() {
+        assertThrows(IllegalArgumentException.class, () -> new Limit("LIMIT 1.0"));
+        assertThrows(IllegalArgumentException.class, () -> new Limit("1.0"));
+        assertThrows(IllegalArgumentException.class, () -> new Limit("LIMIT 10 OFFSET 2.5"));
+    }
+
+    @Test
+    public void testConstructorWithExpression_NegativeThrows() {
+        assertThrows(IllegalArgumentException.class, () -> new Limit("LIMIT -1"));
+        assertThrows(IllegalArgumentException.class, () -> new Limit("-1"));
+        assertThrows(IllegalArgumentException.class, () -> new Limit("LIMIT 10 OFFSET -5"));
+    }
+
+    @Test
+    public void testConstructorWithExpression_InvalidFormatThrows() {
+        // OFF is a typo of OFFSET.
+        assertThrows(IllegalArgumentException.class, () -> new Limit("OFF 5 ROWS FETCH NEXT 20 ROWS ONLY"));
+        // NEXT without a preceding FETCH.
+        assertThrows(IllegalArgumentException.class, () -> new Limit("OFFSET 5 ROWS NEXT 20 ROWS ONLY"));
+        // Missing trailing ONLY.
+        assertThrows(IllegalArgumentException.class, () -> new Limit("FETCH FIRST 5 ROWS"));
+        // Not a limit expression at all.
+        assertThrows(IllegalArgumentException.class, () -> new Limit("SAMPLE(5)"));
+        assertThrows(IllegalArgumentException.class, () -> new Limit("FIRST 10 ROWS"));
     }
 
     @Test
@@ -65,9 +190,9 @@ class Limit2025Test extends TestBase {
 
     @Test
     public void testGetLiteral() {
-        Limit limit = new Limit("FIRST 10 ROWS");
+        Limit limit = new Limit("FETCH FIRST 10 ROWS ONLY");
 
-        assertEquals("FIRST 10 ROWS", limit.getLiteral());
+        assertEquals("FETCH FIRST 10 ROWS ONLY", limit.getLiteral());
     }
 
     @Test
@@ -108,10 +233,10 @@ class Limit2025Test extends TestBase {
 
     @Test
     public void testToStringWithExpression() {
-        Limit limit = new Limit("FIRST 5 ROWS");
+        Limit limit = new Limit("FETCH FIRST 5 ROWS ONLY");
         String result = limit.toString(NamingPolicy.NO_CHANGE);
 
-        assertEquals("FIRST 5 ROWS", result);
+        assertEquals("FETCH FIRST 5 ROWS ONLY", result);
     }
 
     @Test
@@ -282,10 +407,10 @@ class Limit2025Test extends TestBase {
 
     @Test
     public void testToString_NoArgsWithExpression() {
-        Limit limit = new Limit("FIRST 5 ROWS");
+        Limit limit = new Limit("FETCH FIRST 5 ROWS ONLY");
         String result = limit.toString();
 
-        assertEquals("FIRST 5 ROWS", result);
+        assertEquals("FETCH FIRST 5 ROWS ONLY", result);
     }
 
     @Test
@@ -357,8 +482,9 @@ public class LimitTest extends TestBase {
         String expr = "10 OFFSET 20";
         Limit limit = Filters.limit(expr);
         Assertions.assertEquals(SK.LIMIT + SK.SPACE + expr, limit.getLiteral());
-        Assertions.assertEquals(Integer.MAX_VALUE, limit.getCount());
-        Assertions.assertEquals(0, limit.getOffset());
+        // The recognized integer form is parsed into concrete count/offset (literal is still retained).
+        Assertions.assertEquals(10, limit.getCount());
+        Assertions.assertEquals(20, limit.getOffset());
     }
 
     @Test
@@ -377,6 +503,16 @@ public class LimitTest extends TestBase {
     @Test
     public void testConstructorWithWhitespaceExpressionThrows() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.limit("   "));
+    }
+
+    @Test
+    public void testConstructorWithExpression_001() throws Exception {
+        String literal = "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY";
+        final Limit limit = Filters.limit(literal);
+
+        assertEquals("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY", limit.getLiteral());
+        assertEquals(5, limit.getOffset());
+        assertEquals(20, limit.getCount());
     }
 
     @Test
@@ -448,7 +584,7 @@ public class LimitTest extends TestBase {
         String expr = "10 OFFSET 20";
         Limit limit1 = Filters.limit(expr);
         Limit limit2 = Filters.limit(expr);
-        Limit limit3 = Filters.limit("different expr");
+        Limit limit3 = Filters.limit("30 OFFSET 40");
 
         Assertions.assertTrue(limit1.equals(limit2));
         Assertions.assertFalse(limit1.equals(limit3));

@@ -613,7 +613,7 @@ public class Criteria extends AbstractCondition {
         final Builder builder = new Builder();
 
         builder.selectModifier(this.selectModifier);
-        builder.add(this.conditions);
+        builder.addConditions(this.conditions);
 
         return builder;
     }
@@ -806,7 +806,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code joins} is {@code null} or contains {@code null}
          */
         public Builder join(final Join... joins) {
-            add(joins);
+            addConditions(joins);
 
             return this;
         }
@@ -833,7 +833,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code joins} is {@code null} or contains {@code null}
          */
         public Builder join(final Collection<Join> joins) {
-            add(joins);
+            addConditions(joins);
 
             return this;
         }
@@ -855,7 +855,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder join(final String joinEntity) {
-            add(new Join(joinEntity));
+            addConditions(new Join(joinEntity));
 
             return this;
         }
@@ -879,7 +879,7 @@ public class Criteria extends AbstractCondition {
          *                                  is not valid for a JOIN
          */
         public Builder join(final String joinEntity, final Condition cond) {
-            add(new Join(joinEntity, cond));
+            addConditions(new Join(joinEntity, cond));
 
             return this;
         }
@@ -908,7 +908,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
          */
         public Builder join(final Collection<String> joinEntities, final Condition cond) {
-            add(new Join(joinEntities, cond));
+            addConditions(new Join(joinEntities, cond));
 
             return this;
         }
@@ -933,7 +933,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder innerJoin(final String joinEntity) {
-            add(new InnerJoin(joinEntity));
+            addConditions(new InnerJoin(joinEntity));
 
             return this;
         }
@@ -960,7 +960,7 @@ public class Criteria extends AbstractCondition {
          *                                  is not valid for a JOIN
          */
         public Builder innerJoin(final String joinEntity, final Condition cond) {
-            add(new InnerJoin(joinEntity, cond));
+            addConditions(new InnerJoin(joinEntity, cond));
 
             return this;
         }
@@ -988,7 +988,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
          */
         public Builder innerJoin(final Collection<String> joinEntities, final Condition cond) {
-            add(new InnerJoin(joinEntities, cond));
+            addConditions(new InnerJoin(joinEntities, cond));
 
             return this;
         }
@@ -1010,7 +1010,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder leftJoin(final String joinEntity) {
-            add(new LeftJoin(joinEntity));
+            addConditions(new LeftJoin(joinEntity));
 
             return this;
         }
@@ -1036,7 +1036,7 @@ public class Criteria extends AbstractCondition {
          *                                  is not valid for a JOIN
          */
         public Builder leftJoin(final String joinEntity, final Condition cond) {
-            add(new LeftJoin(joinEntity, cond));
+            addConditions(new LeftJoin(joinEntity, cond));
 
             return this;
         }
@@ -1064,7 +1064,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
          */
         public Builder leftJoin(final Collection<String> joinEntities, final Condition cond) {
-            add(new LeftJoin(joinEntities, cond));
+            addConditions(new LeftJoin(joinEntities, cond));
 
             return this;
         }
@@ -1086,7 +1086,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder rightJoin(final String joinEntity) {
-            add(new RightJoin(joinEntity));
+            addConditions(new RightJoin(joinEntity));
 
             return this;
         }
@@ -1112,7 +1112,7 @@ public class Criteria extends AbstractCondition {
          *                                  is not valid for a JOIN
          */
         public Builder rightJoin(final String joinEntity, final Condition cond) {
-            add(new RightJoin(joinEntity, cond));
+            addConditions(new RightJoin(joinEntity, cond));
 
             return this;
         }
@@ -1140,7 +1140,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
          */
         public Builder rightJoin(final Collection<String> joinEntities, final Condition cond) {
-            add(new RightJoin(joinEntities, cond));
+            addConditions(new RightJoin(joinEntities, cond));
 
             return this;
         }
@@ -1162,7 +1162,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder fullJoin(final String joinEntity) {
-            add(new FullJoin(joinEntity));
+            addConditions(new FullJoin(joinEntity));
 
             return this;
         }
@@ -1188,7 +1188,7 @@ public class Criteria extends AbstractCondition {
          *                                  is not valid for a JOIN
          */
         public Builder fullJoin(final String joinEntity, final Condition cond) {
-            add(new FullJoin(joinEntity, cond));
+            addConditions(new FullJoin(joinEntity, cond));
 
             return this;
         }
@@ -1216,7 +1216,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
          */
         public Builder fullJoin(final Collection<String> joinEntities, final Condition cond) {
-            add(new FullJoin(joinEntities, cond));
+            addConditions(new FullJoin(joinEntities, cond));
 
             return this;
         }
@@ -1238,7 +1238,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder crossJoin(final String joinEntity) {
-            add(new CrossJoin(joinEntity));
+            addConditions(new CrossJoin(joinEntity));
 
             return this;
         }
@@ -1266,7 +1266,7 @@ public class Criteria extends AbstractCondition {
          *                                  is not valid for a JOIN
          */
         public Builder crossJoin(final String joinEntity, final Condition cond) {
-            add(new CrossJoin(joinEntity, cond));
+            addConditions(new CrossJoin(joinEntity, cond));
 
             return this;
         }
@@ -1294,7 +1294,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
          */
         public Builder crossJoin(final Collection<String> joinEntities, final Condition cond) {
-            add(new CrossJoin(joinEntities, cond));
+            addConditions(new CrossJoin(joinEntities, cond));
 
             return this;
         }
@@ -1316,7 +1316,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
          */
         public Builder naturalJoin(final String joinEntity) {
-            add(new NaturalJoin(joinEntity));
+            addConditions(new NaturalJoin(joinEntity));
 
             return this;
         }
@@ -1342,7 +1342,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is non-{@code null}
          */
         public Builder naturalJoin(final String joinEntity, final Condition cond) {
-            add(new NaturalJoin(joinEntity, cond));
+            addConditions(new NaturalJoin(joinEntity, cond));
 
             return this;
         }
@@ -1371,7 +1371,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@code null}, empty, or blank elements, or if {@code cond} is non-{@code null}
          */
         public Builder naturalJoin(final Collection<String> joinEntities, final Condition cond) {
-            add(new NaturalJoin(joinEntities, cond));
+            addConditions(new NaturalJoin(joinEntities, cond));
 
             return this;
         }
@@ -1406,9 +1406,9 @@ public class Criteria extends AbstractCondition {
             validateClauseCondition(cond, Operator.WHERE, "where");
 
             if (cond.operator() == Operator.WHERE) {
-                add(cond);
+                addConditions(cond);
             } else {
-                add(new Where(cond));
+                addConditions(new Where(cond));
             }
 
             return this;
@@ -1436,7 +1436,7 @@ public class Criteria extends AbstractCondition {
         public Builder where(final String expr) {
             N.checkArgNotEmpty(expr, "expr");
 
-            add(new Where(Filters.expr(expr)));
+            addConditions(new Where(Filters.expr(expr)));
 
             return this;
         }
@@ -1457,7 +1457,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
          */
         public Builder groupByAsc(final String propName) {
-            add(Filters.groupByAsc(propName));
+            addConditions(Filters.groupByAsc(propName));
 
             return this;
         }
@@ -1479,7 +1479,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder groupByAsc(final String... propNames) {
-            add(Filters.groupByAsc(propNames));
+            addConditions(Filters.groupByAsc(propNames));
 
             return this;
         }
@@ -1522,7 +1522,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
          */
         public Builder groupByDesc(final String propName) {
-            add(Filters.groupByDesc(propName));
+            addConditions(Filters.groupByDesc(propName));
 
             return this;
         }
@@ -1544,7 +1544,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder groupByDesc(final String... propNames) {
-            add(Filters.groupByDesc(propNames));
+            addConditions(Filters.groupByDesc(propNames));
 
             return this;
         }
@@ -1597,9 +1597,9 @@ public class Criteria extends AbstractCondition {
             validateClauseCondition(cond, Operator.GROUP_BY, "groupBy");
 
             if (cond.operator() == Operator.GROUP_BY) {
-                add(cond);
+                addConditions(cond);
             } else {
-                add(new GroupBy(cond));
+                addConditions(new GroupBy(cond));
             }
 
             return this;
@@ -1622,7 +1622,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
          */
         public Builder groupBy(final String... propNames) {
-            add(new GroupBy(propNames));
+            addConditions(new GroupBy(propNames));
 
             return this;
         }
@@ -1644,7 +1644,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
          */
         public Builder groupBy(final String propName, final SortDirection direction) {
-            add(new GroupBy(propName, direction));
+            addConditions(new GroupBy(propName, direction));
 
             return this;
         }
@@ -1723,7 +1723,7 @@ public class Criteria extends AbstractCondition {
         public Builder groupBy(final Collection<String> propNames) {
             N.checkArgNotEmpty(propNames, "propNames");
 
-            add(new GroupBy(propNames.toArray(new String[0])));
+            addConditions(new GroupBy(propNames.toArray(new String[0])));
             return this;
         }
 
@@ -1749,7 +1749,7 @@ public class Criteria extends AbstractCondition {
          *                                  or if {@code direction} is {@code null}
          */
         public Builder groupBy(final Collection<String> propNames, final SortDirection direction) {
-            add(new GroupBy(propNames, direction));
+            addConditions(new GroupBy(propNames, direction));
 
             return this;
         }
@@ -1776,7 +1776,7 @@ public class Criteria extends AbstractCondition {
          *                                  or {@code null} values
          */
         public Builder groupBy(final Map<String, SortDirection> groupings) {
-            add(new GroupBy(groupings));
+            addConditions(new GroupBy(groupings));
 
             return this;
         }
@@ -1812,9 +1812,9 @@ public class Criteria extends AbstractCondition {
             validateClauseCondition(cond, Operator.HAVING, "having");
 
             if (cond.operator() == Operator.HAVING) {
-                add(cond);
+                addConditions(cond);
             } else {
-                add(new Having(cond));
+                addConditions(new Having(cond));
             }
 
             return this;
@@ -1844,7 +1844,7 @@ public class Criteria extends AbstractCondition {
         public Builder having(final String expr) {
             N.checkArgNotEmpty(expr, "expr");
 
-            add(new Having(Filters.expr(expr)));
+            addConditions(new Having(Filters.expr(expr)));
 
             return this;
         }
@@ -1865,7 +1865,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
          */
         public Builder orderByAsc(final String propName) {
-            add(Filters.orderByAsc(propName));
+            addConditions(Filters.orderByAsc(propName));
 
             return this;
         }
@@ -1887,7 +1887,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder orderByAsc(final String... propNames) {
-            add(Filters.orderByAsc(propNames));
+            addConditions(Filters.orderByAsc(propNames));
 
             return this;
         }
@@ -1911,7 +1911,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder orderByAsc(final Collection<String> propNames) {
-            add(Filters.orderByAsc(propNames));
+            addConditions(Filters.orderByAsc(propNames));
 
             return this;
         }
@@ -1932,7 +1932,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
          */
         public Builder orderByDesc(final String propName) {
-            add(Filters.orderByDesc(propName));
+            addConditions(Filters.orderByDesc(propName));
 
             return this;
         }
@@ -1954,7 +1954,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder orderByDesc(final String... propNames) {
-            add(Filters.orderByDesc(propNames));
+            addConditions(Filters.orderByDesc(propNames));
 
             return this;
         }
@@ -1978,7 +1978,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
          */
         public Builder orderByDesc(final Collection<String> propNames) {
-            add(Filters.orderByDesc(propNames));
+            addConditions(Filters.orderByDesc(propNames));
 
             return this;
         }
@@ -2009,9 +2009,9 @@ public class Criteria extends AbstractCondition {
             validateClauseCondition(cond, Operator.ORDER_BY, "orderBy");
 
             if (cond.operator() == Operator.ORDER_BY) {
-                add(cond);
+                addConditions(cond);
             } else {
-                add(new OrderBy(cond));
+                addConditions(new OrderBy(cond));
             }
 
             return this;
@@ -2035,7 +2035,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
          */
         public Builder orderBy(final String... propNames) {
-            add(new OrderBy(propNames));
+            addConditions(new OrderBy(propNames));
 
             return this;
         }
@@ -2057,7 +2057,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
          */
         public Builder orderBy(final String propName, final SortDirection direction) {
-            add(new OrderBy(propName, direction));
+            addConditions(new OrderBy(propName, direction));
 
             return this;
         }
@@ -2137,7 +2137,7 @@ public class Criteria extends AbstractCondition {
         public Builder orderBy(final Collection<String> propNames) {
             N.checkArgNotEmpty(propNames, "propNames");
 
-            add(new OrderBy(propNames.toArray(new String[0])));
+            addConditions(new OrderBy(propNames.toArray(new String[0])));
             return this;
         }
 
@@ -2163,7 +2163,7 @@ public class Criteria extends AbstractCondition {
          *                                  or if {@code direction} is {@code null}
          */
         public Builder orderBy(final Collection<String> propNames, final SortDirection direction) {
-            add(new OrderBy(propNames, direction));
+            addConditions(new OrderBy(propNames, direction));
 
             return this;
         }
@@ -2190,7 +2190,7 @@ public class Criteria extends AbstractCondition {
          *                                  or {@code null} values
          */
         public Builder orderBy(final Map<String, SortDirection> orders) {
-            add(new OrderBy(orders));
+            addConditions(new OrderBy(orders));
 
             return this;
         }
@@ -2213,7 +2213,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code condition} is {@code null}
          */
         public Builder limit(final Limit condition) {
-            add(condition);
+            addConditions(condition);
 
             return this;
         }
@@ -2237,7 +2237,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code count} is negative
          */
         public Builder limit(final int count) {
-            add(Filters.limit(count));
+            addConditions(Filters.limit(count));
 
             return this;
         }
@@ -2263,18 +2263,19 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
          */
         public Builder limit(final int count, final int offset) {
-            add(Filters.limit(count, offset));
+            addConditions(Filters.limit(count, offset));
 
             return this;
         }
 
         /**
          * Sets or replaces the LIMIT clause using a string expression.
-         * Allows for database-specific limit syntax.
+         * The expression is formatted (whitespace collapsed, keywords upper-cased) and validated against the
+         * accepted limit grammar; see {@link Limit#Limit(String)}.
          * If a LIMIT clause already exists, it will be replaced.
          * When rendered by a SQL builder whose dialect paginates with {@code OFFSET}/{@code FETCH}
          * (Oracle, DB2 or SQL Server), a generic {@code LIMIT count [OFFSET offset]} expression is
-         * re-rendered in that dialect's syntax; see {@link Limit#Limit(String)}.
+         * re-rendered in that dialect's syntax.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -2288,10 +2289,10 @@ public class Criteria extends AbstractCondition {
          *
          * @param expr the LIMIT expression as a string
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or not an accepted limit form
          */
         public Builder limit(final String expr) {
-            add(Filters.limit(expr));
+            addConditions(Filters.limit(expr));
 
             return this;
         }
@@ -2319,7 +2320,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code subQuery} is {@code null}
          */
         public Builder union(final SubQuery subQuery) {
-            add(new Union(subQuery));
+            addConditions(new Union(subQuery));
 
             return this;
         }
@@ -2344,7 +2345,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code subQuery} is {@code null}
          */
         public Builder unionAll(final SubQuery subQuery) {
-            add(new UnionAll(subQuery));
+            addConditions(new UnionAll(subQuery));
 
             return this;
         }
@@ -2369,7 +2370,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code subQuery} is {@code null}
          */
         public Builder intersect(final SubQuery subQuery) {
-            add(new Intersect(subQuery));
+            addConditions(new Intersect(subQuery));
 
             return this;
         }
@@ -2394,7 +2395,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code subQuery} is {@code null}
          */
         public Builder except(final SubQuery subQuery) {
-            add(new Except(subQuery));
+            addConditions(new Except(subQuery));
 
             return this;
         }
@@ -2419,7 +2420,95 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code subQuery} is {@code null}
          */
         public Builder minus(final SubQuery subQuery) {
-            add(new Minus(subQuery));
+            addConditions(new Minus(subQuery));
+
+            return this;
+        }
+
+        /**
+         * Adds a condition to this builder, routing it to the appropriate clause based on its operator.
+         * This is a convenience entry point that dispatches on {@link Condition#operator()}:
+         * <ul>
+         *   <li>{@code LIMIT} &rarr; {@link #limit(Limit)}</li>
+         *   <li>{@code ORDER_BY} &rarr; {@link #orderBy(Condition)}</li>
+         *   <li>{@code GROUP_BY} &rarr; {@link #groupBy(Condition)}</li>
+         *   <li>{@code HAVING} &rarr; {@link #having(Condition)}</li>
+         *   <li>{@code WHERE} &rarr; {@link #where(Condition)}</li>
+         *   <li>{@code UNION}, {@code UNION_ALL}, {@code INTERSECT}, {@code EXCEPT}, {@code MINUS} &rarr;
+         *       the matching set-operation method, using the wrapped sub-query</li>
+         *   <li>a {@link Join} (any join operator) is added as a join &mdash; joins accumulate and are not replaced</li>
+         *   <li>any other (non-clause) condition is treated as a predicate and wrapped in a {@code WHERE} clause</li>
+         * </ul>
+         *
+         * <p>As with the dedicated clause methods, adding a {@code WHERE}, {@code GROUP_BY}, {@code HAVING},
+         * {@code ORDER_BY} or {@code LIMIT} clause <b>replaces</b> any existing clause of the same kind.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria c = Criteria.builder()
+         *     .add(Filters.equal("status", "active"))   // -> WHERE status = 'active'
+         *     .add(new OrderBy("createdDate"))          // -> ORDER BY createdDate
+         *     .add(new Limit(10))                       // -> LIMIT 10
+         *     .build();
+         * }</pre>
+         *
+         * @param cond the condition to add (must not be {@code null})
+         * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code cond} is {@code null}, is a nested {@link Criteria}, uses an
+         *         {@code ON}/{@code USING} operator, or is an empty predicate (a blank {@link Expression} or empty
+         *         {@link Junction})
+         */
+        public Builder add(final Condition cond) {
+            N.checkArgNotNull(cond, "cond");
+
+            switch (cond.operator()) {
+                case LIMIT:
+                    limit((Limit) cond);
+                    break;
+
+                case ORDER_BY:
+                    orderBy(cond);
+                    break;
+
+                case GROUP_BY:
+                    groupBy(cond);
+                    break;
+
+                case HAVING:
+                    having(cond);
+                    break;
+
+                case WHERE:
+                    where(cond);
+                    break;
+
+                case UNION:
+                    union(((Union) cond).getSubQuery());
+                    break;
+
+                case UNION_ALL:
+                    unionAll(((UnionAll) cond).getSubQuery());
+                    break;
+
+                case INTERSECT:
+                    intersect(((Intersect) cond).getSubQuery());
+                    break;
+
+                case EXCEPT:
+                    except(((Except) cond).getSubQuery());
+                    break;
+
+                case MINUS:
+                    minus(((Minus) cond).getSubQuery());
+                    break;
+
+                default:
+                    if (cond instanceof Join) {
+                        addConditions(cond);
+                    } else {
+                        where(cond);
+                    }
+            }
 
             return this;
         }
@@ -2536,7 +2625,7 @@ public class Criteria extends AbstractCondition {
             conditions.add(cond);
         }
 
-        private void add(final Condition... conditions) {
+        private void addConditions(final Condition... conditions) {
             checkConditions(conditions);
 
             for (final Condition cond : conditions) {
@@ -2544,7 +2633,7 @@ public class Criteria extends AbstractCondition {
             }
         }
 
-        private void add(final Collection<? extends Condition> conditions) {
+        private void addConditions(final Collection<? extends Condition> conditions) {
             checkConditions(conditions);
 
             for (final Condition cond : conditions) {

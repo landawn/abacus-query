@@ -1769,3 +1769,147 @@ class CriteriaBugFixTest extends TestBase {
         }
     }
 }
+
+/**
+ * Tests for {@link Criteria.Builder#add(Condition)}. This is tagged {@code 2025} so it runs in the default
+ * suite; the previously untagged builder tests missed a regression where a public {@code add(Condition)}
+ * overload hijacked the internal single-argument {@code add(...)} calls, causing infinite recursion.
+ */
+@Tag("2025")
+class CriteriaBuilderAdd2025Test extends TestBase {
+
+    // --- Regression: the internal clause methods must not recurse through the public add(Condition). ---
+
+    @Test
+    public void testInternalClauseMethodsDoNotRecurse() {
+        Criteria c = Criteria.builder()
+                .where(Filters.eq("status", "active"))
+                .groupBy("dept")
+                .having(Filters.gt("COUNT(*)", 1))
+                .orderBy("name")
+                .limit(10)
+                .union(Filters.subQuery("SELECT 1"))
+                .join("orders")
+                .build();
+
+        assertNotNull(c);
+        assertNotNull(c.getWhere());
+        assertNotNull(c.getGroupBy());
+        assertNotNull(c.getHaving());
+        assertNotNull(c.getOrderBy());
+        assertNotNull(c.getLimit());
+        assertEquals(1, c.getJoins().size());
+    }
+
+    // --- Routing by operator. ---
+
+    @Test
+    public void testAddPlainPredicateRoutesToWhere() {
+        Criteria c = Criteria.builder().add(Filters.equal("status", "active")).build();
+
+        assertNotNull(c.getWhere());
+        assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("WHERE status = 'active'"), c.toString());
+    }
+
+    @Test
+    public void testAddWhereClauseRoutesToWhere() {
+        Criteria c = Criteria.builder().add(new Where(Filters.eq("id", 1))).build();
+
+        assertNotNull(c.getWhere());
+        assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("WHERE id = 1"), c.toString());
+    }
+
+    @Test
+    public void testAddOrderByRoutesToOrderBy() {
+        Criteria c = Criteria.builder().add(new OrderBy("createdDate")).build();
+
+        assertNotNull(c.getOrderBy());
+        assertNull(c.getWhere());
+        assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("ORDER BY createdDate"), c.toString());
+    }
+
+    @Test
+    public void testAddGroupByRoutesToGroupBy() {
+        Criteria c = Criteria.builder().add(new GroupBy("department")).build();
+
+        assertNotNull(c.getGroupBy());
+        assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("GROUP BY department"), c.toString());
+    }
+
+    @Test
+    public void testAddHavingRoutesToHaving() {
+        // Previously threw/recursed because the switch had no HAVING case (fell through to where()).
+        Criteria c = Criteria.builder().add(new Having(Filters.gt("COUNT(*)", 5))).build();
+
+        assertNotNull(c.getHaving());
+        assertNull(c.getWhere());
+        assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("HAVING COUNT(*) > 5"), c.toString());
+    }
+
+    @Test
+    public void testAddLimitRoutesToLimit() {
+        Criteria c = Criteria.builder().add(new Limit(10)).build();
+
+        assertNotNull(c.getLimit());
+        assertEquals(10, c.getLimit().getCount());
+    }
+
+    @Test
+    public void testAddSetOperationsRouteCorrectly() {
+        assertTrue(Criteria.builder().add(new Union(Filters.subQuery("SELECT 1"))).build().toString().contains("UNION"));
+        assertTrue(Criteria.builder().add(new UnionAll(Filters.subQuery("SELECT 1"))).build().toString().contains("UNION ALL"));
+        assertTrue(Criteria.builder().add(new Intersect(Filters.subQuery("SELECT 1"))).build().toString().contains("INTERSECT"));
+        assertTrue(Criteria.builder().add(new Except(Filters.subQuery("SELECT 1"))).build().toString().contains("EXCEPT"));
+        assertTrue(Criteria.builder().add(new Minus(Filters.subQuery("SELECT 1"))).build().toString().contains("MINUS"));
+    }
+
+    @Test
+    public void testAddJoinRoutesToJoinAndAccumulates() {
+        Criteria c = Criteria.builder().add(new Join("orders")).add(new Join("payments")).build();
+
+        // Joins accumulate; they are not replaced.
+        assertEquals(2, c.getJoins().size());
+    }
+
+    // --- Replacement semantics for singleton clauses. ---
+
+    @Test
+    public void testAddReplacesExistingSingletonClause() {
+        Criteria c = Criteria.builder().add(new Limit(10)).add(new Limit(20)).build();
+        assertEquals(20, c.getLimit().getCount());
+
+        Criteria c2 = Criteria.builder().add(new OrderBy("colA")).add(new OrderBy("colB")).build();
+        String sql = c2.toString(NamingPolicy.NO_CHANGE);
+        assertTrue(sql.contains("colB"), sql);
+        assertFalse(sql.contains("colA"), sql);
+    }
+
+    // --- Chaining and validation. ---
+
+    @Test
+    public void testAddReturnsBuilderForChaining() {
+        Builder builder = Criteria.builder();
+        assertTrue(builder == builder.add(Filters.equal("a", 1)));
+    }
+
+    @Test
+    public void testAddNullThrows() {
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(null));
+    }
+
+    @Test
+    public void testAddNestedCriteriaThrows() {
+        Criteria nested = Criteria.builder().where(Filters.eq("a", 1)).build();
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(nested));
+    }
+
+    @Test
+    public void testAddOnOrUsingThrows() {
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.expr("ON a.id = b.id")));
+    }
+
+    @Test
+    public void testAddEmptyPredicateThrows() {
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.expr("   ")));
+    }
+}
