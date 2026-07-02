@@ -308,11 +308,12 @@ public abstract class AbstractBetween extends ComposableCondition {
             return true;
         }
 
-        if (obj instanceof final AbstractBetween other) {
-            return N.equals(propName, other.propName) && N.equals(operator, other.operator) && N.equals(minValue, other.minValue)
-                    && N.equals(maxValue, other.maxValue);
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
         }
 
-        return false;
+        final AbstractBetween other = (AbstractBetween) obj;
+        return N.equals(propName, other.propName) && N.equals(operator, other.operator) && N.equals(minValue, other.minValue)
+                && N.equals(maxValue, other.maxValue);
     }
 }

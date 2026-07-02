@@ -213,12 +213,18 @@ public sealed class NamedProperty permits NP {
      * NamedProperty.of("x").equalsAny();   // throws IllegalArgumentException (empty values)
      * }</pre>
      *
+     * <p>Note: despite the similar name, this is a different operation from
+     * {@link com.landawn.abacus.query.Filters#anyEqual(java.util.Map) Filters.anyEqual}:
+     * {@code equalsAny} tests several candidate values for this one property, while
+     * {@code anyEqual} tests one value for each of several properties.</p>
+     *
      * @param values array of values to check equality against. Each value will be tested with OR logic.
      *               Must not be {@code null} or empty.
      * @return an Or condition containing multiple Equal conditions
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see Or
      * @see Equal
+     * @see com.landawn.abacus.query.Filters#anyEqual(java.util.Map)
      */
     public Or equalsAny(final Object... values) {
         N.checkArgNotEmpty(values, "values");
@@ -1153,7 +1159,15 @@ public sealed class NamedProperty permits NP {
      */
     @Override
     public boolean equals(final Object obj) {
-        return this == obj || (obj instanceof NamedProperty && N.equals(((NamedProperty) obj).propName, propName));
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+
+        return N.equals(((NamedProperty) obj).propName, propName);
     }
 
     /**

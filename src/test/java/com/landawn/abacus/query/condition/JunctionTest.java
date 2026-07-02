@@ -240,6 +240,19 @@ class Junction2025Test extends TestBase {
     }
 
     @Test
+    public void testEqualsExactClassNotSubtype() {
+        // getClass()-based equals: a raw Junction(AND, ...) is NOT equal to a subtype (And) with identical fields.
+        Junction rawAnd = new Junction(Operator.AND, Filters.eq("a", 1));
+        And and = new And(Filters.eq("a", 1));
+
+        assertNotEquals(rawAnd, and);
+        assertNotEquals(and, rawAnd);
+
+        // Same-type equality is unaffected.
+        assertEquals(and, new And(Filters.eq("a", 1)));
+    }
+
+    @Test
     public void testComplexJunctionAndOperation() {
         Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.between("age", 18, 65), Filters.isNotNull("email"),
                 Filters.like("name", "John%"));

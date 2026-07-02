@@ -7049,43 +7049,19 @@
                 "public",
                 "static"
               ],
-              "signature": "@Beta public static Or anyOfAllEqual(final List<? extends Map<String, ?>> propsList)",
+              "signature": "@Beta public static Or anyOfAllEqual(final Collection<?> entitiesOrMaps)",
               "return_type": "Or",
               "type_params": [],
               "params": [
                 {
-                  "name": "propsList",
-                  "type": "List<? extends Map<String, ?>>",
-                  "javadoc": "list of property maps (must not be null or empty)",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Creates an {@code OR} condition where each element in the list represents an {@code AND} condition of property-value pairs.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "anyOfAllEqual",
-              "kind": "static",
-              "modifiers": [
-                "public",
-                "static"
-              ],
-              "signature": "@Beta public static Or anyOfAllEqual(final Collection<?> entities)",
-              "return_type": "Or",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "entities",
+                  "name": "entitiesOrMaps",
                   "type": "Collection<?>",
-                  "javadoc": "collection of entity objects (must not be empty)",
+                  "javadoc": "collection of property maps or entity objects (must not be empty)",
                   "nullability": "unspecified"
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates an {@code OR} condition from a collection of entities, where each entity forms an {@code AND} condition.",
+              "javadoc_summary": "Creates an {@code OR} condition from a collection of property maps or entities, where each non-null element forms an {@code AND} condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -9627,7 +9603,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates an {@link OrderBy} clause with properties from a collection in ascending order.",
+              "javadoc_summary": "Creates an {@link OrderBy} clause with properties from a collection.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -10912,7 +10888,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "the property/column names (must contain at least two non- {@code null} /non-blank names)",
+                  "javadoc": "the property/column names (must not be {@code null} or empty and must not contain {@code null} /blank names)",
                   "nullability": "unspecified"
                 },
                 {
@@ -10923,7 +10899,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a multi-column (row value constructor) IN condition.",
+              "javadoc_summary": "Creates a row value constructor IN condition.",
               "contract": [
                 "The tuple of property values must match one of the supplied value rows."
               ],
@@ -11306,7 +11282,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "the property/column names (must contain at least two non- {@code null} /non-blank names)",
+                  "javadoc": "the property/column names (must not be {@code null} or empty and must not contain {@code null} /blank names)",
                   "nullability": "unspecified"
                 },
                 {
@@ -11317,7 +11293,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a multi-column (row value constructor) NOT IN condition.",
+              "javadoc_summary": "Creates a row value constructor NOT IN condition.",
               "contract": [
                 "The tuple of property values must not match any of the supplied value rows."
               ],
@@ -14806,6 +14782,22 @@
           "type_params": [],
           "constructors": [],
           "methods": [
+            {
+              "name": "getPropName",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public String getPropName()",
+              "return_type": "String",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Gets the property name being checked in this IN or NOT IN condition.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
             {
               "name": "getPropNames",
               "kind": "instance",
@@ -20782,7 +20774,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "the property/column names (must not be {@code null} and must contain at least two non- {@code null} /non-blank names; for a single column use {@link #In(String, Collection)} )",
+                  "javadoc": "the property/column names (must not be {@code null} or empty and must not contain {@code null} /blank names)",
                   "nullability": "unspecified"
                 },
                 {
@@ -20793,7 +20785,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a new multi-column (row value constructor) IN condition.",
+              "javadoc_summary": "Creates a new row value constructor IN condition.",
               "contract": [
                 "Each element of {@code valueRows} must resolve to exactly {@code propNames.size()} values."
               ],
@@ -24049,7 +24041,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "the property/column names (must not be {@code null} and must contain at least two non- {@code null} /non-blank names; for a single column use {@link #NotIn(String, Collection)} )",
+                  "javadoc": "the property/column names (must not be {@code null} or empty and must not contain {@code null} /blank names)",
                   "nullability": "unspecified"
                 },
                 {
@@ -24060,7 +24052,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a new multi-column (row value constructor) NOT IN condition.",
+              "javadoc_summary": "Creates a new row value constructor NOT IN condition.",
               "contract": [
                 "Each element of {@code valueRows} must resolve to exactly {@code propNames.size()} values."
               ],

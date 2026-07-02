@@ -34,6 +34,7 @@ public class AbstractInSubQueryTest extends TestBase {
         final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
         final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id", subQuery);
 
+        assertEquals("user_id", condition.getPropName());
         assertEquals(Arrays.asList("user_id"), condition.getPropNames().stream().toList());
     }
 
@@ -42,6 +43,7 @@ public class AbstractInSubQueryTest extends TestBase {
         final SubQuery subQuery = Filters.subQuery("pairs", Arrays.asList("left_id", "right_id"), Filters.eq("active", true));
         final TestAbstractInSubQuery condition = new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"), subQuery);
 
+        assertEquals("leftId", condition.getPropName());
         assertEquals(Arrays.asList("leftId", "rightId"), condition.getPropNames().stream().toList());
     }
 
@@ -137,6 +139,7 @@ public class AbstractInSubQueryTest extends TestBase {
     public void testDefaultConstructor_EmptyState() {
         final TestAbstractInSubQuery condition = new TestAbstractInSubQuery();
 
+        assertEquals(null, condition.getPropName());
         assertTrue(condition.getPropNames().isEmpty());
         assertTrue(condition.getParameters().isEmpty());
     }

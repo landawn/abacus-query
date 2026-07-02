@@ -525,7 +525,7 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param obj the object to compare with
-     * @return {@code true} if the object is a Join with the same operator, entities, and condition
+     * @return {@code true} if the object is of the same class with the same operator, entities, and condition
      */
     @Override
     public boolean equals(final Object obj) {
@@ -533,10 +533,11 @@ public class Join extends AbstractCondition {
             return true;
         }
 
-        if (obj instanceof final Join other) {
-            return N.equals(operator, other.operator) && N.equals(joinEntities, other.joinEntities) && N.equals(condition, other.condition);
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
         }
 
-        return false;
+        final Join other = (Join) obj;
+        return N.equals(operator, other.operator) && N.equals(joinEntities, other.joinEntities) && N.equals(condition, other.condition);
     }
 }

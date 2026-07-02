@@ -315,6 +315,32 @@ public class Filters {
     }
 
     /**
+     * Creates a parameterized {@link Binary} condition for use with prepared statements.
+     * The condition uses a question mark ({@code ?}) placeholder in place of the value, which is
+     * provided later when the statement is executed. This is the parameterized counterpart of
+     * {@link #binary(String, Operator, Object)}, mirroring pairs such as
+     * {@link #equal(String, Object)} / {@link #equal(String)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Binary condition = Filters.binary("price", Operator.GREATER_THAN);
+     * // SQL fragment: price > ?
+     * }</pre>
+     *
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
+     * @param operator the binary comparison/membership operator to use (must not be {@code null} and must be
+     *                 a valid binary operator; structural operators are rejected)
+     * @return a {@link Binary} condition with a {@code ?} placeholder value
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code operator}
+     *                                  is not a valid binary comparison/membership operator (e.g. a structural operator)
+     * @throws NullPointerException if {@code operator} is {@code null}
+     * @see #binary(String, Operator, Object)
+     */
+    public static Binary binary(final String propName, final Operator operator) {
+        return new Binary(propName, operator, QME);
+    }
+
+    /**
      * Creates an equality condition ({@code =}) for the specified property and value.
      *
      * <p><b>Usage Examples:</b></p>
@@ -403,9 +429,14 @@ public class Filters {
      * // SQL fragment: ((name = 'John') OR (email = 'john@example.com'))
      * }</pre>
      *
+     * <p>Note: despite the similar name, this is a different operation from
+     * {@link NamedProperty#equalsAny(Object...)}: {@code anyEqual} tests one value for each of
+     * several properties, while {@code equalsAny} tests several candidate values for one property.</p>
+     *
      * @param props map of property names to values (must not be empty)
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code props} is {@code null} or empty
+     * @see NamedProperty#equalsAny(Object...)
      */
     public static Or anyEqual(final Map<String, ?> props) {
         N.checkArgNotEmpty(props, "props");
@@ -590,6 +621,15 @@ public class Filters {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private static Map<String, ?> stringKeyMap(final Map<?, ?> props) {
+        for (final Object propName : props.keySet()) {
+            N.checkArgument(propName instanceof String, "Map keys must be String: " + propName);
+        }
+
+        return (Map<String, ?>) props;
+    }
+
     /**
      * Creates an {@code AND} condition from an entity object using all its properties.
      * Each property of the entity will be included as an equality check in the {@code AND} condition
@@ -707,60 +747,52 @@ public class Filters {
     }
 
     /**
-     * Creates an {@code OR} condition where each element in the list represents an {@code AND} condition of property-value pairs.
-     * This is useful for creating conditions like: {@code (a=1 AND b=2) OR (a=3 AND b=4)}.
+     * Creates an {@code OR} condition from a collection of property maps or entities, where each non-null element forms an {@code AND} condition.
+     * If the first non-null element is a {@link Map}, all non-null elements must be maps with {@link String} keys. Otherwise, all properties of
+     * each entity will be used.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<Map<String, Object>> propsList = new ArrayList<>();
-     * propsList.add(Map.of("status", "active", "type", "premium"));
-     * propsList.add(Map.of("status", "trial", "verified", true));
-     * Or condition = Filters.anyOfAllEqual(propsList);
+     * Set<Map<String, Object>> propsSet = new LinkedHashSet<>();
+     * propsSet.add(Map.of("status", "active", "type", "premium"));
+     * propsSet.add(Map.of("status", "trial", "verified", true));
+     * Or mapCondition = Filters.anyOfAllEqual(propsSet);
      * // Results in: (status='active' AND type='premium') OR (status='trial' AND verified=true)
-     * }</pre>
      *
-     * @param propsList list of property maps (must not be null or empty)
-     * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code propsList} is {@code null} or empty
-     */
-    @Beta
-    public static Or anyOfAllEqual(final List<? extends Map<String, ?>> propsList) {
-        N.checkArgNotEmpty(propsList, "propsList");
-
-        final Condition[] conds = new Condition[propsList.size()];
-
-        for (int i = 0, size = propsList.size(); i < size; i++) {
-            conds[i] = allEqual(propsList.get(i));
-        }
-
-        return or(conds);
-    }
-
-    /**
-     * Creates an {@code OR} condition from a collection of entities, where each entity forms an {@code AND} condition.
-     * All properties of each entity will be used.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
      * List<User> users = Arrays.asList(
      *     new User("John", "john@example.com"),
      *     new User("Jane", "jane@example.com")
      * );
-     * Or condition = Filters.anyOfAllEqual(users);
+     * Or entityCondition = Filters.anyOfAllEqual(users);
      * // Results in: (name='John' AND email='john@example.com') OR (name='Jane' AND email='jane@example.com')
      * }</pre>
      *
-     * @param entities collection of entity objects (must not be empty)
+     * @param entitiesOrMaps collection of property maps or entity objects (must not be empty)
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entities} is empty or all elements are null
+     * @throws IllegalArgumentException if {@code entitiesOrMaps} is {@code null} or empty, if all elements are {@code null}, if the first non-null
+     *                                  element is a map and any other non-null element is not a map, or if a map key is not a {@link String}
      */
     @Beta
-    public static Or anyOfAllEqual(final Collection<?> entities) {
-        N.checkArgNotEmpty(entities, "entities");
+    public static Or anyOfAllEqual(final Collection<?> entitiesOrMaps) {
+        N.checkArgNotEmpty(entitiesOrMaps, "entitiesOrMaps");
 
-        final Object firstNonNull = N.firstNonNull(entities).orElseThrow(() -> new IllegalArgumentException("All specified entities are null."));
+        final Object firstNonNull = N.firstNonNull(entitiesOrMaps)
+                .orElseThrow(() -> new IllegalArgumentException("All specified entities/maps are null."));
 
-        return anyOfAllEqual(entities, QueryUtil.getSelectPropNames(firstNonNull.getClass(), false, null));
+        if (firstNonNull instanceof Map) {
+            final List<Condition> condList = new ArrayList<>(entitiesOrMaps.size());
+
+            for (final Object entityOrMap : entitiesOrMaps) {
+                if (entityOrMap != null) {
+                    N.checkArgument(entityOrMap instanceof Map, "All non-null elements must be Map when the first non-null element is Map");
+                    condList.add(allEqual(stringKeyMap((Map<?, ?>) entityOrMap)));
+                }
+            }
+
+            return or(condList);
+        }
+
+        return anyOfAllEqual(entitiesOrMaps, QueryUtil.getSelectPropNames(firstNonNull.getClass(), false, null));
     }
 
     /**
@@ -1599,6 +1631,8 @@ public class Filters {
     /**
      * Creates a {@link Like} condition that checks if the property contains the specified value.
      * Automatically wraps the value with {@code %} wildcards.
+     * Wildcard characters ({@code %}, {@code _}) already present in {@code propValue} are not
+     * escaped and remain active in the generated {@code LIKE} pattern.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1619,6 +1653,8 @@ public class Filters {
     /**
      * Creates a {@link NotLike} condition that checks if the property does not contain the specified value.
      * Automatically wraps the value with {@code %} wildcards.
+     * Wildcard characters ({@code %}, {@code _}) already present in {@code propValue} are not
+     * escaped and remain active in the generated {@code LIKE} pattern.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1639,6 +1675,8 @@ public class Filters {
     /**
      * Creates a {@link Like} condition that checks if the property starts with the specified value.
      * Automatically appends a {@code %} wildcard.
+     * Wildcard characters ({@code %}, {@code _}) already present in {@code propValue} are not
+     * escaped and remain active in the generated {@code LIKE} pattern.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1659,6 +1697,8 @@ public class Filters {
     /**
      * Creates a {@link NotLike} condition that checks if the property does not start with the specified value.
      * Automatically appends a {@code %} wildcard.
+     * Wildcard characters ({@code %}, {@code _}) already present in {@code propValue} are not
+     * escaped and remain active in the generated {@code LIKE} pattern.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1679,6 +1719,8 @@ public class Filters {
     /**
      * Creates a {@link Like} condition that checks if the property ends with the specified value.
      * Automatically prepends a {@code %} wildcard.
+     * Wildcard characters ({@code %}, {@code _}) already present in {@code propValue} are not
+     * escaped and remain active in the generated {@code LIKE} pattern.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1699,6 +1741,8 @@ public class Filters {
     /**
      * Creates a {@link NotLike} condition that checks if the property does not end with the specified value.
      * Automatically prepends a {@code %} wildcard.
+     * Wildcard characters ({@code %}, {@code _}) already present in {@code propValue} are not
+     * escaped and remain active in the generated {@code LIKE} pattern.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2266,7 +2310,7 @@ public class Filters {
     public static GroupBy groupBy(final Collection<String> propNames) {
         N.checkArgNotEmpty(propNames, "propNames");
 
-        return new GroupBy(propNames.toArray(new String[propNames.size()]));
+        return new GroupBy(propNames);
     }
 
     /**
@@ -2549,13 +2593,17 @@ public class Filters {
     }
 
     /**
-     * Creates an {@link OrderBy} clause with properties from a collection in ascending order.
+     * Creates an {@link OrderBy} clause with properties from a collection. No explicit sort direction keyword is emitted; SQL's default
+     * ordering direction applies.
+     *
+     * <p>The iteration order of the collection determines the sort priority. Use an order-preserving collection (such as {@link List} or
+     * {@link java.util.LinkedHashSet}) to guarantee predictable ordering.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> columns = Arrays.asList("name", "age");
      * OrderBy orderBy = Filters.orderBy(columns);
-     * // Results in SQL like: ORDER BY name ASC, age ASC
+     * // Results in SQL like: ORDER BY name, age
      * }</pre>
      *
      * @param propNames collection of property/column names to order by
@@ -2563,7 +2611,7 @@ public class Filters {
      * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
      */
     public static OrderBy orderBy(final Collection<String> propNames) {
-        return orderBy(propNames, SortDirection.ASC);
+        return new OrderBy(propNames);
     }
 
     /**
@@ -3186,7 +3234,11 @@ public class Filters {
      * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
      * @return a {@link NaturalJoin} clause
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is non-{@code null}
+     * @deprecated a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and
+     *             throws for any other value. Use {@link #naturalJoin(String)} instead, and place any additional
+     *             filter in the enclosing query's {@code WHERE} clause.
      */
+    @Deprecated
     public static NaturalJoin naturalJoin(final String joinEntity, final Condition cond) {
         return new NaturalJoin(joinEntity, cond);
     }
@@ -3207,7 +3259,11 @@ public class Filters {
      * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
      * @return a {@link NaturalJoin} clause
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty element, or if {@code cond} is non-{@code null}
+     * @deprecated a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and
+     *             throws for any other value. Use the condition-less {@link NaturalJoin#NaturalJoin(Collection)}
+     *             constructor instead, and place any additional filter in the enclosing query's {@code WHERE} clause.
      */
+    @Deprecated
     public static NaturalJoin naturalJoin(final Collection<String> joinEntities, final Condition cond) {
         return new NaturalJoin(joinEntities, cond);
     }
@@ -3394,7 +3450,7 @@ public class Filters {
     }
 
     /**
-     * Creates a multi-column (row value constructor) IN condition.
+     * Creates a row value constructor IN condition.
      * The tuple of property values must match one of the supplied value rows.
      *
      * <p>Each element of {@code values} is one row and may be supplied as a {@link Collection} or other
@@ -3408,14 +3464,14 @@ public class Filters {
      * // SQL fragment: (first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))
      * }</pre>
      *
-     * <p><b>Portability note:</b> the multi-column value-list form is supported by MySQL, PostgreSQL,
+     * <p><b>Portability note:</b> the row value-list form is supported by MySQL, PostgreSQL,
      * Oracle and DB2, but <i>not</i> by SQL Server (use {@link #in(Collection, SubQuery)} there).</p>
      *
-     * @param propNames the property/column names (must contain at least two non-{@code null}/non-blank names)
+     * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}/blank names)
      * @param values collection of value rows; each row must resolve to exactly {@code propNames.size()} values.
      *               A row may be a {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
      *                                  if {@code values} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      */
@@ -3645,7 +3701,7 @@ public class Filters {
     }
 
     /**
-     * Creates a multi-column (row value constructor) NOT IN condition.
+     * Creates a row value constructor NOT IN condition.
      * The tuple of property values must not match any of the supplied value rows.
      *
      * <p>Each element of {@code values} is one row and may be supplied as a {@link Collection} or other
@@ -3659,14 +3715,14 @@ public class Filters {
      * // SQL fragment: (first_name, last_name) NOT IN (('John', 'Doe'), ('Jane', 'Roe'))
      * }</pre>
      *
-     * <p><b>Portability note:</b> the multi-column value-list form is supported by MySQL, PostgreSQL,
+     * <p><b>Portability note:</b> the row value-list form is supported by MySQL, PostgreSQL,
      * Oracle and DB2, but <i>not</i> by SQL Server (use {@link #notIn(Collection, SubQuery)} there).</p>
      *
-     * @param propNames the property/column names (must contain at least two non-{@code null}/non-blank names)
+     * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}/blank names)
      * @param values collection of value rows to exclude; each row must resolve to exactly {@code propNames.size()}
      *               values. A row may be a {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
      *                                  if {@code values} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      */
@@ -3923,6 +3979,35 @@ public class Filters {
      */
     public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition cond) {
         return new SubQuery(entityClass, propNames, cond);
+    }
+
+    /**
+     * Creates a SubQuery from an entity class with selected properties and a raw SQL condition string.
+     *
+     * <p><b>Warning:</b> {@code expr} is appended verbatim to the generated SQL. Do not build it
+     * from untrusted input — use {@link #subQuery(Class, Collection, Condition)} with parameterized
+     * conditions instead.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = Filters.subQuery(Product.class,
+     *     Arrays.asList("id", "price"),
+     *     "category = 'electronics' AND in_stock = true");
+     * // Generates: SELECT id, price FROM Product WHERE category = 'electronics' AND in_stock = true
+     * }</pre>
+     *
+     * @param entityClass the entity class representing the table (must not be {@code null})
+     * @param propNames collection of property names to select (must not be {@code null} or empty, and must not contain
+     *                  {@code null}, empty, or blank elements)
+     * @param expr the WHERE condition as a raw SQL string (must not be {@code null}; may be empty for no filter condition)
+     * @return a {@link SubQuery}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null},
+     *         if {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
+     *         or if {@code expr} is {@code null}
+     * @see #subQuery(String, Collection, String)
+     */
+    public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final String expr) {
+        return new SubQuery(entityClass, propNames, expr(expr));
     }
 
     /**

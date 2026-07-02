@@ -556,6 +556,12 @@ public final class DynamicQuery {
          * {@link #offset(int)}, {@link #offsetRows(int)}, {@link #fetchFirstRows(int)}, or
          * {@link #fetchNextRows(int)}) whenever they can express the desired clause.</p>
          *
+         * <p>A single separating space is inserted before {@code textToAppend} when, and only when, it is
+         * needed: that is, when the text built so far does not already end with a space and
+         * {@code textToAppend} does not already begin with one. As a result both {@code .append("LIMIT 10")}
+         * and {@code .append(" LIMIT 10")} produce the same, correctly spaced output (never a missing or
+         * doubled space).</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.append("LIMIT 10 OFFSET 20");
@@ -563,14 +569,14 @@ public final class DynamicQuery {
          * builder.append("FETCH FIRST 10 ROWS ONLY");
          * }</pre>
          *
-         * @param rawClause the complete raw SQL clause to append verbatim (e.g., {@code "LIMIT 10 OFFSET 20"}) (must not be {@code null}, empty, or blank)
+         * @param textToAppend the complete raw SQL clause to append verbatim (e.g., {@code "LIMIT 10 OFFSET 20"}) (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code rawClause} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code textToAppend} is {@code null}, empty, or blank
          */
-        public DynamicSqlBuilder append(final String rawClause) {
-            checkSqlFragmentNotBlank(rawClause, "rawClause");
+        public DynamicSqlBuilder append(final String textToAppend) {
+            checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-            getStringBuilderForMoreParts().append(" ").append(rawClause);
+            appendRawWithSpace(textToAppend);
 
             return this;
         }
@@ -578,9 +584,9 @@ public final class DynamicQuery {
         /**
          * Conditionally appends a raw SQL clause or fragment verbatim to the end of the query.
          * When {@code condition} is {@code true} this behaves exactly like {@link #append(String)}
-         * (the text is emitted unchanged, preceded by a single space, with no validation, escaping,
-         * or interpretation); when {@code condition} is {@code false} the builder is left unchanged
-         * and {@code textToAppend} is not inspected.
+         * (a single separating space is inserted only when needed, then the text is emitted unchanged
+         * with no validation, escaping, or interpretation); when {@code condition} is {@code false}
+         * the builder is left unchanged and {@code textToAppend} is not inspected.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -599,10 +605,55 @@ public final class DynamicQuery {
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                getStringBuilderForMoreParts().append(" ").append(textToAppend);
+                appendRawWithSpace(textToAppend);
             }
 
             return this;
+        }
+
+        /**
+         * Appends one of two raw SQL clauses verbatim to the end of the query based on a boolean condition.
+         * Always appends something, choosing between the two options; the chosen text is emitted exactly
+         * as {@link #append(String)} would emit it (a single separating space is inserted only when needed,
+         * with no validation, escaping, or interpretation).
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * builder.appendIfOrElse(smallPage, "LIMIT 10", "LIMIT 100");
+         * }</pre>
+         *
+         * @param condition the condition to check
+         * @param textToAppendWhenTrue the raw SQL clause to append if condition is true (must not be {@code null}, empty, or blank)
+         * @param textToAppendWhenFalse the raw SQL clause to append if condition is false (must not be {@code null}, empty, or blank)
+         * @return this builder instance for method chaining
+         * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
+         * @see #append(String)
+         */
+        public DynamicSqlBuilder appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
+            checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
+
+            appendRawWithSpace(condition ? textToAppendWhenTrue : textToAppendWhenFalse);
+
+            return this;
+        }
+
+        /**
+         * Appends {@code rawClause} verbatim to the trailing "more parts" buffer, inserting a single
+         * separating space only when the buffer does not already end with a space and {@code rawClause}
+         * does not already begin with one. An empty buffer is treated as needing a leading space, since
+         * its content is concatenated directly after the preceding clause (which never ends with a space).
+         *
+         * @param rawClause the non-blank text to append verbatim
+         */
+        private void appendRawWithSpace(final String rawClause) {
+            final StringBuilder sb = getStringBuilderForMoreParts();
+
+            if ((sb.isEmpty() || sb.charAt(sb.length() - 1) != ' ') && rawClause.charAt(0) != ' ') {
+                sb.append(' ');
+            }
+
+            sb.append(rawClause);
         }
 
         private StringBuilder getStringBuilderForMoreParts() {
@@ -1026,6 +1077,35 @@ public final class DynamicQuery {
         }
 
         /**
+         * Appends multiple tables to the {@code FROM} clause.
+         * Tables are separated by commas (creating a cross join). If the collection is empty, this method does nothing.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * from.append(Arrays.asList("users", "departments"));
+         * // Generates: FROM users, departments
+         * }</pre>
+         *
+         * @param tables collection of table names to add (may be {@code null} or empty;
+         *               individual elements must not be {@code null}, empty, or blank)
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalArgumentException if any element in {@code tables} is {@code null}, empty, or blank
+         */
+        public FromClause append(final Collection<String> tables) {
+            if (N.isEmpty(tables)) {
+                return this;
+            }
+
+            checkSqlFragmentsNotBlank(tables, "tables");
+
+            startClauseFragment(this, "FROM ", ", ");
+
+            sb.append(Strings.join(tables, ", "));
+
+            return this;
+        }
+
+        /**
          * Adds a {@code JOIN} clause (implicit {@code INNER JOIN}) with the specified table and join condition.
          *
          * <p><b>Usage Examples:</b></p>
@@ -1034,19 +1114,19 @@ public final class DynamicQuery {
          * // Generates: FROM users u JOIN orders o ON u.id = o.user_id
          * }</pre>
          *
-         * @param joinEntity the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
-        public FromClause join(final String joinEntity, final String on) {
+        public FromClause join(final String joinExpr, final String on) {
             checkOpen();
-            checkSqlFragmentNotBlank(joinEntity, "joinEntity");
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
-            sb.append(" JOIN ").append(joinEntity).append(" ON ").append(on);
+            sb.append(" JOIN ").append(joinExpr).append(" ON ").append(on);
 
             return this;
         }
@@ -1061,19 +1141,19 @@ public final class DynamicQuery {
          * // Generates: FROM users u INNER JOIN orders o ON u.id = o.user_id
          * }</pre>
          *
-         * @param joinEntity the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
-        public FromClause innerJoin(final String joinEntity, final String on) {
+        public FromClause innerJoin(final String joinExpr, final String on) {
             checkOpen();
-            checkSqlFragmentNotBlank(joinEntity, "joinEntity");
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
-            sb.append(" INNER JOIN ").append(joinEntity).append(" ON ").append(on);
+            sb.append(" INNER JOIN ").append(joinExpr).append(" ON ").append(on);
 
             return this;
         }
@@ -1088,19 +1168,19 @@ public final class DynamicQuery {
          * // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
          * }</pre>
          *
-         * @param joinEntity the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
-        public FromClause leftJoin(final String joinEntity, final String on) {
+        public FromClause leftJoin(final String joinExpr, final String on) {
             checkOpen();
-            checkSqlFragmentNotBlank(joinEntity, "joinEntity");
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
-            sb.append(" LEFT JOIN ").append(joinEntity).append(" ON ").append(on);
+            sb.append(" LEFT JOIN ").append(joinExpr).append(" ON ").append(on);
 
             return this;
         }
@@ -1115,19 +1195,19 @@ public final class DynamicQuery {
          * // Generates: FROM orders o RIGHT JOIN users u ON o.user_id = u.id
          * }</pre>
          *
-         * @param joinEntity the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
-        public FromClause rightJoin(final String joinEntity, final String on) {
+        public FromClause rightJoin(final String joinExpr, final String on) {
             checkOpen();
-            checkSqlFragmentNotBlank(joinEntity, "joinEntity");
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
-            sb.append(" RIGHT JOIN ").append(joinEntity).append(" ON ").append(on);
+            sb.append(" RIGHT JOIN ").append(joinExpr).append(" ON ").append(on);
 
             return this;
         }
@@ -1143,19 +1223,19 @@ public final class DynamicQuery {
          * // Generates: FROM employees e FULL JOIN departments d ON e.dept_id = d.id
          * }</pre>
          *
-         * @param joinEntity the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
+         * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param on the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          */
-        public FromClause fullJoin(final String joinEntity, final String on) {
+        public FromClause fullJoin(final String joinExpr, final String on) {
             checkOpen();
-            checkSqlFragmentNotBlank(joinEntity, "joinEntity");
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
-            sb.append(" FULL JOIN ").append(joinEntity).append(" ON ").append(on);
+            sb.append(" FULL JOIN ").append(joinExpr).append(" ON ").append(on);
 
             return this;
         }

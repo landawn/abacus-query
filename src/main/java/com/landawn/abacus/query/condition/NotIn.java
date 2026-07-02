@@ -99,7 +99,7 @@ public class NotIn extends AbstractIn {
     }
 
     /**
-     * Creates a new multi-column (row value constructor) NOT IN condition. The condition matches records
+     * Creates a new row value constructor NOT IN condition. The condition matches records
      * whose tuple of property values does not match any of the supplied value rows. Each element of
      * {@code valueRows} must resolve to exactly {@code propNames.size()} values. A row may be supplied as a
      * {@link Collection} or other {@link Iterable}, an object array, a {@link Map} (looked up by property
@@ -111,17 +111,20 @@ public class NotIn extends AbstractIn {
      * NotIn nameFilter = new NotIn(Arrays.asList("first_name", "last_name"),
      *         Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
      * // SQL: (first_name, last_name) NOT IN (('John', 'Doe'), ('Jane', 'Roe'))
+     *
+     * // Explicit one-column row value form
+     * NotIn idFilter = new NotIn(Arrays.asList("id"), Arrays.asList(Arrays.asList(1), Arrays.asList(2)));
+     * // SQL: (id) NOT IN ((1), (2))
      * }</pre>
      *
-     * <p><b>Portability note:</b> the multi-column value-list form is supported by MySQL, PostgreSQL,
+     * <p><b>Portability note:</b> the row value-list form is supported by MySQL, PostgreSQL,
      * Oracle and DB2, but <i>not</i> by SQL Server (use {@link NotInSubQuery} there).</p>
      *
-     * @param propNames the property/column names (must not be {@code null} and must contain at least two
-     *                  non-{@code null}/non-blank names; for a single column use {@link #NotIn(String, Collection)})
+     * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}/blank names)
      * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be
      *               non-{@code null} and resolve to exactly {@code propNames.size()} values. A row may be a
      *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
-     * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      */

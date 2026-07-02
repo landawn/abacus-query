@@ -308,6 +308,26 @@ public class Limit extends Clause {
     }
 
     /**
+     * Checks whether this Limit was created from a string expression (see {@link #Limit(String)}).
+     * When this returns {@code true}, {@link #getLiteral()} is non-null and is what gets rendered;
+     * {@link #getCount()}/{@link #getOffset()} may hold sentinel values ({@link Integer#MAX_VALUE}/0)
+     * if the expression stayed opaque. When it returns {@code false}, the Limit was created with
+     * numeric count/offset parameters and {@link #getLiteral()} returns {@code null}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * new Limit("10 OFFSET 20").hasLiteral();   // true
+     * new Limit(10, 20).hasLiteral();           // false
+     * }</pre>
+     *
+     * @return {@code true} if this Limit was constructed from a string expression, {@code false} otherwise
+     * @see #getLiteral()
+     */
+    public boolean hasLiteral() {
+        return literal != null;
+    }
+
+    /**
      * Gets the maximum number of rows to return.
      * For a string expression that was parsed (see {@link #Limit(String)}), this returns the parsed count.
      * For a string expression that stayed opaque (a placeholder slot, or an integer literal that overflows
@@ -504,7 +524,7 @@ public class Limit extends Clause {
      * }</pre>
      *
      * @param obj the object to compare with
-     * @return {@code true} if the object is a Limit with the same {@code literal} or matching count/offset values
+     * @return {@code true} if the object is of the same class with the same {@code literal} or matching count/offset values
      */
     @Override
     public boolean equals(final Object obj) {
@@ -512,19 +532,21 @@ public class Limit extends Clause {
             return true;
         }
 
-        if (obj instanceof final Limit other) {
-            if (!N.equals(operator(), other.operator())) {
-                return false;
-            }
-
-            if (Strings.isNotEmpty(literal)) {
-                return Strings.isNotEmpty(other.literal) && literal.equals(other.literal);
-            } else {
-                return Strings.isEmpty(other.literal) && (count == other.count) && (offset == other.offset);
-            }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
         }
 
-        return false;
+        final Limit other = (Limit) obj;
+
+        if (!N.equals(operator(), other.operator())) {
+            return false;
+        }
+
+        if (Strings.isNotEmpty(literal)) {
+            return Strings.isNotEmpty(other.literal) && literal.equals(other.literal);
+        } else {
+            return Strings.isEmpty(other.literal) && (count == other.count) && (offset == other.offset);
+        }
     }
 
     /** SQL keywords upper-cased by {@link #normalizeAndFormat(String)} (parameter names are left untouched). */

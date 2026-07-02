@@ -444,7 +444,7 @@ public class InTest extends TestBase {
         Assertions.assertTrue(condition.getValues().contains(null));
     }
 
-    // --- Multi-column (row value constructor) IN ---
+    // --- Row value constructor IN ---
 
     @Test
     public void testMultiColumn_PropNamesAndValues() {
@@ -511,8 +511,18 @@ public class InTest extends TestBase {
     }
 
     @Test
-    public void testMultiColumn_RejectsSinglePropName() {
-        assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a"), Arrays.asList(Arrays.asList(1))));
+    public void testRowValueConstructor_AllowsSinglePropName() {
+        In condition = new In(Arrays.asList("a"), Arrays.asList(Arrays.asList(1), Arrays.asList(2)));
+
+        assertEquals(Arrays.asList("a"), new ArrayList<>(condition.getPropNames()));
+        assertEquals("a", condition.getPropName());
+        assertEquals(Arrays.asList(Arrays.asList(1), Arrays.asList(2)), condition.getValues());
+        assertEquals(Arrays.asList(1, 2), condition.getParameters());
+        assertEquals("(a) IN ((1), (2))", condition.toString(NamingPolicy.NO_CHANGE));
+
+        In scalar = new In("a", Arrays.asList(1, 2));
+        assertNotEquals(scalar, condition);
+        assertNotEquals(scalar.hashCode(), condition.hashCode());
     }
 
     @Test

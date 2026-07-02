@@ -1073,6 +1073,28 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Validates the {@code String} argument of a single-query set-operation overload
+     * ({@code union}/{@code unionAll}/{@code intersect}/{@code except}/{@code minus}). These overloads are
+     * dedicated to appending a complete sub-query, so the argument must satisfy the {@link #isSubQuery(String...)}
+     * heuristic. Without this check a non-{@code SELECT} string would silently fall through to the column-list
+     * varargs path and only surface later as an unrelated "from() must be called" failure at build time.
+     *
+     * @param query the query string to validate
+     * @param operationName the set-operation method name (e.g. {@code "union"}) used in the error message
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
+     */
+    private static void checkSetOperationSubQuery(final String query, final String operationName) {
+        checkSqlFragmentNotBlank(query, "query");
+
+        if (!isSubQuery(query)) {
+            throw new IllegalArgumentException("The 'query' argument to " + operationName
+                    + "(String) must be a complete SELECT sub-query (starting with 'SELECT', or containing 'SELECT ... FROM'), but was: \"" + query
+                    + "\". To start a new SELECT from a column list, use " + operationName + "(String...) or " + operationName
+                    + "(Collection) followed by from(...).");
+        }
+    }
+
+    /**
      * Returns the {@link SqlDialect} this builder renders SQL with.
      *
      * @return the dialect (naming policy, parameter style, identifier quote and optional product info) bound to this builder
@@ -2345,14 +2367,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM orders JOIN order_items USING (order_id, tenant_id)
      * }</pre>
      *
-     * @param columnNames the column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
+     * @param propOrColumnNames the property or column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
-    public This using(final String... columnNames) {
-        checkSqlFragmentsNotBlank(columnNames, "columnNames");
+    public This using(final String... propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
 
-        return using(Array.asList(columnNames));
+        return using(Array.asList(propOrColumnNames));
     }
 
     /**
@@ -2369,24 +2391,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM orders JOIN order_items USING (order_id, tenant_id)
      * }</pre>
      *
-     * @param columnNames the collection of column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
+     * @param propOrColumnNames the collection of property or column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
      */
-    public This using(final Collection<String> columnNames) {
-        checkSqlFragmentsNotBlank(columnNames, "columnNames");
+    public This using(final Collection<String> propOrColumnNames) {
+        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
 
         _sb.append(_SPACE_USING_SPACE);
 
         _sb.append(SK._PARENTHESIS_L);
 
         int i = 0;
-        for (final String columnName : columnNames) {
+        for (final String propOrColumnName : propOrColumnNames) {
             if (i++ > 0) {
                 _sb.append(_COMMA_SPACE);
             }
 
-            appendColumnName(columnName);
+            appendColumnName(propOrColumnName);
         }
 
         _sb.append(SK._PARENTHESIS_R);
@@ -2661,16 +2683,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT category, COUNT(*) FROM products GROUP BY category DESC
      * }</pre>
      *
-     * @param columnName the column to group by
+     * @param expr the column or expression to group by
      * @param direction the sort direction
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code columnName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
-    public This groupBy(final String columnName, final SortDirection direction) {
+    public This groupBy(final String expr, final SortDirection direction) {
         N.checkArgNotNull(direction, "direction");
 
-        groupBy(columnName);
+        groupBy(expr);
 
         _sb.append(_SPACE);
         _sb.append(direction.toString());
@@ -3072,16 +3094,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users ORDER BY name DESC
      * }</pre>
      *
-     * @param columnName the column to order by
+     * @param expr the column or expression to order by
      * @param direction the sort direction
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code columnName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
-    public This orderBy(final String columnName, final SortDirection direction) {
+    public This orderBy(final String expr, final SortDirection direction) {
         N.checkArgNotNull(direction, "direction");
 
-        orderBy(columnName);
+        orderBy(expr);
 
         _sb.append(_SPACE);
         _sb.append(direction.toString());
@@ -3726,11 +3748,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Appends a string expression to the SQL statement.
      *
+     * <p>A single separating space is inserted before {@code expr} when, and only when, it is
+     * needed: that is, when the statement built so far does not already end with a space and
+     * {@code expr} does not already begin with one. As a result both {@code .append("FOR UPDATE")}
+     * and {@code .append(" FOR UPDATE")} produce the same, correctly spaced output (never a missing
+     * or doubled space). The rest of {@code expr} is emitted verbatim and is not validated, escaped,
+     * or interpreted in any way.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
      *                 .from("users")
-     *                 .append(" FOR UPDATE")
+     *                 .append("FOR UPDATE")
      *                 .build().query();
      * // Output: SELECT * FROM users FOR UPDATE
      * }</pre>
@@ -3741,6 +3770,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This append(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
+
+        if (_sb.length() > 0 && _sb.charAt(_sb.length() - 1) != ' ' && expr.charAt(0) != ' ') {
+            _sb.append(_SPACE);
+        }
 
         _sb.append(expr);
 
@@ -3930,12 +3963,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
      *
-     * @param query the SQL query to union (must not be {@code null}, empty, or blank)
+     * @param query the complete {@code SELECT} sub-query to union (must not be {@code null}, empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
      */
     public This union(final String query) {
-        checkSqlFragmentNotBlank(query, "query");
+        checkSetOperationSubQuery(query, "union");
 
         return union(N.asArray(query));
     }
@@ -4027,12 +4060,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
      *
-     * @param query the SQL query to union all (must not be {@code null}, empty, or blank)
+     * @param query the complete {@code SELECT} sub-query to union all (must not be {@code null}, empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
      */
     public This unionAll(final String query) {
-        checkSqlFragmentNotBlank(query, "query");
+        checkSetOperationSubQuery(query, "unionAll");
 
         return unionAll(N.asArray(query));
     }
@@ -4124,12 +4157,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
      * }</pre>
      *
-     * @param query the SQL query to intersect (must not be {@code null}, empty, or blank)
+     * @param query the complete {@code SELECT} sub-query to intersect (must not be {@code null}, empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
      */
     public This intersect(final String query) {
-        checkSqlFragmentNotBlank(query, "query");
+        checkSetOperationSubQuery(query, "intersect");
 
         return intersect(N.asArray(query));
     }
@@ -4221,12 +4254,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * @param query the SQL query to except (must not be {@code null}, empty, or blank)
+     * @param query the complete {@code SELECT} sub-query to except (must not be {@code null}, empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
      */
     public This except(final String query) {
-        checkSqlFragmentNotBlank(query, "query");
+        checkSetOperationSubQuery(query, "except");
 
         return except(N.asArray(query));
     }
@@ -4319,12 +4352,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * @param query the SQL query to minus (must not be {@code null}, empty, or blank)
+     * @param query the complete {@code SELECT} sub-query to minus (must not be {@code null}, empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
      */
     public This minus(final String query) {
-        checkSqlFragmentNotBlank(query, "query");
+        checkSetOperationSubQuery(query, "minus");
 
         return minus(N.asArray(query));
     }

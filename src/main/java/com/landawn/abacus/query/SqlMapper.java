@@ -180,32 +180,32 @@ public final class SqlMapper {
      * SqlMapper mapper = SqlMapper.load("sql/users.xml;sql/orders.xml;sql/products.xml");
      * }</pre>
      *
-     * @param filePath one or more file paths separated by ',' or ';' (must not be {@code null} or empty)
+     * @param filePaths one or more file paths separated by ',' or ';' (must not be {@code null} or empty)
      * @return a new SqlMapper instance loaded with SQL definitions from the specified files
-     * @throws IllegalArgumentException if {@code filePath} is {@code null}, empty, or resolves to no non-empty paths
+     * @throws IllegalArgumentException if {@code filePaths} is {@code null}, empty, or resolves to no non-empty paths
      *         after splitting, or if a loaded {@code <sql>} element has an invalid id (empty, containing whitespace,
      *         exceeding {@link #MAX_ID_LENGTH} characters, or duplicated) or a blank SQL body
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid, or if any of the loaded files does not contain a {@code <sqlMapper>} element
      */
-    public static SqlMapper load(final String filePath) {
-        N.checkArgNotEmpty(filePath, "filePath");
-        final String[] rawFilePaths = Splitter.with(SK.COMMA).trimResults().splitToArray(filePath.replace(SK.SEMICOLON, SK.COMMA));
-        final List<String> filePaths = N.newArrayList(rawFilePaths.length);
+    public static SqlMapper load(final String filePaths) {
+        N.checkArgNotEmpty(filePaths, "filePaths");
+        final String[] rawFilePaths = Splitter.with(SK.COMMA).trimResults().splitToArray(filePaths.replace(SK.SEMICOLON, SK.COMMA));
+        final List<String> parsedFilePaths = N.newArrayList(rawFilePaths.length);
 
         for (final String subFilePath : rawFilePaths) {
             if (!Strings.isEmpty(subFilePath)) {
-                filePaths.add(subFilePath);
+                parsedFilePaths.add(subFilePath);
             }
         }
 
-        if (filePaths.isEmpty()) {
-            throw new IllegalArgumentException("File path is empty after splitting: " + filePath);
+        if (parsedFilePaths.isEmpty()) {
+            throw new IllegalArgumentException("File path is empty after splitting: " + filePaths);
         }
 
         final SqlMapper sqlMapper = new SqlMapper();
 
-        for (final String subFilePath : filePaths) {
+        for (final String subFilePath : parsedFilePaths) {
             final File file = PropertiesUtil.formatPath(PropertiesUtil.findFile(subFilePath));
             loadFile(sqlMapper, file);
         }

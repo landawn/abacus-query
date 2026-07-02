@@ -36,16 +36,17 @@ import com.landawn.abacus.util.Strings;
  * <ul>
  *   <li><b>Single-column</b> ({@link #AbstractIn(String, Operator, Collection)}): each value is a
  *       scalar, rendered as {@code propName IN (v1, v2, ...)}.</li>
- *   <li><b>Multi-column / row value constructor</b>
+ *   <li><b>Row value constructor</b>
  *       ({@link #AbstractIn(Collection, Operator, Collection)}): each value is itself a row whose
  *       width matches the number of property names, rendered as
- *       {@code (p1, p2) IN ((v1a, v1b), (v2a, v2b), ...)}. This mirrors the multi-column subquery
- *       form provided by {@link AbstractInSubQuery}. A row may be supplied as a {@link Collection} or
- *       other {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean
- *       (read by property name); see {@link #AbstractIn(Collection, Operator, Collection)} for details.</li>
+ *       {@code (p1, p2) IN ((v1a, v1b), (v2a, v2b), ...)}. One-column row values are also allowed,
+ *       for example {@code (p1) IN ((v1), (v2))}. This mirrors the subquery form provided by
+ *       {@link AbstractInSubQuery}. A row may be supplied as a {@link Collection} or other
+ *       {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean (read
+ *       by property name); see {@link #AbstractIn(Collection, Operator, Collection)} for details.</li>
  * </ul>
  *
- * <p><b>Portability note:</b> the multi-column value-list form is supported by MySQL, PostgreSQL,
+ * <p><b>Portability note:</b> the row value-list form is supported by MySQL, PostgreSQL,
  * Oracle and DB2, but <i>not</i> by SQL Server (which only supports the {@code (a, b) IN (subquery)}
  * form — see {@link InSubQuery}).</p>
  *
@@ -63,6 +64,8 @@ public abstract class AbstractIn extends ComposableCondition {
     // For Kryo
     final Collection<String> propNames;
 
+    private final boolean rowValueConstructor;
+
     private List<?> values;
 
     /** Lazily memoized parameters (performance only). */
@@ -79,6 +82,7 @@ public abstract class AbstractIn extends ComposableCondition {
      */
     AbstractIn() {
         propNames = Collections.emptyList();
+        rowValueConstructor = false;
     }
 
     /**
@@ -101,13 +105,15 @@ public abstract class AbstractIn extends ComposableCondition {
         N.checkArgNotEmpty(values, "values");
 
         this.propNames = Collections.singletonList(propName);
+        this.rowValueConstructor = false;
         this.values = new ArrayList<>(values);
     }
 
     /**
-     * Creates a new multi-column (row value constructor) IN or NOT IN condition, rendered as
+     * Creates a new row value constructor IN or NOT IN condition, rendered as
      * {@code (p1, p2) IN ((v1a, v1b), (v2a, v2b), ...)}. Each element of {@code valueRows} is a row whose
-     * width must equal {@code propNames.size()}. A row may be supplied in any of the following forms:
+     * width must equal {@code propNames.size()}. A singleton {@code propNames} collection is valid and
+     * renders as {@code (p1) IN ((v1), (v2), ...)}. A row may be supplied in any of the following forms:
      * <ul>
      *   <li>a {@link Collection} or other {@link Iterable} of exactly {@code propNames.size()} elements,
      *       taken positionally;</li>
@@ -121,15 +127,14 @@ public abstract class AbstractIn extends ComposableCondition {
      * collections do not affect this condition. Individual row values may be literal values or
      * {@link Condition} instances; the latter have their parameters spliced into {@link #getParameters()}.
      *
-     * @param propNames the property/column names (must not be {@code null} and must contain at least two
-     *                  non-{@code null}/non-blank names; for a single column use
-     *                  {@link #AbstractIn(String, Operator, Collection)})
+     * @param propNames the property/column names (must not be {@code null} or empty and must not contain
+     *                  {@code null}/blank names)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be
      *               non-{@code null} and resolve to exactly {@code propNames.size()} values (which may be
      *               {@code null}). A row may be a {@link Collection}, {@link Iterable}, object array,
      *               {@link Map} or bean
-     * @throws IllegalArgumentException if {@code propNames} contains fewer than two names or any {@code null}/blank name,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      * @throws NullPointerException if {@code operator} is {@code null}
@@ -138,6 +143,7 @@ public abstract class AbstractIn extends ComposableCondition {
         super(operator);
 
         this.propNames = copyAndValidatePropNames(propNames);
+        this.rowValueConstructor = true;
         N.checkArgNotEmpty(valueRows, "valueRows");
 
         final int arity = this.propNames.size();
@@ -153,7 +159,7 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     /**
-     * Normalizes a single multi-column value row into a list of exactly {@code arity} values, ordered to
+     * Normalizes a single row-value row into a list of exactly {@code arity} values, ordered to
      * match {@code propNames}. See {@link #AbstractIn(Collection, Operator, Collection)} for the accepted
      * row forms.
      */
@@ -195,7 +201,7 @@ public abstract class AbstractIn extends ComposableCondition {
             return tuple;
         } else {
             throw new IllegalArgumentException(
-                    "Each multi-column value row must be a Collection, Iterable, array, Map or bean, but found: " + row.getClass().getName());
+                    "Each row-value row must be a Collection, Iterable, array, Map or bean, but found: " + row.getClass().getName());
         }
     }
 
@@ -207,10 +213,7 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     private static Collection<String> copyAndValidatePropNames(final Collection<String> propNames) {
-        if (N.size(propNames) < 2) {
-            throw new IllegalArgumentException(
-                    "Multi-column IN/NOT IN requires at least two property names; use the single-property constructor for one column");
-        }
+        N.checkArgNotEmpty(propNames, "propNames");
 
         final List<String> copy = new ArrayList<>(propNames.size());
 
@@ -224,7 +227,7 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     /**
-     * Gets the property name being checked in this IN or NOT IN condition. For a multi-column
+     * Gets the property name being checked in this IN or NOT IN condition. For a row-value
      * condition this returns the first property name; prefer {@link #getPropNames()} in that case.
      *
      * <p><b>Usage Examples:</b></p>
@@ -236,7 +239,7 @@ public abstract class AbstractIn extends ComposableCondition {
      * @return the (first) property name, or {@code null} for an uninitialized instance
      */
     public String getPropName() {
-        return propNames.isEmpty() ? null : propNames.iterator().next();
+        return N.firstOrNullIfEmpty(propNames);
     }
 
     /**
@@ -260,7 +263,7 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     /**
-     * Gets the values used by this IN or NOT IN condition. For a multi-column condition each element
+     * Gets the values used by this IN or NOT IN condition. For a row-value condition each element
      * is itself a tuple (a list of values, one per property name).
      *
      * <p><b>Usage Examples:</b></p>
@@ -286,13 +289,13 @@ public abstract class AbstractIn extends ComposableCondition {
         return view;
     }
 
-    private boolean isMultiColumn() {
-        return propNames.size() > 1;
+    private boolean isRowValueConstructor() {
+        return rowValueConstructor;
     }
 
     /**
      * Gets the parameter values for this condition, flattened in declaration order. For a single-column
-     * condition the parameters are the values from {@link #getValues()}; for a multi-column row-value
+     * scalar condition the parameters are the values from {@link #getValues()}; for a row-value
      * condition they are the row tuples flattened row by row, column within row. Any individual value
      * that is itself a {@link Condition} (a nested sub-condition) has its parameters spliced into the
      * result in place of that value; non-{@code Condition} values are included as-is.
@@ -330,7 +333,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
         final List<Object> parameters = new ArrayList<>(values.size());
 
-        if (isMultiColumn()) {
+        if (isRowValueConstructor()) {
             for (final Object tuple : values) {
                 for (final Object value : (Collection<?>) tuple) {
                     addParameter(parameters, value);
@@ -389,7 +392,7 @@ public abstract class AbstractIn extends ComposableCondition {
         final int size = values == null ? 0 : values.size();
         final StringBuilder sb = new StringBuilder(16 + (size << 3));
 
-        if (isMultiColumn()) {
+        if (isRowValueConstructor()) {
             sb.append(SK._PARENTHESIS_L);
             int p = 0;
             for (final String propName : propNames) {
@@ -451,7 +454,7 @@ public abstract class AbstractIn extends ComposableCondition {
      * boolean diff = a.hashCode() == c.hashCode();   // false
      * }</pre>
      *
-     * @return the hash code based on property name(s), operator, and values
+     * @return the hash code based on property name(s), operator, row-value mode, and values
      */
     @Override
     public int hashCode() {
@@ -461,6 +464,7 @@ public abstract class AbstractIn extends ComposableCondition {
             h = 17;
             h = (h * 31) + N.hashCode(propNames);
             h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+            h = (h * 31) + (rowValueConstructor ? 1231 : 1237);
             h = (h * 31) + ((values == null) ? 0 : values.hashCode());
 
             if (h == 0) {
@@ -476,7 +480,7 @@ public abstract class AbstractIn extends ComposableCondition {
     /**
      * Checks if this condition is equal to another object.
      * Two conditions are equal if they have the same property name(s),
-     * operator, and values list.
+     * operator, row-value mode, and values list.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -503,10 +507,12 @@ public abstract class AbstractIn extends ComposableCondition {
             return true;
         }
 
-        if (obj instanceof final AbstractIn other) {
-            return N.equals(propNames, other.propNames) && N.equals(operator, other.operator) && N.equals(values, other.values);
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
         }
 
-        return false;
+        final AbstractIn other = (AbstractIn) obj;
+        return rowValueConstructor == other.rowValueConstructor && N.equals(propNames, other.propNames) && N.equals(operator, other.operator)
+                && N.equals(values, other.values);
     }
 }

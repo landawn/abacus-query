@@ -43,10 +43,12 @@ import java.util.Collection;
  * </ul>
  * 
  * <p>Because the join predicate is implicit, a NATURAL JOIN does <b>not</b> accept an explicit
- * {@code ON}/{@code USING} or filter condition. The condition-taking constructors exist only for
- * API symmetry with the other {@link Join} subclasses and require {@code cond} to be {@code null};
- * any non-{@code null} condition is rejected with an {@link IllegalArgumentException}. To apply an
- * additional filter, place it in the enclosing query's {@code WHERE} clause instead.</p>
+ * {@code ON}/{@code USING} or filter condition. The condition-taking constructors are therefore
+ * <b>deprecated</b>: they exist only for API symmetry with the other {@link Join} subclasses, require
+ * {@code cond} to be {@code null}, and reject any non-{@code null} condition with an
+ * {@link IllegalArgumentException}. Prefer the condition-less {@link #NaturalJoin(String)} /
+ * {@link #NaturalJoin(Collection)} constructors, and to apply an additional filter place it in the
+ * enclosing query's {@code WHERE} clause instead.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -121,7 +123,11 @@ public class NaturalJoin extends Join {
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is non-{@code null}
+     * @deprecated a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and
+     *             throws for any other value. Use {@link #NaturalJoin(String)} instead, and place any additional
+     *             filter in the enclosing query's {@code WHERE} clause.
      */
+    @Deprecated
     public NaturalJoin(final String joinEntity, final Condition cond) {
         super(Operator.NATURAL_JOIN, joinEntity, validateNaturalJoinCondition(cond));
     }
@@ -149,7 +155,11 @@ public class NaturalJoin extends Join {
      * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code cond} is non-{@code null}
+     * @deprecated a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and
+     *             throws for any other value. Use {@link #NaturalJoin(Collection)} instead, and place any additional
+     *             filter in the enclosing query's {@code WHERE} clause.
      */
+    @Deprecated
     public NaturalJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.NATURAL_JOIN, joinEntities, validateNaturalJoinCondition(cond));
     }

@@ -4,12 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -120,6 +122,23 @@ class Filters2025Test extends TestBase {
         assertNotNull(binary);
         assertEquals("age", binary.getPropName());
         assertEquals(Operator.GREATER_THAN, binary.operator());
+    }
+
+    @Test
+    public void testBinaryParameterized() {
+        Binary binary = Filters.binary("price", Operator.GREATER_THAN);
+        assertNotNull(binary);
+        assertEquals("price", binary.getPropName());
+        assertEquals(Operator.GREATER_THAN, binary.operator());
+        assertSame(Filters.QME, binary.getPropValue());
+        // Renders identically to the dedicated parameterized factory for the same operator.
+        assertEquals(Filters.greaterThan("price").toString(), binary.toString());
+    }
+
+    @Test
+    public void testBinaryParameterizedInvalidArgsThrow() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("", Operator.GREATER_THAN));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("price", Operator.WHERE));
     }
 
     @Test
@@ -763,7 +782,7 @@ class Filters2025Test extends TestBase {
     }
 
     @Test
-    public void testAnyOfAllEqualList() {
+    public void testAnyOfAllEqualMapList() {
         Map<String, Object> props1 = new HashMap<>();
         props1.put("status", "active");
         props1.put("type", "A");
@@ -774,6 +793,24 @@ class Filters2025Test extends TestBase {
 
         Or or = Filters.anyOfAllEqual(Arrays.asList(props1, props2));
         assertNotNull(or);
+    }
+
+    @Test
+    public void testAnyOfAllEqualMapSet() {
+        Map<String, Object> props1 = new LinkedHashMap<>();
+        props1.put("status", "active");
+        props1.put("type", "A");
+
+        Map<String, Object> props2 = new LinkedHashMap<>();
+        props2.put("status", "pending");
+        props2.put("type", "B");
+
+        LinkedHashSet<Map<String, Object>> propsSet = new LinkedHashSet<>(Arrays.asList(props1, props2));
+
+        Or or = Filters.anyOfAllEqual(propsSet);
+
+        assertEquals(2, or.getConditions().size());
+        assertTrue(or.getParameters().containsAll(Arrays.asList("active", "A", "pending", "B")));
     }
 
     @Test
@@ -1281,6 +1318,16 @@ class Filters2025Test extends TestBase {
     public void testSubQueryWithEntityClass() {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery(Account.class, Arrays.asList("id", "name"), Filters.equal("active", true));
         assertNotNull(subQuery);
+    }
+
+    @Test
+    public void testSubQueryWithEntityClassAndStringCondition() {
+        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery(Account.class, Arrays.asList("id", "name"), "active = true");
+        assertNotNull(subQuery);
+        assertEquals(Account.class, subQuery.getEntityClass());
+        // Mirrors the entityName-based overload: the raw string becomes an Expression condition.
+        assertEquals(Filters.subQuery("Account", Arrays.asList("id", "name"), "active = true").getCondition().toString(),
+                subQuery.getCondition().toString());
     }
 
     @Test

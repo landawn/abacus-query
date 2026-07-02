@@ -54,6 +54,17 @@ class Limit2025Test extends TestBase {
     }
 
     @Test
+    public void testHasLiteral() {
+        // String-expression constructor: literal mode, even when the expression is parsed or opaque.
+        assertTrue(new Limit("10 OFFSET 20").hasLiteral());
+        assertTrue(new Limit("? OFFSET ?").hasLiteral());
+
+        // Numeric constructors: no literal.
+        assertFalse(new Limit(10).hasLiteral());
+        assertFalse(new Limit(10, 20).hasLiteral());
+    }
+
+    @Test
     public void testConstructorWithExpression_ParsesMySqlCommaForm() {
         Limit limit = new Limit("20, 10");
 

@@ -156,6 +156,11 @@ public final class QueryUtil {
      * boolean isNestedSimple = nested._2;  // false (key contains a dot)
      * }</pre>
      *
+     * <p><b>Note:</b> despite the similar name, this is a different method from
+     * {@link #getProp2ColumnNameMap(Class, NamingPolicy)}, which returns a plain
+     * property-name-to-column-name map ({@code ImmutableMap<String, String>}) and is the one
+     * intended for general use.</p>
+     *
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
      * @return an immutable map whose entries come in two kinds:
@@ -165,6 +170,7 @@ public final class QueryUtil {
      *         name itself is also inserted as a key mapping to {@code (columnName, hasNoDot)} (where {@code hasNoDot}
      *         reflects whether the column name contains no {@code '.'}).
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @see #getProp2ColumnNameMap(Class, NamingPolicy)
      * @deprecated for internal use only. No public replacement is provided.
      */
     @Deprecated

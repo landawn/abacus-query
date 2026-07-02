@@ -58,7 +58,14 @@ import com.landawn.abacus.util.Strings;
  * SubQuery avgSalary = Filters.subQuery("SELECT AVG(salary) FROM employees");
  * Binary aboveAvg = new GreaterThan("salary", avgSalary);
  * }</pre>
- * 
+ *
+ * <p><b>Note on {@code IN}/{@code NOT IN}:</b> although {@code Binary} accepts the membership
+ * operators, prefer the dedicated {@link In}/{@link NotIn} condition classes (or the
+ * {@code Filters.in}/{@code Filters.notIn} factories) for IN conditions — they expose the values
+ * through {@code getValues()}, support multi-column row-value form, and are what
+ * {@code instanceof}-based consumers expect. A {@code Binary} with {@code Operator.IN} renders
+ * the same SQL but is a different type with different accessors.</p>
+ *
  * @see ComposableCondition
  * @see Equal
  * @see GreaterThan
@@ -451,10 +458,11 @@ public class Binary extends ComposableCondition {
             return true;
         }
 
-        if (obj instanceof final Binary other) {
-            return N.equals(propName, other.propName) && N.equals(operator, other.operator) && N.equals(propValue, other.propValue);
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
         }
 
-        return false;
+        final Binary other = (Binary) obj;
+        return N.equals(propName, other.propName) && N.equals(operator, other.operator) && N.equals(propValue, other.propValue);
     }
 }

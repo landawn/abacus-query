@@ -1148,6 +1148,27 @@ public final class SqlParser {
     }
 
     /**
+     * Unregisters a previously registered separator character, removing it from the
+     * recognized separator set. This is the inverse of {@link #registerSeparator(char)};
+     * both the character form and the equivalent single-character {@code String} form are
+     * removed, and all derived lookup tables are rebuilt.
+     *
+     * <p>Unregistering a separator that is not currently registered has no effect.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SqlParser.registerSeparator('$');     // Register custom separator
+     * SqlParser.unregisterSeparator('$');   // ...then remove it again
+     * }</pre>
+     *
+     * @param separator the character to unregister as a separator
+     * @see #unregisterSeparator(String)
+     */
+    public static void unregisterSeparator(final char separator) {
+        unregisterSeparator(String.valueOf(separator));
+    }
+
+    /**
      * Unregisters a previously registered separator, removing it from the recognized
      * separator set. This is the inverse of {@link #registerSeparator(String)} and
      * {@link #registerSeparator(char)} and can be used to undo a registration so the
@@ -1746,9 +1767,10 @@ public final class SqlParser {
     }
 
     /**
-     * Checks whether the given SQL statement neither updates nor deletes existing rows. This is the
-     * kind of gate a no-update DAO can use: it permits reads and plain inserts of new rows but
-     * forbids statements that mutate existing data.
+     * Checks whether the given SQL statement neither updates nor deletes existing rows. The name
+     * deliberately mirrors the {@code NoUpdateDao} gate in abacus-jdbc, which uses exactly this
+     * check: it permits reads and plain inserts of new rows but forbids statements that mutate
+     * existing data.
      * <p>
      * A statement qualifies as "no-update" only if its leading keyword is {@code SELECT} or
      * {@code INSERT} <i>and</i> it contains none of the following (matching outside of quoted string

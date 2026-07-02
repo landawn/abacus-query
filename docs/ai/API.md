@@ -1775,15 +1775,10 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `propValue3` (`Object`) — third property value
 - **Returns:** an {@link And} condition
 ##### anyOfAllEqual(...) -> Or
-- **Signature:** `@Beta public static Or anyOfAllEqual(final List<? extends Map<String, ?>> propsList)`
-- **Summary:** Creates an {@code OR} condition where each element in the list represents an {@code AND} condition of property-value pairs.
+- **Signature:** `@Beta public static Or anyOfAllEqual(final Collection<?> entitiesOrMaps)`
+- **Summary:** Creates an {@code OR} condition from a collection of property maps or entities, where each non-null element forms an {@code AND} condition.
 - **Parameters:**
-  - `propsList` (`List<? extends Map<String, ?>>`) — list of property maps (must not be null or empty)
-- **Returns:** an {@link Or} condition
-- **Signature:** `@Beta public static Or anyOfAllEqual(final Collection<?> entities)`
-- **Summary:** Creates an {@code OR} condition from a collection of entities, where each entity forms an {@code AND} condition.
-- **Parameters:**
-  - `entities` (`Collection<?>`) — collection of entity objects (must not be empty)
+  - `entitiesOrMaps` (`Collection<?>`) — collection of property maps or entity objects (must not be empty)
 - **Returns:** an {@link Or} condition
 - **Signature:** `@Beta public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> selectPropNames)`
 - **Summary:** Creates an {@code OR} condition from a collection of entities using only specified properties.
@@ -2394,7 +2389,7 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `propNames` (`String[]`) — the property/column names to order by
 - **Returns:** an {@link OrderBy} clause
 - **Signature:** `public static OrderBy orderBy(final Collection<String> propNames)`
-- **Summary:** Creates an {@link OrderBy} clause with properties from a collection in ascending order.
+- **Summary:** Creates an {@link OrderBy} clause with properties from a collection.
 - **Parameters:**
   - `propNames` (`Collection<String>`) — collection of property/column names to order by
 - **Returns:** an {@link OrderBy} clause
@@ -2673,11 +2668,11 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `values` (`Collection<?>`) — collection of values
 - **Returns:** an {@link In} condition
 - **Signature:** `public static In in(final Collection<String> propNames, final Collection<?> values)`
-- **Summary:** Creates a multi-column (row value constructor) IN condition.
+- **Summary:** Creates a row value constructor IN condition.
 - **Contract:**
   - The tuple of property values must match one of the supplied value rows.
 - **Parameters:**
-  - `propNames` (`Collection<String>`) — the property/column names (must contain at least two non- {@code null} /non-blank names)
+  - `propNames` (`Collection<String>`) — the property/column names (must not be {@code null} or empty and must not contain {@code null} /blank names)
   - `values` (`Collection<?>`) — collection of value rows; each row must resolve to exactly {@code propNames.size()} values. A row may be a {@link Collection} , {@link Iterable} , object array, {@link Map} or bean
 - **Returns:** an {@link In} condition
 - **Signature:** `public static InSubQuery in(final String propName, final SubQuery subQuery)`
@@ -2756,11 +2751,11 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `values` (`Collection<?>`) — collection of values to exclude
 - **Returns:** a {@link NotIn} condition
 - **Signature:** `public static NotIn notIn(final Collection<String> propNames, final Collection<?> values)`
-- **Summary:** Creates a multi-column (row value constructor) NOT IN condition.
+- **Summary:** Creates a row value constructor NOT IN condition.
 - **Contract:**
   - The tuple of property values must not match any of the supplied value rows.
 - **Parameters:**
-  - `propNames` (`Collection<String>`) — the property/column names (must contain at least two non- {@code null} /non-blank names)
+  - `propNames` (`Collection<String>`) — the property/column names (must not be {@code null} or empty and must not contain {@code null} /blank names)
   - `values` (`Collection<?>`) — collection of value rows to exclude; each row must resolve to exactly {@code propNames.size()} values. A row may be a {@link Collection} , {@link Iterable} , object array, {@link Map} or bean
 - **Returns:** a {@link NotIn} condition
 - **Signature:** `public static NotInSubQuery notIn(final String propName, final SubQuery subQuery)`
@@ -3805,6 +3800,12 @@ Abstract base class for IN and NOT IN subquery conditions in SQL queries.
 - (none)
 
 #### Public Instance Methods
+##### getPropName(...) -> String
+- **Signature:** `public String getPropName()`
+- **Summary:** Gets the property name being checked in this IN or NOT IN condition.
+- **Parameters:**
+  - (none)
+- **Returns:** the (first) property name, or {@code null} for an uninitialized instance
 ##### getPropNames(...) -> Collection<String>
 - **Signature:** `public Collection<String> getPropNames()`
 - **Summary:** Gets the property names for this IN or NOT IN subquery condition.
@@ -5647,11 +5648,11 @@ Represents an IN condition in SQL-like queries.
   - `propName` (`String`) — the property/column name (must not be {@code null} , empty, or blank)
   - `values` (`Collection<?>`) — the collection of values to check against (must not be {@code null} or empty); the collection is copied internally to prevent external modifications
 - **Signature:** `public In(final Collection<String> propNames, final Collection<?> valueRows)`
-- **Summary:** Creates a new multi-column (row value constructor) IN condition.
+- **Summary:** Creates a new row value constructor IN condition.
 - **Contract:**
   - Each element of {@code valueRows} must resolve to exactly {@code propNames.size()} values.
 - **Parameters:**
-  - `propNames` (`Collection<String>`) — the property/column names (must not be {@code null} and must contain at least two non- {@code null} /non-blank names; for a single column use {@link #In(String, Collection)} )
+  - `propNames` (`Collection<String>`) — the property/column names (must not be {@code null} or empty and must not contain {@code null} /blank names)
   - `valueRows` (`Collection<?>`) — the collection of value rows (must not be {@code null} or empty); each row must be non- {@code null} and resolve to exactly {@code propNames.size()} values. A row may be a {@link Collection} , {@link Iterable} , object array, {@link Map} or bean
 
 ### Class InSubQuery (com.landawn.abacus.query.condition.InSubQuery)
@@ -6834,11 +6835,11 @@ Represents a NOT IN condition in SQL queries.
   - `propName` (`String`) — the property/column name (must not be {@code null} , empty, or blank)
   - `values` (`Collection<?>`) — the collection of values that the property should NOT match (must not be {@code null} or empty); the collection is copied internally to ensure immutability
 - **Signature:** `public NotIn(final Collection<String> propNames, final Collection<?> valueRows)`
-- **Summary:** Creates a new multi-column (row value constructor) NOT IN condition.
+- **Summary:** Creates a new row value constructor NOT IN condition.
 - **Contract:**
   - Each element of {@code valueRows} must resolve to exactly {@code propNames.size()} values.
 - **Parameters:**
-  - `propNames` (`Collection<String>`) — the property/column names (must not be {@code null} and must contain at least two non- {@code null} /non-blank names; for a single column use {@link #NotIn(String, Collection)} )
+  - `propNames` (`Collection<String>`) — the property/column names (must not be {@code null} or empty and must not contain {@code null} /blank names)
   - `valueRows` (`Collection<?>`) — the collection of value rows (must not be {@code null} or empty); each row must be non- {@code null} and resolve to exactly {@code propNames.size()} values. A row may be a {@link Collection} , {@link Iterable} , object array, {@link Map} or bean
 
 ### Class NotInSubQuery (com.landawn.abacus.query.condition.NotInSubQuery)
@@ -7310,4 +7311,3 @@ Represents a WHERE clause in SQL queries.
 - **Summary:** Creates a WHERE clause with the specified condition.
 - **Parameters:**
   - `cond` (`Condition`) — the condition to apply in the WHERE clause. Must not be {@code null} .
-

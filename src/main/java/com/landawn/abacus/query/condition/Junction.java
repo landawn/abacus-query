@@ -475,7 +475,7 @@ public class Junction extends ComposableCondition {
      * }</pre>
      *
      * @param obj the object to compare with
-     * @return {@code true} if the object is a Junction with the same operator and conditions
+     * @return {@code true} if the object is of the same class with the same operator and conditions
      */
     @Override
     public boolean equals(final Object obj) {
@@ -483,11 +483,11 @@ public class Junction extends ComposableCondition {
             return true;
         }
 
-        if (obj instanceof final Junction other) {
-            return N.equals(operator, other.operator) && N.equals(conditions, other.conditions);
-
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
         }
 
-        return false;
+        final Junction other = (Junction) obj;
+        return N.equals(operator, other.operator) && N.equals(conditions, other.conditions);
     }
 }

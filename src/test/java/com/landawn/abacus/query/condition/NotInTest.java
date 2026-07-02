@@ -376,7 +376,7 @@ public class NotInTest extends TestBase {
         Assertions.assertEquals(1000, notIn.getParameters().size());
     }
 
-    // --- Multi-column (row value constructor) NOT IN ---
+    // --- Row value constructor NOT IN ---
 
     @Test
     public void testMultiColumn_ToStringAndParameters() {
@@ -386,6 +386,21 @@ public class NotInTest extends TestBase {
         assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), condition.getParameters());
         assertEquals(Arrays.asList("first_name", "last_name"), new ArrayList<>(condition.getPropNames()));
         assertEquals(Operator.NOT_IN, condition.operator());
+    }
+
+    @Test
+    public void testRowValueConstructor_AllowsSinglePropName() {
+        NotIn condition = new NotIn(Arrays.asList("a"), Arrays.asList(Arrays.asList(1), Arrays.asList(2)));
+
+        assertEquals(Arrays.asList("a"), new ArrayList<>(condition.getPropNames()));
+        assertEquals("a", condition.getPropName());
+        assertEquals(Arrays.asList(Arrays.asList(1), Arrays.asList(2)), condition.getValues());
+        assertEquals(Arrays.asList(1, 2), condition.getParameters());
+        assertEquals("(a) NOT IN ((1), (2))", condition.toString(NamingPolicy.NO_CHANGE));
+
+        NotIn scalar = new NotIn("a", Arrays.asList(1, 2));
+        assertNotEquals(scalar, condition);
+        assertNotEquals(scalar.hashCode(), condition.hashCode());
     }
 
     @Test

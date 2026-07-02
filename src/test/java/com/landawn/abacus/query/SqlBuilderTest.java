@@ -708,10 +708,20 @@ class SqlBuilder10Test extends TestBase {
 
         assertEquals("SELECT * FROM users WHERE (age > ?) AND (age < ?)", sql);
 
-        // With string
+        // With string (leading space in the argument)
         sql = Dsl.PSC.select("*").from("users").append(" FOR UPDATE").build().query();
 
         assertEquals("SELECT * FROM users FOR UPDATE", sql);
+
+        // Without a leading space: a separating space is inserted automatically.
+        sql = Dsl.PSC.select("*").from("users").append("FOR UPDATE").build().query();
+
+        assertEquals("SELECT * FROM users FOR UPDATE", sql);
+
+        // Chained appends never produce a doubled space regardless of leading spaces.
+        sql = Dsl.PSC.select("*").from("users").append("WHERE 1=1").append(" AND status = 'x'").append("ORDER BY name").build().query();
+
+        assertEquals("SELECT * FROM users WHERE 1=1 AND status = 'x' ORDER BY name", sql);
     }
 
     //    @Test
@@ -2900,6 +2910,24 @@ class SqlBuilder11Test extends TestBase {
         @Test
         public void testRenderCondition_nullCondition() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.SCSB.renderCondition(null, Account.class));
+        }
+
+        @Test
+        public void testRenderCondition_singleArg_equivalentToNullEntityClass() {
+            Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000));
+
+            String viaSingleArg = Dsl.SCSB.renderCondition(cond).build().query();
+            String viaNullClass = Dsl.SCSB.renderCondition(Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000)), null)
+                    .build()
+                    .query();
+
+            Assertions.assertEquals(viaNullClass, viaSingleArg);
+            Assertions.assertTrue(viaSingleArg.contains("AND"));
+        }
+
+        @Test
+        public void testRenderCondition_singleArg_nullCondition() {
+            Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.SCSB.renderCondition(null));
         }
 
         @Test
@@ -13699,7 +13727,7 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
      */
     @Test
     public void testSelectModifierDoesNotLeakIntoSetOperationSegments() {
-        String sql = Dsl.PSC.select("id").distinct().from("a_tbl").unionAll("id").from("b_tbl").build().query();
+        String sql = Dsl.PSC.select("id").distinct().from("a_tbl").unionAll(Collections.singletonList("id")).from("b_tbl").build().query();
         assertEquals("SELECT DISTINCT id FROM a_tbl UNION ALL SELECT id FROM b_tbl", sql);
     }
 
@@ -13709,7 +13737,7 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
      */
     @Test
     public void testSelectModifierAfterSetOperationAppliesToNewSegmentOnly() {
-        String sql = Dsl.PSC.select("id").from("users").union("id").distinct().from("customers").build().query();
+        String sql = Dsl.PSC.select("id").from("users").union(Collections.singletonList("id")).distinct().from("customers").build().query();
         assertEquals("SELECT id FROM users UNION SELECT DISTINCT id FROM customers", sql);
     }
 
@@ -13852,7 +13880,7 @@ class SqlBuilder2026DialectBugFixTest extends TestBase {
         String sql = Dsl.PSC.select("id").from("users").union("SELECT id FROM customers").build().query();
         assertEquals("SELECT id FROM users UNION SELECT id FROM customers", sql);
 
-        String sql2 = Dsl.PSC.select("id").from("users").union("id").from("customers").build().query();
+        String sql2 = Dsl.PSC.select("id").from("users").union(Collections.singletonList("id")).from("customers").build().query();
         assertEquals("SELECT id FROM users UNION SELECT id FROM customers", sql2);
     }
 

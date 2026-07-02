@@ -135,6 +135,10 @@ public enum SqlOperation {
 
     /**
      * UNKNOWN operation for unrecognized SQL commands.
+     *
+     * <p>Note: {@link #of(String)} returns {@code null} (not this constant) for unrecognized
+     * names; {@code UNKNOWN} is reserved as a default for callers' own classification results,
+     * e.g. {@code N.defaultIfNull(SqlOperation.of(keyword), SqlOperation.UNKNOWN)}.</p>
      */
     UNKNOWN("UNKNOWN");
 

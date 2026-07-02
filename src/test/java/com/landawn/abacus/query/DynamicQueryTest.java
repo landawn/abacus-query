@@ -142,6 +142,30 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
+    public void testFromAppendCollection() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append(Arrays.asList("users", "departments"));
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users, departments", sql);
+    }
+
+    @Test
+    public void testFromAppendEmptyCollectionDoesNotCreateSkeleton() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("id");
+        builder.from().append(Arrays.asList()).append("users");
+        String sql = builder.build();
+        assertEquals("SELECT id FROM users", sql);
+    }
+
+    @Test
+    public void testFromAppendCollectionBlankElementThrows() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        assertThrows(IllegalArgumentException.class, () -> builder.from().append(Arrays.asList("users", "   ")));
+    }
+
+    @Test
     public void testFromJoin() {
         DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
@@ -519,6 +543,23 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
+    public void testAppendRawClauseSpacingIsIdempotent() {
+        // A leading space in the argument does not produce a doubled separating space.
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.append(" LIMIT 10");
+        assertEquals("SELECT * FROM users LIMIT 10", builder.build());
+
+        // Consecutive appends are each separated by exactly one space, whether or not they carry one.
+        builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.append("FOR UPDATE").append(" OF users");
+        assertEquals("SELECT * FROM users FOR UPDATE OF users", builder.build());
+    }
+
+    @Test
     public void testLimitInt() {
         DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");
@@ -637,6 +678,44 @@ public class DynamicQueryTest extends TestBase {
         builder.appendIf(false, null);
         String sql = builder.build();
         assertEquals("SELECT * FROM users", sql);
+    }
+
+    @Test
+    public void testAppendIfOrElseTrueAppendsFirst() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.appendIfOrElse(true, "LIMIT 10", "LIMIT 100");
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users LIMIT 10", sql);
+    }
+
+    @Test
+    public void testAppendIfOrElseFalseAppendsSecond() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.appendIfOrElse(false, "LIMIT 10", "LIMIT 100");
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users LIMIT 100", sql);
+    }
+
+    @Test
+    public void testAppendIfOrElseReturnsSameBuilderForChaining() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.appendIfOrElse(false, "LIMIT 10", "LIMIT 100").appendIf(true, "FOR UPDATE");
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users LIMIT 100 FOR UPDATE", sql);
+    }
+
+    @Test
+    public void testAppendIfOrElseBlankThrowsRegardlessOfCondition() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        // Both fragments are validated up front, matching the clause-level appendIfOrElse contract.
+        assertThrows(IllegalArgumentException.class, () -> builder.appendIfOrElse(true, "LIMIT 10", "   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.appendIfOrElse(false, null, "LIMIT 100"));
     }
 
     @Test

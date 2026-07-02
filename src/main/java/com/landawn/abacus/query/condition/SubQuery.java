@@ -144,6 +144,13 @@ public class SubQuery extends AbstractCondition {
      * );
      * }</pre>
      *
+     * <p><b>Note:</b> the entire argument is treated as the complete subquery SQL — not as an
+     * entity/table name (contrast with {@link #SubQuery(String, java.util.Collection, Condition)},
+     * whose first argument is an entity name). {@code new SubQuery("orders")} would use the text
+     * {@code orders} as the whole subquery. Prefer the
+     * {@link com.landawn.abacus.query.Filters#subQuery(String) Filters.subQuery} factories,
+     * whose overloads make the distinction explicit.</p>
+     *
      * @param sql the SQL SELECT statement (must not be {@code null}, empty, or blank)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
      */
@@ -680,11 +687,12 @@ public class SubQuery extends AbstractCondition {
             return true;
         }
 
-        if (obj instanceof final SubQuery other) {
-            return N.equals(sql, other.sql) && N.equals(entityName, other.entityName) && N.equals(entityClass, other.entityClass)
-                    && N.equals(propNames, other.propNames) && N.equals(condition, other.condition);
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
         }
 
-        return false;
+        final SubQuery other = (SubQuery) obj;
+        return N.equals(sql, other.sql) && N.equals(entityName, other.entityName) && N.equals(entityClass, other.entityClass)
+                && N.equals(propNames, other.propNames) && N.equals(condition, other.condition);
     }
 }

@@ -219,12 +219,12 @@ public class On extends Cell {
      * // SQL: ON ((t1.col1 = t2.col1) AND (t1.col2 = t2.col2) AND (t1.col3 = t2.col3))
      * }</pre>
      *
-     * @param propNamePair map of column pairs where the key is from the first table and the value is from the second
+     * @param propNamePairs map of column pairs where the key is from the first table and the value is from the second
      *            table. Order is preserved if a {@code LinkedHashMap} is used.
-     * @throws IllegalArgumentException if {@code propNamePair} is {@code null}, empty, or contains invalid names
+     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains invalid names
      */
-    public On(final Map<String, String> propNamePair) {
-        this(createOnCondition(propNamePair));
+    public On(final Map<String, String> propNamePairs) {
+        this(createOnCondition(propNamePairs));
     }
 
     /**
@@ -274,21 +274,21 @@ public class On extends Cell {
      * //              Equal("t1.col2", Expression("t2.col2")))
      * }</pre>
      *
-     * @param propNamePair map of column name pairs
+     * @param propNamePairs map of column name pairs
      * @return a single Equal condition or an And condition combining multiple equalities
-     * @throws IllegalArgumentException if {@code propNamePair} is {@code null}, empty, or contains invalid names
+     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains invalid names
      */
-    static Condition createOnCondition(final Map<String, String> propNamePair) {
-        N.checkArgNotEmpty(propNamePair, "propNamePair");
+    static Condition createOnCondition(final Map<String, String> propNamePairs) {
+        N.checkArgNotEmpty(propNamePairs, "propNamePairs");
 
-        if (propNamePair.size() == 1) {
-            final Map.Entry<String, String> entry = propNamePair.entrySet().iterator().next();
+        if (propNamePairs.size() == 1) {
+            final Map.Entry<String, String> entry = propNamePairs.entrySet().iterator().next();
 
             return createOnCondition(entry.getKey(), entry.getValue());
         } else {
-            final List<Condition> conds = new ArrayList<>(propNamePair.size());
+            final List<Condition> conds = new ArrayList<>(propNamePairs.size());
 
-            for (final Map.Entry<String, String> entry : propNamePair.entrySet()) {
+            for (final Map.Entry<String, String> entry : propNamePairs.entrySet()) {
                 conds.add(createOnCondition(entry.getKey(), entry.getValue()));
             }
 

@@ -99,7 +99,7 @@ class SubQuery2025Test extends TestBase {
 
     @Test
     public void testConstructorWithEntityClassAndEmptyPropertiesThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(TestEntity.class, Arrays.asList(), null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(TestEntity.class, Arrays.asList(), (Condition) null));
     }
 
     @Test
@@ -179,7 +179,7 @@ class SubQuery2025Test extends TestBase {
 
     @Test
     public void testGetEntityClass() {
-        SubQuery subQuery = Filters.subQuery(TestEntity.class, Arrays.asList("id"), null);
+        SubQuery subQuery = Filters.subQuery(TestEntity.class, Arrays.asList("id"), (Condition) null);
 
         assertEquals(TestEntity.class, subQuery.getEntityClass());
     }
@@ -414,7 +414,7 @@ class SubQuery2025Test extends TestBase {
     public void testConstructorWithEntityNameAndEntityClass() {
         Collection<String> props = Arrays.asList("id", "name");
 
-        SubQuery subQuery = Filters.subQuery(TestEntity.class, props, null);
+        SubQuery subQuery = Filters.subQuery(TestEntity.class, props, (Condition) null);
 
         assertEquals(TestEntity.class, subQuery.getEntityClass());
         assertEquals("TestEntity", subQuery.getEntityName());
@@ -636,7 +636,7 @@ public class SubQueryTest extends TestBase {
 
     @Test
     public void testToStringForEntityClassUsesTableMetadata() {
-        SubQuery subQuery = Filters.subQuery(AuditEventEntity.class, Arrays.asList("eventId"), null);
+        SubQuery subQuery = Filters.subQuery(AuditEventEntity.class, Arrays.asList("eventId"), (Condition) null);
 
         String result = subQuery.toString(NamingPolicy.SNAKE_CASE);
 

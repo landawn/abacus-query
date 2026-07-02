@@ -1508,6 +1508,10 @@ public final class Dsl {
      * // Output: SELECT count(*) FROM account WHERE status = ?
      * }</pre>
      *
+     * <p><b>Note:</b> unlike {@code insert(String)}/{@code select(String)}, whose String argument
+     * is a column, the argument here is a <em>table name</em> and a {@code FROM} clause is emitted
+     * immediately — {@code count("id")} would generate {@code SELECT count(*) FROM id}.</p>
+     *
      * @param tableName the table to count rows from
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if tableName is null or empty
@@ -1577,6 +1581,27 @@ public final class Dsl {
         instance.append(cond);
 
         return instance;
+    }
+
+    /**
+     * Renders a condition as a standalone SQL fragment without an entity class.
+     * Property names are converted according to this Dsl's naming policy only; no
+     * property-to-column mapping is applied. Equivalent to
+     * {@code renderCondition(cond, null)}.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String sql = PSC.renderCondition(Filters.equal("firstName", "John")).build().query();
+     * // Output: first_name = ?
+     * }</pre>
+     *
+     * @param cond the condition to render (must not be {@code null})
+     * @return a new SqlBuilder instance containing the rendered condition SQL
+     * @throws IllegalArgumentException if cond is null
+     * @see #renderCondition(Condition, Class)
+     */
+    public SqlBuilder renderCondition(final Condition cond) {
+        return renderCondition(cond, null);
     }
 
     /**

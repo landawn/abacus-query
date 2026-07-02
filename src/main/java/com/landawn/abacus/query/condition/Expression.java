@@ -1865,6 +1865,14 @@ public class Expression extends ComposableCondition {
      */
     @Override
     public boolean equals(final Object obj) {
-        return (this == obj) || (obj instanceof Expression && N.equals(literal, ((Expression) obj).literal));
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+
+        return N.equals(literal, ((Expression) obj).literal);
     }
 }

@@ -110,6 +110,23 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     }
 
     /**
+     * Gets the property name being checked in this IN or NOT IN condition. For a multi-column
+     * condition this returns the first property name; prefer {@link #getPropNames()} in that case.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SubQuery subQuery = new SubQuery("SELECT id FROM departments WHERE active = true");
+     * InSubQuery inSub = new InSubQuery("dept_id", subQuery);
+     * String prop = inSub.getPropName();   // "dept_id"
+     * }</pre>
+     *
+     * @return the (first) property name, or {@code null} for an uninitialized instance
+     */
+    public String getPropName() {
+        return N.firstOrNullIfEmpty(propNames);
+    }
+
+    /**
      * Gets the property names for this IN or NOT IN subquery condition.
      *
      * <p><b>Usage Examples:</b></p>
@@ -263,11 +280,12 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
             return true;
         }
 
-        if (obj instanceof final AbstractInSubQuery other) {
-            return N.equals(propNames, other.propNames) && N.equals(operator, other.operator) && N.equals(subQuery, other.subQuery);
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
         }
 
-        return false;
+        final AbstractInSubQuery other = (AbstractInSubQuery) obj;
+        return N.equals(propNames, other.propNames) && N.equals(operator, other.operator) && N.equals(subQuery, other.subQuery);
     }
 
     /**

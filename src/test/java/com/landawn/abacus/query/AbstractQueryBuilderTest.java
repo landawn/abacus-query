@@ -682,10 +682,12 @@ class AbstractQueryBuilder2026Test extends TestBase {
     }
 
     @Test
-    public void testUnion_Columns() {
-        final String sql = Dsl.PSC.select("id").from("users").union("id").from("admins").build().query();
-
-        assertTrue(sql.contains("UNION SELECT id FROM admins"));
+    public void testUnion_SingleNonSubQueryStringRejected() {
+        // union(String) is reserved for a complete SELECT sub-query; a bare column name is rejected up front
+        // instead of silently becoming a column list that fails later with an unrelated "from() must be called" error.
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Dsl.PSC.select("id").from("users").union("id"));
+        assertTrue(ex.getMessage().contains("SELECT sub-query"));
     }
 
     @Test
@@ -715,10 +717,10 @@ class AbstractQueryBuilder2026Test extends TestBase {
     }
 
     @Test
-    public void testUnionAll_Columns() {
-        final String sql = Dsl.PSC.select("id").from("users").unionAll("id").from("admins").build().query();
-
-        assertTrue(sql.contains("UNION ALL SELECT id FROM admins"));
+    public void testUnionAll_SingleNonSubQueryStringRejected() {
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Dsl.PSC.select("id").from("users").unionAll("id"));
+        assertTrue(ex.getMessage().contains("SELECT sub-query"));
     }
 
     @Test
@@ -748,10 +750,10 @@ class AbstractQueryBuilder2026Test extends TestBase {
     }
 
     @Test
-    public void testIntersect_Columns() {
-        final String sql = Dsl.PSC.select("id").from("users").intersect("id").from("admins").build().query();
-
-        assertTrue(sql.contains("INTERSECT SELECT id FROM admins"));
+    public void testIntersect_SingleNonSubQueryStringRejected() {
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Dsl.PSC.select("id").from("users").intersect("id"));
+        assertTrue(ex.getMessage().contains("SELECT sub-query"));
     }
 
     @Test
@@ -781,10 +783,10 @@ class AbstractQueryBuilder2026Test extends TestBase {
     }
 
     @Test
-    public void testExcept_Columns() {
-        final String sql = Dsl.PSC.select("id").from("users").except("id").from("admins").build().query();
-
-        assertTrue(sql.contains("EXCEPT SELECT id FROM admins"));
+    public void testExcept_SingleNonSubQueryStringRejected() {
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Dsl.PSC.select("id").from("users").except("id"));
+        assertTrue(ex.getMessage().contains("SELECT sub-query"));
     }
 
     @Test
@@ -814,10 +816,10 @@ class AbstractQueryBuilder2026Test extends TestBase {
     }
 
     @Test
-    public void testMinus_Columns() {
-        final String sql = Dsl.PSC.select("id").from("users").minus("id").from("admins").build().query();
-
-        assertTrue(sql.contains("MINUS SELECT id FROM admins"));
+    public void testMinus_SingleNonSubQueryStringRejected() {
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Dsl.PSC.select("id").from("users").minus("id"));
+        assertTrue(ex.getMessage().contains("SELECT sub-query"));
     }
 
     @Test

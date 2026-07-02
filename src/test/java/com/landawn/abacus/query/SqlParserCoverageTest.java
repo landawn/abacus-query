@@ -247,6 +247,36 @@ public class SqlParserCoverageTest extends TestBase {
     }
 
     // ----------------------------------------------------------------------------------------------
+    // unregisterSeparator(char)
+    // ----------------------------------------------------------------------------------------------
+
+    @Test
+    public void testUnregisterSeparatorChar_removesCharRegisteredSeparator() {
+        SqlParser.registerSeparator('$');
+        assertEquals(Arrays.asList("a", "$", "b"), SqlParser.parse("a$b"));
+
+        SqlParser.unregisterSeparator('$');
+        assertEquals(Arrays.asList("a$b"), SqlParser.parse("a$b"));
+    }
+
+    @Test
+    public void testUnregisterSeparatorChar_removesStringRegisteredSingleChar() {
+        // registerSeparator(String) dual-registers single-char separators; the char overload must undo both forms.
+        SqlParser.registerSeparator("$");
+        assertEquals(Arrays.asList("a", "$", "b"), SqlParser.parse("a$b"));
+
+        SqlParser.unregisterSeparator('$');
+        assertEquals(Arrays.asList("a$b"), SqlParser.parse("a$b"));
+    }
+
+    @Test
+    public void testUnregisterSeparatorChar_unknownIsNoOp() {
+        SqlParser.unregisterSeparator('¤');
+
+        assertEquals(Arrays.asList("SELECT", " ", "*", " ", "FROM", " ", "t"), SqlParser.parse("SELECT * FROM t"));
+    }
+
+    // ----------------------------------------------------------------------------------------------
     // resetSeparators()
     // ----------------------------------------------------------------------------------------------
 

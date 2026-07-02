@@ -579,8 +579,16 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public boolean equals(final Object obj) {
-        return this == obj
-                || (obj instanceof Criteria && N.equals(((Criteria) obj).selectModifier, selectModifier) && N.equals(((Criteria) obj).conditions, conditions));
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+
+        final Criteria other = (Criteria) obj;
+        return N.equals(other.selectModifier, selectModifier) && N.equals(other.conditions, conditions);
     }
 
     private Condition find(final Operator operator) {
@@ -1340,7 +1348,11 @@ public class Criteria extends AbstractCondition {
          * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is non-{@code null}
+         * @deprecated a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and
+         *             throws for any other value. Use {@link #naturalJoin(String)} instead, and place any additional
+         *             filter in the {@code WHERE} clause.
          */
+        @Deprecated
         public Builder naturalJoin(final String joinEntity, final Condition cond) {
             addConditions(new NaturalJoin(joinEntity, cond));
 
@@ -1369,7 +1381,11 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
          *                                  {@code null}, empty, or blank elements, or if {@code cond} is non-{@code null}
+         * @deprecated a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and
+         *             throws for any other value. Use the condition-less {@link NaturalJoin#NaturalJoin(Collection)}
+         *             constructor instead, and place any additional filter in the {@code WHERE} clause.
          */
+        @Deprecated
         public Builder naturalJoin(final Collection<String> joinEntities, final Condition cond) {
             addConditions(new NaturalJoin(joinEntities, cond));
 
@@ -1723,7 +1739,7 @@ public class Criteria extends AbstractCondition {
         public Builder groupBy(final Collection<String> propNames) {
             N.checkArgNotEmpty(propNames, "propNames");
 
-            addConditions(new GroupBy(propNames.toArray(new String[0])));
+            addConditions(new GroupBy(propNames));
             return this;
         }
 
@@ -2137,7 +2153,7 @@ public class Criteria extends AbstractCondition {
         public Builder orderBy(final Collection<String> propNames) {
             N.checkArgNotEmpty(propNames, "propNames");
 
-            addConditions(new OrderBy(propNames.toArray(new String[0])));
+            addConditions(new OrderBy(propNames));
             return this;
         }
 
@@ -2207,13 +2223,13 @@ public class Criteria extends AbstractCondition {
          * Criteria.builder().limit((Limit) null);   // throws IllegalArgumentException
          * }</pre>
          *
-         * @param condition the LIMIT condition (must not be {@code null}); its operator must be
-         *                  {@link Operator#LIMIT}, which is guaranteed for any {@link Limit} instance
+         * @param cond the LIMIT condition (must not be {@code null}); its operator must be
+         *             {@link Operator#LIMIT}, which is guaranteed for any {@link Limit} instance
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code condition} is {@code null}
+         * @throws IllegalArgumentException if {@code cond} is {@code null}
          */
-        public Builder limit(final Limit condition) {
-            addConditions(condition);
+        public Builder limit(final Limit cond) {
+            addConditions(cond);
 
             return this;
         }

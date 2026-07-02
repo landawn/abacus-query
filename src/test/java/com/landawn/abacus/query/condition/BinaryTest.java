@@ -195,6 +195,19 @@ class Binary2025Test extends TestBase {
     }
 
     @Test
+    public void testEquals_ExactClassNotSubtype() {
+        // getClass()-based equals: a raw Binary is NOT equal to a typed subtype (Equal) with identical fields.
+        Binary rawEqual = new Binary("a", Operator.EQUAL, 1);
+        Equal equal = new Equal("a", 1);
+
+        assertNotEquals(rawEqual, equal);
+        assertNotEquals(equal, rawEqual);
+
+        // Same-type equality is unaffected.
+        assertEquals(equal, new Equal("a", 1));
+    }
+
+    @Test
     public void testAnd() {
         Binary cond1 = new Binary("a", Operator.EQUAL, 1);
         Binary cond2 = new Binary("b", Operator.EQUAL, 2);
