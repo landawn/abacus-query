@@ -2917,9 +2917,7 @@ class SqlBuilder11Test extends TestBase {
             Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000));
 
             String viaSingleArg = Dsl.SCSB.renderCondition(cond).build().query();
-            String viaNullClass = Dsl.SCSB.renderCondition(Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000)), null)
-                    .build()
-                    .query();
+            String viaNullClass = Dsl.SCSB.renderCondition(Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000)), null).build().query();
 
             Assertions.assertEquals(viaNullClass, viaSingleArg);
             Assertions.assertTrue(viaSingleArg.contains("AND"));

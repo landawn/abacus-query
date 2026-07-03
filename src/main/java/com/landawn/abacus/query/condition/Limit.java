@@ -552,6 +552,13 @@ public class Limit extends Clause {
     /** SQL keywords upper-cased by {@link #normalizeAndFormat(String)} (parameter names are left untouched). */
     private static final Set<String> KEYWORDS = Set.of("LIMIT", "OFFSET", "FETCH", "FIRST", "NEXT", "ROW", "ROWS", "ONLY");
 
+    /**
+     * Matches a MyBatis-style <code>#{...}</code> parameter placeholder. Its body (a case-sensitive parameter
+     * name that may contain surrounding spaces) is copied verbatim during normalization &mdash; never
+     * whitespace-collapsed and never keyword-upper-cased.
+     */
+    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("#\\{[^}]*\\}");
+
     /** A number slot: an integer literal, or a {@code ?} / {@code :name} / <code>#{name}</code> parameter placeholder. */
     private static final String SLOT = "(?:\\d+|\\?|:\\w+|#\\{[^}]+\\})";
 
@@ -649,15 +656,60 @@ public class Limit extends Clause {
             throw new IllegalArgumentException("Limit expression must not be null, empty, or blank");
         }
 
-        final String collapsed = trimmed.replaceAll("\\s+", " ");
-        final String prefixed = shouldPrefixLimit(collapsed) ? SK.LIMIT + _SPACE + collapsed : collapsed;
+        // Collapse whitespace and upper-case keywords only outside #{...} placeholders; a placeholder body
+        // is a case-sensitive parameter name (possibly a keyword like "offset") that must survive verbatim.
+        final String formatted = formatOutsidePlaceholders(trimmed);
 
-        return upperCaseKeywords(prefixed);
+        return shouldPrefixLimit(formatted) ? SK.LIMIT + _SPACE + formatted : formatted;
     }
 
-    private static String upperCaseKeywords(final String expr) {
-        final String[] tokens = expr.split(" ");
+    /**
+     * Applies {@link #collapseAndUpperCaseKeywords(String)} to every stretch of the expression that lies
+     * outside a {@link #PLACEHOLDER_PATTERN} match, copying each matched <code>#{...}</code> placeholder
+     * through unchanged.
+     *
+     * @param expr the trimmed raw expression
+     * @return the expression with keywords upper-cased and whitespace collapsed, placeholder bodies preserved
+     */
+    private static String formatOutsidePlaceholders(final String expr) {
+        final Matcher placeholderMatcher = PLACEHOLDER_PATTERN.matcher(expr);
         final StringBuilder sb = new StringBuilder(expr.length());
+        int lastEnd = 0;
+
+        while (placeholderMatcher.find()) {
+            sb.append(collapseAndUpperCaseKeywords(expr.substring(lastEnd, placeholderMatcher.start())));
+            sb.append(placeholderMatcher.group());
+            lastEnd = placeholderMatcher.end();
+        }
+
+        sb.append(collapseAndUpperCaseKeywords(expr.substring(lastEnd)));
+
+        return sb.toString();
+    }
+
+    /**
+     * Collapses internal whitespace runs to a single space and upper-cases whole-word SQL keywords in a
+     * placeholder-free segment. Leading/trailing whitespace is preserved as a single space so adjacent
+     * placeholders stay separated. Keyword matching is whole-token, so a {@code :name} placeholder such as
+     * {@code :offset} is left untouched (the token {@code :offset} is not the keyword {@code OFFSET}).
+     *
+     * @param segment a stretch of the expression that contains no <code>#{...}</code> placeholder
+     * @return the collapsed, keyword-upper-cased segment
+     */
+    private static String collapseAndUpperCaseKeywords(final String segment) {
+        if (segment.isEmpty()) {
+            return segment;
+        }
+
+        final String collapsed = segment.replaceAll("\\s+", " ");
+        final boolean leadingSpace = collapsed.charAt(0) == ' ';
+        final boolean trailingSpace = collapsed.length() > 1 && collapsed.charAt(collapsed.length() - 1) == ' ';
+        final String[] tokens = collapsed.trim().split(" ");
+        final StringBuilder sb = new StringBuilder(collapsed.length());
+
+        if (leadingSpace) {
+            sb.append(' ');
+        }
 
         for (int i = 0; i < tokens.length; i++) {
             if (i > 0) {
@@ -668,6 +720,10 @@ public class Limit extends Clause {
             final String upper = token.toUpperCase(Locale.ROOT);
 
             sb.append(KEYWORDS.contains(upper) ? upper : token);
+        }
+
+        if (trailingSpace) {
+            sb.append(' ');
         }
 
         return sb.toString();

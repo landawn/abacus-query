@@ -1326,8 +1326,7 @@ class Filters2025Test extends TestBase {
         assertNotNull(subQuery);
         assertEquals(Account.class, subQuery.getEntityClass());
         // Mirrors the entityName-based overload: the raw string becomes an Expression condition.
-        assertEquals(Filters.subQuery("Account", Arrays.asList("id", "name"), "active = true").getCondition().toString(),
-                subQuery.getCondition().toString());
+        assertEquals(Filters.subQuery("Account", Arrays.asList("id", "name"), "active = true").getCondition().toString(), subQuery.getCondition().toString());
     }
 
     @Test

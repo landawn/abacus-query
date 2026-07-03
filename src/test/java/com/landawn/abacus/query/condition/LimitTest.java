@@ -129,6 +129,24 @@ class Limit2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorWithExpression_PreservesKeywordNamedPlaceholderWithSpaces() {
+        // A #{...} body may contain internal spaces and be spelled like a keyword. Its parameter name must
+        // survive verbatim (not whitespace-collapsed and not upper-cased), while the leading LIMIT keyword
+        // is still normalized. Regression for the placeholder-corruption bug.
+        Limit spacedOffset = new Limit("LIMIT #{ offset }");
+        assertEquals("LIMIT #{ offset }", spacedOffset.getLiteral());
+        assertEquals(Integer.MAX_VALUE, spacedOffset.getCount());
+        assertEquals(0, spacedOffset.getOffset());
+
+        Limit spacedPair = new Limit("#{ maxRows } offset #{ startRow }");
+        assertEquals("LIMIT #{ maxRows } OFFSET #{ startRow }", spacedPair.getLiteral());
+
+        // A :name placeholder spelled like a keyword must also be preserved (whole-token, so :offset != OFFSET).
+        Limit namedOffset = new Limit("LIMIT :offset");
+        assertEquals("LIMIT :offset", namedOffset.getLiteral());
+    }
+
+    @Test
     public void testConstructorWithExpression_RowSingular() {
         Limit fetchOnly = new Limit("FETCH NEXT 5 ROW ONLY");
         assertEquals("FETCH NEXT 5 ROW ONLY", fetchOnly.getLiteral());

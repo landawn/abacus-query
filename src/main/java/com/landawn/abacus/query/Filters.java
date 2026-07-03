@@ -544,7 +544,7 @@ public class Filters {
      * @param propName2 second property name
      * @param propValue2 second property value
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank
      */
     public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return equal(propName1, propValue1).or(equal(propName2, propValue2));
@@ -572,7 +572,7 @@ public class Filters {
      * @param propName3 third property name
      * @param propValue3 third property value
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank
      */
     public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
@@ -711,7 +711,7 @@ public class Filters {
      * @param propName2 second property name
      * @param propValue2 second property value
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank
      */
     public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return equal(propName1, propValue1).and(equal(propName2, propValue2));
@@ -739,7 +739,7 @@ public class Filters {
      * @param propName3 third property name
      * @param propValue3 third property value
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank
      */
     public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
@@ -776,8 +776,7 @@ public class Filters {
     public static Or anyOfAllEqual(final Collection<?> entitiesOrMaps) {
         N.checkArgNotEmpty(entitiesOrMaps, "entitiesOrMaps");
 
-        final Object firstNonNull = N.firstNonNull(entitiesOrMaps)
-                .orElseThrow(() -> new IllegalArgumentException("All specified entities/maps are null."));
+        final Object firstNonNull = N.firstNonNull(entitiesOrMaps).orElseThrow(() -> new IllegalArgumentException("All specified entities/maps are null."));
 
         if (firstNonNull instanceof Map) {
             final List<Condition> condList = new ArrayList<>(entitiesOrMaps.size());
@@ -2195,7 +2194,7 @@ public class Filters {
      *
      * @param propNames the property/column names to group by ascending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static GroupBy groupByAsc(final String... propNames) {
         return new GroupBy(Array.asList(propNames), SortDirection.ASC);
@@ -2213,7 +2212,7 @@ public class Filters {
      *
      * @param propNames collection of property/column names to group by ascending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static GroupBy groupByAsc(final Collection<String> propNames) {
         return new GroupBy(propNames, SortDirection.ASC);
@@ -2247,7 +2246,7 @@ public class Filters {
      *
      * @param propNames the property/column names to group by descending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static GroupBy groupByDesc(final String... propNames) {
         return new GroupBy(Array.asList(propNames), SortDirection.DESC);
@@ -2265,7 +2264,7 @@ public class Filters {
      *
      * @param propNames collection of property/column names to group by descending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static GroupBy groupByDesc(final Collection<String> propNames) {
         return new GroupBy(propNames, SortDirection.DESC);
@@ -2284,7 +2283,7 @@ public class Filters {
      *
      * @param propNames the property/column names to group by
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static GroupBy groupBy(final String... propNames) {
         return new GroupBy(propNames);
@@ -2305,7 +2304,7 @@ public class Filters {
      *
      * @param propNames collection of property/column names to group by
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static GroupBy groupBy(final Collection<String> propNames) {
         N.checkArgNotEmpty(propNames, "propNames");
@@ -2325,7 +2324,7 @@ public class Filters {
      * @param propNames collection of property/column names to group by
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if any property name is {@code null} or empty, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if any property name is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      */
     public static GroupBy groupBy(final Collection<String> propNames, final SortDirection direction) {
         return new GroupBy(propNames, direction);
@@ -2363,7 +2362,7 @@ public class Filters {
      * @param propName2 second property name
      * @param direction2 second property sort direction
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if any property name is {@code null} or empty, or if any sort direction is {@code null}
+     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
      */
     public static GroupBy groupBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2) {
         return groupBy(N.asMap(propName1, direction1, propName2, direction2));
@@ -2385,7 +2384,7 @@ public class Filters {
      * @param propName3 third property name
      * @param direction3 third property sort direction
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if any property name is {@code null} or empty, or if any sort direction is {@code null}
+     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
      */
     public static GroupBy groupBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2,
             final String propName3, final SortDirection direction3) {
@@ -2407,7 +2406,7 @@ public class Filters {
      *
      * @param groupings map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code groupings} is {@code null} or empty, if any property name is {@code null} or empty, or if any sort direction is {@code null}
+     * @throws IllegalArgumentException if {@code groupings} is {@code null} or empty, if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
      */
     public static GroupBy groupBy(final Map<String, SortDirection> groupings) {
         return new GroupBy(groupings);
@@ -2498,7 +2497,7 @@ public class Filters {
      *
      * @param propNames the property/column names to order by ascending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static OrderBy orderByAsc(final String... propNames) {
         return new OrderBy(Array.asList(propNames), SortDirection.ASC);
@@ -2516,7 +2515,7 @@ public class Filters {
      *
      * @param propNames collection of property/column names to order by ascending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static OrderBy orderByAsc(final Collection<String> propNames) {
         return new OrderBy(propNames, SortDirection.ASC);
@@ -2550,7 +2549,7 @@ public class Filters {
      *
      * @param propNames the property/column names to order by descending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static OrderBy orderByDesc(final String... propNames) {
         return new OrderBy(Array.asList(propNames), SortDirection.DESC);
@@ -2568,7 +2567,7 @@ public class Filters {
      *
      * @param propNames collection of property/column names to order by descending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static OrderBy orderByDesc(final Collection<String> propNames) {
         return new OrderBy(propNames, SortDirection.DESC);
@@ -2586,7 +2585,7 @@ public class Filters {
      *
      * @param propNames the property/column names to order by
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static OrderBy orderBy(final String... propNames) {
         return new OrderBy(propNames);
@@ -2608,7 +2607,7 @@ public class Filters {
      *
      * @param propNames collection of property/column names to order by
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null} or empty
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static OrderBy orderBy(final Collection<String> propNames) {
         return new OrderBy(propNames);
@@ -2626,7 +2625,7 @@ public class Filters {
      * @param propNames collection of property/column names to order by
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if any property name is {@code null} or empty, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if any property name is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      */
     public static OrderBy orderBy(final Collection<String> propNames, final SortDirection direction) {
         return new OrderBy(propNames, direction);
@@ -2664,7 +2663,7 @@ public class Filters {
      * @param propName2 second property name
      * @param direction2 second property sort direction
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if any property name is {@code null} or empty, or if any sort direction is {@code null}
+     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
      */
     public static OrderBy orderBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2) {
         return orderBy(N.asMap(propName1, direction1, propName2, direction2));
@@ -2686,7 +2685,7 @@ public class Filters {
      * @param propName3 third property name
      * @param direction3 third property sort direction
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if any property name is {@code null} or empty, or if any sort direction is {@code null}
+     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
      */
     public static OrderBy orderBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2,
             final String propName3, final SortDirection direction3) {
@@ -2709,7 +2708,7 @@ public class Filters {
      *
      * @param orders map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code orders} is {@code null} or empty, if any property name is {@code null} or empty, or if any sort direction is {@code null}
+     * @throws IllegalArgumentException if {@code orders} is {@code null} or empty, if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
      */
     public static OrderBy orderBy(final Map<String, SortDirection> orders) {
         return new OrderBy(orders);
@@ -2875,7 +2874,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to join
      * @return a {@link Join} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static Join join(final String joinEntity) {
         return new Join(joinEntity);
@@ -2894,7 +2893,7 @@ public class Filters {
      * @param joinEntity the entity/table name to join
      * @param cond the join condition
      * @return a {@link Join} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static Join join(final String joinEntity, final Condition cond) {
         return new Join(joinEntity, cond);
@@ -2913,7 +2912,7 @@ public class Filters {
      * @param joinEntities collection of entity/table names to join
      * @param cond the join condition
      * @return a {@link Join} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty element
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element
      */
     public static Join join(final Collection<String> joinEntities, final Condition cond) {
         return new Join(joinEntities, cond);
@@ -2931,7 +2930,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to left join
      * @return a {@link LeftJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static LeftJoin leftJoin(final String joinEntity) {
         return new LeftJoin(joinEntity);
@@ -2950,7 +2949,7 @@ public class Filters {
      * @param joinEntity the entity/table name to left join
      * @param cond the join condition
      * @return a {@link LeftJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static LeftJoin leftJoin(final String joinEntity, final Condition cond) {
         return new LeftJoin(joinEntity, cond);
@@ -2969,7 +2968,7 @@ public class Filters {
      * @param joinEntities collection of entity/table names to left join
      * @param cond the join condition
      * @return a {@link LeftJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty element
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element
      */
     public static LeftJoin leftJoin(final Collection<String> joinEntities, final Condition cond) {
         return new LeftJoin(joinEntities, cond);
@@ -2987,7 +2986,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to right join
      * @return a {@link RightJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static RightJoin rightJoin(final String joinEntity) {
         return new RightJoin(joinEntity);
@@ -3006,7 +3005,7 @@ public class Filters {
      * @param joinEntity the entity/table name to right join
      * @param cond the join condition
      * @return a {@link RightJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static RightJoin rightJoin(final String joinEntity, final Condition cond) {
         return new RightJoin(joinEntity, cond);
@@ -3025,7 +3024,7 @@ public class Filters {
      * @param joinEntities collection of entity/table names to right join
      * @param cond the join condition
      * @return a {@link RightJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty element
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element
      */
     public static RightJoin rightJoin(final Collection<String> joinEntities, final Condition cond) {
         return new RightJoin(joinEntities, cond);
@@ -3043,7 +3042,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to cross join
      * @return a {@link CrossJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static CrossJoin crossJoin(final String joinEntity) {
         return new CrossJoin(joinEntity);
@@ -3063,7 +3062,7 @@ public class Filters {
      * @param joinEntity the entity/table name to cross join
      * @param cond the optional join condition
      * @return a {@link CrossJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static CrossJoin crossJoin(final String joinEntity, final Condition cond) {
         return new CrossJoin(joinEntity, cond);
@@ -3081,7 +3080,7 @@ public class Filters {
      * @param joinEntities collection of entity/table names to cross join
      * @param cond the optional join condition
      * @return a {@link CrossJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty element
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element
      */
     public static CrossJoin crossJoin(final Collection<String> joinEntities, final Condition cond) {
         return new CrossJoin(joinEntities, cond);
@@ -3099,7 +3098,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to full join
      * @return a {@link FullJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static FullJoin fullJoin(final String joinEntity) {
         return new FullJoin(joinEntity);
@@ -3118,7 +3117,7 @@ public class Filters {
      * @param joinEntity the entity/table name to full join
      * @param cond the join condition
      * @return a {@link FullJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static FullJoin fullJoin(final String joinEntity, final Condition cond) {
         return new FullJoin(joinEntity, cond);
@@ -3137,7 +3136,7 @@ public class Filters {
      * @param joinEntities collection of entity/table names to full join
      * @param cond the join condition
      * @return a {@link FullJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty element
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element
      */
     public static FullJoin fullJoin(final Collection<String> joinEntities, final Condition cond) {
         return new FullJoin(joinEntities, cond);
@@ -3155,7 +3154,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to inner join
      * @return an {@link InnerJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static InnerJoin innerJoin(final String joinEntity) {
         return new InnerJoin(joinEntity);
@@ -3174,7 +3173,7 @@ public class Filters {
      * @param joinEntity the entity/table name to inner join
      * @param cond the join condition
      * @return an {@link InnerJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static InnerJoin innerJoin(final String joinEntity, final Condition cond) {
         return new InnerJoin(joinEntity, cond);
@@ -3193,7 +3192,7 @@ public class Filters {
      * @param joinEntities collection of entity/table names to inner join
      * @param cond the join condition
      * @return an {@link InnerJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty element
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element
      */
     public static InnerJoin innerJoin(final Collection<String> joinEntities, final Condition cond) {
         return new InnerJoin(joinEntities, cond);
@@ -3211,7 +3210,7 @@ public class Filters {
      *
      * @param joinEntity the entity/table name to natural join
      * @return a {@link NaturalJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public static NaturalJoin naturalJoin(final String joinEntity) {
         return new NaturalJoin(joinEntity);
@@ -3233,7 +3232,7 @@ public class Filters {
      * @param joinEntity the entity/table name to natural join
      * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
      * @return a {@link NaturalJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null} or empty, or if {@code cond} is non-{@code null}
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is non-{@code null}
      * @deprecated a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and
      *             throws for any other value. Use {@link #naturalJoin(String)} instead, and place any additional
      *             filter in the enclosing query's {@code WHERE} clause.
@@ -3258,7 +3257,7 @@ public class Filters {
      * @param joinEntities collection of entity/table names to natural join
      * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
      * @return a {@link NaturalJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty element, or if {@code cond} is non-{@code null}
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element, or if {@code cond} is non-{@code null}
      * @deprecated a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and
      *             throws for any other value. Use the condition-less {@link NaturalJoin#NaturalJoin(Collection)}
      *             constructor instead, and place any additional filter in the enclosing query's {@code WHERE} clause.
@@ -3513,7 +3512,7 @@ public class Filters {
      * @param propNames collection of property/column names
      * @param subQuery the subquery to check against
      * @return an {@link InSubQuery} condition
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if {@code subQuery} is {@code null}
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty or contains a {@code null}, empty, or blank name, or if {@code subQuery} is {@code null}
      */
     public static InSubQuery in(final Collection<String> propNames, final SubQuery subQuery) {
         return new InSubQuery(propNames, subQuery);
@@ -3764,7 +3763,7 @@ public class Filters {
      * @param propNames collection of property/column names
      * @param subQuery the subquery to check against
      * @return a {@link NotInSubQuery} condition
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if {@code subQuery} is {@code null}
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty or contains a {@code null}, empty, or blank name, or if {@code subQuery} is {@code null}
      */
     public static NotInSubQuery notIn(final Collection<String> propNames, final SubQuery subQuery) {
         return new NotInSubQuery(propNames, subQuery);

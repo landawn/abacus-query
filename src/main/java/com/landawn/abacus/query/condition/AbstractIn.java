@@ -200,8 +200,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
             return tuple;
         } else {
-            throw new IllegalArgumentException(
-                    "Each row-value row must be a Collection, Iterable, array, Map or bean, but found: " + row.getClass().getName());
+            throw new IllegalArgumentException("Each row-value row must be a Collection, Iterable, array, Map or bean, but found: " + row.getClass().getName());
         }
     }
 

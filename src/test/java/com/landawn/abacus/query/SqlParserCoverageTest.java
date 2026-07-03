@@ -663,6 +663,27 @@ public class SqlParserCoverageTest extends TestBase {
         assertEquals(sql.indexOf("FROM"), SqlParser.indexOfWord(sql, "FROM", 0, false));
     }
 
+    @Test
+    public void testParseAndNextWord_bracketIdentifierEndingInBackslashCloses() {
+        // SQL Server [bracket] identifiers do not honor backslash escaping (only ]] doubles a bracket), so a
+        // bracket ending in a lone backslash must still close and not swallow the rest of the statement.
+        // Regression across all four tokenizer scanners (parse / nextWord / nextWordEnd / indexOfWord).
+        final String sql = "SELECT [a\\] FROM t"; // the identifier is [a\]
+        final List<String> words = SqlParser.parse(sql);
+
+        assertTrue(words.contains("[a\\]"));
+        assertTrue(words.contains("FROM"));
+        assertTrue(words.contains("t"));
+        assertEquals("[a\\]", SqlParser.nextWord(sql, "SELECT".length()));
+        assertEquals(sql.indexOf("[a\\]") + "[a\\]".length(), SqlParser.nextWordEnd(sql, "SELECT".length()));
+        assertEquals(sql.indexOf("FROM"), SqlParser.indexOfWord(sql, "FROM", 0, false));
+
+        // A Windows-path-like identifier that ends in a backslash likewise closes cleanly.
+        final String pathSql = "SELECT [C:\\path\\] FROM t"; // the identifier is [C:\path\]
+        assertTrue(SqlParser.parse(pathSql).contains("[C:\\path\\]"));
+        assertEquals(pathSql.indexOf("FROM"), SqlParser.indexOfWord(pathSql, "FROM", 0, false));
+    }
+
     // ----------------------------------------------------------------------------------------------
     // nextWord / nextWordEnd -- MyBatis #{...} stays one token
     // ----------------------------------------------------------------------------------------------

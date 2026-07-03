@@ -72,11 +72,11 @@ import com.landawn.abacus.util.Strings;
  *
  * // Combine conditions for complex queries via Filters.and / Filters.or
  * Condition complex = Filters.and(age.greaterThan(18), status.equal("active"));
- * // SQL: (age > 18) AND (status = 'active')
+ * // SQL: ((age > 18) AND (status = 'active'))
  *
  * // Combine multiple conditions for use in a WHERE clause
  * Condition where = Filters.and(age.greaterThanOrEqual(21), status.in("active", "pending"));
- * // SQL: (age >= 21) AND (status IN ('active', 'pending'))
+ * // SQL: ((age >= 21) AND (status IN ('active', 'pending')))
  * }</pre>
  *
  * @see Condition

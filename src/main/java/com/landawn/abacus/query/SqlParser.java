@@ -394,7 +394,8 @@ public final class SqlParser {
                             quoteChar = 0;
                             bsEscaped = false;
                         }
-                    } else if (ch == '\\') {
+                    } else if (ch == '\\' && quoteChar != ']') {
+                        // Backslash escaping does not apply inside SQL Server [bracket] identifiers (only ]] does).
                         bsEscaped = !bsEscaped;
                     } else {
                         bsEscaped = false;
@@ -666,7 +667,8 @@ public final class SqlParser {
                                 quoteChar = 0;
                                 bsEscaped = false;
                             }
-                        } else if (ch == '\\') {
+                        } else if (ch == '\\' && quoteChar != ']') {
+                            // Backslash escaping does not apply inside SQL Server [bracket] identifiers (only ]] does).
                             bsEscaped = !bsEscaped;
                         } else {
                             bsEscaped = false;
@@ -884,7 +886,8 @@ public final class SqlParser {
                             // Even count (including 0) of preceding backslashes -> NOT escaped.
                             break;
                         }
-                    } else if (ch == '\\') {
+                    } else if (ch == '\\' && quoteChar != ']') {
+                        // Backslash escaping does not apply inside SQL Server [bracket] identifiers (only ]] does).
                         bsEscaped = !bsEscaped;
                     } else {
                         bsEscaped = false;
@@ -1018,7 +1021,8 @@ public final class SqlParser {
                     } else {
                         return index + 1;
                     }
-                } else if (ch == '\\') {
+                } else if (ch == '\\' && quoteChar != ']') {
+                    // Backslash escaping does not apply inside SQL Server [bracket] identifiers (only ]] does).
                     bsEscaped = !bsEscaped;
                 } else {
                     bsEscaped = false;
