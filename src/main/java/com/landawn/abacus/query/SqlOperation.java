@@ -186,7 +186,7 @@ public enum SqlOperation {
      * SqlOperation nil = SqlOperation.of(null);                 // returns null
      * }</pre>
      *
-     * @param name the SQL operation name to look up (case-insensitive)
+     * @param name the SQL operation name to look up (case-insensitive); may be {@code null}
      * @return the corresponding {@code SqlOperation} enum value, or {@code null} if {@code name} is
      *         {@code null} or no matching operation is found
      */

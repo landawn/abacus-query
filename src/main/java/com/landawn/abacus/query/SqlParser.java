@@ -37,8 +37,10 @@ import com.landawn.abacus.util.Strings;
  * <ul>
  *   <li>Single-quoted, double-quoted, backtick-quoted and square-bracket-quoted
  *       strings/identifiers are kept as a single token. Doubled-quote escapes ({@code ''},
- *       {@code ""}, {@code ``}, {@code ]]}) and backslash escaping are recognized inside quoted
- *       regions.</li>
+ *       {@code ""}, {@code ``}, {@code ]]}) are recognized inside their respective quoted
+ *       regions; backslash escaping is additionally recognized inside single-, double- and
+ *       backtick-quoted regions, but not inside square-bracket identifiers (where only
+ *       {@code ]]} escapes a bracket).</li>
  *   <li>Comments are normally stripped: line comments ({@code -- ...}), MySQL hash comments
  *       ({@code # ...}), and block comments ({@code /* ... *}{@code /}) are discarded.
  *       Exception: block comments are retained as tokens when the SQL begins

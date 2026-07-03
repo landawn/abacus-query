@@ -208,9 +208,9 @@ public final class Dsl {
     }
 
     /**
-     * Returns the {@link SqlDialect} this builder renders SQL with.
+     * Returns the {@link SqlDialect} this DSL is bound to; every {@link SqlBuilder} it produces renders SQL with this dialect.
      *
-     * @return the dialect (naming policy, parameter style, identifier quote and optional product info) bound to this builder
+     * @return the dialect (naming policy, parameter style, identifier quote and optional product info) bound to this DSL
      */
     public SqlDialect sqlDialect() {
         return sqlDialect;

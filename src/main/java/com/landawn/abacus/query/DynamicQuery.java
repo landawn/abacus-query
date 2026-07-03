@@ -276,7 +276,7 @@ public final class DynamicQuery {
 
         /**
          * Adds a {@code LIMIT} clause to restrict the number of rows returned.
-         * Generates standard SQL: {@code LIMIT n}
+         * Generates: {@code LIMIT n}
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -301,7 +301,7 @@ public final class DynamicQuery {
 
         /**
          * Adds a {@code LIMIT} clause with count and offset for pagination.
-         * Generates SQL standard syntax: {@code LIMIT count OFFSET offset}; the {@code OFFSET} portion is
+         * Generates: {@code LIMIT count OFFSET offset}; the {@code OFFSET} portion is
          * omitted when {@code offset} is {@code 0}, emitting just {@code LIMIT count}.
          *
          * <p><b>Usage Examples:</b></p>

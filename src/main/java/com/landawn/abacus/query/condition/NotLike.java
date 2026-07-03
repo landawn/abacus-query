@@ -78,8 +78,7 @@ public class NotLike extends Binary {
      * The condition evaluates to true when the property value does not match the given pattern.
      *
      * <p>The pattern can include SQL wildcards (% and _) for flexible matching.
-     * This operator is case-sensitive in most databases, though behavior may vary
-     * based on database configuration and collation settings.</p>
+     * Case sensitivity depends on the database's collation settings.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

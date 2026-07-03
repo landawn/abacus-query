@@ -81,7 +81,7 @@ public final class QueryUtil {
 
     private static final String ENTITY_CLASS = "entityClass";
 
-    private static final Map<Class<?>, ImmutableMap<String, String>> column2PropNameNameMapPool = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, ImmutableMap<String, String>> column2PropNameMapPool = new ConcurrentHashMap<>();
 
     private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, String>>> entityTablePropColumnNameMap = new ObjectPool<>(POOL_SIZE);
 
@@ -239,7 +239,7 @@ public final class QueryUtil {
 
         // Backing map is a ConcurrentHashMap, so computeIfAbsent runs the (expensive)
         // metadata build at most once per class even under concurrent first-touch.
-        return column2PropNameNameMapPool.computeIfAbsent(entityClass, cls -> {
+        return column2PropNameMapPool.computeIfAbsent(entityClass, cls -> {
             final BeanInfo entityInfo = ParserUtil.getBeanInfo(cls);
             final Map<String, String> map = N.newHashMap(entityInfo.propInfoList.size() * 3);
 
@@ -308,7 +308,7 @@ public final class QueryUtil {
 
     private static ImmutableMap<String, String> registerEntityPropColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy,
             final Set<Class<?>> registeringClasses, final int remainingNestedPropDepth) {
-        N.checkArgNotNull(entityClass, "entityClass");
+        N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
         if (registeringClasses != null) {
             if (registeringClasses.contains(entityClass)) {

@@ -59,7 +59,7 @@ import java.util.Collection;
  *
  * // Multiple tables natural join
  * List<String> tables = Arrays.asList("employees", "departments");
- * NaturalJoin multiJoin = new NaturalJoin(tables, null);
+ * NaturalJoin multiJoin = new NaturalJoin(tables);
  * // SQL: NATURAL JOIN (employees, departments)
  * }</pre>
  *

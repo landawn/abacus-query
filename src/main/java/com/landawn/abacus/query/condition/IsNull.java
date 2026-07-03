@@ -76,7 +76,7 @@ public class IsNull extends Is {
 
     /**
      * Shared Expression instance representing NULL.
-     * This constant is used to represent the NULL value in SQL.
+     * This constant is used internally to represent the NULL value in SQL.
      * It is shared across instances and referenced by {@link IsNotNull} to reduce
      * memory overhead and ensure consistency in SQL generation.
      */

@@ -525,6 +525,26 @@ class SqlBuilder10Test extends TestBase {
         assertEquals("SELECT * FROM users WHERE age > ?", sql);
     }
 
+    @Tag("2025")
+    @Test
+    public void testBinaryWithInOperatorRendersAsInClause() {
+        // A Binary built via Filters.binary(prop, Operator.IN, collection) must render as a real IN clause
+        // (col IN (?, ?, ...)) -- identical to In/NotIn and Binary.toString() -- rather than binding the whole
+        // collection as a single parameter (regression: previously produced "status IN ?" bound to the list).
+        final SP binaryIn = Dsl.PSC.select("*").from("users").where(Filters.binary("status", Operator.IN, N.asList("A", "B", "C"))).build();
+        final SP realIn = Dsl.PSC.select("*").from("users").where(Filters.in("status", N.asList("A", "B", "C"))).build();
+
+        assertEquals("SELECT * FROM users WHERE status IN (?, ?, ?)", binaryIn.query());
+        assertEquals(realIn.query(), binaryIn.query());
+        assertEquals(Arrays.asList("A", "B", "C"), binaryIn.parameters());
+
+        // NOT IN behaves the same way.
+        final SP binaryNotIn = Dsl.PSC.select("*").from("users").where(Filters.binary("status", Operator.NOT_IN, N.asList("A", "B"))).build();
+
+        assertEquals("SELECT * FROM users WHERE status NOT IN (?, ?)", binaryNotIn.query());
+        assertEquals(Arrays.asList("A", "B"), binaryNotIn.parameters());
+    }
+
     @Test
     public void testGroupBy() {
         // Single column

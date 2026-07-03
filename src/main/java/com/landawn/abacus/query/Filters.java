@@ -1788,6 +1788,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link Or} condition combining null and empty checks
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     @Beta
     public static Or isNullOrEmpty(final String propName) {
@@ -1806,6 +1807,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link Or} condition combining null and zero checks
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     @Beta
     public static Or isNullOrZero(final String propName) {
@@ -1840,6 +1842,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link And} condition combining not-null and not-empty checks
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     @Beta
     public static And isNotNullAndNotEmpty(final String propName) {
@@ -1857,6 +1860,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link And} condition combining not-null and non-zero checks
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     @Beta
     public static And isNotNullAndNotZero(final String propName) {
@@ -2156,9 +2160,9 @@ public class Filters {
      * // Results in SQL like: WHERE YEAR(created_date) = 2023
      * }</pre>
      *
-     * @param expr the SQL expression as a string (must not be {@code null} or empty)
+     * @param expr the SQL expression as a string (must not be {@code null}, empty, or blank)
      * @return a {@link Where} clause
-     * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public static Where where(final String expr) {
         N.checkArgNotEmpty(expr, "expr");
@@ -2459,9 +2463,9 @@ public class Filters {
      * // Results in SQL like: HAVING SUM(amount) > 1000
      * }</pre>
      *
-     * @param expr the SQL expression as a string (must not be {@code null} or empty)
+     * @param expr the SQL expression as a string (must not be {@code null}, empty, or blank)
      * @return a {@link Having} clause
-     * @throws IllegalArgumentException if {@code expr} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public static Having having(final String expr) {
         N.checkArgNotEmpty(expr, "expr");

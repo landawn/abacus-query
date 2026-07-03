@@ -156,6 +156,14 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             final String propName = binary.getPropName();
             final Object propValue = binary.getPropValue();
 
+            // A Binary built via Filters.binary(prop, IN/NOT_IN, collection) stores its membership values as a
+            // normalized List. Render it as a real IN clause -- "col IN (?, ?, ...)" -- to match In/NotIn and
+            // Binary.toString(), instead of binding the whole collection as a single parameter.
+            if ((binary.operator() == Operator.IN || binary.operator() == Operator.NOT_IN) && propValue instanceof final List<?> inValues) {
+                appendInClause(N.asList(propName), binary.operator(), inValues);
+                return;
+            }
+
             appendColumnName(propName);
 
             if (propValue == null && (binary.operator() == Operator.EQUAL || binary.operator() == Operator.IS)) {
