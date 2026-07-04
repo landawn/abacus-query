@@ -41,7 +41,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>String expression via {@link #Limit(String)}, which is formatted (whitespace collapsed, keywords
  *       upper-cased) and validated against a fixed grammar — {@code LIMIT n}, {@code LIMIT n OFFSET m},
  *       MySQL's {@code LIMIT offset, count}, and the SQL:2008
- *       {@code OFFSET m ROWS FETCH NEXT/FIRST n ROWS ONLY} / {@code FETCH FIRST/NEXT n ROWS ONLY} forms,
+ *       {@code OFFSET m ROW[S] FETCH NEXT/FIRST n ROW[S] ONLY} / {@code FETCH FIRST/NEXT n ROW[S] ONLY} forms,
  *       where each number may be an integer or a {@code ?} / {@code :name} / <code>#{name}</code> placeholder.
  *       Integer forms are parsed into concrete {@code count}/{@code offset} (the original literal is retained);
  *       placeholder forms stay opaque; any other input is rejected with an {@link IllegalArgumentException}</li>

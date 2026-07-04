@@ -43,7 +43,11 @@ import com.landawn.abacus.util.Strings;
  *   <li>Cannot specify table qualifiers with column names</li>
  *   <li>Less flexible than ON for complex join conditions</li>
  * </ul>
- * 
+ *
+ * <p><b>Deprecation status:</b> both public {@code Using} constructors (and the corresponding
+ * {@code Filters.using(...)} factory methods) are deprecated. Prefer an {@link On} condition created via
+ * {@link Filters#on(java.util.Map)}, which spells out fully qualified column pairs and is more portable.
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Single column join - joining employees and departments on department_id
@@ -93,6 +97,9 @@ public class Using extends Cell {
      */
     private List<String> columnNames;
 
+    /** Lazily memoized immutable view returned by {@link #getColumnNames()} (performance only). */
+    private transient ImmutableList<String> cachedColumnNamesView;
+
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized Using instance and should not be used
@@ -131,8 +138,8 @@ public class Using extends Cell {
      *                    and individual names must not be {@code null}, empty, or blank. Names must be unqualified (cannot contain a {@code .}).
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
      *                                  or contains a qualified (dotted) column name
-     * @deprecated It's recommended to use {@link Filters#on(java.util.Map)} or multiple {@code Filters.on(String, String)} clauses
-     *             instead of {@code Using} for better portability and clarity. Replace {@code new Using("col1", "col2")} with explicit
+     * @deprecated It's recommended to use {@link Filters#on(java.util.Map)} instead of {@code Using} for better
+     *             portability and clarity. Replace {@code new Using("col1", "col2")} with explicit
      *             {@code Filters.on(N.asMap("table1.col1", "table2.col1", "table1.col2", "table2.col2"))}.
      */
     @Deprecated
@@ -175,9 +182,9 @@ public class Using extends Cell {
      *                    Order matters for some databases; use a {@code LinkedHashSet} or {@code List} to preserve insertion order.
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
      *                                  or contains a qualified (dotted) column name
-     * @deprecated It's recommended to use {@link Filters#on(java.util.Map)} or multiple {@code Filters.on(String, String)} clauses
-     *             instead of {@code Using} for better portability and clarity. Replace {@code new Using(columnList)} with explicit
-     *             {@code Filters.on()} conditions that specify the full column names with table prefixes.
+     * @deprecated It's recommended to use {@link Filters#on(java.util.Map)} instead of {@code Using} for better
+     *             portability and clarity. Replace {@code new Using(columnList)} with an explicit
+     *             {@code Filters.on(Map)} condition that specifies the full column names with table prefixes.
      */
     @Deprecated
     public Using(final Collection<String> columnNames) {
@@ -209,7 +216,19 @@ public class Using extends Cell {
      *         list for an uninitialized instance produced by the package-private default constructor
      */
     public ImmutableList<String> getColumnNames() {
-        return columnNames == null ? ImmutableList.empty() : ImmutableList.wrap(columnNames);
+        if (columnNames == null) {
+            return ImmutableList.empty();
+        }
+
+        // Memoized like Join.getJoinEntities(); the underlying list never changes after construction.
+        ImmutableList<String> view = cachedColumnNamesView;
+
+        if (view == null) {
+            view = ImmutableList.wrap(columnNames);
+            cachedColumnNamesView = view;
+        }
+
+        return view;
     }
 
     private static List<String> copyColumnNames(final String... columnNames) {

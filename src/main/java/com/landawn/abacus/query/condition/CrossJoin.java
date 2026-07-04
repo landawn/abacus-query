@@ -49,7 +49,7 @@ import java.util.Collection;
  *
  * // CROSS JOIN multiple tables
  * List<String> tables = Arrays.asList("sizes", "colors");
- * CrossJoin multiJoin = new CrossJoin(tables, null);
+ * CrossJoin multiJoin = new CrossJoin(tables);
  * // SQL: CROSS JOIN (sizes, colors)
  * // Results in all combinations of products × sizes × colors
  *

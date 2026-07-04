@@ -521,6 +521,46 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertNotNull(sql);
         assertTrue(sql.contains("##ACTIVE##"), "## inside value must not be rejected as SQL comment");
     }
+
+    @Test
+    public void testSetEntityClass() {
+        String sql = Dsl.PSC.update("account").setEntity(Account.class).where(Filters.eq("id", 1)).build().query();
+        String deprecatedSql = Dsl.PSC.update("account").set(Account.class).where(Filters.eq("id", 1)).build().query();
+
+        assertTrue(sql.contains("UPDATE account SET"), "setEntity(Class) must render an UPDATE ... SET: " + sql);
+        assertTrue(sql.contains("first_name = ?"), "setEntity(Class) must include updatable properties: " + sql);
+        assertEquals(deprecatedSql, sql, "deprecated set(Class) must delegate to setEntity(Class)");
+    }
+
+    @Test
+    public void testSetEntityClassWithExcludedPropNames() {
+        Set<String> excluded = Collections.singleton("firstName");
+        String sql = Dsl.PSC.update("account").setEntity(Account.class, excluded).where(Filters.eq("id", 1)).build().query();
+        String deprecatedSql = Dsl.PSC.update("account").set(Account.class, excluded).where(Filters.eq("id", 1)).build().query();
+
+        assertFalse(sql.contains("first_name = ?"), "excluded property must not be updated: " + sql);
+        assertTrue(sql.contains("last_name = ?"), "non-excluded property must be updated: " + sql);
+        assertEquals(deprecatedSql, sql, "deprecated set(Class, Set) must delegate to setEntity(Class, Set)");
+    }
+
+    @Test
+    public void testAppendIfOrElseWithConsumers() {
+        String sqlTrue = Dsl.PSC.select("*")
+                .from("users")
+                .appendIfOrElse(true, b -> b.where(Filters.eq("status", "active")), b -> b.where(Filters.eq("status", "inactive")))
+                .build()
+                .query();
+        assertTrue(sqlTrue.contains("WHERE status = ?"), "true branch consumer must be applied: " + sqlTrue);
+
+        AbstractQueryBuilder.SP spFalse = Dsl.PSC.select("*")
+                .from("users")
+                .appendIfOrElse(false, b -> b.where(Filters.eq("status", "active")), b -> b.orderBy("firstName"))
+                .build();
+        assertTrue(spFalse.query().contains("ORDER BY first_name"), "false branch consumer must be applied: " + spFalse.query());
+
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").appendIfOrElse(true, null, b -> b.orderBy("firstName")));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").appendIfOrElse(false, b -> b.orderBy("firstName"), null));
+    }
 }
 
 class AbstractQueryBuilder2026Test extends TestBase {

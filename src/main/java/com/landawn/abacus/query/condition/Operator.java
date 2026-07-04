@@ -87,12 +87,16 @@ public enum Operator {
     /**
      * NOT operator symbol ({@code !}).
      * A non-standard programmatic token; prefer {@link #NOT} for standard SQL.
+     * Parse-only token: recognized by {@code Operator.of(...)} but not accepted by any condition constructor.
      */
     NOT_OP(SK.EXCLAMATION),
 
     /**
      * XOR (exclusive OR) operator.
      * True when exactly one condition is true.
+     * Parse-only token: recognized by {@code Operator.of(...)} but not accepted by any condition
+     * constructor; {@link ComposableCondition#xor(Condition)} composes the equivalent AND/OR/NOT
+     * expansion instead of using this operator.
      */
     XOR(SK.XOR),
 
@@ -106,7 +110,7 @@ public enum Operator {
      * NOT LIKE operator.
      * Negation of LIKE for pattern exclusion.
      */
-    NOT_LIKE(NOT + " " + SK.LIKE),
+    NOT_LIKE(SK.NOT_LIKE),
 
     /**
      * AND operator.
@@ -117,6 +121,7 @@ public enum Operator {
     /**
      * AND operator symbol ({@code &&}).
      * A non-standard programmatic token; prefer {@link #AND} for standard SQL.
+     * Parse-only token: recognized by {@code Operator.of(...)} but not accepted by any condition constructor.
      */
     AND_OP(SK.AND_OP),
 
@@ -130,6 +135,7 @@ public enum Operator {
      * OR operator symbol ({@code ||}).
      * A non-standard programmatic token; note that in standard SQL {@code ||} is string concatenation —
      * use {@link #OR} for logical OR.
+     * Parse-only token: recognized by {@code Operator.of(...)} but not accepted by any condition constructor.
      */
     OR_OP(SK.OR_OP),
 

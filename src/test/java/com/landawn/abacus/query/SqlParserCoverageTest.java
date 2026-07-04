@@ -559,6 +559,28 @@ public class SqlParserCoverageTest extends TestBase {
     }
 
     @Test
+    public void testIsFunctionName_twoArgOverload() {
+        List<String> words = SqlParser.parse("SELECT COUNT(*) FROM users");
+
+        assertTrue(SqlParser.isFunctionName(words, 2)); // "COUNT"
+        assertFalse(SqlParser.isFunctionName(words, 0)); // "SELECT"
+        assertFalse(SqlParser.isFunctionName(words, -1));
+        assertFalse(SqlParser.isFunctionName(words, words.size()));
+        assertThrows(NullPointerException.class, () -> SqlParser.isFunctionName(null, 0));
+    }
+
+    @Test
+    public void testIndexOfWord_compositeWordWithDoubledInternalSpace() {
+        String sql = "A ORDER BY B";
+        int singleSpaced = SqlParser.indexOfWord(sql, "ORDER BY", 0, false);
+
+        assertEquals(2, singleSpaced);
+        // A doubled internal space in the word argument must split to the same sub-words
+        // (previously the empty middle sub-word could never match and was even cached).
+        assertEquals(singleSpaced, SqlParser.indexOfWord(sql, "ORDER  BY", 0, false));
+    }
+
+    @Test
     public void testIsFunctionName_oracleOuterJoinMarkerIsNotFunctionCall() {
         List<String> words = SqlParser.parse("SELECT a.id(+) FROM a");
         int idIndex = words.indexOf("id");
@@ -1068,5 +1090,29 @@ public class SqlParserCoverageTest extends TestBase {
     public void testIsNoUpdateQuery_mergeAfterSemicolonRejected() {
         // Mirror of the isReadOnlyQuery MERGE-after-';' case for the no-update gate.
         assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; MERGE INTO t USING s ON (t.id = s.id) WHEN MATCHED THEN UPDATE SET t.x = s.x"));
+    }
+
+    @Test
+    public void testMultiStatementGate_replaceTruncateAndDdlRejected() {
+        // Regression (2026-07-03): the multi-statement sweeps only covered INSERT/UPDATE/DELETE/MERGE,
+        // so a later REPLACE INTO / TRUNCATE / DDL statement slipped through both gates.
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; REPLACE INTO t VALUES (1)"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; TRUNCATE TABLE t"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; DROP TABLE t"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; ALTER TABLE t ADD COLUMN c INT"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; CREATE TABLE t (c INT)"));
+        assertFalse(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1); REPLACE INTO t VALUES (2)"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; TRUNCATE TABLE t"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; DROP TABLE t"));
+    }
+
+    @Test
+    public void testMultiStatementGate_replaceAndTruncateFunctionsStillReadOnly() {
+        // The REPLACE(...)/TRUNCATE(...) SQL functions appear mid-statement, never at a
+        // statement-start position, so they must not affect classification.
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT REPLACE(name, 'a', 'b') FROM t"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT TRUNCATE(1.234, 2) FROM dual"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT a, REPLACE(b, 'x', 'y') FROM t WHERE c IN (SELECT d FROM e)"));
+        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t SELECT REPLACE(name, 'a', 'b') FROM s"));
     }
 }

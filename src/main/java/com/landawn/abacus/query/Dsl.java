@@ -61,7 +61,7 @@ public final class Dsl {
      */
     public static final Dsl PSC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SqlPolicy.PARAMETERIZED_SQL).build());
     /**
-     * Parameterized-SQL DSL ({@code ?} placeholders) with {@code UPPER_CASE_WITH_UNDERSCORE} naming.
+     * Parameterized-SQL DSL ({@code ?} placeholders) with {@code SCREAMING_SNAKE_CASE} ({@code UPPER_CASE_WITH_UNDERSCORE}) naming.
      */
     public static final Dsl PAC = forDialect(
             SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SqlPolicy.PARAMETERIZED_SQL).build());
@@ -78,7 +78,7 @@ public final class Dsl {
      */
     public static final Dsl NSC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SqlPolicy.NAMED_SQL).build());
     /**
-     * Named-SQL DSL ({@code :name} placeholders) with {@code UPPER_CASE_WITH_UNDERSCORE} naming.
+     * Named-SQL DSL ({@code :name} placeholders) with {@code SCREAMING_SNAKE_CASE} ({@code UPPER_CASE_WITH_UNDERSCORE}) naming.
      */
     public static final Dsl NAC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SqlPolicy.NAMED_SQL).build());
     /**
@@ -94,7 +94,7 @@ public final class Dsl {
     @Deprecated
     public static final Dsl SCSB = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SqlPolicy.RAW_SQL).build());
     /**
-     * Raw-SQL DSL with {@code UPPER_CASE_WITH_UNDERSCORE} naming; values are inlined as SQL literals rather than parameterized.
+     * Raw-SQL DSL with {@code SCREAMING_SNAKE_CASE} ({@code UPPER_CASE_WITH_UNDERSCORE}) naming; values are inlined as SQL literals rather than parameterized.
      *
      * @deprecated {@link #PAC} or {@link #NAC} is preferred for better security and performance.
      *             Un-parameterized SQL is vulnerable to SQL injection attacks.
@@ -126,7 +126,7 @@ public final class Dsl {
     @Deprecated
     public static final Dsl MSC = forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SqlPolicy.IBATIS_SQL).build());
     /**
-     * iBATIS/MyBatis-SQL DSL ({@code #{name}} placeholders) with {@code UPPER_CASE_WITH_UNDERSCORE} naming.
+     * iBATIS/MyBatis-SQL DSL ({@code #{name}} placeholders) with {@code SCREAMING_SNAKE_CASE} ({@code UPPER_CASE_WITH_UNDERSCORE}) naming.
      *
      * @deprecated Use {@link #NAC} instead.
      *             Note: Switching from MAC to NAC changes the parameter style from iBATIS ({@code #{param}}) to named ({@code :param}).
@@ -513,27 +513,27 @@ public final class Dsl {
      * // sqlPair.parameters(): ["John", "Doe", "Jane", "Smith", "Bob", "Johnson"]
      * }</pre>
      *
-     * @param propsList list of entities or property maps to insert
+     * @param entitiesOrProps list of entities or property maps to insert
      * @return a new SqlBuilder instance configured for batch INSERT operation
-     * @throws IllegalArgumentException if {@code propsList} is null or empty, if every element is
+     * @throws IllegalArgumentException if {@code entitiesOrProps} is null or empty, if every element is
      *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
      *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
      *         the same key set / insertable property set
      */
     @Beta
-    public SqlBuilder batchInsert(final Collection<?> propsList) {
-        N.checkArgNotEmpty(propsList, SqlBuilder.INSERTION_PART_MSG);
+    public SqlBuilder batchInsert(final Collection<?> entitiesOrProps) {
+        N.checkArgNotEmpty(entitiesOrProps, SqlBuilder.INSERTION_PART_MSG);
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.ADD;
-        final Optional<?> first = N.firstNonNull(propsList);
+        final Optional<?> first = N.firstNonNull(entitiesOrProps);
 
         if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
             instance.setEntityClass(first.get().getClass());
         }
 
-        instance._propsList = SqlBuilder.toInsertPropsList(propsList);
+        instance._propsList = SqlBuilder.toInsertPropsList(entitiesOrProps);
 
         return instance;
     }
@@ -762,7 +762,10 @@ public final class Dsl {
      * Creates a SELECT statement with a single expression.
      *
      * <p>This method is useful for complex select expressions, aggregate functions, or when
-     * selecting computed values. The expression is used as-is without property name conversion.</p>
+     * selecting computed values. The expression is <em>not</em> emitted verbatim: identifiers
+     * detected inside it are converted according to this DSL's naming policy (exactly as in the
+     * multi-column {@code select(String...)} overload), while function names, SQL keywords,
+     * quoted strings and an alias following {@code AS} are preserved unchanged.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -771,11 +774,13 @@ public final class Dsl {
      *                 .where(Filters.equal("status", "active"))
      *                 .build().query();
      * // Output: SELECT COUNT(*) FROM account WHERE status = ?
+     * // (COUNT is recognized as a function name and left unchanged)
      *
      * String sql2 = PSC.select("firstName || ' ' || lastName AS fullName")
      *                  .from("account")
      *                  .build().query();
-     * // Output: SELECT firstName || ' ' || lastName AS fullName FROM account
+     * // Output: SELECT first_name || ' ' || last_name AS fullName FROM account
+     * // (identifiers converted to snake_case, the AS alias preserved)
      * }</pre>
      *
      * @param expr the select expression
@@ -1037,12 +1042,12 @@ public final class Dsl {
      * }</pre>
      *
      * @param entityClass the entity class to select from
-     * @param alias the table alias to use
+     * @param tableAlias the table alias to use
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if entityClass is null
      */
-    public SqlBuilder selectFrom(final Class<?> entityClass, final String alias) {
-        return selectFrom(entityClass, alias, false);
+    public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias) {
+        return selectFrom(entityClass, tableAlias, false);
     }
 
     /**
@@ -1084,13 +1089,13 @@ public final class Dsl {
      * }</pre>
      *
      * @param entityClass the entity class to select from
-     * @param alias the table alias to use
+     * @param tableAlias the table alias to use
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if entityClass is null
      */
-    public SqlBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties) {
-        return selectFrom(entityClass, alias, includeSubEntityProperties, null);
+    public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties) {
+        return selectFrom(entityClass, tableAlias, includeSubEntityProperties, null);
     }
 
     /**
@@ -1133,13 +1138,13 @@ public final class Dsl {
      * }</pre>
      *
      * @param entityClass the entity class to select from
-     * @param alias the table alias to use
+     * @param tableAlias the table alias to use
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if entityClass is null
      */
-    public SqlBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames) {
-        return selectFrom(entityClass, alias, false, excludedPropNames);
+    public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final Set<String> excludedPropNames) {
+        return selectFrom(entityClass, tableAlias, false, excludedPropNames);
     }
 
     /**
@@ -1185,22 +1190,22 @@ public final class Dsl {
      * }</pre>
      *
      * @param entityClass the entity class to select from
-     * @param alias the table alias to use
+     * @param tableAlias the table alias to use
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if entityClass is null
      */
-    public SqlBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties,
+    public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties,
             final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, SqlBuilder.SELECTION_PART_MSG);
 
         if (SqlBuilder.hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-            final List<String> selectTableNames = SqlBuilder.getSelectTableNames(entityClass, alias, excludedPropNames, namingPolicy);
+            final List<String> selectTableNames = SqlBuilder.getSelectTableNames(entityClass, tableAlias, excludedPropNames, namingPolicy);
             return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
         }
 
-        return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, alias);
+        return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, tableAlias);
     }
 
     /**

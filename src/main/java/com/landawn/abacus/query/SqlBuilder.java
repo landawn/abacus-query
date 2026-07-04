@@ -143,7 +143,9 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * {@link Where}, {@link Having}, {@link Using}, {@link Cell}, {@link ComposableCell}, {@link Junction},
      * {@link SubQuery} and {@link Expression}. Binary conditions with a {@code null} value and an
      * {@code EQUAL}/{@code IS} (or {@code NOT_EQUAL}/{@code NOT_EQUAL_ANSI}/{@code IS_NOT}) operator
-     * are rendered as {@code IS NULL}/{@code IS NOT NULL} respectively. Nested conditions and sub-queries
+     * are rendered as {@code IS NULL}/{@code IS NOT NULL} respectively. Binary conditions whose operator is
+     * {@code IN}/{@code NOT IN} and whose value is a collection are rendered as a full IN list
+     * ({@code col IN (?, ?, ...)}), identically to {@link In}/{@link NotIn}. Nested conditions and sub-queries
      * are rendered recursively, with sub-query parameters merged into this builder's parameter list.</p>
      *
      * @param cond the condition to render; must be one of the supported condition types
@@ -187,7 +189,14 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             appendBetweenClause(nbt.getPropName(), nbt.operator(), nbt.getMinValue(), nbt.getMaxValue());
         } else if (cond instanceof final AbstractIn anyIn) {
             // Handles both In and NotIn; the IN / NOT IN operator is carried by anyIn.operator().
-            appendInClause(anyIn.getPropNames(), anyIn.operator(), anyIn.getValues());
+            // Row-value mode must be dispatched explicitly (not on the property-name count): a
+            // single-prop row-value condition ("(id) IN ((1), (2))") still carries tuple rows,
+            // which the scalar path would bind whole as single parameters.
+            if (anyIn.isRowValueConstructor()) {
+                appendMultiColumnInClause(anyIn.getPropNames(), anyIn.operator(), anyIn.getValues());
+            } else {
+                appendInClause(anyIn.getPropNames(), anyIn.operator(), anyIn.getValues());
+            }
         } else if (cond instanceof final AbstractInSubQuery anyInSubQuery) {
             // Handles both InSubQuery and NotInSubQuery; the IN / NOT IN operator is carried by anyInSubQuery.operator().
             appendInSubQueryClause(anyInSubQuery.getPropNames(), anyInSubQuery.operator(), anyInSubQuery.getSubQuery());
@@ -319,11 +328,11 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
     }
 
     /**
-     * Renders a multi-column (row value constructor) IN / NOT IN clause, e.g.
-     * {@code (p1, p2) IN ((?, ?), (?, ?))}. Each element of {@code values} is a tuple whose size
-     * matches {@code propNames.size()}.
+     * Renders a row value constructor IN / NOT IN clause, e.g.
+     * {@code (p1, p2) IN ((?, ?), (?, ?))} — or {@code (p1) IN ((?), (?))} for a single property.
+     * Each element of {@code values} is a tuple whose size matches {@code propNames.size()}.
      *
-     * @param propNames the property/column names (size {@code > 1})
+     * @param propNames the property/column names (one or more)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param values the value tuples; each element is a {@link Collection} of the row's values
      */

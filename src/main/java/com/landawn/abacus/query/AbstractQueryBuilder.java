@@ -1003,6 +1003,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Sets a custom handler for formatting named parameters in SQL strings.
      * The default handler formats parameters as {@code :paramName}.
      * This is a thread-local setting, so each thread can have its own handler.
+     * Each builder snapshots the handler in its constructor, so calling this method only affects
+     * builders created afterwards on the calling thread; builders that already exist keep the
+     * handler that was in effect when they were created.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1073,11 +1076,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Validates the {@code String} argument of a single-query set-operation overload
-     * ({@code union}/{@code unionAll}/{@code intersect}/{@code except}/{@code minus}). These overloads are
-     * dedicated to appending a complete sub-query, so the argument must satisfy the {@link #isSubQuery(String...)}
-     * heuristic. Without this check a non-{@code SELECT} string would silently fall through to the column-list
-     * varargs path and only surface later as an unrelated "from() must be called" failure at build time.
+     * Validates the complete-sub-query argument of a set-operation overload
+     * ({@code union}/{@code unionAll}/{@code intersect}/{@code except}/{@code minus} taking a single query
+     * string, or the SQL built by the sibling-builder overloads). These overloads are dedicated to appending
+     * a complete sub-query, so the argument must satisfy the {@link #isSubQuery(String...)} heuristic.
+     * Without this check a non-{@code SELECT} string would silently fall through to the column-list
+     * varargs path, where the staged "columns" are only consumed by a follow-up {@code from(...)}.
      *
      * @param query the query string to validate
      * @param operationName the set-operation method name (e.g. {@code "union"}) used in the error message
@@ -1087,8 +1091,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         checkSqlFragmentNotBlank(query, "query");
 
         if (!isSubQuery(query)) {
-            throw new IllegalArgumentException("The 'query' argument to " + operationName
-                    + "(String) must be a complete SELECT sub-query (starting with 'SELECT', or containing 'SELECT ... FROM'), but was: \"" + query
+            throw new IllegalArgumentException("The query argument to " + operationName
+                    + " must be a complete SELECT sub-query (starting with 'SELECT', or containing 'SELECT ... FROM'), but was: \"" + query
                     + "\". To start a new SELECT from a column list, use " + operationName + "(String...) or " + operationName
                     + "(Collection) followed by from(...).");
         }
@@ -1139,6 +1143,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_props) && N.isEmpty(_propsList)) {
                 throw new IllegalStateException("Column names must be set by insert() before calling into()");
             }
+        }
+
+        // Guard against calling into() after SQL has already been emitted (e.g. after from(), or a second
+        // into()), which would blindly concatenate a new INSERT fragment onto the existing statement.
+        if (!_sb.isEmpty()) {
+            throw new IllegalStateException("into() must be called before from() and any other SQL-emitting method, and can only be called once");
         }
 
         _tableName = normalizedTableName;
@@ -1361,7 +1371,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             _sb.append(_SPACE);
 
-            appendStringExpr(_selectModifier, false);
+            // The modifier is a raw SQL fragment (e.g. "DISTINCT", "TOP 10", "SQL_CALC_FOUND_ROWS") and must
+            // be emitted verbatim: appendStringExpr would apply column-name normalization, corrupting any
+            // modifier keyword the naming policy does not recognize (e.g. camelCasing "SQL_CALC_FOUND_ROWS").
+            _sb.append(_selectModifier);
 
             final int newLength = _sb.length();
 
@@ -1692,6 +1705,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             throw new IllegalStateException("Invalid operation for from(): " + _op + ". Expected QUERY");
         }
 
+        // Guard against a second from() in the same query segment, which would silently emit a second
+        // "SELECT ... FROM ..." fragment. Set operations (union/intersect/...) reset this flag when they
+        // start a new segment, so multi-segment queries are unaffected.
+        if (_hasFromBeenSet) {
+            throw new IllegalStateException("from() has already been called for the current query segment");
+        }
+
         if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_propOrColumnNameAliases) && N.isEmpty(_multiSelects)) {
             throw new IllegalStateException("Column names must be set by select() before calling from()");
         }
@@ -1742,7 +1762,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(_SPACE);
 
         if (Strings.isNotEmpty(_selectModifier)) {
-            appendStringExpr(_selectModifier, false);
+            // Emitted verbatim -- see selectModifier(String) for why appendStringExpr must not be used here.
+            _sb.append(_selectModifier);
 
             _sb.append(_SPACE);
         }
@@ -2258,6 +2279,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p>This is a convenience for multi-column ON conditions. Each element is rendered as a separate
      * expression and the resulting fragments are combined with {@code AND}.</p>
      *
+     * <p><b>Note:</b> unlike {@link Filters#on(String, String)} — where two strings mean an equality
+     * {@code ON left = right} — each argument here is a <em>complete</em> boolean expression and multiple
+     * arguments are joined with {@code AND}: {@code on("u.id = o.user_id", "o.active = 1")}. Calling
+     * {@code on("u.id", "o.user_id")} renders the invalid SQL {@code ON u.id AND o.user_id}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -2494,6 +2520,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param expr the column to group by ascending
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     @Beta
     public This groupByAsc(final String expr) {
@@ -2515,6 +2543,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns to group by ascending
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     @Beta
     public This groupByAsc(final String... propOrColumnNames) {
@@ -2537,6 +2567,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns to group by ascending
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     @Beta
     public This groupByAsc(final Collection<String> propOrColumnNames) {
@@ -2558,6 +2590,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param expr the column to group by descending
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     @Beta
     public This groupByDesc(final String expr) {
@@ -2579,6 +2613,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns to group by descending
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     @Beta
     public This groupByDesc(final String... propOrColumnNames) {
@@ -2601,6 +2637,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns to group by descending
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     @Beta
     public This groupByDesc(final Collection<String> propOrColumnNames) {
@@ -2905,6 +2943,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param expr the column to order by ascending
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     @Beta
     public This orderByAsc(final String expr) {
@@ -2926,6 +2966,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns to order by ascending
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     @Beta
     public This orderByAsc(final String... propOrColumnNames) {
@@ -2948,6 +2990,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns to order by ascending
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     @Beta
     public This orderByAsc(final Collection<String> propOrColumnNames) {
@@ -2969,6 +3013,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param expr the column to order by descending
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     @Beta
     public This orderByDesc(final String expr) {
@@ -2990,6 +3036,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns to order by descending
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     @Beta
     public This orderByDesc(final String... propOrColumnNames) {
@@ -3012,6 +3060,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of columns to order by descending
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     @Beta
     public This orderByDesc(final Collection<String> propOrColumnNames) {
@@ -3423,6 +3473,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             checkIfAlreadyCalled(SK.LIMIT);
+
+            // The verbatim literal may itself carry an OFFSET portion (e.g. "LIMIT ? OFFSET ?"); consume the
+            // OFFSET slot too so a follow-up offset(...) call is rejected instead of silently emitting a
+            // second OFFSET clause. Limit's normalization upper-cases the OFFSET keyword only outside
+            // placeholders, so a case-sensitive check does not misfire on ":offset" / "#{ offset }".
+            if (limit.getLiteral().contains(SK.OFFSET)) {
+                checkIfAlreadyCalled(SK.OFFSET);
+            }
+
             _sb.append(_SPACE).append(limit.getLiteral());
         } else if (limit.getOffset() > 0) {
             limit(limit.getCount(), limit.getOffset());
@@ -3664,8 +3723,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         _sb.append(SK._PARENTHESIS_R);
                     }
 
-                    if (join.getCondition() != null) {
-                        appendCondition(join.getCondition());
+                    final Condition joinCond = join.getCondition();
+
+                    if (joinCond != null) {
+                        // Mirror Join.toString(): a raw join condition (e.g. an Expression or Binary) needs an
+                        // explicit ON keyword and a separating space; an On/Using condition renders its own keyword.
+                        if (joinCond.operator() != Operator.ON && joinCond.operator() != Operator.USING) {
+                            _sb.append(_SPACE_ON_SPACE);
+                        }
+
+                        appendCondition(joinCond);
                     }
                 }
             }
@@ -3751,9 +3818,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p>A single separating space is inserted before {@code expr} when, and only when, it is
      * needed: that is, when the statement built so far does not already end with a space and
      * {@code expr} does not already begin with one. As a result both {@code .append("FOR UPDATE")}
-     * and {@code .append(" FOR UPDATE")} produce the same, correctly spaced output (never a missing
-     * or doubled space). The rest of {@code expr} is emitted verbatim and is not validated, escaped,
-     * or interpreted in any way.</p>
+     * and {@code .append(" FOR UPDATE")} produce the same, correctly spaced output (a doubled space
+     * is possible only when the statement built so far already ends with a space and {@code expr}
+     * also begins with one). The rest of {@code expr} is emitted verbatim and is not validated,
+     * escaped, or interpreted in any way.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3793,14 +3861,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE age > ?
      * }</pre>
      *
-     * @param b if true, the condition will be appended
+     * @param condition if true, the condition will be appended
      * @param cond the condition to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code b} is {@code true} and {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code cond} is {@code null}
      */
     @Beta
-    public This appendIf(final boolean b, final Condition cond) {
-        if (b) {
+    public This appendIf(final boolean condition, final Condition cond) {
+        if (condition) {
             append(cond);
         }
 
@@ -3822,14 +3890,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE id = ? FOR UPDATE
      * }</pre>
      *
-     * @param b if true, the expression will be appended
+     * @param condition if true, the expression will be appended
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code b} is {@code true} and {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code expr} is {@code null}, empty, or blank
      */
     @Beta
-    public This appendIf(final boolean b, final String expr) {
-        if (b) {
+    public This appendIf(final boolean condition, final String expr) {
+        if (condition) {
             append(expr);
         }
 
@@ -3851,14 +3919,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE age > ? ORDER BY name
      * }</pre>
      *
-     * @param b if true, the consumer will be executed
-     * @param append the consumer function to execute
+     * @param condition if true, the consumer will be executed
+     * @param appender the consumer function to execute
      * @return this SqlBuilder instance for method chaining
      */
     @Beta
-    public This appendIf(final boolean b, final java.util.function.Consumer<? super This> append) {
-        if (b) {
-            append.accept((This) this);
+    public This appendIf(final boolean condition, final java.util.function.Consumer<? super This> appender) {
+        if (condition) {
+            appender.accept((This) this);
         }
 
         return (This) this;
@@ -3879,16 +3947,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE status = ?
      * }</pre>
      *
-     * @param b if true, append condToAppendForTrue; otherwise append condToAppendForFalse
-     * @param condToAppendForTrue the condition to append if b is true
-     * @param condToAppendForFalse the condition to append if b is false
+     * @param condition if true, append condToAppendForTrue; otherwise append condToAppendForFalse
+     * @param condToAppendForTrue the condition to append if condition is true
+     * @param condToAppendForFalse the condition to append if condition is false
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if the selected condition (the one chosen by {@code b}) is {@code null}
+     * @throws IllegalArgumentException if the selected condition (the one chosen by {@code condition}) is {@code null}
      * @throws IllegalStateException if a clause emitted by the selected condition has already been set
      */
     @Beta
-    public This appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
-        if (b) {
+    public This appendIfOrElse(final boolean condition, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
+        if (condition) {
             append(condToAppendForTrue);
         } else {
             append(condToAppendForFalse);
@@ -3913,18 +3981,55 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users ORDER BY name ASC
      * }</pre>
      *
-     * @param b if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
-     * @param exprToAppendForTrue the expression to append if b is true
-     * @param exprToAppendForFalse the expression to append if b is false
+     * @param condition if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
+     * @param exprToAppendForTrue the expression to append if condition is true
+     * @param exprToAppendForFalse the expression to append if condition is false
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if the selected expression (the one chosen by {@code b}) is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if the selected expression (the one chosen by {@code condition}) is {@code null}, empty, or blank
      */
     @Beta
-    public This appendIfOrElse(final boolean b, final String exprToAppendForTrue, final String exprToAppendForFalse) {
-        if (b) {
+    public This appendIfOrElse(final boolean condition, final String exprToAppendForTrue, final String exprToAppendForFalse) {
+        if (condition) {
             append(exprToAppendForTrue);
         } else {
             append(exprToAppendForFalse);
+        }
+
+        return (This) this;
+    }
+
+    /**
+     * Conditionally executes one of two append operations using consumer functions.
+     * Exactly one of the two consumers is invoked with this builder, based on the boolean value.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * boolean isActive = true;
+     * String sql = PSC.select("*")
+     *                 .from("users")
+     *                 .appendIfOrElse(isActive,
+     *                     builder -> builder.where(Filters.equal("status", "active")),
+     *                     builder -> builder.where(Filters.equal("status", "inactive")))
+     *                 .build().query();
+     * // Output: SELECT * FROM users WHERE status = ?
+     * }</pre>
+     *
+     * @param condition if true, appenderWhenTrue is executed; otherwise appenderWhenFalse is executed
+     * @param appenderWhenTrue the consumer function to execute if condition is true (must not be {@code null})
+     * @param appenderWhenFalse the consumer function to execute if condition is false (must not be {@code null})
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code appenderWhenTrue} or {@code appenderWhenFalse} is {@code null}
+     */
+    @Beta
+    public This appendIfOrElse(final boolean condition, final java.util.function.Consumer<? super This> appenderWhenTrue,
+            final java.util.function.Consumer<? super This> appenderWhenFalse) {
+        N.checkArgNotNull(appenderWhenTrue, "appenderWhenTrue");
+        N.checkArgNotNull(appenderWhenFalse, "appenderWhenFalse");
+
+        if (condition) {
+            appenderWhenTrue.accept((This) this);
+        } else {
+            appenderWhenFalse.accept((This) this);
         }
 
         return (This) this;
@@ -4495,6 +4600,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         final SP sp = sqlBuilder.build();
 
+        // Same validation as the single-String overloads: only a SELECT query is a valid set-operation
+        // operand. Without this check, e.g. an UPDATE builder's SQL would be staged as a "column list"
+        // and dropped, silently truncating the compound query.
+        checkSetOperationSubQuery(sp.query(), operationName);
+
         final Set<String> childParameterNames = new HashSet<>(sqlBuilder._generatedNamedParameterNames);
         final String sql = uniquifySetOperationNamedParameters(sp.query(), sqlBuilder._namedParameterNameOccurrences, parentOccurrences, childParameterNames);
         mergeNamedParameterOccurrences(sqlBuilder._namedParameterNameOccurrences);
@@ -4519,15 +4629,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final String name = entry.getKey();
             final int parentCount = parentOccurrences.getOrDefault(name, 0);
 
-            if (parentCount <= 0) {
-                continue;
-            }
-
             for (int i = entry.getValue(); i > 0; i--) {
                 final String oldName = indexedNamedParameterName(name, i);
 
                 if (!childParameterNames.contains(oldName)) {
                     continue; // this suffix was never emitted by the child (skipped due to a literal-name collision)
+                }
+
+                // Rename when the parent generated names from the same base (the child's suffixes must shift
+                // past the parent's), or when this exact name collides with a parent name generated from a
+                // DIFFERENT base (e.g. parent property "id_2" vs the child's "id" + "_2" suffix, or the
+                // reverse) -- otherwise the same placeholder would be bound to two different values.
+                if (parentCount <= 0 && !_generatedNamedParameterNames.contains(oldName)) {
+                    continue;
                 }
 
                 int suffix = parentCount + i;
@@ -5078,7 +5192,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.update("account")
-     *                 .set(Account.class)
+     *                 .setEntity(Account.class)
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * // Output: UPDATE account SET id = ?, gui = ?, email_address = ?, first_name = ?, middle_name = ?, last_name = ?, birth_date = ?, status = ?, last_update_time = ?, create_time = ?, contact = ? WHERE id = ?
@@ -5088,10 +5202,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
-    public This set(final Class<?> entityClass) {
+    public This setEntity(final Class<?> entityClass) {
         setEntityClass(entityClass);
 
-        return set(entityClass, null);
+        return setEntity(entityClass, (Set<String>) null);
+    }
+
+    /**
+     * Sets all updatable properties from an entity class for UPDATE operation.
+     *
+     * @param entityClass the entity class to get properties from
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @deprecated use {@link #setEntity(Class)}
+     */
+    @Deprecated
+    public This set(final Class<?> entityClass) {
+        return setEntity(entityClass);
     }
 
     /**
@@ -5102,7 +5229,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * Set<String> excluded = N.asSet("lastUpdateTime");
      * String sql = PSC.update("account")
-     *                 .set(Account.class, excluded)
+     *                 .setEntity(Account.class, excluded)
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * // Output: UPDATE account SET id = ?, gui = ?, email_address = ?, first_name = ?, middle_name = ?, last_name = ?, birth_date = ?, status = ?, create_time = ?, contact = ? WHERE id = ?
@@ -5113,10 +5240,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
-    public This set(final Class<?> entityClass, final Set<String> excludedPropNames) {
+    public This setEntity(final Class<?> entityClass, final Set<String> excludedPropNames) {
         setEntityClass(entityClass);
 
         return set(QueryUtil.getUpdatePropNames(entityClass, excludedPropNames));
+    }
+
+    /**
+     * Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.
+     *
+     * @param entityClass the entity class to get properties from
+     * @param excludedPropNames additional properties to exclude from the update
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @deprecated use {@link #setEntity(Class, Set)}
+     */
+    @Deprecated
+    public This set(final Class<?> entityClass, final Set<String> excludedPropNames) {
+        return setEntity(entityClass, excludedPropNames);
     }
 
     /**
@@ -5322,6 +5463,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // Note: any change, please take a look at: parse(final Class<?> entityClass, final Condition cond) first.
 
         if (!_sb.isEmpty()) {
+            // A set operation (union/intersect/...) stages new columns and resets _hasFromBeenSet, and an
+            // INSERT ... SELECT started by into() likewise still needs its FROM. If the follow-up from(...)
+            // never happens, the staged columns would otherwise be dropped silently here, emitting truncated
+            // SQL such as "SELECT id FROM t UNION ".
+            if (_op == OperationType.QUERY && !_hasFromBeenSet && !_isForConditionOnly && N.notEmpty(_propOrColumnNames)) {
+                throw new IllegalStateException("from() must be called to complete the current query segment "
+                        + "(a set operation or INSERT ... SELECT was started but no from(...) followed)");
+            }
+
             return;
         }
 
@@ -5722,7 +5872,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // TODO performance improvement.
 
         if (expr.length() < 16) {
-            final boolean matched = QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(expr).matches();
+            final boolean matched = QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher(expr).matches();
 
             if (matched) {
                 if (isFromAppendColumn) {
@@ -5741,7 +5891,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         for (int i = 0, len = words.size(); i < len; i++) {
             word = words.get(i);
 
-            if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SqlParser.isFunctionName(words, len, i)) {
+            if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SqlParser.isFunctionName(words, i)) {
                 _sb.append(word);
             } else {
                 _sb.append(normalizeColumnName(_propColumnNameMap, word));

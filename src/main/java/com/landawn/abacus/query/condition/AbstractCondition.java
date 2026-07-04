@@ -198,7 +198,9 @@ public abstract class AbstractCondition implements Condition {
                 return true;
             }
 
-            final int secondWordStart = literal.indexOf(firstWord) + firstWord.length();
+            // nextWordEnd mirrors nextWord's comment-skipping scan; a raw indexOf(firstWord) could bind to
+            // an earlier occurrence of the word inside a leading SQL comment and misread the second word.
+            final int secondWordStart = SqlParser.nextWordEnd(literal, 0);
             final String secondWord = SqlParser.nextWord(literal, secondWordStart);
 
             return Strings.isNotEmpty(secondWord) && isClause(firstWord + SPACE + secondWord);

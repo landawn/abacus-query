@@ -688,12 +688,8 @@ class Expression2025Test extends TestBase {
     }
 
     @Test
-    public void testToStringNull() {
-        Expression expr = new Expression(null);
-
-        String result = expr.toString(NamingPolicy.NO_CHANGE);
-
-        assertEquals("null", result);
+    public void testConstructorWithNull() {
+        assertThrows(IllegalArgumentException.class, () -> new Expression(null));
     }
 
     @Test
@@ -714,10 +710,10 @@ class Expression2025Test extends TestBase {
     }
 
     @Test
-    public void testHashCodeNull() {
-        Expression expr = new Expression(null);
+    public void testHashCodeEmptyLiteral() {
+        Expression expr = new Expression("");
 
-        assertEquals(0, expr.hashCode());
+        assertEquals("".hashCode(), expr.hashCode());
     }
 
     @Test
@@ -922,9 +918,9 @@ class Expression2025Test extends TestBase {
     }
 
     @Test
-    public void testEqualsWithNullLiterals() {
-        Expression expr1 = new Expression(null);
-        Expression expr2 = new Expression(null);
+    public void testEqualsWithEmptyLiterals() {
+        Expression expr1 = new Expression("");
+        Expression expr2 = new Expression("");
 
         assertEquals(expr1, expr2);
     }

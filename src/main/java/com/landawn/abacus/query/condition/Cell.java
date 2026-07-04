@@ -41,7 +41,7 @@ import com.landawn.abacus.util.Strings;
  */
 public abstract class Cell extends AbstractCondition {
 
-    private Condition condition;
+    private final Condition condition;
 
     /** Lazily memoized parameters (performance only). */
     private transient ImmutableList<Object> cachedParameters;
@@ -55,6 +55,7 @@ public abstract class Cell extends AbstractCondition {
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     Cell() {
+        condition = null;
     }
 
     /**
@@ -85,7 +86,7 @@ public abstract class Cell extends AbstractCondition {
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
-    public Cell(final Operator operator, final Condition cond) {
+    protected Cell(final Operator operator, final Condition cond) {
         super(operator);
         this.condition = N.checkArgNotNull(cond, "cond");
     }
@@ -109,7 +110,7 @@ public abstract class Cell extends AbstractCondition {
      * Like bad = (Like) where.getCondition();    // throws ClassCastException
      * }</pre>
      *
-     * @return the wrapped condition; never {@code null} for instances created via the public
+     * @return the wrapped condition; never {@code null} for instances created via the protected
      *         constructor, but may be {@code null} for uninitialized instances produced by the
      *         package-private default constructor (e.g., during Kryo deserialization)
      */

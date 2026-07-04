@@ -147,7 +147,9 @@ public class On extends Cell {
         N.checkArgNotNull(cond, "cond");
 
         if (cond instanceof Criteria || isClause(cond) || containsOnOrUsing(cond) || isEmptyPredicate(cond)) {
-            throw new IllegalArgumentException("ON condition cannot be a SQL clause, Criteria, empty predicate, or ON/USING connector: " + cond.operator());
+            // Include the condition text, not just the operator: for a rejected Expression the operator is
+            // EMPTY (literal ""), which would leave the message without any diagnostic payload.
+            throw new IllegalArgumentException("ON condition cannot be a SQL clause, Criteria, empty predicate, or ON/USING connector: " + cond);
         }
 
         return cond;
@@ -221,7 +223,7 @@ public class On extends Cell {
      *
      * @param propNamePairs map of column pairs where the key is from the first table and the value is from the second
      *            table. Order is preserved if a {@code LinkedHashMap} is used.
-     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains invalid names
+     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains {@code null}, empty, or blank keys or values
      */
     public On(final Map<String, String> propNamePairs) {
         this(createOnCondition(propNamePairs));
@@ -276,7 +278,7 @@ public class On extends Cell {
      *
      * @param propNamePairs map of column name pairs
      * @return a single Equal condition or an And condition combining multiple equalities
-     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains invalid names
+     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains {@code null}, empty, or blank keys or values
      */
     static Condition createOnCondition(final Map<String, String> propNamePairs) {
         N.checkArgNotEmpty(propNamePairs, "propNamePairs");

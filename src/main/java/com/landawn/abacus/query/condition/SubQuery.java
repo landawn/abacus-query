@@ -105,7 +105,7 @@ public class SubQuery extends AbstractCondition {
     private transient int cachedHashCode;
 
     /** Lazily memoized unmodifiable view of {@link #propNames} (performance only). */
-    private transient List<String> cachedPropNamesView;
+    private transient ImmutableList<String> cachedPropNamesView;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -381,17 +381,17 @@ public class SubQuery extends AbstractCondition {
      * // Returns: null
      * }</pre>
      *
-     * @return unmodifiable collection of property names to select, or {@code null} for raw SQL subqueries
+     * @return immutable list of property names to select, or {@code null} for raw SQL subqueries
      */
-    public Collection<String> getSelectPropNames() {
+    public ImmutableList<String> getSelectPropNames() {
         if (propNames == null) {
             return null;
         }
 
-        List<String> view = cachedPropNamesView;
+        ImmutableList<String> view = cachedPropNamesView;
 
         if (view == null) {
-            view = Collections.unmodifiableList(propNames);
+            view = ImmutableList.wrap(propNames);
             cachedPropNamesView = view;
         }
 

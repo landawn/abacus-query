@@ -180,11 +180,14 @@ public final class SqlMapper {
      * SqlMapper mapper = SqlMapper.load("sql/users.xml;sql/orders.xml;sql/products.xml");
      * }</pre>
      *
-     * @param filePaths one or more file paths separated by ',' or ';' (must not be {@code null} or empty)
+     * @param filePaths one or more file paths separated by ',' or ';' (must not be {@code null} or empty).
+     *        Each path is resolved against the literal location first; when no file exists there, the common
+     *        configuration directories are searched as a fallback
      * @return a new SqlMapper instance loaded with SQL definitions from the specified files
      * @throws IllegalArgumentException if {@code filePaths} is {@code null}, empty, or resolves to no non-empty paths
-     *         after splitting, or if a loaded {@code <sql>} element has an invalid id (empty, containing whitespace,
-     *         exceeding {@link #MAX_ID_LENGTH} characters, or duplicated) or a blank SQL body
+     *         after splitting, if no file can be found for one of the paths, or if a loaded {@code <sql>} element has
+     *         an invalid id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated)
+     *         or a blank SQL body
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid, or if any of the loaded files does not contain a {@code <sqlMapper>} element
      */
@@ -206,8 +209,15 @@ public final class SqlMapper {
         final SqlMapper sqlMapper = new SqlMapper();
 
         for (final String subFilePath : parsedFilePaths) {
-            final File file = PropertiesUtil.formatPath(PropertiesUtil.findFile(subFilePath));
-            loadFile(sqlMapper, file);
+            final File foundFile = PropertiesUtil.findFile(subFilePath);
+
+            // findFile returns null when the path exists neither literally nor in the common
+            // configuration directories; without this check formatPath would throw a bare NPE.
+            if (foundFile == null) {
+                throw new IllegalArgumentException("No file found for path: " + subFilePath);
+            }
+
+            loadFile(sqlMapper, PropertiesUtil.formatPath(foundFile));
         }
 
         return sqlMapper;
@@ -668,7 +678,9 @@ public final class SqlMapper {
 
         final File parent = file.getParentFile();
 
-        if (parent != null && !parent.exists() && !parent.mkdirs()) {
+        // mkdirs-then-isDirectory is the race-free idiom: mkdirs() returns false when another thread or
+        // process created the directory between any exists() check and the call.
+        if (parent != null && !(parent.mkdirs() || parent.isDirectory())) {
             throw new UncheckedIOException(new IOException("Failed to create parent directories for file: " + file.getAbsolutePath()));
         }
 

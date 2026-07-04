@@ -42,7 +42,7 @@ import com.landawn.abacus.util.Strings;
 public abstract class AbstractInSubQuery extends ComposableCondition {
 
     // For Kryo
-    final Collection<String> propNames;
+    final ImmutableList<String> propNames;
 
     private SubQuery subQuery;
 
@@ -56,7 +56,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * Default constructor for serialization frameworks like Kryo.
      */
     AbstractInSubQuery() {
-        propNames = Collections.emptyList();
+        propNames = ImmutableList.empty();
     }
 
     /**
@@ -79,7 +79,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
         checkPropName(propName);
         N.checkArgNotNull(subQuery, "subQuery");
 
-        this.propNames = Collections.singletonList(propName);
+        this.propNames = ImmutableList.wrap(Collections.singletonList(propName));
         validateSubQuerySelectArity(this.propNames, subQuery);
         this.subQuery = subQuery;
     }
@@ -138,11 +138,11 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      *
      * @return non-null immutable collection of property names
      */
-    public Collection<String> getPropNames() {
+    public ImmutableList<String> getPropNames() {
         return propNames;
     }
 
-    private static Collection<String> copyAndValidatePropNames(final Collection<String> propNames) {
+    private static ImmutableList<String> copyAndValidatePropNames(final Collection<String> propNames) {
         N.checkArgNotEmpty(propNames, "propNames");
 
         final List<String> copy = new ArrayList<>(propNames.size());
@@ -153,7 +153,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
             copy.add(propName);
         }
 
-        return Collections.unmodifiableList(copy);
+        return ImmutableList.wrap(copy);
     }
 
     /**

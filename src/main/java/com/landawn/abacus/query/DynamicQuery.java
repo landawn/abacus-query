@@ -438,6 +438,9 @@ public final class DynamicQuery {
          * Adds a {@code UNION} operator to combine results with another query.
          * {@code UNION} removes duplicate rows from the combined result set.
          *
+         * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
+         * sub-query (unlike {@code SqlBuilder}'s {@code union(String)}) — raw by design.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.union("SELECT id, name FROM archived_users");
@@ -459,6 +462,9 @@ public final class DynamicQuery {
         /**
          * Adds a {@code UNION ALL} operator to combine results with another query.
          * {@code UNION ALL} keeps all rows including duplicates.
+         *
+         * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
+         * sub-query (unlike {@code SqlBuilder}'s {@code unionAll(String)}) — raw by design.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -482,6 +488,9 @@ public final class DynamicQuery {
          * Adds an {@code INTERSECT} operator to find common rows between queries.
          * Returns only rows that appear in both result sets.
          *
+         * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
+         * sub-query (unlike {@code SqlBuilder}'s {@code intersect(String)}) — raw by design.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.intersect("SELECT user_id FROM premium_users");
@@ -504,6 +513,9 @@ public final class DynamicQuery {
          * Adds an {@code EXCEPT} operator to find rows in the first query but not in the second.
          * This is the SQL standard operator (used by PostgreSQL, SQL Server).
          *
+         * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
+         * sub-query (unlike {@code SqlBuilder}'s {@code except(String)}) — raw by design.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.except("SELECT user_id FROM blocked_users");
@@ -525,6 +537,9 @@ public final class DynamicQuery {
         /**
          * Adds a {@code MINUS} operator to find rows in the first query but not in the second.
          * This is Oracle's equivalent of {@code EXCEPT}.
+         *
+         * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
+         * sub-query (unlike {@code SqlBuilder}'s {@code minus(String)}) — raw by design.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -559,8 +574,9 @@ public final class DynamicQuery {
          * <p>A single separating space is inserted before {@code textToAppend} when, and only when, it is
          * needed: that is, when the text built so far does not already end with a space and
          * {@code textToAppend} does not already begin with one. As a result both {@code .append("LIMIT 10")}
-         * and {@code .append(" LIMIT 10")} produce the same, correctly spaced output (never a missing or
-         * doubled space).</p>
+         * and {@code .append(" LIMIT 10")} produce the same, correctly spaced output (a doubled space is
+         * possible only when the previously appended raw text already ends with a space and
+         * {@code textToAppend} also begins with one).</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1119,7 +1135,8 @@ public final class DynamicQuery {
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause join(final String joinExpr, final String on) {
             checkOpen();
@@ -1146,7 +1163,8 @@ public final class DynamicQuery {
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause innerJoin(final String joinExpr, final String on) {
             checkOpen();
@@ -1173,7 +1191,8 @@ public final class DynamicQuery {
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause leftJoin(final String joinExpr, final String on) {
             checkOpen();
@@ -1200,7 +1219,8 @@ public final class DynamicQuery {
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause rightJoin(final String joinExpr, final String on) {
             checkOpen();
@@ -1228,7 +1248,8 @@ public final class DynamicQuery {
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause fullJoin(final String joinExpr, final String on) {
             checkOpen();
@@ -1236,6 +1257,85 @@ public final class DynamicQuery {
             checkSqlFragmentNotBlank(on, "on");
             requireFromInitialized();
             sb.append(" FULL JOIN ").append(joinExpr).append(" ON ").append(on);
+
+            return this;
+        }
+
+        /**
+         * Adds a {@code JOIN} clause (implicit {@code INNER JOIN}) with the specified table and no
+         * {@code ON} condition. Use this for join expressions that carry their own condition (or none),
+         * or follow it with a {@code USING}/{@code ON} fragment appended elsewhere.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * from.append("users u").join("orders o USING (user_id)");
+         * // Generates: FROM users u JOIN orders o USING (user_id)
+         * }</pre>
+         *
+         * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
+         */
+        public FromClause join(final String joinExpr) {
+            checkOpen();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            requireFromInitialized();
+            sb.append(" JOIN ").append(joinExpr);
+
+            return this;
+        }
+
+        /**
+         * Adds a {@code CROSS JOIN} clause with the specified table. A cross join produces the
+         * Cartesian product of the two tables and takes no {@code ON} condition.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * from.append("users u").crossJoin("colors c");
+         * // Generates: FROM users u CROSS JOIN colors c
+         * }</pre>
+         *
+         * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
+         */
+        public FromClause crossJoin(final String joinExpr) {
+            checkOpen();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            requireFromInitialized();
+            sb.append(" CROSS JOIN ").append(joinExpr);
+
+            return this;
+        }
+
+        /**
+         * Adds a {@code NATURAL JOIN} clause with the specified table. A natural join matches rows on
+         * all columns with the same name in both tables, so it takes no {@code ON} condition.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * from.append("users u").naturalJoin("user_profiles");
+         * // Generates: FROM users u NATURAL JOIN user_profiles
+         * }</pre>
+         *
+         * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
+         */
+        public FromClause naturalJoin(final String joinExpr) {
+            checkOpen();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            requireFromInitialized();
+            sb.append(" NATURAL JOIN ").append(joinExpr);
 
             return this;
         }

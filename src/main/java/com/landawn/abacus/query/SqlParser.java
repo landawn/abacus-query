@@ -49,7 +49,8 @@ import com.landawn.abacus.util.Strings;
  *       Nested block comments and PostgreSQL dollar-quoting ({@code $$...$$}) are NOT
  *       supported.</li>
  *   <li>Runs of whitespace between emitted tokens are collapsed into a single space token
- *       ({@code " "}); leading whitespace before the very first emitted token is dropped.</li>
+ *       ({@code " "}); leading whitespace before the very first emitted token is dropped, while
+ *       trailing whitespace after the last non-space token yields a final {@code " "} token.</li>
  *   <li>Multi-character operators (e.g. {@code >=}, {@code <>}, {@code ->>}) are emitted
  *       as single tokens; additional separators can be registered via
  *       {@link #registerSeparator(String)} / {@link #registerSeparator(char)}.</li>
@@ -127,6 +128,9 @@ public final class SqlParser {
         separators.add('!');
         separators.add('@');
         separators.add('^');
+        // Registered so isSeparator('#') stays true, but a bare '#' is in practice always consumed
+        // as a MySQL hash comment (or merged into a hash-prefixed identifier / #{...} marker) by the
+        // scanners before the separator branch, so '#' is never emitted as its own token.
         separators.add('#');
         separators.add("!!");
         separators.add(';');
@@ -279,8 +283,13 @@ public final class SqlParser {
 
     private static final Map<String, String[]> compositeWords = new ConcurrentHashMap<>(64);
 
-    /** Reused space-splitter (immutable config) instead of constructing one per split call. */
-    private static final Splitter WORD_SPLITTER = Splitter.with(SK.SPACE).trimResults();
+    /**
+     * Reused space-splitter (immutable config) instead of constructing one per split call.
+     * Empty sub-words are omitted so a composite word containing consecutive spaces (e.g.
+     * {@code "ORDER  BY"}) splits to the same sub-words as its single-spaced form instead of
+     * producing an empty, never-matching middle sub-word.
+     */
+    private static final Splitter WORD_SPLITTER = Splitter.with(SK.SPACE).trimResults().omitEmptyStrings();
 
     static {
         compositeWords.put(SK.LEFT_JOIN, new String[] { "LEFT", "JOIN" });
@@ -1103,6 +1112,9 @@ public final class SqlParser {
      * }</pre>
      *
      * @param separator the character to register as a separator
+     * @see #registerSeparator(String)
+     * @see #unregisterSeparator(char)
+     * @see #resetSeparators()
      */
     public static void registerSeparator(final char separator) {
         separators.add(separator);
@@ -1128,6 +1140,9 @@ public final class SqlParser {
      *
      * @param separator the string to register as a separator (must not be {@code null} or empty)
      * @throws IllegalArgumentException if {@code separator} is {@code null} or empty
+     * @see #registerSeparator(char)
+     * @see #unregisterSeparator(String)
+     * @see #resetSeparators()
      */
     public static void registerSeparator(final String separator) {
         N.checkArgNotEmpty(separator, "separator");
@@ -1560,9 +1575,23 @@ public final class SqlParser {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<String> words = SqlParser.parse("SELECT COUNT(*) FROM users");
-     * boolean isFunc = SqlParser.isFunctionName(words, words.size(), 2);   // true for "COUNT"
-     * boolean notFunc = SqlParser.isFunctionName(words, words.size(), 0);  // false for "SELECT"
+     * boolean isFunc = SqlParser.isFunctionName(words, 2);   // true for "COUNT"
+     * boolean notFunc = SqlParser.isFunctionName(words, 0);  // false for "SELECT"
      * }</pre>
+     *
+     * @param words the list of parsed SQL words/tokens (typically the result of {@link #parse(String)})
+     * @param index the index of the word to check; invalid indices return {@code false}
+     * @return {@code true} if the word at {@code index} is followed (after zero or more space tokens)
+     *         by the {@code "("} token; {@code false} otherwise
+     * @throws NullPointerException if {@code words} is {@code null}
+     */
+    public static boolean isFunctionName(final List<String> words, final int index) {
+        return isFunctionName(words, words.size(), index);
+    }
+
+    /**
+     * Determines if a word at a specific position in a parsed word list represents a function name,
+     * examining only the tokens below the given exclusive upper bound.
      *
      * @param words the list of parsed SQL words/tokens (typically the result of {@link #parse(String)})
      * @param len the exclusive upper bound to search within {@code words} (usually {@code words.size()};
@@ -1572,7 +1601,9 @@ public final class SqlParser {
      * @return {@code true} if the word at {@code index} is followed (after zero or more space tokens)
      *         by the {@code "("} token; {@code false} otherwise
      * @throws NullPointerException if {@code words} is {@code null}
+     * @deprecated use {@link #isFunctionName(List, int)}
      */
+    @Deprecated
     public static boolean isFunctionName(final List<String> words, final int len, final int index) {
         final int upperBound = Math.min(len, words.size());
 
@@ -1582,13 +1613,6 @@ public final class SqlParser {
 
         if (SK.SPACE.equals(words.get(index))) {
             return false;
-        }
-
-        if (index < upperBound - 1) {
-            String nextWord = words.get(index + 1);
-            if (SK.PARENTHESIS_L.equals(nextWord)) {
-                return true;
-            }
         }
 
         for (int i = index + 1; i < upperBound; i++) {
@@ -1651,8 +1675,9 @@ public final class SqlParser {
      * modify data.
      * <p>
      * A statement is considered read-only only if its leading keyword is {@code SELECT}
-     * (see {@link #isSelectQuery(String)}) <i>and</i> it contains no top-level mutation keyword
-     * ({@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE}) and no standalone
+     * (see {@link #isSelectQuery(String)}) <i>and</i> it contains no top-level mutation or DDL keyword
+     * ({@code INSERT}, {@code UPDATE}, {@code DELETE}, {@code MERGE}, {@code REPLACE}, {@code TRUNCATE},
+     * {@code CREATE}, {@code ALTER} or {@code DROP}) and no standalone
      * {@code SELECT ... INTO ...} clause. The {@code INTO} check is limited to the SELECT list
      * before that SELECT's {@code FROM}; table names after {@code FROM} and qualified identifiers
      * such as {@code t.into} do not count as {@code SELECT ... INTO}. Keyword matching ignores
@@ -1660,9 +1685,11 @@ public final class SqlParser {
      * identifier tokens, so a SELECT that merely returns the literal text {@code 'DELETE'} or a
      * column named {@code into$} is still treated as read-only, whereas a data-changing CTE such as
      * {@code WITH t AS (...) DELETE ...} is not. For multi-statement SQL, a later statement that
-     * starts with {@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE} also makes the
-     * SQL non-read-only, including when that later statement starts with a {@code WITH} clause or
-     * leading parentheses.
+     * starts with one of the mutation or DDL keywords listed above also makes the SQL
+     * non-read-only, including when that later statement starts with a {@code WITH} clause or
+     * leading parentheses. The keyword scan matches only statement-start positions, so the
+     * {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL <i>functions</i> inside a SELECT do not
+     * affect the classification.
      * </p>
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
@@ -1798,8 +1825,11 @@ public final class SqlParser {
      * boundaries, so identifiers such as {@code into$}, qualified names such as {@code t.into},
      * {@code update_time} or bracket/quoted identifiers named like keywords are ignored. A
      * {@code null} or empty statement does not lead with {@code SELECT} or {@code INSERT}, so it
-     * returns {@code false}. For multi-statement SQL, a later top-level update/delete/merge
-     * statement makes this method return {@code false}.
+     * returns {@code false}. For multi-statement SQL, a later top-level {@code UPDATE},
+     * {@code DELETE}, {@code MERGE}, {@code REPLACE}, {@code TRUNCATE}, {@code DROP} or
+     * {@code ALTER} statement makes this method return {@code false}; the keyword scan matches
+     * only statement-start positions, so the {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL
+     * <i>functions</i> do not affect the classification.
      * </p>
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
@@ -1817,13 +1847,21 @@ public final class SqlParser {
             return false;
         }
 
+        // See the note in containsMutationQueryKeyword: statement-start-only matching keeps the
+        // REPLACE(...)/TRUNCATE(...) functions from false-positiving.
         return !containsQueryKeyword(sql, "UPDATE") && !containsQueryKeyword(sql, "DELETE") && !containsQueryKeyword(sql, "MERGE")
-                && !containsInsertUpdateClause(sql) && !containsSelectIntoClause(sql) && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
+                && !containsQueryKeyword(sql, "REPLACE") && !containsQueryKeyword(sql, "TRUNCATE") && !containsQueryKeyword(sql, "DROP")
+                && !containsQueryKeyword(sql, "ALTER") && !containsInsertUpdateClause(sql) && !containsSelectIntoClause(sql)
+                && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
     }
 
     private static boolean containsMutationQueryKeyword(final String sql) {
+        // containsQueryKeyword matches only at statement-start positions (start of SQL, after ';', or a CTE
+        // body's "AS ("), so the REPLACE(...)/TRUNCATE(...) string/numeric FUNCTIONS -- which always appear
+        // mid-statement -- cannot false-positive here.
         return containsQueryKeyword(sql, "INSERT") || containsQueryKeyword(sql, "UPDATE") || containsQueryKeyword(sql, "DELETE")
-                || containsQueryKeyword(sql, "MERGE");
+                || containsQueryKeyword(sql, "MERGE") || containsQueryKeyword(sql, "REPLACE") || containsQueryKeyword(sql, "TRUNCATE")
+                || containsQueryKeyword(sql, "DROP") || containsQueryKeyword(sql, "ALTER") || containsQueryKeyword(sql, "CREATE");
     }
 
     private static boolean containsInsertUpdateClause(final String sql) {

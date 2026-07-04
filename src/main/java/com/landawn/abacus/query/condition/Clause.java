@@ -104,7 +104,7 @@ public abstract class Clause extends Cell {
      *         {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
      *         (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
-    public Clause(final Operator operator, final Condition cond) {
+    protected Clause(final Operator operator, final Condition cond) {
         super(operator, validateClauseOperand(operator, cond));
     }
 

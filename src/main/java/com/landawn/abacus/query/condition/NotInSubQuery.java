@@ -80,9 +80,9 @@ public class NotInSubQuery extends AbstractInSubQuery {
      * // SQL: id NOT IN (SELECT user_id FROM dept_users WHERE dept = 'HR')
      * }</pre>
      *
-     * @param propName the property/column name to check against the subquery results (must not be {@code null}, empty, or blank).
-     *            If the subquery is structured, it must select exactly one column.
-     * @param subQuery the subquery that returns the values to check against (must not be {@code null})
+     * @param propName the property/column name to check against the subquery results (must not be {@code null}, empty, or blank)
+     * @param subQuery the subquery that returns the values to check against (must not be {@code null});
+     *            if it is a structured subquery, it must select exactly one column
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code subQuery} is {@code null},
      *             or if the subquery is structured and selects a number of columns other than 1
      */

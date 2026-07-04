@@ -218,6 +218,60 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
+    public void testFromJoinWithoutOn() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users", "u").join("orders o USING (user_id)");
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users u JOIN orders o USING (user_id)", sql);
+    }
+
+    @Test
+    public void testFromJoinWithoutOn_Validation() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        assertThrows(IllegalStateException.class, () -> builder.from().join("orders o"));
+        builder.from().append("users");
+        assertThrows(IllegalArgumentException.class, () -> builder.from().join("   "));
+    }
+
+    @Test
+    public void testFromCrossJoin() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users", "u").crossJoin("colors c");
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users u CROSS JOIN colors c", sql);
+    }
+
+    @Test
+    public void testFromCrossJoin_Validation() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        assertThrows(IllegalStateException.class, () -> builder.from().crossJoin("colors c"));
+        builder.from().append("users");
+        assertThrows(IllegalArgumentException.class, () -> builder.from().crossJoin("   "));
+    }
+
+    @Test
+    public void testFromNaturalJoin() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users", "u").naturalJoin("user_profiles");
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users u NATURAL JOIN user_profiles", sql);
+    }
+
+    @Test
+    public void testFromNaturalJoin_Validation() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        assertThrows(IllegalStateException.class, () -> builder.from().naturalJoin("user_profiles"));
+        builder.from().append("users");
+        assertThrows(IllegalArgumentException.class, () -> builder.from().naturalJoin("   "));
+    }
+
+    @Test
     public void testFromAppendIf() {
         DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");

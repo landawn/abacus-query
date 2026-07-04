@@ -12799,6 +12799,122 @@ public class SqlBuilderTest extends TestBase {
         assertEquals("ALL", AbstractQueryBuilder.ALL);
         assertEquals("count(*)", AbstractQueryBuilder.COUNT_ALL);
     }
+
+    // ==== Regression tests for the 2026-07-03 review fixes ====
+
+    @Test
+    public void testSinglePropRowValueInRendersTupleRows() {
+        // A single-prop row-value In previously fell into the scalar IN path, binding each tuple List
+        // whole as one parameter ("id IN (?, ?)" with params [[1],[2]]; raw mode "IN ('[1]', '[2]')").
+        SP sp = Dsl.PSC.select("*").from("users").where(Filters.in(N.asList("id"), N.asList(N.asList(1), N.asList(2)))).build();
+        assertEquals("SELECT * FROM users WHERE (id) IN ((?), (?))", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+
+        SP named = Dsl.NSC.select("*").from("users").where(Filters.in(N.asList("id"), N.asList(N.asList(1), N.asList(2)))).build();
+        assertEquals("SELECT * FROM users WHERE (id) IN ((:id1), (:id2))", named.query());
+        assertEquals(Arrays.asList(1, 2), named.parameters());
+
+        SP notIn = Dsl.PSC.select("*").from("users").where(Filters.notIn(N.asList("id"), N.asList(N.asList(1), N.asList(2)))).build();
+        assertEquals("SELECT * FROM users WHERE (id) NOT IN ((?), (?))", notIn.query());
+        assertEquals(Arrays.asList(1, 2), notIn.parameters());
+    }
+
+    @Test
+    public void testCriteriaJoinWithRawConditionRendersOnKeyword() {
+        // A raw (non-On/Using) join condition previously rendered with no ON keyword and no separator,
+        // fusing the table name and the condition: "JOIN orderst1.id = ...".
+        Criteria exprJoin = Criteria.builder().join("orders", Filters.expr("users.id = orders.user_id")).build();
+        assertEquals("SELECT * FROM users JOIN orders ON users.id = orders.user_id", Dsl.PSC.select("*").from("users").append(exprJoin).build().query());
+
+        Criteria binaryJoin = Criteria.builder().join("orders", Filters.equal("orders.user_id", 5)).build();
+        SP sp = Dsl.PSC.select("*").from("users").append(binaryJoin).build();
+        assertEquals("SELECT * FROM users JOIN orders ON orders.user_id = ?", sp.query());
+        assertEquals(Arrays.asList(5), sp.parameters());
+
+        // An On condition renders its own ON keyword -- no double "ON ON".
+        Criteria onJoin = Criteria.builder().join("orders", Filters.on("users.id", "orders.user_id")).build();
+        String onSql = Dsl.PSC.select("*").from("users").append(onJoin).build().query();
+        assertTrue(onSql.contains("JOIN orders ON ("));
+        assertFalse(onSql.contains("ON ON"));
+    }
+
+    @Test
+    public void testSetOperationCrossBaseNamedParameterCollision() {
+        // Parent's literal property "id_2" used to collide with the child's generated "id" + "_2" suffix,
+        // binding the same :id_2 placeholder to two different values.
+        SqlBuilder child = Dsl.NSC.select("id").from("t2").where(Filters.and(Filters.equal("id", 1), Filters.equal("id", 2)));
+        SP sp = Dsl.NSC.select("id").from("t1").where(Filters.equal("id_2", 100)).union(child).build();
+
+        List<String> names = new ArrayList<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(":([A-Za-z0-9_]+)").matcher(sp.query());
+        while (m.find()) {
+            names.add(m.group(1));
+        }
+
+        assertEquals(3, names.size());
+        assertEquals(3, new HashSet<>(names).size()); // every placeholder unique across the compound query
+        assertEquals(Arrays.asList(100, 1, 2), sp.parameters());
+    }
+
+    @Test
+    public void testIncompleteSetOperationSegmentThrowsInsteadOfTruncating() {
+        // Previously built "SELECT id FROM t UNION " with the staged columns silently dropped.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t").union("id", "name").build());
+
+        // A non-SELECT sibling builder is rejected up front instead of being staged as a "column list".
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("t").union(Dsl.PSC.update("t2").set("a")));
+
+        // Completing the segment still works.
+        String sql = Dsl.PSC.select("id").from("t").union("id", "name").from("t2").build().query();
+        assertTrue(sql.startsWith("SELECT id FROM t UNION SELECT "));
+        assertTrue(sql.endsWith("FROM t2"));
+    }
+
+    @Test
+    public void testSelectModifierEmittedVerbatim() {
+        // The modifier used to be routed through column-name normalization, camelCasing any
+        // non-keyword modifier under PLC (SQL_CALC_FOUND_ROWS -> sqlCalcFoundRows).
+        assertEquals("SELECT SQL_CALC_FOUND_ROWS * FROM account", Dsl.PLC.select("*").selectModifier("SQL_CALC_FOUND_ROWS").from("account").build().query());
+
+        // The late-insert path (selectModifier after from) must be verbatim too.
+        assertEquals("SELECT SQL_CALC_FOUND_ROWS * FROM account", Dsl.PLC.select("*").from("account").selectModifier("SQL_CALC_FOUND_ROWS").build().query());
+    }
+
+    @Test
+    public void testFromAndIntoReentryGuards() {
+        // Double from() used to emit two fused SELECT fragments.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t1").from("t2"));
+
+        // into() after from() used to concatenate a second INSERT statement with no separator.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("firstName").from("account").into("backup"));
+
+        // A second into() is rejected as well.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.insert("firstName").into("t1").into("t2"));
+
+        // An INSERT ... SELECT left without its from() now fails at build instead of emitting a fragment.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("firstName").into("backup").build());
+
+        // The documented INSERT ... SELECT flow still works.
+        assertEquals("INSERT INTO account_backup (first_name) SELECT first_name AS \"firstName\" FROM account",
+                Dsl.PSC.select("firstName").into("account_backup").from("account").build().query());
+    }
+
+    @Test
+    public void testVerbatimLimitLiteralConsumesOffsetSlot() {
+        // "LIMIT ? OFFSET ?" followed by offset(5) used to emit a second OFFSET clause.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t").append(Filters.limit("LIMIT ? OFFSET ?")).offset(5));
+
+        // A literal without OFFSET leaves the offset slot available.
+        assertEquals("SELECT id FROM t LIMIT ? OFFSET 5", Dsl.PSC.select("id").from("t").append(Filters.limit("LIMIT ?")).offset(5).build().query());
+    }
+
+    @Test
+    public void testSelectSingleExpressionAppliesNamingPolicy() {
+        // Documented behavior of Dsl.select(String): identifiers inside the expression ARE converted
+        // by the naming policy; function names, keywords and the AS alias are preserved.
+        assertEquals("SELECT first_name || ' ' || last_name AS fullName FROM account",
+                Dsl.PSC.select("firstName || ' ' || lastName AS fullName").from("account").build().query());
+    }
 }
 
 class SqlBuilderJavadocExamples extends TestBase {

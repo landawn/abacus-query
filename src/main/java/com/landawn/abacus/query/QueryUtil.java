@@ -63,10 +63,10 @@ public final class QueryUtil {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * boolean isValid = PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("column_name").matches();
+     * boolean isValid = PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("column_name").matches();
      * }</pre>
      */
-    public static final Pattern PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME = Pattern.compile("^[a-zA-Z0-9_-]+$");
+    public static final Pattern PATTERN_FOR_SIMPLE_COLUMN_NAME = Pattern.compile("^[a-zA-Z0-9_-]+$");
 
     private QueryUtil() {
         // utility class — no instances
@@ -893,13 +893,14 @@ public final class QueryUtil {
 
     /**
      * Gets the table name and optional alias for the entity class using the specified naming policy.
-     * If {@code @Table} annotation is present, uses its values; otherwise derives the table name from the class name
-     * using the provided naming policy.
+     * The table name is resolved the same way the query builders resolve it: from the {@code @Table}
+     * annotation ({@link Table#name() name} or its deprecated {@code value()} alias) or a JPA
+     * {@code javax.persistence}/{@code jakarta.persistence} {@code @Table} annotation; only when no
+     * annotated name exists is the table name derived from the class name using the provided naming
+     * policy. The alias comes from {@link Table#alias()} and is appended after a space when present.
      *
-     * <p>The naming policy is only used when no {@code @Table} annotation is present. If {@code @Table} is defined,
-     * its {@link Table#name() name} and {@link Table#alias() alias} values are used directly without any
-     * transformation; the naming policy is ignored. If {@code @Table} is present but its {@code name} attribute
-     * is left at the default (empty string), the returned table portion will likewise be empty.</p>
+     * <p>Annotated names are used directly without any transformation; the naming policy is only applied
+     * to a class-name-derived table name.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -925,14 +926,16 @@ public final class QueryUtil {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
 
+        // Resolve the annotated table name the same way the query builders do: BeanInfo.tableName honors
+        // @Table.name(), its deprecated @Table.value() alias, and the javax/jakarta persistence @Table
+        // annotations, so this helper cannot diverge from the FROM clause rendered for the same class.
+        final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
         final Table anno = entityClass.getAnnotation(Table.class);
+        final String alias = anno == null ? null : anno.alias();
 
-        if (anno == null) {
-            return effectiveNamingPolicy.convert(ClassUtil.getSimpleClassName(entityClass));
-        } else {
-            final String tableName = anno.name();
-            final String alias = anno.alias();
-            return Strings.isEmpty(alias) ? tableName : Strings.concat(tableName, SK.SPACE, alias);
-        }
+        final String tableName = entityInfo.tableName.isPresent() ? entityInfo.tableName.get()
+                : effectiveNamingPolicy.convert(ClassUtil.getSimpleClassName(entityClass));
+
+        return Strings.isEmpty(alias) ? tableName : Strings.concat(tableName, SK.SPACE, alias);
     }
 }

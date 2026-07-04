@@ -183,8 +183,8 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
-     *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
+     * @param cond the condition appended after the join target. Use {@link On} (or the deprecated {@link Using})
+     *            when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with
      *                                  {@code ON} or {@code USING}, or an empty predicate (a blank {@link Expression}
@@ -211,8 +211,8 @@ public class Join extends AbstractCondition {
      *
      * @param operator the join operator
      * @param joinEntity the table or entity to join with
-     * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
-     *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
+     * @param cond the condition appended after the join target. Use {@link On} (or the deprecated {@link Using})
+     *            when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with
      *                                  {@code ON} or {@code USING}, or an empty predicate (a blank {@link Expression}
@@ -245,8 +245,8 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with
-     * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
-     *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
+     * @param cond the condition appended after the join target. Use {@link On} (or the deprecated {@link Using})
+     *            when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins
      *                                  with {@code ON} or {@code USING}, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
@@ -272,8 +272,8 @@ public class Join extends AbstractCondition {
      *
      * @param operator the join operator
      * @param joinEntities the collection of tables or entities to join with
-     * @param cond the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should
-     *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
+     * @param cond the condition appended after the join target. Use {@link On} (or the deprecated {@link Using})
+     *            when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains
      *                                  {@code null}, empty, or blank elements, or if {@code cond} is a {@link Criteria},
      *                                  a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
@@ -305,8 +305,9 @@ public class Join extends AbstractCondition {
     private static Condition validateJoinCondition(final Condition cond) {
         if (cond != null && (cond instanceof Criteria || isClause(cond) || isEmptyPredicate(cond) || (cond instanceof Expression && isOnOrUsing(cond))
                 || (!(cond instanceof On) && !(cond instanceof Using) && containsOnOrUsing(cond)))) {
-            throw new IllegalArgumentException(
-                    "Join condition cannot be a SQL clause, Criteria, empty predicate, or nested ON/USING connector: " + cond.operator());
+            // Include the condition text, not just the operator: for a rejected Expression the operator is
+            // EMPTY (literal ""), which would leave the message without any diagnostic payload.
+            throw new IllegalArgumentException("Join condition cannot be a SQL clause, Criteria, empty predicate, or nested ON/USING connector: " + cond);
         }
 
         return cond;

@@ -52,6 +52,11 @@ package com.landawn.abacus.query.condition;
  *   <li>SOME/ANY are less restrictive than ALL</li>
  * </ul>
  *
+ * <p>Note: although this class extends {@link ComposableCell}, the inherited composition methods
+ * ({@code and()}, {@code or()}, {@code not()}, {@code xor()}) are unavailable for SOME conditions and throw
+ * {@link IllegalArgumentException}, because a quantified-subquery operand can only appear as the
+ * right-hand side of a comparison.</p>
+ *
  * @see All
  * @see Any
  * @see SubQuery
@@ -99,7 +104,7 @@ public class Some extends ComposableCell {
     }
 
     /**
-     * Gets the subquery wrapped by this SOME condition.
+     * Gets the subquery used by this SOME condition.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -114,7 +119,7 @@ public class Some extends ComposableCell {
      * // returns true
      * }</pre>
      *
-     * @return the {@link SubQuery} supplied to this condition
+     * @return the {@link SubQuery} supplied at construction time
      */
     public SubQuery getSubQuery() {
         return (SubQuery) condition;

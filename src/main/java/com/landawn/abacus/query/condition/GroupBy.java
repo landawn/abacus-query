@@ -106,6 +106,7 @@ public class GroupBy extends Clause {
      *             an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
      *             operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which
      *             can be nested inside a clause
+     * @see Filters#expr(String)
      */
     public GroupBy(final Condition cond) {
         super(Operator.GROUP_BY, cond);

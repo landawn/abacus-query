@@ -80,7 +80,8 @@ public class Like extends Binary {
      * Creates a new LIKE condition with the specified property name and pattern.
      * The pattern should include SQL wildcards ({@code %} or {@code _}) for pattern matching.
      * If special characters need to be matched literally, they should be escaped
-     * according to your database's escape syntax.
+     * according to your database's escape syntax. Case sensitivity depends on the
+     * database's collation settings.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

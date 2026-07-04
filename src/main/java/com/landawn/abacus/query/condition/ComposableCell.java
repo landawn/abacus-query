@@ -39,7 +39,8 @@ public abstract class ComposableCell extends ComposableCondition {
 
     /**
      * The wrapped condition. This field is immutable once set in the constructor.
-     * Accessed by subclasses for direct rendering when they override {@code toString(NamingPolicy)}.
+     * Accessed by subclasses for covariant getter casts (e.g. {@link All#getSubQuery()} returns
+     * {@code (SubQuery) condition}).
      */
     protected final Condition condition;
 
@@ -83,7 +84,7 @@ public abstract class ComposableCell extends ComposableCondition {
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
-    public ComposableCell(final Operator operator, final Condition cond) {
+    protected ComposableCell(final Operator operator, final Condition cond) {
         super(operator);
         this.condition = N.checkArgNotNull(cond, "cond");
     }
@@ -108,7 +109,7 @@ public abstract class ComposableCell extends ComposableCondition {
      * Like bad = (Like) notCond.getCondition();   // throws ClassCastException
      * }</pre>
      *
-     * @return the wrapped condition; never {@code null} for instances created via the public
+     * @return the wrapped condition; never {@code null} for instances created via the protected
      *         constructor, but may be {@code null} for uninitialized instances produced by the
      *         package-private default constructor (e.g., during Kryo deserialization)
      */

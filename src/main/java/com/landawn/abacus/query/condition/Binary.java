@@ -17,6 +17,7 @@ package com.landawn.abacus.query.condition;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -90,7 +91,7 @@ public class Binary extends ComposableCondition {
     // For Kryo
     final String propName;
 
-    private Object propValue;
+    private final Object propValue;
 
     /** Lazily memoized parameters (performance only). */
     private transient ImmutableList<Object> cachedParameters;
@@ -105,6 +106,7 @@ public class Binary extends ComposableCondition {
      */
     Binary() {
         propName = null;
+        propValue = null;
     }
 
     /**
@@ -348,9 +350,11 @@ public class Binary extends ComposableCondition {
             return propValue;
         }
 
+        // The copies are wrapped unmodifiable so getPropValue() cannot leak a mutable view of the
+        // internal membership list (mutation would silently desync the memoized parameters/hashCode).
         if (propValue instanceof final Collection<?> values) {
             N.checkArgNotEmpty(values, "propValue");
-            return new ArrayList<>(values);
+            return Collections.unmodifiableList(new ArrayList<>(values));
         }
 
         if (propValue != null && propValue.getClass().isArray()) {
@@ -366,7 +370,7 @@ public class Binary extends ComposableCondition {
                 values.add(Array.get(propValue, i));
             }
 
-            return values;
+            return Collections.unmodifiableList(values);
         }
 
         throw new IllegalArgumentException("IN/NOT IN operator requires a non-empty collection, array, or condition value");

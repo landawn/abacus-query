@@ -321,6 +321,10 @@ public class Filters {
      * {@link #binary(String, Operator, Object)}, mirroring pairs such as
      * {@link #equal(String, Object)} / {@link #equal(String)}.
      *
+     * <p><b>Note:</b> with {@link Operator#IN} or {@link Operator#NOT_IN} this parameterized form
+     * renders the invalid SQL {@code propName IN ?} — use {@link #in(String, java.util.Collection)} /
+     * {@link #notIn(String, java.util.Collection)} (or the {@link In}/{@link NotIn} conditions) instead.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = Filters.binary("price", Operator.GREATER_THAN);
@@ -435,7 +439,7 @@ public class Filters {
      *
      * @param props map of property names to values (must not be empty)
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code props} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or any property name key is {@code null}, empty, or blank
      * @see NamedProperty#equalsAny(Object...)
      */
     public static Or anyEqual(final Map<String, ?> props) {
@@ -594,7 +598,7 @@ public class Filters {
      *
      * @param props map of property names to values (must not be empty)
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code props} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or any property name key is {@code null}, empty, or blank
      */
     public static And allEqual(final Map<String, ?> props) {
         N.checkArgNotEmpty(props, "props");
@@ -809,7 +813,7 @@ public class Filters {
      * @param entities collection of entity objects (must not be empty)
      * @param selectPropNames the property names to include (must not be empty)
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entities} or {@code selectPropNames} is empty, or all entities are null
+     * @throws IllegalArgumentException if {@code entities} or {@code selectPropNames} is {@code null} or empty, or all entities are null
      */
     @Beta
     public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> selectPropNames) {
@@ -845,6 +849,7 @@ public class Filters {
      * @param minValue the minimum value (exclusive)
      * @param maxValue the maximum value (exclusive)
      * @return an {@link And} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static And gtAndLt(final String propName, final Object minValue, final Object maxValue) {
         return gt(propName, minValue).and(lt(propName, maxValue));
@@ -865,6 +870,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link And} condition with parameter placeholders
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static And gtAndLt(final String propName) {
         return gt(propName).and(lt(propName));
@@ -887,6 +893,7 @@ public class Filters {
      * @param minValue the minimum value (inclusive)
      * @param maxValue the maximum value (exclusive)
      * @return an {@link And} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static And geAndLt(final String propName, final Object minValue, final Object maxValue) {
         return ge(propName, minValue).and(lt(propName, maxValue));
@@ -907,6 +914,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link And} condition with parameter placeholders
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static And geAndLt(final String propName) {
         return ge(propName).and(lt(propName));
@@ -929,6 +937,7 @@ public class Filters {
      * @param minValue the minimum value (inclusive)
      * @param maxValue the maximum value (inclusive)
      * @return an {@link And} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static And geAndLe(final String propName, final Object minValue, final Object maxValue) {
         return ge(propName, minValue).and(le(propName, maxValue));
@@ -949,6 +958,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link And} condition with parameter placeholders
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static And geAndLe(final String propName) {
         return ge(propName).and(le(propName));
@@ -971,6 +981,7 @@ public class Filters {
      * @param minValue the minimum value (exclusive)
      * @param maxValue the maximum value (inclusive)
      * @return an {@link And} condition
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static And gtAndLe(final String propName, final Object minValue, final Object maxValue) {
         return gt(propName, minValue).and(le(propName, maxValue));
@@ -991,6 +1002,7 @@ public class Filters {
      *
      * @param propName the property/column name
      * @return an {@link And} condition with parameter placeholders
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static And gtAndLe(final String propName) {
         return gt(propName).and(le(propName));
@@ -1564,7 +1576,10 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param propValue the pattern to match (can include SQL wildcards)
+     * @param propValue the pattern to match (can include SQL wildcards). Passing {@code null} renders as
+     *                  {@code propName LIKE null}, which is not a meaningful SQL comparison; do not pass
+     *                  {@code null} (the {@link #contains(String, String)} / {@link #startsWith(String, String)}
+     *                  siblings reject a {@code null} value)
      * @return a {@link Like} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
@@ -1601,7 +1616,9 @@ public class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param propValue the pattern to exclude (can include SQL wildcards)
+     * @param propValue the pattern to exclude (can include SQL wildcards). Passing {@code null} renders as
+     *                  {@code propName NOT LIKE null}, which is not a meaningful SQL comparison; do not pass
+     *                  {@code null} (the {@link #notContains(String, String)} sibling rejects a {@code null} value)
      * @return a {@link NotLike} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
@@ -2098,7 +2115,7 @@ public class Filters {
      * }</pre>
      *
      * @param operator the junction operator; must be {@link Operator#AND} or {@link Operator#OR}
-     * @param conditions the array of conditions to combine
+     * @param conditions the array of conditions to combine; {@code null} or empty is permitted and yields an empty junction
      * @return a {@link Junction} with the specified operator
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
@@ -2122,7 +2139,7 @@ public class Filters {
      * }</pre>
      *
      * @param operator the junction operator; must be {@link Operator#AND} or {@link Operator#OR}
-     * @param conditions the collection of conditions to combine
+     * @param conditions the collection of conditions to combine; {@code null} or empty is permitted and yields an empty junction
      * @return a {@link Junction} with the specified operator
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
@@ -2783,6 +2800,11 @@ public class Filters {
     /**
      * Creates an {@link On} clause for simple equality join between two columns.
      *
+     * <p><b>Note:</b> unlike {@code SqlBuilder}'s {@code on(String...)} — where each argument is a
+     * complete boolean expression and multiple arguments are joined with {@code AND} — the two strings
+     * here are <em>column names</em> forming a single equality {@code ON leftPropName = rightPropName}.
+     * To pass a complete expression, use {@link #on(String)} instead.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * On on = Filters.on("user_id", "id");
@@ -2835,7 +2857,8 @@ public class Filters {
      * @param columnNames the column names used for joining
      * @return a {@link Using} clause
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank element, or contains a qualified (dotted) column name
-     * @deprecated It's recommended to use {@link #on(Map)} or multiple {@link #on(String, String)} clauses instead of
+     * @deprecated It's recommended to use {@link #on(java.util.Map)} (a join takes a single {@code ON}
+     *             condition; the map form combines multiple column pairs with {@code AND}) instead of
      *             {@code Using} for better portability and clarity. Replace {@code using("col1", "col2")} with explicit
      *             {@code on(N.asMap("table1.col1", "table2.col1", "table1.col2", "table2.col2"))}.
      */
@@ -2857,9 +2880,10 @@ public class Filters {
      * @param columnNames collection of column names used for joining
      * @return a {@link Using} clause
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank element, or contains a qualified (dotted) column name
-     * @deprecated It's recommended to use {@link #on(Map)} or multiple {@link #on(String, String)} clauses
-     *             instead of {@code Using} for better portability and clarity. Replace {@code using(columnList)}
-     *             with explicit {@code on()} conditions that specify the full column names with table prefixes.
+     * @deprecated It's recommended to use {@link #on(java.util.Map)} (a join takes a single {@code ON}
+     *             condition; the map form combines multiple column pairs with {@code AND}) instead of
+     *             {@code Using} for better portability and clarity. Replace {@code using(columnList)}
+     *             with an explicit {@code on(Map)} condition that specifies the full column names with table prefixes.
      */
     @Deprecated
     public static Using using(final Collection<String> columnNames) {
@@ -3456,7 +3480,7 @@ public class Filters {
      * Creates a row value constructor IN condition.
      * The tuple of property values must match one of the supplied value rows.
      *
-     * <p>Each element of {@code values} is one row and may be supplied as a {@link Collection} or other
+     * <p>Each element of {@code valueRows} is one row and may be supplied as a {@link Collection} or other
      * {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean (read by
      * property name).</p>
      *
@@ -3471,15 +3495,15 @@ public class Filters {
      * Oracle and DB2, but <i>not</i> by SQL Server (use {@link #in(Collection, SubQuery)} there).</p>
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}/blank names)
-     * @param values collection of value rows; each row must resolve to exactly {@code propNames.size()} values.
+     * @param valueRows collection of value rows; each row must resolve to exactly {@code propNames.size()} values.
      *               A row may be a {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @return an {@link In} condition
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
-     *                                  if {@code values} is {@code null} or empty, if any row is {@code null} or of an
+     *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      */
-    public static In in(final Collection<String> propNames, final Collection<?> values) {
-        return new In(propNames, values);
+    public static In in(final Collection<String> propNames, final Collection<?> valueRows) {
+        return new In(propNames, valueRows);
     }
 
     /**
@@ -3496,7 +3520,9 @@ public class Filters {
      * @param propName the property/column name
      * @param subQuery the subquery to check against
      * @return an {@link InSubQuery} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code subQuery} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code subQuery} is {@code null},
+     *                                  or if {@code subQuery} is a structured subquery (exposing selected property names)
+     *                                  that selects a number of columns other than 1
      */
     public static InSubQuery in(final String propName, final SubQuery subQuery) {
         return new InSubQuery(propName, subQuery);
@@ -3516,7 +3542,9 @@ public class Filters {
      * @param propNames collection of property/column names
      * @param subQuery the subquery to check against
      * @return an {@link InSubQuery} condition
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty or contains a {@code null}, empty, or blank name, or if {@code subQuery} is {@code null}
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty or contains a {@code null}, empty, or blank name,
+     *                                  if {@code subQuery} is {@code null}, or if {@code subQuery} is a structured subquery
+     *                                  (exposing selected property names) whose number of selected columns does not match {@code propNames.size()}
      */
     public static InSubQuery in(final Collection<String> propNames, final SubQuery subQuery) {
         return new InSubQuery(propNames, subQuery);
@@ -3707,7 +3735,7 @@ public class Filters {
      * Creates a row value constructor NOT IN condition.
      * The tuple of property values must not match any of the supplied value rows.
      *
-     * <p>Each element of {@code values} is one row and may be supplied as a {@link Collection} or other
+     * <p>Each element of {@code valueRows} is one row and may be supplied as a {@link Collection} or other
      * {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean (read by
      * property name).</p>
      *
@@ -3722,15 +3750,15 @@ public class Filters {
      * Oracle and DB2, but <i>not</i> by SQL Server (use {@link #notIn(Collection, SubQuery)} there).</p>
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}/blank names)
-     * @param values collection of value rows to exclude; each row must resolve to exactly {@code propNames.size()}
+     * @param valueRows collection of value rows to exclude; each row must resolve to exactly {@code propNames.size()}
      *               values. A row may be a {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @return a {@link NotIn} condition
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
-     *                                  if {@code values} is {@code null} or empty, if any row is {@code null} or of an
+     *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      */
-    public static NotIn notIn(final Collection<String> propNames, final Collection<?> values) {
-        return new NotIn(propNames, values);
+    public static NotIn notIn(final Collection<String> propNames, final Collection<?> valueRows) {
+        return new NotIn(propNames, valueRows);
     }
 
     /**
@@ -3747,7 +3775,9 @@ public class Filters {
      * @param propName the property/column name
      * @param subQuery the subquery to check against
      * @return a {@link NotInSubQuery} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code subQuery} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code subQuery} is {@code null},
+     *                                  or if {@code subQuery} is a structured subquery (exposing selected property names)
+     *                                  that selects a number of columns other than 1
      */
     public static NotInSubQuery notIn(final String propName, final SubQuery subQuery) {
         return new NotInSubQuery(propName, subQuery);
@@ -3767,7 +3797,9 @@ public class Filters {
      * @param propNames collection of property/column names
      * @param subQuery the subquery to check against
      * @return a {@link NotInSubQuery} condition
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty or contains a {@code null}, empty, or blank name, or if {@code subQuery} is {@code null}
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty or contains a {@code null}, empty, or blank name,
+     *                                  if {@code subQuery} is {@code null}, or if {@code subQuery} is a structured subquery
+     *                                  (exposing selected property names) whose number of selected columns does not match {@code propNames.size()}
      */
     public static NotInSubQuery notIn(final Collection<String> propNames, final SubQuery subQuery) {
         return new NotInSubQuery(propNames, subQuery);
@@ -3788,6 +3820,7 @@ public class Filters {
      *
      * @param subQuery the subquery
      * @return an {@link All} condition
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public static All all(final SubQuery subQuery) {
         return new All(subQuery);
@@ -3808,6 +3841,7 @@ public class Filters {
      *
      * @param subQuery the subquery
      * @return an {@link Any} condition
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public static Any any(final SubQuery subQuery) {
         return new Any(subQuery);
@@ -3828,6 +3862,7 @@ public class Filters {
      *
      * @param subQuery the subquery
      * @return a {@link Some} condition
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public static Some some(final SubQuery subQuery) {
         return new Some(subQuery);
@@ -3845,6 +3880,7 @@ public class Filters {
      *
      * @param subQuery the subquery to check
      * @return an {@link Exists} condition
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public static Exists exists(final SubQuery subQuery) {
         return new Exists(subQuery);
@@ -3862,6 +3898,7 @@ public class Filters {
      *
      * @param subQuery the subquery to check
      * @return a {@link NotExists} condition
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public static NotExists notExists(final SubQuery subQuery) {
         return new NotExists(subQuery);
@@ -3880,6 +3917,7 @@ public class Filters {
      *
      * @param subQuery the subquery to union with
      * @return a {@link Union} clause
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public static Union union(final SubQuery subQuery) {
         return new Union(subQuery);
@@ -3898,6 +3936,7 @@ public class Filters {
      *
      * @param subQuery the subquery to union with
      * @return a {@link UnionAll} clause
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public static UnionAll unionAll(final SubQuery subQuery) {
         return new UnionAll(subQuery);
@@ -3916,6 +3955,7 @@ public class Filters {
      *
      * @param subQuery the subquery to subtract
      * @return an {@link Except} clause
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public static Except except(final SubQuery subQuery) {
         return new Except(subQuery);
@@ -3934,6 +3974,7 @@ public class Filters {
      *
      * @param subQuery the subquery to intersect with
      * @return an {@link Intersect} clause
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public static Intersect intersect(final SubQuery subQuery) {
         return new Intersect(subQuery);
@@ -3952,6 +3993,7 @@ public class Filters {
      *
      * @param subQuery the subquery to subtract
      * @return a {@link Minus} clause
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public static Minus minus(final SubQuery subQuery) {
         return new Minus(subQuery);
@@ -3977,8 +4019,12 @@ public class Filters {
      * @param cond the WHERE condition for the subquery; may be {@code null} for no WHERE clause
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propNames} is
-     *         {@code null} or empty, contains a {@code null}, empty, or blank element, or if {@code cond}
-     *         uses an {@code ON}/{@code USING} operator
+     *         {@code null} or empty, contains a {@code null}, empty, or blank element, if {@code cond}
+     *         uses an {@code ON}/{@code USING} operator, if {@code cond} is a
+     *         {@link com.landawn.abacus.query.condition.Criteria Criteria} carrying a SELECT modifier
+     *         (e.g. {@code DISTINCT}), or if {@code cond} is an {@code ANY}/{@code ALL}/{@code SOME}
+     *         quantified-subquery operand or an empty {@link Junction} (neither can be nested inside
+     *         the generated {@code WHERE} clause)
      */
     public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition cond) {
         return new SubQuery(entityClass, propNames, cond);
@@ -4034,7 +4080,11 @@ public class Filters {
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank, if
      *         {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
-     *         or if {@code cond} uses an {@code ON}/{@code USING} operator
+     *         if {@code cond} uses an {@code ON}/{@code USING} operator, if {@code cond} is a
+     *         {@link com.landawn.abacus.query.condition.Criteria Criteria} carrying a SELECT modifier
+     *         (e.g. {@code DISTINCT}), or if {@code cond} is an {@code ANY}/{@code ALL}/{@code SOME}
+     *         quantified-subquery operand or an empty {@link Junction} (neither can be nested inside
+     *         the generated {@code WHERE} clause)
      */
     public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final Condition cond) {
         return new SubQuery(entityName, propNames, cond);
@@ -4080,9 +4130,9 @@ public class Filters {
      * }</pre>
      *
      * @param entityName the entity/table name
-     * @param sql the complete SQL for the subquery
+     * @param sql the complete SQL for the subquery (must not be {@code null}, empty, or blank)
      * @return a {@link SubQuery}
-     * @throws IllegalArgumentException if {@code sql} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
      * @see #subQuery(String)
      * @deprecated when the full SQL is supplied, {@code entityName} is not used to build the
      *             subquery; use {@link #subQuery(String)} instead.
@@ -4107,9 +4157,9 @@ public class Filters {
      * // Generates: SELECT user_id FROM orders WHERE total > 1000 GROUP BY user_id
      * }</pre>
      *
-     * @param sql the complete SQL for the subquery (must not be {@code null} or empty)
+     * @param sql the complete SQL for the subquery (must not be {@code null}, empty, or blank)
      * @return a {@link SubQuery}
-     * @throws IllegalArgumentException if {@code sql} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
      */
     public static SubQuery subQuery(final String sql) {
         return new SubQuery(sql);

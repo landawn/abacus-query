@@ -181,8 +181,7 @@ public class Expression extends ComposableCondition {
     /**
      * Constructs a new {@code Expression} with the specified SQL literal.
      * The literal can contain any valid SQL expression, including functions, operators,
-     * column references, and complex expressions. A {@code null} literal is permitted and
-     * will render as the string {@code "null"}.
+     * column references, and complex expressions.
      *
      * <p>Note: For frequently used expressions, prefer {@link #of(String)} instead,
      * which provides instance caching for better performance and memory efficiency.</p>
@@ -196,10 +195,15 @@ public class Expression extends ComposableCondition {
      * // expr4.toString() returns: "COALESCE(middle_name, '')"
      * }</pre>
      *
-     * @param literal the SQL expression as a string; may be {@code null}
+     * @param literal the SQL expression as a string (must not be {@code null})
+     * @throws IllegalArgumentException if {@code literal} is {@code null}
      */
     public Expression(final String literal) {
         super(Operator.EMPTY);
+
+        if (literal == null) {
+            throw new IllegalArgumentException("literal must not be null");
+        }
 
         this.literal = literal;
     }
@@ -214,12 +218,11 @@ public class Expression extends ComposableCondition {
      *
      * Expression expr2 = Expression.of("CURRENT_TIMESTAMP");
      * String literal2 = expr2.getLiteral();   // Returns "CURRENT_TIMESTAMP"
-     *
-     * Expression empty = new Expression(null);
-     * String literal3 = empty.getLiteral();   // Returns null
      * }</pre>
      *
-     * @return the SQL expression string; may be {@code null} if this expression was constructed with a {@code null} literal
+     * @return the SQL expression string; never {@code null} for instances created via the public
+     *         constructor or {@link #of(String)}, but may be {@code null} for uninitialized instances
+     *         produced by the package-private default constructor (e.g., during Kryo deserialization)
      */
     public String getLiteral() {
         return literal;
@@ -229,6 +232,9 @@ public class Expression extends ComposableCondition {
      * Creates or retrieves a cached Expression instance for the given literal.
      * This method uses caching to ensure that expressions with the same literal
      * share the same instance, improving memory efficiency and performance.
+     *
+     * <p>Note: the cache is unbounded and retains every distinct literal for the lifetime of the
+     * JVM, so prefer the {@link #Expression(String) constructor} for dynamically-generated literals.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -269,13 +275,13 @@ public class Expression extends ComposableCondition {
      * // Returns: "middle_name IS NULL"
      * }</pre>
      *
-     * @param literal the left-hand side of the equality
+     * @param expr the left-hand side of the equality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NULL})
      * @return a string representation of the equality expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String equal(final String literal, final Object value) { //NOSONAR
-        return link(Operator.EQUAL, literal, value);
+    public static String equal(final String expr, final Object value) { //NOSONAR
+        return link(Operator.EQUAL, expr, value);
     }
 
     /**
@@ -288,14 +294,14 @@ public class Expression extends ComposableCondition {
      * // Returns: "user_id = 123"
      * }</pre>
      *
-     * @param literal the left-hand side of the equality
+     * @param expr the left-hand side of the equality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NULL})
      * @return a string representation of the equality expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     @Beta
-    public static String eq(final String literal, final Object value) {
-        return equal(literal, value);
+    public static String eq(final String expr, final Object value) {
+        return equal(expr, value);
     }
 
     /**
@@ -314,13 +320,13 @@ public class Expression extends ComposableCondition {
      * // Returns: "email IS NOT NULL"
      * }</pre>
      *
-     * @param literal the left-hand side of the inequality
+     * @param expr the left-hand side of the inequality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NOT NULL})
      * @return a string representation of the not-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String notEqual(final String literal, final Object value) {
-        return link(Operator.NOT_EQUAL, literal, value);
+    public static String notEqual(final String expr, final Object value) {
+        return link(Operator.NOT_EQUAL, expr, value);
     }
 
     /**
@@ -333,14 +339,14 @@ public class Expression extends ComposableCondition {
      * // Returns: "type != 'guest'"
      * }</pre>
      *
-     * @param literal the left-hand side of the inequality
+     * @param expr the left-hand side of the inequality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NOT NULL})
      * @return a string representation of the not-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     @Beta
-    public static String ne(final String literal, final Object value) {
-        return notEqual(literal, value);
+    public static String ne(final String expr, final Object value) {
+        return notEqual(expr, value);
     }
 
     /**
@@ -355,13 +361,13 @@ public class Expression extends ComposableCondition {
      * // Returns: "created_date > '2024-01-01'"
      * }</pre>
      *
-     * @param literal the left-hand side of the comparison
-     * @param value the right-hand side value
+     * @param expr the left-hand side of the comparison
+     * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a string representation of the greater-than expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String greaterThan(final String literal, final Object value) {
-        return link(Operator.GREATER_THAN, literal, value);
+    public static String greaterThan(final String expr, final Object value) {
+        return link(Operator.GREATER_THAN, expr, value);
     }
 
     /**
@@ -374,14 +380,14 @@ public class Expression extends ComposableCondition {
      * // Returns: "age > 18"
      * }</pre>
      *
-     * @param literal the left-hand side of the comparison
-     * @param value the right-hand side value
+     * @param expr the left-hand side of the comparison
+     * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a string representation of the greater-than expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     @Beta
-    public static String gt(final String literal, final Object value) {
-        return greaterThan(literal, value);
+    public static String gt(final String expr, final Object value) {
+        return greaterThan(expr, value);
     }
 
     /**
@@ -393,13 +399,13 @@ public class Expression extends ComposableCondition {
      * // Returns: "score >= 60"
      * }</pre>
      *
-     * @param literal the left-hand side of the comparison
-     * @param value the right-hand side value
+     * @param expr the left-hand side of the comparison
+     * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a string representation of the greater-than-or-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String greaterThanOrEqual(final String literal, final Object value) {
-        return link(Operator.GREATER_THAN_OR_EQUAL, literal, value);
+    public static String greaterThanOrEqual(final String expr, final Object value) {
+        return link(Operator.GREATER_THAN_OR_EQUAL, expr, value);
     }
 
     /**
@@ -412,14 +418,14 @@ public class Expression extends ComposableCondition {
      * // Returns: "quantity >= 1"
      * }</pre>
      *
-     * @param literal the left-hand side of the comparison
-     * @param value the right-hand side value
+     * @param expr the left-hand side of the comparison
+     * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a string representation of the greater-than-or-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     @Beta
-    public static String ge(final String literal, final Object value) {
-        return greaterThanOrEqual(literal, value);
+    public static String ge(final String expr, final Object value) {
+        return greaterThanOrEqual(expr, value);
     }
 
     /**
@@ -431,13 +437,13 @@ public class Expression extends ComposableCondition {
      * // Returns: "price < 100"
      * }</pre>
      *
-     * @param literal the left-hand side of the comparison
-     * @param value the right-hand side value
+     * @param expr the left-hand side of the comparison
+     * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a string representation of the less-than expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String lessThan(final String literal, final Object value) {
-        return link(Operator.LESS_THAN, literal, value);
+    public static String lessThan(final String expr, final Object value) {
+        return link(Operator.LESS_THAN, expr, value);
     }
 
     /**
@@ -450,14 +456,14 @@ public class Expression extends ComposableCondition {
      * // Returns: "stock < 10"
      * }</pre>
      *
-     * @param literal the left-hand side of the comparison
-     * @param value the right-hand side value
+     * @param expr the left-hand side of the comparison
+     * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a string representation of the less-than expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     @Beta
-    public static String lt(final String literal, final Object value) {
-        return lessThan(literal, value);
+    public static String lt(final String expr, final Object value) {
+        return lessThan(expr, value);
     }
 
     /**
@@ -469,13 +475,13 @@ public class Expression extends ComposableCondition {
      * // Returns: "discount <= 50"
      * }</pre>
      *
-     * @param literal the left-hand side of the comparison
-     * @param value the right-hand side value
+     * @param expr the left-hand side of the comparison
+     * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a string representation of the less-than-or-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String lessThanOrEqual(final String literal, final Object value) {
-        return link(Operator.LESS_THAN_OR_EQUAL, literal, value);
+    public static String lessThanOrEqual(final String expr, final Object value) {
+        return link(Operator.LESS_THAN_OR_EQUAL, expr, value);
     }
 
     /**
@@ -488,14 +494,14 @@ public class Expression extends ComposableCondition {
      * // Returns: "temperature <= 32"
      * }</pre>
      *
-     * @param literal the left-hand side of the comparison
-     * @param value the right-hand side value
+     * @param expr the left-hand side of the comparison
+     * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a string representation of the less-than-or-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     @Beta
-    public static String le(final String literal, final Object value) {
-        return lessThanOrEqual(literal, value);
+    public static String le(final String expr, final Object value) {
+        return lessThanOrEqual(expr, value);
     }
 
     /**
@@ -511,14 +517,14 @@ public class Expression extends ComposableCondition {
      * // Returns: "price BETWEEN 10.0 AND 50.0"
      * }</pre>
      *
-     * @param literal the literal to test
+     * @param expr the expression to test
      * @param min the minimum value (inclusive)
      * @param max the maximum value (inclusive)
      * @return a string representation of the BETWEEN expression
      * @throws IllegalArgumentException if {@code min} or {@code max} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String between(final String literal, final Object min, final Object max) {
-        return link(Operator.BETWEEN, literal, min, max);
+    public static String between(final String expr, final Object min, final Object max) {
+        return link(Operator.BETWEEN, expr, min, max);
     }
 
     // Removed: bt(String, Object, Object) - non-standard abbreviation.
@@ -540,12 +546,13 @@ public class Expression extends ComposableCondition {
      * // Returns: "code LIKE 'A__'" (matches 'A' followed by exactly 2 characters)
      * }</pre>
      *
-     * @param literal the literal to match
-     * @param value the pattern to match against (can include % and _ wildcards)
+     * @param expr the expression to match
+     * @param value the pattern to match against (can include % and _ wildcards); should not be
+     *              {@code null} — a {@code null} renders as the literal {@code null}
      * @return a string representation of the LIKE expression
      */
-    public static String like(final String literal, final String value) {
-        return link(Operator.LIKE, literal, value);
+    public static String like(final String expr, final String value) {
+        return link(Operator.LIKE, expr, value);
     }
 
     /**
@@ -557,11 +564,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.isNull("middle_name");   // Returns: "middle_name IS NULL"
      * }</pre>
      *
-     * @param literal the literal to check for null
+     * @param expr the expression to check for null
      * @return a string representation of the IS NULL expression
      */
-    public static String isNull(final String literal) {
-        return link2(Operator.IS, literal, NULL_KEYWORD);
+    public static String isNull(final String expr) {
+        return link2(Operator.IS, expr, NULL_KEYWORD);
     }
 
     /**
@@ -573,11 +580,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.isNotNull("phone");   // Returns: "phone IS NOT NULL"
      * }</pre>
      *
-     * @param literal the literal to check for not null
+     * @param expr the expression to check for not null
      * @return a string representation of the IS NOT NULL expression
      */
-    public static String isNotNull(final String literal) {
-        return link2(Operator.IS_NOT, literal, NULL_KEYWORD);
+    public static String isNotNull(final String expr) {
+        return link2(Operator.IS_NOT, expr, NULL_KEYWORD);
     }
 
     /**
@@ -592,11 +599,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.isNullOrEmpty("address");      // Returns: "address IS BLANK"
      * }</pre>
      *
-     * @param literal the column reference or expression to check
+     * @param expr the column reference or expression to check
      * @return a framework-specific {@code IS BLANK} expression string
      */
-    public static String isNullOrEmpty(final String literal) {
-        return link2(Operator.IS, literal, BLANK_KEYWORD);
+    public static String isNullOrEmpty(final String expr) {
+        return link2(Operator.IS, expr, BLANK_KEYWORD);
     }
 
     /**
@@ -611,11 +618,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.isNotNullAndNotEmpty("comment");   // Returns: "comment IS NOT BLANK"
      * }</pre>
      *
-     * @param literal the column reference or expression to check
+     * @param expr the column reference or expression to check
      * @return a framework-specific {@code IS NOT BLANK} expression string
      */
-    public static String isNotNullAndNotEmpty(final String literal) {
-        return link2(Operator.IS_NOT, literal, BLANK_KEYWORD);
+    public static String isNotNullAndNotEmpty(final String expr) {
+        return link2(Operator.IS_NOT, expr, BLANK_KEYWORD);
     }
 
     /**
@@ -631,11 +638,11 @@ public class Expression extends ComposableCondition {
      * // Returns: "verified = 1 AND email IS NOT NULL"
      * }</pre>
      *
-     * @param literals the literals to combine with AND
+     * @param exprs the expressions to combine with AND
      * @return a string representation of the AND expression
      */
-    public static String and(final String... literals) {
-        return link2(Operator.AND, literals);
+    public static String and(final String... exprs) {
+        return link2(Operator.AND, exprs);
     }
 
     /**
@@ -648,11 +655,11 @@ public class Expression extends ComposableCondition {
      * // Returns: "status = 'active' OR status = 'pending' OR priority = 1"
      * }</pre>
      *
-     * @param literals the literals to combine with OR
+     * @param exprs the expressions to combine with OR
      * @return a string representation of the OR expression
      */
-    public static String or(final String... literals) {
-        return link2(Operator.OR, literals);
+    public static String or(final String... exprs) {
+        return link2(Operator.OR, exprs);
     }
 
     /**
@@ -1779,8 +1786,8 @@ public class Expression extends ComposableCondition {
      * Expression.of("firstName = 'John'").toString(NamingPolicy.SNAKE_CASE); // returns "first_name = 'John'" (identifier converted, quoted literal kept)
      * Expression.of("firstName").toString(NamingPolicy.NO_CHANGE);           // returns "firstName"
      * Expression.of("firstName").toString(null);                             // returns "firstName" (null defaults to NO_CHANGE)
-     * new Expression(null).toString(NamingPolicy.NO_CHANGE);                 // returns "null"
      * Expression.of("").toString(NamingPolicy.NO_CHANGE);                    // returns "" (empty literal)
+     * // an uninitialized instance (null literal, only possible via deserialization) returns "null"
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply to detected identifiers;
@@ -1797,8 +1804,10 @@ public class Expression extends ComposableCondition {
             return Strings.EMPTY;
         }
 
-        if (literal.length() < 16 && QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher(literal).matches()) {
-            if (isSqlKeyword(literal)) {
+        if (literal.length() < 16 && QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher(literal).matches()) {
+            // Mirror the parse path below: only tokens starting with an ASCII letter are naming-policy
+            // converted; a digit-leading token (e.g. "2faCode") passes through unchanged.
+            if (!Strings.isAsciiAlpha(literal.charAt(0)) || isSqlKeyword(literal)) {
                 return literal;
             }
 
@@ -1819,7 +1828,7 @@ public class Expression extends ComposableCondition {
             for (int i = 0, len = words.size(); i < len; i++) {
                 word = words.get(i);
 
-                if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SqlParser.isFunctionName(words, len, i) || isSqlKeyword(word)) {
+                if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SqlParser.isFunctionName(words, i) || isSqlKeyword(word)) {
                     sb.append(word);
                 } else {
                     sb.append(effectiveNamingPolicy.convert(word));
@@ -1837,7 +1846,6 @@ public class Expression extends ComposableCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * new Expression("price * quantity").hashCode();                            // returns "price * quantity".hashCode()
-     * new Expression(null).hashCode();                                          // returns 0
      * Expression.of("a + b").hashCode() == Expression.of("a + b").hashCode();   // true (same literal)
      * }</pre>
      *

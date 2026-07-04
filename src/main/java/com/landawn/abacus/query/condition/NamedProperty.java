@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.query.condition.NamedProperty.NP;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.ObjectPool;
 import com.landawn.abacus.util.Strings;
@@ -42,7 +41,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Support for comparison operators (equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual)</li>
  *   <li>Support for pattern matching (like, notLike, startsWith, notStartsWith, endsWith, notEndsWith, contains, notContains)</li>
  *   <li>Support for null checks (isNull, isNotNull)</li>
- *   <li>Support for range operations (between, notBetween) and set operations (in, notIn), with set operations offering overloads for {@code Object[]}, {@code int[]}, {@code long[]}, {@code double[]}, and {@link Collection}</li>
+ *   <li>Support for range operations (between, notBetween) and set operations (in, notIn), with set operations offering overloads for {@code Object[]}, {@code int[]}, {@code long[]}, {@code double[]}, {@link Collection}, and {@link SubQuery}</li>
  *   <li>Convenience methods for OR combinations (equalsAny) with overloads for {@code Object[]}, {@code int[]}, {@code long[]}, {@code double[]}, and {@link Collection}</li>
  * </ul>
  *
@@ -83,7 +82,7 @@ import com.landawn.abacus.util.Strings;
  * @see Filters
  */
 @Beta
-public sealed class NamedProperty permits NP {
+public class NamedProperty {
 
     private static final ObjectPool<String, NamedProperty> instancePool = new ObjectPool<>(1024);
 
@@ -140,7 +139,18 @@ public sealed class NamedProperty permits NP {
             throw new IllegalArgumentException("Property name must not be null, empty, or blank");
         }
 
-        return instancePool.computeIfAbsent(propName, NamedProperty::new);
+        // ObjectPool inherits the non-atomic AbstractMap computeIfAbsent (its own Javadoc says only
+        // putIfAbsent is atomic), so the get -> putIfAbsent -> re-read dance is what actually keeps the
+        // "one instance per name" caching claim true under concurrent first access.
+        NamedProperty cached = instancePool.get(propName);
+
+        if (cached == null) {
+            final NamedProperty created = new NamedProperty(propName);
+            final NamedProperty raced = instancePool.putIfAbsent(propName, created);
+            cached = raced == null ? created : raced;
+        }
+
+        return cached;
     }
 
     /**
@@ -333,7 +343,7 @@ public sealed class NamedProperty permits NP {
      * NamedProperty.of("city").equalsAny(cities);
      * // SQL: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
      *
-     * Set<Integer> validIds = Set.of(10, 20, 30);
+     * List<Integer> validIds = List.of(10, 20, 30);
      * NamedProperty.of("department_id").equalsAny(validIds);
      * // SQL: ((department_id = 10) OR (department_id = 20) OR (department_id = 30))
      * }</pre>
@@ -953,7 +963,7 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Set<Integer> validIds = new HashSet<>(Arrays.asList(1, 2, 3, 4, 5));
+     * List<Integer> validIds = Arrays.asList(1, 2, 3, 4, 5);
      * NamedProperty.of("id").in(validIds);
      * // SQL: id IN (1, 2, 3, 4, 5)
      *
@@ -1081,7 +1091,7 @@ public sealed class NamedProperty permits NP {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Set<Integer> excludedIds = new HashSet<>(Arrays.asList(100, 200, 300));
+     * List<Integer> excludedIds = Arrays.asList(100, 200, 300);
      * NamedProperty.of("id").notIn(excludedIds);
      * // SQL: id NOT IN (100, 200, 300)
      *
@@ -1187,32 +1197,4 @@ public sealed class NamedProperty permits NP {
         return propName;
     }
 
-    /**
-     * Backward-compatible subtype of {@link NamedProperty}.
-     *
-     * <p>This type is kept for compatibility with existing user code that explicitly
-     * references {@code NamedProperty.NP}.</p>
-     */
-    @Beta
-    public static final class NP extends NamedProperty {
-
-        /**
-         * Creates an {@code NP} instance for the specified property name.
-         *
-         * <p><b>Usage Examples:</b></p>
-         * <pre>{@code
-         * NamedProperty.NP age = new NamedProperty.NP("age");
-         * age.equal(25).toString();        // returns "age = 25" (inherits NamedProperty builders)
-         * new NamedProperty.NP("");        // throws IllegalArgumentException (empty name)
-         * new NamedProperty.NP(null);      // throws NullPointerException (null name)
-         * }</pre>
-         *
-         * @param propName the property name; must not be {@code null}, empty, or blank
-         * @throws NullPointerException if {@code propName} is {@code null}
-         * @throws IllegalArgumentException if {@code propName} is empty or blank (whitespace-only)
-         */
-        public NP(final String propName) {
-            super(propName);
-        }
-    }
 }

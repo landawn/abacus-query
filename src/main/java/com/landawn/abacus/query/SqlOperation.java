@@ -39,14 +39,16 @@ import com.landawn.abacus.util.SK;
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
- * // Get operation from SQL statement
+ * // Get operation from SQL statement (of() is case-insensitive)
  * String sql = "SELECT * FROM users";
- * String firstWord = sql.trim().split("\\s+")[0].toUpperCase();
+ * String firstWord = sql.trim().split("\\s+")[0];
  * SqlOperation op = SqlOperation.of(firstWord);
  *
  * if (op == SqlOperation.SELECT) {
  *     // Handle SELECT query
  * }
+ * // Note: a first-word split can never produce the multi-word token "BEGIN TRANSACTION";
+ * // pass the full token (or the constant name "BEGIN_TRANSACTION") to of() for that operation.
  * }</pre>
  *
  * @see SqlParser

@@ -62,7 +62,7 @@ import com.landawn.abacus.util.Strings;
 public abstract class AbstractIn extends ComposableCondition {
 
     // For Kryo
-    final Collection<String> propNames;
+    final ImmutableList<String> propNames;
 
     private final boolean rowValueConstructor;
 
@@ -81,7 +81,7 @@ public abstract class AbstractIn extends ComposableCondition {
      * Default constructor for serialization frameworks like Kryo.
      */
     AbstractIn() {
-        propNames = Collections.emptyList();
+        propNames = ImmutableList.empty();
         rowValueConstructor = false;
     }
 
@@ -104,7 +104,7 @@ public abstract class AbstractIn extends ComposableCondition {
         checkPropName(propName);
         N.checkArgNotEmpty(values, "values");
 
-        this.propNames = Collections.singletonList(propName);
+        this.propNames = ImmutableList.wrap(Collections.singletonList(propName));
         this.rowValueConstructor = false;
         this.values = new ArrayList<>(values);
     }
@@ -152,7 +152,9 @@ public abstract class AbstractIn extends ComposableCondition {
         for (final Object row : valueRows) {
             N.checkArgNotNull(row, "value row");
 
-            copy.add(toRowTuple(row, this.propNames, arity));
+            // Each tuple is wrapped unmodifiable so getValues() is immutable in depth, not just at the
+            // outer ImmutableList level (a mutated tuple would silently desync the memoized parameters).
+            copy.add(Collections.unmodifiableList(toRowTuple(row, this.propNames, arity)));
         }
 
         this.values = copy;
@@ -200,7 +202,8 @@ public abstract class AbstractIn extends ComposableCondition {
 
             return tuple;
         } else {
-            throw new IllegalArgumentException("Each row-value row must be a Collection, Iterable, array, Map or bean, but found: " + row.getClass().getName());
+            throw new IllegalArgumentException(
+                    "Each row-value row must be a Collection, Iterable, object array, Map or bean, but found: " + row.getClass().getName());
         }
     }
 
@@ -211,7 +214,7 @@ public abstract class AbstractIn extends ComposableCondition {
         }
     }
 
-    private static Collection<String> copyAndValidatePropNames(final Collection<String> propNames) {
+    private static ImmutableList<String> copyAndValidatePropNames(final Collection<String> propNames) {
         N.checkArgNotEmpty(propNames, "propNames");
 
         final List<String> copy = new ArrayList<>(propNames.size());
@@ -222,7 +225,7 @@ public abstract class AbstractIn extends ComposableCondition {
             copy.add(propName);
         }
 
-        return Collections.unmodifiableList(copy);
+        return ImmutableList.wrap(copy);
     }
 
     /**
@@ -257,7 +260,7 @@ public abstract class AbstractIn extends ComposableCondition {
      *
      * @return non-null immutable collection of property names
      */
-    public Collection<String> getPropNames() {
+    public ImmutableList<String> getPropNames() {
         return propNames;
     }
 
@@ -288,7 +291,30 @@ public abstract class AbstractIn extends ComposableCondition {
         return view;
     }
 
-    private boolean isRowValueConstructor() {
+    /**
+     * Checks whether this condition was created in row value constructor form, i.e. via
+     * {@link #AbstractIn(Collection, Operator, Collection)}, where each value is a tuple matched
+     * positionally against the property names and rendered as {@code (p1, p2) IN ((v1a, v1b), ...)}.
+     * A scalar condition created via {@link #AbstractIn(String, Operator, Collection)} returns {@code false}.
+     *
+     * <p>Note that the mode is independent of the number of property names: a single-property row value
+     * condition renders as {@code (p1) IN ((v1), (v2))} and carries one-element tuples in
+     * {@link #getValues()}, while a scalar condition renders as {@code p1 IN (v1, v2)} and carries
+     * plain values.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * In scalar = new In("status", Arrays.asList("active", "pending"));
+     * boolean b1 = scalar.isRowValueConstructor();   // false
+     *
+     * In rowValue = new In(Arrays.asList("firstName", "lastName"),
+     *                      Arrays.asList(Arrays.asList("John", "Doe")));
+     * boolean b2 = rowValue.isRowValueConstructor(); // true
+     * }</pre>
+     *
+     * @return {@code true} if this condition renders in row value constructor form, {@code false} for the scalar form
+     */
+    public boolean isRowValueConstructor() {
         return rowValueConstructor;
     }
 

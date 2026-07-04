@@ -366,7 +366,8 @@ public class Junction extends ComposableCondition {
      * new Junction(Operator.AND).toString(NamingPolicy.NO_CHANGE);   // returns ""
      * }</pre>
      *
-     * @param namingPolicy the naming policy to apply to property names within each condition
+     * @param namingPolicy the naming policy to apply to property names within each condition;
+     *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return the string representation with proper parentheses and spacing, or an empty string if
      *         no non-{@code null} conditions are present
      */

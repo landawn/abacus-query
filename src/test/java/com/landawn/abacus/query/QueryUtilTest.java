@@ -37,6 +37,41 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("2025")
 class QueryUtil2025Test extends TestBase {
 
+    @Table("value_form_accounts")
+    static class ValueFormEntity {
+        private int id;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(final int id) {
+            this.id = id;
+        }
+    }
+
+    @Table(alias = "ao")
+    static class AliasOnlyEntity {
+        private int id;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(final int id) {
+            this.id = id;
+        }
+    }
+
+    @Test
+    public void testGetTableNameAndAliasHonorsTableValueAndAliasOnly() {
+        // Regression (2026-07-03): only @Table.name() was read, so the deprecated @Table("...") value
+        // form returned "" and an alias-only @Table returned " ao" (leading-space garbage) -- both
+        // diverging from the FROM clause the query builders render for the same class.
+        assertEquals("value_form_accounts", QueryUtil.getTableNameAndAlias(ValueFormEntity.class, NamingPolicy.SNAKE_CASE));
+        assertEquals("alias_only_entity ao", QueryUtil.getTableNameAndAlias(AliasOnlyEntity.class, NamingPolicy.SNAKE_CASE));
+    }
+
     @Test
     public void testGetColumn2PropNameMap() {
         ImmutableMap<String, String> map = QueryUtil.getColumn2PropNameMap(Account.class);
@@ -1059,9 +1094,9 @@ class QueryUtilJavadocExamples extends TestBase {
 
     @Test
     public void testQueryUtil_patternForAlphanumericColumnName() {
-        boolean isValid = QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("column_name").matches();
+        boolean isValid = QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("column_name").matches();
         assertTrue(isValid);
-        boolean isInvalid = QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("column name").matches();
+        boolean isInvalid = QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("column name").matches();
         assertFalse(isInvalid);
     }
 
@@ -1084,12 +1119,12 @@ class QueryUtilFromFilters2025Test extends TestBase {
 
     @Test
     public void testPatternForAlphanumericColumnName() {
-        assertNotNull(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME);
-        assertTrue(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user_name").matches());
-        assertTrue(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user123").matches());
-        assertTrue(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user-name").matches());
-        assertFalse(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user.name").matches());
-        assertFalse(QueryUtil.PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME.matcher("user name").matches());
+        assertNotNull(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME);
+        assertTrue(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("user_name").matches());
+        assertTrue(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("user123").matches());
+        assertTrue(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("user-name").matches());
+        assertFalse(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("user.name").matches());
+        assertFalse(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("user name").matches());
     }
 }
 

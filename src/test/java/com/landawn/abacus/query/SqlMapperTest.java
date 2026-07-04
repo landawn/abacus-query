@@ -30,6 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SqlMapper2025Test extends TestBase {
 
     @Test
+    public void testLoadMissingFilePathThrowsPointedIae() {
+        // Regression (2026-07-03): a path that resolves to no file used to surface as a bare NPE
+        // from PropertiesUtil.formatPath(null) instead of the documented IllegalArgumentException.
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> SqlMapper.load("no/such/sql-mapper-file-xyz.xml"));
+        assertTrue(e.getMessage().contains("no/such/sql-mapper-file-xyz.xml"));
+    }
+
+    @Test
     public void testConstructor() {
         SqlMapper mapper = new SqlMapper();
         assertNotNull(mapper);

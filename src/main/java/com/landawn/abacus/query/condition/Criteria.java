@@ -86,10 +86,10 @@ public class Criteria extends AbstractCondition {
     private transient int cachedHashCode;
 
     /** Lazily memoized unmodifiable JOIN view (performance only). */
-    private transient List<Join> cachedJoinsView;
+    private transient ImmutableList<Join> cachedJoinsView;
 
     /** Lazily memoized unmodifiable set-operations view (performance only). */
-    private transient List<Clause> cachedSetOperationsView;
+    private transient ImmutableList<Clause> cachedSetOperationsView;
 
     /** Lazily memoized immutable conditions view (performance only). */
     private transient ImmutableList<Condition> cachedConditionsView;
@@ -145,10 +145,10 @@ public class Criteria extends AbstractCondition {
      * c.getJoins().add(null);                  // throws UnsupportedOperationException (unmodifiable view)
      * }</pre>
      *
-     * @return an unmodifiable list of {@link Join} conditions; empty if none exist
+     * @return an immutable list of {@link Join} conditions; empty if none exist
      */
-    public List<Join> getJoins() {
-        List<Join> view = cachedJoinsView;
+    public ImmutableList<Join> getJoins() {
+        ImmutableList<Join> view = cachedJoinsView;
 
         if (view == null) {
             List<Join> joins = null;
@@ -163,7 +163,7 @@ public class Criteria extends AbstractCondition {
                 }
             }
 
-            view = joins == null ? N.emptyList() : Collections.unmodifiableList(joins);
+            view = joins == null ? ImmutableList.empty() : ImmutableList.wrap(joins);
             cachedJoinsView = view;
         }
 
@@ -232,10 +232,10 @@ public class Criteria extends AbstractCondition {
      * c.getSetOperations().size();                     // returns 1
      * }</pre>
      *
-     * @return an unmodifiable list of set operation clauses; empty if none exist
+     * @return an immutable list of set operation clauses; empty if none exist
      */
-    public List<Clause> getSetOperations() {
-        List<Clause> view = cachedSetOperationsView;
+    public ImmutableList<Clause> getSetOperations() {
+        ImmutableList<Clause> view = cachedSetOperationsView;
 
         if (view == null) {
             List<Clause> result = null;
@@ -250,7 +250,7 @@ public class Criteria extends AbstractCondition {
                 }
             }
 
-            view = result == null ? N.emptyList() : Collections.unmodifiableList(result);
+            view = result == null ? ImmutableList.empty() : ImmutableList.wrap(result);
             cachedSetOperationsView = view;
         }
 
@@ -333,9 +333,9 @@ public class Criteria extends AbstractCondition {
      *
      * @param operator the operator to match (may be {@code null}, in which case this returns an
      *                 empty list since {@link AbstractCondition} disallows null operators)
-     * @return an unmodifiable list of matching conditions; empty if none found
+     * @return an immutable list of matching conditions; empty if none found
      */
-    public List<Condition> findConditions(final Operator operator) {
+    public ImmutableList<Condition> findConditions(final Operator operator) {
         final List<Condition> result = new ArrayList<>();
 
         for (final Condition cond : this.conditions) {
@@ -344,7 +344,7 @@ public class Criteria extends AbstractCondition {
             }
         }
 
-        return Collections.unmodifiableList(result);
+        return ImmutableList.wrap(result);
     }
 
     /**
@@ -466,7 +466,7 @@ public class Criteria extends AbstractCondition {
     /**
      * Returns a string representation of this Criteria using the specified naming policy.
      * Clauses are emitted in SQL order: select modifier, JOINs, WHERE, GROUP BY, HAVING,
-     * set operations (UNION/INTERSECT/EXCEPT), ORDER BY, LIMIT. Each clause is prefixed by a
+     * set operations (UNION/UNION ALL/INTERSECT/EXCEPT/MINUS), ORDER BY, LIMIT. Each clause is prefixed by a
      * leading space, so a non-empty result starts with a space.
      *
      * <p><b>Usage Examples:</b></p>
@@ -771,21 +771,24 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets a custom SELECT modifier.
          * This allows for database-specific modifiers not covered by other methods.
+         * An empty string is treated as no modifier (normalized to {@code null}).
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.builder().selectModifier("SQL_CALC_FOUND_ROWS").build().getSelectModifier();
          * // returns "SQL_CALC_FOUND_ROWS"
          *
-         * // The value is stored verbatim; passing null clears any previously set modifier.
+         * // Passing null (or an empty string) clears any previously set modifier.
          * Criteria.builder().selectModifier(null).build().getSelectModifier();   // returns null
          * }</pre>
          *
-         * @param selectModifier the custom SELECT modifier
+         * @param selectModifier the custom SELECT modifier; {@code null} or an empty string means no modifier
          * @return this Builder instance for method chaining
          */
         public Builder selectModifier(final String selectModifier) {
-            this.selectModifier = selectModifier;
+            // Normalize empty to null so a Criteria built with selectModifier("") equals one built with
+            // no modifier at all -- the two already render identically and share a hash code.
+            this.selectModifier = Strings.isEmpty(selectModifier) ? null : selectModifier;
 
             return this;
         }

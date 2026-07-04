@@ -140,7 +140,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      *
      * <p>XOR has no direct SQL equivalent, so it is expanded to its composable definition:
      * {@code (A AND NOT B) OR (NOT A AND B)}. The object returned is the outer {@link Or} of that
-     * flattened expression.</p>
+     * expanded expression.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
