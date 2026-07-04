@@ -19,7 +19,6 @@ import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -36,13 +35,13 @@ import com.landawn.abacus.util.Strings;
 /**
  * Represents a subquery that can be used within SQL conditions.
  * A subquery is a SELECT statement nested inside another SQL statement.
- * 
+ *
  * <p>This class supports two types of subqueries:</p>
  * <ul>
  *   <li><b>Raw SQL subqueries</b> - directly specified SQL strings for maximum flexibility</li>
  *   <li><b>Structured subqueries</b> - built from entity names, property names, and conditions for type safety</li>
  * </ul>
- * 
+ *
  * <p>Subqueries can be used in various contexts:</p>
  * <ul>
  *   <li>IN/NOT IN conditions for set membership tests (see {@link InSubQuery}, {@link NotInSubQuery})</li>
@@ -122,19 +121,19 @@ public class SubQuery extends AbstractCondition {
      * Creates a subquery with raw SQL.
      * This provides maximum flexibility for complex subqueries that cannot be easily
      * expressed using the structured approach.
-     * 
+     *
      * <p>Use this constructor when:</p>
      * <ul>
      *   <li>The subquery uses database-specific features</li>
      *   <li>Complex joins or aggregations are needed</li>
      *   <li>Performance-tuned SQL is required</li>
      * </ul>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Simple subquery
      * SubQuery subQuery = Filters.subQuery("SELECT MAX(salary) FROM employees");
-     * 
+     *
      * // Complex subquery with joins
      * SubQuery complexQuery = Filters.subQuery(
      *     "SELECT u.id FROM users u " +
@@ -161,10 +160,10 @@ public class SubQuery extends AbstractCondition {
     /**
      * Creates a subquery with an entity name and raw SQL.
      * The entity name is for reference only when using raw SQL and doesn't affect the query.
-     * 
+     *
      * <p>This constructor allows associating a logical entity name with a raw SQL subquery,
      * which can be useful for documentation or framework integration purposes.</p>
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = new SubQuery("orders",

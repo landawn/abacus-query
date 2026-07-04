@@ -16,7 +16,6 @@ package com.landawn.abacus.query.condition;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -75,7 +74,7 @@ public class Criteria extends AbstractCondition {
         SET_OPERATORS.add(Operator.MINUS);
     }
 
-    private String selectModifier = null;
+    private final String selectModifier;
 
     private final List<Condition> conditions;
 

@@ -1266,12 +1266,8 @@ public final class SqlParser {
      *   <li>All registered single-character and multi-character separators are checked</li>
      * </ul>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = "SELECT * FROM users";
-     * boolean isStar  = SqlParser.isSeparator(sql, sql.length(), 7, '*');   // true ('*' is a separator)
-     * boolean isSpace = SqlParser.isSeparator(sql, sql.length(), 6, ' ');   // true (space is a separator)
-     * }</pre>
+     * <p>Behavior (internal helper): for the SQL {@code "SELECT * FROM users"}, the {@code '*'} at index 7
+     * and the space at index 6 are both separators, while the {@code '#'} in a {@code #{...}} marker is not.</p>
      *
      * <p>The method may inspect characters surrounding {@code index} (notably the next char to
      * disambiguate {@code #{...}}, and previous characters to detect a hash-prefixed identifier

@@ -100,7 +100,8 @@ import com.landawn.abacus.util.SK;
  *   <li><b>Range/Collection:</b> {@code between}, {@code notBetween}, {@code in}, {@code notIn}
  *       (range/keyword factories intentionally have <b>no</b> short alias; the former {@code bt}
  *       alias for {@code between} was removed)</li>
- *   <li><b>Pattern Matching:</b> {@code like}, {@code notLike}, {@code contains}, {@code startsWith}, {@code endsWith}</li>
+ *   <li><b>Pattern Matching:</b> {@code like}, {@code notLike}, {@code contains}, {@code notContains},
+ *       {@code startsWith}, {@code notStartsWith}, {@code endsWith}, {@code notEndsWith}</li>
  *   <li><b>Null Checks:</b> {@code isNull}, {@code isNotNull}</li>
  *   <li><b>Logical:</b> {@code and}, {@code or}, {@code not}</li>
  *   <li><b>Subquery:</b> {@code exists}, {@code notExists}, {@code in(String, SubQuery)}, {@code notIn(String, SubQuery)}</li>
@@ -268,7 +269,10 @@ public class Filters {
      *
      * @param cond the condition to negate (must not be {@code null} and must be a composable condition)
      * @return a {@link Not} condition that wraps and negates the provided condition
-     * @throws IllegalArgumentException if {@code cond} is {@code null} or is a clause/join condition (e.g., {@code ON}/{@code USING}) that cannot be composed
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is non-composable — a Criteria, a clause
+     *             (for example {@code WHERE}, {@code HAVING}, or {@code ORDER BY}), an {@code ON}/{@code USING} connector,
+     *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
+     *             (a blank {@link Expression} or empty {@link Junction})
      * @see Not
      * @see Condition
      */
@@ -2025,7 +2029,10 @@ public class Filters {
      * @param conditions the array of conditions to combine with {@code OR}; {@code null} or empty
      *                   is permitted and yields an empty junction (which renders as an empty string)
      * @return an {@link Or} junction
-     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}
+     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
+     *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
+     *             (a blank {@link Expression} or empty {@link Junction})
      */
     public static Or or(final Condition... conditions) {
         return new Or(conditions);
@@ -2048,7 +2055,10 @@ public class Filters {
      * @param conditions the collection of conditions to combine with {@code OR}; {@code null} or
      *                   empty is permitted and yields an empty junction
      * @return an {@link Or} junction
-     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}
+     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
+     *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
+     *             (a blank {@link Expression} or empty {@link Junction})
      */
     public static Or or(final Collection<? extends Condition> conditions) {
         return new Or(conditions);
@@ -2071,7 +2081,10 @@ public class Filters {
      * @param conditions the array of conditions to combine with {@code AND}; {@code null} or
      *                   empty is permitted and yields an empty junction (which renders as an empty string)
      * @return an {@link And} junction
-     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}
+     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
+     *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
+     *             (a blank {@link Expression} or empty {@link Junction})
      */
     public static And and(final Condition... conditions) {
         return new And(conditions);
@@ -2094,7 +2107,10 @@ public class Filters {
      * @param conditions the collection of conditions to combine with {@code AND}; {@code null} or
      *                   empty is permitted and yields an empty junction
      * @return an {@link And} junction
-     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}
+     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
+     *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
+     *             (a blank {@link Expression} or empty {@link Junction})
      */
     public static And and(final Collection<? extends Condition> conditions) {
         return new And(conditions);
@@ -2119,7 +2135,10 @@ public class Filters {
      * @return a {@link Junction} with the specified operator
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
-     *             or if any element of {@code conditions} is {@code null}
+     *             or if any element of {@code conditions} is {@code null}, or is a Criteria, a clause
+     *             (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
+     *             (a blank {@link Expression} or empty {@link Junction})
      */
     @Beta
     public static Junction junction(final Operator operator, final Condition... conditions) {
@@ -2143,7 +2162,10 @@ public class Filters {
      * @return a {@link Junction} with the specified operator
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
-     *             or if any element of {@code conditions} is {@code null}
+     *             or if any element of {@code conditions} is {@code null}, or is a Criteria, a clause
+     *             (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
+     *             (a blank {@link Expression} or empty {@link Junction})
      */
     @Beta
     public static Junction junction(final Operator operator, final Collection<? extends Condition> conditions) {

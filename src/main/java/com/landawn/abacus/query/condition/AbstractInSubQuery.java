@@ -102,9 +102,8 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     protected AbstractInSubQuery(final Collection<String> propNames, final Operator operator, final SubQuery subQuery) {
         super(operator);
 
-        N.checkArgNotNull(subQuery, "subQuery");
-
         this.propNames = copyAndValidatePropNames(propNames);
+        N.checkArgNotNull(subQuery, "subQuery");
         validateSubQuerySelectArity(this.propNames, subQuery);
         this.subQuery = subQuery;
     }

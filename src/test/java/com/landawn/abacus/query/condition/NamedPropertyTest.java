@@ -55,6 +55,15 @@ class NamedProperty2025Test extends TestBase {
     }
 
     @Test
+    public void testConstructorWithNullThrowsIAE() {
+        // Constructor rejects null with IllegalArgumentException, consistent with of(null) and the
+        // rest of the name-validation surface (previously threw NullPointerException).
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NamedProperty(null);
+        });
+    }
+
+    @Test
     public void testOfMethodWithEmptyStringThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> {
             NamedProperty.of("");
@@ -745,7 +754,9 @@ public class NamedPropertyTest extends TestBase {
 
     @Test
     public void testConstructorWithNull() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        // Constructor now rejects null with IllegalArgumentException, consistent with NamedProperty.of(null)
+        // and the rest of the name-validation surface (previously threw NullPointerException).
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
             new NamedProperty(null);
         });
     }

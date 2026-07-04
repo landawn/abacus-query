@@ -86,7 +86,7 @@ public class SqlDialect {
      * Parameter rendering policy for values supplied to builder operations. When {@code null}, builders
      * use {@link SqlPolicy#RAW_SQL}.
      */
-    private SqlDialect.SqlPolicy sqlPolicy;
+    private SqlPolicy sqlPolicy;
 
     /**
      * Quote style used for generated aliases and identifiers that need quoting. When {@code null},

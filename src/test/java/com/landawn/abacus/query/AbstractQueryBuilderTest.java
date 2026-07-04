@@ -308,6 +308,17 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public void testAppendIfConsumerNullHandling() {
+        // condition == true + null appender -> documented IllegalArgumentException (previously a bare NPE)
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("accounts").appendIf(true, (java.util.function.Consumer) null));
+
+        // condition == false + null appender -> no-op (validation is guarded by the condition, matching appendIf(Condition/String))
+        String sql = Dsl.PSC.select("id").from("accounts").appendIf(false, (java.util.function.Consumer) null).build().query();
+        assertTrue(sql.contains("SELECT"));
+    }
+
+    @Test
     public void testUpdateWithSet() {
         String sql = Dsl.PSC.update("accounts").set("status", "inactive").set("updated_at", "NOW()").where(Filters.eq("id", 1)).build().query();
         assertNotNull(sql);

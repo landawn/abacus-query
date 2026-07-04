@@ -100,15 +100,14 @@ public class NamedProperty {
      * }</pre>
      *
      * @param propName the property name; must not be {@code null}, empty, or blank
-     * @throws NullPointerException if {@code propName} is {@code null}
-     * @throws IllegalArgumentException if {@code propName} is empty or blank (whitespace-only)
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank (whitespace-only)
      */
     public NamedProperty(final String propName) {
-        this.propName = N.requireNonNull(propName, "propName");
-
-        if (Strings.isBlank(this.propName)) {
+        if (Strings.isBlank(propName)) {
             throw new IllegalArgumentException("Property name must not be null, empty, or blank");
         }
+
+        this.propName = propName;
     }
 
     /**
@@ -129,7 +128,7 @@ public class NamedProperty {
      * }</pre>
      *
      * @param propName the property name. Must not be null, empty, or blank.
-     *                 Note: unlike the constructor, a {@code null} argument causes an {@code IllegalArgumentException}
+     *                 A {@code null} argument causes an {@code IllegalArgumentException}
      *                 (null is treated like a blank string by the internal {@code Strings.isBlank} check).
      * @return a cached or new NamedProperty instance
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank

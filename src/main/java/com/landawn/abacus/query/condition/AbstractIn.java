@@ -128,13 +128,13 @@ public abstract class AbstractIn extends ComposableCondition {
      * {@link Condition} instances; the latter have their parameters spliced into {@link #getParameters()}.
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain
-     *                  {@code null}/blank names)
+     *                  {@code null}, empty, or blank names)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be
      *               non-{@code null} and resolve to exactly {@code propNames.size()} values (which may be
      *               {@code null}). A row may be a {@link Collection}, {@link Iterable}, object array,
      *               {@link Map} or bean
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
      * @throws NullPointerException if {@code operator} is {@code null}

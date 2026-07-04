@@ -437,8 +437,6 @@ public final class QueryUtil {
 
         final Class<?> entityClass = entity.getClass();
 
-        final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
-
         // Resolve the ID PropInfo array once per class (cached); on subsequent calls this
         // is just a value read instead of repeated reflective BeanInfo.getPropInfo lookups.
         // The array mirrors getIdPropNames(entityClass) order and may contain null
@@ -479,6 +477,7 @@ public final class QueryUtil {
         }
 
         if (!N.isEmpty(excludedPropNames)) {
+            final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
             // N.excludeAll returns a freshly-built mutable ArrayList; wrap it (no extra copy) so the
             // exclusion path returns an immutable list, matching the no-exclusion path below.
             return ImmutableList.wrap(N.excludeAll(val[baseSlot], excludedPropNames));

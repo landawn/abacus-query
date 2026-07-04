@@ -1125,7 +1125,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param tableName the name of the target table (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank
-     * @throws IllegalStateException if the current operation is neither {@code ADD} nor {@code QUERY}, or if columns/values have not been set
+     * @throws IllegalStateException if the current operation is neither {@code ADD} nor {@code QUERY}, if columns/values
+     *             have not been set, or if it is called after SQL has already been emitted (e.g., after {@code from()} or a second {@code into()})
      */
     public This into(final String tableName) {
         checkSqlFragmentNotBlank(tableName, "tableName");
@@ -1280,7 +1281,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class representing the target table
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if the current operation is neither {@code ADD} nor {@code QUERY}, or if columns/values have not been set
+     * @throws IllegalStateException if the current operation is neither {@code ADD} nor {@code QUERY}, if columns/values
+     *             have not been set, or if it is called after SQL has already been emitted (e.g., after {@code from()} or a second {@code into()})
      */
     public This into(final Class<?> entityClass) {
         setEntityClass(entityClass);
@@ -1301,7 +1303,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class for property mapping (may be {@code null})
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank
-     * @throws IllegalStateException if the current operation is neither {@code ADD} nor {@code QUERY}, or if columns/values have not been set
+     * @throws IllegalStateException if the current operation is neither {@code ADD} nor {@code QUERY}, if columns/values
+     *             have not been set, or if it is called after SQL has already been emitted (e.g., after {@code from()} or a second {@code into()})
      */
     public This into(final String tableName, final Class<?> entityClass) {
         if (entityClass != null) {
@@ -3458,7 +3461,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * in the dialect's FETCH pagination syntax when this builder uses one (Oracle, DB2, SQL Server) and the
      * expression is a generic {@code LIMIT count [OFFSET offset]} form with placeholder tokens; any other
      * unparsed expression is emitted verbatim.
-     * Shared by the {@link Criteria} and standalone-{@link Limit} branches of {@link #appendCondition(Condition)}.
+     * Shared by the {@link Criteria} and standalone-{@link Limit} branches of {@link #append(Condition)}.
      *
      * @param limit the limit condition to render (must not be {@code null})
      */
@@ -3920,12 +3923,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param condition if true, the consumer will be executed
-     * @param appender the consumer function to execute
+     * @param appender the consumer function to execute (must not be {@code null} when {@code condition} is {@code true})
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code appender} is {@code null}
      */
     @Beta
     public This appendIf(final boolean condition, final java.util.function.Consumer<? super This> appender) {
         if (condition) {
+            N.checkArgNotNull(appender, "appender");
             appender.accept((This) this);
         }
 
@@ -5203,8 +5208,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     public This setEntity(final Class<?> entityClass) {
-        setEntityClass(entityClass);
-
         return setEntity(entityClass, (Set<String>) null);
     }
 
