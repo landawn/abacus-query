@@ -1,8 +1,8 @@
 {
   "library": {
     "name": "abacus-query",
-    "version": "4.8.6",
-    "generated_at": "2026-06-30",
+    "version": "4.8.8",
+    "generated_at": "2026-07-04",
     "java_target": "17",
     "source": {
       "git_sha": "unknown"
@@ -54,6 +54,7 @@
               "throws": [],
               "javadoc_summary": "Sets a custom handler for formatting named parameters in SQL strings.",
               "contract": [
+                "Each builder snapshots the handler in its constructor, so calling this method only affects builders created afterwards on the calling thread; builders that already exist keep the handler that was in effect when they were created.",
                 "<p> <b> Usage Examples: </b> </p> <pre> {@code // Use MyBatis-style named parameters: #{paramName} AbstractQueryBuilder.setHandlerForNamedParameter( (sb, propName) -> sb.append(\"#{\").append(propName).append(\"}\")); // Reset to default when done AbstractQueryBuilder.resetHandlerForNamedParameter(); } </pre>"
               ],
               "examples": [],
@@ -984,14 +985,14 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public This using(final String... columnNames)",
+              "signature": "public This using(final String... propOrColumnNames)",
               "return_type": "This",
               "type_params": [],
               "params": [
                 {
-                  "name": "columnNames",
+                  "name": "propOrColumnNames",
                   "type": "String[]",
-                  "javadoc": "the column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null} , empty, or blank)",
+                  "javadoc": "the property or column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 }
               ],
@@ -1007,14 +1008,14 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public This using(final Collection<String> columnNames)",
+              "signature": "public This using(final Collection<String> propOrColumnNames)",
               "return_type": "This",
               "type_params": [],
               "params": [
                 {
-                  "name": "columnNames",
+                  "name": "propOrColumnNames",
                   "type": "Collection<String>",
-                  "javadoc": "the collection of column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null} , empty, or blank)",
+                  "javadoc": "the collection of property or column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 }
               ],
@@ -1262,14 +1263,14 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public This groupBy(final String columnName, final SortDirection direction)",
+              "signature": "public This groupBy(final String expr, final SortDirection direction)",
               "return_type": "This",
               "type_params": [],
               "params": [
                 {
-                  "name": "columnName",
+                  "name": "expr",
                   "type": "String",
-                  "javadoc": "the column to group by",
+                  "javadoc": "the column or expression to group by",
                   "nullability": "unspecified"
                 },
                 {
@@ -1598,14 +1599,14 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public This orderBy(final String columnName, final SortDirection direction)",
+              "signature": "public This orderBy(final String expr, final SortDirection direction)",
               "return_type": "This",
               "type_params": [],
               "params": [
                 {
-                  "name": "columnName",
+                  "name": "expr",
                   "type": "String",
-                  "javadoc": "the column to order by",
+                  "javadoc": "the column or expression to order by",
                   "nullability": "unspecified"
                 },
                 {
@@ -1897,7 +1898,10 @@
               ],
               "throws": [],
               "javadoc_summary": "Appends a string expression to the SQL statement.",
-              "contract": [],
+              "contract": [
+                "<p> A single separating space is inserted before {@code expr} when, and only when, it is needed: that is, when the statement built so far does not already end with a space and {@code expr} does not already begin with one.",
+                "As a result both {@code .append(\"FOR UPDATE\")} and {@code .append(\" FOR UPDATE\")} produce the same, correctly spaced output (a doubled space is possible only when the statement built so far already ends with a space and {@code expr} also begins with one)."
+              ],
               "examples": [],
               "see_also": []
             },
@@ -1907,12 +1911,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "@Beta public This appendIf(final boolean b, final Condition cond)",
+              "signature": "@Beta public This appendIf(final boolean condition, final Condition cond)",
               "return_type": "This",
               "type_params": [],
               "params": [
                 {
-                  "name": "b",
+                  "name": "condition",
                   "type": "boolean",
                   "javadoc": "if true, the condition will be appended",
                   "nullability": "unspecified"
@@ -1936,12 +1940,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "@Beta public This appendIf(final boolean b, final String expr)",
+              "signature": "@Beta public This appendIf(final boolean condition, final String expr)",
               "return_type": "This",
               "type_params": [],
               "params": [
                 {
-                  "name": "b",
+                  "name": "condition",
                   "type": "boolean",
                   "javadoc": "if true, the expression will be appended",
                   "nullability": "unspecified"
@@ -1960,46 +1964,17 @@
               "see_also": []
             },
             {
-              "name": "appendIf",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Beta public This appendIf(final boolean b, final java.util.function.Consumer<? super This> append)",
-              "return_type": "This",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "b",
-                  "type": "boolean",
-                  "javadoc": "if true, the consumer will be executed",
-                  "nullability": "unspecified"
-                },
-                {
-                  "name": "append",
-                  "type": "java.util.function.Consumer<? super This>",
-                  "javadoc": "the consumer function to execute",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Conditionally executes an append operation using a consumer function.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
               "name": "appendIfOrElse",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "@Beta public This appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse)",
+              "signature": "@Beta public This appendIfOrElse(final boolean condition, final Condition condToAppendForTrue, final Condition condToAppendForFalse)",
               "return_type": "This",
               "type_params": [],
               "params": [
                 {
-                  "name": "b",
+                  "name": "condition",
                   "type": "boolean",
                   "javadoc": "if true, append condToAppendForTrue; otherwise append condToAppendForFalse",
                   "nullability": "unspecified"
@@ -2007,13 +1982,13 @@
                 {
                   "name": "condToAppendForTrue",
                   "type": "Condition",
-                  "javadoc": "the condition to append if b is true",
+                  "javadoc": "the condition to append if condition is true",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "condToAppendForFalse",
                   "type": "Condition",
-                  "javadoc": "the condition to append if b is false",
+                  "javadoc": "the condition to append if condition is false",
                   "nullability": "unspecified"
                 }
               ],
@@ -2029,12 +2004,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "@Beta public This appendIfOrElse(final boolean b, final String exprToAppendForTrue, final String exprToAppendForFalse)",
+              "signature": "@Beta public This appendIfOrElse(final boolean condition, final String exprToAppendForTrue, final String exprToAppendForFalse)",
               "return_type": "This",
               "type_params": [],
               "params": [
                 {
-                  "name": "b",
+                  "name": "condition",
                   "type": "boolean",
                   "javadoc": "if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse",
                   "nullability": "unspecified"
@@ -2042,13 +2017,13 @@
                 {
                   "name": "exprToAppendForTrue",
                   "type": "String",
-                  "javadoc": "the expression to append if b is true",
+                  "javadoc": "the expression to append if condition is true",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "exprToAppendForFalse",
                   "type": "String",
-                  "javadoc": "the expression to append if b is false",
+                  "javadoc": "the expression to append if condition is false",
                   "nullability": "unspecified"
                 }
               ],
@@ -2094,7 +2069,7 @@
                 {
                   "name": "query",
                   "type": "String",
-                  "javadoc": "the SQL query to union (must not be {@code null} , empty, or blank)",
+                  "javadoc": "the complete {@code SELECT} sub-query to union (must not be {@code null} , empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM} )",
                   "nullability": "unspecified"
                 }
               ],
@@ -2188,7 +2163,7 @@
                 {
                   "name": "query",
                   "type": "String",
-                  "javadoc": "the SQL query to union all (must not be {@code null} , empty, or blank)",
+                  "javadoc": "the complete {@code SELECT} sub-query to union all (must not be {@code null} , empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM} )",
                   "nullability": "unspecified"
                 }
               ],
@@ -2282,7 +2257,7 @@
                 {
                   "name": "query",
                   "type": "String",
-                  "javadoc": "the SQL query to intersect (must not be {@code null} , empty, or blank)",
+                  "javadoc": "the complete {@code SELECT} sub-query to intersect (must not be {@code null} , empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM} )",
                   "nullability": "unspecified"
                 }
               ],
@@ -2376,7 +2351,7 @@
                 {
                   "name": "query",
                   "type": "String",
-                  "javadoc": "the SQL query to except (must not be {@code null} , empty, or blank)",
+                  "javadoc": "the complete {@code SELECT} sub-query to except (must not be {@code null} , empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM} )",
                   "nullability": "unspecified"
                 }
               ],
@@ -2470,7 +2445,7 @@
                 {
                   "name": "query",
                   "type": "String",
-                  "javadoc": "the SQL query to minus (must not be {@code null} , empty, or blank)",
+                  "javadoc": "the complete {@code SELECT} sub-query to minus (must not be {@code null} , empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM} )",
                   "nullability": "unspecified"
                 }
               ],
@@ -2757,12 +2732,12 @@
               "see_also": []
             },
             {
-              "name": "set",
+              "name": "setEntity",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public This set(final Class<?> entityClass)",
+              "signature": "public This setEntity(final Class<?> entityClass)",
               "return_type": "This",
               "type_params": [],
               "params": [
@@ -2785,7 +2760,35 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public This set(final Class<?> entityClass, final Set<String> excludedPropNames)",
+              "signature": "@Deprecated public This set(final Class<?> entityClass)",
+              "return_type": "This",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "entityClass",
+                  "type": "Class<?>",
+                  "javadoc": "the entity class to get properties from",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "deprecated": {
+                "is_deprecated": true,
+                "message": "use {@link #setEntity(Class)}",
+                "for_removal": false
+              },
+              "javadoc_summary": "Sets all updatable properties from an entity class for UPDATE operation.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "setEntity",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public This setEntity(final Class<?> entityClass, final Set<String> excludedPropNames)",
               "return_type": "This",
               "type_params": [],
               "params": [
@@ -2803,6 +2806,40 @@
                 }
               ],
               "throws": [],
+              "javadoc_summary": "Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "set",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "@Deprecated public This set(final Class<?> entityClass, final Set<String> excludedPropNames)",
+              "return_type": "This",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "entityClass",
+                  "type": "Class<?>",
+                  "javadoc": "the entity class to get properties from",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "excludedPropNames",
+                  "type": "Set<String>",
+                  "javadoc": "additional properties to exclude from the update",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "deprecated": {
+                "is_deprecated": true,
+                "message": "use {@link #setEntity(Class, Set)}",
+                "for_removal": false
+              },
               "javadoc_summary": "Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.",
               "contract": [],
               "examples": [],
@@ -3168,7 +3205,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Returns the {@link SqlDialect} this builder renders SQL with.",
+              "javadoc_summary": "Returns the {@link SqlDialect} this DSL is bound to; every {@link SqlBuilder} it produces renders SQL with this dialect.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -3435,12 +3472,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "@Beta public SqlBuilder batchInsert(final Collection<?> propsList)",
+              "signature": "@Beta public SqlBuilder batchInsert(final Collection<?> entitiesOrProps)",
               "return_type": "SqlBuilder",
               "type_params": [],
               "params": [
                 {
-                  "name": "propsList",
+                  "name": "entitiesOrProps",
                   "type": "Collection<?>",
                   "javadoc": "list of entities or property maps to insert",
                   "nullability": "unspecified"
@@ -3880,7 +3917,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public SqlBuilder selectFrom(final Class<?> entityClass, final String alias)",
+              "signature": "public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias)",
               "return_type": "SqlBuilder",
               "type_params": [],
               "params": [
@@ -3891,7 +3928,7 @@
                   "nullability": "unspecified"
                 },
                 {
-                  "name": "alias",
+                  "name": "tableAlias",
                   "type": "String",
                   "javadoc": "the table alias to use",
                   "nullability": "unspecified"
@@ -3940,7 +3977,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public SqlBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties)",
+              "signature": "public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties)",
               "return_type": "SqlBuilder",
               "type_params": [],
               "params": [
@@ -3951,7 +3988,7 @@
                   "nullability": "unspecified"
                 },
                 {
-                  "name": "alias",
+                  "name": "tableAlias",
                   "type": "String",
                   "javadoc": "the table alias to use",
                   "nullability": "unspecified"
@@ -4004,7 +4041,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public SqlBuilder selectFrom(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames)",
+              "signature": "public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final Set<String> excludedPropNames)",
               "return_type": "SqlBuilder",
               "type_params": [],
               "params": [
@@ -4015,7 +4052,7 @@
                   "nullability": "unspecified"
                 },
                 {
-                  "name": "alias",
+                  "name": "tableAlias",
                   "type": "String",
                   "javadoc": "the table alias to use",
                   "nullability": "unspecified"
@@ -4074,7 +4111,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public SqlBuilder selectFrom(final Class<?> entityClass, final String alias, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)",
+              "signature": "public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)",
               "return_type": "SqlBuilder",
               "type_params": [],
               "params": [
@@ -4085,7 +4122,7 @@
                   "nullability": "unspecified"
                 },
                 {
-                  "name": "alias",
+                  "name": "tableAlias",
                   "type": "String",
                   "javadoc": "the table alias to use",
                   "nullability": "unspecified"
@@ -4543,6 +4580,31 @@
               "see_also": []
             },
             {
+              "name": "renderCondition",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public SqlBuilder renderCondition(final Condition cond)",
+              "return_type": "SqlBuilder",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "cond",
+                  "type": "Condition",
+                  "javadoc": "the condition to render (must not be {@code null} )",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Renders a condition as a standalone SQL fragment without an entity class.",
+              "contract": [],
+              "examples": [],
+              "see_also": [
+                "#renderCondition(Condition, Class)"
+              ]
+            },
+            {
               "name": "fromCondition",
               "kind": "instance",
               "modifiers": [
@@ -4609,7 +4671,7 @@
               ],
               "type": "Dsl",
               "value": "forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SqlPolicy.PARAMETERIZED_SQL).build())",
-              "javadoc_summary": "Parameterized-SQL DSL ( {@code ?} placeholders) with {@code UPPER_CASE_WITH_UNDERSCORE} naming."
+              "javadoc_summary": "Parameterized-SQL DSL ( {@code ?} placeholders) with {@code SCREAMING_SNAKE_CASE} ( {@code UPPER_CASE_WITH_UNDERSCORE} ) naming."
             },
             {
               "name": "PLC",
@@ -4653,7 +4715,7 @@
               ],
               "type": "Dsl",
               "value": "forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SqlPolicy.NAMED_SQL).build())",
-              "javadoc_summary": "Named-SQL DSL ( {@code :name} placeholders) with {@code UPPER_CASE_WITH_UNDERSCORE} naming."
+              "javadoc_summary": "Named-SQL DSL ( {@code :name} placeholders) with {@code SCREAMING_SNAKE_CASE} ( {@code UPPER_CASE_WITH_UNDERSCORE} ) naming."
             },
             {
               "name": "NLC",
@@ -4686,7 +4748,7 @@
               ],
               "type": "Dsl",
               "value": "forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SqlPolicy.RAW_SQL).build())",
-              "javadoc_summary": "Raw-SQL DSL with {@code UPPER_CASE_WITH_UNDERSCORE} naming; values are inlined as SQL literals rather than parameterized."
+              "javadoc_summary": "Raw-SQL DSL with {@code SCREAMING_SNAKE_CASE} ( {@code UPPER_CASE_WITH_UNDERSCORE} ) naming; values are inlined as SQL literals rather than parameterized."
             },
             {
               "name": "LCSB",
@@ -4730,7 +4792,7 @@
               ],
               "type": "Dsl",
               "value": "forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.SCREAMING_SNAKE_CASE).sqlPolicy(SqlPolicy.IBATIS_SQL).build())",
-              "javadoc_summary": "iBATIS/MyBatis-SQL DSL ( {@code #{name}} placeholders) with {@code UPPER_CASE_WITH_UNDERSCORE} naming."
+              "javadoc_summary": "iBATIS/MyBatis-SQL DSL ( {@code #{name}} placeholders) with {@code SCREAMING_SNAKE_CASE} ( {@code UPPER_CASE_WITH_UNDERSCORE} ) naming."
             },
             {
               "name": "MLC",
@@ -4938,7 +5000,7 @@
               "throws": [],
               "javadoc_summary": "Adds a {@code LIMIT} clause with count and offset for pagination.",
               "contract": [
-                "Generates SQL standard syntax: {@code LIMIT count OFFSET offset} ; the {@code OFFSET} portion is omitted when {@code offset} is {@code 0} , emitting just {@code LIMIT count} ."
+                "Generates: {@code LIMIT count OFFSET offset} ; the {@code OFFSET} portion is omitted when {@code offset} is {@code 0} , emitting just {@code LIMIT count} ."
               ],
               "examples": [],
               "see_also": [
@@ -5169,12 +5231,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder append(final String rawClause)",
+              "signature": "public DynamicSqlBuilder append(final String textToAppend)",
               "return_type": "DynamicSqlBuilder",
               "type_params": [],
               "params": [
                 {
-                  "name": "rawClause",
+                  "name": "textToAppend",
                   "type": "String",
                   "javadoc": "the complete raw SQL clause to append verbatim (e.g., {@code \"LIMIT 10 OFFSET 20\"} ) (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
@@ -5182,7 +5244,10 @@
               ],
               "throws": [],
               "javadoc_summary": "Appends a raw, database-specific SQL clause or fragment verbatim to the end of the query.",
-              "contract": [],
+              "contract": [
+                "</p> <p> A single separating space is inserted before {@code textToAppend} when, and only when, it is needed: that is, when the text built so far does not already end with a space and {@code textToAppend} does not already begin with one.",
+                "As a result both {@code .append(\"LIMIT 10\")} and {@code .append(\" LIMIT 10\")} produce the same, correctly spaced output (a doubled space is possible only when the previously appended raw text already ends with a space and {@code textToAppend} also begins with one)."
+              ],
               "examples": [],
               "see_also": []
             },
@@ -5212,7 +5277,46 @@
               "throws": [],
               "javadoc_summary": "Conditionally appends a raw SQL clause or fragment verbatim to the end of the query.",
               "contract": [
-                "When {@code condition} is {@code true} this behaves exactly like {@link #append(String)} (the text is emitted unchanged, preceded by a single space, with no validation, escaping, or interpretation); when {@code condition} is {@code false} the builder is left unchanged and {@code textToAppend} is not inspected."
+                "When {@code condition} is {@code true} this behaves exactly like {@link #append(String)} (a single separating space is inserted only when needed, then the text is emitted unchanged with no validation, escaping, or interpretation); when {@code condition} is {@code false} the builder is left unchanged and {@code textToAppend} is not inspected."
+              ],
+              "examples": [],
+              "see_also": [
+                "#append(String)"
+              ]
+            },
+            {
+              "name": "appendIfOrElse",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public DynamicSqlBuilder appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse)",
+              "return_type": "DynamicSqlBuilder",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "condition",
+                  "type": "boolean",
+                  "javadoc": "the condition to check",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "textToAppendWhenTrue",
+                  "type": "String",
+                  "javadoc": "the raw SQL clause to append if condition is true (must not be {@code null} , empty, or blank)",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "textToAppendWhenFalse",
+                  "type": "String",
+                  "javadoc": "the raw SQL clause to append if condition is false (must not be {@code null} , empty, or blank)",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Appends one of two raw SQL clauses verbatim to the end of the query based on a boolean condition.",
+              "contract": [
+                "Always appends something, choosing between the two options; the chosen text is emitted exactly as {@link #append(String)} would emit it (a single separating space is inserted only when needed, with no validation, escaping, or interpretation)."
               ],
               "examples": [],
               "see_also": [
@@ -5494,17 +5598,42 @@
               "see_also": []
             },
             {
+              "name": "append",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public FromClause append(final Collection<String> tables)",
+              "return_type": "FromClause",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "tables",
+                  "type": "Collection<String>",
+                  "javadoc": "collection of table names to add (may be {@code null} or empty; individual elements must not be {@code null} , empty, or blank)",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Appends multiple tables to the {@code FROM} clause.",
+              "contract": [
+                "If the collection is empty, this method does nothing."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
               "name": "join",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public FromClause join(final String joinEntity, final String on)",
+              "signature": "public FromClause join(final String joinExpr, final String on)",
               "return_type": "FromClause",
               "type_params": [],
               "params": [
                 {
-                  "name": "joinEntity",
+                  "name": "joinExpr",
                   "type": "String",
                   "javadoc": "the table or entity to join (can include alias; must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
@@ -5528,12 +5657,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public FromClause innerJoin(final String joinEntity, final String on)",
+              "signature": "public FromClause innerJoin(final String joinExpr, final String on)",
               "return_type": "FromClause",
               "type_params": [],
               "params": [
                 {
-                  "name": "joinEntity",
+                  "name": "joinExpr",
                   "type": "String",
                   "javadoc": "the table or entity to join (can include alias; must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
@@ -5557,12 +5686,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public FromClause leftJoin(final String joinEntity, final String on)",
+              "signature": "public FromClause leftJoin(final String joinExpr, final String on)",
               "return_type": "FromClause",
               "type_params": [],
               "params": [
                 {
-                  "name": "joinEntity",
+                  "name": "joinExpr",
                   "type": "String",
                   "javadoc": "the table or entity to join (can include alias; must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
@@ -5586,12 +5715,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public FromClause rightJoin(final String joinEntity, final String on)",
+              "signature": "public FromClause rightJoin(final String joinExpr, final String on)",
               "return_type": "FromClause",
               "type_params": [],
               "params": [
                 {
-                  "name": "joinEntity",
+                  "name": "joinExpr",
                   "type": "String",
                   "javadoc": "the table or entity to join (can include alias; must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
@@ -5615,12 +5744,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public FromClause fullJoin(final String joinEntity, final String on)",
+              "signature": "public FromClause fullJoin(final String joinExpr, final String on)",
               "return_type": "FromClause",
               "type_params": [],
               "params": [
                 {
-                  "name": "joinEntity",
+                  "name": "joinExpr",
                   "type": "String",
                   "javadoc": "the table or entity to join (can include alias; must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
@@ -5634,6 +5763,75 @@
               ],
               "throws": [],
               "javadoc_summary": "Adds a {@code FULL JOIN} clause with the specified table and join condition.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "join",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public FromClause join(final String joinExpr)",
+              "return_type": "FromClause",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "joinExpr",
+                  "type": "String",
+                  "javadoc": "the table or entity to join (can include alias; must not be {@code null} , empty, or blank)",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Adds a {@code JOIN} clause (implicit {@code INNER JOIN} ) with the specified table and no {@code ON} condition.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "crossJoin",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public FromClause crossJoin(final String joinExpr)",
+              "return_type": "FromClause",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "joinExpr",
+                  "type": "String",
+                  "javadoc": "the table or entity to join (can include alias; must not be {@code null} , empty, or blank)",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Adds a {@code CROSS JOIN} clause with the specified table.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "naturalJoin",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public FromClause naturalJoin(final String joinExpr)",
+              "return_type": "FromClause",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "joinExpr",
+                  "type": "String",
+                  "javadoc": "the table or entity to join (can include alias; must not be {@code null} , empty, or blank)",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Adds a {@code NATURAL JOIN} clause with the specified table.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -6583,6 +6781,40 @@
               "see_also": []
             },
             {
+              "name": "binary",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static Binary binary(final String propName, final Operator operator)",
+              "return_type": "Binary",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "propName",
+                  "type": "String",
+                  "javadoc": "the property/column name (must not be {@code null} , empty, or blank)",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "operator",
+                  "type": "Operator",
+                  "javadoc": "the binary comparison/membership operator to use (must not be {@code null} and must be a valid binary operator; structural operators are rejected)",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates a parameterized {@link Binary} condition for use with prepared statements.",
+              "contract": [
+                "The condition uses a question mark ( {@code ?} ) placeholder in place of the value, which is provided later when the statement is executed."
+              ],
+              "examples": [],
+              "see_also": [
+                "#binary(String, Operator, Object)"
+              ]
+            },
+            {
               "name": "equal",
               "kind": "static",
               "modifiers": [
@@ -6716,7 +6948,9 @@
               "javadoc_summary": "Creates an {@code OR} condition from a map where each entry represents a property-value equality check across <b> different </b> columns/properties.",
               "contract": [],
               "examples": [],
-              "see_also": []
+              "see_also": [
+                "NamedProperty#equalsAny(Object...)"
+              ]
             },
             {
               "name": "anyEqual",
@@ -7062,7 +7296,9 @@
               ],
               "throws": [],
               "javadoc_summary": "Creates an {@code OR} condition from a collection of property maps or entities, where each non-null element forms an {@code AND} condition.",
-              "contract": [],
+              "contract": [
+                "If the first non-null element is a {@link Map} , all non-null elements must be maps with {@link String} keys."
+              ],
               "examples": [],
               "see_also": []
             },
@@ -8148,7 +8384,7 @@
                 {
                   "name": "propValue",
                   "type": "String",
-                  "javadoc": "the pattern to match (can include SQL wildcards)",
+                  "javadoc": "the pattern to match (can include SQL wildcards). Passing {@code null} renders as {@code propName LIKE null} , which is not a meaningful SQL comparison; do not pass {@code null} (the {@link #contains(String, String)} / {@link #startsWith(String, String)} siblings reject a {@code null} value)",
                   "nullability": "unspecified"
                 }
               ],
@@ -8204,7 +8440,7 @@
                 {
                   "name": "propValue",
                   "type": "String",
-                  "javadoc": "the pattern to exclude (can include SQL wildcards)",
+                  "javadoc": "the pattern to exclude (can include SQL wildcards). Passing {@code null} renders as {@code propName NOT LIKE null} , which is not a meaningful SQL comparison; do not pass {@code null} (the {@link #notContains(String, String)} sibling rejects a {@code null} value)",
                   "nullability": "unspecified"
                 }
               ],
@@ -8876,7 +9112,7 @@
                 {
                   "name": "conditions",
                   "type": "Condition[]",
-                  "javadoc": "the array of conditions to combine",
+                  "javadoc": "the array of conditions to combine; {@code null} or empty is permitted and yields an empty junction",
                   "nullability": "unspecified"
                 }
               ],
@@ -8909,7 +9145,7 @@
                 {
                   "name": "conditions",
                   "type": "Collection<? extends Condition>",
-                  "javadoc": "the collection of conditions to combine",
+                  "javadoc": "the collection of conditions to combine; {@code null} or empty is permitted and yields an empty junction",
                   "nullability": "unspecified"
                 }
               ],
@@ -8960,7 +9196,7 @@
                 {
                   "name": "expr",
                   "type": "String",
-                  "javadoc": "the SQL expression as a string (must not be {@code null} or empty)",
+                  "javadoc": "the SQL expression as a string (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 }
               ],
@@ -9406,7 +9642,7 @@
                 {
                   "name": "expr",
                   "type": "String",
-                  "javadoc": "the SQL expression as a string (must not be {@code null} or empty)",
+                  "javadoc": "the SQL expression as a string (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 }
               ],
@@ -9939,7 +10175,7 @@
               "throws": [],
               "deprecated": {
                 "is_deprecated": true,
-                "message": "It's recommended to use {@link #on(Map)} or multiple {@link #on(String, String)} clauses instead of {@code Using} for better portability and clarity. Replace {@code using(\"col1\", \"col2\")} with explicit {@code on(N.asMap(\"table1.col1\", \"table2.col1\", \"table1.col2\", \"table2.col2\"))} .",
+                "message": "It's recommended to use {@link #on(java.util.Map)} (a join takes a single {@code ON} condition; the map form combines multiple column pairs with {@code AND} ) instead of {@code Using} for better portability and clarity. Replace {@code using(\"col1\", \"col2\")} with explicit {@code on(N.asMap(\"table1.col1\", \"table2.col1\", \"table1.col2\", \"table2.col2\"))} .",
                 "for_removal": false
               },
               "javadoc_summary": "Creates a USING clause for JOIN operations with the specified columns.",
@@ -9970,7 +10206,7 @@
               "throws": [],
               "deprecated": {
                 "is_deprecated": true,
-                "message": "It's recommended to use {@link #on(Map)} or multiple {@link #on(String, String)} clauses instead of {@code Using} for better portability and clarity. Replace {@code using(columnList)} with explicit {@code on()} conditions that specify the full column names with table prefixes.",
+                "message": "It's recommended to use {@link #on(java.util.Map)} (a join takes a single {@code ON} condition; the map form combines multiple column pairs with {@code AND} ) instead of {@code Using} for better portability and clarity. Replace {@code using(columnList)} with an explicit {@code on(Map)} condition that specifies the full column names with table prefixes.",
                 "for_removal": false
               },
               "javadoc_summary": "Creates a USING clause from a collection of column names for JOIN operations.",
@@ -10517,7 +10753,7 @@
                 "public",
                 "static"
               ],
-              "signature": "public static NaturalJoin naturalJoin(final String joinEntity, final Condition cond)",
+              "signature": "@Deprecated public static NaturalJoin naturalJoin(final String joinEntity, final Condition cond)",
               "return_type": "NaturalJoin",
               "type_params": [],
               "params": [
@@ -10535,6 +10771,11 @@
                 }
               ],
               "throws": [],
+              "deprecated": {
+                "is_deprecated": true,
+                "message": "a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and throws for any other value. Use {@link #naturalJoin(String)} instead, and place any additional filter in the enclosing query's {@code WHERE} clause.",
+                "for_removal": false
+              },
               "javadoc_summary": "Creates a NATURAL JOIN clause with the specified entity.",
               "contract": [
                 "A NATURAL JOIN derives its join predicate implicitly from columns with matching names and therefore does not accept an explicit condition: {@code cond} must be {@code null} ."
@@ -10549,7 +10790,7 @@
                 "public",
                 "static"
               ],
-              "signature": "public static NaturalJoin naturalJoin(final Collection<String> joinEntities, final Condition cond)",
+              "signature": "@Deprecated public static NaturalJoin naturalJoin(final Collection<String> joinEntities, final Condition cond)",
               "return_type": "NaturalJoin",
               "type_params": [],
               "params": [
@@ -10567,6 +10808,11 @@
                 }
               ],
               "throws": [],
+              "deprecated": {
+                "is_deprecated": true,
+                "message": "a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and throws for any other value. Use the condition-less {@link NaturalJoin#NaturalJoin(Collection)} constructor instead, and place any additional filter in the enclosing query's {@code WHERE} clause.",
+                "for_removal": false
+              },
               "javadoc_summary": "Creates a NATURAL JOIN clause with multiple entities.",
               "contract": [
                 "As with the single-entity overload, a NATURAL JOIN cannot carry an explicit condition, so {@code cond} must be {@code null} ; this form exists only for API symmetry with the other join factories."
@@ -10881,7 +11127,7 @@
                 "public",
                 "static"
               ],
-              "signature": "public static In in(final Collection<String> propNames, final Collection<?> values)",
+              "signature": "public static In in(final Collection<String> propNames, final Collection<?> valueRows)",
               "return_type": "In",
               "type_params": [],
               "params": [
@@ -10892,7 +11138,7 @@
                   "nullability": "unspecified"
                 },
                 {
-                  "name": "values",
+                  "name": "valueRows",
                   "type": "Collection<?>",
                   "javadoc": "collection of value rows; each row must resolve to exactly {@code propNames.size()} values. A row may be a {@link Collection} , {@link Iterable} , object array, {@link Map} or bean",
                   "nullability": "unspecified"
@@ -11275,7 +11521,7 @@
                 "public",
                 "static"
               ],
-              "signature": "public static NotIn notIn(final Collection<String> propNames, final Collection<?> values)",
+              "signature": "public static NotIn notIn(final Collection<String> propNames, final Collection<?> valueRows)",
               "return_type": "NotIn",
               "type_params": [],
               "params": [
@@ -11286,7 +11532,7 @@
                   "nullability": "unspecified"
                 },
                 {
-                  "name": "values",
+                  "name": "valueRows",
                   "type": "Collection<?>",
                   "javadoc": "collection of value rows to exclude; each row must resolve to exactly {@code propNames.size()} values. A row may be a {@link Collection} , {@link Iterable} , object array, {@link Map} or bean",
                   "nullability": "unspecified"
@@ -11659,6 +11905,44 @@
                 "public",
                 "static"
               ],
+              "signature": "public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final String expr)",
+              "return_type": "SubQuery",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "entityClass",
+                  "type": "Class<?>",
+                  "javadoc": "the entity class representing the table (must not be {@code null} )",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "propNames",
+                  "type": "Collection<String>",
+                  "javadoc": "collection of property names to select (must not be {@code null} or empty, and must not contain {@code null} , empty, or blank elements)",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "expr",
+                  "type": "String",
+                  "javadoc": "the WHERE condition as a raw SQL string (must not be {@code null} ; may be empty for no filter condition)",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates a SubQuery from an entity class with selected properties and a raw SQL condition string.",
+              "contract": [],
+              "examples": [],
+              "see_also": [
+                "#subQuery(String, Collection, String)"
+              ]
+            },
+            {
+              "name": "subQuery",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
               "signature": "public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final Condition cond)",
               "return_type": "SubQuery",
               "type_params": [],
@@ -11746,7 +12030,7 @@
                 {
                   "name": "sql",
                   "type": "String",
-                  "javadoc": "the complete SQL for the subquery",
+                  "javadoc": "the complete SQL for the subquery (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 }
               ],
@@ -11779,7 +12063,7 @@
                 {
                   "name": "sql",
                   "type": "String",
-                  "javadoc": "the complete SQL for the subquery (must not be {@code null} or empty)",
+                  "javadoc": "the complete SQL for the subquery (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 }
               ],
@@ -12104,7 +12388,9 @@
                 "Returns a mapping of property names to their corresponding column names and a flag indicating if it's a simple property."
               ],
               "examples": [],
-              "see_also": []
+              "see_also": [
+                "#getProp2ColumnNameMap(Class, NamingPolicy)"
+              ]
             },
             {
               "name": "getColumn2PropNameMap",
@@ -12539,10 +12825,8 @@
               "throws": [],
               "javadoc_summary": "Gets the table name and optional alias for the entity class using the specified naming policy.",
               "contract": [
-                "If {@code @Table} annotation is present, uses its values; otherwise derives the table name from the class name using the provided naming policy.",
-                "<p> The naming policy is only used when no {@code @Table} annotation is present.",
-                "If {@code @Table} is defined, its {@link Table#name() name} and {@link Table#alias() alias} values are used directly without any transformation; the naming policy is ignored.",
-                "If {@code @Table} is present but its {@code name} attribute is left at the default (empty string), the returned table portion will likewise be empty."
+                "The table name is resolved the same way the query builders resolve it: from the {@code @Table} annotation ( {@link Table#name() name} or its deprecated {@code value()} alias) or a JPA {@code javax.persistence} / {@code jakarta.persistence} {@code @Table} annotation; only when no annotated name exists is the table name derived from the class name using the provided naming policy.",
+                "The alias comes from {@link Table#alias()} and is appended after a space when present."
               ],
               "examples": [],
               "see_also": []
@@ -12550,7 +12834,7 @@
           ],
           "fields": [
             {
-              "name": "PATTERN_FOR_ALPHANUMERIC_COLUMN_NAME",
+              "name": "PATTERN_FOR_SIMPLE_COLUMN_NAME",
               "modifiers": [
                 "public",
                 "static",
@@ -12826,7 +13110,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "class SqlDialect { /** * Optional descriptor of the target database product. When set, query builders branch on * {@link ProductInfo#name()} to emit product-specific SQL: Oracle, DB2 and SQL Server dialects * render pagination with {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY} instead of * {@code LIMIT}/{@code OFFSET}, and a {@code null} {@link #identifierQuote} defaults to * {@link IdentifierQuote#BACKTICK} for MySQL/MariaDB. When {@code null}, builders use the default * SQL syntax. */ private ProductInfo productInfo; /** * Naming policy used to translate Java property names into generated SQL identifiers. For example, * {@link NamingPolicy#SNAKE_CASE} renders {@code firstName} as {@code first_name}. When {@code null}, * builders use {@link NamingPolicy#SNAKE_CASE}. */ private NamingPolicy namingPolicy; /** * Parameter rendering policy for values supplied to builder operations. When {@code null}, builders * use {@link SqlPolicy#RAW_SQL}. */ private SqlDialect.SqlPolicy sqlPolicy; /** * Quote style used for generated aliases and identifiers that need quoting. When {@code null}, * builders use {@link IdentifierQuote#DOUBLE_QUOTE}. */ private IdentifierQuote identifierQuote; /** * Identifier quoting style used by SQL builders. * * <p>The enum currently distinguishes the two quote characters supported by this builder: * ANSI double quotes and MySQL-style backticks.</p> */ public static enum IdentifierQuote { /** * ANSI/standard SQL double quote ({@code \"}). This is the effective default when * {@link #identifierQuote} is {@code null}, except when {@link #productInfo} names MySQL or * MariaDB, in which case {@link #BACKTICK} is the default. */ DOUBLE_QUOTE, /** * MySQL/MariaDB-style backtick ({@code `}). */ BACKTICK; } /** * Defines how values supplied to query builders are represented in generated SQL. * * <p>This setting controls value placeholders only. It does not change table/column naming, * identifier quoting, or database-specific SQL syntax.</p> */ public static enum SqlPolicy { /** * Inline values directly into the SQL string as literals. * * <p>Use only for trusted values; parameterized or named policies are preferred for user input.</p> */ RAW_SQL, /** * Render each value as a positional {@code ?} placeholder and collect parameter values in order. */ PARAMETERIZED_SQL, /** * Render values as named placeholders, such as {@code :id} or {@code :firstName}. */ NAMED_SQL, /** * Render values as iBATIS/MyBatis-style named placeholders, such as {@code #{id}}. */ IBATIS_SQL } /** * Immutable descriptor of a database product, holding the product name and version separately. * * <p>When attached to a dialect via {@link SqlDialect#productInfo}, the {@link #name()} drives * product-specific SQL generation in query builders (for example, Oracle-style * {@code FETCH FIRST ... ROWS ONLY} pagination). The name is matched case-insensitively as a * substring, so raw JDBC values from {@code DatabaseMetaData.getDatabaseProductName()} such as * {@code \"Microsoft SQL Server\"} or {@code \"Oracle Database 19c\"} are recognized. The * {@link #version()} is descriptive metadata only.</p> * * @param name the database product name, such as {@code \"MySQL\"} or {@code \"PostgreSQL\"} * @param version the database product version, such as {@code \"9.7\"} or {@code \"18\"}; descriptive metadata only */ public record ProductInfo(String name, String version) { /** * Creates a {@code ProductInfo} with the given product name and no version. * * @param name the database product name, such as {@code \"Oracle\"} or {@code \"MySQL\"} * @return a new {@code ProductInfo} with the given name and a {@code null} version */ public static ProductInfo of(final String name) { return new ProductInfo(name, null); } /** * Creates a {@code ProductInfo} with the given product name and version. * * @param name the database product name, such as {@code \"Oracle\"} or {@code \"MySQL\"} * @param version the database product version, such as {@code \"19c\"} or {@code \"9.7\"} * @return a new {@code ProductInfo} with the given name and version */ public static ProductInfo of(final String name, final String version) { return new ProductInfo(name, version); } } }",
+              "signature": "class SqlDialect { /** * Optional descriptor of the target database product. When set, query builders branch on * {@link ProductInfo#name()} to emit product-specific SQL: Oracle, DB2 and SQL Server dialects * render pagination with {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY} instead of * {@code LIMIT}/{@code OFFSET}, and a {@code null} {@link #identifierQuote} defaults to * {@link IdentifierQuote#BACKTICK} for MySQL/MariaDB. When {@code null}, builders use the default * SQL syntax. */ private ProductInfo productInfo; /** * Naming policy used to translate Java property names into generated SQL identifiers. For example, * {@link NamingPolicy#SNAKE_CASE} renders {@code firstName} as {@code first_name}. When {@code null}, * builders use {@link NamingPolicy#SNAKE_CASE}. */ private NamingPolicy namingPolicy; /** * Parameter rendering policy for values supplied to builder operations. When {@code null}, builders * use {@link SqlPolicy#RAW_SQL}. */ private SqlPolicy sqlPolicy; /** * Quote style used for generated aliases and identifiers that need quoting. When {@code null}, * builders use {@link IdentifierQuote#DOUBLE_QUOTE}. */ private IdentifierQuote identifierQuote; /** * Identifier quoting style used by SQL builders. * * <p>The enum currently distinguishes the two quote characters supported by this builder: * ANSI double quotes and MySQL-style backticks.</p> */ public static enum IdentifierQuote { /** * ANSI/standard SQL double quote ({@code \"}). This is the effective default when * {@link #identifierQuote} is {@code null}, except when {@link #productInfo} names MySQL or * MariaDB, in which case {@link #BACKTICK} is the default. */ DOUBLE_QUOTE, /** * MySQL/MariaDB-style backtick ({@code `}). */ BACKTICK; } /** * Defines how values supplied to query builders are represented in generated SQL. * * <p>This setting controls value placeholders only. It does not change table/column naming, * identifier quoting, or database-specific SQL syntax.</p> */ public static enum SqlPolicy { /** * Inline values directly into the SQL string as literals. * * <p>Use only for trusted values; parameterized or named policies are preferred for user input.</p> */ RAW_SQL, /** * Render each value as a positional {@code ?} placeholder and collect parameter values in order. */ PARAMETERIZED_SQL, /** * Render values as named placeholders, such as {@code :id} or {@code :firstName}. */ NAMED_SQL, /** * Render values as iBATIS/MyBatis-style named placeholders, such as {@code #{id}}. */ IBATIS_SQL } /** * Immutable descriptor of a database product, holding the product name and version separately. * * <p>When attached to a dialect via {@link SqlDialect#productInfo}, the {@link #name()} drives * product-specific SQL generation in query builders (for example, Oracle-style * {@code FETCH FIRST ... ROWS ONLY} pagination). The name is matched case-insensitively as a * substring, so raw JDBC values from {@code DatabaseMetaData.getDatabaseProductName()} such as * {@code \"Microsoft SQL Server\"} or {@code \"Oracle Database 19c\"} are recognized. The * {@link #version()} can be compared numerically via {@link #isVersionAtLeast(String)} and * {@link #isVersionAtMost(String)}.</p> * * @param name the database product name, such as {@code \"MySQL\"} or {@code \"PostgreSQL\"} * @param version the database product version, such as {@code \"9.7\"} or {@code \"18\"}; a {@code null} * version is normalized to an empty string, so {@link #version()} never returns {@code null}. * Comparable via {@link #isVersionAtLeast(String)} / {@link #isVersionAtMost(String)} */ public record ProductInfo(String name, String version) { /** * Canonical constructor that normalizes a {@code null} {@code version} to an empty string, so * {@link #version()} never returns {@code null} and an absent version has a single canonical * representation. This keeps {@code equals}/{@code hashCode} consistent whether the version was * omitted (via {@link #of(String)}) or passed as {@code null}. */ public ProductInfo { version = version == null ? \"\" : version; } /** * Creates a {@code ProductInfo} with the given product name and no version (an empty {@link #version()}). * * @param name the database product name, such as {@code \"Oracle\"} or {@code \"MySQL\"} * @return a new {@code ProductInfo} with the given name and an empty ({@code \"\"}) version */ public static ProductInfo of(final String name) { return new ProductInfo(name, \"\"); } /** * Creates a {@code ProductInfo} with the given product name and version. * * @param name the database product name, such as {@code \"Oracle\"} or {@code \"MySQL\"} * @param version the database product version, such as {@code \"19c\"} or {@code \"9.7\"} * @return a new {@code ProductInfo} with the given name and version */ public static ProductInfo of(final String name, final String version) { return new ProductInfo(name, version); } /** * Returns whether this descriptor names MySQL. The match is a case-insensitive substring test * against {@link #name()}. This is distinct from {@link #isMariaDB()}, although both share the * same {@code LIMIT}/{@code OFFSET} pagination and backtick-quoting behavior in query builders. * Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code \"mysql\"} (case-insensitively) */ public boolean isMySQL() { return Strings.containsIgnoreCase(name, \"mysql\"); } /** * Returns whether this descriptor names MariaDB. The match is a case-insensitive substring test * against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code \"mariadb\"} (case-insensitively) */ public boolean isMariaDB() { return Strings.containsIgnoreCase(name, \"mariadb\"); } /** * Returns whether this descriptor names PostgreSQL. The match is a case-insensitive substring * test against {@link #name()} (the substring {@code \"postgres\"} also matches {@code \"PostgreSQL\"}). * Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code \"postgres\"} (case-insensitively) */ public boolean isPostgreSQL() { return Strings.containsIgnoreCase(name, \"postgres\"); } /** * Returns whether this descriptor names Microsoft SQL Server. The match is a case-insensitive * substring test against {@link #name()}, so raw JDBC values such as {@code \"Microsoft SQL Server\"} * are recognized. Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code \"sql server\"} or {@code \"sqlserver\"} (case-insensitively) */ public boolean isSQLServer() { return Strings.containsIgnoreCase(name, \"sql server\") || Strings.containsIgnoreCase(name, \"sqlserver\"); } /** * Returns whether this descriptor names Oracle Database. The match is a case-insensitive * substring test against {@link #name()}, so raw JDBC values from * {@code DatabaseMetaData.getDatabaseProductName()} such as {@code \"Oracle Database 19c\"} * are recognized. Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code \"oracle\"} (case-insensitively) */ public boolean isOracle() { return Strings.containsIgnoreCase(name, \"oracle\"); } /** * Returns whether this descriptor names IBM DB2. The match is a case-insensitive substring * test against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code \"db2\"} (case-insensitively) */ public boolean isDB2() { return Strings.containsIgnoreCase(name, \"db2\"); } /** * Returns whether this descriptor names H2 Database. The match is a case-insensitive substring * test against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code \"h2\"} (case-insensitively) */ public boolean isH2() { return Strings.containsIgnoreCase(name, \"h2\"); } /** * Returns whether this descriptor names SQLite. The match is a case-insensitive substring test * against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code \"sqlite\"} (case-insensitively) */ public boolean isSQLite() { return Strings.containsIgnoreCase(name, \"sqlite\"); } /** * Returns whether this product's {@link #version()} is greater than or equal to the given version. * * <p>Versions are compared by their leading dot-separated run of integer components: for example * {@code \"8.0.32\"} parses to {@code [8, 0, 32]} and {@code \"19c\"} to {@code [19]} (parsing stops at * the first character that is neither a digit nor a dot). Missing trailing components are treated as * {@code 0}, so {@code \"8.0\"} equals {@code \"8.0.0\"} and is less than {@code \"8.1\"}.</p> * * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code minVersion} * is {@code null}, blank, or does not begin with an integer component. This makes the method safe for * feature-gating: an unknown or unparseable version simply fails the check.</p> * * @param minVersion the minimum version to compare against, such as {@code \"8.0\"} or {@code \"19\"} * @return {@code true} if this product's version parses and is greater than or equal to {@code minVersion}; * {@code false} otherwise, including when either version is not comparable * @see #isVersionAtMost(String) */ public boolean isVersionAtLeast(final String minVersion) { final long[] mine = parseVersionComponents(version()); final long[] other = parseVersionComponents(minVersion); return mine != null && other != null && compareVersionComponents(mine, other) >= 0; } /** * Returns whether this product's {@link #version()} is less than or equal to the given version. * * <p>Versions are compared by their leading dot-separated run of integer components; see * {@link #isVersionAtLeast(String)} for the parsing and padding rules.</p> * * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code maxVersion} * is {@code null}, blank, or does not begin with an integer component.</p> * * @param maxVersion the maximum version to compare against, such as {@code \"8.0\"} or {@code \"19\"} * @return {@code true} if this product's version parses and is less than or equal to {@code maxVersion}; * {@code false} otherwise, including when either version is not comparable * @see #isVersionAtLeast(String) */ public boolean isVersionAtMost(final String maxVersion) { final long[] mine = parseVersionComponents(version()); final long[] other = parseVersionComponents(maxVersion); return mine != null && other != null && compareVersionComponents(mine, other) <= 0; } /** * Parses the leading dot-separated run of integer components of a version string (for example * {@code \"8.0.32\"} to {@code [8, 0, 32]} and {@code \"19c\"} to {@code [19]}), or {@code null} when the * string is {@code null}, blank, does not begin with a digit, or has an unparseable component. */ private static long[] parseVersionComponents(final String version) { if (Strings.isBlank(version)) { return null; } final String trimmed = version.trim(); if (!Character.isDigit(trimmed.charAt(0))) { return null; } int end = 0; while (end < trimmed.length() && (Character.isDigit(trimmed.charAt(end)) || trimmed.charAt(end) == '.')) { end++; } final String[] parts = trimmed.substring(0, end).split(\"\\\\.\"); final long[] components = new long[parts.length]; try { for (int i = 0; i < parts.length; i++) { components[i] = Long.parseLong(parts[i]); } } catch (final NumberFormatException e) { return null; } return components; } /** * Compares two version-component arrays element by element, treating missing trailing components as * {@code 0}. Returns a negative, zero, or positive value when {@code a} is respectively less than, * equal to, or greater than {@code b}. */ private static int compareVersionComponents(final long[] a, final long[] b) { final int len = Math.max(a.length, b.length); for (int i = 0; i < len; i++) { final long av = i < a.length ? a[i] : 0L; final long bv = i < b.length ? b[i] : 0L; if (av != bv) { return av < bv ? -1 : 1; } } return 0; } } }",
               "return_type": "void",
               "type_params": [],
               "params": [],
@@ -12957,7 +13241,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "record ProductInfo(String name, String version) { /** * Creates a {@code ProductInfo} with the given product name and no version. * * @param name the database product name, such as {@code \"Oracle\"} or {@code \"MySQL\"} * @return a new {@code ProductInfo} with the given name and a {@code null} version */ public static ProductInfo of(final String name) { return new ProductInfo(name, null); } /** * Creates a {@code ProductInfo} with the given product name and version. * * @param name the database product name, such as {@code \"Oracle\"} or {@code \"MySQL\"} * @param version the database product version, such as {@code \"19c\"} or {@code \"9.7\"} * @return a new {@code ProductInfo} with the given name and version */ public static ProductInfo of(final String name, final String version) { return new ProductInfo(name, version); } } }",
+              "signature": "public ProductInfo",
               "return_type": "void",
               "type_params": [],
               "params": [
@@ -12973,6 +13257,7 @@
                 }
               ],
               "throws": [],
+              "javadoc_summary": "Canonical constructor that normalizes a {@code null} {@code version} to an empty string, so {@link #version()} never returns {@code null} and an absent version has a single canonical representation.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -12996,7 +13281,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a {@code ProductInfo} with the given product name and no version.",
+              "javadoc_summary": "Creates a {@code ProductInfo} with the given product name and no version (an empty {@link #version()} ).",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -13030,6 +13315,204 @@
               "contract": [],
               "examples": [],
               "see_also": []
+            },
+            {
+              "name": "isMySQL",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean isMySQL()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns whether this descriptor names MySQL.",
+              "contract": [
+                "Returns {@code false} when {@link #name()} is {@code null} ."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isMariaDB",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean isMariaDB()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns whether this descriptor names MariaDB.",
+              "contract": [
+                "Returns {@code false} when {@link #name()} is {@code null} ."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isPostgreSQL",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean isPostgreSQL()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns whether this descriptor names PostgreSQL.",
+              "contract": [
+                "Returns {@code false} when {@link #name()} is {@code null} ."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isSQLServer",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean isSQLServer()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns whether this descriptor names Microsoft SQL Server.",
+              "contract": [
+                "Returns {@code false} when {@link #name()} is {@code null} ."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isOracle",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean isOracle()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns whether this descriptor names Oracle Database.",
+              "contract": [
+                "Returns {@code false} when {@link #name()} is {@code null} ."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isDB2",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean isDB2()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns whether this descriptor names IBM DB2.",
+              "contract": [
+                "Returns {@code false} when {@link #name()} is {@code null} ."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isH2",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean isH2()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns whether this descriptor names H2 Database.",
+              "contract": [
+                "Returns {@code false} when {@link #name()} is {@code null} ."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isSQLite",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean isSQLite()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns whether this descriptor names SQLite.",
+              "contract": [
+                "Returns {@code false} when {@link #name()} is {@code null} ."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isVersionAtLeast",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean isVersionAtLeast(final String minVersion)",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "minVersion",
+                  "type": "String",
+                  "javadoc": "the minimum version to compare against, such as {@code \"8.0\"} or {@code \"19\"}",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Returns whether this product's {@link #version()} is greater than or equal to the given version.",
+              "contract": [
+                "</p> <p> Returns {@code false} (not comparable) when either this {@link #version()} or {@code minVersion} is {@code null} , blank, or does not begin with an integer component."
+              ],
+              "examples": [],
+              "see_also": [
+                "#isVersionAtMost(String)"
+              ]
+            },
+            {
+              "name": "isVersionAtMost",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean isVersionAtMost(final String maxVersion)",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "maxVersion",
+                  "type": "String",
+                  "javadoc": "the maximum version to compare against, such as {@code \"8.0\"} or {@code \"19\"}",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Returns whether this product's {@link #version()} is less than or equal to the given version.",
+              "contract": [
+                "</p> <p> Returns {@code false} (not comparable) when either this {@link #version()} or {@code maxVersion} is {@code null} , blank, or does not begin with an integer component."
+              ],
+              "examples": [],
+              "see_also": [
+                "#isVersionAtLeast(String)"
+              ]
             }
           ],
           "fields": []
@@ -13071,14 +13554,14 @@
                 "public",
                 "static"
               ],
-              "signature": "public static SqlMapper load(final String filePath)",
+              "signature": "public static SqlMapper load(final String filePaths)",
               "return_type": "SqlMapper",
               "type_params": [],
               "params": [
                 {
-                  "name": "filePath",
+                  "name": "filePaths",
                   "type": "String",
-                  "javadoc": "one or more file paths separated by ',' or ';' (must not be {@code null} or empty)",
+                  "javadoc": "one or more file paths separated by ',' or ';' (must not be {@code null} or empty). Each path is resolved against the literal location first; when no file exists there, the common configuration directories are searched as a fallback",
                   "nullability": "unspecified"
                 }
               ],
@@ -13678,7 +14161,7 @@
                 {
                   "name": "name",
                   "type": "String",
-                  "javadoc": "the SQL operation name to look up (case-insensitive)",
+                  "javadoc": "the SQL operation name to look up (case-insensitive); may be {@code null}",
                   "nullability": "unspecified"
                 }
               ],
@@ -14149,7 +14632,11 @@
               "javadoc_summary": "Registers a single character as a SQL separator.",
               "contract": [],
               "examples": [],
-              "see_also": []
+              "see_also": [
+                "#registerSeparator(String)",
+                "#unregisterSeparator(char)",
+                "#resetSeparators()"
+              ]
             },
             {
               "name": "registerSeparator",
@@ -14176,7 +14663,37 @@
                 "<p> If the separator is a single character, it will also be registered as a character separator for efficiency."
               ],
               "examples": [],
-              "see_also": []
+              "see_also": [
+                "#registerSeparator(char)",
+                "#unregisterSeparator(String)",
+                "#resetSeparators()"
+              ]
+            },
+            {
+              "name": "unregisterSeparator",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static void unregisterSeparator(final char separator)",
+              "return_type": "void",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "separator",
+                  "type": "char",
+                  "javadoc": "the character to unregister as a separator",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Unregisters a previously registered separator character, removing it from the recognized separator set.",
+              "contract": [],
+              "examples": [],
+              "see_also": [
+                "#unregisterSeparator(String)"
+              ]
             },
             {
               "name": "unregisterSeparator",
@@ -14230,7 +14747,40 @@
                 "public",
                 "static"
               ],
-              "signature": "public static boolean isFunctionName(final List<String> words, final int len, final int index)",
+              "signature": "public static boolean isFunctionName(final List<String> words, final int index)",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "words",
+                  "type": "List<String>",
+                  "javadoc": "the list of parsed SQL words/tokens (typically the result of {@link #parse(String)} )",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "index",
+                  "type": "int",
+                  "javadoc": "the index of the word to check; invalid indices return {@code false}",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Determines if a word at a specific position in a parsed word list represents a function name.",
+              "contract": [
+                "Determines if a word at a specific position in a parsed word list represents a function name.",
+                "A word is considered a function name if it is followed by the opening parenthesis token, either immediately or after whitespace."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isFunctionName",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "@Deprecated public static boolean isFunctionName(final List<String> words, final int len, final int index)",
               "return_type": "boolean",
               "type_params": [],
               "params": [
@@ -14254,10 +14804,14 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Determines if a word at a specific position in a parsed word list represents a function name.",
+              "deprecated": {
+                "is_deprecated": true,
+                "message": "use {@link #isFunctionName(List, int)}",
+                "for_removal": false
+              },
+              "javadoc_summary": "Determines if a word at a specific position in a parsed word list represents a function name, examining only the tokens below the given exclusive upper bound.",
               "contract": [
-                "Determines if a word at a specific position in a parsed word list represents a function name.",
-                "A word is considered a function name if it is followed by the opening parenthesis token, either immediately or after whitespace."
+                "Determines if a word at a specific position in a parsed word list represents a function name, examining only the tokens below the given exclusive upper bound."
               ],
               "examples": [],
               "see_also": []
@@ -14309,8 +14863,8 @@
               "throws": [],
               "javadoc_summary": "Checks whether the given SQL statement is read-only, i.e.",
               "contract": [
-                "<p> A statement is considered read-only only if its leading keyword is {@code SELECT} (see {@link #isSelectQuery(String)} ) <i> and </i> it contains no top-level mutation keyword ( {@code INSERT} , {@code UPDATE} , {@code DELETE} or {@code MERGE} ) and no standalone {@code SELECT ...",
-                "For multi-statement SQL, a later statement that starts with {@code INSERT} , {@code UPDATE} , {@code DELETE} or {@code MERGE} also makes the SQL non-read-only, including when that later statement starts with a {@code WITH} clause or leading parentheses."
+                "<p> A statement is considered read-only only if its leading keyword is {@code SELECT} (see {@link #isSelectQuery(String)} ) <i> and </i> it contains no top-level mutation or DDL keyword ( {@code INSERT} , {@code UPDATE} , {@code DELETE} , {@code MERGE} , {@code REPLACE} , {@code TRUNCATE} , {@code CREATE} , {@code ALTER} or {@code DROP} ) and no standalone {@code SELECT ...",
+                "For multi-statement SQL, a later statement that starts with one of the mutation or DDL keywords listed above also makes the SQL non-read-only, including when that later statement starts with a {@code WITH} clause or leading parentheses."
               ],
               "examples": [],
               "see_also": [
@@ -14656,8 +15210,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public Collection<String> getPropNames()",
-              "return_type": "Collection<String>",
+              "signature": "public ImmutableList<String> getPropNames()",
+              "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [],
               "throws": [],
@@ -14678,6 +15232,22 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Gets the values used by this IN or NOT IN condition.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isRowValueConstructor",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean isRowValueConstructor()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Checks whether this condition was created in row value constructor form, i.e.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -14760,7 +15330,7 @@
               "javadoc_summary": "Checks if this condition is equal to another object.",
               "contract": [
                 "Checks if this condition is equal to another object.",
-                "Two conditions are equal if they have the same property name(s), operator, and values list."
+                "Two conditions are equal if they have the same property name(s), operator, row-value mode, and values list."
               ],
               "examples": [],
               "see_also": []
@@ -14804,8 +15374,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public Collection<String> getPropNames()",
-              "return_type": "Collection<String>",
+              "signature": "public ImmutableList<String> getPropNames()",
+              "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [],
               "throws": [],
@@ -14963,7 +15533,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery wrapped by this ALL condition.",
+              "javadoc_summary": "Gets the subquery used by this ALL condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -15110,7 +15680,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery wrapped by this ANY condition.",
+              "javadoc_summary": "Gets the subquery used by this ANY condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -15342,8 +15912,8 @@
               "javadoc_summary": "Checks if this Binary condition is equal to another object.",
               "contract": [
                 "Checks if this Binary condition is equal to another object.",
-                "Two Binary conditions are equal if they have the same property name, operator, and value.",
-                "Comparison is based on these three fields only \\u2014 the runtime class is not part of the equality contract \\u2014 so two instances of different concrete subclasses are considered equal when their property name, operator, and value all match."
+                "Two conditions are equal only if they are of the exact same runtime class and have the same property name, operator, and value.",
+                "The runtime class is part of the equality contract, so an instance of one concrete subclass is never equal to an instance of a different subclass (or to a raw {@code Binary} ), even when their property name, operator, and value all match."
               ],
               "examples": [],
               "see_also": []
@@ -15365,35 +15935,6 @@
           "type_params": [],
           "constructors": [],
           "methods": [
-            {
-              "name": "<init>",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "public Cell(final Operator operator, final Condition cond)",
-              "return_type": "void",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "operator",
-                  "type": "Operator",
-                  "javadoc": "the operator to apply to the condition (must not be {@code null} )",
-                  "nullability": "unspecified"
-                },
-                {
-                  "name": "cond",
-                  "type": "Condition",
-                  "javadoc": "the condition to wrap (must not be {@code null} )",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Creates a new {@code Cell} with the specified operator and condition.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
             {
               "name": "getCondition",
               "kind": "instance",
@@ -15513,37 +16054,7 @@
           "nullability": "unspecified",
           "type_params": [],
           "constructors": [],
-          "methods": [
-            {
-              "name": "<init>",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "public Clause(final Operator operator, final Condition cond)",
-              "return_type": "void",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "operator",
-                  "type": "Operator",
-                  "javadoc": "the operator to apply to the condition (must not be {@code null} ); typically a clause operator such as {@code WHERE} , {@code GROUP_BY} , etc.",
-                  "nullability": "unspecified"
-                },
-                {
-                  "name": "cond",
-                  "type": "Condition",
-                  "javadoc": "the condition to wrap (must not be {@code null} )",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Creates a new {@code Clause} with the specified operator and condition.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            }
-          ],
+          "methods": [],
           "fields": []
         },
         {
@@ -15560,35 +16071,6 @@
           "type_params": [],
           "constructors": [],
           "methods": [
-            {
-              "name": "<init>",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "public ComposableCell(final Operator operator, final Condition cond)",
-              "return_type": "void",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "operator",
-                  "type": "Operator",
-                  "javadoc": "the operator to apply to the condition (must not be {@code null} )",
-                  "nullability": "unspecified"
-                },
-                {
-                  "name": "cond",
-                  "type": "Condition",
-                  "javadoc": "the condition to wrap (must not be {@code null} )",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Creates a new {@code ComposableCell} with the specified operator and condition.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
             {
               "name": "getCondition",
               "kind": "instance",
@@ -15918,8 +16400,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public List<Join> getJoins()",
-              "return_type": "List<Join>",
+              "signature": "public ImmutableList<Join> getJoins()",
+              "return_type": "ImmutableList<Join>",
               "type_params": [],
               "params": [],
               "throws": [],
@@ -15988,8 +16470,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public List<Clause> getSetOperations()",
-              "return_type": "List<Clause>",
+              "signature": "public ImmutableList<Clause> getSetOperations()",
+              "return_type": "ImmutableList<Clause>",
               "type_params": [],
               "params": [],
               "throws": [],
@@ -16056,8 +16538,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public List<Condition> findConditions(final Operator operator)",
-              "return_type": "List<Condition>",
+              "signature": "public ImmutableList<Condition> findConditions(final Operator operator)",
+              "return_type": "ImmutableList<Condition>",
               "type_params": [],
               "params": [
                 {
@@ -16303,7 +16785,7 @@
                 {
                   "name": "selectModifier",
                   "type": "String",
-                  "javadoc": "the custom SELECT modifier",
+                  "javadoc": "the custom SELECT modifier; {@code null} or an empty string means no modifier",
                   "nullability": "unspecified"
                 }
               ],
@@ -16874,7 +17356,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public Builder naturalJoin(final String joinEntity, final Condition cond)",
+              "signature": "@Deprecated public Builder naturalJoin(final String joinEntity, final Condition cond)",
               "return_type": "Builder",
               "type_params": [],
               "params": [
@@ -16892,6 +17374,11 @@
                 }
               ],
               "throws": [],
+              "deprecated": {
+                "is_deprecated": true,
+                "message": "a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and throws for any other value. Use {@link #naturalJoin(String)} instead, and place any additional filter in the {@code WHERE} clause.",
+                "for_removal": false
+              },
               "javadoc_summary": "Adds a NATURAL JOIN to this criteria.",
               "contract": [
                 "A NATURAL JOIN derives its join predicate implicitly from columns with matching names, so it does <b> not </b> accept an explicit condition; {@code cond} must be {@code null} ."
@@ -16905,7 +17392,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public Builder naturalJoin(final Collection<String> joinEntities, final Condition cond)",
+              "signature": "@Deprecated public Builder naturalJoin(final Collection<String> joinEntities, final Condition cond)",
               "return_type": "Builder",
               "type_params": [],
               "params": [
@@ -16923,6 +17410,11 @@
                 }
               ],
               "throws": [],
+              "deprecated": {
+                "is_deprecated": true,
+                "message": "a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and throws for any other value. Use the condition-less {@link NaturalJoin#NaturalJoin(Collection)} constructor instead, and place any additional filter in the {@code WHERE} clause.",
+                "for_removal": false
+              },
               "javadoc_summary": "Adds a NATURAL JOIN with multiple entities to this criteria.",
               "contract": [
                 "A NATURAL JOIN derives its join predicate implicitly, so it does <b> not </b> accept an explicit condition; {@code cond} must be {@code null} ."
@@ -17858,12 +18350,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public Builder limit(final Limit condition)",
+              "signature": "public Builder limit(final Limit cond)",
               "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
-                  "name": "condition",
+                  "name": "cond",
                   "type": "Limit",
                   "javadoc": "the LIMIT condition (must not be {@code null} ); its operator must be {@link Operator#LIMIT} , which is guaranteed for any {@link Limit} instance",
                   "nullability": "unspecified"
@@ -18432,7 +18924,7 @@
                 {
                   "name": "literal",
                   "type": "String",
-                  "javadoc": "the SQL expression as a string; may be {@code null}",
+                  "javadoc": "the SQL expression as a string (must not be {@code null} )",
                   "nullability": "unspecified"
                 }
               ],
@@ -18491,12 +18983,12 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String equal(final String literal, final Object value)",
+              "signature": "public static String equal(final String expr, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the left-hand side of the equality",
                   "nullability": "unspecified"
@@ -18523,12 +19015,12 @@
                 "public",
                 "static"
               ],
-              "signature": "@Beta public static String eq(final String literal, final Object value)",
+              "signature": "@Beta public static String eq(final String expr, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the left-hand side of the equality",
                   "nullability": "unspecified"
@@ -18553,12 +19045,12 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String notEqual(final String literal, final Object value)",
+              "signature": "public static String notEqual(final String expr, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the left-hand side of the inequality",
                   "nullability": "unspecified"
@@ -18585,12 +19077,12 @@
                 "public",
                 "static"
               ],
-              "signature": "@Beta public static String ne(final String literal, final Object value)",
+              "signature": "@Beta public static String ne(final String expr, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the left-hand side of the inequality",
                   "nullability": "unspecified"
@@ -18615,12 +19107,12 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String greaterThan(final String literal, final Object value)",
+              "signature": "public static String greaterThan(final String expr, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the left-hand side of the comparison",
                   "nullability": "unspecified"
@@ -18628,7 +19120,7 @@
                 {
                   "name": "value",
                   "type": "Object",
-                  "javadoc": "the right-hand side value",
+                  "javadoc": "the right-hand side value; should not be {@code null} \\u2014 a {@code null} renders as the literal {@code null}",
                   "nullability": "unspecified"
                 }
               ],
@@ -18645,12 +19137,12 @@
                 "public",
                 "static"
               ],
-              "signature": "@Beta public static String gt(final String literal, final Object value)",
+              "signature": "@Beta public static String gt(final String expr, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the left-hand side of the comparison",
                   "nullability": "unspecified"
@@ -18658,7 +19150,7 @@
                 {
                   "name": "value",
                   "type": "Object",
-                  "javadoc": "the right-hand side value",
+                  "javadoc": "the right-hand side value; should not be {@code null} \\u2014 a {@code null} renders as the literal {@code null}",
                   "nullability": "unspecified"
                 }
               ],
@@ -18675,12 +19167,12 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String greaterThanOrEqual(final String literal, final Object value)",
+              "signature": "public static String greaterThanOrEqual(final String expr, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the left-hand side of the comparison",
                   "nullability": "unspecified"
@@ -18688,7 +19180,7 @@
                 {
                   "name": "value",
                   "type": "Object",
-                  "javadoc": "the right-hand side value",
+                  "javadoc": "the right-hand side value; should not be {@code null} \\u2014 a {@code null} renders as the literal {@code null}",
                   "nullability": "unspecified"
                 }
               ],
@@ -18705,12 +19197,12 @@
                 "public",
                 "static"
               ],
-              "signature": "@Beta public static String ge(final String literal, final Object value)",
+              "signature": "@Beta public static String ge(final String expr, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the left-hand side of the comparison",
                   "nullability": "unspecified"
@@ -18718,7 +19210,7 @@
                 {
                   "name": "value",
                   "type": "Object",
-                  "javadoc": "the right-hand side value",
+                  "javadoc": "the right-hand side value; should not be {@code null} \\u2014 a {@code null} renders as the literal {@code null}",
                   "nullability": "unspecified"
                 }
               ],
@@ -18735,12 +19227,12 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String lessThan(final String literal, final Object value)",
+              "signature": "public static String lessThan(final String expr, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the left-hand side of the comparison",
                   "nullability": "unspecified"
@@ -18748,7 +19240,7 @@
                 {
                   "name": "value",
                   "type": "Object",
-                  "javadoc": "the right-hand side value",
+                  "javadoc": "the right-hand side value; should not be {@code null} \\u2014 a {@code null} renders as the literal {@code null}",
                   "nullability": "unspecified"
                 }
               ],
@@ -18765,12 +19257,12 @@
                 "public",
                 "static"
               ],
-              "signature": "@Beta public static String lt(final String literal, final Object value)",
+              "signature": "@Beta public static String lt(final String expr, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the left-hand side of the comparison",
                   "nullability": "unspecified"
@@ -18778,7 +19270,7 @@
                 {
                   "name": "value",
                   "type": "Object",
-                  "javadoc": "the right-hand side value",
+                  "javadoc": "the right-hand side value; should not be {@code null} \\u2014 a {@code null} renders as the literal {@code null}",
                   "nullability": "unspecified"
                 }
               ],
@@ -18795,12 +19287,12 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String lessThanOrEqual(final String literal, final Object value)",
+              "signature": "public static String lessThanOrEqual(final String expr, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the left-hand side of the comparison",
                   "nullability": "unspecified"
@@ -18808,7 +19300,7 @@
                 {
                   "name": "value",
                   "type": "Object",
-                  "javadoc": "the right-hand side value",
+                  "javadoc": "the right-hand side value; should not be {@code null} \\u2014 a {@code null} renders as the literal {@code null}",
                   "nullability": "unspecified"
                 }
               ],
@@ -18825,12 +19317,12 @@
                 "public",
                 "static"
               ],
-              "signature": "@Beta public static String le(final String literal, final Object value)",
+              "signature": "@Beta public static String le(final String expr, final Object value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the left-hand side of the comparison",
                   "nullability": "unspecified"
@@ -18838,7 +19330,7 @@
                 {
                   "name": "value",
                   "type": "Object",
-                  "javadoc": "the right-hand side value",
+                  "javadoc": "the right-hand side value; should not be {@code null} \\u2014 a {@code null} renders as the literal {@code null}",
                   "nullability": "unspecified"
                 }
               ],
@@ -18855,14 +19347,14 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String between(final String literal, final Object min, final Object max)",
+              "signature": "public static String between(final String expr, final Object min, final Object max)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
-                  "javadoc": "the literal to test",
+                  "javadoc": "the expression to test",
                   "nullability": "unspecified"
                 },
                 {
@@ -18891,20 +19383,20 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String like(final String literal, final String value)",
+              "signature": "public static String like(final String expr, final String value)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
-                  "javadoc": "the literal to match",
+                  "javadoc": "the expression to match",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "value",
                   "type": "String",
-                  "javadoc": "the pattern to match against (can include % and _ wildcards)",
+                  "javadoc": "the pattern to match against (can include % and _ wildcards); should not be {@code null} \\u2014 a {@code null} renders as the literal {@code null}",
                   "nullability": "unspecified"
                 }
               ],
@@ -18921,14 +19413,14 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String isNull(final String literal)",
+              "signature": "public static String isNull(final String expr)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
-                  "javadoc": "the literal to check for null",
+                  "javadoc": "the expression to check for null",
                   "nullability": "unspecified"
                 }
               ],
@@ -18945,14 +19437,14 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String isNotNull(final String literal)",
+              "signature": "public static String isNotNull(final String expr)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
-                  "javadoc": "the literal to check for not null",
+                  "javadoc": "the expression to check for not null",
                   "nullability": "unspecified"
                 }
               ],
@@ -18969,12 +19461,12 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String isNullOrEmpty(final String literal)",
+              "signature": "public static String isNullOrEmpty(final String expr)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the column reference or expression to check",
                   "nullability": "unspecified"
@@ -18993,12 +19485,12 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String isNotNullAndNotEmpty(final String literal)",
+              "signature": "public static String isNotNullAndNotEmpty(final String expr)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literal",
+                  "name": "expr",
                   "type": "String",
                   "javadoc": "the column reference or expression to check",
                   "nullability": "unspecified"
@@ -19017,14 +19509,14 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String and(final String... literals)",
+              "signature": "public static String and(final String... exprs)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literals",
+                  "name": "exprs",
                   "type": "String[]",
-                  "javadoc": "the literals to combine with AND",
+                  "javadoc": "the expressions to combine with AND",
                   "nullability": "unspecified"
                 }
               ],
@@ -19043,14 +19535,14 @@
                 "public",
                 "static"
               ],
-              "signature": "public static String or(final String... literals)",
+              "signature": "public static String or(final String... exprs)",
               "return_type": "String",
               "type_params": [],
               "params": [
                 {
-                  "name": "literals",
+                  "name": "exprs",
                   "type": "String[]",
-                  "javadoc": "the literals to combine with OR",
+                  "javadoc": "the expressions to combine with OR",
                   "nullability": "unspecified"
                 }
               ],
@@ -20368,7 +20860,7 @@
                 {
                   "name": "cond",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
+                  "javadoc": "the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
                   "nullability": "unspecified"
                 }
               ],
@@ -20397,7 +20889,7 @@
                 {
                   "name": "cond",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the joined table list. Use {@link On} or {@link Using} when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
+                  "javadoc": "the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
                   "nullability": "unspecified"
                 }
               ],
@@ -20542,7 +21034,9 @@
                 "<p> <b> Usage Examples: </b> </p> <pre> {@code // Group by year extracted from date GroupBy byYear = new GroupBy(Filters.expr(\"YEAR(order_date)\")); // SQL: GROUP BY YEAR(order_date) // Group by calculated expression GroupBy byRange = new GroupBy(Filters.expr(\"CASE WHEN age < 30 THEN 'Young' ELSE 'Senior' END\")); // SQL: GROUP BY CASE WHEN age < 30 THEN 'Young' ELSE 'Senior' END } </pre>"
               ],
               "examples": [],
-              "see_also": []
+              "see_also": [
+                "Filters#expr(String)"
+              ]
             },
             {
               "name": "<init>",
@@ -20930,7 +21424,7 @@
                 {
                   "name": "cond",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
+                  "javadoc": "the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
                   "nullability": "unspecified"
                 }
               ],
@@ -20959,7 +21453,7 @@
                 {
                   "name": "cond",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the joined table list. Use {@link On} or {@link Using} when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
+                  "javadoc": "the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
                   "nullability": "unspecified"
                 }
               ],
@@ -21432,7 +21926,7 @@
                 {
                   "name": "cond",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
+                  "javadoc": "the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
                   "nullability": "unspecified"
                 }
               ],
@@ -21463,7 +21957,7 @@
                 {
                   "name": "cond",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
+                  "javadoc": "the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
                   "nullability": "unspecified"
                 }
               ],
@@ -21713,7 +22207,7 @@
                 {
                   "name": "namingPolicy",
                   "type": "NamingPolicy",
-                  "javadoc": "the naming policy to apply to property names within each condition",
+                  "javadoc": "the naming policy to apply to property names within each condition; if {@code null} , {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used",
                   "nullability": "unspecified"
                 }
               ],
@@ -21825,7 +22319,7 @@
                 {
                   "name": "cond",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
+                  "javadoc": "the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
                   "nullability": "unspecified"
                 }
               ],
@@ -21854,7 +22348,7 @@
                 {
                   "name": "cond",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the joined table list. Use {@link On} or {@link Using} when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
+                  "javadoc": "the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
                   "nullability": "unspecified"
                 }
               ],
@@ -22127,6 +22621,27 @@
               "see_also": []
             },
             {
+              "name": "hasLiteral",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean hasLiteral()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Checks whether this Limit was created from a string expression (see {@link #Limit(String)} ).",
+              "contract": [
+                "When this returns {@code true} , {@link #getLiteral()} is non-null and is what gets rendered; {@link #getCount()} / {@link #getOffset()} may hold sentinel values ( {@link Integer#MAX_VALUE} /0) if the expression stayed opaque.",
+                "When it returns {@code false} , the Limit was created with numeric count/offset parameters and {@link #getLiteral()} returns {@code null} ."
+              ],
+              "examples": [],
+              "see_also": [
+                "#getLiteral()"
+              ]
+            },
+            {
               "name": "getCount",
               "kind": "instance",
               "modifiers": [
@@ -22362,7 +22877,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property name. Must not be null, empty, or blank. Note: unlike the constructor, a {@code null} argument causes an {@code IllegalArgumentException} (null is treated like a blank string by the internal {@code Strings.isBlank} check).",
+                  "javadoc": "the property name. Must not be null, empty, or blank. A {@code null} argument causes an {@code IllegalArgumentException} (null is treated like a blank string by the internal {@code Strings.isBlank} check).",
                   "nullability": "unspecified"
                 }
               ],
@@ -22462,7 +22977,8 @@
               "examples": [],
               "see_also": [
                 "Or",
-                "Equal"
+                "Equal",
+                "com.landawn.abacus.query.Filters#anyEqual(java.util.Map)"
               ]
             },
             {
@@ -23624,47 +24140,6 @@
           "fields": []
         },
         {
-          "fqn": "com.landawn.abacus.query.condition.NamedProperty.NP",
-          "name": "NP",
-          "kind": "class",
-          "modifiers": [
-            "public",
-            "static",
-            "final"
-          ],
-          "javadoc_summary": "Backward-compatible subtype of {@link NamedProperty} .",
-          "thread_safety": "unspecified",
-          "nullability": "unspecified",
-          "type_params": [],
-          "constructors": [],
-          "methods": [
-            {
-              "name": "<init>",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "public NP(final String propName)",
-              "return_type": "void",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "propName",
-                  "type": "String",
-                  "javadoc": "the property name; must not be {@code null} , empty, or blank",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Creates an {@code NP} instance for the specified property name.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            }
-          ],
-          "fields": []
-        },
-        {
           "fqn": "com.landawn.abacus.query.condition.NaturalJoin",
           "name": "NaturalJoin",
           "kind": "class",
@@ -23708,7 +24183,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public NaturalJoin(final String joinEntity, final Condition cond)",
+              "signature": "@Deprecated public NaturalJoin(final String joinEntity, final Condition cond)",
               "return_type": "void",
               "type_params": [],
               "params": [
@@ -23726,6 +24201,11 @@
                 }
               ],
               "throws": [],
+              "deprecated": {
+                "is_deprecated": true,
+                "message": "a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and throws for any other value. Use {@link #NaturalJoin(String)} instead, and place any additional filter in the enclosing query's {@code WHERE} clause.",
+                "for_removal": false
+              },
               "javadoc_summary": "Creates a NATURAL JOIN clause for the specified table or entity.",
               "contract": [
                 "This constructor exists only for API symmetry with the other {@link Join} subclasses; {@code cond} must be {@code null} ."
@@ -23739,7 +24219,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public NaturalJoin(final Collection<String> joinEntities, final Condition cond)",
+              "signature": "@Deprecated public NaturalJoin(final Collection<String> joinEntities, final Condition cond)",
               "return_type": "void",
               "type_params": [],
               "params": [
@@ -23757,6 +24237,11 @@
                 }
               ],
               "throws": [],
+              "deprecated": {
+                "is_deprecated": true,
+                "message": "a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and throws for any other value. Use {@link #NaturalJoin(Collection)} instead, and place any additional filter in the enclosing query's {@code WHERE} clause.",
+                "for_removal": false
+              },
               "javadoc_summary": "Creates a NATURAL JOIN clause with multiple tables/entities.",
               "contract": [
                 "<p> As with the other constructors, a NATURAL JOIN cannot carry an explicit condition, so {@code cond} must be {@code null} ; it exists only for API symmetry with the other {@link Join} subclasses."
@@ -24088,13 +24573,13 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property/column name to check against the subquery results (must not be {@code null} , empty, or blank). If the subquery is structured, it must select exactly one column.",
+                  "javadoc": "the property/column name to check against the subquery results (must not be {@code null} , empty, or blank)",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "subQuery",
                   "type": "SubQuery",
-                  "javadoc": "the subquery that returns the values to check against (must not be {@code null} )",
+                  "javadoc": "the subquery that returns the values to check against (must not be {@code null} ); if it is a structured subquery, it must select exactly one column",
                   "nullability": "unspecified"
                 }
               ],
@@ -24256,12 +24741,12 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public On(final Map<String, String> propNamePair)",
+              "signature": "public On(final Map<String, String> propNamePairs)",
               "return_type": "void",
               "type_params": [],
               "params": [
                 {
-                  "name": "propNamePair",
+                  "name": "propNamePairs",
                   "type": "Map<String, String>",
                   "javadoc": "map of column pairs where the key is from the first table and the value is from the second table. Order is preserved if a {@code LinkedHashMap} is used.",
                   "nullability": "unspecified"
@@ -24434,7 +24919,7 @@
                 "final"
               ],
               "type": "Operator",
-              "value": "new Operator(NOT + \" \" + SK.LIKE)",
+              "value": "new Operator(SK.NOT_LIKE)",
               "javadoc_summary": "NOT LIKE operator."
             },
             {
@@ -25211,7 +25696,7 @@
                 {
                   "name": "cond",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the join target. Use {@link On} or {@link Using} when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
+                  "javadoc": "the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
                   "nullability": "unspecified"
                 }
               ],
@@ -25240,7 +25725,7 @@
                 {
                   "name": "cond",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the joined table list. Use {@link On} or {@link Using} when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
+                  "javadoc": "the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .",
                   "nullability": "unspecified"
                 }
               ],
@@ -25302,7 +25787,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery wrapped by this SOME condition.",
+              "javadoc_summary": "Gets the subquery used by this SOME condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -25509,8 +25994,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public Collection<String> getSelectPropNames()",
-              "return_type": "Collection<String>",
+              "signature": "public ImmutableList<String> getSelectPropNames()",
+              "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [],
               "throws": [],
@@ -25785,7 +26270,7 @@
               "throws": [],
               "deprecated": {
                 "is_deprecated": true,
-                "message": "It's recommended to use {@link Filters#on(java.util.Map)} or multiple {@code Filters.on(String, String)} clauses instead of {@code Using} for better portability and clarity. Replace {@code new Using(\"col1\", \"col2\")} with explicit {@code Filters.on(N.asMap(\"table1.col1\", \"table2.col1\", \"table1.col2\", \"table2.col2\"))} .",
+                "message": "It's recommended to use {@link Filters#on(java.util.Map)} instead of {@code Using} for better portability and clarity. Replace {@code new Using(\"col1\", \"col2\")} with explicit {@code Filters.on(N.asMap(\"table1.col1\", \"table2.col1\", \"table1.col2\", \"table2.col2\"))} .",
                 "for_removal": false
               },
               "javadoc_summary": "Creates a USING clause with the specified column names.",
@@ -25815,7 +26300,7 @@
               "throws": [],
               "deprecated": {
                 "is_deprecated": true,
-                "message": "It's recommended to use {@link Filters#on(java.util.Map)} or multiple {@code Filters.on(String, String)} clauses instead of {@code Using} for better portability and clarity. Replace {@code new Using(columnList)} with explicit {@code Filters.on()} conditions that specify the full column names with table prefixes.",
+                "message": "It's recommended to use {@link Filters#on(java.util.Map)} instead of {@code Using} for better portability and clarity. Replace {@code new Using(columnList)} with an explicit {@code Filters.on(Map)} condition that specifies the full column names with table prefixes.",
                 "for_removal": false
               },
               "javadoc_summary": "Creates a USING clause with a collection of column names.",
