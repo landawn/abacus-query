@@ -760,12 +760,6 @@ class SqlBuilder10Test extends TestBase {
     //        sql = PSC.select("*").from("users").appendIf(true, " FOR UPDATE").build().query();
     //
     //        assertEquals("SELECT * FROM users FOR UPDATE", sql);
-    //
-    //        // With consumer
-    //        sql = PSC.select("*").from("users").appendIf(true, builder -> builder.where(Filters.gt("age", 18)).orderBy("name")).build().query();
-    //
-    //        assertTrue(sql.contains("WHERE age > ?"));
-    //        assertTrue(sql.contains("ORDER BY name"));
     //    }
     //
     //    @Test
@@ -1029,18 +1023,6 @@ class SqlBuilder10Test extends TestBase {
     @Test
     public void testAppendIf_StringFalse() {
         String sql = Dsl.PSC.select("*").from("users").appendIf(false, " FOR UPDATE").build().query();
-        assertEquals("SELECT * FROM users", sql);
-    }
-
-    @Test
-    public void testAppendIf_ConsumerTrue() {
-        String sql = Dsl.PSC.select("*").from("users").appendIf(true, builder -> builder.where(Filters.gt("age", 18))).build().query();
-        assertTrue(sql.contains("WHERE age > ?"));
-    }
-
-    @Test
-    public void testAppendIf_ConsumerFalse() {
-        String sql = Dsl.PSC.select("*").from("users").appendIf(false, builder -> builder.where(Filters.gt("age", 18))).build().query();
         assertEquals("SELECT * FROM users", sql);
     }
 

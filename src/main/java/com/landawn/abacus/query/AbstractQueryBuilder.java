@@ -3908,36 +3908,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Conditionally executes an append operation using a consumer function.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * boolean complexFilter = true;
-     * String sql = PSC.select("*")
-     *                 .from("users")
-     *                 .appendIf(complexFilter, builder ->
-     *                     builder.where(Filters.greaterThan("age", 18))
-     *                            .orderBy("name"))
-     *                 .build().query();
-     * // Output: SELECT * FROM users WHERE age > ? ORDER BY name
-     * }</pre>
-     *
-     * @param condition if true, the consumer will be executed
-     * @param appender the consumer function to execute (must not be {@code null} when {@code condition} is {@code true})
-     * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code appender} is {@code null}
-     */
-    @Beta
-    public This appendIf(final boolean condition, final java.util.function.Consumer<? super This> appender) {
-        if (condition) {
-            N.checkArgNotNull(appender, "appender");
-            appender.accept((This) this);
-        }
-
-        return (This) this;
-    }
-
-    /**
      * Conditionally appends one of two conditions based on a boolean value.
      *
      * <p><b>Usage Examples:</b></p>
@@ -3998,43 +3968,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             append(exprToAppendForTrue);
         } else {
             append(exprToAppendForFalse);
-        }
-
-        return (This) this;
-    }
-
-    /**
-     * Conditionally executes one of two append operations using consumer functions.
-     * Exactly one of the two consumers is invoked with this builder, based on the boolean value.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * boolean isActive = true;
-     * String sql = PSC.select("*")
-     *                 .from("users")
-     *                 .appendIfOrElse(isActive,
-     *                     builder -> builder.where(Filters.equal("status", "active")),
-     *                     builder -> builder.where(Filters.equal("status", "inactive")))
-     *                 .build().query();
-     * // Output: SELECT * FROM users WHERE status = ?
-     * }</pre>
-     *
-     * @param condition if true, appenderWhenTrue is executed; otherwise appenderWhenFalse is executed
-     * @param appenderWhenTrue the consumer function to execute if condition is true (must not be {@code null})
-     * @param appenderWhenFalse the consumer function to execute if condition is false (must not be {@code null})
-     * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code appenderWhenTrue} or {@code appenderWhenFalse} is {@code null}
-     */
-    @Beta
-    public This appendIfOrElse(final boolean condition, final java.util.function.Consumer<? super This> appenderWhenTrue,
-            final java.util.function.Consumer<? super This> appenderWhenFalse) {
-        N.checkArgNotNull(appenderWhenTrue, "appenderWhenTrue");
-        N.checkArgNotNull(appenderWhenFalse, "appenderWhenFalse");
-
-        if (condition) {
-            appenderWhenTrue.accept((This) this);
-        } else {
-            appenderWhenFalse.accept((This) this);
         }
 
         return (This) this;

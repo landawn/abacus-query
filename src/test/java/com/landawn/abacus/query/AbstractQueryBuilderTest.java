@@ -308,17 +308,6 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public void testAppendIfConsumerNullHandling() {
-        // condition == true + null appender -> documented IllegalArgumentException (previously a bare NPE)
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("accounts").appendIf(true, (java.util.function.Consumer) null));
-
-        // condition == false + null appender -> no-op (validation is guarded by the condition, matching appendIf(Condition/String))
-        String sql = Dsl.PSC.select("id").from("accounts").appendIf(false, (java.util.function.Consumer) null).build().query();
-        assertTrue(sql.contains("SELECT"));
-    }
-
-    @Test
     public void testUpdateWithSet() {
         String sql = Dsl.PSC.update("accounts").set("status", "inactive").set("updated_at", "NOW()").where(Filters.eq("id", 1)).build().query();
         assertNotNull(sql);
@@ -554,24 +543,6 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals(deprecatedSql, sql, "deprecated set(Class, Set) must delegate to setEntity(Class, Set)");
     }
 
-    @Test
-    public void testAppendIfOrElseWithConsumers() {
-        String sqlTrue = Dsl.PSC.select("*")
-                .from("users")
-                .appendIfOrElse(true, b -> b.where(Filters.eq("status", "active")), b -> b.where(Filters.eq("status", "inactive")))
-                .build()
-                .query();
-        assertTrue(sqlTrue.contains("WHERE status = ?"), "true branch consumer must be applied: " + sqlTrue);
-
-        AbstractQueryBuilder.SP spFalse = Dsl.PSC.select("*")
-                .from("users")
-                .appendIfOrElse(false, b -> b.where(Filters.eq("status", "active")), b -> b.orderBy("firstName"))
-                .build();
-        assertTrue(spFalse.query().contains("ORDER BY first_name"), "false branch consumer must be applied: " + spFalse.query());
-
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").appendIfOrElse(true, null, b -> b.orderBy("firstName")));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").appendIfOrElse(false, b -> b.orderBy("firstName"), null));
-    }
 }
 
 class AbstractQueryBuilder2026Test extends TestBase {
@@ -673,18 +644,6 @@ class AbstractQueryBuilder2026Test extends TestBase {
 
         assertTrue(withExpression.contains("FOR UPDATE"));
         assertTrue(!withoutExpression.contains("FOR UPDATE"));
-    }
-
-    @Test
-    public void testAppendIf_Consumer() {
-        final String sql = Dsl.PSC.select("*")
-                .from("users")
-                .appendIf(true, builder -> builder.where(Filters.eq("status", "ACTIVE")).orderBy("name"))
-                .build()
-                .query();
-
-        assertTrue(sql.contains("WHERE"));
-        assertTrue(sql.contains("ORDER BY"));
     }
 
     @Test
