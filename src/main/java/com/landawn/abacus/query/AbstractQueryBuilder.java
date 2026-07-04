@@ -544,29 +544,27 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return the resolved dialect family, never {@code null}
      */
     static DialectFamily resolveDialectFamily(final ProductInfo productInfo) {
-        final String name = productInfo == null ? null : productInfo.name();
-
-        if (Strings.isBlank(name)) {
+        if (productInfo == null || Strings.isBlank(productInfo.name())) {
             return DialectFamily.DEFAULT;
         }
 
-        if (Strings.containsIgnoreCase(name, "oracle")) {
+        if (productInfo.isOracle()) {
             return DialectFamily.ORACLE;
         }
 
-        if (Strings.containsIgnoreCase(name, "db2")) {
+        if (productInfo.isDB2()) {
             return DialectFamily.DB2;
         }
 
-        if (Strings.containsIgnoreCase(name, "sql server") || Strings.containsIgnoreCase(name, "sqlserver")) {
+        if (productInfo.isSQLServer()) {
             return DialectFamily.SQL_SERVER;
         }
 
-        if (Strings.containsIgnoreCase(name, "mysql") || Strings.containsIgnoreCase(name, "mariadb")) {
+        if (productInfo.isMySQL() || productInfo.isMariaDB()) {
             return DialectFamily.MYSQL;
         }
 
-        if (Strings.containsIgnoreCase(name, "postgres") || Strings.containsIgnoreCase(name, "sqlite") || Strings.containsIgnoreCase(name, "h2")) {
+        if (productInfo.isPostgreSQL() || productInfo.isSQLite() || productInfo.isH2()) {
             return DialectFamily.LIMIT_STYLE;
         }
 

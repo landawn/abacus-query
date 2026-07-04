@@ -17,6 +17,7 @@
 package com.landawn.abacus.query;
 
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.Strings;
 
 import lombok.Builder;
 import lombok.Value;
@@ -152,21 +153,34 @@ public class SqlDialect {
      * {@code FETCH FIRST ... ROWS ONLY} pagination). The name is matched case-insensitively as a
      * substring, so raw JDBC values from {@code DatabaseMetaData.getDatabaseProductName()} such as
      * {@code "Microsoft SQL Server"} or {@code "Oracle Database 19c"} are recognized. The
-     * {@link #version()} is descriptive metadata only.</p>
+     * {@link #version()} can be compared numerically via {@link #isVersionAtLeast(String)} and
+     * {@link #isVersionAtMost(String)}.</p>
      *
      * @param name the database product name, such as {@code "MySQL"} or {@code "PostgreSQL"}
-     * @param version the database product version, such as {@code "9.7"} or {@code "18"}; descriptive metadata only
+     * @param version the database product version, such as {@code "9.7"} or {@code "18"}; a {@code null}
+     *        version is normalized to an empty string, so {@link #version()} never returns {@code null}.
+     *        Comparable via {@link #isVersionAtLeast(String)} / {@link #isVersionAtMost(String)}
      */
     public record ProductInfo(String name, String version) {
 
         /**
-         * Creates a {@code ProductInfo} with the given product name and no version.
+         * Canonical constructor that normalizes a {@code null} {@code version} to an empty string, so
+         * {@link #version()} never returns {@code null} and an absent version has a single canonical
+         * representation. This keeps {@code equals}/{@code hashCode} consistent whether the version was
+         * omitted (via {@link #of(String)}) or passed as {@code null}.
+         */
+        public ProductInfo {
+            version = version == null ? "" : version;
+        }
+
+        /**
+         * Creates a {@code ProductInfo} with the given product name and no version (an empty {@link #version()}).
          *
          * @param name the database product name, such as {@code "Oracle"} or {@code "MySQL"}
-         * @return a new {@code ProductInfo} with the given name and a {@code null} version
+         * @return a new {@code ProductInfo} with the given name and an empty ({@code ""}) version
          */
         public static ProductInfo of(final String name) {
-            return new ProductInfo(name, null);
+            return new ProductInfo(name, "");
         }
 
         /**
@@ -178,6 +192,191 @@ public class SqlDialect {
          */
         public static ProductInfo of(final String name, final String version) {
             return new ProductInfo(name, version);
+        }
+
+        /**
+         * Returns whether this descriptor names MySQL. The match is a case-insensitive substring test
+         * against {@link #name()}. This is distinct from {@link #isMariaDB()}, although both share the
+         * same {@code LIMIT}/{@code OFFSET} pagination and backtick-quoting behavior in query builders.
+         * Returns {@code false} when {@link #name()} is {@code null}.
+         *
+         * @return {@code true} if {@link #name()} contains {@code "mysql"} (case-insensitively)
+         */
+        public boolean isMySQL() {
+            return Strings.containsIgnoreCase(name, "mysql");
+        }
+
+        /**
+         * Returns whether this descriptor names MariaDB. The match is a case-insensitive substring test
+         * against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}.
+         *
+         * @return {@code true} if {@link #name()} contains {@code "mariadb"} (case-insensitively)
+         */
+        public boolean isMariaDB() {
+            return Strings.containsIgnoreCase(name, "mariadb");
+        }
+
+        /**
+         * Returns whether this descriptor names PostgreSQL. The match is a case-insensitive substring
+         * test against {@link #name()} (the substring {@code "postgres"} also matches {@code "PostgreSQL"}).
+         * Returns {@code false} when {@link #name()} is {@code null}.
+         *
+         * @return {@code true} if {@link #name()} contains {@code "postgres"} (case-insensitively)
+         */
+        public boolean isPostgreSQL() {
+            return Strings.containsIgnoreCase(name, "postgres");
+        }
+
+        /**
+         * Returns whether this descriptor names Microsoft SQL Server. The match is a case-insensitive
+         * substring test against {@link #name()}, so raw JDBC values such as {@code "Microsoft SQL Server"}
+         * are recognized. Returns {@code false} when {@link #name()} is {@code null}.
+         *
+         * @return {@code true} if {@link #name()} contains {@code "sql server"} or {@code "sqlserver"} (case-insensitively)
+         */
+        public boolean isSQLServer() {
+            return Strings.containsIgnoreCase(name, "sql server") || Strings.containsIgnoreCase(name, "sqlserver");
+        }
+
+        /**
+         * Returns whether this descriptor names Oracle Database. The match is a case-insensitive
+         * substring test against {@link #name()}, so raw JDBC values from
+         * {@code DatabaseMetaData.getDatabaseProductName()} such as {@code "Oracle Database 19c"}
+         * are recognized. Returns {@code false} when {@link #name()} is {@code null}.
+         *
+         * @return {@code true} if {@link #name()} contains {@code "oracle"} (case-insensitively)
+         */
+        public boolean isOracle() {
+            return Strings.containsIgnoreCase(name, "oracle");
+        }
+
+        /**
+         * Returns whether this descriptor names IBM DB2. The match is a case-insensitive substring
+         * test against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}.
+         *
+         * @return {@code true} if {@link #name()} contains {@code "db2"} (case-insensitively)
+         */
+        public boolean isDB2() {
+            return Strings.containsIgnoreCase(name, "db2");
+        }
+
+        /**
+         * Returns whether this descriptor names H2 Database. The match is a case-insensitive substring
+         * test against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}.
+         *
+         * @return {@code true} if {@link #name()} contains {@code "h2"} (case-insensitively)
+         */
+        public boolean isH2() {
+            return Strings.containsIgnoreCase(name, "h2");
+        }
+
+        /**
+         * Returns whether this descriptor names SQLite. The match is a case-insensitive substring test
+         * against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}.
+         *
+         * @return {@code true} if {@link #name()} contains {@code "sqlite"} (case-insensitively)
+         */
+        public boolean isSQLite() {
+            return Strings.containsIgnoreCase(name, "sqlite");
+        }
+
+        /**
+         * Returns whether this product's {@link #version()} is greater than or equal to the given version.
+         *
+         * <p>Versions are compared by their leading dot-separated run of integer components: for example
+         * {@code "8.0.32"} parses to {@code [8, 0, 32]} and {@code "19c"} to {@code [19]} (parsing stops at
+         * the first character that is neither a digit nor a dot). Missing trailing components are treated as
+         * {@code 0}, so {@code "8.0"} equals {@code "8.0.0"} and is less than {@code "8.1"}.</p>
+         *
+         * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code minVersion}
+         * is {@code null}, blank, or does not begin with an integer component. This makes the method safe for
+         * feature-gating: an unknown or unparseable version simply fails the check.</p>
+         *
+         * @param minVersion the minimum version to compare against, such as {@code "8.0"} or {@code "19"}
+         * @return {@code true} if this product's version parses and is greater than or equal to {@code minVersion};
+         *         {@code false} otherwise, including when either version is not comparable
+         * @see #isVersionAtMost(String)
+         */
+        public boolean isVersionAtLeast(final String minVersion) {
+            final long[] mine = parseVersionComponents(version());
+            final long[] other = parseVersionComponents(minVersion);
+            return mine != null && other != null && compareVersionComponents(mine, other) >= 0;
+        }
+
+        /**
+         * Returns whether this product's {@link #version()} is less than or equal to the given version.
+         *
+         * <p>Versions are compared by their leading dot-separated run of integer components; see
+         * {@link #isVersionAtLeast(String)} for the parsing and padding rules.</p>
+         *
+         * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code maxVersion}
+         * is {@code null}, blank, or does not begin with an integer component.</p>
+         *
+         * @param maxVersion the maximum version to compare against, such as {@code "8.0"} or {@code "19"}
+         * @return {@code true} if this product's version parses and is less than or equal to {@code maxVersion};
+         *         {@code false} otherwise, including when either version is not comparable
+         * @see #isVersionAtLeast(String)
+         */
+        public boolean isVersionAtMost(final String maxVersion) {
+            final long[] mine = parseVersionComponents(version());
+            final long[] other = parseVersionComponents(maxVersion);
+            return mine != null && other != null && compareVersionComponents(mine, other) <= 0;
+        }
+
+        /**
+         * Parses the leading dot-separated run of integer components of a version string (for example
+         * {@code "8.0.32"} to {@code [8, 0, 32]} and {@code "19c"} to {@code [19]}), or {@code null} when the
+         * string is {@code null}, blank, does not begin with a digit, or has an unparseable component.
+         */
+        private static long[] parseVersionComponents(final String version) {
+            if (Strings.isBlank(version)) {
+                return null;
+            }
+
+            final String trimmed = version.trim();
+
+            if (!Character.isDigit(trimmed.charAt(0))) {
+                return null;
+            }
+
+            int end = 0;
+
+            while (end < trimmed.length() && (Character.isDigit(trimmed.charAt(end)) || trimmed.charAt(end) == '.')) {
+                end++;
+            }
+
+            final String[] parts = trimmed.substring(0, end).split("\\.");
+            final long[] components = new long[parts.length];
+
+            try {
+                for (int i = 0; i < parts.length; i++) {
+                    components[i] = Long.parseLong(parts[i]);
+                }
+            } catch (final NumberFormatException e) {
+                return null;
+            }
+
+            return components;
+        }
+
+        /**
+         * Compares two version-component arrays element by element, treating missing trailing components as
+         * {@code 0}. Returns a negative, zero, or positive value when {@code a} is respectively less than,
+         * equal to, or greater than {@code b}.
+         */
+        private static int compareVersionComponents(final long[] a, final long[] b) {
+            final int len = Math.max(a.length, b.length);
+
+            for (int i = 0; i < len; i++) {
+                final long av = i < a.length ? a[i] : 0L;
+                final long bv = i < b.length ? b[i] : 0L;
+
+                if (av != bv) {
+                    return av < bv ? -1 : 1;
+                }
+            }
+
+            return 0;
         }
     }
 }
