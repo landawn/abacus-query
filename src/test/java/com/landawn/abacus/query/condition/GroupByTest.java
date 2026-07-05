@@ -1,28 +1,30 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.query.SortDirection;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.SortDirection;
+import com.landawn.abacus.util.NamingPolicy;
+
 /**
  * Comprehensive test class for {@link GroupBy}.
  */
 @Tag("2025")
-class GroupBy2025Test extends TestBase {
-
+public class GroupByTest extends TestBase {
     @Test
     public void testConstructorWithCondition() {
         GroupBy groupBy = new GroupBy(Filters.expr("department"));
@@ -254,7 +256,7 @@ class GroupBy2025Test extends TestBase {
     public void testEquals_DifferentClass() {
         GroupBy groupBy = new GroupBy("column");
         OrderBy orderBy = new OrderBy("column");
-        assertNotEquals(groupBy, (Object) orderBy);
+        assertNotEquals(groupBy, orderBy);
     }
 
     @Test
@@ -282,19 +284,6 @@ class GroupBy2025Test extends TestBase {
         GroupBy groupBy = new GroupBy(props, SortDirection.DESC);
 
         assertTrue(groupBy.toString().contains("singleCol"));
-    }
-}
-
-public class GroupByTest extends TestBase {
-
-    @Test
-    public void testConstructorWithCondition() {
-        Condition condition = Filters.expr("YEAR(order_date)");
-        GroupBy groupBy = new GroupBy(condition);
-
-        Assertions.assertNotNull(groupBy);
-        Assertions.assertEquals(Operator.GROUP_BY, groupBy.operator());
-        Assertions.assertEquals(condition, groupBy.getCondition());
     }
 
     @Test
@@ -329,98 +318,8 @@ public class GroupByTest extends TestBase {
     }
 
     @Test
-    public void testConstructorWithCollectionAndDirection() {
-        List<String> columns = Arrays.asList("department", "location");
-        GroupBy groupBy = new GroupBy(columns, SortDirection.DESC);
-
-        Assertions.assertNotNull(groupBy);
-        String result = groupBy.toString();
-        Assertions.assertTrue(result.contains("department"));
-        Assertions.assertTrue(result.contains("location"));
-        Assertions.assertTrue(result.contains("DESC"));
-    }
-
-    @Test
-    public void testConstructorWithMap() {
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("department", SortDirection.ASC);
-        orders.put("salary", SortDirection.DESC);
-        orders.put("hire_date", SortDirection.ASC);
-
-        GroupBy groupBy = new GroupBy(orders);
-
-        Assertions.assertNotNull(groupBy);
-        String result = groupBy.toString();
-        Assertions.assertTrue(result.contains("department"));
-        Assertions.assertTrue(result.contains("ASC"));
-        Assertions.assertTrue(result.contains("salary"));
-        Assertions.assertTrue(result.contains("DESC"));
-        Assertions.assertTrue(result.contains("hire_date"));
-    }
-
-    @Test
-    public void testGetParameters() {
-        GroupBy groupBy = new GroupBy("category", "subcategory");
-        List<Object> params = groupBy.getParameters();
-        Assertions.assertNotNull(params);
-        Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testToString() {
-        GroupBy groupBy = new GroupBy("product_category");
-        String result = groupBy.toString();
-
-        Assertions.assertTrue(result.contains("GROUP BY"));
-        Assertions.assertTrue(result.contains("product_category"));
-    }
-
-    @Test
-    public void testToStringWithNamingPolicy() {
-        GroupBy groupBy = new GroupBy("productCategory");
-        String result = groupBy.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
-
-        Assertions.assertTrue(result.contains("GROUP BY"));
-        Assertions.assertTrue(result.contains("PRODUCT_CATEGORY"));
-    }
-
-    @Test
-    public void testHashCode() {
-        GroupBy groupBy1 = new GroupBy("department");
-        GroupBy groupBy2 = new GroupBy("department");
-        GroupBy groupBy3 = new GroupBy("location");
-
-        Assertions.assertEquals(groupBy1.hashCode(), groupBy2.hashCode());
-        Assertions.assertNotEquals(groupBy1.hashCode(), groupBy3.hashCode());
-    }
-
-    @Test
-    public void testEquals() {
-        GroupBy groupBy1 = new GroupBy("department");
-        GroupBy groupBy2 = new GroupBy("department");
-        GroupBy groupBy3 = new GroupBy("location");
-
-        Assertions.assertEquals(groupBy1, groupBy1);
-        Assertions.assertEquals(groupBy1, groupBy2);
-        Assertions.assertNotEquals(groupBy1, groupBy3);
-        Assertions.assertNotEquals(groupBy1, null);
-        Assertions.assertNotEquals(groupBy1, "string");
-    }
-
-    @Test
     public void testEmptyPropNames() {
         assertThrows(IllegalArgumentException.class, () -> new GroupBy(new String[0]));
-    }
-
-    @Test
-    public void testConstructorRejectsBlankPropertyNames() {
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("   ", SortDirection.ASC);
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("   "));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new GroupBy("   ", SortDirection.ASC));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new GroupBy(Arrays.asList("department", "   "), SortDirection.ASC));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new GroupBy(orders));
     }
 
     @Test

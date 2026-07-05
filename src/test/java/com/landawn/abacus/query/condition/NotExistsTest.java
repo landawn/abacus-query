@@ -1,40 +1,24 @@
-/*
- * Copyright (c) 2025, Haiyang Li.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.landawn.abacus.query.condition;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("2025")
 public class NotExistsTest extends TestBase {
-
     @Test
     public void testConstructor_WithRawSQLSubQuery() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = users.id");
@@ -83,7 +67,7 @@ public class NotExistsTest extends TestBase {
         NotExists condition = new NotExists(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("cancelled", params.get(0));
     }
 
@@ -183,11 +167,11 @@ public class NotExistsTest extends TestBase {
 
     @Test
     public void testSubQueryWithMultipleConditions() {
-        And andCondition = new And(Arrays.asList(new Equal("cancelled", true), new LessThan("amount", (Object) 10)));
+        And andCondition = new And(Arrays.asList(new Equal("cancelled", true), new LessThan("amount", 10)));
         SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), andCondition);
         NotExists condition = new NotExists(subQuery);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int) params.size());
+        assertEquals(2, params.size());
     }
 
     @Test
@@ -205,15 +189,9 @@ public class NotExistsTest extends TestBase {
         NotExists condition = new NotExists(subQuery);
         assertNotNull(condition);
     }
-}
-
-/**
- * Simple unit tests for the NotExists condition.
- * Tests basic functionality without complex scenarios.
- */
-class SimpleNotExistsTest extends TestBase {
 
     private SubQuery simpleSubQuery;
+
     private NotExists notExistsCondition;
 
     @BeforeEach
@@ -236,17 +214,6 @@ class SimpleNotExistsTest extends TestBase {
     }
 
     @Test
-    void testGetOperator() {
-        assertEquals(Operator.NOT_EXISTS, notExistsCondition.operator());
-    }
-
-    @Test
-    void testGetCondition() {
-        SubQuery retrieved = (SubQuery) notExistsCondition.getCondition();
-        assertSame(simpleSubQuery, retrieved);
-    }
-
-    @Test
     void testGetParameters() {
         // Simple SubQuery without parameters should return empty list
         assertNotNull(notExistsCondition.getParameters());
@@ -260,5 +227,4 @@ class SimpleNotExistsTest extends TestBase {
         // Should contain NOT EXISTS in the output
         // Note: specific format may vary based on implementation
     }
-
 }

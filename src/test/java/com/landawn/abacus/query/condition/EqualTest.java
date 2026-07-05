@@ -1,25 +1,26 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Date;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Equal2025Test extends TestBase {
+import java.util.Date;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class EqualTest extends TestBase {
     @Test
     public void testConstructor() {
         Equal condition = new Equal("age", 25);
@@ -74,7 +75,7 @@ class Equal2025Test extends TestBase {
     public void testGetParameters() {
         Equal condition = new Equal("status", "active");
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -82,7 +83,7 @@ class Equal2025Test extends TestBase {
     public void testGetParameters_MultipleValues() {
         Equal condition = new Equal("count", 42);
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
 
@@ -215,19 +216,6 @@ class Equal2025Test extends TestBase {
         NotEqual notEqual = new NotEqual("field", "value");
         assertNotEquals(equal, notEqual);
     }
-}
-
-public class EqualTest extends TestBase {
-
-    @Test
-    public void testConstructor() {
-        Equal eq = Filters.eq("status", "active");
-
-        Assertions.assertNotNull(eq);
-        Assertions.assertEquals("status", eq.getPropName());
-        Assertions.assertEquals("active", eq.getPropValue());
-        Assertions.assertEquals(Operator.EQUAL, eq.operator());
-    }
 
     @Test
     public void testConstructorWithDifferentTypes() {
@@ -303,15 +291,6 @@ public class EqualTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        Equal eq = Filters.eq("email", "test@example.com");
-        var params = eq.getParameters();
-
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertEquals("test@example.com", params.get(0));
-    }
-
-    @Test
     public void testEquals() {
         Equal eq1 = Filters.eq("status", "active");
         Equal eq2 = Filters.eq("status", "active");
@@ -324,51 +303,6 @@ public class EqualTest extends TestBase {
         Assertions.assertNotEquals(eq1, eq4); // Different property
         Assertions.assertNotEquals(eq1, null);
         Assertions.assertNotEquals(eq1, "string");
-    }
-
-    @Test
-    public void testHashCode() {
-        Equal eq1 = Filters.eq("code", "ABC123");
-        Equal eq2 = Filters.eq("code", "ABC123");
-
-        Assertions.assertEquals(eq1.hashCode(), eq2.hashCode());
-    }
-
-    @Test
-    public void testAnd() {
-        Equal eq1 = Filters.eq("status", "active");
-        Equal eq2 = Filters.eq("type", "premium");
-
-        And and = eq1.and(eq2);
-
-        Assertions.assertNotNull(and);
-        Assertions.assertEquals(Operator.AND, and.operator());
-        Assertions.assertEquals(2, and.getConditions().size());
-        Assertions.assertTrue(and.getConditions().contains(eq1));
-        Assertions.assertTrue(and.getConditions().contains(eq2));
-    }
-
-    @Test
-    public void testOr() {
-        Equal eq1 = Filters.eq("department", "Sales");
-        Equal eq2 = Filters.eq("department", "Marketing");
-
-        Or or = eq1.or(eq2);
-
-        Assertions.assertNotNull(or);
-        Assertions.assertEquals(Operator.OR, or.operator());
-        Assertions.assertEquals(2, or.getConditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        Equal eq = Filters.eq("deleted", false);
-
-        Not not = eq.not();
-
-        Assertions.assertNotNull(not);
-        Assertions.assertEquals(Operator.NOT, not.operator());
-        Assertions.assertEquals(eq, not.getCondition());
     }
 
     @Test

@@ -1,21 +1,23 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Union2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class UnionTest extends TestBase {
     @Test
     public void testConstructor() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
@@ -38,7 +40,7 @@ class Union2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("customers", List.of("*"), new Equal("status", "active"));
         Union union = new Union(subQuery);
         List<Object> params = union.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -121,9 +123,6 @@ class Union2025Test extends TestBase {
         assertNotEquals(union, "not a Union");
         assertNotEquals(union, new UnionAll(subQuery));
     }
-}
-
-public class UnionTest extends TestBase {
 
     @Test
     public void testConstructorWithSubQuery() {
@@ -133,22 +132,6 @@ public class UnionTest extends TestBase {
         Assertions.assertNotNull(union);
         Assertions.assertEquals(Operator.UNION, union.operator());
         Assertions.assertEquals(subQuery, union.getCondition());
-    }
-
-    @Test
-    public void testGetCondition() {
-        SubQuery subQuery = Filters.subQuery("SELECT user_id FROM active_users");
-        Union union = Filters.union(subQuery);
-
-        Assertions.assertEquals(subQuery, union.getCondition());
-    }
-
-    @Test
-    public void testGetOperator() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
-        Union union = Filters.union(subQuery);
-
-        Assertions.assertEquals(Operator.UNION, union.operator());
     }
 
     @Test
@@ -169,27 +152,6 @@ public class UnionTest extends TestBase {
 
         Assertions.assertEquals(subQuery, union.getCondition());
         Assertions.assertEquals(2, union.getParameters().size());
-    }
-
-    @Test
-    public void testToString() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM archived_users");
-        Union union = Filters.union(subQuery);
-
-        String result = union.toString();
-        Assertions.assertTrue(result.contains("UNION"));
-        Assertions.assertTrue(result.contains("SELECT id FROM archived_users"));
-    }
-
-    @Test
-    public void testHashCode() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM users");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM users");
-
-        Union union1 = Filters.union(subQuery1);
-        Union union2 = Filters.union(subQuery2);
-
-        Assertions.assertEquals(union1.hashCode(), union2.hashCode());
     }
 
     @Test

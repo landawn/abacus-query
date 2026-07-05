@@ -1,13 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.util.NamingPolicy;
-import java.time.LocalDate;
-import java.util.Date;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -15,9 +7,19 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class LessThanOrEqual2025Test extends TestBase {
+import java.time.LocalDate;
+import java.util.Date;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class LessThanOrEqualTest extends TestBase {
     @Test
     public void testConstructor() {
         LessThanOrEqual condition = new LessThanOrEqual("age", 25);
@@ -72,7 +74,7 @@ class LessThanOrEqual2025Test extends TestBase {
     public void testGetParameters() {
         LessThanOrEqual condition = new LessThanOrEqual("status", "active");
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -80,7 +82,7 @@ class LessThanOrEqual2025Test extends TestBase {
     public void testGetParameters_MultipleValues() {
         LessThanOrEqual condition = new LessThanOrEqual("count", 42);
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
 
@@ -191,9 +193,6 @@ class LessThanOrEqual2025Test extends TestBase {
         GreaterThanOrEqual greaterThanOrEqual = new GreaterThanOrEqual("field", 40);
         assertNotEquals(lessThanOrEqual, greaterThanOrEqual);
     }
-}
-
-public class LessThanOrEqualTest extends TestBase {
 
     @Test
     public void testConstructorWithNumber() {
@@ -202,7 +201,7 @@ public class LessThanOrEqualTest extends TestBase {
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("age", condition.getPropName());
         Assertions.assertEquals(Operator.LESS_THAN_OR_EQUAL, condition.operator());
-        Assertions.assertEquals(18, (Integer) (Integer) condition.getPropValue());
+        Assertions.assertEquals(18, (Integer) condition.getPropValue());
     }
 
     @Test
@@ -244,16 +243,6 @@ public class LessThanOrEqualTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        LessThanOrEqual condition = new LessThanOrEqual("quantity", 100);
-        List<Object> params = condition.getParameters();
-
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertEquals(100, params.get(0));
-    }
-
-    @Test
     public void testToString() {
         LessThanOrEqual condition = new LessThanOrEqual("amount", 1000);
         String result = condition.toString();
@@ -271,18 +260,6 @@ public class LessThanOrEqualTest extends TestBase {
         Assertions.assertTrue(result.contains("TOTAL_AMOUNT"));
         Assertions.assertTrue(result.contains("<="));
         Assertions.assertTrue(result.contains("5000"));
-    }
-
-    @Test
-    public void testHashCode() {
-        LessThanOrEqual condition1 = new LessThanOrEqual("age", 30);
-        LessThanOrEqual condition2 = new LessThanOrEqual("age", 30);
-        LessThanOrEqual condition3 = new LessThanOrEqual("age", 40);
-        LessThanOrEqual condition4 = new LessThanOrEqual("weight", 30);
-
-        Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
-        Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
-        Assertions.assertNotEquals(condition1.hashCode(), condition4.hashCode());
     }
 
     @Test

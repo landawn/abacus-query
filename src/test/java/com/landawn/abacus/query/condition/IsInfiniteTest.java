@@ -1,20 +1,22 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class IsInfinite2025Test extends TestBase {
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class IsInfiniteTest extends TestBase {
     @Test
     public void testConstructor() {
         IsInfinite condition = new IsInfinite("growthRate");
@@ -194,9 +196,6 @@ class IsInfinite2025Test extends TestBase {
         assertNotNull(condition.getPropName());
         assertNotNull(condition.getPropValue());
     }
-}
-
-public class IsInfiniteTest extends TestBase {
 
     @Test
     public void testConstructorWithPropName() {
@@ -222,15 +221,6 @@ public class IsInfiniteTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        IsInfinite condition = new IsInfinite("ratio");
-        List<Object> params = condition.getParameters();
-
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(0, params.size());
-    }
-
-    @Test
     public void testToString() {
         IsInfinite condition = new IsInfinite("calculated_ratio");
         String result = condition.toString();
@@ -248,16 +238,6 @@ public class IsInfiniteTest extends TestBase {
         Assertions.assertTrue(result.contains("INTEREST_RATE"));
         Assertions.assertTrue(result.contains("IS"));
         Assertions.assertTrue(result.contains("INFINITE"));
-    }
-
-    @Test
-    public void testHashCode() {
-        IsInfinite condition1 = new IsInfinite("field1");
-        IsInfinite condition2 = new IsInfinite("field1");
-        IsInfinite condition3 = new IsInfinite("field2");
-
-        Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
-        Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
     }
 
     @Test

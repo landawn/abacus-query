@@ -1,21 +1,22 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Intersect2025Test extends TestBase {
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class IntersectTest extends TestBase {
     @Test
     public void testConstructor() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
@@ -39,7 +40,7 @@ class Intersect2025Test extends TestBase {
         Intersect intersect = new Intersect(subQuery);
         List<Object> params = intersect.getParameters();
         // Raw SQL SubQuery has no parameters
-        assertEquals(0, (int) params.size());
+        assertEquals(0, params.size());
     }
 
     @Test
@@ -104,7 +105,7 @@ class Intersect2025Test extends TestBase {
         SubQuery onSale = Filters.subQuery("SELECT product_id FROM promotions WHERE discount > 0");
         Intersect intersect = new Intersect(onSale);
         // Raw SQL SubQuery has no parameters
-        assertEquals(0, (int) intersect.getParameters().size());
+        assertEquals(0, intersect.getParameters().size());
     }
 
     @Test
@@ -129,9 +130,6 @@ class Intersect2025Test extends TestBase {
         assertNotEquals(intersect, "not an Intersect");
         assertNotEquals(intersect, new Union(subQuery));
     }
-}
-
-public class IntersectTest extends TestBase {
 
     @Test
     public void testConstructorWithSubQuery() {
@@ -154,16 +152,6 @@ public class IntersectTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table WHERE value = ?");
-        Intersect intersect = new Intersect(subQuery);
-
-        List<Object> params = intersect.getParameters();
-
-        Assertions.assertNotNull(params);
-    }
-
-    @Test
     public void testGetParametersWithMultipleValues() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table WHERE value BETWEEN ? AND ?");
         Intersect intersect = new Intersect(subQuery);
@@ -171,18 +159,6 @@ public class IntersectTest extends TestBase {
         List<Object> params = intersect.getParameters();
 
         Assertions.assertNotNull(params);
-    }
-
-    @Test
-    public void testToString() {
-        SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM orders WHERE order_date > '2023-01-01'");
-        Intersect intersect = new Intersect(subQuery);
-
-        String result = intersect.toString();
-
-        Assertions.assertTrue(result.contains("INTERSECT"));
-        Assertions.assertTrue(result.contains("SELECT customer_id FROM orders"));
-        Assertions.assertTrue(result.contains("order_date > '2023-01-01'"));
     }
 
     @Test
@@ -195,20 +171,6 @@ public class IntersectTest extends TestBase {
         Assertions.assertTrue(result.contains("INTERSECT"));
         // The SubQuery content might not be affected by naming policy,
         // but the Intersect operator should be present
-    }
-
-    @Test
-    public void testHashCode() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");
-        SubQuery subQuery3 = Filters.subQuery("SELECT id FROM table2");
-
-        Intersect intersect1 = new Intersect(subQuery1);
-        Intersect intersect2 = new Intersect(subQuery2);
-        Intersect intersect3 = new Intersect(subQuery3);
-
-        Assertions.assertEquals(intersect1.hashCode(), intersect2.hashCode());
-        Assertions.assertNotEquals(intersect1.hashCode(), intersect3.hashCode());
     }
 
     @Test
@@ -226,17 +188,6 @@ public class IntersectTest extends TestBase {
         Assertions.assertNotEquals(intersect1, intersect3);
         Assertions.assertNotEquals(intersect1, null);
         Assertions.assertNotEquals(intersect1, "string");
-    }
-
-    @Test
-    public void testGetCondition() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
-        Intersect intersect = new Intersect(subQuery);
-
-        SubQuery retrieved = (SubQuery) intersect.getCondition();
-
-        Assertions.assertNotNull(retrieved);
-        Assertions.assertEquals(subQuery, retrieved);
     }
 
     @Test

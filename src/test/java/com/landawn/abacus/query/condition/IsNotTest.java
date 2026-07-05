@@ -1,12 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,9 +7,18 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class IsNot2025Test extends TestBase {
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class IsNotTest extends TestBase {
     @Test
     public void testConstructor() {
         IsNot condition = new IsNot("age", 25);
@@ -71,7 +73,7 @@ class IsNot2025Test extends TestBase {
     public void testGetParameters() {
         IsNot condition = new IsNot("status", "active");
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -79,7 +81,7 @@ class IsNot2025Test extends TestBase {
     public void testGetParameters_MultipleValues() {
         IsNot condition = new IsNot("count", 42);
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
 
@@ -174,9 +176,6 @@ class IsNot2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
     }
-}
-
-public class IsNotTest extends TestBase {
 
     @Test
     public void testConstructorWithPropNameAndValue() {
@@ -194,15 +193,6 @@ public class IsNotTest extends TestBase {
         Assertions.assertEquals("status", condition.getPropName());
         Assertions.assertEquals(Operator.IS_NOT, condition.operator());
         Assertions.assertNotNull(condition.getPropValue());
-    }
-
-    @Test
-    public void testGetParameters() {
-        IsNot condition = new IsNot("name", "value");
-        List<Object> params = condition.getParameters();
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertEquals("value", params.get(0));
     }
 
     @Test
@@ -225,16 +215,6 @@ public class IsNotTest extends TestBase {
         IsNot condition = new IsNot("firstName", null);
         String result = condition.toString(NamingPolicy.CAMEL_CASE);
         Assertions.assertEquals("firstName IS NOT NULL", result);
-    }
-
-    @Test
-    public void testHashCode() {
-        IsNot condition1 = new IsNot("name", "value");
-        IsNot condition2 = new IsNot("name", "value");
-        IsNot condition3 = new IsNot("other", "value");
-
-        Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
-        Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
     }
 
     @Test

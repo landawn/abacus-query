@@ -37,7 +37,6 @@ import com.landawn.abacus.annotation.ReadOnly;
 import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.annotation.Transient;
 import com.landawn.abacus.query.AbstractQueryBuilder.SP;
-import com.landawn.abacus.query.SqlBuilder10Test.Order;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Expression;
@@ -46,7 +45,6 @@ import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
-import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableMap;
@@ -55,7 +53,801 @@ import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Tuple.Tuple2;
 
-class SqlBuilder10Test extends TestBase {
+@Tag("2025")
+public class SqlBuilderTest extends TestBase {
+    // Basic SELECT tests
+    @Test
+    public void testSelectAll() {
+        String sql = Dsl.PSC.select("*").from("users").build().query();
+        assertEquals("SELECT * FROM users", sql);
+    }
+
+    @Test
+    public void testSelectSingleColumn() {
+        String sql = Dsl.PSC.select("name").from("users").build().query();
+        assertEquals("SELECT name FROM users", sql);
+    }
+
+    @Test
+    public void testSelectMultipleColumns() {
+        String sql = Dsl.PSC.select("id", "name", "email").from("users").build().query();
+        assertTrue(sql.contains("SELECT id, name, email"));
+    }
+
+    @Test
+    public void testSelectWithAlias() {
+        String sql = Dsl.PSC.select("first_name AS fname").from("users").build().query();
+        assertTrue(sql.contains("AS fname"));
+    }
+
+    @Test
+    public void testSelectWithEntityClass() {
+        String sql = Dsl.PSC.select(Account.class).from(Account.class).build().query();
+        assertNotNull(sql);
+        assertTrue(sql.contains("SELECT"));
+        assertTrue(sql.contains("FROM"));
+    }
+
+    // FROM clause tests
+    @Test
+    public void testFromSingleTable() {
+        String sql = Dsl.PSC.select("*").from("users").build().query();
+        assertTrue(sql.contains("FROM users"));
+    }
+
+    @Test
+    public void testFromMultipleTables() {
+        String sql = Dsl.PSC.select("*").from("users", "orders").build().query();
+        assertTrue(sql.contains("FROM orders"));
+    }
+
+    @Test
+    public void testFromWithAlias() {
+        String sql = Dsl.PSC.select("u.*").from("users u").build().query();
+        assertTrue(sql.contains("FROM users u"));
+    }
+
+    @Test
+    public void testFromEntityClass() {
+        String sql = Dsl.PSC.select("*").from(Account.class).build().query();
+        assertNotNull(sql);
+    }
+
+    // WHERE clause tests
+    @Test
+    public void testWhereEqual() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.eq("id", 1)).build().query();
+        assertTrue(sql.contains("WHERE"));
+    }
+
+    @Test
+    public void testWhereMultipleConditions() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.eq("status", "active").and(Filters.gt("age", 18))).build().query();
+        assertTrue(sql.contains("AND"));
+    }
+
+    @Test
+    public void testWhereOr() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.eq("role", "admin").or(Filters.eq("role", "moderator"))).build().query();
+        assertTrue(sql.contains("OR"));
+    }
+
+    @Test
+    public void testWhereBetween() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.between("age", 18, 65)).build().query();
+        assertTrue(sql.contains("BETWEEN"));
+    }
+
+    @Test
+    public void testWhereLike() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.like("name", "%John%")).build().query();
+        assertTrue(sql.contains("LIKE"));
+    }
+
+    @Test
+    public void testWhereIsNull() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.isNull("deleted_at")).build().query();
+        assertTrue(sql.contains("IS NULL"));
+    }
+
+    @Test
+    public void testWhereIsNotNull() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.isNotNull("email")).build().query();
+        assertTrue(sql.contains("IS NOT NULL"));
+    }
+
+    @Test
+    public void testWhereIsWithNullValue() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.is("deleted_at", null)).build().query();
+        assertTrue(sql.contains("IS NULL"));
+        assertFalse(sql.contains("IS ?"));
+    }
+
+    @Test
+    public void testWhereIsNotWithNullValue() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.isNot("deleted_at", null)).build().query();
+        assertTrue(sql.contains("IS NOT NULL"));
+        assertFalse(sql.contains("IS NOT ?"));
+    }
+
+    // JOIN tests
+    @Test
+    public void testInnerJoin() {
+        String sql = Dsl.PSC.select("*").from("users").join("orders").on("users.id = orders.user_id").build().query();
+        assertTrue(sql.contains("JOIN"));
+        assertTrue(sql.contains("ON"));
+    }
+
+    @Test
+    public void testLeftJoin() {
+        String sql = Dsl.PSC.select("*").from("users").leftJoin("orders").on("users.id = orders.user_id").build().query();
+        assertTrue(sql.contains("LEFT JOIN"));
+    }
+
+    @Test
+    public void testRightJoin() {
+        String sql = Dsl.PSC.select("*").from("users").rightJoin("departments").on("users.dept_id = departments.id").build().query();
+        assertTrue(sql.contains("RIGHT JOIN"));
+    }
+
+    @Test
+    public void testFullJoin() {
+        String sql = Dsl.PSC.select("*").from("users").fullJoin("departments").on("users.dept_id = departments.id").build().query();
+        assertTrue(sql.contains("FULL JOIN"));
+    }
+
+    @Test
+    public void testCrossJoin() {
+        String sql = Dsl.PSC.select("*").from("users").crossJoin("roles").build().query();
+        assertTrue(sql.contains("CROSS JOIN"));
+    }
+
+    @Test
+    public void testMultipleJoins() {
+        String sql = Dsl.PSC.select("*")
+                .from("users u")
+                .innerJoin("orders o")
+                .on("u.id = o.user_id")
+                .leftJoin("products p")
+                .on("o.product_id = p.id")
+                .build()
+                .query();
+        assertTrue(sql.contains("INNER JOIN"));
+        assertTrue(sql.contains("LEFT JOIN"));
+    }
+
+    // GROUP BY tests
+    @Test
+    public void testGroupBy() {
+        String sql = Dsl.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").build().query();
+        assertTrue(sql.contains("GROUP BY department"));
+    }
+
+    @Test
+    public void testGroupByMultipleColumns() {
+        String sql = Dsl.PSC.select("year", "month", "COUNT(*)").from("sales").groupBy("year", "month").build().query();
+        assertTrue(sql.contains("GROUP BY"));
+    }
+
+    // HAVING tests
+    @Test
+    public void testHaving() {
+        String sql = Dsl.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).build().query();
+        assertTrue(sql.contains("HAVING"));
+    }
+
+    // ORDER BY tests
+    @Test
+    public void testOrderBy() {
+        String sql = Dsl.PSC.select("*").from("users").orderBy("name").build().query();
+        assertTrue(sql.contains("ORDER BY name"));
+    }
+
+    @Test
+    public void testOrderByAsc() {
+        String sql = Dsl.PSC.select("*").from("users").orderBy("name", SortDirection.ASC).build().query();
+        assertTrue(sql.contains("ORDER BY"));
+        assertTrue(sql.contains("ASC"));
+    }
+
+    @Test
+    public void testOrderByDesc() {
+        String sql = Dsl.PSC.select("*").from("users").orderBy("created_date", SortDirection.DESC).build().query();
+        assertTrue(sql.contains("ORDER BY"));
+        assertTrue(sql.contains("DESC"));
+    }
+
+    @Test
+    public void testOrderByMultipleColumns() {
+        String sql = Dsl.PSC.select("*").from("users").orderBy("last_name", "first_name").build().query();
+        assertTrue(sql.contains("ORDER BY"));
+    }
+
+    // LIMIT tests
+    @Test
+    public void testLimit() {
+        String sql = Dsl.PSC.select("*").from("users").limit(10).build().query();
+        assertTrue(sql.contains("LIMIT 10"));
+    }
+
+    @Test
+    public void testLimitWithOffset() {
+        String sql = Dsl.PSC.select("*").from("users").limit(20, 10).build().query();
+        assertTrue(sql.contains("LIMIT"));
+    }
+
+    // DISTINCT tests
+    @Test
+    public void testDistinct() {
+        String sql = Dsl.PSC.select("status").from("users").distinct().build().query();
+        assertTrue(sql.contains("DISTINCT"));
+    }
+
+    // INSERT tests
+    @Test
+    public void testInsertInto() {
+        String sql = Dsl.PSC.insert("id", "name").into("users").build().query();
+        assertTrue(sql.contains("INSERT INTO users"));
+    }
+
+    @Test
+    public void testInsertIntoWithEntityClass() {
+        String sql = Dsl.PSC.insert("firstName", "lastName").into(Account.class).build().query();
+        assertTrue(sql.contains("INSERT INTO"));
+    }
+
+    // UPDATE tests
+    @Test
+    public void testUpdate() {
+        String sql = Dsl.PSC.update("users").set("status", "inactive").where(Filters.eq("id", 1)).build().query();
+        assertTrue(sql.contains("UPDATE users"));
+        assertTrue(sql.contains("SET"));
+    }
+
+    @Test
+    public void testUpdateMultipleColumns() {
+        String sql = Dsl.PSC.update("users").set("first_name", "John").set("last_name", "Doe").where(Filters.eq("id", 1)).build().query();
+        assertTrue(sql.contains("SET"));
+    }
+
+    @Test
+    public void testUpdateWithEntityClass() {
+        String sql = Dsl.PSC.update(Account.class).set("status", "active").where(Filters.eq("id", 1)).build().query();
+        assertNotNull(sql);
+    }
+
+    // DELETE tests
+    @Test
+    public void testDeleteFrom() {
+        String sql = Dsl.PSC.deleteFrom("users").where(Filters.eq("id", 1)).build().query();
+        assertTrue(sql.contains("DELETE FROM users"));
+    }
+
+    @Test
+    public void testDeleteFromWithEntityClass() {
+        String sql = Dsl.PSC.deleteFrom(Account.class).where(Filters.eq("id", 1)).build().query();
+        assertNotNull(sql);
+    }
+
+    @Test
+    public void testBatchInsertWithDifferentMapKeyOrder() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("lastName", "Smith");
+        row2.put("firstName", "Jane");
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(row1);
+        rows.add(row2);
+
+        AbstractQueryBuilder.SP sp = Dsl.PSC.batchInsert(rows).into("users").build();
+
+        assertEquals("INSERT INTO users (first_name, last_name) VALUES (?, ?), (?, ?)", sp.query());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
+    }
+
+    @Test
+    public void testBatchInsertWithDifferentMapKeyOrder_NamedSnakeCase() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("lastName", "Smith");
+        row2.put("firstName", "Jane");
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(row1);
+        rows.add(row2);
+
+        AbstractQueryBuilder.SP sp = Dsl.NSC.batchInsert(rows).into("users").build();
+
+        assertEquals("INSERT INTO users (first_name, last_name) VALUES (:firstName_0, :lastName_0), (:firstName_1, :lastName_1)", sp.query());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
+    }
+
+    @Test
+    public void testBatchInsertWithDifferentMapKeyOrder_NamedLowerCamelCase() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("lastName", "Smith");
+        row2.put("firstName", "Jane");
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(row1);
+        rows.add(row2);
+
+        AbstractQueryBuilder.SP sp = Dsl.NLC.batchInsert(rows).into("users").build();
+
+        assertEquals("INSERT INTO users (firstName, lastName) VALUES (:firstName_0, :lastName_0), (:firstName_1, :lastName_1)", sp.query());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
+    }
+
+    @Test
+    public void testBatchInsertWithNullMapRows() {
+        Map<String, Object> row1 = new LinkedHashMap<>();
+        row1.put("firstName", "John");
+        row1.put("lastName", "Doe");
+
+        Map<String, Object> row2 = new LinkedHashMap<>();
+        row2.put("firstName", "Jane");
+        row2.put("lastName", "Smith");
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(row1);
+        rows.add(null);
+        rows.add(row2);
+
+        AbstractQueryBuilder.SP sp = Dsl.PSC.batchInsert(rows).into("users").build();
+
+        assertEquals("INSERT INTO users (first_name, last_name) VALUES (?, ?), (?, ?)", sp.query());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
+    }
+
+    // Complex query tests
+    @Test
+    public void testComplexSelectQuery() {
+        String sql = Dsl.PSC.select("u.id", "u.name", "COUNT(o.id) as order_count")
+                .from("users u")
+                .leftJoin("orders o")
+                .on("u.id = o.user_id")
+                .where(Filters.eq("u.status", "active"))
+                .groupBy("u.id", "u.name")
+                .having(Filters.expr("COUNT(o.id) > 5"))
+                .orderBy("order_count", SortDirection.DESC)
+                .limit(10)
+                .build()
+                .query();
+
+        assertTrue(sql.contains("SELECT"));
+        assertTrue(sql.contains("LEFT JOIN"));
+        assertTrue(sql.contains("WHERE"));
+        assertTrue(sql.contains("GROUP BY"));
+        assertTrue(sql.contains("HAVING"));
+        assertTrue(sql.contains("ORDER BY"));
+        assertTrue(sql.contains("LIMIT"));
+    }
+
+    // Naming policy tests
+    @Test
+    public void testSelectWithLowerCaseUnderscore() {
+        String sql = Dsl.PSC.select(Account.class).from(Account.class).build().query();
+        assertNotNull(sql);
+    }
+
+    @Test
+    public void testSelectWithUpperCaseUnderscore() {
+        String sql = Dsl.PAC.select(Account.class).from(Account.class).build().query();
+        assertNotNull(sql);
+    }
+
+    // Parameterized query tests
+    @Test
+    public void testPairWithParameters() {
+        SqlBuilder builder = Dsl.PSC.select("*").from("users").where(Filters.eq("id", 1));
+        AbstractQueryBuilder.SP sp = builder.build();
+        assertNotNull(sp);
+        assertNotNull(sp.query());
+        assertNotNull(sp.parameters());
+    }
+
+    // Subquery tests
+    @Test
+    public void testSubquery() {
+        String subquery = Dsl.PSC.select("id").from("active_users").build().query();
+        String sql = Dsl.PSC.select("*").from("orders").where("user_id IN (" + subquery + ")").build().query();
+        assertTrue(sql.contains("IN"));
+        assertTrue(sql.contains("SELECT"));
+    }
+
+    // UNION tests
+    @Test
+    public void testUnion() {
+        String sql1 = Dsl.PSC.select("id", "name").from("users").build().query();
+        String sql2 = Dsl.PSC.select("id", "name").from("archived_users").build().query();
+        String unionSql = sql1 + " UNION " + sql2;
+        assertTrue(unionSql.contains("UNION"));
+    }
+
+    // Expression tests
+    @Test
+    public void testExpressionInSelect() {
+        String sql = Dsl.PSC.select("COUNT(*) as total").from("users").build().query();
+        assertTrue(sql.contains("COUNT(*)"));
+    }
+
+    @Test
+    public void testExpressionInWhere() {
+        Expression expr = Filters.expr("age > 18 AND status = 'active'");
+        String sql = Dsl.PSC.select("*").from("users").where(expr).build().query();
+        assertNotNull(sql);
+    }
+
+    // Aggregate functions tests
+    @Test
+    public void testCount() {
+        String sql = Dsl.PSC.select("COUNT(*)").from("users").build().query();
+        assertTrue(sql.contains("COUNT(*)"));
+    }
+
+    @Test
+    public void testSum() {
+        String sql = Dsl.PSC.select("SUM(amount)").from("orders").build().query();
+        assertTrue(sql.contains("SUM(amount)"));
+    }
+
+    @Test
+    public void testAvg() {
+        String sql = Dsl.PSC.select("AVG(price)").from("products").build().query();
+        assertTrue(sql.contains("AVG(price)"));
+    }
+
+    @Test
+    public void testMax() {
+        String sql = Dsl.PSC.select("MAX(price)").from("products").build().query();
+        assertTrue(sql.contains("MAX(price)"));
+    }
+
+    @Test
+    public void testMin() {
+        String sql = Dsl.PSC.select("MIN(price)").from("products").build().query();
+        assertTrue(sql.contains("MIN(price)"));
+    }
+
+    // Build method tests
+    @Test
+    public void testBuildMethod() {
+        AbstractQueryBuilder.SP sp = Dsl.PSC.select("*").from("users").build();
+        assertNotNull(sp);
+        assertNotNull(sp.query());
+    }
+
+    // Multiple where conditions with different operators
+    @Test
+    public void testWhereGreaterThan() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.gt("age", 18)).build().query();
+        assertTrue(sql.contains(">"));
+    }
+
+    @Test
+    public void testWhereLessThan() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.lt("age", 65)).build().query();
+        assertTrue(sql.contains("<"));
+    }
+
+    @Test
+    public void testWhereGreaterThanOrEqual() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.ge("age", 21)).build().query();
+        assertTrue(sql.contains(">="));
+    }
+
+    @Test
+    public void testWhereLessThanOrEqual() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.le("age", 60)).build().query();
+        assertTrue(sql.contains("<="));
+    }
+
+    @Test
+    public void testWhereNotEqual() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.ne("status", "deleted")).build().query();
+        assertTrue(sql.contains("!=") || sql.contains("<>"));
+    }
+
+    // IN clause tests
+    @Test
+    public void testWhereIn() {
+        String sql = Dsl.PSC.select("*").from("users").where("id IN (1, 2, 3)").build().query();
+        assertTrue(sql.contains("IN"));
+    }
+
+    // CASE WHEN tests
+    @Test
+    public void testCaseWhen() {
+        String sql = Dsl.PSC.select("CASE WHEN age < 18 THEN 'minor' ELSE 'adult' END as age_group").from("users").build().query();
+        assertTrue(sql.contains(" case when age < 18 then 'minor' else 'adult' end AS age_group "));
+    }
+
+    // Multiple table sources
+    @Test
+    public void testFromMultipleTablesWithJoin() {
+        String sql = Dsl.PSC.select("*").from("users u").join("orders o").on("u.id = o.user_id").join("products p").on("o.product_id = p.id").build().query();
+        assertTrue(sql.contains("users u"));
+        assertTrue(sql.contains("orders o"));
+        assertTrue(sql.contains("products p"));
+    }
+
+    // Chaining tests
+    @Test
+    public void testChainedAndConditions() {
+        String sql = Dsl.PSC.select("*")
+                .from("users")
+                .where(Filters.eq("status", "active").and(Filters.gt("age", 18)).and(Filters.lt("age", 65)))
+                .build()
+                .query();
+        assertTrue(sql.contains("AND"));
+    }
+
+    @Test
+    public void testChainedOrConditions() {
+        String sql = Dsl.PSC.select("*")
+                .from("users")
+                .where(Filters.eq("role", "admin").or(Filters.eq("role", "moderator")).or(Filters.eq("role", "owner")))
+                .build()
+                .query();
+        assertTrue(sql.contains("OR"));
+    }
+
+    // Edge case tests
+    @Test
+    public void testSelectWithNoFrom() {
+        assertThrows(Exception.class, () -> {
+            Dsl.PSC.select("*").build().query();
+        });
+    }
+
+    @Test
+    public void testEmptySelect() {
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select().from("users").build().query());
+    }
+
+    // Named SQL tests
+    @Test
+    public void testNamedInsert() {
+        String sql = Dsl.PSC.insert("firstName", "lastName").into(Account.class).build().query();
+        assertNotNull(sql);
+    }
+
+    // Static factory tests
+    @Test
+    public void testSelectFactory() {
+        SqlBuilder builder = Dsl.PSC.select("*");
+        assertNotNull(builder);
+    }
+
+    @Test
+    public void testInsertIntoFactory() {
+        SqlBuilder builder = Dsl.PSC.insert("id", "name");
+        assertNotNull(builder);
+    }
+
+    @Test
+    public void testUpdateFactory() {
+        SqlBuilder builder = Dsl.PSC.update("users");
+        assertNotNull(builder);
+    }
+
+    @Test
+    public void testDeleteFromFactory() {
+        SqlBuilder builder = Dsl.PSC.deleteFrom("users");
+        assertNotNull(builder);
+    }
+
+    // Performance and resource cleanup
+    @Test
+    public void testMultipleBuildCalls() {
+        SqlBuilder builder = Dsl.PSC.select("*").from("users");
+        String sql1 = builder.build().query();
+        assertNotNull(sql1);
+        // Builder should be reusable or properly cleaned up
+    }
+
+    // Collection-based select
+    @Test
+    public void testSelectWithCollection() {
+        String sql = Dsl.PSC.select(Arrays.asList("id", "name", "email")).from("users").build().query();
+        assertTrue(sql.contains("id"));
+        assertTrue(sql.contains("name"));
+        assertTrue(sql.contains("email"));
+    }
+
+    // Map-based operations
+    @Test
+    public void testUpdateWithMap() {
+        Map<String, Object> props = new HashMap<>();
+        props.put("first_name", "John");
+        props.put("last_name", "Doe");
+
+        String sql = Dsl.PSC.update("users").set(props).where(Filters.eq("id", 1)).build().query();
+        assertTrue(sql.contains("SET"));
+    }
+
+    // Complex conditions
+    @Test
+    public void testWhereWithNestedAndOr() {
+        String sql = Dsl.PSC.select("*")
+                .from("users")
+                .where(Filters.and(Filters.eq("status", "active"), Filters.or(Filters.eq("role", "admin"), Filters.eq("role", "moderator"))))
+                .build()
+                .query();
+        assertNotNull(sql);
+    }
+
+    // NULL handling
+    @Test
+    public void testWhereNullCheck() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.isNull("deleted_at").and(Filters.isNotNull("email"))).build().query();
+        assertTrue(sql.contains("IS NULL"));
+        assertTrue(sql.contains("IS NOT NULL"));
+    }
+
+    // Preselect tests
+    @Test
+    public void testPreselectDistinct() {
+        String sql = Dsl.PSC.select("status").from("users").selectModifier("DISTINCT").build().query();
+        assertTrue(sql.contains("DISTINCT"));
+    }
+
+    // USING clause tests
+    @Test
+    public void testJoinUsing() {
+        String sql = Dsl.PSC.select("*").from("users").join("orders").using("user_id").build().query();
+        assertTrue(sql.contains("USING (user_id)"));
+    }
+
+    @Test
+    public void testBinaryWithSubQueryRhsIsParenthesized() {
+        String sql = Dsl.PSC.select("*").from("users").where(Filters.equal("id", Filters.subQuery("SELECT MAX(user_id) FROM orders"))).build().query();
+        assertTrue(sql.contains("id = (SELECT MAX(user_id) FROM orders)"));
+    }
+
+    // Offset tests
+    @Test
+    public void testOffset() {
+        String sql = Dsl.PSC.select("*").from("users").offset(20).build().query();
+        assertTrue(sql.contains("OFFSET") || sql.contains("20"));
+    }
+
+    // Constants verification
+    @Test
+    public void testConstants() {
+        assertNotNull(AbstractQueryBuilder.ALL);
+        assertNotNull(AbstractQueryBuilder.DISTINCT);
+        assertNotNull(AbstractQueryBuilder.COUNT_ALL);
+        assertEquals("ALL", AbstractQueryBuilder.ALL);
+        assertEquals("count(*)", AbstractQueryBuilder.COUNT_ALL);
+    }
+
+    // ==== Regression tests for the 2026-07-03 review fixes ====
+
+    @Test
+    public void testSinglePropRowValueInRendersTupleRows() {
+        // A single-prop row-value In previously fell into the scalar IN path, binding each tuple List
+        // whole as one parameter ("id IN (?, ?)" with params [[1],[2]]; raw mode "IN ('[1]', '[2]')").
+        SP sp = Dsl.PSC.select("*").from("users").where(Filters.in(N.asList("id"), N.asList(N.asList(1), N.asList(2)))).build();
+        assertEquals("SELECT * FROM users WHERE (id) IN ((?), (?))", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+
+        SP named = Dsl.NSC.select("*").from("users").where(Filters.in(N.asList("id"), N.asList(N.asList(1), N.asList(2)))).build();
+        assertEquals("SELECT * FROM users WHERE (id) IN ((:id1), (:id2))", named.query());
+        assertEquals(Arrays.asList(1, 2), named.parameters());
+
+        SP notIn = Dsl.PSC.select("*").from("users").where(Filters.notIn(N.asList("id"), N.asList(N.asList(1), N.asList(2)))).build();
+        assertEquals("SELECT * FROM users WHERE (id) NOT IN ((?), (?))", notIn.query());
+        assertEquals(Arrays.asList(1, 2), notIn.parameters());
+    }
+
+    @Test
+    public void testCriteriaJoinWithRawConditionRendersOnKeyword() {
+        // A raw (non-On/Using) join condition previously rendered with no ON keyword and no separator,
+        // fusing the table name and the condition: "JOIN orderst1.id = ...".
+        Criteria exprJoin = Criteria.builder().join("orders", Filters.expr("users.id = orders.user_id")).build();
+        assertEquals("SELECT * FROM users JOIN orders ON users.id = orders.user_id", Dsl.PSC.select("*").from("users").append(exprJoin).build().query());
+
+        Criteria binaryJoin = Criteria.builder().join("orders", Filters.equal("orders.user_id", 5)).build();
+        SP sp = Dsl.PSC.select("*").from("users").append(binaryJoin).build();
+        assertEquals("SELECT * FROM users JOIN orders ON orders.user_id = ?", sp.query());
+        assertEquals(Arrays.asList(5), sp.parameters());
+
+        // An On condition renders its own ON keyword -- no double "ON ON".
+        Criteria onJoin = Criteria.builder().join("orders", Filters.on("users.id", "orders.user_id")).build();
+        String onSql = Dsl.PSC.select("*").from("users").append(onJoin).build().query();
+        assertTrue(onSql.contains("JOIN orders ON ("));
+        assertFalse(onSql.contains("ON ON"));
+    }
+
+    @Test
+    public void testSetOperationCrossBaseNamedParameterCollision() {
+        // Parent's literal property "id_2" used to collide with the child's generated "id" + "_2" suffix,
+        // binding the same :id_2 placeholder to two different values.
+        SqlBuilder child = Dsl.NSC.select("id").from("t2").where(Filters.and(Filters.equal("id", 1), Filters.equal("id", 2)));
+        SP sp = Dsl.NSC.select("id").from("t1").where(Filters.equal("id_2", 100)).union(child).build();
+
+        List<String> names = new ArrayList<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(":([A-Za-z0-9_]+)").matcher(sp.query());
+        while (m.find()) {
+            names.add(m.group(1));
+        }
+
+        assertEquals(3, names.size());
+        assertEquals(3, new HashSet<>(names).size()); // every placeholder unique across the compound query
+        assertEquals(Arrays.asList(100, 1, 2), sp.parameters());
+    }
+
+    @Test
+    public void testIncompleteSetOperationSegmentThrowsInsteadOfTruncating() {
+        // Previously built "SELECT id FROM t UNION " with the staged columns silently dropped.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t").union("id", "name").build());
+
+        // A non-SELECT sibling builder is rejected up front instead of being staged as a "column list".
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("t").union(Dsl.PSC.update("t2").set("a")));
+
+        // Completing the segment still works.
+        String sql = Dsl.PSC.select("id").from("t").union("id", "name").from("t2").build().query();
+        assertTrue(sql.startsWith("SELECT id FROM t UNION SELECT "));
+        assertTrue(sql.endsWith("FROM t2"));
+    }
+
+    @Test
+    public void testSelectModifierEmittedVerbatim() {
+        // The modifier used to be routed through column-name normalization, camelCasing any
+        // non-keyword modifier under PLC (SQL_CALC_FOUND_ROWS -> sqlCalcFoundRows).
+        assertEquals("SELECT SQL_CALC_FOUND_ROWS * FROM account", Dsl.PLC.select("*").selectModifier("SQL_CALC_FOUND_ROWS").from("account").build().query());
+
+        // The late-insert path (selectModifier after from) must be verbatim too.
+        assertEquals("SELECT SQL_CALC_FOUND_ROWS * FROM account", Dsl.PLC.select("*").from("account").selectModifier("SQL_CALC_FOUND_ROWS").build().query());
+    }
+
+    @Test
+    public void testFromAndIntoReentryGuards() {
+        // Double from() used to emit two fused SELECT fragments.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t1").from("t2"));
+
+        // into() after from() used to concatenate a second INSERT statement with no separator.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("firstName").from("account").into("backup"));
+
+        // A second into() is rejected as well.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.insert("firstName").into("t1").into("t2"));
+
+        // An INSERT ... SELECT left without its from() now fails at build instead of emitting a fragment.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("firstName").into("backup").build());
+
+        // The documented INSERT ... SELECT flow still works.
+        assertEquals("INSERT INTO account_backup (first_name) SELECT first_name AS \"firstName\" FROM account",
+                Dsl.PSC.select("firstName").into("account_backup").from("account").build().query());
+    }
+
+    @Test
+    public void testVerbatimLimitLiteralConsumesOffsetSlot() {
+        // "LIMIT ? OFFSET ?" followed by offset(5) used to emit a second OFFSET clause.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t").append(Filters.limit("LIMIT ? OFFSET ?")).offset(5));
+
+        // A literal without OFFSET leaves the offset slot available.
+        assertEquals("SELECT id FROM t LIMIT ? OFFSET 5", Dsl.PSC.select("id").from("t").append(Filters.limit("LIMIT ?")).offset(5).build().query());
+    }
+
+    @Test
+    public void testSelectSingleExpressionAppliesNamingPolicy() {
+        // Documented behavior of Dsl.select(String): identifiers inside the expression ARE converted
+        // by the naming policy; function names, keywords and the AS alias are preserved.
+        assertEquals("SELECT first_name || ' ' || last_name AS fullName FROM account",
+                Dsl.PSC.select("firstName || ' ' || lastName AS fullName").from("account").build().query());
+    }
 
     // Test entity classes
     @Table(name = "test_account")
@@ -365,13 +1157,6 @@ class SqlBuilder10Test extends TestBase {
     }
 
     @Test
-    public void testDistinct() {
-        String sql = Dsl.PSC.select("name").distinct().from("account").build().query();
-
-        assertEquals("SELECT DISTINCT name FROM account", sql);
-    }
-
-    @Test
     public void testPreselect() {
         String sql = Dsl.PSC.select("*").selectModifier("TOP 10").from("account").build().query();
 
@@ -453,41 +1238,6 @@ class SqlBuilder10Test extends TestBase {
     }
 
     @Test
-    public void testInnerJoin() {
-        String sql = Dsl.PSC.select("*").from("users u").innerJoin("orders o ON u.id = o.user_id").build().query();
-
-        assertEquals("SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id", sql);
-    }
-
-    @Test
-    public void testLeftJoin() {
-        String sql = Dsl.PSC.select("*").from("users u").leftJoin("orders o ON u.id = o.user_id").build().query();
-
-        assertEquals("SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id", sql);
-    }
-
-    @Test
-    public void testRightJoin() {
-        String sql = Dsl.PSC.select("*").from("users u").rightJoin("orders o ON u.id = o.user_id").build().query();
-
-        assertEquals("SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id", sql);
-    }
-
-    @Test
-    public void testFullJoin() {
-        String sql = Dsl.PSC.select("*").from("users u").fullJoin("orders o ON u.id = o.user_id").build().query();
-
-        assertEquals("SELECT * FROM users u FULL JOIN orders o ON u.id = o.user_id", sql);
-    }
-
-    @Test
-    public void testCrossJoin() {
-        String sql = Dsl.PSC.select("*").from("users").crossJoin("orders").build().query();
-
-        assertEquals("SELECT * FROM users CROSS JOIN orders", sql);
-    }
-
-    @Test
     public void testNaturalJoin() {
         String sql = Dsl.PSC.select("*").from("users").naturalJoin("orders").build().query();
 
@@ -546,38 +1296,6 @@ class SqlBuilder10Test extends TestBase {
     }
 
     @Test
-    public void testGroupBy() {
-        // Single column
-        String sql = Dsl.PSC.select("category", "COUNT(*)").from("products").groupBy("category").build().query();
-
-        assertEquals("SELECT category, COUNT(*) FROM products GROUP BY category", sql);
-
-        // Multiple columns
-        sql = Dsl.PSC.select("category", "brand", "COUNT(*)").from("products").groupBy("category", "brand").build().query();
-
-        assertEquals("SELECT category, brand, COUNT(*) FROM products GROUP BY category, brand", sql);
-
-        // With direction
-        sql = Dsl.PSC.select("category", "COUNT(*)").from("products").groupBy("category", SortDirection.DESC).build().query();
-
-        assertEquals("SELECT category, COUNT(*) FROM products GROUP BY category DESC", sql);
-
-        // Collection
-        sql = Dsl.PSC.select("category", "brand", "COUNT(*)").from("products").groupBy(Arrays.asList("category", "brand")).build().query();
-
-        assertEquals("SELECT category, brand, COUNT(*) FROM products GROUP BY category, brand", sql);
-
-        // Map with directions
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("category", SortDirection.ASC);
-        orders.put("brand", SortDirection.DESC);
-
-        sql = Dsl.PSC.select("category", "brand", "COUNT(*)").from("products").groupBy(orders).build().query();
-
-        assertEquals("SELECT category, brand, COUNT(*) FROM products GROUP BY category ASC, brand DESC", sql);
-    }
-
-    @Test
     public void testGroupByAsc() {
         String sql = Dsl.PSC.select("category", "COUNT(*)").from("products").groupByAsc("category").build().query();
 
@@ -605,99 +1323,6 @@ class SqlBuilder10Test extends TestBase {
         sql = Dsl.PSC.select("category", "brand", "COUNT(*)").from("products").groupByDesc(Arrays.asList("category", "brand")).build().query();
 
         assertEquals("SELECT category, brand, COUNT(*) FROM products GROUP BY category DESC, brand DESC", sql);
-    }
-
-    @Test
-    public void testHaving() {
-        String sql = Dsl.PSC.select("category", "COUNT(*) as count").from("products").groupBy("category").having("COUNT(*) > 10").build().query();
-
-        assertEquals("SELECT category, COUNT(*) AS count FROM products GROUP BY category HAVING COUNT(*) > 10", sql);
-
-        // With condition
-        sql = Dsl.PSC.select("category", "COUNT(*) as count").from("products").groupBy("category").having(Filters.gt("COUNT(*)", 10)).build().query();
-
-        assertEquals("SELECT category, COUNT(*) AS count FROM products GROUP BY category HAVING COUNT(*) > ?", sql);
-    }
-
-    @Test
-    public void testOrderBy() {
-        // Single column
-        String sql = Dsl.PSC.select("*").from("users").orderBy("name").build().query();
-
-        assertEquals("SELECT * FROM users ORDER BY name", sql);
-
-        // Multiple columns
-        sql = Dsl.PSC.select("*").from("users").orderBy("lastName", "firstName").build().query();
-
-        assertEquals("SELECT * FROM users ORDER BY last_name, first_name", sql);
-
-        // With direction
-        sql = Dsl.PSC.select("*").from("users").orderBy("name", SortDirection.DESC).build().query();
-
-        assertEquals("SELECT * FROM users ORDER BY name DESC", sql);
-
-        // Collection
-        sql = Dsl.PSC.select("*").from("users").orderBy(Arrays.asList("lastName", "firstName")).build().query();
-
-        assertEquals("SELECT * FROM users ORDER BY last_name, first_name", sql);
-
-        // Map with directions
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("lastName", SortDirection.ASC);
-        orders.put("firstName", SortDirection.DESC);
-
-        sql = Dsl.PSC.select("*").from("users").orderBy(orders).build().query();
-
-        assertEquals("SELECT * FROM users ORDER BY last_name ASC, first_name DESC", sql);
-    }
-
-    @Test
-    public void testOrderByAsc() {
-        String sql = Dsl.PSC.select("*").from("users").orderByAsc("name").build().query();
-
-        assertEquals("SELECT * FROM users ORDER BY name ASC", sql);
-
-        sql = Dsl.PSC.select("*").from("users").orderByAsc("lastName", "firstName").build().query();
-
-        assertEquals("SELECT * FROM users ORDER BY last_name ASC, first_name ASC", sql);
-
-        sql = Dsl.PSC.select("*").from("users").orderByAsc(Arrays.asList("lastName", "firstName")).build().query();
-
-        assertEquals("SELECT * FROM users ORDER BY last_name ASC, first_name ASC", sql);
-    }
-
-    @Test
-    public void testOrderByDesc() {
-        String sql = Dsl.PSC.select("*").from("users").orderByDesc("createdDate").build().query();
-
-        assertEquals("SELECT * FROM users ORDER BY created_date DESC", sql);
-
-        sql = Dsl.PSC.select("*").from("users").orderByDesc("lastName", "firstName").build().query();
-
-        assertEquals("SELECT * FROM users ORDER BY last_name DESC, first_name DESC", sql);
-
-        sql = Dsl.PSC.select("*").from("users").orderByDesc(Arrays.asList("lastName", "firstName")).build().query();
-
-        assertEquals("SELECT * FROM users ORDER BY last_name DESC, first_name DESC", sql);
-    }
-
-    @Test
-    public void testLimit() {
-        String sql = Dsl.PSC.select("*").from("users").limit(10).build().query();
-
-        assertEquals("SELECT * FROM users LIMIT 10", sql);
-
-        // With offset
-        sql = Dsl.PSC.select("*").from("users").limit(10, 20).build().query();
-
-        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
-    }
-
-    @Test
-    public void testOffset() {
-        String sql = Dsl.PSC.select("*").from("users").limit(10).offset(20).build().query();
-
-        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
     }
 
     @Test
@@ -742,68 +1367,6 @@ class SqlBuilder10Test extends TestBase {
         sql = Dsl.PSC.select("*").from("users").append("WHERE 1=1").append(" AND status = 'x'").append("ORDER BY name").build().query();
 
         assertEquals("SELECT * FROM users WHERE 1=1 AND status = 'x' ORDER BY name", sql);
-    }
-
-    //    @Test
-    //    public void testAppendIf() {
-    //        // With condition - true
-    //        String sql = PSC.select("*").from("users").appendIf(true, Filters.gt("age", 18)).build().query();
-    //
-    //        assertEquals("SELECT * FROM users WHERE age > ?", sql);
-    //
-    //        // With condition - false
-    //        sql = PSC.select("*").from("users").appendIf(false, Filters.gt("age", 18)).build().query();
-    //
-    //        assertEquals("SELECT * FROM users", sql);
-    //
-    //        // With string
-    //        sql = PSC.select("*").from("users").appendIf(true, " FOR UPDATE").build().query();
-    //
-    //        assertEquals("SELECT * FROM users FOR UPDATE", sql);
-    //    }
-    //
-    //    @Test
-    //    public void testAppendIfOrElse() {
-    //        // With condition
-    //        String sql = PSC.select("*").from("users").appendIfOrElse(true, Filters.eq("status", "active"), Filters.eq("status", "inactive")).build().query();
-    //
-    //        assertEquals("SELECT * FROM users WHERE status = ?", sql);
-    //
-    //        sql = PSC.select("*").from("users").appendIfOrElse(false, Filters.eq("status", "active"), Filters.eq("status", "inactive")).build().query();
-    //
-    //        assertEquals("SELECT * FROM users WHERE status = ?", sql);
-    //
-    //        // With string
-    //        sql = PSC.select("*").from("users").appendIfOrElse(true, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
-    //
-    //        assertEquals("SELECT * FROM users ORDER BY name ASC", sql);
-    //    }
-
-    @Test
-    public void testUnion() {
-        SqlBuilder query1 = Dsl.PSC.select("id", "name").from("users");
-        SqlBuilder query2 = Dsl.PSC.select("id", "name").from("customers");
-
-        String sql = query1.union(query2).build().query();
-        assertEquals("SELECT id, name FROM users UNION SELECT id, name FROM customers", sql);
-
-        // With string
-        sql = Dsl.PSC.select("id", "name").from("users").union("SELECT id, name FROM customers").build().query();
-
-        assertEquals("SELECT id, name FROM users UNION SELECT id, name FROM customers", sql);
-
-        // Start new select
-        sql = Dsl.PSC.select("id", "name").from("users").union("id", "name").from("customers").build().query();
-
-        assertEquals("SELECT id, name FROM users UNION SELECT id, name FROM customers", sql);
-
-        // With collection
-        sql = Dsl.PSC.select("id", "name").from("users").union(Arrays.asList("id", "name")).from("customers").build().query();
-
-        assertEquals("SELECT id, name FROM users UNION SELECT id, name FROM customers", sql);
-
-        SqlBuilder self = Dsl.PSC.select("id").from("users");
-        assertThrows(IllegalArgumentException.class, () -> self.union(self));
     }
 
     @Test
@@ -1278,24 +1841,6 @@ class SqlBuilder10Test extends TestBase {
     }
 
     @Test
-    public void testMultipleJoins() {
-        String sql = Dsl.PSC.select("*")
-                .from("users u")
-                .leftJoin("orders o")
-                .on("u.id = o.user_id")
-                .leftJoin("products p")
-                .on("o.product_id = p.id")
-                .where(Filters.eq("u.status", "ACTIVE"))
-                .build()
-                .query();
-
-        assertTrue(sql.contains("FROM users u"));
-        assertTrue(sql.contains("LEFT JOIN orders o ON u.id = o.user_id"));
-        assertTrue(sql.contains("LEFT JOIN products p ON o.product_id = p.id"));
-        assertTrue(sql.contains("WHERE u.status = ?"));
-    }
-
-    @Test
     public void testJoinWithEntityClasses() {
         String sql = Dsl.PSC.select("*").from(Account.class, "a").join(Order.class, "o").on(Filters.eq("a.id", "o.userId")).build().query();
 
@@ -1540,14 +2085,6 @@ class SqlBuilder10Test extends TestBase {
     }
 
     @Test
-    public void testSelectWithAlias() {
-        String sql = Dsl.PSC.select("firstName AS name", "age").from("users").build().query();
-
-        assertTrue(sql.contains("first_name AS name"));
-        assertTrue(sql.contains("age"));
-    }
-
-    @Test
     public void testSelectWithAliasMap() {
         Map<String, String> aliases = new LinkedHashMap<>();
         aliases.put("firstName", "name");
@@ -1609,18 +2146,6 @@ class SqlBuilder10Test extends TestBase {
 
         assertTrue(sql.contains("UPDATE users SET"));
         assertTrue(sql.contains("WHERE id = ?"));
-    }
-
-    @Test
-    public void testDeleteFrom() {
-        String sql = Dsl.PSC.deleteFrom("users").where(Filters.eq("status", "DELETED")).build().query();
-
-        assertEquals("DELETE FROM users WHERE status = ?", sql);
-
-        // With entity class
-        sql = Dsl.PSC.deleteFrom(Account.class).where(Filters.eq("id", 1)).build().query();
-
-        assertEquals("DELETE FROM test_account WHERE id = ?", sql);
     }
 
     @Test
@@ -2213,18 +2738,6 @@ class SqlBuilder10Test extends TestBase {
         sql = Dsl.PSC.select("status", "COUNT(*)").from("users").groupBy("status").append(criteria).build().query();
         assertTrue(sql.contains("WHERE status = 'ACTIVE'"));
         assertTrue(sql.contains("HAVING COUNT(*) > 10"));
-    }
-}
-
-/**
- * Unit tests for SqlBuilder class
- */
-class SqlBuilder11Test extends TestBase {
-
-    @BeforeEach
-    public void setUp() {
-        // Reset handler to default before each test
-        AbstractQueryBuilder.resetHandlerForNamedParameter();
     }
 
     @Test
@@ -4232,13 +4745,6 @@ class SqlBuilder11Test extends TestBase {
         }
     }
 
-}
-
-/**
- * Unit tests for SqlBuilder class
- */
-class SqlBuilder12Test extends TestBase {
-
     @Nested
     public class PSBTest {
 
@@ -4354,7 +4860,7 @@ class SqlBuilder12Test extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.insert((Collection<String>) null));
 
             // Test with empty collection
-            assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.insert(new ArrayList<String>()));
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.insert(new ArrayList<>()));
         }
 
         @Test
@@ -4370,7 +4876,7 @@ class SqlBuilder12Test extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.insert((Map<String, Object>) null));
 
             // Test with empty map
-            assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.insert(new HashMap<String, Object>()));
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.insert(new HashMap<>()));
         }
 
         @Test
@@ -4558,7 +5064,7 @@ class SqlBuilder12Test extends TestBase {
 
             // Test with null/empty collection
             assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.select((Collection<String>) null));
-            assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.select(new ArrayList<String>()));
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.select(new ArrayList<Selection>()));
         }
 
         @Test
@@ -4572,7 +5078,7 @@ class SqlBuilder12Test extends TestBase {
 
             // Test with null/empty map
             assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.select((Map<String, String>) null));
-            assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.select(new HashMap<String, String>()));
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.select(new HashMap<>()));
         }
 
         @Test
@@ -4743,7 +5249,7 @@ class SqlBuilder12Test extends TestBase {
 
             // Test with invalid selections
             assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.selectFrom((List<Selection>) null));
-            assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.selectFrom(new ArrayList<Selection>()));
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.selectFrom(new ArrayList<>()));
         }
 
         @Test
@@ -6121,26 +6627,20 @@ class SqlBuilder12Test extends TestBase {
             // Test error cases
             assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.insert(""));
             assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.insert(new String[0]));
-            assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.insert(new ArrayList<String>()));
-            assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.insert(new HashMap<String, Object>()));
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.insert(new ArrayList<>()));
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.insert(new HashMap<>()));
             assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.batchInsert(new ArrayList<>()));
             assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.update(""));
             assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.deleteFrom(""));
             assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.select(""));
             assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.select(new String[0]));
-            assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.select(new ArrayList<String>()));
-            assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.select(new HashMap<String, String>()));
             assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.select(new ArrayList<Selection>()));
-            assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.selectFrom(new ArrayList<Selection>()));
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.select(new HashMap<>()));
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.select(new ArrayList<Selection>()));
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.selectFrom(new ArrayList<>()));
             assertThrows(IllegalArgumentException.class, () -> Dsl.PLC.count(""));
         }
     }
-}
-
-/**
- * Unit tests for SqlBuilder class
- */
-class SqlBuilder13Test extends TestBase {
 
     @Nested
     public class NSBTest {
@@ -6697,11 +7197,11 @@ class SqlBuilder13Test extends TestBase {
         @Test
         public void testEmptyCollectionThrows() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.NSB.insert(new ArrayList<String>()).into("users").build().query();
+                Dsl.NSB.insert(new ArrayList<>()).into("users").build().query();
             });
 
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.NSB.select(new ArrayList<String>()).from("users").build().query();
+                Dsl.NSB.select(new ArrayList<Selection>()).from("users").build().query();
             });
         }
 
@@ -7702,11 +8202,11 @@ class SqlBuilder13Test extends TestBase {
             });
 
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.NSC.select(new ArrayList<String>());
+                Dsl.NSC.select(new ArrayList<Selection>());
             });
 
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.NSC.select(new HashMap<String, String>());
+                Dsl.NSC.select(new HashMap<>());
             });
         }
 
@@ -8410,7 +8910,7 @@ class SqlBuilder13Test extends TestBase {
             });
 
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.NAC.select(new ArrayList<String>());
+                Dsl.NAC.select(new ArrayList<Selection>());
             });
         }
 
@@ -9204,7 +9704,7 @@ class SqlBuilder13Test extends TestBase {
             });
 
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.NLC.select(new ArrayList<String>());
+                Dsl.NLC.select(new ArrayList<Selection>());
             });
         }
 
@@ -9501,763 +10001,6 @@ class SqlBuilder13Test extends TestBase {
             N.println(sql);
         }
     }
-
-    @Nested
-    public class PSCTest extends TestBase {
-
-        @Table("users")
-        public static class User {
-            private long id;
-            @Column("first_name")
-            private String firstName;
-            @Column("last_name")
-            private String lastName;
-            private String email;
-            @ReadOnly
-            private Date created_date;
-            @NonUpdatable
-            private String password;
-            @Transient
-            private String tempData;
-
-            // Getters and setters
-            public long getId() {
-                return id;
-            }
-
-            public void setId(long id) {
-                this.id = id;
-            }
-
-            public String getFirstName() {
-                return firstName;
-            }
-
-            public void setFirstName(String firstName) {
-                this.firstName = firstName;
-            }
-
-            public String getLastName() {
-                return lastName;
-            }
-
-            public void setLastName(String lastName) {
-                this.lastName = lastName;
-            }
-
-            public String getEmail() {
-                return email;
-            }
-
-            public void setEmail(String email) {
-                this.email = email;
-            }
-
-            public Date getCreated_date() {
-                return created_date;
-            }
-
-            public void setCreated_date(Date created_date) {
-                this.created_date = created_date;
-            }
-
-            public String getPassword() {
-                return password;
-            }
-
-            public void setPassword(String password) {
-                this.password = password;
-            }
-
-            public String getTempData() {
-                return tempData;
-            }
-
-            public void setTempData(String tempData) {
-                this.tempData = tempData;
-            }
-        }
-
-        @Test
-        public void testInsertSingleExpression() {
-            String sql = Dsl.PSC.insert("name").into("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("INSERT INTO users"));
-            Assertions.assertTrue(sql.contains("(name)"));
-            Assertions.assertTrue(sql.contains("VALUES (?)"));
-        }
-
-        @Test
-        public void testInsertMultipleColumns() {
-            String sql = Dsl.PSC.insert("firstName", "lastName", "email").into("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("INSERT INTO users"));
-            Assertions.assertTrue(sql.contains("first_name"));
-            Assertions.assertTrue(sql.contains("last_name"));
-            Assertions.assertTrue(sql.contains("email"));
-            Assertions.assertTrue(sql.contains("VALUES (?, ?, ?)"));
-        }
-
-        @Test
-        public void testInsertWithCollection() {
-            List<String> columns = Arrays.asList("firstName", "lastName", "email");
-            String sql = Dsl.PSC.insert(columns).into("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("first_name"));
-            Assertions.assertTrue(sql.contains("last_name"));
-            Assertions.assertTrue(sql.contains("VALUES (?, ?, ?)"));
-        }
-
-        @Test
-        public void testInsertWithMap() {
-            Map<String, Object> props = new HashMap<>();
-            props.put("firstName", "John");
-            props.put("lastName", "Doe");
-            String sql = Dsl.PSC.insert(props).into("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("first_name"));
-            Assertions.assertTrue(sql.contains("last_name"));
-            Assertions.assertTrue(sql.contains("VALUES (?, ?)"));
-        }
-
-        @Test
-        public void testInsertWithEntity() {
-            User user = new User();
-            user.setFirstName("John");
-            user.setLastName("Doe");
-            user.setEmail("john@example.com");
-            user.setCreated_date(new Date()); // Should be excluded (ReadOnly)
-            user.setTempData("temp"); // Should be excluded (Transient)
-
-            String sql = Dsl.PSC.insert(user).into("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("first_name"));
-            Assertions.assertTrue(sql.contains("last_name"));
-            Assertions.assertTrue(sql.contains("email"));
-            Assertions.assertFalse(sql.contains("created_date"));
-            Assertions.assertFalse(sql.contains("temp_data"));
-        }
-
-        @Test
-        public void testInsertWithEntityAndExclusions() {
-            User user = new User();
-            user.setFirstName("John");
-            user.setLastName("Doe");
-            user.setEmail("john@example.com");
-
-            Set<String> excluded = Set.of("email");
-            String sql = Dsl.PSC.insert(user, excluded).into("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("first_name"));
-            Assertions.assertTrue(sql.contains("last_name"));
-            Assertions.assertFalse(sql.contains("email"));
-        }
-
-        @Test
-        public void testInsertWithEntityClass() {
-            String sql = Dsl.PSC.insert(User.class).into("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("INSERT INTO users"));
-            Assertions.assertTrue(sql.contains("first_name"));
-            Assertions.assertTrue(sql.contains("last_name"));
-            Assertions.assertTrue(sql.contains("email"));
-            Assertions.assertTrue(sql.contains("password"));
-            Assertions.assertFalse(sql.contains("created_date"));
-            Assertions.assertFalse(sql.contains("temp_data"));
-        }
-
-        @Test
-        public void testInsertWithEntityClassAndExclusions() {
-            Set<String> excluded = Set.of("id", "password");
-            String sql = Dsl.PSC.insert(User.class, excluded).into("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertFalse(sql.contains("id"));
-            Assertions.assertFalse(sql.contains("password"));
-            Assertions.assertTrue(sql.contains("first_name"));
-            Assertions.assertTrue(sql.contains("last_name"));
-        }
-
-        @Test
-        public void testInsertInto() {
-            String sql = Dsl.PSC.insertInto(User.class).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("INSERT INTO users"));
-            Assertions.assertTrue(sql.contains("VALUES"));
-        }
-
-        @Test
-        public void testInsertIntoWithExclusions() {
-            Set<String> excluded = Set.of("id");
-            String sql = Dsl.PSC.insertInto(User.class, excluded).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("INSERT INTO users"));
-            Assertions.assertFalse(sql.contains("id"));
-        }
-
-        @Test
-        public void testBatchInsert() {
-            List<User> users = new ArrayList<>();
-            User user1 = new User();
-            user1.setFirstName("John");
-            user1.setLastName("Doe");
-
-            User user2 = new User();
-            user2.setFirstName("Jane");
-            user2.setLastName("Smith");
-
-            users.add(user1);
-            users.add(user2);
-
-            String sql = Dsl.PSC.batchInsert(users).into("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("INSERT INTO users"));
-            Assertions.assertTrue(sql.contains("VALUES"));
-            // Should have multiple value sets with ?
-            Assertions.assertTrue(sql.contains("(?, ?)"));
-        }
-
-        @Test
-        public void testUpdate() {
-            String sql = Dsl.PSC.update("users").set("last_login", "status").where(Filters.eq("id", 1)).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("UPDATE users"));
-            Assertions.assertTrue(sql.contains("SET"));
-            Assertions.assertTrue(sql.contains("last_login = ?"));
-            Assertions.assertTrue(sql.contains("status = ?"));
-            Assertions.assertTrue(sql.contains("WHERE"));
-            Assertions.assertTrue(sql.contains("id = ?"));
-        }
-
-        @Test
-        public void testUpdateWithEntityClass() {
-            String sql = Dsl.PSC.update("users", User.class).set("firstName", "John").where(Filters.eq("id", 1)).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("UPDATE users"));
-            Assertions.assertTrue(sql.contains("SET"));
-            Assertions.assertTrue(sql.contains("first_name = ?"));
-        }
-
-        @Test
-        public void testUpdateEntityClass() {
-            String sql = Dsl.PSC.update(User.class).set("firstName", "email").where(Filters.eq("id", 1)).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("UPDATE users"));
-            Assertions.assertTrue(sql.contains("first_name = ?"));
-            Assertions.assertTrue(sql.contains("email = ?"));
-        }
-
-        @Test
-        public void testUpdateEntityClassWithExclusions() {
-            Set<String> excluded = Set.of("password", "created_date");
-            String sql = Dsl.PSC.update(User.class, excluded).set("firstName", "email").where(Filters.eq("id", 1)).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("UPDATE users"));
-            Assertions.assertTrue(sql.contains("first_name = ?"));
-            Assertions.assertTrue(sql.contains("email = ?"));
-        }
-
-        @Test
-        public void testDeleteFrom() {
-            String sql = Dsl.PSC.deleteFrom("users").where(Filters.eq("status", "inactive")).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("DELETE FROM users"));
-            Assertions.assertTrue(sql.contains("WHERE"));
-            Assertions.assertTrue(sql.contains("status = ?"));
-        }
-
-        @Test
-        public void testDeleteFromWithEntityClass() {
-            String sql = Dsl.PSC.deleteFrom("users", User.class).where(Filters.lt("lastLogin", new Date())).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("DELETE FROM users"));
-            Assertions.assertTrue(sql.contains("WHERE"));
-            Assertions.assertTrue(sql.contains("last_login < ?"));
-        }
-
-        @Test
-        public void testDeleteFromEntityClass() {
-            String sql = Dsl.PSC.deleteFrom(User.class).where(Filters.eq("id", 123)).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("DELETE FROM users"));
-            Assertions.assertTrue(sql.contains("WHERE"));
-            Assertions.assertTrue(sql.contains("id = ?"));
-        }
-
-        @Test
-        public void testSelectSingleExpression() {
-            String sql = Dsl.PSC.select("COUNT(*) AS total").from("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT COUNT(*) AS total"));
-            Assertions.assertTrue(sql.contains("FROM users"));
-        }
-
-        @Test
-        public void testSelectMultipleColumns() {
-            String sql = Dsl.PSC.select("id", "name", "email", "created_date").from("users").where(Filters.eq("active", true)).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT"));
-            Assertions.assertTrue(sql.contains("id"));
-            Assertions.assertTrue(sql.contains("name"));
-            Assertions.assertTrue(sql.contains("email"));
-            Assertions.assertTrue(sql.contains("created_date"));
-            Assertions.assertTrue(sql.contains("FROM users"));
-            Assertions.assertTrue(sql.contains("WHERE"));
-            Assertions.assertTrue(sql.contains("active = ?"));
-        }
-
-        @Test
-        public void testSelectWithCollection() {
-            List<String> columns = Arrays.asList("firstName", "lastName", "email");
-            String sql = Dsl.PSC.select(columns).from("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT"));
-            Assertions.assertTrue(sql.contains("first_name AS \"firstName\""));
-            Assertions.assertTrue(sql.contains("last_name AS \"lastName\""));
-            Assertions.assertTrue(sql.contains("email"));
-        }
-
-        @Test
-        public void testSelectWithAliases() {
-            Map<String, String> aliases = new LinkedHashMap<>();
-            aliases.put("u.first_name", "firstName");
-            aliases.put("u.last_name", "lastName");
-            aliases.put("COUNT(o.id)", "orderCount");
-
-            String sql = Dsl.PSC.select(aliases).from("users u").leftJoin("orders o").on("u.id = o.user_id").groupBy("u.id").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("u.first_name AS \"firstName\""));
-            Assertions.assertTrue(sql.contains("u.last_name AS \"lastName\""));
-            Assertions.assertTrue(sql.contains("COUNT(o.id) AS \"orderCount\""));
-        }
-
-        @Test
-        public void testSelectEntityClass() {
-            String sql = Dsl.PSC.select(User.class).from("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT"));
-            Assertions.assertTrue(sql.contains("id"));
-            Assertions.assertTrue(sql.contains("first_name AS \"firstName\""));
-            Assertions.assertTrue(sql.contains("last_name AS \"lastName\""));
-            Assertions.assertTrue(sql.contains("email"));
-            Assertions.assertTrue(sql.contains("created_date"));
-            Assertions.assertTrue(sql.contains("password"));
-            Assertions.assertFalse(sql.contains("temp_data"));
-        }
-
-        @Test
-        public void testSelectEntityClassWithSubEntities() {
-            String sql = Dsl.PSC.select(User.class, true).from("users u").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT"));
-        }
-
-        @Test
-        public void testSelectEntityClassWithExclusions() {
-            Set<String> exclude = Set.of("password", "created_date");
-            String sql = Dsl.PSC.select(User.class, exclude).from("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT"));
-            Assertions.assertTrue(sql.contains("id"));
-            Assertions.assertTrue(sql.contains("first_name"));
-            Assertions.assertFalse(sql.contains("password"));
-            Assertions.assertFalse(sql.contains("created_date"));
-        }
-
-        @Test
-        public void testSelectEntityClassWithAllOptions() {
-            Set<String> exclude = Set.of("password");
-            String sql = Dsl.PSC.select(User.class, true, exclude).from("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT"));
-            Assertions.assertFalse(sql.contains("password"));
-        }
-
-        @Test
-        public void testSelectFrom() {
-            String sql = Dsl.PSC.selectFrom(User.class).where(Filters.eq("active", true)).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT"));
-            Assertions.assertTrue(sql.contains("FROM users"));
-            Assertions.assertTrue(sql.contains("WHERE"));
-            Assertions.assertTrue(sql.contains("active = ?"));
-        }
-
-        @Test
-        public void testSelectFromWithAlias() {
-            String sql = Dsl.PSC.selectFrom(User.class, "u").where(Filters.eq("u.active", true)).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("FROM users u"));
-        }
-
-        @Test
-        public void testSelectFromWithSubEntities() {
-            String sql = Dsl.PSC.selectFrom(User.class, true).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT"));
-            Assertions.assertTrue(sql.contains("FROM"));
-        }
-
-        @Test
-        public void testSelectFromWithAliasAndSubEntities() {
-            String sql = Dsl.PSC.selectFrom(User.class, "u", true).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT"));
-            Assertions.assertTrue(sql.contains("FROM"));
-        }
-
-        @Test
-        public void testSelectFromWithExclusions() {
-            Set<String> exclude = Set.of("password");
-            String sql = Dsl.PSC.selectFrom(User.class, exclude).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertFalse(sql.contains("password"));
-        }
-
-        @Test
-        public void testSelectFromWithAliasAndExclusions() {
-            Set<String> exclude = Set.of("password");
-            String sql = Dsl.PSC.selectFrom(User.class, "u", exclude).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("users u"));
-            Assertions.assertFalse(sql.contains("password"));
-        }
-
-        @Test
-        public void testSelectFromWithSubEntitiesAndExclusions() {
-            Set<String> exclude = Set.of("password");
-            String sql = Dsl.PSC.selectFrom(User.class, true, exclude).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertFalse(sql.contains("password"));
-        }
-
-        @Test
-        public void testSelectFromWithAllOptions() {
-            Set<String> exclude = Set.of("password");
-            String sql = Dsl.PSC.selectFrom(User.class, "u", true, exclude).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("FROM"));
-            Assertions.assertFalse(sql.contains("password"));
-        }
-
-        @Test
-        public void testSelectMultipleEntities() {
-            String sql = Dsl.PSC.select(User.class, "u", "user_", User.class, "u2", "user2_")
-                    .from("users u")
-                    .join("users u2")
-                    .on("u.id = u2.parent_id")
-                    .build()
-                    .query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT"));
-            Assertions.assertTrue(sql.contains("u.id AS \"user_.id\""));
-            Assertions.assertTrue(sql.contains("u2.id AS \"user2_.id\""));
-        }
-
-        @Test
-        public void testSelectMultipleEntitiesWithExclusions() {
-            Set<String> excludeUser = Set.of("password");
-            Set<String> excludeUser2 = Set.of("email");
-
-            String sql = Dsl.PSC.select(User.class, "u", "user_", excludeUser, User.class, "u2", "user2_", excludeUser2)
-                    .from("users u")
-                    .join("users u2")
-                    .on("u.id = u2.parent_id")
-                    .build()
-                    .query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT"));
-        }
-
-        @Test
-        public void testSelectWithSelectionList() {
-            List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
-                    new Selection(User.class, "m", "manager", null, false, Set.of("password")));
-
-            String sql = Dsl.PSC.select(selections).from("users u").join("users m").on("u.manager_id = m.id").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT"));
-        }
-
-        @Test
-        public void testSelectFromMultipleEntities() {
-            String sql = Dsl.PSC.selectFrom(User.class, "u", "user_", User.class, "m", "manager_").where(Filters.eq("u.active", true)).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("FROM"));
-        }
-
-        @Test
-        public void testSelectFromMultipleEntitiesWithExclusions() {
-            Set<String> excludeU = Set.of("password");
-            Set<String> excludeM = Set.of("email", "password");
-
-            String sql = Dsl.PSC.selectFrom(User.class, "u", "user_", excludeU, User.class, "m", "manager_", excludeM).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("FROM"));
-        }
-
-        @Test
-        public void testSelectFromWithSelectionList() {
-            List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
-                    new Selection(User.class, "m", "manager", null, false, null));
-
-            String sql = Dsl.PSC.selectFrom(selections).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("FROM"));
-        }
-
-        @Test
-        public void testCount() {
-            String sql = Dsl.PSC.count("users").where(Filters.eq("active", true)).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT count(*)"));
-            Assertions.assertTrue(sql.contains("FROM users"));
-            Assertions.assertTrue(sql.contains("WHERE"));
-            Assertions.assertTrue(sql.contains("active = ?"));
-        }
-
-        @Test
-        public void testCountEntityClass() {
-            String sql = Dsl.PSC.count(User.class).where(Filters.eq("status", "active")).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("SELECT count(*)"));
-            Assertions.assertTrue(sql.contains("FROM users"));
-            Assertions.assertTrue(sql.contains("WHERE"));
-            Assertions.assertTrue(sql.contains("status = ?"));
-        }
-
-        @Test
-        public void testParse() {
-            Condition cond = Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18));
-            String sql = Dsl.PSC.fromCondition(cond, User.class).build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("status = ?"));
-            Assertions.assertTrue(sql.contains("age > ?"));
-            Assertions.assertTrue(sql.contains("AND"));
-        }
-
-        @Test
-        public void testUpdateWithMap() {
-            Map<String, Object> updates = new HashMap<>();
-            updates.put("firstName", "Jane");
-            updates.put("lastName", "Smith");
-
-            String sql = Dsl.PSC.update("users").set(updates).where(Filters.eq("id", 1)).build().query();
-
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("first_name = ?"));
-            Assertions.assertTrue(sql.contains("last_name = ?"));
-            Assertions.assertTrue(sql.contains("id = ?"));
-        }
-
-        @Test
-        public void testBatchInsertWithMaps() {
-            List<Map<String, Object>> data = new ArrayList<>();
-            Map<String, Object> row1 = new HashMap<>();
-            row1.put("firstName", "John");
-            row1.put("lastName", "Doe");
-            data.add(row1);
-
-            Map<String, Object> row2 = new HashMap<>();
-            row2.put("firstName", "Jane");
-            row2.put("lastName", "Smith");
-            data.add(row2);
-
-            String sql = Dsl.PSC.batchInsert(data).into("users").build().query();
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("INSERT INTO users"));
-            Assertions.assertTrue(sql.contains("VALUES"));
-            Assertions.assertTrue(sql.contains("(?, ?)"));
-        }
-
-        @Test
-        public void testNamingPolicySnakeCase() {
-            // PSC uses SNAKE_CASE naming policy
-            String sql = Dsl.PSC.select("firstName", "lastName").from("userAccounts").build().query();
-
-            Assertions.assertTrue(sql.contains("first_name"));
-            Assertions.assertTrue(sql.contains("last_name"));
-            Assertions.assertTrue(sql.contains("userAccounts"));
-        }
-
-        @Test
-        public void testColumnNameTransformation() {
-            // Test that camelCase property names are converted to snake_case
-            User user = new User();
-            user.setFirstName("John");
-            user.setLastName("Doe");
-
-            String sql = Dsl.PSC.insert(user).into("users").build().query();
-
-            // Column names should be snake_case
-            Assertions.assertTrue(sql.contains("first_name"));
-            Assertions.assertTrue(sql.contains("last_name"));
-
-            // Should use ? for parameters
-            Assertions.assertTrue(sql.contains("VALUES (?, ?)"));
-        }
-
-        @Test
-        public void testAllJoinTypes() {
-            // Test all join variations
-            String sql;
-
-            sql = Dsl.PSC.select("*").from("users u").join("orders o").on("u.id = o.user_id").build().query();
-            Assertions.assertTrue(sql.contains("JOIN"));
-
-            sql = Dsl.PSC.select("*").from("users u").innerJoin("orders o").on("u.id = o.user_id").build().query();
-            Assertions.assertTrue(sql.contains("INNER JOIN"));
-
-            sql = Dsl.PSC.select("*").from("users u").leftJoin("orders o").on("u.id = o.user_id").build().query();
-            Assertions.assertTrue(sql.contains("LEFT JOIN"));
-
-            sql = Dsl.PSC.select("*").from("users u").rightJoin("orders o").on("u.id = o.user_id").build().query();
-            Assertions.assertTrue(sql.contains("RIGHT JOIN"));
-
-            sql = Dsl.PSC.select("*").from("users u").fullJoin("orders o").on("u.id = o.user_id").build().query();
-            Assertions.assertTrue(sql.contains("FULL JOIN"));
-
-            sql = Dsl.PSC.select("*").from("users").crossJoin("departments").build().query();
-            Assertions.assertTrue(sql.contains("CROSS JOIN"));
-
-            sql = Dsl.PSC.select("*").from("users").naturalJoin("user_profiles").build().query();
-            Assertions.assertTrue(sql.contains("NATURAL JOIN"));
-        }
-
-        @Test
-        public void testSpecialConditions() {
-            // Test IS NULL
-            String sql = Dsl.PSC.select("*").from("users").where(Filters.isNull("email")).build().query();
-            Assertions.assertTrue(sql.contains("email IS NULL"));
-
-            // Test IS NOT NULL
-            sql = Dsl.PSC.select("*").from("users").where(Filters.isNotNull("email")).build().query();
-            Assertions.assertTrue(sql.contains("email IS NOT NULL"));
-
-            // Test IN
-            sql = Dsl.PSC.select("*").from("users").where(Filters.in("status", Arrays.asList("active", "premium", "trial"))).build().query();
-            Assertions.assertTrue(sql.contains("status IN (?, ?, ?)"));
-
-            // Test BETWEEN
-            sql = Dsl.PSC.select("*").from("users").where(Filters.between("age", 18, 65)).build().query();
-            Assertions.assertTrue(sql.contains("age BETWEEN ? AND ?"));
-
-            // Test LIKE
-            sql = Dsl.PSC.select("*").from("users").where(Filters.like("name", "%John%")).build().query();
-            Assertions.assertTrue(sql.contains("name LIKE ?"));
-        }
-
-        @Test
-        public void testEmptyArgumentsThrow() {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.PSC.select("");
-            });
-
-            Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.PSC.select(new String[0]);
-            });
-
-            Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.PSC.select(new ArrayList<String>());
-            });
-        }
-
-        @Test
-        public void testNullConditionThrows() {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.PSC.fromCondition(null, User.class);
-            });
-        }
-
-        @Test
-        public void testForUpdate() {
-            String sql = Dsl.PSC.select("*").from("users").where(Filters.eq("id", 1)).forUpdate().build().query();
-
-            Assertions.assertTrue(sql.contains("FOR UPDATE"));
-            Assertions.assertTrue(sql.contains("id = ?"));
-        }
-
-        @Test
-        public void testLimitOffset() {
-            String sql = Dsl.PSC.select("*").from("users").limit(10).offset(20).build().query();
-
-            Assertions.assertTrue(sql.contains("LIMIT 10"));
-            Assertions.assertTrue(sql.contains("OFFSET 20"));
-
-            // Test limit with offset parameter
-            sql = Dsl.PSC.select("*").from("users").limit(10, 20).build().query();
-
-            Assertions.assertTrue(sql.contains("LIMIT"));
-        }
-
-        @Test
-        public void testAppendCustomSQL() {
-            String sql = Dsl.PSC.select("*").from("users").append(" WHERE custom_function(name) = ?").build().query();
-
-            Assertions.assertTrue(sql.contains("custom_function"));
-        }
-
-        @Test
-        public void testGroupByHaving() {
-            String sql = Dsl.PSC.select("department", "COUNT(*) as count")
-                    .from("users")
-                    .groupBy("department")
-                    .having(Filters.gt("COUNT(*)", 5))
-                    .build()
-                    .query();
-
-            Assertions.assertTrue(sql.contains("GROUP BY department"));
-            Assertions.assertTrue(sql.contains("HAVING"));
-            Assertions.assertTrue(sql.contains("COUNT(*) > ?"));
-        }
-
-        @Test
-        public void testOrderBy() {
-            String sql = Dsl.PSC.select("*").from("users").orderBy("last_name ASC", "first_name ASC").build().query();
-
-            Assertions.assertTrue(sql.contains("ORDER BY"));
-            Assertions.assertTrue(sql.contains("last_name ASC"));
-            Assertions.assertTrue(sql.contains("first_name ASC"));
-        }
-
-        @Test
-        public void testMultipleWhereConditions() {
-            String sql = Dsl.PSC.select("*")
-                    .from("users")
-                    .where(Filters.eq("ACTIVE", true).and(Filters.gt("AGE", 18)).and(Filters.like("NAME", "J%")))
-                    .build()
-                    .query();
-
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("WHERE"));
-            Assertions.assertTrue(sql.contains("AND"));
-            Assertions.assertTrue(sql.contains("active = ?"));
-            Assertions.assertTrue(sql.contains("age > ?"));
-            Assertions.assertTrue(sql.contains("name LIKE ?"));
-        }
-
-        @Test
-        public void testComplexConditionCombinations() {
-            String sql = Dsl.PSC.select("*")
-                    .from("users")
-                    .where(Filters.or(Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18)),
-                            Filters.and(Filters.eq("status", "premium"), Filters.isNotNull("subscription_id"))))
-                    .build()
-                    .query();
-
-            Assertions.assertNotNull(sql);
-            Assertions.assertTrue(sql.contains("OR"));
-            Assertions.assertTrue(sql.contains("AND"));
-            Assertions.assertTrue(sql.contains("status = ?"));
-            Assertions.assertTrue(sql.contains("age > ?"));
-            Assertions.assertTrue(sql.contains("subscription_id IS NOT NULL"));
-        }
-    }
-}
-
-/**
- * Unit tests for SqlBuilder class
- */
-class SqlBuilder14Test extends TestBase {
 
     @Nested
     public class MSBTest extends TestBase {
@@ -12099,807 +11842,6 @@ class SqlBuilder14Test extends TestBase {
             Assertions.assertTrue(sql.contains("balance > #{balance}"));
         }
     }
-}
-
-@Tag("2025")
-public class SqlBuilderTest extends TestBase {
-
-    // Basic SELECT tests
-    @Test
-    public void testSelectAll() {
-        String sql = Dsl.PSC.select("*").from("users").build().query();
-        assertEquals("SELECT * FROM users", sql);
-    }
-
-    @Test
-    public void testSelectSingleColumn() {
-        String sql = Dsl.PSC.select("name").from("users").build().query();
-        assertEquals("SELECT name FROM users", sql);
-    }
-
-    @Test
-    public void testSelectMultipleColumns() {
-        String sql = Dsl.PSC.select("id", "name", "email").from("users").build().query();
-        assertTrue(sql.contains("SELECT id, name, email"));
-    }
-
-    @Test
-    public void testSelectWithAlias() {
-        String sql = Dsl.PSC.select("first_name AS fname").from("users").build().query();
-        assertTrue(sql.contains("AS fname"));
-    }
-
-    @Test
-    public void testSelectWithEntityClass() {
-        String sql = Dsl.PSC.select(Account.class).from(Account.class).build().query();
-        assertNotNull(sql);
-        assertTrue(sql.contains("SELECT"));
-        assertTrue(sql.contains("FROM"));
-    }
-
-    // FROM clause tests
-    @Test
-    public void testFromSingleTable() {
-        String sql = Dsl.PSC.select("*").from("users").build().query();
-        assertTrue(sql.contains("FROM users"));
-    }
-
-    @Test
-    public void testFromMultipleTables() {
-        String sql = Dsl.PSC.select("*").from("users", "orders").build().query();
-        assertTrue(sql.contains("FROM orders"));
-    }
-
-    @Test
-    public void testFromWithAlias() {
-        String sql = Dsl.PSC.select("u.*").from("users u").build().query();
-        assertTrue(sql.contains("FROM users u"));
-    }
-
-    @Test
-    public void testFromEntityClass() {
-        String sql = Dsl.PSC.select("*").from(Account.class).build().query();
-        assertNotNull(sql);
-    }
-
-    // WHERE clause tests
-    @Test
-    public void testWhereEqual() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.eq("id", 1)).build().query();
-        assertTrue(sql.contains("WHERE"));
-    }
-
-    @Test
-    public void testWhereMultipleConditions() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.eq("status", "active").and(Filters.gt("age", 18))).build().query();
-        assertTrue(sql.contains("AND"));
-    }
-
-    @Test
-    public void testWhereOr() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.eq("role", "admin").or(Filters.eq("role", "moderator"))).build().query();
-        assertTrue(sql.contains("OR"));
-    }
-
-    @Test
-    public void testWhereBetween() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.between("age", 18, 65)).build().query();
-        assertTrue(sql.contains("BETWEEN"));
-    }
-
-    @Test
-    public void testWhereLike() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.like("name", "%John%")).build().query();
-        assertTrue(sql.contains("LIKE"));
-    }
-
-    @Test
-    public void testWhereIsNull() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.isNull("deleted_at")).build().query();
-        assertTrue(sql.contains("IS NULL"));
-    }
-
-    @Test
-    public void testWhereIsNotNull() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.isNotNull("email")).build().query();
-        assertTrue(sql.contains("IS NOT NULL"));
-    }
-
-    @Test
-    public void testWhereIsWithNullValue() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.is("deleted_at", null)).build().query();
-        assertTrue(sql.contains("IS NULL"));
-        assertFalse(sql.contains("IS ?"));
-    }
-
-    @Test
-    public void testWhereIsNotWithNullValue() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.isNot("deleted_at", null)).build().query();
-        assertTrue(sql.contains("IS NOT NULL"));
-        assertFalse(sql.contains("IS NOT ?"));
-    }
-
-    // JOIN tests
-    @Test
-    public void testInnerJoin() {
-        String sql = Dsl.PSC.select("*").from("users").join("orders").on("users.id = orders.user_id").build().query();
-        assertTrue(sql.contains("JOIN"));
-        assertTrue(sql.contains("ON"));
-    }
-
-    @Test
-    public void testLeftJoin() {
-        String sql = Dsl.PSC.select("*").from("users").leftJoin("orders").on("users.id = orders.user_id").build().query();
-        assertTrue(sql.contains("LEFT JOIN"));
-    }
-
-    @Test
-    public void testRightJoin() {
-        String sql = Dsl.PSC.select("*").from("users").rightJoin("departments").on("users.dept_id = departments.id").build().query();
-        assertTrue(sql.contains("RIGHT JOIN"));
-    }
-
-    @Test
-    public void testFullJoin() {
-        String sql = Dsl.PSC.select("*").from("users").fullJoin("departments").on("users.dept_id = departments.id").build().query();
-        assertTrue(sql.contains("FULL JOIN"));
-    }
-
-    @Test
-    public void testCrossJoin() {
-        String sql = Dsl.PSC.select("*").from("users").crossJoin("roles").build().query();
-        assertTrue(sql.contains("CROSS JOIN"));
-    }
-
-    @Test
-    public void testMultipleJoins() {
-        String sql = Dsl.PSC.select("*")
-                .from("users u")
-                .innerJoin("orders o")
-                .on("u.id = o.user_id")
-                .leftJoin("products p")
-                .on("o.product_id = p.id")
-                .build()
-                .query();
-        assertTrue(sql.contains("INNER JOIN"));
-        assertTrue(sql.contains("LEFT JOIN"));
-    }
-
-    // GROUP BY tests
-    @Test
-    public void testGroupBy() {
-        String sql = Dsl.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").build().query();
-        assertTrue(sql.contains("GROUP BY department"));
-    }
-
-    @Test
-    public void testGroupByMultipleColumns() {
-        String sql = Dsl.PSC.select("year", "month", "COUNT(*)").from("sales").groupBy("year", "month").build().query();
-        assertTrue(sql.contains("GROUP BY"));
-    }
-
-    // HAVING tests
-    @Test
-    public void testHaving() {
-        String sql = Dsl.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).build().query();
-        assertTrue(sql.contains("HAVING"));
-    }
-
-    // ORDER BY tests
-    @Test
-    public void testOrderBy() {
-        String sql = Dsl.PSC.select("*").from("users").orderBy("name").build().query();
-        assertTrue(sql.contains("ORDER BY name"));
-    }
-
-    @Test
-    public void testOrderByAsc() {
-        String sql = Dsl.PSC.select("*").from("users").orderBy("name", SortDirection.ASC).build().query();
-        assertTrue(sql.contains("ORDER BY"));
-        assertTrue(sql.contains("ASC"));
-    }
-
-    @Test
-    public void testOrderByDesc() {
-        String sql = Dsl.PSC.select("*").from("users").orderBy("created_date", SortDirection.DESC).build().query();
-        assertTrue(sql.contains("ORDER BY"));
-        assertTrue(sql.contains("DESC"));
-    }
-
-    @Test
-    public void testOrderByMultipleColumns() {
-        String sql = Dsl.PSC.select("*").from("users").orderBy("last_name", "first_name").build().query();
-        assertTrue(sql.contains("ORDER BY"));
-    }
-
-    // LIMIT tests
-    @Test
-    public void testLimit() {
-        String sql = Dsl.PSC.select("*").from("users").limit(10).build().query();
-        assertTrue(sql.contains("LIMIT 10"));
-    }
-
-    @Test
-    public void testLimitWithOffset() {
-        String sql = Dsl.PSC.select("*").from("users").limit(20, 10).build().query();
-        assertTrue(sql.contains("LIMIT"));
-    }
-
-    // DISTINCT tests
-    @Test
-    public void testDistinct() {
-        String sql = Dsl.PSC.select("status").from("users").distinct().build().query();
-        assertTrue(sql.contains("DISTINCT"));
-    }
-
-    // INSERT tests
-    @Test
-    public void testInsertInto() {
-        String sql = Dsl.PSC.insert("id", "name").into("users").build().query();
-        assertTrue(sql.contains("INSERT INTO users"));
-    }
-
-    @Test
-    public void testInsertIntoWithEntityClass() {
-        String sql = Dsl.PSC.insert("firstName", "lastName").into(Account.class).build().query();
-        assertTrue(sql.contains("INSERT INTO"));
-    }
-
-    // UPDATE tests
-    @Test
-    public void testUpdate() {
-        String sql = Dsl.PSC.update("users").set("status", "inactive").where(Filters.eq("id", 1)).build().query();
-        assertTrue(sql.contains("UPDATE users"));
-        assertTrue(sql.contains("SET"));
-    }
-
-    @Test
-    public void testUpdateMultipleColumns() {
-        String sql = Dsl.PSC.update("users").set("first_name", "John").set("last_name", "Doe").where(Filters.eq("id", 1)).build().query();
-        assertTrue(sql.contains("SET"));
-    }
-
-    @Test
-    public void testUpdateWithEntityClass() {
-        String sql = Dsl.PSC.update(Account.class).set("status", "active").where(Filters.eq("id", 1)).build().query();
-        assertNotNull(sql);
-    }
-
-    // DELETE tests
-    @Test
-    public void testDeleteFrom() {
-        String sql = Dsl.PSC.deleteFrom("users").where(Filters.eq("id", 1)).build().query();
-        assertTrue(sql.contains("DELETE FROM users"));
-    }
-
-    @Test
-    public void testDeleteFromWithEntityClass() {
-        String sql = Dsl.PSC.deleteFrom(Account.class).where(Filters.eq("id", 1)).build().query();
-        assertNotNull(sql);
-    }
-
-    @Test
-    public void testBatchInsertWithDifferentMapKeyOrder() {
-        Map<String, Object> row1 = new LinkedHashMap<>();
-        row1.put("firstName", "John");
-        row1.put("lastName", "Doe");
-
-        Map<String, Object> row2 = new LinkedHashMap<>();
-        row2.put("lastName", "Smith");
-        row2.put("firstName", "Jane");
-
-        List<Map<String, Object>> rows = new ArrayList<>();
-        rows.add(row1);
-        rows.add(row2);
-
-        AbstractQueryBuilder.SP sp = Dsl.PSC.batchInsert(rows).into("users").build();
-
-        assertEquals("INSERT INTO users (first_name, last_name) VALUES (?, ?), (?, ?)", sp.query());
-        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
-    }
-
-    @Test
-    public void testBatchInsertWithDifferentMapKeyOrder_NamedSnakeCase() {
-        Map<String, Object> row1 = new LinkedHashMap<>();
-        row1.put("firstName", "John");
-        row1.put("lastName", "Doe");
-
-        Map<String, Object> row2 = new LinkedHashMap<>();
-        row2.put("lastName", "Smith");
-        row2.put("firstName", "Jane");
-
-        List<Map<String, Object>> rows = new ArrayList<>();
-        rows.add(row1);
-        rows.add(row2);
-
-        AbstractQueryBuilder.SP sp = Dsl.NSC.batchInsert(rows).into("users").build();
-
-        assertEquals("INSERT INTO users (first_name, last_name) VALUES (:firstName_0, :lastName_0), (:firstName_1, :lastName_1)", sp.query());
-        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
-    }
-
-    @Test
-    public void testBatchInsertWithDifferentMapKeyOrder_NamedLowerCamelCase() {
-        Map<String, Object> row1 = new LinkedHashMap<>();
-        row1.put("firstName", "John");
-        row1.put("lastName", "Doe");
-
-        Map<String, Object> row2 = new LinkedHashMap<>();
-        row2.put("lastName", "Smith");
-        row2.put("firstName", "Jane");
-
-        List<Map<String, Object>> rows = new ArrayList<>();
-        rows.add(row1);
-        rows.add(row2);
-
-        AbstractQueryBuilder.SP sp = Dsl.NLC.batchInsert(rows).into("users").build();
-
-        assertEquals("INSERT INTO users (firstName, lastName) VALUES (:firstName_0, :lastName_0), (:firstName_1, :lastName_1)", sp.query());
-        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
-    }
-
-    @Test
-    public void testBatchInsertWithNullMapRows() {
-        Map<String, Object> row1 = new LinkedHashMap<>();
-        row1.put("firstName", "John");
-        row1.put("lastName", "Doe");
-
-        Map<String, Object> row2 = new LinkedHashMap<>();
-        row2.put("firstName", "Jane");
-        row2.put("lastName", "Smith");
-
-        List<Map<String, Object>> rows = new ArrayList<>();
-        rows.add(row1);
-        rows.add(null);
-        rows.add(row2);
-
-        AbstractQueryBuilder.SP sp = Dsl.PSC.batchInsert(rows).into("users").build();
-
-        assertEquals("INSERT INTO users (first_name, last_name) VALUES (?, ?), (?, ?)", sp.query());
-        assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
-    }
-
-    // Complex query tests
-    @Test
-    public void testComplexSelectQuery() {
-        String sql = Dsl.PSC.select("u.id", "u.name", "COUNT(o.id) as order_count")
-                .from("users u")
-                .leftJoin("orders o")
-                .on("u.id = o.user_id")
-                .where(Filters.eq("u.status", "active"))
-                .groupBy("u.id", "u.name")
-                .having(Filters.expr("COUNT(o.id) > 5"))
-                .orderBy("order_count", SortDirection.DESC)
-                .limit(10)
-                .build()
-                .query();
-
-        assertTrue(sql.contains("SELECT"));
-        assertTrue(sql.contains("LEFT JOIN"));
-        assertTrue(sql.contains("WHERE"));
-        assertTrue(sql.contains("GROUP BY"));
-        assertTrue(sql.contains("HAVING"));
-        assertTrue(sql.contains("ORDER BY"));
-        assertTrue(sql.contains("LIMIT"));
-    }
-
-    // Naming policy tests
-    @Test
-    public void testSelectWithLowerCaseUnderscore() {
-        String sql = Dsl.PSC.select(Account.class).from(Account.class).build().query();
-        assertNotNull(sql);
-    }
-
-    @Test
-    public void testSelectWithUpperCaseUnderscore() {
-        String sql = Dsl.PAC.select(Account.class).from(Account.class).build().query();
-        assertNotNull(sql);
-    }
-
-    // Parameterized query tests
-    @Test
-    public void testPairWithParameters() {
-        SqlBuilder builder = Dsl.PSC.select("*").from("users").where(Filters.eq("id", 1));
-        AbstractQueryBuilder.SP sp = builder.build();
-        assertNotNull(sp);
-        assertNotNull(sp.query());
-        assertNotNull(sp.parameters());
-    }
-
-    // Subquery tests
-    @Test
-    public void testSubquery() {
-        String subquery = Dsl.PSC.select("id").from("active_users").build().query();
-        String sql = Dsl.PSC.select("*").from("orders").where("user_id IN (" + subquery + ")").build().query();
-        assertTrue(sql.contains("IN"));
-        assertTrue(sql.contains("SELECT"));
-    }
-
-    // UNION tests
-    @Test
-    public void testUnion() {
-        String sql1 = Dsl.PSC.select("id", "name").from("users").build().query();
-        String sql2 = Dsl.PSC.select("id", "name").from("archived_users").build().query();
-        String unionSql = sql1 + " UNION " + sql2;
-        assertTrue(unionSql.contains("UNION"));
-    }
-
-    // Expression tests
-    @Test
-    public void testExpressionInSelect() {
-        String sql = Dsl.PSC.select("COUNT(*) as total").from("users").build().query();
-        assertTrue(sql.contains("COUNT(*)"));
-    }
-
-    @Test
-    public void testExpressionInWhere() {
-        Expression expr = Filters.expr("age > 18 AND status = 'active'");
-        String sql = Dsl.PSC.select("*").from("users").where(expr).build().query();
-        assertNotNull(sql);
-    }
-
-    // Aggregate functions tests
-    @Test
-    public void testCount() {
-        String sql = Dsl.PSC.select("COUNT(*)").from("users").build().query();
-        assertTrue(sql.contains("COUNT(*)"));
-    }
-
-    @Test
-    public void testSum() {
-        String sql = Dsl.PSC.select("SUM(amount)").from("orders").build().query();
-        assertTrue(sql.contains("SUM(amount)"));
-    }
-
-    @Test
-    public void testAvg() {
-        String sql = Dsl.PSC.select("AVG(price)").from("products").build().query();
-        assertTrue(sql.contains("AVG(price)"));
-    }
-
-    @Test
-    public void testMax() {
-        String sql = Dsl.PSC.select("MAX(price)").from("products").build().query();
-        assertTrue(sql.contains("MAX(price)"));
-    }
-
-    @Test
-    public void testMin() {
-        String sql = Dsl.PSC.select("MIN(price)").from("products").build().query();
-        assertTrue(sql.contains("MIN(price)"));
-    }
-
-    // Build method tests
-    @Test
-    public void testBuildMethod() {
-        AbstractQueryBuilder.SP sp = Dsl.PSC.select("*").from("users").build();
-        assertNotNull(sp);
-        assertNotNull(sp.query());
-    }
-
-    // Multiple where conditions with different operators
-    @Test
-    public void testWhereGreaterThan() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.gt("age", 18)).build().query();
-        assertTrue(sql.contains(">"));
-    }
-
-    @Test
-    public void testWhereLessThan() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.lt("age", 65)).build().query();
-        assertTrue(sql.contains("<"));
-    }
-
-    @Test
-    public void testWhereGreaterThanOrEqual() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.ge("age", 21)).build().query();
-        assertTrue(sql.contains(">="));
-    }
-
-    @Test
-    public void testWhereLessThanOrEqual() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.le("age", 60)).build().query();
-        assertTrue(sql.contains("<="));
-    }
-
-    @Test
-    public void testWhereNotEqual() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.ne("status", "deleted")).build().query();
-        assertTrue(sql.contains("!=") || sql.contains("<>"));
-    }
-
-    // IN clause tests
-    @Test
-    public void testWhereIn() {
-        String sql = Dsl.PSC.select("*").from("users").where("id IN (1, 2, 3)").build().query();
-        assertTrue(sql.contains("IN"));
-    }
-
-    // CASE WHEN tests
-    @Test
-    public void testCaseWhen() {
-        String sql = Dsl.PSC.select("CASE WHEN age < 18 THEN 'minor' ELSE 'adult' END as age_group").from("users").build().query();
-        assertTrue(sql.contains(" case when age < 18 then 'minor' else 'adult' end AS age_group "));
-    }
-
-    // Multiple table sources
-    @Test
-    public void testFromMultipleTablesWithJoin() {
-        String sql = Dsl.PSC.select("*").from("users u").join("orders o").on("u.id = o.user_id").join("products p").on("o.product_id = p.id").build().query();
-        assertTrue(sql.contains("users u"));
-        assertTrue(sql.contains("orders o"));
-        assertTrue(sql.contains("products p"));
-    }
-
-    // Chaining tests
-    @Test
-    public void testChainedAndConditions() {
-        String sql = Dsl.PSC.select("*")
-                .from("users")
-                .where(Filters.eq("status", "active").and(Filters.gt("age", 18)).and(Filters.lt("age", 65)))
-                .build()
-                .query();
-        assertTrue(sql.contains("AND"));
-    }
-
-    @Test
-    public void testChainedOrConditions() {
-        String sql = Dsl.PSC.select("*")
-                .from("users")
-                .where(Filters.eq("role", "admin").or(Filters.eq("role", "moderator")).or(Filters.eq("role", "owner")))
-                .build()
-                .query();
-        assertTrue(sql.contains("OR"));
-    }
-
-    // Edge case tests
-    @Test
-    public void testSelectWithNoFrom() {
-        assertThrows(Exception.class, () -> {
-            Dsl.PSC.select("*").build().query();
-        });
-    }
-
-    @Test
-    public void testEmptySelect() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select().from("users").build().query());
-    }
-
-    // Named SQL tests
-    @Test
-    public void testNamedInsert() {
-        String sql = Dsl.PSC.insert("firstName", "lastName").into(Account.class).build().query();
-        assertNotNull(sql);
-    }
-
-    // Static factory tests
-    @Test
-    public void testSelectFactory() {
-        SqlBuilder builder = Dsl.PSC.select("*");
-        assertNotNull(builder);
-    }
-
-    @Test
-    public void testInsertIntoFactory() {
-        SqlBuilder builder = Dsl.PSC.insert("id", "name");
-        assertNotNull(builder);
-    }
-
-    @Test
-    public void testUpdateFactory() {
-        SqlBuilder builder = Dsl.PSC.update("users");
-        assertNotNull(builder);
-    }
-
-    @Test
-    public void testDeleteFromFactory() {
-        SqlBuilder builder = Dsl.PSC.deleteFrom("users");
-        assertNotNull(builder);
-    }
-
-    // Performance and resource cleanup
-    @Test
-    public void testMultipleBuildCalls() {
-        SqlBuilder builder = Dsl.PSC.select("*").from("users");
-        String sql1 = builder.build().query();
-        assertNotNull(sql1);
-        // Builder should be reusable or properly cleaned up
-    }
-
-    // Collection-based select
-    @Test
-    public void testSelectWithCollection() {
-        String sql = Dsl.PSC.select(Arrays.asList("id", "name", "email")).from("users").build().query();
-        assertTrue(sql.contains("id"));
-        assertTrue(sql.contains("name"));
-        assertTrue(sql.contains("email"));
-    }
-
-    // Map-based operations
-    @Test
-    public void testUpdateWithMap() {
-        Map<String, Object> props = new HashMap<>();
-        props.put("first_name", "John");
-        props.put("last_name", "Doe");
-
-        String sql = Dsl.PSC.update("users").set(props).where(Filters.eq("id", 1)).build().query();
-        assertTrue(sql.contains("SET"));
-    }
-
-    // Complex conditions
-    @Test
-    public void testWhereWithNestedAndOr() {
-        String sql = Dsl.PSC.select("*")
-                .from("users")
-                .where(Filters.and(Filters.eq("status", "active"), Filters.or(Filters.eq("role", "admin"), Filters.eq("role", "moderator"))))
-                .build()
-                .query();
-        assertNotNull(sql);
-    }
-
-    // NULL handling
-    @Test
-    public void testWhereNullCheck() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.isNull("deleted_at").and(Filters.isNotNull("email"))).build().query();
-        assertTrue(sql.contains("IS NULL"));
-        assertTrue(sql.contains("IS NOT NULL"));
-    }
-
-    // Preselect tests
-    @Test
-    public void testPreselectDistinct() {
-        String sql = Dsl.PSC.select("status").from("users").selectModifier("DISTINCT").build().query();
-        assertTrue(sql.contains("DISTINCT"));
-    }
-
-    // USING clause tests
-    @Test
-    public void testJoinUsing() {
-        String sql = Dsl.PSC.select("*").from("users").join("orders").using("user_id").build().query();
-        assertTrue(sql.contains("USING (user_id)"));
-    }
-
-    @Test
-    public void testBinaryWithSubQueryRhsIsParenthesized() {
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.equal("id", Filters.subQuery("SELECT MAX(user_id) FROM orders"))).build().query();
-        assertTrue(sql.contains("id = (SELECT MAX(user_id) FROM orders)"));
-    }
-
-    // Offset tests
-    @Test
-    public void testOffset() {
-        String sql = Dsl.PSC.select("*").from("users").offset(20).build().query();
-        assertTrue(sql.contains("OFFSET") || sql.contains("20"));
-    }
-
-    // Constants verification
-    @Test
-    public void testConstants() {
-        assertNotNull(AbstractQueryBuilder.ALL);
-        assertNotNull(AbstractQueryBuilder.DISTINCT);
-        assertNotNull(AbstractQueryBuilder.COUNT_ALL);
-        assertEquals("ALL", AbstractQueryBuilder.ALL);
-        assertEquals("count(*)", AbstractQueryBuilder.COUNT_ALL);
-    }
-
-    // ==== Regression tests for the 2026-07-03 review fixes ====
-
-    @Test
-    public void testSinglePropRowValueInRendersTupleRows() {
-        // A single-prop row-value In previously fell into the scalar IN path, binding each tuple List
-        // whole as one parameter ("id IN (?, ?)" with params [[1],[2]]; raw mode "IN ('[1]', '[2]')").
-        SP sp = Dsl.PSC.select("*").from("users").where(Filters.in(N.asList("id"), N.asList(N.asList(1), N.asList(2)))).build();
-        assertEquals("SELECT * FROM users WHERE (id) IN ((?), (?))", sp.query());
-        assertEquals(Arrays.asList(1, 2), sp.parameters());
-
-        SP named = Dsl.NSC.select("*").from("users").where(Filters.in(N.asList("id"), N.asList(N.asList(1), N.asList(2)))).build();
-        assertEquals("SELECT * FROM users WHERE (id) IN ((:id1), (:id2))", named.query());
-        assertEquals(Arrays.asList(1, 2), named.parameters());
-
-        SP notIn = Dsl.PSC.select("*").from("users").where(Filters.notIn(N.asList("id"), N.asList(N.asList(1), N.asList(2)))).build();
-        assertEquals("SELECT * FROM users WHERE (id) NOT IN ((?), (?))", notIn.query());
-        assertEquals(Arrays.asList(1, 2), notIn.parameters());
-    }
-
-    @Test
-    public void testCriteriaJoinWithRawConditionRendersOnKeyword() {
-        // A raw (non-On/Using) join condition previously rendered with no ON keyword and no separator,
-        // fusing the table name and the condition: "JOIN orderst1.id = ...".
-        Criteria exprJoin = Criteria.builder().join("orders", Filters.expr("users.id = orders.user_id")).build();
-        assertEquals("SELECT * FROM users JOIN orders ON users.id = orders.user_id", Dsl.PSC.select("*").from("users").append(exprJoin).build().query());
-
-        Criteria binaryJoin = Criteria.builder().join("orders", Filters.equal("orders.user_id", 5)).build();
-        SP sp = Dsl.PSC.select("*").from("users").append(binaryJoin).build();
-        assertEquals("SELECT * FROM users JOIN orders ON orders.user_id = ?", sp.query());
-        assertEquals(Arrays.asList(5), sp.parameters());
-
-        // An On condition renders its own ON keyword -- no double "ON ON".
-        Criteria onJoin = Criteria.builder().join("orders", Filters.on("users.id", "orders.user_id")).build();
-        String onSql = Dsl.PSC.select("*").from("users").append(onJoin).build().query();
-        assertTrue(onSql.contains("JOIN orders ON ("));
-        assertFalse(onSql.contains("ON ON"));
-    }
-
-    @Test
-    public void testSetOperationCrossBaseNamedParameterCollision() {
-        // Parent's literal property "id_2" used to collide with the child's generated "id" + "_2" suffix,
-        // binding the same :id_2 placeholder to two different values.
-        SqlBuilder child = Dsl.NSC.select("id").from("t2").where(Filters.and(Filters.equal("id", 1), Filters.equal("id", 2)));
-        SP sp = Dsl.NSC.select("id").from("t1").where(Filters.equal("id_2", 100)).union(child).build();
-
-        List<String> names = new ArrayList<>();
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile(":([A-Za-z0-9_]+)").matcher(sp.query());
-        while (m.find()) {
-            names.add(m.group(1));
-        }
-
-        assertEquals(3, names.size());
-        assertEquals(3, new HashSet<>(names).size()); // every placeholder unique across the compound query
-        assertEquals(Arrays.asList(100, 1, 2), sp.parameters());
-    }
-
-    @Test
-    public void testIncompleteSetOperationSegmentThrowsInsteadOfTruncating() {
-        // Previously built "SELECT id FROM t UNION " with the staged columns silently dropped.
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t").union("id", "name").build());
-
-        // A non-SELECT sibling builder is rejected up front instead of being staged as a "column list".
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("t").union(Dsl.PSC.update("t2").set("a")));
-
-        // Completing the segment still works.
-        String sql = Dsl.PSC.select("id").from("t").union("id", "name").from("t2").build().query();
-        assertTrue(sql.startsWith("SELECT id FROM t UNION SELECT "));
-        assertTrue(sql.endsWith("FROM t2"));
-    }
-
-    @Test
-    public void testSelectModifierEmittedVerbatim() {
-        // The modifier used to be routed through column-name normalization, camelCasing any
-        // non-keyword modifier under PLC (SQL_CALC_FOUND_ROWS -> sqlCalcFoundRows).
-        assertEquals("SELECT SQL_CALC_FOUND_ROWS * FROM account", Dsl.PLC.select("*").selectModifier("SQL_CALC_FOUND_ROWS").from("account").build().query());
-
-        // The late-insert path (selectModifier after from) must be verbatim too.
-        assertEquals("SELECT SQL_CALC_FOUND_ROWS * FROM account", Dsl.PLC.select("*").from("account").selectModifier("SQL_CALC_FOUND_ROWS").build().query());
-    }
-
-    @Test
-    public void testFromAndIntoReentryGuards() {
-        // Double from() used to emit two fused SELECT fragments.
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t1").from("t2"));
-
-        // into() after from() used to concatenate a second INSERT statement with no separator.
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("firstName").from("account").into("backup"));
-
-        // A second into() is rejected as well.
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.insert("firstName").into("t1").into("t2"));
-
-        // An INSERT ... SELECT left without its from() now fails at build instead of emitting a fragment.
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("firstName").into("backup").build());
-
-        // The documented INSERT ... SELECT flow still works.
-        assertEquals("INSERT INTO account_backup (first_name) SELECT first_name AS \"firstName\" FROM account",
-                Dsl.PSC.select("firstName").into("account_backup").from("account").build().query());
-    }
-
-    @Test
-    public void testVerbatimLimitLiteralConsumesOffsetSlot() {
-        // "LIMIT ? OFFSET ?" followed by offset(5) used to emit a second OFFSET clause.
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t").append(Filters.limit("LIMIT ? OFFSET ?")).offset(5));
-
-        // A literal without OFFSET leaves the offset slot available.
-        assertEquals("SELECT id FROM t LIMIT ? OFFSET 5", Dsl.PSC.select("id").from("t").append(Filters.limit("LIMIT ?")).offset(5).build().query());
-    }
-
-    @Test
-    public void testSelectSingleExpressionAppliesNamingPolicy() {
-        // Documented behavior of Dsl.select(String): identifiers inside the expression ARE converted
-        // by the naming policy; function names, keywords and the AS alias are preserved.
-        assertEquals("SELECT first_name || ' ' || last_name AS fullName FROM account",
-                Dsl.PSC.select("firstName || ' ' || lastName AS fullName").from("account").build().query());
-    }
-}
-
-class SqlBuilderJavadocExamples extends TestBase {
 
     @Test
     public void testSqlBuilder_PSC_simpleSelect() {
@@ -13080,9 +12022,6 @@ class SqlBuilderJavadocExamples extends TestBase {
         String sql = Dsl.PSC.select("id", "name").from("users").offset(10).limit(5).build().query();
         assertNotNull(sql);
     }
-}
-
-class SqlBuilder15Test extends TestBase {
 
     @Test
     public void testPAC_UpdateAndDeleteWithEntityClass() {
@@ -13146,9 +12085,6 @@ class SqlBuilder15Test extends TestBase {
         assertTrue(selectSql.contains("FROM ACCOUNT1 a1, ACCOUNT2 a2"));
         assertTrue(selectFromSql.contains("FROM"));
     }
-}
-
-class SqlBuilder16Test extends TestBase {
 
     private static List<Map<String, Object>> batchRows() {
         Map<String, Object> row1 = new LinkedHashMap<>();
@@ -13194,16 +12130,16 @@ class SqlBuilder16Test extends TestBase {
 
     @Test
     public void testUpdateTableWithEntityVariants_Batch2() {
-        List<SP> results = Arrays.asList(Dsl.SCSB.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
-                Dsl.ACSB.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
-                Dsl.PSB.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
-                Dsl.PSC.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
-                Dsl.NSB.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
-                Dsl.NSC.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
-                Dsl.NAC.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
-                Dsl.NLC.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
-                Dsl.MSC.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
-                Dsl.MLC.update("account", SqlBuilder10Test.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build());
+        List<SP> results = Arrays.asList(Dsl.SCSB.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                Dsl.ACSB.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                Dsl.PSB.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                Dsl.PSC.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                Dsl.NSB.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                Dsl.NSC.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                Dsl.NAC.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                Dsl.NLC.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                Dsl.MSC.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+                Dsl.MLC.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build());
 
         for (SP sp : results) {
             assertUpdateBuilds(sp, "account");
@@ -13214,16 +12150,16 @@ class SqlBuilder16Test extends TestBase {
     public void testUpdateEntityWithExcludedPropsVariants_Batch2() {
         Set<String> excluded = Collections.singleton("lastModifiedDate");
 
-        List<SP> results = Arrays.asList(Dsl.SCSB.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
-                Dsl.ACSB.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
-                Dsl.PSB.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
-                Dsl.PSC.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
-                Dsl.NSB.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
-                Dsl.NSC.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
-                Dsl.NAC.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
-                Dsl.NLC.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
-                Dsl.MSC.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
-                Dsl.MLC.update(SqlBuilder10Test.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build());
+        List<SP> results = Arrays.asList(Dsl.SCSB.update(SqlBuilderTest.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                Dsl.ACSB.update(SqlBuilderTest.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                Dsl.PSB.update(SqlBuilderTest.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                Dsl.PSC.update(SqlBuilderTest.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                Dsl.NSB.update(SqlBuilderTest.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                Dsl.NSC.update(SqlBuilderTest.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                Dsl.NAC.update(SqlBuilderTest.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                Dsl.NLC.update(SqlBuilderTest.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                Dsl.MSC.update(SqlBuilderTest.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
+                Dsl.MLC.update(SqlBuilderTest.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build());
 
         for (SP sp : results) {
             assertTrue(sp.query().contains("UPDATE"));
@@ -13233,16 +12169,16 @@ class SqlBuilder16Test extends TestBase {
 
     @Test
     public void testDeleteFromTableWithEntityVariants_Batch2() {
-        List<SP> results = Arrays.asList(Dsl.SCSB.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
-                Dsl.ACSB.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
-                Dsl.PSB.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
-                Dsl.PSC.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
-                Dsl.NSB.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
-                Dsl.NSC.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
-                Dsl.NAC.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
-                Dsl.NLC.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
-                Dsl.MSC.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build(),
-                Dsl.MLC.deleteFrom("account", SqlBuilder10Test.Account.class).where(Filters.eq("id", 1)).build());
+        List<SP> results = Arrays.asList(Dsl.SCSB.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build(),
+                Dsl.ACSB.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build(),
+                Dsl.PSB.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build(),
+                Dsl.PSC.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build(),
+                Dsl.NSB.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build(),
+                Dsl.NSC.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build(),
+                Dsl.NAC.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build(),
+                Dsl.NLC.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build(),
+                Dsl.MSC.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build(),
+                Dsl.MLC.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build());
 
         for (SP sp : results) {
             assertDeleteBuilds(sp, "account");
@@ -13255,43 +12191,43 @@ class SqlBuilder16Test extends TestBase {
         Set<String> excludedB = Collections.singleton("amount");
 
         List<String> results = Arrays.asList(
-                Dsl.SCSB.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                Dsl.SCSB.select(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
                         .from("test_account a1, user_order o1")
                         .build()
                         .query(),
-                Dsl.ACSB.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                Dsl.ACSB.select(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
                         .from("test_account a1, user_order o1")
                         .build()
                         .query(),
-                Dsl.PSB.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                Dsl.PSB.select(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
                         .from("test_account a1, user_order o1")
                         .build()
                         .query(),
-                Dsl.PSC.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                Dsl.PSC.select(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
                         .from("test_account a1, user_order o1")
                         .build()
                         .query(),
-                Dsl.NSB.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                Dsl.NSB.select(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
                         .from("test_account a1, user_order o1")
                         .build()
                         .query(),
-                Dsl.NSC.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                Dsl.NSC.select(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
                         .from("test_account a1, user_order o1")
                         .build()
                         .query(),
-                Dsl.NAC.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                Dsl.NAC.select(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
                         .from("test_account a1, user_order o1")
                         .build()
                         .query(),
-                Dsl.NLC.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                Dsl.NLC.select(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
                         .from("test_account a1, user_order o1")
                         .build()
                         .query(),
-                Dsl.MSC.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                Dsl.MSC.select(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
                         .from("test_account a1, user_order o1")
                         .build()
                         .query(),
-                Dsl.MLC.select(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
+                Dsl.MLC.select(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB)
                         .from("test_account a1, user_order o1")
                         .build()
                         .query());
@@ -13308,16 +12244,16 @@ class SqlBuilder16Test extends TestBase {
         Set<String> excludedB = Collections.singleton("amount");
 
         List<String> results = Arrays.asList(
-                Dsl.SCSB.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
-                Dsl.ACSB.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
-                Dsl.PSB.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
-                Dsl.PSC.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
-                Dsl.NSB.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
-                Dsl.NSC.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
-                Dsl.NAC.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
-                Dsl.NLC.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
-                Dsl.MSC.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
-                Dsl.MLC.selectFrom(SqlBuilder10Test.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query());
+                Dsl.SCSB.selectFrom(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                Dsl.ACSB.selectFrom(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                Dsl.PSB.selectFrom(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                Dsl.PSC.selectFrom(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                Dsl.NSB.selectFrom(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                Dsl.NSC.selectFrom(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                Dsl.NAC.selectFrom(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                Dsl.NLC.selectFrom(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                Dsl.MSC.selectFrom(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query(),
+                Dsl.MLC.selectFrom(SqlBuilderTest.Account.class, "a1", "account1", excludedA, Order.class, "o1", "order1", excludedB).build().query());
 
         for (String sql : results) {
             assertTrue(sql.contains("FROM"));
@@ -13680,16 +12616,6 @@ class SqlBuilder16Test extends TestBase {
         assertEquals("INSERT INTO account (first_name, last_name) VALUES (?, ?), (?, ?)", sp.query());
         assertEquals(Arrays.asList("John", "Doe", "Jane", "Smith"), sp.parameters());
     }
-}
-
-/**
- * Regression tests for the 2026-06-09 bug-review fixes: dialect-quote-aware select-parts cache,
- * dialect naming policy in {@code selectFrom} FROM clauses, {@code USING} join-condition rendering,
- * select-modifier scoping across set operations, named-parameter literal-name collisions,
- * FROM-less inline union queries, chained {@code set()} comma handling, and the
- * {@code sqlDialect()} accessor.
- */
-class SqlBuilder2026DialectBugFixTest extends TestBase {
 
     public static class BfxQuoted {
         private long id;

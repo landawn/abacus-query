@@ -1,28 +1,30 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.query.SortDirection;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.SortDirection;
+import com.landawn.abacus.util.NamingPolicy;
+
 /**
  * Comprehensive test class for {@link OrderBy}.
  */
 @Tag("2025")
-class OrderBy2025Test extends TestBase {
-
+public class OrderByTest extends TestBase {
     @Test
     public void testConstructorWithCondition() {
         OrderBy orderBy = new OrderBy(Filters.expr("name ASC"));
@@ -317,7 +319,7 @@ class OrderBy2025Test extends TestBase {
     public void testEquals_DifferentClass() {
         OrderBy orderBy = new OrderBy("column");
         GroupBy groupBy = new GroupBy("column");
-        assertNotEquals(orderBy, (Object) groupBy);
+        assertNotEquals(orderBy, groupBy);
     }
 
     @Test
@@ -359,19 +361,6 @@ class OrderBy2025Test extends TestBase {
         OrderBy orderBy2 = new OrderBy("name", SortDirection.DESC);
         assertNotEquals(orderBy1.hashCode(), orderBy2.hashCode());
     }
-}
-
-public class OrderByTest extends TestBase {
-
-    @Test
-    public void testConstructorWithCondition() {
-        Expression expr = Filters.expr("CASE WHEN status='urgent' THEN 1 ELSE 2 END");
-        OrderBy orderBy = Filters.orderBy(expr);
-
-        Assertions.assertNotNull(orderBy);
-        Assertions.assertEquals(Operator.ORDER_BY, orderBy.operator());
-        Assertions.assertEquals(expr, orderBy.getCondition());
-    }
 
     @Test
     public void testConstructorWithVarArgs() {
@@ -380,46 +369,6 @@ public class OrderByTest extends TestBase {
         Assertions.assertEquals(Operator.ORDER_BY, orderBy.operator());
         String result = orderBy.toString();
         Assertions.assertTrue(result.contains("country, state, city"));
-    }
-
-    @Test
-    public void testConstructorWithSingleProperty() {
-        OrderBy orderBy = Filters.orderBy("lastName");
-
-        String result = orderBy.toString();
-        Assertions.assertTrue(result.contains("lastName"));
-    }
-
-    @Test
-    public void testConstructorWithPropertyAndDirection() {
-        OrderBy orderBy = Filters.orderBy("price", SortDirection.DESC);
-
-        String result = orderBy.toString();
-        Assertions.assertTrue(result.contains("price DESC"));
-    }
-
-    @Test
-    public void testConstructorWithCollectionAndDirection() {
-        List<String> dateFields = Arrays.asList("created", "updated", "published");
-        OrderBy orderBy = Filters.orderBy(dateFields, SortDirection.DESC);
-
-        String result = orderBy.toString();
-        Assertions.assertTrue(result.contains("created DESC, updated DESC, published DESC"));
-    }
-
-    @Test
-    public void testConstructorWithMap() {
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("isActive", SortDirection.DESC);
-        orders.put("priority", SortDirection.DESC);
-        orders.put("created", SortDirection.ASC);
-
-        OrderBy orderBy = Filters.orderBy(orders);
-
-        String result = orderBy.toString();
-        Assertions.assertTrue(result.contains("isActive DESC"));
-        Assertions.assertTrue(result.contains("priority DESC"));
-        Assertions.assertTrue(result.contains("created ASC"));
     }
 
     @Test
@@ -466,46 +415,6 @@ public class OrderByTest extends TestBase {
     public void testCreateConditionWithEmptyMap() {
         Map<String, SortDirection> emptyMap = new LinkedHashMap<>();
         assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(emptyMap));
-    }
-
-    @Test
-    public void testGetCondition() {
-        Expression expr = Filters.expr("custom expression");
-        OrderBy orderBy = Filters.orderBy(expr);
-
-        Assertions.assertEquals(expr, orderBy.getCondition());
-    }
-
-    @Test
-    public void testToString() {
-        OrderBy orderBy = Filters.orderBy("name", "age");
-
-        String result = orderBy.toString();
-        Assertions.assertTrue(result.contains("ORDER BY"));
-        Assertions.assertTrue(result.contains("name, age"));
-    }
-
-    @Test
-    public void testHashCode() {
-        OrderBy orderBy1 = Filters.orderBy("name", "age");
-        OrderBy orderBy2 = Filters.orderBy("name", "age");
-        OrderBy orderBy3 = Filters.orderBy("age", "name");
-
-        Assertions.assertEquals(orderBy1.hashCode(), orderBy2.hashCode());
-        Assertions.assertNotEquals(orderBy1.hashCode(), orderBy3.hashCode());
-    }
-
-    @Test
-    public void testEquals() {
-        OrderBy orderBy1 = Filters.orderBy("name", "age");
-        OrderBy orderBy2 = Filters.orderBy("name", "age");
-        OrderBy orderBy3 = Filters.orderBy("age", "name");
-
-        Assertions.assertTrue(orderBy1.equals(orderBy1));
-        Assertions.assertTrue(orderBy1.equals(orderBy2));
-        Assertions.assertFalse(orderBy1.equals(orderBy3));
-        Assertions.assertFalse(orderBy1.equals(null));
-        Assertions.assertFalse(orderBy1.equals("not an OrderBy"));
     }
 
     @Test

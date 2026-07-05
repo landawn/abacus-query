@@ -1,11 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -13,9 +7,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Like2025Test extends TestBase {
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class LikeTest extends TestBase {
     @Test
     public void testConstructor() {
         Like condition = new Like("age", 25);
@@ -70,7 +72,7 @@ class Like2025Test extends TestBase {
     public void testGetParameters() {
         Like condition = new Like("status", "active");
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -78,7 +80,7 @@ class Like2025Test extends TestBase {
     public void testGetParameters_MultipleValues() {
         Like condition = new Like("count", 42);
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
 
@@ -210,9 +212,6 @@ class Like2025Test extends TestBase {
         String result = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("important"));
     }
-}
-
-public class LikeTest extends TestBase {
 
     @Test
     public void testConstructorStartsWith() {
@@ -261,16 +260,6 @@ public class LikeTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        Like condition = new Like("title", "The%");
-        List<Object> params = condition.getParameters();
-
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertEquals("The%", params.get(0));
-    }
-
-    @Test
     public void testToString() {
         Like condition = new Like("code", "A_B_C");
         String result = condition.toString();
@@ -288,18 +277,6 @@ public class LikeTest extends TestBase {
         Assertions.assertTrue(result.contains("FIRST_NAME"));
         Assertions.assertTrue(result.contains("LIKE"));
         Assertions.assertTrue(result.contains("J%"));
-    }
-
-    @Test
-    public void testHashCode() {
-        Like condition1 = new Like("name", "John%");
-        Like condition2 = new Like("name", "John%");
-        Like condition3 = new Like("name", "Jane%");
-        Like condition4 = new Like("title", "John%");
-
-        Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
-        Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
-        Assertions.assertNotEquals(condition1.hashCode(), condition4.hashCode());
     }
 
     @Test

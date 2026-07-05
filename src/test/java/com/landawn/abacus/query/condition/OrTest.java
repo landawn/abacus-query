@@ -1,13 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -16,16 +8,26 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Or2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class OrTest extends TestBase {
     @Test
     public void testConstructor_VarArgs() {
         Equal cond1 = new Equal("a", 1);
         Equal cond2 = new Equal("b", 2);
         Or junction = new Or(cond1, cond2);
 
-        assertEquals(2, (int) junction.getConditions().size());
+        assertEquals(2, junction.getConditions().size());
         assertEquals(Operator.OR, junction.operator());
     }
 
@@ -36,7 +38,7 @@ class Or2025Test extends TestBase {
         List<Condition> conditions = Arrays.asList(cond1, cond2);
 
         Or junction = new Or(conditions);
-        assertEquals(2, (int) junction.getConditions().size());
+        assertEquals(2, junction.getConditions().size());
     }
 
     @Test
@@ -70,15 +72,15 @@ class Or2025Test extends TestBase {
 
         List<Condition> conditions = junction.getConditions();
         assertNotNull(conditions);
-        assertEquals(2, (int) conditions.size());
+        assertEquals(2, conditions.size());
     }
 
     @Test
     public void testGetParameters() {
         Or junction = new Or(new Equal("a", 1), new Equal("b", "test"));
         List<Object> params = junction.getParameters();
-        assertEquals(2, (int) params.size());
-        assertEquals((Object) Integer.valueOf(1), params.get(0));
+        assertEquals(2, params.size());
+        assertEquals(Integer.valueOf(1), params.get(0));
         assertEquals("test", params.get(1));
     }
 
@@ -86,7 +88,7 @@ class Or2025Test extends TestBase {
     public void testGetParameters_EmptyConditions() {
         Or junction = new Or();
         List<Object> params = junction.getParameters();
-        assertEquals(0, (int) params.size());
+        assertEquals(0, params.size());
     }
 
     @Test
@@ -156,7 +158,7 @@ class Or2025Test extends TestBase {
         Or extended = original.or(cond3);
 
         assertEquals(Integer.valueOf(3), extended.getConditions().size());
-        assertEquals(2, (int) original.getConditions().size());
+        assertEquals(2, original.getConditions().size());
     }
 
     @Test
@@ -176,9 +178,9 @@ class Or2025Test extends TestBase {
         Or inner = new Or(new Equal("a", 1), new Equal("b", 2));
         Or outer = new Or(inner, new Equal("c", 3));
 
-        assertEquals(2, (int) outer.getConditions().size());
+        assertEquals(2, outer.getConditions().size());
         List<Object> params = outer.getParameters();
-        assertEquals(3, (int) params.size());
+        assertEquals(3, params.size());
     }
 
     @Test
@@ -200,7 +202,7 @@ class Or2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
         Or innerCondition = (Or) result.getCondition();
-        assertEquals(2, (int) innerCondition.getConditions().size());
+        assertEquals(2, innerCondition.getConditions().size());
     }
 
     @Test
@@ -242,10 +244,6 @@ class Or2025Test extends TestBase {
         });
     }
 
-}
-
-public class OrTest extends TestBase {
-
     @Test
     public void testConstructorWithVarArgs() {
         Equal eq1 = Filters.eq("status", "active");
@@ -274,11 +272,6 @@ public class OrTest extends TestBase {
         Or or = Filters.or(conditions);
 
         Assertions.assertEquals(2, or.getConditions().size());
-    }
-
-    @Test
-    public void testConstructorRejectsOnConnectorOperand() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.or(Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
     }
 
     @Test
@@ -311,17 +304,6 @@ public class OrTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        Or or = Filters.or(Filters.eq("status", "active"), Filters.gt("age", 18), Filters.like("name", "%John%"));
-
-        List<Object> params = or.getParameters();
-        Assertions.assertEquals(3, params.size());
-        Assertions.assertTrue(params.contains("active"));
-        Assertions.assertTrue(params.contains(18));
-        Assertions.assertTrue(params.contains("%John%"));
-    }
-
-    @Test
     public void testToString() {
         Or or = Filters.or(Filters.eq("city", "New York"), Filters.eq("city", "Los Angeles"), Filters.eq("city", "Chicago"));
 
@@ -331,14 +313,6 @@ public class OrTest extends TestBase {
         Assertions.assertTrue(result.contains("New York"));
         Assertions.assertTrue(result.contains("Los Angeles"));
         Assertions.assertTrue(result.contains("Chicago"));
-    }
-
-    @Test
-    public void testHashCode() {
-        Or or1 = Filters.or(Filters.eq("status", "active"), Filters.eq("status", "pending"));
-        Or or2 = Filters.or(Filters.eq("status", "active"), Filters.eq("status", "pending"));
-
-        Assertions.assertEquals(or1.hashCode(), or2.hashCode());
     }
 
     @Test
@@ -361,21 +335,5 @@ public class OrTest extends TestBase {
 
         Assertions.assertEquals(3, or.getConditions().size());
         Assertions.assertTrue(or.getParameters().size() >= 5);
-    }
-
-    @Test
-    public void testAndMethod() {
-        Or or = Filters.or(Filters.eq("status", "active"));
-        And and = or.and(Filters.eq("type", "user"));
-        Assertions.assertEquals(Operator.AND, and.operator());
-        Assertions.assertEquals(2, and.getConditions().size());
-    }
-
-    @Test
-    public void testNotMethod() {
-        Or or = Filters.or(Filters.eq("status", "active"));
-        Not not = or.not();
-        Assertions.assertEquals(Operator.NOT, not.operator());
-        Assertions.assertEquals(or, not.getCondition());
     }
 }

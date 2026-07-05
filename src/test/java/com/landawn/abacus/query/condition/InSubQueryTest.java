@@ -1,24 +1,26 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class InSubQuery2025Test extends TestBase {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class InSubQueryTest extends TestBase {
     @Test
     public void testConstructor_SingleProperty() {
         SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM customers WHERE status = 'premium'");
@@ -300,9 +302,6 @@ class InSubQuery2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
     }
-}
-
-public class InSubQueryTest extends TestBase {
 
     @Test
     public void testConstructorWithSinglePropName() {
@@ -366,25 +365,6 @@ public class InSubQueryTest extends TestBase {
         InSubQuery condition = new InSubQuery(propNames, subQuery);
 
         Assertions.assertEquals(propNames, condition.getPropNames());
-    }
-
-    @Test
-    public void testGetSubQuery() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
-        InSubQuery condition = new InSubQuery("user_id", subQuery);
-
-        Assertions.assertEquals(subQuery, condition.getSubQuery());
-    }
-
-    @Test
-    public void testGetParameters() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE status = ?", "active");
-        InSubQuery condition = new InSubQuery("user_id", subQuery);
-
-        List<Object> params = condition.getParameters();
-
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(0, params.size());
     }
 
     @Test
@@ -477,7 +457,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table");
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            new InSubQuery(new ArrayList<String>(), subQuery);
+            new InSubQuery(new ArrayList<>(), subQuery);
         });
     }
 

@@ -1,16 +1,17 @@
 package com.landawn.abacus.query;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.util.SK;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class SK2025Test extends TestBase {
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.SK;
+
+@Tag("2025")
+public class SKTest extends TestBase {
     @Test
     public void testSpecialCharacters() {
         assertEquals((char) 0, SK.CHAR_ZERO);
@@ -304,25 +305,6 @@ class SK2025Test extends TestBase {
         assertNotNull(SK.OR);
         assertNotNull(SK.NULL);
     }
-}
-
-/**
- * Unit tests for the SK (String and Keywords) constants class.
- * Tests all public constants for correct values and types.
- *
- * This class validates that all SQL keywords, operators, and character constants
- * in the SK class have the expected values and are properly initialized.
- */
-public class SKTest extends TestBase {
-
-    // Tests for Character Constants
-
-    @Test
-    void testSpecialCharacters() {
-        assertEquals((char) 0, SK.CHAR_ZERO);
-        assertEquals('\n', SK.CHAR_LF);
-        assertEquals('\r', SK.CHAR_CR);
-    }
 
     @Test
     void testBasicPunctuationCharacters() {
@@ -338,22 +320,6 @@ public class SKTest extends TestBase {
         assertEquals('\\', SK._BACKSLASH);
         assertEquals('\'', SK._SINGLE_QUOTE);
         assertEquals('"', SK._DOUBLE_QUOTE);
-    }
-
-    @Test
-    void testOperatorCharacters() {
-        assertEquals('&', SK._AMPERSAND);
-        assertEquals('|', SK._VERTICAL_BAR);
-        assertEquals('_', SK._UNDERSCORE);
-        assertEquals('<', SK._LESS_THAN);
-        assertEquals('>', SK._GREATER_THAN);
-        assertEquals('=', SK._EQUAL);
-        assertEquals('+', SK._PLUS);
-        assertEquals('-', SK._MINUS);
-        assertEquals('%', SK._PERCENT);
-        assertEquals('/', SK._SLASH);
-        assertEquals('*', SK._ASTERISK);
-        assertEquals('?', SK._QUESTION_MARK);
     }
 
     @Test
@@ -423,16 +389,6 @@ public class SKTest extends TestBase {
         assertEquals("\" ", SK.DOUBLE_QUOTE_SPACE);
         assertEquals(" (", SK.SPACE_PARENTHESIS_L);
         assertEquals(") ", SK.PARENTHESIS_R_SPACE);
-    }
-
-    // Tests for Operator Constants
-
-    @Test
-    void testComparisonOperators() {
-        assertEquals("!=", SK.NOT_EQUAL);
-        assertEquals("<>", SK.NOT_EQUAL_ANSI);
-        assertEquals(">=", SK.GREATER_THAN_OR_EQUAL);
-        assertEquals("<=", SK.LESS_THAN_OR_EQUAL);
     }
 
     @Test
@@ -869,9 +825,6 @@ public class SKTest extends TestBase {
 
         assertEquals("SELECT name, email FROM users ORDER BY name ASC", query2);
     }
-}
-
-class SKJavadocExamples extends TestBase {
 
     @Test
     public void testSK_classLevelExample_buildingQuery() {

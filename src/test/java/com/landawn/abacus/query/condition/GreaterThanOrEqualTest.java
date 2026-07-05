@@ -1,12 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,9 +7,18 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class GreaterThanOrEqual2025Test extends TestBase {
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class GreaterThanOrEqualTest extends TestBase {
     @Test
     public void testConstructor() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("age", 25);
@@ -71,7 +73,7 @@ class GreaterThanOrEqual2025Test extends TestBase {
     public void testGetParameters() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("status", "active");
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -79,7 +81,7 @@ class GreaterThanOrEqual2025Test extends TestBase {
     public void testGetParameters_MultipleValues() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("count", 42);
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
 
@@ -190,18 +192,6 @@ class GreaterThanOrEqual2025Test extends TestBase {
         LessThanOrEqual lessThanOrEqual = new LessThanOrEqual("field", 20);
         assertNotEquals(greaterThanOrEqual, lessThanOrEqual);
     }
-}
-
-public class GreaterThanOrEqualTest extends TestBase {
-
-    @Test
-    public void testConstructor() {
-        GreaterThanOrEqual ge = Filters.ge("age", 18);
-        Assertions.assertNotNull(ge);
-        Assertions.assertEquals("age", ge.getPropName());
-        Assertions.assertEquals(18, (Integer) (Integer) ge.getPropValue());
-        Assertions.assertEquals(Operator.GREATER_THAN_OR_EQUAL, ge.operator());
-    }
 
     @Test
     public void testConstructorWithNullValue() {
@@ -251,54 +241,5 @@ public class GreaterThanOrEqualTest extends TestBase {
         Assertions.assertNotEquals(ge1, ge4);
         Assertions.assertNotEquals(ge1, null);
         Assertions.assertNotEquals(ge1, "string");
-    }
-
-    @Test
-    public void testHashCode() {
-        GreaterThanOrEqual ge1 = Filters.ge("age", 25);
-        GreaterThanOrEqual ge2 = Filters.ge("age", 25);
-
-        Assertions.assertEquals(ge1.hashCode(), ge2.hashCode());
-    }
-
-    @Test
-    public void testGetParameters() {
-        GreaterThanOrEqual ge = Filters.ge("price", 100.0);
-        var params = ge.getParameters();
-
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertEquals(100.0, params.get(0));
-    }
-
-    @Test
-    public void testAnd() {
-        GreaterThanOrEqual ge = Filters.ge("age", 18);
-        LessThan lt = Filters.lt("age", 65);
-        And and = ge.and(lt);
-
-        Assertions.assertNotNull(and);
-        Assertions.assertEquals(Operator.AND, and.operator());
-        Assertions.assertEquals(2, and.getConditions().size());
-    }
-
-    @Test
-    public void testOr() {
-        GreaterThanOrEqual ge = Filters.ge("score", 90);
-        Equal eq = Filters.eq("grade", "A");
-        Or or = ge.or(eq);
-
-        Assertions.assertNotNull(or);
-        Assertions.assertEquals(Operator.OR, or.operator());
-        Assertions.assertEquals(2, or.getConditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        GreaterThanOrEqual ge = Filters.ge("temperature", 0);
-        Not not = ge.not();
-
-        Assertions.assertNotNull(not);
-        Assertions.assertEquals(Operator.NOT, not.operator());
-        Assertions.assertEquals(ge, not.getCondition());
     }
 }

@@ -1,21 +1,23 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Some2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class SomeTest extends TestBase {
     @Test
     public void testConstructor_WithRawSQLSubQuery() {
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE role = 'manager'");
@@ -72,7 +74,7 @@ class Some2025Test extends TestBase {
         Some condition = new Some(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals(true, params.get(0));
     }
 
@@ -87,7 +89,7 @@ class Some2025Test extends TestBase {
 
     @Test
     public void testToString_WithStructuredQuery() {
-        Condition whereCondition = new GreaterThan("experience", (Object) 5);
+        Condition whereCondition = new GreaterThan("experience", 5);
         SubQuery subQuery = Filters.subQuery("employees", Arrays.asList("salary"), whereCondition);
         Some condition = new Some(subQuery);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -197,11 +199,11 @@ class Some2025Test extends TestBase {
 
     @Test
     public void testWithMultipleConditions() {
-        And andCondition = new And(Arrays.asList(new Equal("available", true), new GreaterThan("stock", (Object) 10)));
+        And andCondition = new And(Arrays.asList(new Equal("available", true), new GreaterThan("stock", 10)));
         SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), andCondition);
         Some condition = new Some(subQuery);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int) params.size());
+        assertEquals(2, params.size());
     }
 
     @Test
@@ -222,10 +224,6 @@ class Some2025Test extends TestBase {
         assertNotNull(condition);
     }
 
-}
-
-public class SomeTest extends TestBase {
-
     @Test
     public void testConstructorWithSubQuery() {
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE role = 'manager'");
@@ -234,22 +232,6 @@ public class SomeTest extends TestBase {
         Assertions.assertNotNull(some);
         Assertions.assertEquals(Operator.SOME, some.operator());
         Assertions.assertEquals(subQuery, some.getCondition());
-    }
-
-    @Test
-    public void testGetCondition() {
-        SubQuery subQuery = Filters.subQuery("SELECT price FROM competitor_products");
-        Some some = Filters.some(subQuery);
-
-        Assertions.assertEquals(subQuery, some.getCondition());
-    }
-
-    @Test
-    public void testGetOperator() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM test");
-        Some some = Filters.some(subQuery);
-
-        Assertions.assertEquals(Operator.SOME, some.operator());
     }
 
     @Test
@@ -286,28 +268,6 @@ public class SomeTest extends TestBase {
 
         String result = some.toString();
         Assertions.assertEquals("SOME (SELECT level FROM requirements)", result);
-    }
-
-    @Test
-    public void testRejectsStandalonePredicateUse() {
-        Some some = Filters.some(Filters.subQuery("SELECT score FROM tests"));
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.where(some));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> some.or(Filters.eq("active", true)));
-    }
-
-    @Test
-    public void testHashCode() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM test");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM test");
-        SubQuery subQuery3 = Filters.subQuery("SELECT id FROM other");
-
-        Some some1 = Filters.some(subQuery1);
-        Some some2 = Filters.some(subQuery2);
-        Some some3 = Filters.some(subQuery3);
-
-        Assertions.assertEquals(some1.hashCode(), some2.hashCode());
-        Assertions.assertNotEquals(some1.hashCode(), some3.hashCode());
     }
 
     @Test

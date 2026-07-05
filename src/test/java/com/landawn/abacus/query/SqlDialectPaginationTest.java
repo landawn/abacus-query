@@ -15,11 +15,125 @@ import com.landawn.abacus.query.SqlDialect.SqlPolicy;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
- * Dialect-aware SQL generation driven by {@link SqlDialect#productInfo()}: pagination syntax
- * ({@code LIMIT}/{@code OFFSET} vs {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY}) and the
- * identifier-quote fallback for MySQL/MariaDB.
+ * Per-product detection predicates on {@link ProductInfo} ({@code isMySQL()}, {@code isOracle()}, ...)
+ * and their consistency with {@link AbstractQueryBuilder#resolveDialectFamily(ProductInfo)}.
  */
+@Tag("2025")
 public class SqlDialectPaginationTest extends TestBase {
+    @Test
+    public void testPredicatesMatchTheirProduct() {
+        assertTrue(ProductInfo.of("Oracle").isOracle());
+        assertTrue(ProductInfo.of("DB2").isDB2());
+        assertTrue(ProductInfo.of("SQL Server").isSQLServer());
+        assertTrue(ProductInfo.of("MySQL").isMySQL());
+        assertTrue(ProductInfo.of("MariaDB").isMariaDB());
+        assertTrue(ProductInfo.of("PostgreSQL").isPostgreSQL());
+        assertTrue(ProductInfo.of("SQLite").isSQLite());
+        assertTrue(ProductInfo.of("H2").isH2());
+    }
+
+    @Test
+    public void testPredicatesAreCaseInsensitiveSubstringMatches() {
+        // Raw DatabaseMetaData.getDatabaseProductName() values are recognized.
+        assertTrue(ProductInfo.of("Oracle Database 19c").isOracle());
+        assertTrue(ProductInfo.of("Microsoft SQL Server").isSQLServer());
+        assertTrue(ProductInfo.of("sqlserver").isSQLServer());
+        assertTrue(ProductInfo.of("MYSQL").isMySQL());
+        assertTrue(ProductInfo.of("PostgreSQL 16.1").isPostgreSQL());
+    }
+
+    @Test
+    public void testMySqlAndMariaDbAreDistinctProducts() {
+        final ProductInfo mysql = ProductInfo.of("MySQL");
+        assertTrue(mysql.isMySQL());
+        assertFalse(mysql.isMariaDB());
+
+        final ProductInfo mariadb = ProductInfo.of("MariaDB");
+        assertTrue(mariadb.isMariaDB());
+        assertFalse(mariadb.isMySQL());
+    }
+
+    @Test
+    public void testNullNameAndUnknownProductReturnFalse() {
+        final ProductInfo nullName = ProductInfo.of(null);
+        assertFalse(nullName.isOracle());
+        assertFalse(nullName.isMySQL());
+        assertFalse(nullName.isSQLServer());
+
+        final ProductInfo unknown = ProductInfo.of("FancyNewDB");
+        assertFalse(unknown.isOracle());
+        assertFalse(unknown.isDB2());
+        assertFalse(unknown.isSQLServer());
+        assertFalse(unknown.isMySQL());
+        assertFalse(unknown.isMariaDB());
+        assertFalse(unknown.isPostgreSQL());
+        assertFalse(unknown.isSQLite());
+        assertFalse(unknown.isH2());
+    }
+
+    @Test
+    public void testVersionAtLeastAndAtMostAreInclusive() {
+        final ProductInfo mysql = ProductInfo.of("MySQL", "8.0.32");
+        assertTrue(mysql.isVersionAtLeast("8.0"));
+        assertTrue(mysql.isVersionAtLeast("8.0.32")); // equal -> inclusive
+        assertFalse(mysql.isVersionAtLeast("8.1"));
+        assertFalse(mysql.isVersionAtLeast("9"));
+
+        assertTrue(mysql.isVersionAtMost("8.1"));
+        assertTrue(mysql.isVersionAtMost("8.0.32")); // equal -> inclusive
+        assertFalse(mysql.isVersionAtMost("8.0"));
+    }
+
+    @Test
+    public void testVersionComparisonPadsMissingComponentsWithZero() {
+        final ProductInfo v = ProductInfo.of("MySQL", "8.0");
+        assertTrue(v.isVersionAtLeast("8.0.0")); // 8.0 == 8.0.0
+        assertTrue(v.isVersionAtMost("8.0.0"));
+        assertFalse(v.isVersionAtLeast("8.0.1"));
+    }
+
+    @Test
+    public void testVersionComparisonParsesLeadingNumericRun() {
+        final ProductInfo oracle = ProductInfo.of("Oracle", "19c");
+        assertTrue(oracle.isVersionAtLeast("18"));
+        assertTrue(oracle.isVersionAtLeast("19"));
+        assertFalse(oracle.isVersionAtLeast("21"));
+        assertTrue(oracle.isVersionAtMost("21"));
+    }
+
+    @Test
+    public void testVersionComparisonReturnsFalseWhenNotComparable() {
+        assertFalse(ProductInfo.of("MySQL").isVersionAtLeast("8.0")); // absent version ("") -> not comparable
+        assertFalse(ProductInfo.of("MySQL", "unknown").isVersionAtLeast("8")); // not leading-numeric
+        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast(null)); // null argument
+        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast("abc")); // unparseable argument
+        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtMost(null));
+    }
+
+    @Test
+    public void testAbsentVersionIsNormalizedToEmptyAndConsistent() {
+        // Absent/null version normalizes to "" across all construction paths, so version() is never null
+        // and equals/hashCode stay consistent regardless of how "no version" was expressed.
+        assertEquals("", ProductInfo.of("Oracle").version());
+        assertEquals("", ProductInfo.of("Oracle", null).version());
+        assertEquals("", new ProductInfo("Oracle", null).version());
+
+        assertEquals(ProductInfo.of("Oracle"), ProductInfo.of("Oracle", null));
+        assertEquals(ProductInfo.of("Oracle"), new ProductInfo("Oracle", null));
+        assertEquals(ProductInfo.of("Oracle").hashCode(), new ProductInfo("Oracle", null).hashCode());
+    }
+
+    @Test
+    public void testResolveDialectFamilyStaysConsistentWithPredicates() {
+        assertEquals(AbstractQueryBuilder.DialectFamily.ORACLE, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("Oracle Database 19c")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.DB2, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("DB2/LINUXX8664")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.SQL_SERVER, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("Microsoft SQL Server")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.MYSQL, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("MySQL")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.MYSQL, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("MariaDB")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.LIMIT_STYLE, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("PostgreSQL")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.DEFAULT, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("FancyNewDB")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.DEFAULT, AbstractQueryBuilder.resolveDialectFamily(null));
+    }
 
     private static Dsl dslFor(final String productName) {
         return Dsl.forDialect(SqlDialect.builder()
@@ -266,128 +380,5 @@ public class SqlDialectPaginationTest extends TestBase {
         public void setFirstName(final String firstName) {
             this.firstName = firstName;
         }
-    }
-}
-
-/**
- * Per-product detection predicates on {@link ProductInfo} ({@code isMySQL()}, {@code isOracle()}, ...)
- * and their consistency with {@link AbstractQueryBuilder#resolveDialectFamily(ProductInfo)}.
- */
-@Tag("2025")
-class SqlDialectProductInfo2025Test extends TestBase {
-
-    @Test
-    public void testPredicatesMatchTheirProduct() {
-        assertTrue(ProductInfo.of("Oracle").isOracle());
-        assertTrue(ProductInfo.of("DB2").isDB2());
-        assertTrue(ProductInfo.of("SQL Server").isSQLServer());
-        assertTrue(ProductInfo.of("MySQL").isMySQL());
-        assertTrue(ProductInfo.of("MariaDB").isMariaDB());
-        assertTrue(ProductInfo.of("PostgreSQL").isPostgreSQL());
-        assertTrue(ProductInfo.of("SQLite").isSQLite());
-        assertTrue(ProductInfo.of("H2").isH2());
-    }
-
-    @Test
-    public void testPredicatesAreCaseInsensitiveSubstringMatches() {
-        // Raw DatabaseMetaData.getDatabaseProductName() values are recognized.
-        assertTrue(ProductInfo.of("Oracle Database 19c").isOracle());
-        assertTrue(ProductInfo.of("Microsoft SQL Server").isSQLServer());
-        assertTrue(ProductInfo.of("sqlserver").isSQLServer());
-        assertTrue(ProductInfo.of("MYSQL").isMySQL());
-        assertTrue(ProductInfo.of("PostgreSQL 16.1").isPostgreSQL());
-    }
-
-    @Test
-    public void testMySqlAndMariaDbAreDistinctProducts() {
-        final ProductInfo mysql = ProductInfo.of("MySQL");
-        assertTrue(mysql.isMySQL());
-        assertFalse(mysql.isMariaDB());
-
-        final ProductInfo mariadb = ProductInfo.of("MariaDB");
-        assertTrue(mariadb.isMariaDB());
-        assertFalse(mariadb.isMySQL());
-    }
-
-    @Test
-    public void testNullNameAndUnknownProductReturnFalse() {
-        final ProductInfo nullName = ProductInfo.of(null);
-        assertFalse(nullName.isOracle());
-        assertFalse(nullName.isMySQL());
-        assertFalse(nullName.isSQLServer());
-
-        final ProductInfo unknown = ProductInfo.of("FancyNewDB");
-        assertFalse(unknown.isOracle());
-        assertFalse(unknown.isDB2());
-        assertFalse(unknown.isSQLServer());
-        assertFalse(unknown.isMySQL());
-        assertFalse(unknown.isMariaDB());
-        assertFalse(unknown.isPostgreSQL());
-        assertFalse(unknown.isSQLite());
-        assertFalse(unknown.isH2());
-    }
-
-    @Test
-    public void testVersionAtLeastAndAtMostAreInclusive() {
-        final ProductInfo mysql = ProductInfo.of("MySQL", "8.0.32");
-        assertTrue(mysql.isVersionAtLeast("8.0"));
-        assertTrue(mysql.isVersionAtLeast("8.0.32")); // equal -> inclusive
-        assertFalse(mysql.isVersionAtLeast("8.1"));
-        assertFalse(mysql.isVersionAtLeast("9"));
-
-        assertTrue(mysql.isVersionAtMost("8.1"));
-        assertTrue(mysql.isVersionAtMost("8.0.32")); // equal -> inclusive
-        assertFalse(mysql.isVersionAtMost("8.0"));
-    }
-
-    @Test
-    public void testVersionComparisonPadsMissingComponentsWithZero() {
-        final ProductInfo v = ProductInfo.of("MySQL", "8.0");
-        assertTrue(v.isVersionAtLeast("8.0.0")); // 8.0 == 8.0.0
-        assertTrue(v.isVersionAtMost("8.0.0"));
-        assertFalse(v.isVersionAtLeast("8.0.1"));
-    }
-
-    @Test
-    public void testVersionComparisonParsesLeadingNumericRun() {
-        final ProductInfo oracle = ProductInfo.of("Oracle", "19c");
-        assertTrue(oracle.isVersionAtLeast("18"));
-        assertTrue(oracle.isVersionAtLeast("19"));
-        assertFalse(oracle.isVersionAtLeast("21"));
-        assertTrue(oracle.isVersionAtMost("21"));
-    }
-
-    @Test
-    public void testVersionComparisonReturnsFalseWhenNotComparable() {
-        assertFalse(ProductInfo.of("MySQL").isVersionAtLeast("8.0")); // absent version ("") -> not comparable
-        assertFalse(ProductInfo.of("MySQL", "unknown").isVersionAtLeast("8")); // not leading-numeric
-        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast(null)); // null argument
-        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast("abc")); // unparseable argument
-        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtMost(null));
-    }
-
-    @Test
-    public void testAbsentVersionIsNormalizedToEmptyAndConsistent() {
-        // Absent/null version normalizes to "" across all construction paths, so version() is never null
-        // and equals/hashCode stay consistent regardless of how "no version" was expressed.
-        assertEquals("", ProductInfo.of("Oracle").version());
-        assertEquals("", ProductInfo.of("Oracle", null).version());
-        assertEquals("", new ProductInfo("Oracle", null).version());
-
-        assertEquals(ProductInfo.of("Oracle"), ProductInfo.of("Oracle", null));
-        assertEquals(ProductInfo.of("Oracle"), new ProductInfo("Oracle", null));
-        assertEquals(ProductInfo.of("Oracle").hashCode(), new ProductInfo("Oracle", null).hashCode());
-    }
-
-    @Test
-    public void testResolveDialectFamilyStaysConsistentWithPredicates() {
-        assertEquals(AbstractQueryBuilder.DialectFamily.ORACLE, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("Oracle Database 19c")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.DB2, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("DB2/LINUXX8664")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.SQL_SERVER, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("Microsoft SQL Server")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.MYSQL, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("MySQL")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.MYSQL, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("MariaDB")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.LIMIT_STYLE, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("PostgreSQL")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.DEFAULT, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("FancyNewDB")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.DEFAULT, AbstractQueryBuilder.resolveDialectFamily(null));
     }
 }

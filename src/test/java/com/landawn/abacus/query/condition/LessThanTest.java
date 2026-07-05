@@ -1,12 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Date;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,9 +7,18 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class LessThan2025Test extends TestBase {
+import java.util.Date;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class LessThanTest extends TestBase {
     @Test
     public void testConstructor() {
         LessThan condition = new LessThan("age", 25);
@@ -71,7 +73,7 @@ class LessThan2025Test extends TestBase {
     public void testGetParameters() {
         LessThan condition = new LessThan("status", "active");
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -79,7 +81,7 @@ class LessThan2025Test extends TestBase {
     public void testGetParameters_MultipleValues() {
         LessThan condition = new LessThan("count", 42);
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
 
@@ -190,9 +192,6 @@ class LessThan2025Test extends TestBase {
         GreaterThan greaterThan = new GreaterThan("field", 30);
         assertNotEquals(lessThan, greaterThan);
     }
-}
-
-public class LessThanTest extends TestBase {
 
     @Test
     public void testConstructorWithNumber() {
@@ -201,7 +200,7 @@ public class LessThanTest extends TestBase {
         Assertions.assertNotNull(condition);
         Assertions.assertEquals("age", condition.getPropName());
         Assertions.assertEquals(Operator.LESS_THAN, condition.operator());
-        Assertions.assertEquals(18, (Integer) (Integer) condition.getPropValue());
+        Assertions.assertEquals(18, (Integer) condition.getPropValue());
     }
 
     @Test
@@ -233,16 +232,6 @@ public class LessThanTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        LessThan condition = new LessThan("salary", 50000);
-        List<Object> params = condition.getParameters();
-
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(1, params.size());
-        Assertions.assertEquals(50000, params.get(0));
-    }
-
-    @Test
     public void testToString() {
         LessThan condition = new LessThan("amount", 1000);
         String result = condition.toString();
@@ -260,18 +249,6 @@ public class LessThanTest extends TestBase {
         Assertions.assertTrue(result.contains("TOTAL_AMOUNT"));
         Assertions.assertTrue(result.contains("<"));
         Assertions.assertTrue(result.contains("5000"));
-    }
-
-    @Test
-    public void testHashCode() {
-        LessThan condition1 = new LessThan("age", 30);
-        LessThan condition2 = new LessThan("age", 30);
-        LessThan condition3 = new LessThan("age", 40);
-        LessThan condition4 = new LessThan("weight", 30);
-
-        Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
-        Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
-        Assertions.assertNotEquals(condition1.hashCode(), condition4.hashCode());
     }
 
     @Test

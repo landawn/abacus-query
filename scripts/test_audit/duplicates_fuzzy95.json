@@ -1,0 +1,6491 @@
+[
+  {
+    "size": 9,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LessThanTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java"
+    ],
+    "method_names": [
+      "testConstructor_NullPropertyName"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testConstructor_NullPropertyName",
+        "line": 32,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testConstructor_NullPropertyName",
+        "line": 29,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNull2025Test",
+        "name": "testConstructor_NullPropertyName",
+        "line": 26,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testConstructor_NullPropertyName",
+        "line": 29,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java",
+        "class": "LessThanOrEqual2025Test",
+        "name": "testConstructor_NullPropertyName",
+        "line": 30,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LessThanTest.java",
+        "class": "LessThan2025Test",
+        "name": "testConstructor_NullPropertyName",
+        "line": 29,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testConstructor_NullPropertyName",
+        "line": 28,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testConstructor_NullPropertyName",
+        "line": 30,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java",
+        "class": "NotLike2025Test",
+        "name": "testConstructor_NullPropertyName",
+        "line": 29,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 9,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LessThanTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java"
+    ],
+    "method_names": [
+      "testConstructor_EmptyPropertyName"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testConstructor_EmptyPropertyName",
+        "line": 37,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testConstructor_EmptyPropertyName",
+        "line": 34,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNull2025Test",
+        "name": "testConstructor_EmptyPropertyName",
+        "line": 31,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testConstructor_EmptyPropertyName",
+        "line": 34,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java",
+        "class": "LessThanOrEqual2025Test",
+        "name": "testConstructor_EmptyPropertyName",
+        "line": 35,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LessThanTest.java",
+        "class": "LessThan2025Test",
+        "name": "testConstructor_EmptyPropertyName",
+        "line": 34,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testConstructor_EmptyPropertyName",
+        "line": 33,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testConstructor_EmptyPropertyName",
+        "line": 35,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java",
+        "class": "NotLike2025Test",
+        "name": "testConstructor_EmptyPropertyName",
+        "line": 34,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 6,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/CrossJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NaturalJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java"
+    ],
+    "method_names": [
+      "testGetJoinEntities"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/CrossJoinTest.java",
+        "class": "CrossJoin2025Test",
+        "name": "testGetJoinEntities",
+        "line": 47,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+        "class": "FullJoin2025Test",
+        "name": "testGetJoinEntities",
+        "line": 46,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoin2025Test",
+        "name": "testGetJoinEntities",
+        "line": 46,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+        "class": "LeftJoin2025Test",
+        "name": "testGetJoinEntities",
+        "line": 46,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NaturalJoinTest.java",
+        "class": "NaturalJoin2025Test",
+        "name": "testGetJoinEntities",
+        "line": 43,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java",
+        "class": "RightJoin2025Test",
+        "name": "testGetJoinEntities",
+        "line": 46,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 6,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testGetParameters_MultipleValues"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testGetParameters_MultipleValues",
+        "line": 82,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testGetParameters_MultipleValues",
+        "line": 79,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testGetParameters_MultipleValues",
+        "line": 79,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java",
+        "class": "LessThanOrEqual2025Test",
+        "name": "testGetParameters_MultipleValues",
+        "line": 80,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testGetParameters_MultipleValues",
+        "line": 78,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testGetParameters_MultipleValues",
+        "line": 80,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 5,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testGetParameters"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testGetParameters",
+        "line": 74,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testGetParameters",
+        "line": 71,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java",
+        "class": "LessThanOrEqual2025Test",
+        "name": "testGetParameters",
+        "line": 72,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testGetParameters",
+        "line": 70,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testGetParameters",
+        "line": 72,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 5,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotExistsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/SomeTest.java"
+    ],
+    "method_names": [
+      "testGetParameters_WithConditionParameters"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+        "class": "All2025Test",
+        "name": "testGetParameters_WithConditionParameters",
+        "line": 69,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+        "class": "Any2025Test",
+        "name": "testGetParameters_WithConditionParameters",
+        "line": 61,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+        "class": "Exists2025Test",
+        "name": "testGetParameters_WithConditionParameters",
+        "line": 61,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotExistsTest.java",
+        "class": "NotExistsTest",
+        "name": "testGetParameters_WithConditionParameters",
+        "line": 80,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/SomeTest.java",
+        "class": "Some2025Test",
+        "name": "testGetParameters_WithConditionParameters",
+        "line": 69,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 5,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java"
+    ],
+    "method_names": [
+      "testToStringWithNamingPolicy"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaNTest",
+        "name": "testToStringWithNamingPolicy",
+        "line": 218,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaNTest",
+        "name": "testToStringWithNamingPolicy",
+        "line": 238,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+        "class": "IsNotNullTest",
+        "name": "testToStringWithNamingPolicy",
+        "line": 220,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNullTest",
+        "name": "testToStringWithNamingPolicy",
+        "line": 219,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "LikeTest",
+        "name": "testToStringWithNamingPolicy",
+        "line": 284,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 5,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testToString_SnakeCase"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaN2025Test",
+        "name": "testToString_SnakeCase",
+        "line": 60,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testToString_SnakeCase",
+        "line": 79,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+        "class": "IsNotNull2025Test",
+        "name": "testToString_SnakeCase",
+        "line": 51,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testToString_SnakeCase",
+        "line": 95,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNull2025Test",
+        "name": "testToString_SnakeCase",
+        "line": 51,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 5,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/CrossJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java"
+    ],
+    "method_names": [
+      "testToString_Simple"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/CrossJoinTest.java",
+        "class": "CrossJoin2025Test",
+        "name": "testToString_Simple",
+        "line": 85,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+        "class": "FullJoin2025Test",
+        "name": "testToString_Simple",
+        "line": 84,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoin2025Test",
+        "name": "testToString_Simple",
+        "line": 84,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "Join2025Test",
+        "name": "testToString_Simple",
+        "line": 80,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+        "class": "LeftJoin2025Test",
+        "name": "testToString_Simple",
+        "line": 84,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertInto"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSBTest",
+        "name": "testInsertInto",
+        "line": 6334,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testInsertInto",
+        "line": 7259,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testInsertInto",
+        "line": 7966,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testInsertInto",
+        "line": 8757,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testDeleteFrom"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testDeleteFrom",
+        "line": 7335,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testDeleteFrom",
+        "line": 8041,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testDeleteFrom",
+        "line": 8832,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testDeleteFrom",
+        "line": 9760,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testForUpdate"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSBTest",
+        "name": "testForUpdate",
+        "line": 6882,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testForUpdate",
+        "line": 7772,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testForUpdate",
+        "line": 8474,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testForUpdate",
+        "line": 9268,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testNot"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testNot",
+        "line": 155,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+        "class": "IsNotNull2025Test",
+        "name": "testNot",
+        "line": 135,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testNot",
+        "line": 171,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNull2025Test",
+        "name": "testNot",
+        "line": 141,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertSingleColumn"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSBTest",
+        "name": "testInsertSingleColumn",
+        "line": 10322,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSCTest",
+        "name": "testInsertSingleColumn",
+        "line": 10683,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MACTest",
+        "name": "testInsertSingleColumn",
+        "line": 11118,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MLCTest",
+        "name": "testInsertSingleColumn",
+        "line": 11613,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testUpdateEntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testUpdateEntityClass",
+        "line": 7317,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testUpdateEntityClass",
+        "line": 8023,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testUpdateEntityClass",
+        "line": 8814,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testUpdateEntityClass",
+        "line": 9741,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectEntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSBTest",
+        "name": "testSelectEntityClass",
+        "line": 6492,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testSelectEntityClass",
+        "line": 7398,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSelectEntityClass",
+        "line": 8103,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSelectEntityClass",
+        "line": 8894,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertWithCollection"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSBTest",
+        "name": "testInsertWithCollection",
+        "line": 6243,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testInsertWithCollection",
+        "line": 7891,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testInsertWithCollection",
+        "line": 8682,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSBTest",
+        "name": "testInsertWithCollection",
+        "line": 10342,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertWithEntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSBTest",
+        "name": "testInsertWithEntityClass",
+        "line": 6305,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testInsertWithEntityClass",
+        "line": 7235,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testInsertWithEntityClass",
+        "line": 7942,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testInsertWithEntityClass",
+        "line": 8733,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertWithEntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSBTest",
+        "name": "testInsertWithEntityClass",
+        "line": 10396,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSCTest",
+        "name": "testInsertWithEntityClass",
+        "line": 10754,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MACTest",
+        "name": "testInsertWithEntityClass",
+        "line": 11192,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MLCTest",
+        "name": "testInsertWithEntityClass",
+        "line": 11690,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectFromWithAlias"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSBTest",
+        "name": "testSelectFromWithAlias",
+        "line": 6545,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSelectFromWithAlias",
+        "line": 8150,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSelectFromWithAlias",
+        "line": 8942,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testSelectFromWithAlias",
+        "line": 9886,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectFromWithSubEntities"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSBTest",
+        "name": "testSelectFromWithSubEntities",
+        "line": 6552,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testSelectFromWithSubEntities",
+        "line": 7452,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSelectFromWithSubEntities",
+        "line": 8157,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSelectFromWithSubEntities",
+        "line": 8949,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testLimitOffset"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testLimitOffset",
+        "line": 7779,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testLimitOffset",
+        "line": 8481,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testLimitOffset",
+        "line": 9275,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testLimitOffset",
+        "line": 10180,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertSingleExpression"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testInsertSingleExpression",
+        "line": 7157,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testInsertSingleExpression",
+        "line": 7869,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testInsertSingleExpression",
+        "line": 8660,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testInsertSingleExpression",
+        "line": 9582,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testUpdateWithMap"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testUpdateWithMap",
+        "line": 7629,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testUpdateWithMap",
+        "line": 8336,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testUpdateWithMap",
+        "line": 9130,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testUpdateWithMap",
+        "line": 10039,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testNullConditionThrows"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testNullConditionThrows",
+        "line": 7714,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testNullConditionThrows",
+        "line": 8418,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testNullConditionThrows",
+        "line": 9212,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testNullConditionThrows",
+        "line": 10165,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testAllJoinTypes"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testAllJoinTypes",
+        "line": 7721,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testAllJoinTypes",
+        "line": 8425,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testAllJoinTypes",
+        "line": 9219,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testAllJoinTypes",
+        "line": 10100,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testDeleteFromTable"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSBTest",
+        "name": "testDeleteFromTable",
+        "line": 10489,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSCTest",
+        "name": "testDeleteFromTable",
+        "line": 10847,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MACTest",
+        "name": "testDeleteFromTable",
+        "line": 11317,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MLCTest",
+        "name": "testDeleteFromTable",
+        "line": 11795,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testGetParameters"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaNTest",
+        "name": "testGetParameters",
+        "line": 199,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaNTest",
+        "name": "testGetParameters",
+        "line": 219,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+        "class": "IsNotNullTest",
+        "name": "testGetParameters",
+        "line": 201,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNullTest",
+        "name": "testGetParameters",
+        "line": 200,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java"
+    ],
+    "method_names": [
+      "testGetOperator"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaN2025Test",
+        "name": "testGetOperator",
+        "line": 34,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testGetOperator",
+        "line": 56,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNull2025Test",
+        "name": "testGetOperator",
+        "line": 97,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testGetOperator",
+        "line": 65,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotExistsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/SomeTest.java"
+    ],
+    "method_names": [
+      "testConstructor_WithStructuredSubQuery"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+        "class": "All2025Test",
+        "name": "testConstructor_WithStructuredSubQuery",
+        "line": 28,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+        "class": "Exists2025Test",
+        "name": "testConstructor_WithStructuredSubQuery",
+        "line": 28,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotExistsTest.java",
+        "class": "NotExistsTest",
+        "name": "testConstructor_WithStructuredSubQuery",
+        "line": 47,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/SomeTest.java",
+        "class": "Some2025Test",
+        "name": "testConstructor_WithStructuredSubQuery",
+        "line": 28,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/SomeTest.java"
+    ],
+    "method_names": [
+      "testGetCondition"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+        "class": "All2025Test",
+        "name": "testGetCondition",
+        "line": 51,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+        "class": "Any2025Test",
+        "name": "testGetCondition",
+        "line": 43,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+        "class": "Exists2025Test",
+        "name": "testGetCondition",
+        "line": 43,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/SomeTest.java",
+        "class": "Some2025Test",
+        "name": "testGetCondition",
+        "line": 51,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java"
+    ],
+    "method_names": [
+      "testGetCondition"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+        "class": "FullJoin2025Test",
+        "name": "testGetCondition",
+        "line": 56,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoin2025Test",
+        "name": "testGetCondition",
+        "line": 56,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+        "class": "LeftJoin2025Test",
+        "name": "testGetCondition",
+        "line": 56,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java",
+        "class": "RightJoin2025Test",
+        "name": "testGetCondition",
+        "line": 56,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/SomeTest.java"
+    ],
+    "method_names": [
+      "testGetParameters_EmptyForRawSQL"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+        "class": "All2025Test",
+        "name": "testGetParameters_EmptyForRawSQL",
+        "line": 60,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+        "class": "Any2025Test",
+        "name": "testGetParameters_EmptyForRawSQL",
+        "line": 52,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+        "class": "Exists2025Test",
+        "name": "testGetParameters_EmptyForRawSQL",
+        "line": 52,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/SomeTest.java",
+        "class": "Some2025Test",
+        "name": "testGetParameters_EmptyForRawSQL",
+        "line": 60,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java"
+    ],
+    "method_names": [
+      "testToString_WithCondition"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+        "class": "FullJoin2025Test",
+        "name": "testToString_WithCondition",
+        "line": 92,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoin2025Test",
+        "name": "testToString_WithCondition",
+        "line": 92,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+        "class": "LeftJoin2025Test",
+        "name": "testToString_WithCondition",
+        "line": 92,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java",
+        "class": "RightJoin2025Test",
+        "name": "testToString_WithCondition",
+        "line": 92,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 4,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testInheritedMethods"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+        "class": "IsInfiniteTest",
+        "name": "testInheritedMethods",
+        "line": 284,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaNTest",
+        "name": "testInheritedMethods",
+        "line": 258,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+        "class": "IsNotInfiniteTest",
+        "name": "testInheritedMethods",
+        "line": 279,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNullTest",
+        "name": "testInheritedMethods",
+        "line": 259,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertInto"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testInsertInto",
+        "line": 2550,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testInsertInto",
+        "line": 3124,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testInsertInto",
+        "line": 3702,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testUpdate"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testUpdate",
+        "line": 7297,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testUpdate",
+        "line": 8003,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testUpdate",
+        "line": 8794,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testNot"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testNot",
+        "line": 175,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testNot",
+        "line": 171,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testNot",
+        "line": 172,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java"
+    ],
+    "method_names": [
+      "testNot"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+        "class": "GreaterThanOrEqual2025Test",
+        "name": "testNot",
+        "line": 171,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+        "class": "GreaterThan2025Test",
+        "name": "testNot",
+        "line": 172,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java",
+        "class": "LessThanOrEqual2025Test",
+        "name": "testNot",
+        "line": 172,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testOrderBy"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testOrderBy",
+        "line": 8539,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testOrderBy",
+        "line": 9322,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testOrderBy",
+        "line": 10214,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/SomeTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+        "class": "All2025Test",
+        "name": "testEquals_SameObject",
+        "line": 118,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+        "class": "Any2025Test",
+        "name": "testEquals_SameObject",
+        "line": 110,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/SomeTest.java",
+        "class": "Some2025Test",
+        "name": "testEquals_SameObject",
+        "line": 118,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaN2025Test",
+        "name": "testEquals_SameObject",
+        "line": 88,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testEquals_SameObject",
+        "line": 107,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNull2025Test",
+        "name": "testEquals_SameObject",
+        "line": 161,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/SomeTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+        "class": "All2025Test",
+        "name": "testEquals_Null",
+        "line": 143,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+        "class": "Any2025Test",
+        "name": "testEquals_Null",
+        "line": 135,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/SomeTest.java",
+        "class": "Some2025Test",
+        "name": "testEquals_Null",
+        "line": 143,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaN2025Test",
+        "name": "testEquals_Null",
+        "line": 108,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testEquals_Null",
+        "line": 127,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNull2025Test",
+        "name": "testEquals_Null",
+        "line": 155,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/SomeTest.java"
+    ],
+    "method_names": [
+      "testEquals_DifferentClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+        "class": "All2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 150,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+        "class": "Any2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 142,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/SomeTest.java",
+        "class": "Some2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 150,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testEquals_DifferentClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaN2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 114,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 133,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNull2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 149,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/CrossJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java"
+    ],
+    "method_names": [
+      "testToString"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/CrossJoinTest.java",
+        "class": "CrossJoinTest",
+        "name": "testToString",
+        "line": 194,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+        "class": "FullJoinTest",
+        "name": "testToString",
+        "line": 200,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java",
+        "class": "RightJoinTest",
+        "name": "testToString",
+        "line": 253,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java"
+    ],
+    "method_names": [
+      "testToString"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaNTest",
+        "name": "testToString",
+        "line": 208,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaNTest",
+        "name": "testToString",
+        "line": 228,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+        "class": "IsNotNullTest",
+        "name": "testToString",
+        "line": 210,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testEquals"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaNTest",
+        "name": "testEquals",
+        "line": 238,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaNTest",
+        "name": "testEquals",
+        "line": 258,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNullTest",
+        "name": "testEquals",
+        "line": 239,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertWithEntity"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSBTest",
+        "name": "testInsertWithEntity",
+        "line": 10366,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MACTest",
+        "name": "testInsertWithEntity",
+        "line": 11162,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MLCTest",
+        "name": "testInsertWithEntity",
+        "line": 11660,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertMultipleColumns"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testInsertMultipleColumns",
+        "line": 7166,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testInsertMultipleColumns",
+        "line": 7878,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testInsertMultipleColumns",
+        "line": 8669,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertMultipleColumns"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSBTest",
+        "name": "testInsertMultipleColumns",
+        "line": 10331,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MACTest",
+        "name": "testInsertMultipleColumns",
+        "line": 11127,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MLCTest",
+        "name": "testInsertMultipleColumns",
+        "line": 11622,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertEntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testInsertEntityClass",
+        "line": 2531,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testInsertEntityClass",
+        "line": 3105,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testInsertEntityClass",
+        "line": 3683,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertIntoWithExclusions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testInsertIntoWithExclusions",
+        "line": 2559,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testInsertIntoWithExclusions",
+        "line": 3133,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testInsertIntoWithExclusions",
+        "line": 3710,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testInsertIntoWithExclusions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testInsertIntoWithExclusions",
+        "line": 7267,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testInsertIntoWithExclusions",
+        "line": 7974,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testInsertIntoWithExclusions",
+        "line": 8765,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testUpdateEntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testUpdateEntityClass",
+        "line": 2599,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testUpdateEntityClass",
+        "line": 3192,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testUpdateEntityClass",
+        "line": 3770,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testUpdateEntityClassWithExclusions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testUpdateEntityClassWithExclusions",
+        "line": 2607,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testUpdateEntityClassWithExclusions",
+        "line": 3200,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testUpdateEntityClassWithExclusions",
+        "line": 3778,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testUpdateEntityClassWithExclusions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testUpdateEntityClassWithExclusions",
+        "line": 7326,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testUpdateEntityClassWithExclusions",
+        "line": 8032,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testUpdateEntityClassWithExclusions",
+        "line": 8823,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testUpdateEntityClassWithExclusions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSBTest",
+        "name": "testUpdateEntityClassWithExclusions",
+        "line": 10480,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSCTest",
+        "name": "testUpdateEntityClassWithExclusions",
+        "line": 10838,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MLCTest",
+        "name": "testUpdateEntityClassWithExclusions",
+        "line": 11786,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testDeleteFromTableNameWithEntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testDeleteFromTableNameWithEntityClass",
+        "line": 2627,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testDeleteFromTableNameWithEntityClass",
+        "line": 3219,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testDeleteFromTableNameWithEntityClass",
+        "line": 3797,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testDeleteFromEntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testDeleteFromEntityClass",
+        "line": 7352,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testDeleteFromEntityClass",
+        "line": 8058,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testDeleteFromEntityClass",
+        "line": 8849,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectSingleExpression"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testSelectSingleExpression",
+        "line": 2645,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testSelectSingleExpression",
+        "line": 3237,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testSelectSingleExpression",
+        "line": 3815,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectSingleExpression"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSBTest",
+        "name": "testSelectSingleExpression",
+        "line": 10511,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSCTest",
+        "name": "testSelectSingleExpression",
+        "line": 10869,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MLCTest",
+        "name": "testSelectSingleExpression",
+        "line": 11819,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectCollectionOfColumns"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testSelectCollectionOfColumns",
+        "line": 2666,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testSelectCollectionOfColumns",
+        "line": 3257,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testSelectCollectionOfColumns",
+        "line": 3835,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectWithAliases"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testSelectWithAliases",
+        "line": 2676,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testSelectWithAliases",
+        "line": 3267,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testSelectWithAliases",
+        "line": 3845,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectEntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testSelectEntityClass",
+        "line": 2689,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testSelectEntityClass",
+        "line": 3281,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testSelectEntityClass",
+        "line": 3859,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectEntityClassWithSubEntities"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testSelectEntityClassWithSubEntities",
+        "line": 2698,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testSelectEntityClassWithSubEntities",
+        "line": 3290,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testSelectEntityClassWithSubEntities",
+        "line": 3868,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectEntityClassWithSubEntitiesAndExclusions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testSelectEntityClassWithSubEntitiesAndExclusions",
+        "line": 2717,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testSelectEntityClassWithSubEntitiesAndExclusions",
+        "line": 3309,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testSelectEntityClassWithSubEntitiesAndExclusions",
+        "line": 3887,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectFromEntityClassWithAlias"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testSelectFromEntityClassWithAlias",
+        "line": 2736,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testSelectFromEntityClassWithAlias",
+        "line": 3328,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testSelectFromEntityClassWithAlias",
+        "line": 4188,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectFromEntityClassWithAliasAndSubEntities"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testSelectFromEntityClassWithAliasAndSubEntities",
+        "line": 2754,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testSelectFromEntityClassWithAliasAndSubEntities",
+        "line": 3346,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testSelectFromEntityClassWithAliasAndSubEntities",
+        "line": 4206,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectFromEntityClassWithAliasAndExclusions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testSelectFromEntityClassWithAliasAndExclusions",
+        "line": 2773,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testSelectFromEntityClassWithAliasAndExclusions",
+        "line": 3365,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testSelectFromEntityClassWithAliasAndExclusions",
+        "line": 4225,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectFromEntityClassWithSubEntitiesAndExclusions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testSelectFromEntityClassWithSubEntitiesAndExclusions",
+        "line": 2783,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testSelectFromEntityClassWithSubEntitiesAndExclusions",
+        "line": 3375,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testSelectFromEntityClassWithSubEntitiesAndExclusions",
+        "line": 3897,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testCountTableName"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testCountTableName",
+        "line": 2869,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testCountTableName",
+        "line": 3461,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testCountTableName",
+        "line": 3983,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testCountEntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "SCSBTest",
+        "name": "testCountEntityClass",
+        "line": 2879,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "ACSBTest",
+        "name": "testCountEntityClass",
+        "line": 3471,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "LCSBTest",
+        "name": "testCountEntityClass",
+        "line": 3993,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testParseCondition"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MSBTest",
+        "name": "testParseCondition",
+        "line": 10614,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MACTest",
+        "name": "testParseCondition",
+        "line": 11526,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "MLCTest",
+        "name": "testParseCondition",
+        "line": 12094,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testComplexQueryWithJoins"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testComplexQueryWithJoins",
+        "line": 7605,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testComplexQueryWithJoins",
+        "line": 8312,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testComplexQueryWithJoins",
+        "line": 9106,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testCreateInstance"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSBTest",
+        "name": "testCreateInstance",
+        "line": 4784,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PACTest",
+        "name": "testCreateInstance",
+        "line": 5628,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PLCTest",
+        "name": "testCreateInstance",
+        "line": 6056,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testUpdate_TableName"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testUpdate_TableName",
+        "line": 5021,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PACTest",
+        "name": "testUpdate_TableName",
+        "line": 5478,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PLCTest",
+        "name": "testUpdate_TableName",
+        "line": 5905,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testDeleteFrom_EntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testDeleteFrom_EntityClass",
+        "line": 5089,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PACTest",
+        "name": "testDeleteFrom_EntityClass",
+        "line": 5507,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PLCTest",
+        "name": "testDeleteFrom_EntityClass",
+        "line": 5934,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelect_SingleColumn"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testSelect_SingleColumn",
+        "line": 5098,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PACTest",
+        "name": "testSelect_SingleColumn",
+        "line": 5516,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PLCTest",
+        "name": "testSelect_SingleColumn",
+        "line": 5943,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelect_Map"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testSelect_Map",
+        "line": 5132,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PACTest",
+        "name": "testSelect_Map",
+        "line": 5537,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PLCTest",
+        "name": "testSelect_Map",
+        "line": 5964,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testUpdateWithEntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSBTest",
+        "name": "testUpdateWithEntityClass",
+        "line": 6387,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testUpdateWithEntityClass",
+        "line": 7308,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testUpdateWithEntityClass",
+        "line": 9732,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testDeleteFromWithEntityClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testDeleteFromWithEntityClass",
+        "line": 7344,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testDeleteFromWithEntityClass",
+        "line": 8050,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testDeleteFromWithEntityClass",
+        "line": 8841,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectWithCollection"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testSelectWithCollection",
+        "line": 7378,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSelectWithCollection",
+        "line": 8085,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSelectWithCollection",
+        "line": 8876,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectEntityClassWithAllOptions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testSelectEntityClassWithAllOptions",
+        "line": 7429,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSelectEntityClassWithAllOptions",
+        "line": 8133,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSelectEntityClassWithAllOptions",
+        "line": 8925,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectFrom"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSBTest",
+        "name": "testSelectFrom",
+        "line": 6536,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSelectFrom",
+        "line": 8141,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSelectFrom",
+        "line": 8933,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectFromWithAliasAndSubEntities"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testSelectFromWithAliasAndSubEntities",
+        "line": 7460,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSelectFromWithAliasAndSubEntities",
+        "line": 8165,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSelectFromWithAliasAndSubEntities",
+        "line": 8957,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectFromWithExclusions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testSelectFromWithExclusions",
+        "line": 7467,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSelectFromWithExclusions",
+        "line": 8172,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSelectFromWithExclusions",
+        "line": 8964,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectFromWithAliasAndExclusions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testSelectFromWithAliasAndExclusions",
+        "line": 7475,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSelectFromWithAliasAndExclusions",
+        "line": 8180,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSelectFromWithAliasAndExclusions",
+        "line": 8972,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectFromWithSubEntitiesAndExclusions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testSelectFromWithSubEntitiesAndExclusions",
+        "line": 7484,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSelectFromWithSubEntitiesAndExclusions",
+        "line": 8189,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSelectFromWithSubEntitiesAndExclusions",
+        "line": 8981,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectFromWithAllOptions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testSelectFromWithAllOptions",
+        "line": 7492,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSelectFromWithAllOptions",
+        "line": 8197,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSelectFromWithAllOptions",
+        "line": 8989,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testCount"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSBTest",
+        "name": "testCount",
+        "line": 6668,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testCount",
+        "line": 8274,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testCount",
+        "line": 9066,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSpecialConditions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSpecialConditions",
+        "line": 8548,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSpecialConditions",
+        "line": 9331,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testSpecialConditions",
+        "line": 10127,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testSelectSinglePart"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testSelectSinglePart",
+        "line": 7360,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testSelectSinglePart",
+        "line": 8066,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testSelectSinglePart",
+        "line": 8857,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testNamedParametersAreCorrect"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testNamedParametersAreCorrect",
+        "line": 7662,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testNamedParametersAreCorrect",
+        "line": 8371,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testNamedParametersAreCorrect",
+        "line": 9165,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testEmptyArgumentsThrow"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testEmptyArgumentsThrow",
+        "line": 8403,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testEmptyArgumentsThrow",
+        "line": 9197,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testEmptyArgumentsThrow",
+        "line": 10150,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testAppendCustomSQL"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testAppendCustomSQL",
+        "line": 8451,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testAppendCustomSQL",
+        "line": 9245,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testAppendCustomSQL",
+        "line": 10193,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testComplexNestedConditions"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSCTest",
+        "name": "testComplexNestedConditions",
+        "line": 7756,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NACTest",
+        "name": "testComplexNestedConditions",
+        "line": 8458,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NLCTest",
+        "name": "testComplexNestedConditions",
+        "line": 9252,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java"
+    ],
+    "method_names": [
+      "testGetPropName"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testGetPropName",
+        "line": 36,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+        "class": "IsNotNull2025Test",
+        "name": "testGetPropName",
+        "line": 36,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testGetPropName",
+        "line": 39,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java"
+    ],
+    "method_names": [
+      "testGetParameters"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNotTest",
+        "name": "testGetParameters",
+        "line": 200,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "IsTest",
+        "name": "testGetParameters",
+        "line": 200,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "LikeTest",
+        "name": "testGetParameters",
+        "line": 264,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/SomeTest.java"
+    ],
+    "method_names": [
+      "testRejectsStandalonePredicateUse"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+        "class": "All2025Test",
+        "name": "testRejectsStandalonePredicateUse",
+        "line": 43,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+        "class": "Any2025Test",
+        "name": "testRejectsStandalonePredicateUse",
+        "line": 35,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/SomeTest.java",
+        "class": "Some2025Test",
+        "name": "testRejectsStandalonePredicateUse",
+        "line": 43,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java"
+    ],
+    "method_names": [
+      "testGetCondition"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoinTest",
+        "name": "testGetCondition",
+        "line": 228,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "JoinTest",
+        "name": "testGetCondition",
+        "line": 244,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+        "class": "LeftJoinTest",
+        "name": "testGetCondition",
+        "line": 234,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/SomeTest.java"
+    ],
+    "method_names": [
+      "testToString_NoChange"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+        "class": "All2025Test",
+        "name": "testToString_NoChange",
+        "line": 80,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+        "class": "Any2025Test",
+        "name": "testToString_NoChange",
+        "line": 72,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/SomeTest.java",
+        "class": "Some2025Test",
+        "name": "testToString_NoChange",
+        "line": 80,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java"
+    ],
+    "method_names": [
+      "testToString_NoChange"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+        "class": "GreaterThanOrEqual2025Test",
+        "name": "testToString_NoChange",
+        "line": 87,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+        "class": "GreaterThan2025Test",
+        "name": "testToString_NoChange",
+        "line": 88,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java",
+        "class": "LessThanOrEqual2025Test",
+        "name": "testToString_NoChange",
+        "line": 88,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testToString_NoChange"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testToString_NoChange",
+        "line": 70,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+        "class": "IsNotNull2025Test",
+        "name": "testToString_NoChange",
+        "line": 42,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNull2025Test",
+        "name": "testToString_NoChange",
+        "line": 42,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java"
+    ],
+    "method_names": [
+      "testToString_NoChange"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testToString_NoChange",
+        "line": 87,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testToString_NoChange",
+        "line": 87,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testToString_NoChange",
+        "line": 86,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/SomeTest.java"
+    ],
+    "method_names": [
+      "testToString_WithStructuredQuery"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+        "class": "All2025Test",
+        "name": "testToString_WithStructuredQuery",
+        "line": 89,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+        "class": "Any2025Test",
+        "name": "testToString_WithStructuredQuery",
+        "line": 81,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/SomeTest.java",
+        "class": "Some2025Test",
+        "name": "testToString_WithStructuredQuery",
+        "line": 89,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/SomeTest.java"
+    ],
+    "method_names": [
+      "testInheritance"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+        "class": "All2025Test",
+        "name": "testInheritance",
+        "line": 157,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+        "class": "Any2025Test",
+        "name": "testInheritance",
+        "line": 149,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/SomeTest.java",
+        "class": "Some2025Test",
+        "name": "testInheritance",
+        "line": 157,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java"
+    ],
+    "method_names": [
+      "testToStringWithNamingPolicy"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoinTest",
+        "name": "testToStringWithNamingPolicy",
+        "line": 280,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "JoinTest",
+        "name": "testToStringWithNamingPolicy",
+        "line": 320,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+        "class": "LeftJoinTest",
+        "name": "testToStringWithNamingPolicy",
+        "line": 285,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testToString_NoArgs"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testToString_NoArgs",
+        "line": 204,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testToString_NoArgs",
+        "line": 178,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testToString_NoArgs",
+        "line": 180,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java"
+    ],
+    "method_names": [
+      "testConstructor_NullPropertyName"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+        "class": "IsInfinite2025Test",
+        "name": "testConstructor_NullPropertyName",
+        "line": 26,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+        "class": "IsNotInfinite2025Test",
+        "name": "testConstructor_NullPropertyName",
+        "line": 26,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testConstructor_NullPropertyName",
+        "line": 26,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java"
+    ],
+    "method_names": [
+      "testConstructor_EmptyPropertyName"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+        "class": "IsInfinite2025Test",
+        "name": "testConstructor_EmptyPropertyName",
+        "line": 31,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+        "class": "IsNotInfinite2025Test",
+        "name": "testConstructor_EmptyPropertyName",
+        "line": 31,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testConstructor_EmptyPropertyName",
+        "line": 31,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testToString_SnakeCase"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testToString_SnakeCase",
+        "line": 99,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testToString_SnakeCase",
+        "line": 95,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testToString_SnakeCase",
+        "line": 96,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java"
+    ],
+    "method_names": [
+      "testToString_SnakeCase"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+        "class": "GreaterThanOrEqual2025Test",
+        "name": "testToString_SnakeCase",
+        "line": 95,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+        "class": "GreaterThan2025Test",
+        "name": "testToString_SnakeCase",
+        "line": 96,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java",
+        "class": "LessThanOrEqual2025Test",
+        "name": "testToString_SnakeCase",
+        "line": 96,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/BetweenTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotBetweenTest.java"
+    ],
+    "method_names": [
+      "testConstructorWithEmptyPropName"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/BetweenTest.java",
+        "class": "BetweenTest",
+        "name": "testConstructorWithEmptyPropName",
+        "line": 263,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+        "class": "GreaterThanTest",
+        "name": "testConstructorWithEmptyPropName",
+        "line": 236,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotBetweenTest.java",
+        "class": "NotBetweenTest",
+        "name": "testConstructorWithEmptyPropName",
+        "line": 307,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/BetweenTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotBetweenTest.java"
+    ],
+    "method_names": [
+      "testConstructorWithNullPropName"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/BetweenTest.java",
+        "class": "BetweenTest",
+        "name": "testConstructorWithNullPropName",
+        "line": 270,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+        "class": "GreaterThanTest",
+        "name": "testConstructorWithNullPropName",
+        "line": 243,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotBetweenTest.java",
+        "class": "NotBetweenTest",
+        "name": "testConstructorWithNullPropName",
+        "line": 314,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testGetPropValue"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testGetPropValue",
+        "line": 48,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testGetPropValue",
+        "line": 45,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testGetPropValue",
+        "line": 46,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testGetPropValue_String"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testGetPropValue_String",
+        "line": 55,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testGetPropValue_String",
+        "line": 52,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testGetPropValue_String",
+        "line": 53,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/CrossJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java"
+    ],
+    "method_names": [
+      "testGetParameters_WithCondition"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/CrossJoinTest.java",
+        "class": "CrossJoin2025Test",
+        "name": "testGetParameters_WithCondition",
+        "line": 77,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+        "class": "FullJoin2025Test",
+        "name": "testGetParameters_WithCondition",
+        "line": 76,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java",
+        "class": "RightJoin2025Test",
+        "name": "testGetParameters_WithCondition",
+        "line": 76,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java"
+    ],
+    "method_names": [
+      "testGetParameters_WithCondition"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoin2025Test",
+        "name": "testGetParameters_WithCondition",
+        "line": 76,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "Join2025Test",
+        "name": "testGetParameters_WithCondition",
+        "line": 72,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+        "class": "LeftJoin2025Test",
+        "name": "testGetParameters_WithCondition",
+        "line": 76,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java"
+    ],
+    "method_names": [
+      "testConstructor_MultipleEntities"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+        "class": "FullJoin2025Test",
+        "name": "testConstructor_MultipleEntities",
+        "line": 37,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoin2025Test",
+        "name": "testConstructor_MultipleEntities",
+        "line": 37,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java",
+        "class": "RightJoin2025Test",
+        "name": "testConstructor_MultipleEntities",
+        "line": 37,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java"
+    ],
+    "method_names": [
+      "testGetJoinEntities"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoinTest",
+        "name": "testGetJoinEntities",
+        "line": 218,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "JoinTest",
+        "name": "testGetJoinEntities",
+        "line": 234,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+        "class": "LeftJoinTest",
+        "name": "testGetJoinEntities",
+        "line": 224,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java"
+    ],
+    "method_names": [
+      "testConstructorWithJoinEntity"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoinTest",
+        "name": "testConstructorWithJoinEntity",
+        "line": 166,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "JoinTest",
+        "name": "testConstructorWithJoinEntity",
+        "line": 156,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+        "class": "LeftJoinTest",
+        "name": "testConstructorWithJoinEntity",
+        "line": 172,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java"
+    ],
+    "method_names": [
+      "testConstructorWithJoinEntityAndCondition"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoinTest",
+        "name": "testConstructorWithJoinEntityAndCondition",
+        "line": 185,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "JoinTest",
+        "name": "testConstructorWithJoinEntityAndCondition",
+        "line": 167,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+        "class": "LeftJoinTest",
+        "name": "testConstructorWithJoinEntityAndCondition",
+        "line": 191,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java"
+    ],
+    "method_names": [
+      "testToStringWithCondition"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoinTest",
+        "name": "testToStringWithCondition",
+        "line": 268,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "JoinTest",
+        "name": "testToStringWithCondition",
+        "line": 286,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+        "class": "LeftJoinTest",
+        "name": "testToStringWithCondition",
+        "line": 273,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java"
+    ],
+    "method_names": [
+      "testGetParametersNoCondition"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+        "class": "InnerJoinTest",
+        "name": "testGetParametersNoCondition",
+        "line": 250,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "JoinTest",
+        "name": "testGetParametersNoCondition",
+        "line": 266,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+        "class": "LeftJoinTest",
+        "name": "testGetParametersNoCondition",
+        "line": 255,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 3,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testConstructorWithPropName"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaNTest",
+        "name": "testConstructorWithPropName",
+        "line": 180,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaNTest",
+        "name": "testConstructorWithPropName",
+        "line": 200,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNullTest",
+        "name": "testConstructorWithPropName",
+        "line": 177,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java"
+    ],
+    "method_names": [
+      "testUpdate"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "NSBTest",
+        "name": "testUpdate",
+        "line": 6375,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+        "class": "PSCTest",
+        "name": "testUpdate",
+        "line": 9720,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/BetweenTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotBetweenTest.java"
+    ],
+    "method_names": [
+      "testNot"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/BetweenTest.java",
+        "class": "Between2025Test",
+        "name": "testNot",
+        "line": 185,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotBetweenTest.java",
+        "class": "NotBetween2025Test",
+        "name": "testNot",
+        "line": 276,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java"
+    ],
+    "method_names": [
+      "testNot"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+        "class": "GreaterThanOrEqualTest",
+        "name": "testNot",
+        "line": 296,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+        "class": "GreaterThanTest",
+        "name": "testNot",
+        "line": 329,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java"
+    ],
+    "method_names": [
+      "testNot"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+        "class": "InSubQuery2025Test",
+        "name": "testNot",
+        "line": 296,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java",
+        "class": "NotInSubQuery2025Test",
+        "name": "testNot",
+        "line": 231,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotInTest.java"
+    ],
+    "method_names": [
+      "testNot"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+        "class": "In2025Test",
+        "name": "testNot",
+        "line": 285,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotInTest.java",
+        "class": "NotIn2025Test",
+        "name": "testNot",
+        "line": 241,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java"
+    ],
+    "method_names": [
+      "testNot"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+        "class": "IsInfinite2025Test",
+        "name": "testNot",
+        "line": 149,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+        "class": "IsNotInfinite2025Test",
+        "name": "testNot",
+        "line": 149,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/LessThanTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java"
+    ],
+    "method_names": [
+      "testNot"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LessThanTest.java",
+        "class": "LessThan2025Test",
+        "name": "testNot",
+        "line": 171,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testNot",
+        "line": 170,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/SqlMapperTest.java"
+    ],
+    "method_names": [
+      "testIsEmpty"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlMapperTest.java",
+        "class": "SqlMapper2025Test",
+        "name": "testIsEmpty",
+        "line": 236,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/SqlMapperTest.java",
+        "class": "SqlMapperTest",
+        "name": "testIsEmpty",
+        "line": 831,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/FiltersTest.java"
+    ],
+    "method_names": [
+      "testAnyOfAllEqual_AllNullEntities"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/FiltersTest.java",
+        "class": "Filters2026Test",
+        "name": "testAnyOfAllEqual_AllNullEntities",
+        "line": 1586,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/FiltersTest.java",
+        "class": "Filters2026BatchTest",
+        "name": "testAnyOfAllEqual_AllNullEntities",
+        "line": 3162,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testOr"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testOr",
+        "line": 167,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testOr",
+        "line": 164,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java"
+    ],
+    "method_names": [
+      "testOr"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+        "class": "GreaterThanOrEqualTest",
+        "name": "testOr",
+        "line": 285,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+        "class": "GreaterThanTest",
+        "name": "testOr",
+        "line": 317,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java"
+    ],
+    "method_names": [
+      "testOr"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+        "class": "InSubQuery2025Test",
+        "name": "testOr",
+        "line": 285,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java",
+        "class": "NotInSubQuery2025Test",
+        "name": "testOr",
+        "line": 220,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotInTest.java"
+    ],
+    "method_names": [
+      "testOr"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+        "class": "In2025Test",
+        "name": "testOr",
+        "line": 276,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotInTest.java",
+        "class": "NotIn2025Test",
+        "name": "testOr",
+        "line": 232,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java"
+    ],
+    "method_names": [
+      "testOr"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+        "class": "IsInfinite2025Test",
+        "name": "testOr",
+        "line": 141,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+        "class": "IsNotInfinite2025Test",
+        "name": "testOr",
+        "line": 141,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java"
+    ],
+    "method_names": [
+      "testOr"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testOr",
+        "line": 147,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testOr",
+        "line": 163,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testOr"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+        "class": "IsNotNull2025Test",
+        "name": "testOr",
+        "line": 127,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNull2025Test",
+        "name": "testOr",
+        "line": 133,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java"
+    ],
+    "method_names": [
+      "testOr"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testOr",
+        "line": 162,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java",
+        "class": "NotLike2025Test",
+        "name": "testOr",
+        "line": 163,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testAnd"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testAnd",
+        "line": 159,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testAnd",
+        "line": 156,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java"
+    ],
+    "method_names": [
+      "testAnd"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+        "class": "InSubQuery2025Test",
+        "name": "testAnd",
+        "line": 274,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java",
+        "class": "NotInSubQuery2025Test",
+        "name": "testAnd",
+        "line": 209,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotInTest.java"
+    ],
+    "method_names": [
+      "testAnd"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+        "class": "In2025Test",
+        "name": "testAnd",
+        "line": 267,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotInTest.java",
+        "class": "NotIn2025Test",
+        "name": "testAnd",
+        "line": 223,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java"
+    ],
+    "method_names": [
+      "testAnd"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+        "class": "IsInfinite2025Test",
+        "name": "testAnd",
+        "line": 133,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+        "class": "IsNotInfinite2025Test",
+        "name": "testAnd",
+        "line": 133,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java"
+    ],
+    "method_names": [
+      "testAnd"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testAnd",
+        "line": 139,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testAnd",
+        "line": 155,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testAnd"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+        "class": "IsNotNull2025Test",
+        "name": "testAnd",
+        "line": 119,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNull2025Test",
+        "name": "testAnd",
+        "line": 125,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java"
+    ],
+    "method_names": [
+      "testAnd"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testAnd",
+        "line": 154,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java",
+        "class": "NotLike2025Test",
+        "name": "testAnd",
+        "line": 155,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testHashCode"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testHashCode",
+        "line": 106,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testHashCode",
+        "line": 103,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/ExpressionTest.java"
+    ],
+    "method_names": [
+      "testHashCode"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/ExpressionTest.java",
+        "class": "Expression2025Test",
+        "name": "testHashCode",
+        "line": 705,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/ExpressionTest.java",
+        "class": "ExpressionTest",
+        "name": "testHashCode",
+        "line": 1385,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java"
+    ],
+    "method_names": [
+      "testHashCode"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+        "class": "FullJoin2025Test",
+        "name": "testHashCode",
+        "line": 100,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "Join2025Test",
+        "name": "testHashCode",
+        "line": 96,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java"
+    ],
+    "method_names": [
+      "testHashCode"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+        "class": "IsInfinite2025Test",
+        "name": "testHashCode",
+        "line": 87,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+        "class": "IsNotInfinite2025Test",
+        "name": "testHashCode",
+        "line": 87,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java"
+    ],
+    "method_names": [
+      "testHashCode"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+        "class": "IsInfiniteTest",
+        "name": "testHashCode",
+        "line": 254,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+        "class": "IsNotInfiniteTest",
+        "name": "testHashCode",
+        "line": 256,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java"
+    ],
+    "method_names": [
+      "testHashCode"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaN2025Test",
+        "name": "testHashCode",
+        "line": 74,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testHashCode",
+        "line": 93,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java"
+    ],
+    "method_names": [
+      "testHashCode"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaNTest",
+        "name": "testHashCode",
+        "line": 228,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaNTest",
+        "name": "testHashCode",
+        "line": 248,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testHashCode"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+        "class": "IsNotNull2025Test",
+        "name": "testHashCode",
+        "line": 72,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNull2025Test",
+        "name": "testHashCode",
+        "line": 72,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java"
+    ],
+    "method_names": [
+      "testHashCode"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+        "class": "IsNotNullTest",
+        "name": "testHashCode",
+        "line": 240,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+        "class": "IsNullTest",
+        "name": "testHashCode",
+        "line": 229,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java"
+    ],
+    "method_names": [
+      "testHashCode"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testHashCode",
+        "line": 102,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testHashCode",
+        "line": 102,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java"
+    ],
+    "method_names": [
+      "testHashCode"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testHashCode",
+        "line": 101,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java",
+        "class": "NotLike2025Test",
+        "name": "testHashCode",
+        "line": 102,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AndTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/OrTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AndTest.java",
+        "class": "And2025Test",
+        "name": "testEquals_SameObject",
+        "line": 125,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/OrTest.java",
+        "class": "Or2025Test",
+        "name": "testEquals_SameObject",
+        "line": 124,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/BetweenTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotBetweenTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/BetweenTest.java",
+        "class": "Between2025Test",
+        "name": "testEquals_SameObject",
+        "line": 123,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotBetweenTest.java",
+        "class": "NotBetween2025Test",
+        "name": "testEquals_SameObject",
+        "line": 175,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testEquals_SameObject",
+        "line": 120,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testEquals_SameObject",
+        "line": 117,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotExistsTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+        "class": "Exists2025Test",
+        "name": "testEquals_SameObject",
+        "line": 109,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotExistsTest.java",
+        "class": "NotExistsTest",
+        "name": "testEquals_SameObject",
+        "line": 128,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+        "class": "FullJoin2025Test",
+        "name": "testEquals_SameObject",
+        "line": 107,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "Join2025Test",
+        "name": "testEquals_SameObject",
+        "line": 103,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+        "class": "InSubQuery2025Test",
+        "name": "testEquals_SameObject",
+        "line": 189,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java",
+        "class": "NotInSubQuery2025Test",
+        "name": "testEquals_SameObject",
+        "line": 158,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotInTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+        "class": "In2025Test",
+        "name": "testEquals_SameObject",
+        "line": 176,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotInTest.java",
+        "class": "NotIn2025Test",
+        "name": "testEquals_SameObject",
+        "line": 133,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+        "class": "IsInfinite2025Test",
+        "name": "testEquals_SameObject",
+        "line": 101,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+        "class": "IsNotInfinite2025Test",
+        "name": "testEquals_SameObject",
+        "line": 101,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testEquals_SameObject",
+        "line": 116,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testEquals_SameObject",
+        "line": 116,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testEquals_SameObject",
+        "line": 115,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java",
+        "class": "NotLike2025Test",
+        "name": "testEquals_SameObject",
+        "line": 116,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/UnionAllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/UnionTest.java"
+    ],
+    "method_names": [
+      "testEquals_SameObject"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/UnionAllTest.java",
+        "class": "UnionAll2025Test",
+        "name": "testEquals_SameObject",
+        "line": 64,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/UnionTest.java",
+        "class": "Union2025Test",
+        "name": "testEquals_SameObject",
+        "line": 63,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testEquals_EqualObjects"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 126,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 123,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java"
+    ],
+    "method_names": [
+      "testEquals_EqualObjects"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+        "class": "FullJoin2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 113,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "Join2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 109,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java"
+    ],
+    "method_names": [
+      "testEquals_EqualObjects"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+        "class": "InSubQuery2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 197,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java",
+        "class": "NotInSubQuery2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 166,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotInTest.java"
+    ],
+    "method_names": [
+      "testEquals_EqualObjects"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+        "class": "In2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 182,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotInTest.java",
+        "class": "NotIn2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 139,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java"
+    ],
+    "method_names": [
+      "testEquals_EqualObjects"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+        "class": "IsInfinite2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 107,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+        "class": "IsNotInfinite2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 107,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java"
+    ],
+    "method_names": [
+      "testEquals_EqualObjects"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+        "class": "IsNaN2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 94,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+        "class": "IsNotNaN2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 113,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java"
+    ],
+    "method_names": [
+      "testEquals_EqualObjects"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 122,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 122,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java"
+    ],
+    "method_names": [
+      "testEquals_EqualObjects"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 121,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java",
+        "class": "NotLike2025Test",
+        "name": "testEquals_EqualObjects",
+        "line": 122,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AndTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/OrTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AndTest.java",
+        "class": "And2025Test",
+        "name": "testEquals_Null",
+        "line": 145,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/OrTest.java",
+        "class": "Or2025Test",
+        "name": "testEquals_Null",
+        "line": 144,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/BetweenTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotBetweenTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/BetweenTest.java",
+        "class": "Between2025Test",
+        "name": "testEquals_Null",
+        "line": 157,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotBetweenTest.java",
+        "class": "NotBetween2025Test",
+        "name": "testEquals_Null",
+        "line": 213,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testEquals_Null",
+        "line": 147,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testEquals_Null",
+        "line": 144,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotExistsTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+        "class": "Exists2025Test",
+        "name": "testEquals_Null",
+        "line": 134,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotExistsTest.java",
+        "class": "NotExistsTest",
+        "name": "testEquals_Null",
+        "line": 153,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/JoinTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+        "class": "FullJoin2025Test",
+        "name": "testEquals_Null",
+        "line": 127,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+        "class": "Join2025Test",
+        "name": "testEquals_Null",
+        "line": 123,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+        "class": "InSubQuery2025Test",
+        "name": "testEquals_Null",
+        "line": 225,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java",
+        "class": "NotInSubQuery2025Test",
+        "name": "testEquals_Null",
+        "line": 184,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotInTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+        "class": "In2025Test",
+        "name": "testEquals_Null",
+        "line": 206,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotInTest.java",
+        "class": "NotIn2025Test",
+        "name": "testEquals_Null",
+        "line": 163,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+        "class": "IsInfinite2025Test",
+        "name": "testEquals_Null",
+        "line": 121,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+        "class": "IsNotInfinite2025Test",
+        "name": "testEquals_Null",
+        "line": 121,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testEquals_Null",
+        "line": 143,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testEquals_Null",
+        "line": 143,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testEquals_Null",
+        "line": 142,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java",
+        "class": "NotLike2025Test",
+        "name": "testEquals_Null",
+        "line": 143,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/UnionAllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/UnionTest.java"
+    ],
+    "method_names": [
+      "testEquals_Null"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/UnionAllTest.java",
+        "class": "UnionAll2025Test",
+        "name": "testEquals_Null",
+        "line": 89,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/UnionTest.java",
+        "class": "Union2025Test",
+        "name": "testEquals_Null",
+        "line": 88,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java"
+    ],
+    "method_names": [
+      "testEquals_DifferentClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+        "class": "Equal2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 153,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+        "class": "NotEqual2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 150,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotExistsTest.java"
+    ],
+    "method_names": [
+      "testEquals_DifferentClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+        "class": "Exists2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 141,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotExistsTest.java",
+        "class": "NotExistsTest",
+        "name": "testEquals_DifferentClass",
+        "line": 160,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java"
+    ],
+    "method_names": [
+      "testEquals_DifferentClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+        "class": "IsInfinite2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 127,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+        "class": "IsNotInfinite2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 127,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/IsTest.java"
+    ],
+    "method_names": [
+      "testEquals_DifferentClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+        "class": "IsNot2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 149,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+        "class": "Is2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 149,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java"
+    ],
+    "method_names": [
+      "testEquals_DifferentClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+        "class": "Like2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 148,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java",
+        "class": "NotLike2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 149,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/UnionAllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/UnionTest.java"
+    ],
+    "method_names": [
+      "testEquals_DifferentClass"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/UnionAllTest.java",
+        "class": "UnionAll2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 126,
+        "class_tag": "2025"
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/UnionTest.java",
+        "class": "Union2025Test",
+        "name": "testEquals_DifferentClass",
+        "line": 118,
+        "class_tag": "2025"
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/AnyTest.java"
+    ],
+    "method_names": [
+      "testToString"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+        "class": "AllTest",
+        "name": "testToString",
+        "line": 234,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+        "class": "AnyTest",
+        "name": "testToString",
+        "line": 236,
+        "class_tag": ""
+      }
+    ]
+  },
+  {
+    "size": 2,
+    "files": [
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+      "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java"
+    ],
+    "method_names": [
+      "testToString"
+    ],
+    "members": [
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+        "class": "GreaterThanOrEqualTest",
+        "name": "testToString",
+        "line": 229,
+        "class_tag": ""
+      },
+      {
+        "file": "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+        "class": "GreaterThanTest",
+        "name": "testToString",
+        "line": 250,
+        "class_tag": ""
+      }
+    ]
+  }
+]

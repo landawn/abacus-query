@@ -1,23 +1,24 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class InnerJoin2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class InnerJoinTest extends TestBase {
     @Test
     public void testConstructor_Simple() {
         InnerJoin join = new InnerJoin("orders");
@@ -38,7 +39,7 @@ class InnerJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("orders o", "customers c");
         InnerJoin join = new InnerJoin(entities, new Equal("o.customer_id", "c.id"));
         assertNotNull(join);
-        assertEquals(2, (int) join.getJoinEntities().size());
+        assertEquals(2, join.getJoinEntities().size());
         assertEquals(Operator.INNER_JOIN, join.operator());
     }
 
@@ -47,7 +48,7 @@ class InnerJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("table1", "table2");
         InnerJoin join = new InnerJoin(entities, null);
         List<String> result = join.getJoinEntities();
-        assertEquals(2, (int) result.size());
+        assertEquals(2, result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
     }
@@ -76,7 +77,7 @@ class InnerJoin2025Test extends TestBase {
     public void testGetParameters_WithCondition() {
         InnerJoin join = new InnerJoin("orders o", new Equal("status", "active"));
         List<Object> params = join.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -131,9 +132,9 @@ class InnerJoin2025Test extends TestBase {
 
     @Test
     public void testComplexCondition() {
-        And andCondition = new And(Arrays.asList(new Equal("o.customer_id", "c.id"), new GreaterThan("o.total", (Object) 100)));
+        And andCondition = new And(Arrays.asList(new Equal("o.customer_id", "c.id"), new GreaterThan("o.total", 100)));
         InnerJoin join = new InnerJoin("orders o", andCondition);
-        assertEquals(2, (int) join.getParameters().size());
+        assertEquals(2, join.getParameters().size());
     }
 
     @Test
@@ -148,19 +149,16 @@ class InnerJoin2025Test extends TestBase {
         And compositeKey = new And(Arrays.asList(new Equal("orders.id", "oi.order_id"), new Equal("orders.version", "oi.order_version")));
         InnerJoin join = new InnerJoin("order_items oi", compositeKey);
         assertNotNull(join.getCondition());
-        assertEquals(2, (int) join.getParameters().size());
+        assertEquals(2, join.getParameters().size());
     }
 
     @Test
     public void testWithMultipleConditions() {
         And multipleConditions = new And(
-                Arrays.asList(new Equal("order_items.product_id", "p.id"), new Equal("p.active", true), new GreaterThan("p.stock", (Object) 0)));
+                Arrays.asList(new Equal("order_items.product_id", "p.id"), new Equal("p.active", true), new GreaterThan("p.stock", 0)));
         InnerJoin join = new InnerJoin("products p", multipleConditions);
-        assertEquals(3, (int) join.getParameters().size());
+        assertEquals(3, join.getParameters().size());
     }
-}
-
-public class InnerJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntity() {
@@ -212,25 +210,6 @@ public class InnerJoinTest extends TestBase {
         Assertions.assertEquals(2, join.getJoinEntities().size());
         Assertions.assertTrue(join.getJoinEntities().containsAll(entities));
         Assertions.assertEquals(condition, join.getCondition());
-    }
-
-    @Test
-    public void testGetJoinEntities() {
-        InnerJoin join = new InnerJoin("categories cat");
-        List<String> entities = join.getJoinEntities();
-
-        Assertions.assertNotNull(entities);
-        Assertions.assertEquals(1, entities.size());
-        Assertions.assertEquals("categories cat", entities.get(0));
-    }
-
-    @Test
-    public void testGetCondition() {
-        Condition condition = Filters.eq("p.category_id", "c.id");
-        InnerJoin join = new InnerJoin("categories c", condition);
-
-        Condition retrieved = join.getCondition();
-        Assertions.assertEquals(condition, retrieved);
     }
 
     @Test
@@ -286,17 +265,6 @@ public class InnerJoinTest extends TestBase {
         Assertions.assertTrue(result.contains("productCategory"));
         Assertions.assertTrue(result.contains("PRODUCT_ID"));
         Assertions.assertTrue(result.contains("CATEGORY_ID"));
-    }
-
-    @Test
-    public void testHashCode() {
-        Condition condition = Filters.eq("a", "b");
-        InnerJoin join1 = new InnerJoin("table", condition);
-        InnerJoin join2 = new InnerJoin("table", condition);
-        InnerJoin join3 = new InnerJoin("other", condition);
-
-        Assertions.assertEquals(join1.hashCode(), join2.hashCode());
-        Assertions.assertNotEquals(join1.hashCode(), join3.hashCode());
     }
 
     @Test

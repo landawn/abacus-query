@@ -1,21 +1,23 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Exists2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class ExistsTest extends TestBase {
     @Test
     public void testConstructor_WithRawSQLSubQuery() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = users.id");
@@ -64,7 +66,7 @@ class Exists2025Test extends TestBase {
         Exists condition = new Exists(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -172,16 +174,12 @@ class Exists2025Test extends TestBase {
 
     @Test
     public void testSubQueryWithMultipleConditions() {
-        And andCondition = new And(Arrays.asList(new Equal("status", "active"), new GreaterThan("total", (Object) 100)));
+        And andCondition = new And(Arrays.asList(new Equal("status", "active"), new GreaterThan("total", 100)));
         SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), andCondition);
         Exists condition = new Exists(subQuery);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int) params.size());
+        assertEquals(2, params.size());
     }
-
-}
-
-public class ExistsTest extends TestBase {
 
     @Test
     public void testConstructor() {
@@ -191,15 +189,6 @@ public class ExistsTest extends TestBase {
         Assertions.assertNotNull(exists);
         Assertions.assertEquals(Operator.EXISTS, exists.operator());
         Assertions.assertEquals(subQuery, exists.getCondition());
-    }
-
-    @Test
-    public void testGetCondition() {
-        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM reviews WHERE reviews.product_id = products.id");
-        Exists exists = Filters.exists(subQuery);
-
-        SubQuery retrieved = (SubQuery) exists.getCondition();
-        Assertions.assertEquals(subQuery, retrieved);
     }
 
     @Test
@@ -246,17 +235,6 @@ public class ExistsTest extends TestBase {
         Assertions.assertNotEquals(exists1, exists3);
         Assertions.assertNotEquals(exists1, null);
         Assertions.assertNotEquals(exists1, "string");
-    }
-
-    @Test
-    public void testHashCode() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT 1 FROM tags WHERE product_id = p.id");
-        SubQuery subQuery2 = Filters.subQuery("SELECT 1 FROM tags WHERE product_id = p.id");
-
-        Exists exists1 = Filters.exists(subQuery1);
-        Exists exists2 = Filters.exists(subQuery2);
-
-        Assertions.assertEquals(exists1.hashCode(), exists2.hashCode());
     }
 
     @Test

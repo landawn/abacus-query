@@ -1,23 +1,24 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class NaturalJoin2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class NaturalJoinTest extends TestBase {
     @Test
     public void testConstructor_Simple() {
         NaturalJoin join = new NaturalJoin("employees");
@@ -35,7 +36,7 @@ class NaturalJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("customers", "orders", "products");
         NaturalJoin join = new NaturalJoin(entities, null);
         assertNotNull(join);
-        assertEquals(3, (int) join.getJoinEntities().size());
+        assertEquals(3, join.getJoinEntities().size());
         assertEquals(Operator.NATURAL_JOIN, join.operator());
     }
 
@@ -44,7 +45,7 @@ class NaturalJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("table1", "table2");
         NaturalJoin join = new NaturalJoin(entities, null);
         List<String> result = join.getJoinEntities();
-        assertEquals(2, (int) result.size());
+        assertEquals(2, result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
     }
@@ -129,9 +130,6 @@ class NaturalJoin2025Test extends TestBase {
     public void testWithAdditionalFilter() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new NaturalJoin("orders", new GreaterThan("orderDate", "2024-01-01")));
     }
-}
-
-public class NaturalJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithEntityOnly() {
@@ -157,23 +155,6 @@ public class NaturalJoinTest extends TestBase {
         Condition condition = Filters.gt("salary", 50000);
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin(tables, condition));
-    }
-
-    @Test
-    public void testGetJoinEntities() {
-        NaturalJoin join = Filters.naturalJoin("orders");
-
-        List<String> entities = join.getJoinEntities();
-        Assertions.assertNotNull(entities);
-        Assertions.assertEquals(1, entities.size());
-        Assertions.assertEquals("orders", entities.get(0));
-    }
-
-    @Test
-    public void testGetCondition() {
-        NaturalJoin join = Filters.naturalJoin("orders");
-
-        Assertions.assertNull(join.getCondition());
     }
 
     @Test
@@ -204,16 +185,6 @@ public class NaturalJoinTest extends TestBase {
     public void testToStringWithCondition() {
         Equal condition = Filters.eq("active", true);
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin("users", condition));
-    }
-
-    @Test
-    public void testHashCode() {
-        NaturalJoin join1 = Filters.naturalJoin("employees");
-        NaturalJoin join2 = Filters.naturalJoin("employees");
-        NaturalJoin join3 = Filters.naturalJoin("departments");
-
-        Assertions.assertEquals(join1.hashCode(), join2.hashCode());
-        Assertions.assertNotEquals(join1.hashCode(), join3.hashCode());
     }
 
     @Test

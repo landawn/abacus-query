@@ -20,16 +20,13 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.All;
 import com.landawn.abacus.query.condition.And;
-import com.landawn.abacus.query.condition.Any;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.CrossJoin;
 import com.landawn.abacus.query.condition.Equal;
-import com.landawn.abacus.query.condition.Except;
 import com.landawn.abacus.query.condition.Exists;
 import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.FullJoin;
@@ -40,7 +37,6 @@ import com.landawn.abacus.query.condition.Having;
 import com.landawn.abacus.query.condition.In;
 import com.landawn.abacus.query.condition.InSubQuery;
 import com.landawn.abacus.query.condition.InnerJoin;
-import com.landawn.abacus.query.condition.Intersect;
 import com.landawn.abacus.query.condition.Is;
 import com.landawn.abacus.query.condition.IsInfinite;
 import com.landawn.abacus.query.condition.IsNaN;
@@ -56,13 +52,11 @@ import com.landawn.abacus.query.condition.LessThan;
 import com.landawn.abacus.query.condition.LessThanOrEqual;
 import com.landawn.abacus.query.condition.Like;
 import com.landawn.abacus.query.condition.Limit;
-import com.landawn.abacus.query.condition.Minus;
 import com.landawn.abacus.query.condition.NamedProperty;
 import com.landawn.abacus.query.condition.NaturalJoin;
 import com.landawn.abacus.query.condition.Not;
 import com.landawn.abacus.query.condition.NotBetween;
 import com.landawn.abacus.query.condition.NotEqual;
-import com.landawn.abacus.query.condition.NotExists;
 import com.landawn.abacus.query.condition.NotIn;
 import com.landawn.abacus.query.condition.NotInSubQuery;
 import com.landawn.abacus.query.condition.NotLike;
@@ -71,18 +65,14 @@ import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.Or;
 import com.landawn.abacus.query.condition.OrderBy;
 import com.landawn.abacus.query.condition.RightJoin;
-import com.landawn.abacus.query.condition.Some;
 import com.landawn.abacus.query.condition.SubQuery;
-import com.landawn.abacus.query.condition.Union;
-import com.landawn.abacus.query.condition.UnionAll;
 import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.EntityId;
 
 @Tag("2025")
-class Filters2025Test extends TestBase {
-
+public class FiltersTest extends TestBase {
     @Test
     public void testAlwaysTrue() {
         Expression expr = Filters.alwaysTrue();
@@ -1418,9 +1408,6 @@ class Filters2025Test extends TestBase {
         assertEquals(20, limit.getCount());
         assertEquals(5, limit.getOffset());
     }
-}
-
-class Filters2026Test extends TestBase {
 
     @Test
     public void testId2Cond() {
@@ -1626,89 +1613,12 @@ class Filters2026Test extends TestBase {
         Assertions.assertTrue(condition.toString().contains("IS NOT NULL"));
         Assertions.assertTrue(condition.toString().contains("!= 0"));
     }
-}
-
-public class FiltersTest extends TestBase {
-
-    @Test
-    public void testAlwaysTrue() {
-        Expression expr = Filters.alwaysTrue();
-        Assertions.assertNotNull(expr);
-        Assertions.assertEquals("1 < 2", expr.getLiteral());
-    }
-
-    @Test
-    public void testAlwaysFalse() {
-        Expression expr = Filters.alwaysFalse();
-        Assertions.assertNotNull(expr);
-        Assertions.assertEquals("1 > 2", expr.getLiteral());
-    }
-
-    @Test
-    public void testNamedProperty() {
-        NamedProperty prop = Filters.namedProperty("testProp");
-        Assertions.assertNotNull(prop);
-        Assertions.assertEquals("testProp", prop.propName());
-    }
-
-    @Test
-    public void testExpr() {
-        Expression expr = Filters.expr("age > 18");
-        Assertions.assertNotNull(expr);
-        Assertions.assertEquals("age > 18", expr.getLiteral());
-    }
-
-    @Test
-    public void testBinary() {
-        Binary binary = Filters.binary("name", Operator.EQUAL, "John");
-        Assertions.assertNotNull(binary);
-        Assertions.assertEquals("name", binary.getPropName());
-        Assertions.assertEquals(Operator.EQUAL, binary.operator());
-        Assertions.assertEquals("John", binary.getPropValue());
-    }
-
-    @Test
-    public void testEqual() {
-        // Test with value
-        Equal eq1 = Filters.equal("status", "active");
-        Assertions.assertNotNull(eq1);
-        Assertions.assertEquals("status", eq1.getPropName());
-        Assertions.assertEquals("active", eq1.getPropValue());
-
-        // Test without value (for parameterized SQL)
-        Equal eq2 = Filters.equal("status");
-        Assertions.assertNotNull(eq2);
-        Assertions.assertEquals("status", eq2.getPropName());
-        Assertions.assertEquals(Filters.QME, eq2.getPropValue());
-    }
-
-    @Test
-    public void testEq() {
-        // Test with value
-        Equal eq1 = Filters.eq("age", 25);
-        Assertions.assertNotNull(eq1);
-        Assertions.assertEquals("age", eq1.getPropName());
-        Assertions.assertEquals(25, (Integer) eq1.getPropValue());
-
-        // Test without value
-        Equal eq2 = Filters.eq("age");
-        Assertions.assertNotNull(eq2);
-        Assertions.assertEquals("age", eq2.getPropName());
-        Assertions.assertEquals(Filters.QME, eq2.getPropValue());
-    }
 
     @Test
     public void testAnyEqualWithArray() {
         Or or = Filters.anyEqual("status", "active", "pending", "approved");
         Assertions.assertNotNull(or);
         Assertions.assertEquals(2, or.getConditions().size());
-    }
-
-    @Test
-    public void testInCollection() {
-        List<String> values = Arrays.asList("red", "green", "blue");
-        In in = Filters.in("color", values);
-        Assertions.assertNotNull(in);
     }
 
     @Test
@@ -1763,380 +1673,6 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
-    public void testGtAndLt() {
-        // With values
-        And and1 = Filters.gtAndLt("age", 18, 65);
-        Assertions.assertNotNull(and1);
-        Assertions.assertEquals(2, and1.getConditions().size());
-
-        // Without values
-        And and2 = Filters.gtAndLt("age");
-        Assertions.assertNotNull(and2);
-        Assertions.assertEquals(2, and2.getConditions().size());
-    }
-
-    @Test
-    public void testGeAndLt() {
-        // With values
-        And and1 = Filters.geAndLt("score", 0, 100);
-        Assertions.assertNotNull(and1);
-        Assertions.assertEquals(2, and1.getConditions().size());
-
-        // Without values
-        And and2 = Filters.geAndLt("score");
-        Assertions.assertNotNull(and2);
-        Assertions.assertEquals(2, and2.getConditions().size());
-    }
-
-    @Test
-    public void testGeAndLe() {
-        // With values
-        And and1 = Filters.geAndLe("price", 10.0, 100.0);
-        Assertions.assertNotNull(and1);
-        Assertions.assertEquals(2, and1.getConditions().size());
-
-        // Without values
-        And and2 = Filters.geAndLe("price");
-        Assertions.assertNotNull(and2);
-        Assertions.assertEquals(2, and2.getConditions().size());
-    }
-
-    @Test
-    public void testGtAndLe() {
-        // With values
-        And and1 = Filters.gtAndLe("temperature", -10, 40);
-        Assertions.assertNotNull(and1);
-        Assertions.assertEquals(2, and1.getConditions().size());
-
-        // Without values
-        And and2 = Filters.gtAndLe("temperature");
-        Assertions.assertNotNull(and2);
-        Assertions.assertEquals(2, and2.getConditions().size());
-    }
-
-    @Test
-    public void testNotEqual() {
-        // With value
-        NotEqual ne1 = Filters.notEqual("status", "deleted");
-        Assertions.assertNotNull(ne1);
-        Assertions.assertEquals("status", ne1.getPropName());
-        Assertions.assertEquals("deleted", ne1.getPropValue());
-
-        // Without value
-        NotEqual ne2 = Filters.notEqual("status");
-        Assertions.assertNotNull(ne2);
-        Assertions.assertEquals(Filters.QME, ne2.getPropValue());
-    }
-
-    @Test
-    public void testNe() {
-        // With value
-        NotEqual ne1 = Filters.ne("type", "admin");
-        Assertions.assertNotNull(ne1);
-        Assertions.assertEquals("type", ne1.getPropName());
-        Assertions.assertEquals("admin", ne1.getPropValue());
-
-        // Without value
-        NotEqual ne2 = Filters.ne("type");
-        Assertions.assertNotNull(ne2);
-        Assertions.assertEquals(Filters.QME, ne2.getPropValue());
-    }
-
-    @Test
-    public void testGreaterThan() {
-        // With value
-        GreaterThan gt1 = Filters.greaterThan("age", 18);
-        Assertions.assertNotNull(gt1);
-        Assertions.assertEquals("age", gt1.getPropName());
-        Assertions.assertEquals(18, (Integer) (Integer) gt1.getPropValue());
-
-        // Without value
-        GreaterThan gt2 = Filters.greaterThan("age");
-        Assertions.assertNotNull(gt2);
-        Assertions.assertEquals(Filters.QME, gt2.getPropValue());
-    }
-
-    @Test
-    public void testGt() {
-        // With value
-        GreaterThan gt1 = Filters.gt("score", 60);
-        Assertions.assertNotNull(gt1);
-        Assertions.assertEquals("score", gt1.getPropName());
-        Assertions.assertEquals(60, (Integer) gt1.getPropValue());
-
-        // Without value
-        GreaterThan gt2 = Filters.gt("score");
-        Assertions.assertNotNull(gt2);
-        Assertions.assertEquals(Filters.QME, gt2.getPropValue());
-    }
-
-    @Test
-    public void testGreaterThanOrEqual() {
-        // With value
-        GreaterThanOrEqual ge1 = Filters.greaterThanOrEqual("level", 5);
-        Assertions.assertNotNull(ge1);
-        Assertions.assertEquals("level", ge1.getPropName());
-        Assertions.assertEquals(5, (Integer) ge1.getPropValue());
-
-        // Without value
-        GreaterThanOrEqual ge2 = Filters.greaterThanOrEqual("level");
-        Assertions.assertNotNull(ge2);
-        Assertions.assertEquals(Filters.QME, ge2.getPropValue());
-    }
-
-    @Test
-    public void testGe() {
-        // With value
-        GreaterThanOrEqual ge1 = Filters.ge("rating", 4.0);
-        Assertions.assertNotNull(ge1);
-        Assertions.assertEquals("rating", ge1.getPropName());
-        Assertions.assertEquals(4.0, ge1.getPropValue());
-
-        // Without value
-        GreaterThanOrEqual ge2 = Filters.ge("rating");
-        Assertions.assertNotNull(ge2);
-        Assertions.assertEquals(Filters.QME, ge2.getPropValue());
-    }
-
-    @Test
-    public void testLessThan() {
-        // With value
-        LessThan lt1 = Filters.lessThan("price", 100);
-        Assertions.assertNotNull(lt1);
-        Assertions.assertEquals("price", lt1.getPropName());
-        Assertions.assertEquals(100, (Integer) lt1.getPropValue());
-
-        // Without value
-        LessThan lt2 = Filters.lessThan("price");
-        Assertions.assertNotNull(lt2);
-        Assertions.assertEquals(Filters.QME, lt2.getPropValue());
-    }
-
-    @Test
-    public void testLt() {
-        // With value
-        LessThan lt1 = Filters.lt("quantity", 10);
-        Assertions.assertNotNull(lt1);
-        Assertions.assertEquals("quantity", lt1.getPropName());
-        Assertions.assertEquals(10, (Integer) lt1.getPropValue());
-
-        // Without value
-        LessThan lt2 = Filters.lt("quantity");
-        Assertions.assertNotNull(lt2);
-        Assertions.assertEquals(Filters.QME, lt2.getPropValue());
-    }
-
-    @Test
-    public void testLessThanOrEqual() {
-        // With value
-        LessThanOrEqual le1 = Filters.lessThanOrEqual("discount", 50);
-        Assertions.assertNotNull(le1);
-        Assertions.assertEquals("discount", le1.getPropName());
-        Assertions.assertEquals(50, (Integer) le1.getPropValue());
-
-        // Without value
-        LessThanOrEqual le2 = Filters.lessThanOrEqual("discount");
-        Assertions.assertNotNull(le2);
-        Assertions.assertEquals(Filters.QME, le2.getPropValue());
-    }
-
-    @Test
-    public void testLe() {
-        // With value
-        LessThanOrEqual le1 = Filters.le("temperature", 30);
-        Assertions.assertNotNull(le1);
-        Assertions.assertEquals("temperature", le1.getPropName());
-        Assertions.assertEquals(30, (Integer) le1.getPropValue());
-
-        // Without value
-        LessThanOrEqual le2 = Filters.le("temperature");
-        Assertions.assertNotNull(le2);
-        Assertions.assertEquals(Filters.QME, le2.getPropValue());
-    }
-
-    @Test
-    public void testBetween() {
-        // With values
-        Between bt1 = Filters.between("age", 18, 65);
-        Assertions.assertNotNull(bt1);
-        Assertions.assertEquals("age", bt1.getPropName());
-        Assertions.assertEquals(18, (Integer) (Integer) bt1.getMinValue());
-        Assertions.assertEquals(65, (Integer) bt1.getMaxValue());
-
-        // Without values
-        Between bt2 = Filters.between("age");
-        Assertions.assertNotNull(bt2);
-        Assertions.assertEquals(Filters.QME, bt2.getMinValue());
-        Assertions.assertEquals(Filters.QME, bt2.getMaxValue());
-    }
-
-    // Removed: testBt() - bt() methods have been removed. Use between() instead.
-
-    @Test
-    public void testNotBetween() {
-        // With values
-        NotBetween nbt1 = Filters.notBetween("score", 0, 50);
-        Assertions.assertNotNull(nbt1);
-        Assertions.assertEquals("score", nbt1.getPropName());
-        Assertions.assertEquals(0, (Integer) nbt1.getMinValue());
-        Assertions.assertEquals(50, (Integer) nbt1.getMaxValue());
-
-        // Without values
-        NotBetween nbt2 = Filters.notBetween("score");
-        Assertions.assertNotNull(nbt2);
-        Assertions.assertEquals(Filters.QME, nbt2.getMinValue());
-        Assertions.assertEquals(Filters.QME, nbt2.getMaxValue());
-    }
-
-    @Test
-    public void testLike() {
-        // With value
-        Like like1 = Filters.like("name", "%John%");
-        Assertions.assertNotNull(like1);
-        Assertions.assertEquals("name", like1.getPropName());
-        Assertions.assertEquals("%John%", like1.getPropValue());
-
-        // Without value
-        Like like2 = Filters.like("name");
-        Assertions.assertNotNull(like2);
-        Assertions.assertEquals(Filters.QME, like2.getPropValue());
-    }
-
-    @Test
-    public void testNotLike() {
-        // With value
-        NotLike notLike1 = Filters.notLike("description", "%spam%");
-        Assertions.assertNotNull(notLike1);
-        Assertions.assertEquals("description", notLike1.getPropName());
-        Assertions.assertEquals("%spam%", notLike1.getPropValue());
-
-        // Without value
-        NotLike notLike2 = Filters.notLike("description");
-        Assertions.assertNotNull(notLike2);
-        Assertions.assertEquals(Filters.QME, notLike2.getPropValue());
-    }
-
-    @Test
-    public void testContains() {
-        Like like = Filters.contains("name", "John");
-        Assertions.assertNotNull(like);
-        Assertions.assertEquals("name", like.getPropName());
-        Assertions.assertEquals("%John%", like.getPropValue());
-    }
-
-    @Test
-    public void testNotContains() {
-        NotLike notLike = Filters.notContains("description", "spam");
-        Assertions.assertNotNull(notLike);
-        Assertions.assertEquals("description", notLike.getPropName());
-        Assertions.assertEquals("%spam%", notLike.getPropValue());
-    }
-
-    @Test
-    public void testStartsWith() {
-        Like like = Filters.startsWith("email", "admin@");
-        Assertions.assertNotNull(like);
-        Assertions.assertEquals("email", like.getPropName());
-        Assertions.assertEquals("admin@%", like.getPropValue());
-    }
-
-    @Test
-    public void testNotStartsWith() {
-        NotLike notLike = Filters.notStartsWith("username", "test_");
-        Assertions.assertNotNull(notLike);
-        Assertions.assertEquals("username", notLike.getPropName());
-        Assertions.assertEquals("test_%", notLike.getPropValue());
-    }
-
-    @Test
-    public void testEndsWith() {
-        Like like = Filters.endsWith("email", "@example.com");
-        Assertions.assertNotNull(like);
-        Assertions.assertEquals("email", like.getPropName());
-        Assertions.assertEquals("%@example.com", like.getPropValue());
-    }
-
-    @Test
-    public void testNotEndsWith() {
-        NotLike notLike = Filters.notEndsWith("filename", ".tmp");
-        Assertions.assertNotNull(notLike);
-        Assertions.assertEquals("filename", notLike.getPropName());
-        Assertions.assertEquals("%.tmp", notLike.getPropValue());
-    }
-
-    @Test
-    public void testIsNull() {
-        IsNull isNull = Filters.isNull("deletedAt");
-        Assertions.assertNotNull(isNull);
-        Assertions.assertEquals("deletedAt", isNull.getPropName());
-    }
-
-    @Test
-    public void testIsEmpty() {
-        Or isEmpty = Filters.isNullOrEmpty("description");
-        Assertions.assertNotNull(isEmpty);
-        Assertions.assertEquals(2, isEmpty.getConditions().size());
-    }
-
-    @Test
-    public void testIsNullOrZero() {
-        Or isNullOrZero = Filters.isNullOrZero("count");
-        Assertions.assertNotNull(isNullOrZero);
-        Assertions.assertEquals(2, isNullOrZero.getConditions().size());
-    }
-
-    @Test
-    public void testIsNotNull() {
-        IsNotNull isNotNull = Filters.isNotNull("createdAt");
-        Assertions.assertNotNull(isNotNull);
-        Assertions.assertEquals("createdAt", isNotNull.getPropName());
-    }
-
-    @Test
-    public void testIsNaN() {
-        IsNaN isNaN = Filters.isNaN("value");
-        Assertions.assertNotNull(isNaN);
-        Assertions.assertEquals("value", isNaN.getPropName());
-    }
-
-    @Test
-    public void testIsNotNaN() {
-        IsNotNaN isNotNaN = Filters.isNotNaN("price");
-        Assertions.assertNotNull(isNotNaN);
-        Assertions.assertEquals("price", isNotNaN.getPropName());
-    }
-
-    @Test
-    public void testIsInfinite() {
-        IsInfinite isInfinite = Filters.isInfinite("result");
-        Assertions.assertNotNull(isInfinite);
-        Assertions.assertEquals("result", isInfinite.getPropName());
-    }
-
-    @Test
-    public void testIsNotInfinite() {
-        IsNotInfinite isNotInfinite = Filters.isNotInfinite("calculation");
-        Assertions.assertNotNull(isNotInfinite);
-        Assertions.assertEquals("calculation", isNotInfinite.getPropName());
-    }
-
-    @Test
-    public void testIs() {
-        Is is = Filters.is("status", "active");
-        Assertions.assertNotNull(is);
-        Assertions.assertEquals("status", is.getPropName());
-        Assertions.assertEquals("active", is.getPropValue());
-    }
-
-    @Test
-    public void testIsNot() {
-        IsNot isNot = Filters.isNot("type", "guest");
-        Assertions.assertNotNull(isNot);
-        Assertions.assertEquals("type", isNot.getPropName());
-        Assertions.assertEquals("guest", isNot.getPropValue());
-    }
-
-    @Test
     public void testOr() {
         // Test with array of conditions
         Condition cond1 = Filters.eq("status", "active");
@@ -2166,24 +1702,6 @@ public class FiltersTest extends TestBase {
         And and2 = Filters.and(conditions);
         Assertions.assertNotNull(and2);
         Assertions.assertEquals(2, and2.getConditions().size());
-    }
-
-    @Test
-    public void testJunction() {
-        // Test with array of conditions
-        Condition cond1 = Filters.eq("a", 1);
-        Condition cond2 = Filters.eq("b", 2);
-        Junction junction1 = Filters.junction(Operator.OR, cond1, cond2);
-        Assertions.assertNotNull(junction1);
-        Assertions.assertEquals(Operator.OR, junction1.operator());
-        Assertions.assertEquals(2, junction1.getConditions().size());
-
-        // Test with collection of conditions
-        List<Condition> conditions = Arrays.asList(cond1, cond2);
-        Junction junction2 = Filters.junction(Operator.AND, conditions);
-        Assertions.assertNotNull(junction2);
-        Assertions.assertEquals(Operator.AND, junction2.operator());
-        Assertions.assertEquals(2, junction2.getConditions().size());
     }
 
     @Test
@@ -2497,19 +2015,6 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
-    public void testInSubQuery() {
-        // Test with single property
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
-        InSubQuery in1 = Filters.in("userId", subQuery);
-        Assertions.assertNotNull(in1);
-
-        // Test with multiple properties
-        List<String> props = Arrays.asList("userId", "departmentId");
-        InSubQuery in2 = Filters.in(props, subQuery);
-        Assertions.assertNotNull(in2);
-    }
-
-    @Test
     public void testNotIn() {
         // Test with int array
         NotIn notIn1 = Filters.notIn("status", new int[] { 0, -1 });
@@ -2531,89 +2036,6 @@ public class FiltersTest extends TestBase {
         List<String> values = Arrays.asList("spam", "deleted", "hidden");
         NotIn notIn5 = Filters.notIn("status", values);
         Assertions.assertNotNull(notIn5);
-    }
-
-    @Test
-    public void testNotInSubQuery() {
-        // Test with single property
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM blacklist");
-        NotInSubQuery notIn1 = Filters.notIn("userId", subQuery);
-        Assertions.assertNotNull(notIn1);
-
-        // Test with multiple properties
-        List<String> props = Arrays.asList("email", "phone");
-        NotInSubQuery notIn2 = Filters.notIn(props, subQuery);
-        Assertions.assertNotNull(notIn2);
-    }
-
-    @Test
-    public void testAll() {
-        SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
-        All all = Filters.all(subQuery);
-        Assertions.assertNotNull(all);
-    }
-
-    @Test
-    public void testAny() {
-        SubQuery subQuery = Filters.subQuery("SELECT score FROM tests");
-        Any any = Filters.any(subQuery);
-        Assertions.assertNotNull(any);
-    }
-
-    @Test
-    public void testSome() {
-        SubQuery subQuery = Filters.subQuery("SELECT level FROM users");
-        Some some = Filters.some(subQuery);
-        Assertions.assertNotNull(some);
-    }
-
-    @Test
-    public void testExists() {
-        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE user_id = users.id");
-        Exists exists = Filters.exists(subQuery);
-        Assertions.assertNotNull(exists);
-    }
-
-    @Test
-    public void testNotExists() {
-        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM blacklist WHERE email = users.email");
-        NotExists notExists = Filters.notExists(subQuery);
-        Assertions.assertNotNull(notExists);
-    }
-
-    @Test
-    public void testUnion() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM archived_users");
-        Union union = Filters.union(subQuery);
-        Assertions.assertNotNull(union);
-    }
-
-    @Test
-    public void testUnionAll() {
-        SubQuery subQuery = Filters.subQuery("SELECT name FROM products");
-        UnionAll unionAll = Filters.unionAll(subQuery);
-        Assertions.assertNotNull(unionAll);
-    }
-
-    @Test
-    public void testExcept() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM deleted_items");
-        Except except = Filters.except(subQuery);
-        Assertions.assertNotNull(except);
-    }
-
-    @Test
-    public void testIntersect() {
-        SubQuery subQuery = Filters.subQuery("SELECT user_id FROM premium_users");
-        Intersect intersect = Filters.intersect(subQuery);
-        Assertions.assertNotNull(intersect);
-    }
-
-    @Test
-    public void testMinus() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_accounts");
-        Minus minus = Filters.minus(subQuery);
-        Assertions.assertNotNull(minus);
     }
 
     //    @Test
@@ -2772,9 +2194,6 @@ public class FiltersTest extends TestBase {
         Criteria criteria24 = Criteria.builder().limit("50 OFFSET 100").build();
         Assertions.assertNotNull(criteria24);
     }
-}
-
-class FiltersJavadocExamples extends TestBase {
 
     @Test
     public void testFilters_alwaysTrue() {
@@ -3133,9 +2552,6 @@ class FiltersJavadocExamples extends TestBase {
         NaturalJoin naturalJoin = Filters.naturalJoin("department");
         assertNotNull(naturalJoin);
     }
-}
-
-class Filters2026BatchTest extends TestBase {
 
     @Test
     public void testAllEqual_EntitySingleSelectedProperty() {
@@ -3156,11 +2572,6 @@ class Filters2026BatchTest extends TestBase {
         And condition = Filters.allEqual(account, Arrays.asList("firstName", "lastName"));
 
         assertEquals(2, condition.getConditions().size());
-    }
-
-    @Test
-    public void testAnyOfAllEqual_AllNullEntities() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(null, null)));
     }
 
     @Test

@@ -1,12 +1,14 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.util.ImmutableList;
-import com.landawn.abacus.util.NamingPolicy;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.ImmutableList;
+import com.landawn.abacus.util.NamingPolicy;
 
 public class ComposableConditionTest extends TestBase {
 
@@ -84,7 +86,7 @@ public class ComposableConditionTest extends TestBase {
         final TestComposableCondition left = new TestComposableCondition("status", "ACTIVE");
         final TestComposableCondition right = new TestComposableCondition("type", "ADMIN");
 
-        final Or result = (Or) left.xor(right);
+        final Or result = left.xor(right);
 
         assertEquals(Operator.OR, result.operator());
         assertEquals(2, result.getConditions().size());

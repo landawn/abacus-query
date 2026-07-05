@@ -1,23 +1,24 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class RightJoin2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class RightJoinTest extends TestBase {
     @Test
     public void testConstructor_Simple() {
         RightJoin join = new RightJoin("departments");
@@ -38,7 +39,7 @@ class RightJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("orders", "order_items");
         RightJoin join = new RightJoin(entities, new Equal("orders.id", "order_items.order_id"));
         assertNotNull(join);
-        assertEquals(2, (int) join.getJoinEntities().size());
+        assertEquals(2, join.getJoinEntities().size());
         assertEquals(Operator.RIGHT_JOIN, join.operator());
     }
 
@@ -47,7 +48,7 @@ class RightJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("table1", "table2");
         RightJoin join = new RightJoin(entities, null);
         List<String> result = join.getJoinEntities();
-        assertEquals(2, (int) result.size());
+        assertEquals(2, result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
     }
@@ -76,7 +77,7 @@ class RightJoin2025Test extends TestBase {
     public void testGetParameters_WithCondition() {
         RightJoin join = new RightJoin("products", new Equal("active", true));
         List<Object> params = join.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals(true, params.get(0));
     }
 
@@ -133,7 +134,7 @@ class RightJoin2025Test extends TestBase {
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("orders.product_id", "products.id"), new Equal("products.active", true)));
         RightJoin join = new RightJoin("products", andCondition);
-        assertEquals(2, (int) join.getParameters().size());
+        assertEquals(2, join.getParameters().size());
     }
 
     @Test
@@ -148,7 +149,7 @@ class RightJoin2025Test extends TestBase {
         List<String> tables = Arrays.asList("categories", "subcategories");
         And condition = new And(Arrays.asList(new Equal("products.category_id", "categories.id"), new Equal("products.subcategory_id", "subcategories.id")));
         RightJoin join = new RightJoin(tables, condition);
-        assertEquals(2, (int) join.getJoinEntities().size());
+        assertEquals(2, join.getJoinEntities().size());
     }
 
     @Test
@@ -157,9 +158,6 @@ class RightJoin2025Test extends TestBase {
         assertNotNull(join.getCondition());
         assertEquals(Operator.RIGHT_JOIN, join.operator());
     }
-}
-
-public class RightJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithEntityOnly() {
@@ -213,24 +211,6 @@ public class RightJoinTest extends TestBase {
     }
 
     @Test
-    public void testGetJoinEntities() {
-        RightJoin join = Filters.rightJoin("departments");
-
-        List<String> entities = join.getJoinEntities();
-        Assertions.assertNotNull(entities);
-        Assertions.assertEquals(1, entities.size());
-        Assertions.assertEquals("departments", entities.get(0));
-    }
-
-    @Test
-    public void testGetCondition() {
-        On onClause = Filters.on("employees.dept_id", "departments.id");
-        RightJoin join = Filters.rightJoin("departments", onClause);
-
-        Assertions.assertEquals(onClause, join.getCondition());
-    }
-
-    @Test
     public void testGetParameters() {
         Equal activeCondition = Filters.eq("active", true);
         RightJoin join = Filters.rightJoin("users", activeCondition);
@@ -267,16 +247,6 @@ public class RightJoinTest extends TestBase {
         Assertions.assertTrue(result.contains("RIGHT JOIN"));
         Assertions.assertTrue(result.contains("suppliers"));
         Assertions.assertTrue(result.contains("ON"));
-    }
-
-    @Test
-    public void testHashCode() {
-        RightJoin join1 = Filters.rightJoin("products");
-        RightJoin join2 = Filters.rightJoin("products");
-        RightJoin join3 = Filters.rightJoin("categories");
-
-        Assertions.assertEquals(join1.hashCode(), join2.hashCode());
-        Assertions.assertNotEquals(join1.hashCode(), join3.hashCode());
     }
 
     @Test

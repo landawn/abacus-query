@@ -20,8 +20,7 @@ import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
-class Binary2025Test extends TestBase {
-
+public class BinaryTest extends TestBase {
     @Test
     public void testConstructor() {
         Binary condition = new Binary("age", Operator.EQUAL, 25);
@@ -76,7 +75,7 @@ class Binary2025Test extends TestBase {
     public void testGetParameters() {
         Binary condition = new Binary("status", Operator.EQUAL, "active");
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -262,20 +261,6 @@ class Binary2025Test extends TestBase {
         assertEquals(Operator.LIKE, like.operator());
     }
 
-}
-
-public class BinaryTest extends TestBase {
-
-    @Test
-    public void testConstructor() {
-        Binary binary = Filters.binary("price", Operator.GREATER_THAN, 100.0);
-
-        Assertions.assertNotNull(binary);
-        Assertions.assertEquals("price", binary.getPropName());
-        Assertions.assertEquals(Operator.GREATER_THAN, binary.operator());
-        Assertions.assertEquals(100.0, binary.getPropValue());
-    }
-
     @Test
     public void testConstructorWithNullValue() {
         Binary binary = Filters.binary("optional", Operator.EQUAL, null);
@@ -296,19 +281,6 @@ public class BinaryTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             new Binary(null, Operator.EQUAL, "value");
         });
-    }
-
-    @Test
-    public void testGetPropName() {
-        Binary binary = Filters.binary("userName", Operator.EQUAL, "John");
-        Assertions.assertEquals("userName", binary.getPropName());
-    }
-
-    @Test
-    public void testGetPropValue() {
-        Binary binary = Filters.binary("age", Operator.GREATER_THAN_OR_EQUAL, 25);
-        Integer value = binary.getPropValue();
-        Assertions.assertEquals(25, value);
     }
 
     @Test
@@ -380,14 +352,6 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
-    public void testHashCode() {
-        Binary binary1 = Filters.binary("status", Operator.EQUAL, "active");
-        Binary binary2 = Filters.binary("status", Operator.EQUAL, "active");
-
-        Assertions.assertEquals(binary1.hashCode(), binary2.hashCode());
-    }
-
-    @Test
     public void testHashCodeWithNull() {
         Binary binary1 = Filters.binary("optional", Operator.EQUAL, null);
         Binary binary2 = Filters.binary("optional", Operator.EQUAL, null);
@@ -419,40 +383,6 @@ public class BinaryTest extends TestBase {
         Assertions.assertNotEquals(binary1, binary5); // Different property
         Assertions.assertNotEquals(binary1, null);
         Assertions.assertNotEquals(binary1, "string");
-    }
-
-    @Test
-    public void testAnd() {
-        Binary binary = Filters.binary("age", Operator.GREATER_THAN_OR_EQUAL, 18);
-        LessThan lt = Filters.lt("age", 65);
-
-        And and = binary.and(lt);
-
-        Assertions.assertNotNull(and);
-        Assertions.assertEquals(2, and.getConditions().size());
-        Assertions.assertTrue(and.getConditions().contains(binary));
-        Assertions.assertTrue(and.getConditions().contains(lt));
-    }
-
-    @Test
-    public void testOr() {
-        Binary binary = Filters.binary("status", Operator.EQUAL, "premium");
-        Equal eq = Filters.eq("status", "vip");
-
-        Or or = binary.or(eq);
-
-        Assertions.assertNotNull(or);
-        Assertions.assertEquals(2, or.getConditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        Binary binary = Filters.binary("active", Operator.EQUAL, false);
-
-        Not not = binary.not();
-
-        Assertions.assertNotNull(not);
-        Assertions.assertEquals(binary, not.getCondition());
     }
 
     @Test

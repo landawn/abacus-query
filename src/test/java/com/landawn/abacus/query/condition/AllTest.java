@@ -1,21 +1,23 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class All2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class AllTest extends TestBase {
     @Test
     public void testConstructor_WithRawSQLSubQuery() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
@@ -72,7 +74,7 @@ class All2025Test extends TestBase {
         All condition = new All(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("Premium", params.get(0));
     }
 
@@ -87,7 +89,7 @@ class All2025Test extends TestBase {
 
     @Test
     public void testToString_WithStructuredQuery() {
-        Condition whereCondition = new GreaterThan("rating", (Object) 4);
+        Condition whereCondition = new GreaterThan("rating", 4);
         SubQuery subQuery = Filters.subQuery("reviews", Arrays.asList("score"), whereCondition);
         All condition = new All(subQuery);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -196,20 +198,17 @@ class All2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), andCondition);
         All condition = new All(subQuery);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int) params.size());
+        assertEquals(2, params.size());
     }
 
     @Test
     public void testScoreComparison() {
         // score >= ALL (SELECT avg_score FROM class_statistics)
-        Condition whereCondition = new Equal("year", (Object) 2024);
+        Condition whereCondition = new Equal("year", 2024);
         SubQuery subQuery = Filters.subQuery("class_statistics", Arrays.asList("avg_score"), whereCondition);
         All condition = new All(subQuery);
         assertNotNull(condition);
     }
-}
-
-public class AllTest extends TestBase {
 
     @Test
     public void testConstructor() {
@@ -222,29 +221,12 @@ public class AllTest extends TestBase {
     }
 
     @Test
-    public void testGetCondition() {
-        SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
-        All all = Filters.all(subQuery);
-
-        SubQuery retrieved = (SubQuery) all.getCondition();
-        Assertions.assertEquals(subQuery, retrieved);
-    }
-
-    @Test
     public void testToString() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM competitor_products");
         All all = Filters.all(subQuery);
 
         String result = all.toString();
         Assertions.assertEquals("ALL (SELECT price FROM competitor_products)", result);
-    }
-
-    @Test
-    public void testRejectsStandalonePredicateUse() {
-        All all = Filters.all(Filters.subQuery("SELECT score FROM exams"));
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.where(all));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> all.or(Filters.eq("active", true)));
     }
 
     @Test
@@ -282,17 +264,6 @@ public class AllTest extends TestBase {
         Assertions.assertNotEquals(all1, all3);
         Assertions.assertNotEquals(all1, null);
         Assertions.assertNotEquals(all1, "string");
-    }
-
-    @Test
-    public void testHashCode() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT score FROM exams");
-        SubQuery subQuery2 = Filters.subQuery("SELECT score FROM exams");
-
-        All all1 = Filters.all(subQuery1);
-        All all2 = Filters.all(subQuery2);
-
-        Assertions.assertEquals(all1.hashCode(), all2.hashCode());
     }
 
     @Test

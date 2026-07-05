@@ -1,23 +1,24 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Not2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class NotTest extends TestBase {
     @Test
     public void testConstructor() {
         Equal innerCondition = new Equal("status", "active");
@@ -62,7 +63,7 @@ class Not2025Test extends TestBase {
         Not condition = new Not(innerCondition);
 
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("John", params.get(0));
     }
 
@@ -72,7 +73,7 @@ class Not2025Test extends TestBase {
         Not condition = new Not(between);
 
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int) params.size());
+        assertEquals(2, params.size());
         assertEquals(18, (int) params.get(0));
         assertEquals(65, (int) params.get(1));
     }
@@ -143,7 +144,7 @@ class Not2025Test extends TestBase {
         Not condition = new Not(innerAnd);
 
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int) params.size());
+        assertEquals(2, params.size());
     }
 
     @Test
@@ -160,12 +161,8 @@ class Not2025Test extends TestBase {
         Not condition = new Not(new Equal("field", null));
         List<Object> params = condition.getParameters();
 
-        assertEquals(0, (int) params.size());
+        assertEquals(0, params.size());
     }
-
-}
-
-public class NotTest extends TestBase {
 
     @Test
     public void testConstructorWithLikeCondition() {
@@ -196,31 +193,6 @@ public class NotTest extends TestBase {
     }
 
     @Test
-    public void testGetCondition() {
-        Like likeCondition = Filters.like("email", "%@example.com");
-        Not notCondition = Filters.not(likeCondition);
-
-        Assertions.assertEquals(likeCondition, notCondition.getCondition());
-    }
-
-    @Test
-    public void testGetOperator() {
-        Like likeCondition = Filters.like("name", "John%");
-        Not notCondition = Filters.not(likeCondition);
-
-        Assertions.assertEquals(Operator.NOT, notCondition.operator());
-    }
-
-    @Test
-    public void testGetParameters() {
-        In inCondition = Filters.in("id", Arrays.asList(1, 2, 3));
-        Not notCondition = Filters.not(inCondition);
-
-        Assertions.assertEquals(inCondition.getParameters(), notCondition.getParameters());
-        Assertions.assertEquals(3, notCondition.getParameters().size());
-    }
-
-    @Test
     public void testToString() {
         Like likeCondition = Filters.like("name", "%test%");
         Not notCondition = Filters.not(likeCondition);
@@ -230,17 +202,6 @@ public class NotTest extends TestBase {
         Assertions.assertTrue(result.contains("name"));
         Assertions.assertTrue(result.contains("LIKE"));
         Assertions.assertTrue(result.contains("%test%"));
-    }
-
-    @Test
-    public void testHashCode() {
-        Like likeCondition1 = Filters.like("name", "%test%");
-        Like likeCondition2 = Filters.like("name", "%test%");
-
-        Not not1 = Filters.not(likeCondition1);
-        Not not2 = Filters.not(likeCondition2);
-
-        Assertions.assertEquals(not1.hashCode(), not2.hashCode());
     }
 
     @Test

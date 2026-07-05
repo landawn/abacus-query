@@ -1,22 +1,23 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Where2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class WhereTest extends TestBase {
     @Test
     public void testConstructor_SimpleCondition() {
         Equal condition = new Equal("status", "active");
@@ -27,7 +28,7 @@ class Where2025Test extends TestBase {
 
     @Test
     public void testConstructor_ComplexCondition() {
-        And and = new And(new Equal("age", (Object) 25), new GreaterThan("salary", (Object) 50000));
+        And and = new And(new Equal("age", 25), new GreaterThan("salary", 50000));
         Where where = new Where(and);
         assertNotNull(where);
         assertEquals(Operator.WHERE, where.operator());
@@ -47,16 +48,16 @@ class Where2025Test extends TestBase {
         Equal condition = new Equal("status", "active");
         Where where = new Where(condition);
         List<Object> params = where.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
     @Test
     public void testGetParameters_MultipleValues() {
-        And complexCondition = new And(Arrays.asList(new Equal("status", "active"), new GreaterThan("balance", (Object) 1000)));
+        And complexCondition = new And(Arrays.asList(new Equal("status", "active"), new GreaterThan("balance", 1000)));
         Where where = new Where(complexCondition);
         List<Object> params = where.getParameters();
-        assertEquals(2, (int) params.size());
+        assertEquals(2, params.size());
     }
 
     @Test
@@ -69,7 +70,7 @@ class Where2025Test extends TestBase {
 
     @Test
     public void testToString_Complex() {
-        Or complexCondition = new Or(new And(new Equal("status", "active"), new GreaterThan("balance", (Object) 1000)), new Equal("vip", true));
+        Or complexCondition = new Or(new And(new Equal("status", "active"), new GreaterThan("balance", 1000)), new Equal("vip", true));
         Where where = new Where(complexCondition);
         String result = where.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("WHERE"));
@@ -121,21 +122,21 @@ class Where2025Test extends TestBase {
         Like condition = new Like("name", "%John%");
         Where where = new Where(condition);
         assertNotNull(where);
-        assertEquals(1, (int) where.getParameters().size());
+        assertEquals(1, where.getParameters().size());
     }
 
     @Test
     public void testWithBetween() {
-        Between condition = new Between("age", (Object) 18, (Object) 65);
+        Between condition = new Between("age", 18, 65);
         Where where = new Where(condition);
-        assertEquals(2, (int) where.getParameters().size());
+        assertEquals(2, where.getParameters().size());
     }
 
     @Test
     public void testWithInOperator() {
         In condition = new In("status", Arrays.asList("active", "pending", "approved"));
         Where where = new Where(condition);
-        assertEquals(3, (int) where.getParameters().size());
+        assertEquals(3, where.getParameters().size());
     }
 
     @Test
@@ -147,7 +148,7 @@ class Where2025Test extends TestBase {
     public void testWithOrCondition() {
         Or orCondition = new Or(new Equal("type", "A"), new Equal("type", "B"));
         Where where = new Where(orCondition);
-        assertEquals(2, (int) where.getParameters().size());
+        assertEquals(2, where.getParameters().size());
     }
 
     @Test
@@ -169,18 +170,15 @@ class Where2025Test extends TestBase {
     public void testWithIsNull() {
         IsNull condition = new IsNull("deletedAt");
         Where where = new Where(condition);
-        assertEquals(0, (int) where.getParameters().size());
+        assertEquals(0, where.getParameters().size());
     }
 
     @Test
     public void testEquals_DifferentClass() {
         Where where = new Where(new Equal("status", "active"));
         Having having = new Having(new Equal("status", "active"));
-        assertNotEquals(where, (Object) having);
+        assertNotEquals(where, having);
     }
-}
-
-public class WhereTest extends TestBase {
 
     @Test
     public void testConstructorWithCondition() {
@@ -246,17 +244,6 @@ public class WhereTest extends TestBase {
         Assertions.assertNotEquals(where1, where3);
         Assertions.assertNotEquals(where1, null);
         Assertions.assertNotEquals(where1, "string");
-    }
-
-    @Test
-    public void testHashCode() {
-        Condition condition1 = Filters.eq("status", "active");
-        Condition condition2 = Filters.eq("status", "active");
-
-        Where where1 = Filters.where(condition1);
-        Where where2 = Filters.where(condition2);
-
-        Assertions.assertEquals(where1.hashCode(), where2.hashCode());
     }
 
     @Test

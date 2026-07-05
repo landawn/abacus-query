@@ -1,19 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.query.entity.Account;
-import com.landawn.abacus.util.N;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -21,9 +7,25 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class NotIn2025Test extends TestBase {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.N;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class NotInTest extends TestBase {
     @Test
     public void testConstructor_ValidList() {
         List<String> values = Arrays.asList("deleted", "archived", "suspended");
@@ -244,9 +246,6 @@ class NotIn2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
     }
-}
-
-public class NotInTest extends TestBase {
 
     @Test
     public void testConstructorWithList() {
@@ -283,15 +282,6 @@ public class NotInTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             Filters.notIn("status", (List<String>) null);
         });
-    }
-
-    @Test
-    public void testGetParameters() {
-        List<Integer> values = Arrays.asList(10, 20, 30);
-        NotIn notIn = Filters.notIn("amount", values);
-
-        List<Object> params = notIn.getParameters();
-        Assertions.assertEquals(values, params);
     }
 
     @Test

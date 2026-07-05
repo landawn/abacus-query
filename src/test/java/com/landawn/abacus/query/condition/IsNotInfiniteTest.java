@@ -1,20 +1,22 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class IsNotInfinite2025Test extends TestBase {
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class IsNotInfiniteTest extends TestBase {
     @Test
     public void testConstructor() {
         IsNotInfinite condition = new IsNotInfinite("priceRatio");
@@ -196,9 +198,6 @@ class IsNotInfinite2025Test extends TestBase {
         And combined = infinite.and(nan);
         assertEquals(Integer.valueOf(2), combined.getConditions().size());
     }
-}
-
-public class IsNotInfiniteTest extends TestBase {
 
     @Test
     public void testConstructorWithPropName() {
@@ -224,15 +223,6 @@ public class IsNotInfiniteTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        IsNotInfinite condition = new IsNotInfinite("ratio");
-        List<Object> params = condition.getParameters();
-
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(0, params.size());
-    }
-
-    @Test
     public void testToString() {
         IsNotInfinite condition = new IsNotInfinite("calculation_result");
         String result = condition.toString();
@@ -250,16 +240,6 @@ public class IsNotInfiniteTest extends TestBase {
         Assertions.assertTrue(result.contains("GROWTH_RATE"));
         Assertions.assertTrue(result.contains("IS NOT"));
         Assertions.assertTrue(result.contains("INFINITE"));
-    }
-
-    @Test
-    public void testHashCode() {
-        IsNotInfinite condition1 = new IsNotInfinite("field1");
-        IsNotInfinite condition2 = new IsNotInfinite("field1");
-        IsNotInfinite condition3 = new IsNotInfinite("field2");
-
-        Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
-        Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
     }
 
     @Test
@@ -309,5 +289,4 @@ public class IsNotInfiniteTest extends TestBase {
             Assertions.assertTrue(result.contains("IS NOT INFINITE"));
         }
     }
-
 }

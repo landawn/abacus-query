@@ -1,20 +1,20 @@
 package com.landawn.abacus.query;
 
-import com.landawn.abacus.TestBase;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class SortDirection2025Test extends TestBase {
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
+import com.landawn.abacus.TestBase;
+
+@Tag("2025")
+public class SortDirectionTest extends TestBase {
     @Test
     public void testIsAscending_ASC() {
         assertTrue(SortDirection.ASC.isAscending());
@@ -66,9 +66,6 @@ class SortDirection2025Test extends TestBase {
         assertEquals(SortDirection.class, SortDirection.ASC.getDeclaringClass());
         assertEquals(SortDirection.class, SortDirection.DESC.getDeclaringClass());
     }
-}
-
-public class SortDirectionTest extends TestBase {
 
     @Test
     public void testIsAscending() {
@@ -99,16 +96,6 @@ public class SortDirectionTest extends TestBase {
         }
         assertTrue(hasAsc);
         assertTrue(hasDesc);
-    }
-
-    @Test
-    public void testValueOf() {
-        // Test valueOf for valid values
-        assertEquals(SortDirection.ASC, SortDirection.valueOf("ASC"));
-        assertEquals(SortDirection.DESC, SortDirection.valueOf("DESC"));
-
-        // Test valueOf for invalid value
-        assertThrows(IllegalArgumentException.class, () -> SortDirection.valueOf("INVALID"));
     }
 
     @Test
@@ -146,9 +133,6 @@ public class SortDirectionTest extends TestBase {
         assertEquals("ASC", SortDirection.ASC.name());
         assertEquals("DESC", SortDirection.DESC.name());
     }
-}
-
-class SortDirectionJavadocExamples extends TestBase {
 
     @Test
     public void testSortDirection_classLevelExample() {
@@ -169,9 +153,6 @@ class SortDirectionJavadocExamples extends TestBase {
         boolean descAscending = descDirection.isAscending();
         assertFalse(descAscending);
     }
-}
-
-class SortDirection2026Test extends TestBase {
 
     @Test
     public void testIsDescending() {

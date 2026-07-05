@@ -1,14 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -17,16 +8,27 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class And2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class AndTest extends TestBase {
     @Test
     public void testConstructor_VarArgs() {
         Equal cond1 = new Equal("a", 1);
         Equal cond2 = new Equal("b", 2);
         And junction = new And(cond1, cond2);
 
-        assertEquals(2, (int) junction.getConditions().size());
+        assertEquals(2, junction.getConditions().size());
         assertEquals(Operator.AND, junction.operator());
     }
 
@@ -37,7 +39,7 @@ class And2025Test extends TestBase {
         List<Condition> conditions = Arrays.asList(cond1, cond2);
 
         And junction = new And(conditions);
-        assertEquals(2, (int) junction.getConditions().size());
+        assertEquals(2, junction.getConditions().size());
     }
 
     @Test
@@ -71,15 +73,15 @@ class And2025Test extends TestBase {
 
         List<Condition> conditions = junction.getConditions();
         assertNotNull(conditions);
-        assertEquals(2, (int) conditions.size());
+        assertEquals(2, conditions.size());
     }
 
     @Test
     public void testGetParameters() {
         And junction = new And(new Equal("a", 1), new Equal("b", "test"));
         List<Object> params = junction.getParameters();
-        assertEquals(2, (int) params.size());
-        assertEquals((Object) Integer.valueOf(1), params.get(0));
+        assertEquals(2, params.size());
+        assertEquals(Integer.valueOf(1), params.get(0));
         assertEquals("test", params.get(1));
     }
 
@@ -87,7 +89,7 @@ class And2025Test extends TestBase {
     public void testGetParameters_EmptyConditions() {
         And junction = new And();
         List<Object> params = junction.getParameters();
-        assertEquals(0, (int) params.size());
+        assertEquals(0, params.size());
     }
 
     @Test
@@ -157,7 +159,7 @@ class And2025Test extends TestBase {
         And extended = original.and(cond3);
 
         assertEquals(Integer.valueOf(3), extended.getConditions().size());
-        assertEquals(2, (int) original.getConditions().size());
+        assertEquals(2, original.getConditions().size());
     }
 
     @Test
@@ -177,9 +179,9 @@ class And2025Test extends TestBase {
         And inner = new And(new Equal("a", 1), new Equal("b", 2));
         And outer = new And(inner, new Equal("c", 3));
 
-        assertEquals(2, (int) outer.getConditions().size());
+        assertEquals(2, outer.getConditions().size());
         List<Object> params = outer.getParameters();
-        assertEquals(3, (int) params.size());
+        assertEquals(3, params.size());
     }
 
     @Test
@@ -201,7 +203,7 @@ class And2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
         And innerCondition = (And) result.getCondition();
-        assertEquals(2, (int) innerCondition.getConditions().size());
+        assertEquals(2, innerCondition.getConditions().size());
     }
 
     @Test
@@ -244,10 +246,6 @@ class And2025Test extends TestBase {
         });
     }
 
-}
-
-public class AndTest extends TestBase {
-
     @Test
     public void testConstructorWithVarargs() {
         Equal eq1 = Filters.eq("status", "active");
@@ -288,24 +286,6 @@ public class AndTest extends TestBase {
     }
 
     @Test
-    public void testConstructorRejectsOnConnectorOperand() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
-    }
-
-    @Test
-    public void testAndMethod() {
-        And and = Filters.and(Filters.eq("status", "active"));
-        NotEqual ne = Filters.ne("type", "temp");
-
-        And extended = and.and(ne);
-
-        Assertions.assertNotNull(extended);
-        Assertions.assertNotSame(and, extended);
-        Assertions.assertEquals(2, extended.getConditions().size());
-        Assertions.assertEquals(1, and.getConditions().size()); // Original unchanged
-    }
-
-    @Test
     public void testAndMethodThrowsException() {
         And and = Filters.and();
 
@@ -334,19 +314,6 @@ public class AndTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        And and = Filters.and(Filters.eq("status", "active"), Filters.between("age", 18, 65), Filters.like("name", "John%"));
-
-        List<Object> params = and.getParameters();
-
-        Assertions.assertEquals(4, params.size());
-        Assertions.assertTrue(params.contains("active"));
-        Assertions.assertTrue(params.contains(18));
-        Assertions.assertTrue(params.contains(65));
-        Assertions.assertTrue(params.contains("John%"));
-    }
-
-    @Test
     public void testEquals() {
         And and1 = Filters.and(Filters.eq("name", "Test"), Filters.gt("value", 10));
 
@@ -358,15 +325,6 @@ public class AndTest extends TestBase {
         Assertions.assertNotEquals(and1, and3);
         Assertions.assertNotEquals(and1, null);
         Assertions.assertNotEquals(and1, "string");
-    }
-
-    @Test
-    public void testHashCode() {
-        And and1 = Filters.and(Filters.eq("id", 1), Filters.ne("deleted", true));
-
-        And and2 = Filters.and(Filters.eq("id", 1), Filters.ne("deleted", true));
-
-        Assertions.assertEquals(and1.hashCode(), and2.hashCode());
     }
 
     @Test

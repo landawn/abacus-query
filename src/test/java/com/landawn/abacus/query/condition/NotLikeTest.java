@@ -1,12 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,9 +7,18 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class NotLike2025Test extends TestBase {
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class NotLikeTest extends TestBase {
     @Test
     public void testConstructor() {
         NotLike condition = new NotLike("age", 25);
@@ -71,7 +73,7 @@ class NotLike2025Test extends TestBase {
     public void testGetParameters() {
         NotLike condition = new NotLike("status", "active");
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -79,7 +81,7 @@ class NotLike2025Test extends TestBase {
     public void testGetParameters_MultipleValues() {
         NotLike condition = new NotLike("count", 42);
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
 
@@ -211,19 +213,6 @@ class NotLike2025Test extends TestBase {
         String result = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("temp"));
     }
-}
-
-public class NotLikeTest extends TestBase {
-
-    @Test
-    public void testConstructor() {
-        NotLike notLike = Filters.notLike("name", "John%");
-
-        Assertions.assertNotNull(notLike);
-        Assertions.assertEquals("name", notLike.getPropName());
-        Assertions.assertEquals("John%", notLike.getPropValue());
-        Assertions.assertEquals(Operator.NOT_LIKE, notLike.operator());
-    }
 
     @Test
     public void testConstructorWithWildcardPercent() {
@@ -250,14 +239,6 @@ public class NotLikeTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        NotLike notLike = Filters.notLike("filename", "%.tmp");
-
-        Assertions.assertEquals(1, notLike.getParameters().size());
-        Assertions.assertEquals("%.tmp", notLike.getParameters().get(0));
-    }
-
-    @Test
     public void testToString() {
         NotLike notLike = Filters.notLike("description", "%important%");
 
@@ -275,16 +256,6 @@ public class NotLikeTest extends TestBase {
         Assertions.assertTrue(result.contains("USER_NAME"));
         Assertions.assertTrue(result.contains("NOT LIKE"));
         Assertions.assertTrue(result.contains("admin%"));
-    }
-
-    @Test
-    public void testHashCode() {
-        NotLike notLike1 = Filters.notLike("name", "%test%");
-        NotLike notLike2 = Filters.notLike("name", "%test%");
-        NotLike notLike3 = Filters.notLike("name", "%demo%");
-
-        Assertions.assertEquals(notLike1.hashCode(), notLike2.hashCode());
-        Assertions.assertNotEquals(notLike1.hashCode(), notLike3.hashCode());
     }
 
     @Test

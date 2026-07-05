@@ -1,23 +1,24 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class FullJoin2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class FullJoinTest extends TestBase {
     @Test
     public void testConstructor_Simple() {
         FullJoin join = new FullJoin("departments");
@@ -38,7 +39,7 @@ class FullJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("employees", "contractors");
         FullJoin join = new FullJoin(entities, new Equal("departments.id", "person.dept_id"));
         assertNotNull(join);
-        assertEquals(2, (int) join.getJoinEntities().size());
+        assertEquals(2, join.getJoinEntities().size());
         assertEquals(Operator.FULL_JOIN, join.operator());
     }
 
@@ -47,7 +48,7 @@ class FullJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("table1", "table2");
         FullJoin join = new FullJoin(entities, null);
         List<String> result = join.getJoinEntities();
-        assertEquals(2, (int) result.size());
+        assertEquals(2, result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
     }
@@ -76,7 +77,7 @@ class FullJoin2025Test extends TestBase {
     public void testGetParameters_WithCondition() {
         FullJoin join = new FullJoin("products", new Equal("active", true));
         List<Object> params = join.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals(true, params.get(0));
     }
 
@@ -147,7 +148,7 @@ class FullJoin2025Test extends TestBase {
     public void testMultiTableFullJoin() {
         List<String> tables = Arrays.asList("system_a_data", "system_b_data");
         FullJoin join = new FullJoin(tables, new Equal("master_data.record_id", "source.record_id"));
-        assertEquals(2, (int) join.getJoinEntities().size());
+        assertEquals(2, join.getJoinEntities().size());
     }
 
     @Test
@@ -156,9 +157,6 @@ class FullJoin2025Test extends TestBase {
         assertNotNull(join.getCondition());
         assertEquals(Operator.FULL_JOIN, join.operator());
     }
-}
-
-public class FullJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntity() {
@@ -267,15 +265,6 @@ public class FullJoinTest extends TestBase {
         Assertions.assertNotEquals(join1, join4); // No condition vs with condition
         Assertions.assertNotEquals(join1, null);
         Assertions.assertNotEquals(join1, "string");
-    }
-
-    @Test
-    public void testHashCode() {
-        NotEqual ne = Filters.ne("status", "inactive");
-        FullJoin join1 = Filters.fullJoin("records", ne);
-        FullJoin join2 = Filters.fullJoin("records", ne);
-
-        Assertions.assertEquals(join1.hashCode(), join2.hashCode());
     }
 
     @Test

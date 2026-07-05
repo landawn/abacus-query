@@ -1,42 +1,40 @@
 package com.landawn.abacus.query;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.annotation.Column;
-import com.landawn.abacus.annotation.Id;
-import com.landawn.abacus.annotation.NonColumn;
-import com.landawn.abacus.annotation.Table;
-import com.landawn.abacus.parser.ParserUtil.BeanInfo;
-import com.landawn.abacus.parser.ParserUtil.PropInfo;
-import com.landawn.abacus.parser.ParserUtil;
-import com.landawn.abacus.query.entity.Account;
-import com.landawn.abacus.util.ImmutableList;
-import com.landawn.abacus.util.ImmutableMap;
-import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.Tuple.Tuple2;
-import com.landawn.abacus.util.Tuple;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.annotation.Column;
+import com.landawn.abacus.annotation.Id;
+import com.landawn.abacus.annotation.NonColumn;
+import com.landawn.abacus.annotation.Table;
+import com.landawn.abacus.parser.ParserUtil;
+import com.landawn.abacus.parser.ParserUtil.BeanInfo;
+import com.landawn.abacus.parser.ParserUtil.PropInfo;
+import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.ImmutableList;
+import com.landawn.abacus.util.ImmutableMap;
+import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.Tuple;
+import com.landawn.abacus.util.Tuple.Tuple2;
 
 @Tag("2025")
-class QueryUtil2025Test extends TestBase {
-
+public class QueryUtilTest extends TestBase {
     @Table("value_form_accounts")
     static class ValueFormEntity {
         private int id;
@@ -436,9 +434,6 @@ class QueryUtil2025Test extends TestBase {
         boolean result = QueryUtil.isNonColumn(columnFields, nonColumnFields, propInfo);
         assertFalse(result);
     }
-}
-
-public class QueryUtilTest extends TestBase {
 
     @Table(name = "test_user", alias = "tu", columnFields = { "id", "name" }, nonColumnFields = { "tempData" })
     static class TestUser {
@@ -705,78 +700,6 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testProp2ColumnNameMap() {
-        // Test with valid entity class
-        ImmutableMap<String, Tuple2<String, Boolean>> result = QueryUtil.prop2ColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE);
-
-        assertNotNull(result);
-        assertTrue(result.containsKey("id"));
-        assertTrue(result.containsKey("name"));
-        assertFalse(result.containsKey("email"));
-
-        // Check column name mapping
-        assertEquals("id", result.get("id")._1);
-        assertEquals("user_name", result.get("name")._1);
-
-        // Check simple property flags
-        assertTrue(result.get("id")._2);
-        assertTrue(result.get("name")._2);
-
-        // Check that notColumnField is not included
-        assertFalse(result.containsKey("notColumnField"));
-
-        // Test caching - should return same instance
-        ImmutableMap<String, Tuple2<String, Boolean>> result2 = QueryUtil.prop2ColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE);
-        assertSame(result, result2);
-
-        // Test with different naming policy
-        ImmutableMap<String, Tuple2<String, Boolean>> result3 = QueryUtil.prop2ColumnNameMap(TestUser.class, NamingPolicy.SCREAMING_SNAKE_CASE);
-        assertNotSame(result, result3);
-    }
-
-    @Test
-    public void testGetColumn2PropNameMap() {
-        ImmutableMap<String, String> result = QueryUtil.getColumn2PropNameMap(TestUser.class);
-
-        assertNotNull(result);
-        assertTrue(result.containsKey("user_name"));
-        assertTrue(result.containsKey("USER_NAME"));
-        assertTrue(result.containsKey("user_name"));
-
-        assertEquals("name", result.get("user_name"));
-        assertEquals("name", result.get("USER_NAME"));
-        assertEquals("name", result.get("user_name"));
-
-        // Test caching
-        ImmutableMap<String, String> result2 = QueryUtil.getColumn2PropNameMap(TestUser.class);
-        assertSame(result, result2);
-    }
-
-    @Test
-    public void testGetProp2ColumnNameMap() {
-        // Test with null entity class
-        ImmutableMap<String, String> nullResult = QueryUtil.getProp2ColumnNameMap(null, NamingPolicy.SNAKE_CASE);
-        assertTrue(nullResult.isEmpty());
-
-        // Test with Map class
-        ImmutableMap<String, String> mapResult = QueryUtil.getProp2ColumnNameMap(Map.class, NamingPolicy.SNAKE_CASE);
-        assertTrue(mapResult.isEmpty());
-
-        // Test with regular entity class
-        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE);
-        assertNotNull(result);
-        assertEquals("id", result.get("id"));
-        assertEquals("user_name", result.get("name"));
-
-        // Test that excluded fields are not included
-        assertFalse(result.containsKey("notColumnField"));
-
-        // Test caching
-        ImmutableMap<String, String> result2 = QueryUtil.getProp2ColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE);
-        assertSame(result, result2);
-    }
-
-    @Test
     public void testGetProp2ColumnNameMapWithRepeatedNestedType() {
         final ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(NestedRoot.class, NamingPolicy.SNAKE_CASE);
 
@@ -836,141 +759,6 @@ public class QueryUtilTest extends TestBase {
         assertTrue(props.contains("id"));
         assertTrue(props.contains("name"));
         assertFalse(props.contains("email"));
-    }
-
-    @Test
-    public void testGetSelectPropNames() {
-        Set<String> excludedProps = new HashSet<>();
-
-        // Test without sub-entity properties
-        Collection<String> props = QueryUtil.getSelectPropNames(TestUser.class, false, excludedProps);
-        assertNotNull(props);
-        assertTrue(props.contains("id"));
-        assertTrue(props.contains("name"));
-        assertFalse(props.contains("email"));
-
-        // Test with sub-entity properties
-        props = QueryUtil.getSelectPropNames(TestUser.class, true, excludedProps);
-        assertNotNull(props);
-        // Should include nested properties if entity has sub-entities
-
-        // Test with exclusions
-        excludedProps.add("email");
-        props = QueryUtil.getSelectPropNames(TestUser.class, false, excludedProps);
-        assertTrue(props.contains("id"));
-        assertTrue(props.contains("name"));
-        assertFalse(props.contains("email"));
-    }
-
-    @Test
-    public void testGetUpdatePropNames() {
-        Set<String> excludedProps = new HashSet<>();
-
-        // Test without exclusions
-        Collection<String> props = QueryUtil.getUpdatePropNames(TestUser.class, excludedProps);
-        assertNotNull(props);
-        assertTrue(props.contains("id")); // ID should be excluded from update
-        assertTrue(props.contains("name"));
-        assertFalse(props.contains("email"));
-
-        // Test with exclusions
-        excludedProps.add("email");
-        props = QueryUtil.getUpdatePropNames(TestUser.class, excludedProps);
-        assertTrue(props.contains("id"));
-        assertTrue(props.contains("name"));
-        assertFalse(props.contains("email"));
-    }
-
-    @Test
-    public void testGetIdFieldNames() {
-        // Test entity with ID
-        List<String> idFields = QueryUtil.getIdPropNames(TestUser.class);
-        assertNotNull(idFields);
-        assertEquals(1, idFields.size());
-        assertEquals("id", idFields.get(0));
-
-        // Test entity without ID
-        idFields = QueryUtil.getIdPropNames(NoIdEntity.class);
-        assertNotNull(idFields);
-        assertTrue(idFields.isEmpty());
-    }
-
-    @Test
-    public void testIsNonColumn() {
-        PropInfo propInfo = ParserUtil.getBeanInfo(TestUser.class).getPropInfo("nonColumnField");
-        Set<String> columnFields = new HashSet<>(Arrays.asList("id", "name"));
-        Set<String> nonColumnFields = new HashSet<>(Arrays.asList("tempData"));
-
-        // Test with @NonColumn annotation
-        assertTrue(QueryUtil.isNonColumn(Collections.emptySet(), Collections.emptySet(), propInfo));
-
-        // Test with columnFields restriction
-        PropInfo emailProp = ParserUtil.getBeanInfo(TestUser.class).getPropInfo("email");
-        assertTrue(QueryUtil.isNonColumn(columnFields, Collections.emptySet(), emailProp));
-
-        // Test with nonColumnFields
-        PropInfo tempDataProp = ParserUtil.getBeanInfo(TestUser.class).getPropInfo("tempData");
-        assertTrue(QueryUtil.isNonColumn(Collections.emptySet(), nonColumnFields, tempDataProp));
-
-        // Test normal column
-        PropInfo nameProp = ParserUtil.getBeanInfo(TestUser.class).getPropInfo("name");
-        assertFalse(QueryUtil.isNonColumn(columnFields, Collections.emptySet(), nameProp));
-    }
-
-    @Test
-    public void testRepeatQuestionMark() {
-        // Test zero count
-        assertEquals("", QueryUtil.placeholders(0));
-
-        // Test small counts (cached)
-        assertEquals("?", QueryUtil.placeholders(1));
-        assertEquals("?, ?", QueryUtil.placeholders(2));
-        assertEquals("?, ?, ?", QueryUtil.placeholders(3));
-        assertEquals("?, ?, ?, ?, ?", QueryUtil.placeholders(5));
-
-        // Test larger cached values
-        assertEquals(Strings.repeat("?", 30, ", "), QueryUtil.placeholders(30));
-        assertEquals(Strings.repeat("?", 100, ", "), QueryUtil.placeholders(100));
-        assertEquals(Strings.repeat("?", 200, ", "), QueryUtil.placeholders(200));
-        assertEquals(Strings.repeat("?", 300, ", "), QueryUtil.placeholders(300));
-        assertEquals(Strings.repeat("?", 500, ", "), QueryUtil.placeholders(500));
-        assertEquals(Strings.repeat("?", 1000, ", "), QueryUtil.placeholders(1000));
-
-        // Test non-cached value
-        assertEquals(Strings.repeat("?", 37, ", "), QueryUtil.placeholders(37));
-
-        // Test negative value should throw exception
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.placeholders(-1));
-    }
-
-    @Test
-    public void testGetTableAlias() {
-        // Test with @Table annotation that has alias
-        String alias = QueryUtil.getTableAlias(TestUser.class);
-        assertEquals("tu", alias);
-
-        // Test with class without @Table annotation
-        alias = QueryUtil.getTableAlias(SimpleEntity.class);
-        assertNull(alias);
-    }
-
-    @Test
-    public void testGetTableNameAndAlias() {
-        // Test with default naming policy
-        String tableInfo = QueryUtil.getTableNameAndAlias(TestUser.class);
-        assertEquals("test_user tu", tableInfo);
-
-        // Test with specific naming policy
-        tableInfo = QueryUtil.getTableNameAndAlias(TestUser.class, NamingPolicy.SCREAMING_SNAKE_CASE);
-        assertEquals("test_user tu", tableInfo);
-
-        // Test with class without @Table annotation
-        tableInfo = QueryUtil.getTableNameAndAlias(SimpleEntity.class);
-        assertEquals("simple_entity", tableInfo);
-
-        // Test with different naming policy
-        tableInfo = QueryUtil.getTableNameAndAlias(SimpleEntity.class, NamingPolicy.SCREAMING_SNAKE_CASE);
-        assertEquals("SIMPLE_ENTITY", tableInfo);
     }
 
     @Test
@@ -1088,9 +876,6 @@ public class QueryUtilTest extends TestBase {
     public void testIsNonColumn_NullPropInfoThrowsIllegalArgument() {
         assertThrows(IllegalArgumentException.class, () -> QueryUtil.isNonColumn(Collections.emptySet(), Collections.emptySet(), null));
     }
-}
-
-class QueryUtilJavadocExamples extends TestBase {
 
     @Test
     public void testQueryUtil_patternForAlphanumericColumnName() {
@@ -1113,9 +898,6 @@ class QueryUtilJavadocExamples extends TestBase {
         String placeholders = QueryUtil.placeholders(0);
         assertEquals("", placeholders);
     }
-}
-
-class QueryUtilFromFilters2025Test extends TestBase {
 
     @Test
     public void testPatternForAlphanumericColumnName() {
@@ -1126,9 +908,6 @@ class QueryUtilFromFilters2025Test extends TestBase {
         assertFalse(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("user.name").matches());
         assertFalse(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("user name").matches());
     }
-}
-
-class QueryUtil2026Batch2Test extends TestBase {
 
     @Test
     public void testProp2ColumnNameMap_NullNamingPolicyUsesSnakeCase() {

@@ -1,23 +1,25 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Join2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class JoinTest extends TestBase {
     @Test
     public void testConstructor_SimpleJoin() {
         Join join = new Join("orders");
@@ -36,14 +38,14 @@ class Join2025Test extends TestBase {
     public void testConstructor_MultipleEntities() {
         Join join = new Join(Arrays.asList("orders o", "customers c"), new Equal("o.customer_id", "c.id"));
         assertNotNull(join);
-        assertEquals(2, (int) join.getJoinEntities().size());
+        assertEquals(2, join.getJoinEntities().size());
     }
 
     @Test
     public void testGetJoinEntities() {
         Join join = new Join(Arrays.asList("table1", "table2"), null);
         List<String> entities = join.getJoinEntities();
-        assertEquals(2, (int) entities.size());
+        assertEquals(2, entities.size());
         assertTrue(entities.contains("table1"));
         assertTrue(entities.contains("table2"));
     }
@@ -72,7 +74,7 @@ class Join2025Test extends TestBase {
     public void testGetParameters_WithCondition() {
         Join join = new Join("orders o", new Equal("status", "active"));
         List<Object> params = join.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -127,9 +129,9 @@ class Join2025Test extends TestBase {
 
     @Test
     public void testComplexCondition() {
-        And andCondition = new And(Arrays.asList(new Equal("o.customer_id", "c.id"), new GreaterThan("o.total", (Object) 100)));
+        And andCondition = new And(Arrays.asList(new Equal("o.customer_id", "c.id"), new GreaterThan("o.total", 100)));
         Join join = new Join("orders o", andCondition);
-        assertEquals(2, (int) join.getParameters().size());
+        assertEquals(2, join.getParameters().size());
     }
 
     @Test
@@ -148,9 +150,6 @@ class Join2025Test extends TestBase {
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("products", nestedOn));
     }
-}
-
-public class JoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntity() {
@@ -231,25 +230,6 @@ public class JoinTest extends TestBase {
     }
 
     @Test
-    public void testGetJoinEntities() {
-        Join join = new Join("customers c");
-        List<String> entities = join.getJoinEntities();
-
-        Assertions.assertNotNull(entities);
-        Assertions.assertEquals(1, entities.size());
-        Assertions.assertEquals("customers c", entities.get(0));
-    }
-
-    @Test
-    public void testGetCondition() {
-        Condition condition = Filters.eq("a.id", "b.a_id");
-        Join join = new Join("table_b b", condition);
-
-        Condition retrieved = join.getCondition();
-        Assertions.assertEquals(condition, retrieved);
-    }
-
-    @Test
     public void testGetParameters() {
         Condition condition = Filters.and(Filters.eq("status", "active"), Filters.gt("amount", 100));
         Join join = new Join("orders", condition);
@@ -309,14 +289,6 @@ public class JoinTest extends TestBase {
     }
 
     @Test
-    public void testConstructorRejectsNestedOnConnectorCondition() {
-        Condition nestedOn = new Junction(Operator.AND, Arrays.asList(Filters.on("sales.product_id", "products.id"), Filters.eq("products.active", true)),
-                true);
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("products", nestedOn));
-    }
-
-    @Test
     public void testToStringWithNamingPolicy() {
         Condition condition = Filters.eq("customerId", Filters.expr("orderId"));
         Join join = new Join("orderTable", condition);
@@ -336,19 +308,6 @@ public class JoinTest extends TestBase {
 
         String result = join.toString();
         Assertions.assertTrue(result.contains("t1, t2, t3"));
-    }
-
-    @Test
-    public void testHashCode() {
-        Condition condition = Filters.eq("a", "b");
-        Join join1 = new Join("table", condition);
-        Join join2 = new Join("table", condition);
-        Join join3 = new Join("other", condition);
-        Join join4 = new Join("table");
-
-        Assertions.assertEquals(join1.hashCode(), join2.hashCode());
-        Assertions.assertNotEquals(join1.hashCode(), join3.hashCode());
-        Assertions.assertNotEquals(join1.hashCode(), join4.hashCode());
     }
 
     @Test
@@ -389,9 +348,6 @@ public class JoinTest extends TestBase {
             super(operator, joinEntities, condition);
         }
     }
-}
-
-class Join2026Batch2Test extends TestBase {
 
     @Test
     public void testDefaultConstructor_EmptyState() {

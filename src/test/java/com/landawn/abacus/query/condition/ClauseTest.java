@@ -1,20 +1,19 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import java.util.Arrays;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Clause2025Test extends TestBase {
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+
+@Tag("2025")
+public class ClauseTest extends TestBase {
     private static class TestClause extends Clause {
         public TestClause(Operator operator, Condition condition) {
             super(operator, condition);
@@ -141,27 +140,6 @@ class Clause2025Test extends TestBase {
         assertEquals(2, params.size());
     }
 
-}
-
-public class ClauseTest extends TestBase {
-
-    // Create a concrete Clause subclass for testing
-    private static class TestClause extends Clause {
-        public TestClause(Operator operator, Condition condition) {
-            super(operator, condition);
-        }
-    }
-
-    @Test
-    public void testConstructor() {
-        Equal eq = Filters.eq("status", "active");
-        TestClause clause = new TestClause(Operator.WHERE, eq);
-
-        Assertions.assertNotNull(clause);
-        Assertions.assertEquals(Operator.WHERE, clause.operator());
-        Assertions.assertEquals(eq, clause.getCondition());
-    }
-
     @Test
     public void testInheritedMethodsFromCell() {
         GreaterThan gt = Filters.gt("price", 100);
@@ -198,15 +176,6 @@ public class ClauseTest extends TestBase {
 
         Assertions.assertEquals(clause1, clause2);
         Assertions.assertNotEquals(clause1, clause3);
-    }
-
-    @Test
-    public void testHashCode() {
-        In in = Filters.in("type", Arrays.asList("A", "B", "C"));
-        TestClause clause1 = new TestClause(Operator.WHERE, in);
-        TestClause clause2 = new TestClause(Operator.WHERE, in);
-
-        Assertions.assertEquals(clause1.hashCode(), clause2.hashCode());
     }
 
     @Test

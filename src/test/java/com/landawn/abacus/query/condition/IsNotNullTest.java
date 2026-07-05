@@ -1,20 +1,20 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class IsNotNull2025Test extends TestBase {
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class IsNotNullTest extends TestBase {
     @Test
     public void testConstructor() {
         IsNotNull condition = new IsNotNull("email");
@@ -170,9 +170,6 @@ class IsNotNull2025Test extends TestBase {
         IsNull isNull = new IsNull("field");
         assertNotEquals(isNotNull, isNull);
     }
-}
-
-public class IsNotNullTest extends TestBase {
 
     @Test
     public void testConstructorWithPropName() {
@@ -195,15 +192,6 @@ public class IsNotNullTest extends TestBase {
             Assertions.assertEquals(Operator.IS_NOT, condition.operator());
             Assertions.assertEquals(IsNull.NULL, condition.getPropValue());
         }
-    }
-
-    @Test
-    public void testGetParameters() {
-        IsNotNull condition = new IsNotNull("status");
-        List<Object> params = condition.getParameters();
-
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(0, params.size());
     }
 
     @Test
@@ -234,29 +222,6 @@ public class IsNotNullTest extends TestBase {
         Assertions.assertTrue(result.contains("phoneNumber"));
         Assertions.assertTrue(result.contains("IS NOT"));
         Assertions.assertTrue(result.contains("NULL"));
-    }
-
-    @Test
-    public void testHashCode() {
-        IsNotNull condition1 = new IsNotNull("field1");
-        IsNotNull condition2 = new IsNotNull("field1");
-        IsNotNull condition3 = new IsNotNull("field2");
-
-        Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
-        Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
-    }
-
-    @Test
-    public void testEquals() {
-        IsNotNull condition1 = new IsNotNull("field1");
-        IsNotNull condition2 = new IsNotNull("field1");
-        IsNotNull condition3 = new IsNotNull("field2");
-
-        Assertions.assertEquals(condition1, condition1);
-        Assertions.assertEquals(condition1, condition2);
-        Assertions.assertNotEquals(condition1, condition3);
-        Assertions.assertNotEquals(condition1, null);
-        Assertions.assertNotEquals(condition1, "string");
     }
 
     @Test

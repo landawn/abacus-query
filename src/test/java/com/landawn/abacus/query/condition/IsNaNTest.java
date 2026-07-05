@@ -1,19 +1,19 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class IsNaN2025Test extends TestBase {
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class IsNaNTest extends TestBase {
     @Test
     public void testConstructor() {
         IsNaN condition = new IsNaN("value");
@@ -172,9 +172,6 @@ class IsNaN2025Test extends TestBase {
         assertNotNull(combined);
         assertTrue(combined instanceof Junction);
     }
-}
-
-public class IsNaNTest extends TestBase {
 
     @Test
     public void testConstructorWithPropName() {
@@ -196,15 +193,6 @@ public class IsNaNTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        IsNaN condition = new IsNaN("profit_ratio");
-        List<Object> params = condition.getParameters();
-
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(0, params.size());
-    }
-
-    @Test
     public void testToString() {
         IsNaN condition = new IsNaN("calculation_result");
         String result = condition.toString();
@@ -222,16 +210,6 @@ public class IsNaNTest extends TestBase {
         Assertions.assertTrue(result.contains("COMPUTED_VALUE"));
         Assertions.assertTrue(result.contains("IS"));
         Assertions.assertTrue(result.contains("NAN"));
-    }
-
-    @Test
-    public void testHashCode() {
-        IsNaN condition1 = new IsNaN("field1");
-        IsNaN condition2 = new IsNaN("field1");
-        IsNaN condition3 = new IsNaN("field2");
-
-        Assertions.assertEquals(condition1.hashCode(), condition2.hashCode());
-        Assertions.assertNotEquals(condition1.hashCode(), condition3.hashCode());
     }
 
     @Test

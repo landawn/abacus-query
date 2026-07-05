@@ -38,9 +38,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param id 
+     *
+     * @param id
      */
     public AccountContact(long id) {
         this();
@@ -49,23 +49,23 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param accountId 
-     * @param mobile 
-     * @param telephone 
-     * @param email 
-     * @param address 
-     * @param address2 
-     * @param city 
-     * @param state 
-     * @param country 
-     * @param zipCode 
-     * @param category 
-     * @param description 
-     * @param status 
-     * @param lastUpdateTime 
-     * @param createTime 
+     *
+     * @param accountId
+     * @param mobile
+     * @param telephone
+     * @param email
+     * @param address
+     * @param address2
+     * @param city
+     * @param state
+     * @param country
+     * @param zipCode
+     * @param category
+     * @param description
+     * @param status
+     * @param lastUpdateTime
+     * @param createTime
      */
     public AccountContact(long accountId, String mobile, String telephone, String email, String address, String address2, String city, String state,
             String country, String zipCode, String category, String description, int status, Timestamp lastUpdateTime, Timestamp createTime) {
@@ -89,24 +89,24 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param id 
-     * @param accountId 
-     * @param mobile 
-     * @param telephone 
-     * @param email 
-     * @param address 
-     * @param address2 
-     * @param city 
-     * @param state 
-     * @param country 
-     * @param zipCode 
-     * @param category 
-     * @param description 
-     * @param status 
-     * @param lastUpdateTime 
-     * @param createTime 
+     *
+     * @param id
+     * @param accountId
+     * @param mobile
+     * @param telephone
+     * @param email
+     * @param address
+     * @param address2
+     * @param city
+     * @param state
+     * @param country
+     * @param zipCode
+     * @param category
+     * @param description
+     * @param status
+     * @param lastUpdateTime
+     * @param createTime
      */
     public AccountContact(long id, long accountId, String mobile, String telephone, String email, String address, String address2, String city, String state,
             String country, String zipCode, String category, String description, int status, Timestamp lastUpdateTime, Timestamp createTime) {
@@ -131,9 +131,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("long")
     public long getId() {
@@ -141,10 +141,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param id 
-     * @return 
+     *
+     * @param id
+     * @return
      */
     public AccountContact setId(long id) {
         this.id = id;
@@ -153,9 +153,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("long")
     public long getAccountId() {
@@ -163,10 +163,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param accountId 
-     * @return 
+     *
+     * @param accountId
+     * @return
      */
     public AccountContact setAccountId(long accountId) {
         this.accountId = accountId;
@@ -175,9 +175,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("String")
     public String getMobile() {
@@ -185,10 +185,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param mobile 
-     * @return 
+     *
+     * @param mobile
+     * @return
      */
     public AccountContact setMobile(String mobile) {
         this.mobile = mobile;
@@ -197,9 +197,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("String")
     public String getTelephone() {
@@ -207,10 +207,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param telephone 
-     * @return 
+     *
+     * @param telephone
+     * @return
      */
     public AccountContact setTelephone(String telephone) {
         this.telephone = telephone;
@@ -219,9 +219,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("String")
     public String getEmail() {
@@ -229,10 +229,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param email 
-     * @return 
+     *
+     * @param email
+     * @return
      */
     public AccountContact setEmail(String email) {
         this.email = email;
@@ -241,9 +241,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("String")
     public String getAddress() {
@@ -251,10 +251,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param address 
-     * @return 
+     *
+     * @param address
+     * @return
      */
     public AccountContact setAddress(String address) {
         this.address = address;
@@ -263,9 +263,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("String")
     public String getAddress2() {
@@ -273,10 +273,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param address2 
-     * @return 
+     *
+     * @param address2
+     * @return
      */
     public AccountContact setAddress2(String address2) {
         this.address2 = address2;
@@ -285,9 +285,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("String")
     public String getCity() {
@@ -295,10 +295,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param city 
-     * @return 
+     *
+     * @param city
+     * @return
      */
     public AccountContact setCity(String city) {
         this.city = city;
@@ -307,9 +307,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("String")
     public String getState() {
@@ -317,10 +317,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param state 
-     * @return 
+     *
+     * @param state
+     * @return
      */
     public AccountContact setState(String state) {
         this.state = state;
@@ -329,9 +329,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("String")
     public String getCountry() {
@@ -339,10 +339,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param country 
-     * @return 
+     *
+     * @param country
+     * @return
      */
     public AccountContact setCountry(String country) {
         this.country = country;
@@ -351,9 +351,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("String")
     public String getZipCode() {
@@ -361,10 +361,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param zipCode 
-     * @return 
+     *
+     * @param zipCode
+     * @return
      */
     public AccountContact setZipCode(String zipCode) {
         this.zipCode = zipCode;
@@ -373,9 +373,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("String")
     public String getCategory() {
@@ -383,10 +383,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param category 
-     * @return 
+     *
+     * @param category
+     * @return
      */
     public AccountContact setCategory(String category) {
         this.category = category;
@@ -395,9 +395,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("String")
     public String getDescription() {
@@ -405,10 +405,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param description 
-     * @return 
+     *
+     * @param description
+     * @return
      */
     public AccountContact setDescription(String description) {
         this.description = description;
@@ -417,9 +417,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("int")
     public int getStatus() {
@@ -427,10 +427,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param status 
-     * @return 
+     *
+     * @param status
+     * @return
      */
     public AccountContact setStatus(int status) {
         this.status = status;
@@ -439,9 +439,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("Timestamp")
     public Timestamp getLastUpdateTime() {
@@ -449,10 +449,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param lastUpdateTime 
-     * @return 
+     *
+     * @param lastUpdateTime
+     * @return
      */
     public AccountContact setLastUpdateTime(Timestamp lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
@@ -461,9 +461,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Type("Timestamp")
     public Timestamp getCreateTime() {
@@ -471,10 +471,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param createTime 
-     * @return 
+     *
+     * @param createTime
+     * @return
      */
     public AccountContact setCreateTime(Timestamp createTime) {
         this.createTime = createTime;
@@ -483,9 +483,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public int hashCode() {
@@ -509,10 +509,10 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @param obj 
-     * @return 
+     *
+     * @param obj
+     * @return
      */
     @Override
     public boolean equals(Object obj) {
@@ -533,9 +533,9 @@ public class AccountContact {
     }
 
     /**
-     * 
      *
-     * @return 
+     *
+     * @return
      */
     @Override
     public String toString() {

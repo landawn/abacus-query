@@ -1,0 +1,644 @@
+{
+  "cross_file_scattering": [
+    {
+      "source": "SqlParser",
+      "source_file": "src/main/java/com/landawn/abacus/query/SqlParser.java",
+      "test_files": [
+        {
+          "file": "src/test/java/com/landawn/abacus/query/SqlParserCoverageTest.java",
+          "classes": [
+            "SqlParserCoverageTest"
+          ],
+          "method_counts": {
+            "SqlParserCoverageTest": 116
+          }
+        },
+        {
+          "file": "src/test/java/com/landawn/abacus/query/SqlParserTest.java",
+          "classes": [
+            "SqlParserTest"
+          ],
+          "method_counts": {
+            "SqlParserTest": 111
+          }
+        }
+      ]
+    }
+  ],
+  "multi_class_one_file": [],
+  "orphan_test_classes": [
+    {
+      "class": "always",
+      "file": "src/test/java/com/landawn/abacus/query/AbstractQueryBuilderTest.java",
+      "guessed_source": "always"
+    },
+    {
+      "class": "join",
+      "file": "src/test/java/com/landawn/abacus/query/AbstractQueryBuilderTest.java",
+      "guessed_source": "join"
+    },
+    {
+      "class": "values",
+      "file": "src/test/java/com/landawn/abacus/query/AbstractQueryBuilderTest.java",
+      "guessed_source": "values"
+    },
+    {
+      "class": "FractionalIdEntity",
+      "file": "src/test/java/com/landawn/abacus/query/AbstractQueryBuilderTest.java",
+      "guessed_source": "FractionalIdEntity"
+    },
+    {
+      "class": "CompositeIdEntity",
+      "file": "src/test/java/com/landawn/abacus/query/AbstractQueryBuilderTest.java",
+      "guessed_source": "CompositeIdEntity"
+    },
+    {
+      "class": "QueryUtilTest",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "Query"
+    },
+    {
+      "class": "ValueFormEntity",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "ValueFormEntity"
+    },
+    {
+      "class": "AliasOnlyEntity",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "AliasOnlyEntity"
+    },
+    {
+      "class": "TestUser",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "TestUser"
+    },
+    {
+      "class": "TestAddress",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "TestAddress"
+    },
+    {
+      "class": "NestedLeaf",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "NestedLeaf"
+    },
+    {
+      "class": "NestedBranch",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "NestedBranch"
+    },
+    {
+      "class": "NestedRoot",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "NestedRoot"
+    },
+    {
+      "class": "DeepNestedRoot",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "DeepNestedRoot"
+    },
+    {
+      "class": "DeepNestedMiddle",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "DeepNestedMiddle"
+    },
+    {
+      "class": "DeepNestedLeaf",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "DeepNestedLeaf"
+    },
+    {
+      "class": "DeepNestedTail",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "DeepNestedTail"
+    },
+    {
+      "class": "SimpleEntity",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "SimpleEntity"
+    },
+    {
+      "class": "AliaslessEntity",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "AliaslessEntity"
+    },
+    {
+      "class": "NonColumnOnlyEntity",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "NonColumnOnlyEntity"
+    },
+    {
+      "class": "NoIdEntity",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "NoIdEntity"
+    },
+    {
+      "class": "SelfReferentialEntity",
+      "file": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "guessed_source": "SelfReferentialEntity"
+    },
+    {
+      "class": "SKTest",
+      "file": "src/test/java/com/landawn/abacus/query/SKTest.java",
+      "guessed_source": "SK"
+    },
+    {
+      "class": "name",
+      "file": "src/test/java/com/landawn/abacus/query/SortDirectionTest.java",
+      "guessed_source": "name"
+    },
+    {
+      "class": "instances",
+      "file": "src/test/java/com/landawn/abacus/query/SortDirectionTest.java",
+      "guessed_source": "instances"
+    },
+    {
+      "class": "Account",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "Account"
+    },
+    {
+      "class": "Order",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "Order"
+    },
+    {
+      "class": "sql",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "sql"
+    },
+    {
+      "class": "sql",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "sql"
+    },
+    {
+      "class": "and",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "and"
+    },
+    {
+      "class": "sql",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "sql"
+    },
+    {
+      "class": "sql",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "sql"
+    },
+    {
+      "class": "without",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "without"
+    },
+    {
+      "class": "SimpleEntity",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "SimpleEntity"
+    },
+    {
+      "class": "TestEntity",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "TestEntity"
+    },
+    {
+      "class": "TestOrder",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "TestOrder"
+    },
+    {
+      "class": "SCSBTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "SCSB"
+    },
+    {
+      "class": "Account",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "Account"
+    },
+    {
+      "class": "ACSBTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "ACSB"
+    },
+    {
+      "class": "User",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "User"
+    },
+    {
+      "class": "LCSBTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "LCSB"
+    },
+    {
+      "class": "Customer",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "Customer"
+    },
+    {
+      "class": "PSBTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "PSB"
+    },
+    {
+      "class": "User",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "User"
+    },
+    {
+      "class": "assertThrows",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "assertThrows"
+    },
+    {
+      "class": "assertThrows",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "assertThrows"
+    },
+    {
+      "class": "assertThrows",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "assertThrows"
+    },
+    {
+      "class": "assertThrows",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "assertThrows"
+    },
+    {
+      "class": "assertThrows",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "assertThrows"
+    },
+    {
+      "class": "assertThrows",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "assertThrows"
+    },
+    {
+      "class": "assertThrows",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "assertThrows"
+    },
+    {
+      "class": "assertThrows",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "assertThrows"
+    },
+    {
+      "class": "assertThrows",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "assertThrows"
+    },
+    {
+      "class": "assertThrows",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "assertThrows"
+    },
+    {
+      "class": "PSCTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "PSC"
+    },
+    {
+      "class": "Account",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "Account"
+    },
+    {
+      "class": "PACTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "PAC"
+    },
+    {
+      "class": "UserAccount",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "UserAccount"
+    },
+    {
+      "class": "PLCTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "PLC"
+    },
+    {
+      "class": "UserProfile",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "UserProfile"
+    },
+    {
+      "class": "NSBTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "NSB"
+    },
+    {
+      "class": "User",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "User"
+    },
+    {
+      "class": "NSCTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "NSC"
+    },
+    {
+      "class": "User",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "User"
+    },
+    {
+      "class": "NACTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "NAC"
+    },
+    {
+      "class": "Account",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "Account"
+    },
+    {
+      "class": "NLCTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "NLC"
+    },
+    {
+      "class": "Account",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "Account"
+    },
+    {
+      "class": "MSBTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "MSB"
+    },
+    {
+      "class": "Account",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "Account"
+    },
+    {
+      "class": "MSCTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "MSC"
+    },
+    {
+      "class": "User",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "User"
+    },
+    {
+      "class": "MACTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "MAC"
+    },
+    {
+      "class": "Account",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "Account"
+    },
+    {
+      "class": "MLCTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "MLC"
+    },
+    {
+      "class": "Account",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "Account"
+    },
+    {
+      "class": "BfxQuoted",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "BfxQuoted"
+    },
+    {
+      "class": "BfxAddress",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "BfxAddress"
+    },
+    {
+      "class": "BfxUser",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "BfxUser"
+    },
+    {
+      "class": "init",
+      "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "guessed_source": "init"
+    },
+    {
+      "class": "QdpUser",
+      "file": "src/test/java/com/landawn/abacus/query/SqlDialectPaginationTest.java",
+      "guessed_source": "QdpUser"
+    },
+    {
+      "class": "SqlOperationTest",
+      "file": "src/test/java/com/landawn/abacus/query/SqlOperationTest.java",
+      "guessed_source": "Sql"
+    },
+    {
+      "class": "instances",
+      "file": "src/test/java/com/landawn/abacus/query/SqlOperationTest.java",
+      "guessed_source": "instances"
+    },
+    {
+      "class": "constant",
+      "file": "src/test/java/com/landawn/abacus/query/SqlOperationTest.java",
+      "guessed_source": "constant"
+    },
+    {
+      "class": "values",
+      "file": "src/test/java/com/landawn/abacus/query/SqlOperationTest.java",
+      "guessed_source": "values"
+    },
+    {
+      "class": "TestAbstractBetween",
+      "file": "src/test/java/com/landawn/abacus/query/condition/AbstractBetweenTest.java",
+      "guessed_source": "TestAbstractBetween"
+    },
+    {
+      "class": "EmptyAbstractBetween",
+      "file": "src/test/java/com/landawn/abacus/query/condition/AbstractBetweenTest.java",
+      "guessed_source": "EmptyAbstractBetween"
+    },
+    {
+      "class": "TestCondition",
+      "file": "src/test/java/com/landawn/abacus/query/condition/AbstractConditionTest.java",
+      "guessed_source": "TestCondition"
+    },
+    {
+      "class": "TestAbstractInSubQuery",
+      "file": "src/test/java/com/landawn/abacus/query/condition/AbstractInSubQueryTest.java",
+      "guessed_source": "TestAbstractInSubQuery"
+    },
+    {
+      "class": "TestAbstractIn",
+      "file": "src/test/java/com/landawn/abacus/query/condition/AbstractInTest.java",
+      "guessed_source": "TestAbstractIn"
+    },
+    {
+      "class": "EmptyAbstractIn",
+      "file": "src/test/java/com/landawn/abacus/query/condition/AbstractInTest.java",
+      "guessed_source": "EmptyAbstractIn"
+    },
+    {
+      "class": "TestCell",
+      "file": "src/test/java/com/landawn/abacus/query/condition/CellTest.java",
+      "guessed_source": "TestCell"
+    },
+    {
+      "class": "EmptyTestCell",
+      "file": "src/test/java/com/landawn/abacus/query/condition/CellTest.java",
+      "guessed_source": "EmptyTestCell"
+    },
+    {
+      "class": "TestClause",
+      "file": "src/test/java/com/landawn/abacus/query/condition/ClauseTest.java",
+      "guessed_source": "TestClause"
+    },
+    {
+      "class": "TestComposableCell",
+      "file": "src/test/java/com/landawn/abacus/query/condition/ComposableCellTest.java",
+      "guessed_source": "TestComposableCell"
+    },
+    {
+      "class": "EmptyComposableCell",
+      "file": "src/test/java/com/landawn/abacus/query/condition/ComposableCellTest.java",
+      "guessed_source": "EmptyComposableCell"
+    },
+    {
+      "class": "TestComposableCondition",
+      "file": "src/test/java/com/landawn/abacus/query/condition/ComposableConditionTest.java",
+      "guessed_source": "TestComposableCondition"
+    },
+    {
+      "class": "contract",
+      "file": "src/test/java/com/landawn/abacus/query/condition/ConditionTest.java",
+      "guessed_source": "contract"
+    },
+    {
+      "class": "contract",
+      "file": "src/test/java/com/landawn/abacus/query/condition/ConditionTest.java",
+      "guessed_source": "contract"
+    },
+    {
+      "class": "FakeClauseCondition",
+      "file": "src/test/java/com/landawn/abacus/query/condition/CriteriaTest.java",
+      "guessed_source": "FakeClauseCondition"
+    },
+    {
+      "class": "CustomWhereClause",
+      "file": "src/test/java/com/landawn/abacus/query/condition/CriteriaTest.java",
+      "guessed_source": "CustomWhereClause"
+    },
+    {
+      "class": "CustomGroupByClause",
+      "file": "src/test/java/com/landawn/abacus/query/condition/CriteriaTest.java",
+      "guessed_source": "CustomGroupByClause"
+    },
+    {
+      "class": "CustomHavingClause",
+      "file": "src/test/java/com/landawn/abacus/query/condition/CriteriaTest.java",
+      "guessed_source": "CustomHavingClause"
+    },
+    {
+      "class": "CustomOrderByClause",
+      "file": "src/test/java/com/landawn/abacus/query/condition/CriteriaTest.java",
+      "guessed_source": "CustomOrderByClause"
+    },
+    {
+      "class": "for",
+      "file": "src/test/java/com/landawn/abacus/query/condition/ExpressionTest.java",
+      "guessed_source": "for"
+    },
+    {
+      "class": "for",
+      "file": "src/test/java/com/landawn/abacus/query/condition/GroupByTest.java",
+      "guessed_source": "for"
+    },
+    {
+      "class": "for",
+      "file": "src/test/java/com/landawn/abacus/query/condition/HavingTest.java",
+      "guessed_source": "for"
+    },
+    {
+      "class": "values",
+      "file": "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+      "guessed_source": "values"
+    },
+    {
+      "class": "TestJoin",
+      "file": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+      "guessed_source": "TestJoin"
+    },
+    {
+      "class": "for",
+      "file": "src/test/java/com/landawn/abacus/query/condition/JunctionTest.java",
+      "guessed_source": "for"
+    },
+    {
+      "class": "for",
+      "file": "src/test/java/com/landawn/abacus/query/condition/NamedPropertyTest.java",
+      "guessed_source": "for"
+    },
+    {
+      "class": "name",
+      "file": "src/test/java/com/landawn/abacus/query/condition/OperatorTest.java",
+      "guessed_source": "name"
+    },
+    {
+      "class": "for",
+      "file": "src/test/java/com/landawn/abacus/query/condition/OrderByTest.java",
+      "guessed_source": "for"
+    },
+    {
+      "class": "for",
+      "file": "src/test/java/com/landawn/abacus/query/condition/SubQueryTest.java",
+      "guessed_source": "for"
+    },
+    {
+      "class": "private",
+      "file": "src/test/java/com/landawn/abacus/query/condition/SubQueryTest.java",
+      "guessed_source": "private"
+    },
+    {
+      "class": "TestEntity",
+      "file": "src/test/java/com/landawn/abacus/query/condition/SubQueryTest.java",
+      "guessed_source": "TestEntity"
+    },
+    {
+      "class": "AuditEventEntity",
+      "file": "src/test/java/com/landawn/abacus/query/condition/SubQueryTest.java",
+      "guessed_source": "AuditEventEntity"
+    },
+    {
+      "class": "Account",
+      "file": "src/test/java/com/landawn/abacus/query/entity/Account.java",
+      "guessed_source": "Account"
+    },
+    {
+      "class": "AccountContact",
+      "file": "src/test/java/com/landawn/abacus/query/entity/AccountContact.java",
+      "guessed_source": "AccountContact"
+    },
+    {
+      "class": "AccountDevice",
+      "file": "src/test/java/com/landawn/abacus/query/entity/AccountDevice.java",
+      "guessed_source": "AccountDevice"
+    }
+  ],
+  "untested_source_classes": [
+    "Dsl",
+    "QueryUtil",
+    "SqlOperation"
+  ],
+  "summary": {
+    "source_class_count": 78,
+    "tested_source_class_count": 75,
+    "cross_file_groups": 1,
+    "multi_class_files": 0,
+    "orphan_test_classes": 120,
+    "untested_source_classes": 3
+  }
+}

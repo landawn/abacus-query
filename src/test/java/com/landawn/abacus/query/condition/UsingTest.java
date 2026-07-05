@@ -1,25 +1,27 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Using2025Test extends TestBase {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class UsingTest extends TestBase {
     @Test
     public void testConstructor_SingleColumn() {
         Using using = new Using("department_id");
@@ -193,9 +195,6 @@ class Using2025Test extends TestBase {
         Using using = new Using(sharedColumns);
         assertNotNull(using);
     }
-}
-
-public class UsingTest extends TestBase {
 
     @Test
     public void testConstructorWithVarArgs() {
@@ -326,38 +325,10 @@ public class UsingTest extends TestBase {
     }
 
     @Test
-    public void testGetCondition() {
-        Using using = Filters.using("employee_id");
-
-        Assertions.assertNotNull(using.getCondition());
-        Assertions.assertTrue(using.getCondition() instanceof Expression);
-    }
-
-    @Test
     public void testGetOperator() {
         Using using = Filters.using("department_id");
 
         Assertions.assertEquals(Operator.USING, using.operator());
-    }
-
-    @Test
-    public void testToString() {
-        Using using = Filters.using("branch_id", "department_id");
-
-        String result = using.toString();
-        Assertions.assertTrue(result.contains("USING"));
-        Assertions.assertTrue(result.contains("branch_id"));
-        Assertions.assertTrue(result.contains("department_id"));
-    }
-
-    @Test
-    public void testHashCode() {
-        Using using1 = Filters.using("department_id");
-        Using using2 = Filters.using("department_id");
-        Using using3 = Filters.using("employee_id");
-
-        Assertions.assertEquals(using1.hashCode(), using2.hashCode());
-        Assertions.assertNotEquals(using1.hashCode(), using3.hashCode());
     }
 
     @Test

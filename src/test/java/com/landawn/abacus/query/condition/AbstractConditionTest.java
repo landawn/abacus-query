@@ -1,28 +1,29 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.ImmutableList;
-import com.landawn.abacus.util.NamingPolicy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.ImmutableList;
+import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
-class AbstractCondition2025Test extends TestBase {
-
+public class AbstractConditionTest extends TestBase {
     @Test
     public void testGetOperator() {
         AbstractCondition condition = new Equal("name", "John");
@@ -95,7 +96,7 @@ class AbstractCondition2025Test extends TestBase {
     public void testParameter2String_Null() {
         Equal condition = new Equal("name", null);
         List<Object> params = condition.getParameters();
-        assertEquals(0, (int) params.size());
+        assertEquals(0, params.size());
     }
 
     @Test
@@ -112,7 +113,7 @@ class AbstractCondition2025Test extends TestBase {
         Equal cond3 = new Equal("c", 3);
 
         And and = cond1.and(cond2).and(cond3);
-        assertEquals(3, (int) and.getConditions().size());
+        assertEquals(3, and.getConditions().size());
     }
 
     @Test
@@ -237,9 +238,6 @@ class AbstractCondition2025Test extends TestBase {
         assertTrue(str.contains("col4"));
         assertTrue(str.contains("col5"));
     }
-}
-
-public class AbstractConditionTest extends TestBase {
 
     // Create a concrete implementation for testing
     private static class TestCondition extends ComposableCondition {
@@ -262,10 +260,12 @@ public class AbstractConditionTest extends TestBase {
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj)
+            if (this == obj) {
                 return true;
-            if (!(obj instanceof TestCondition))
+            }
+            if (!(obj instanceof TestCondition)) {
                 return false;
+            }
             TestCondition other = (TestCondition) obj;
             return Objects.equals(operator, other.operator) && Objects.equals(value, other.value);
         }
@@ -286,57 +286,12 @@ public class AbstractConditionTest extends TestBase {
     }
 
     @Test
-    public void testGetOperator() {
-        TestCondition condition = new TestCondition(Operator.NOT_EQUAL, "value");
-        Assertions.assertEquals(Operator.NOT_EQUAL, condition.operator());
-    }
-
-    @Test
-    public void testAnd() {
-        TestCondition cond1 = new TestCondition(Operator.EQUAL, "test1");
-        TestCondition cond2 = new TestCondition(Operator.NOT_EQUAL, "test2");
-
-        And and = cond1.and(cond2);
-
-        Assertions.assertNotNull(and);
-        Assertions.assertEquals(Operator.AND, and.operator());
-        Assertions.assertEquals(2, and.getConditions().size());
-        Assertions.assertTrue(and.getConditions().contains(cond1));
-        Assertions.assertTrue(and.getConditions().contains(cond2));
-    }
-
-    @Test
     public void testOffsetAndForUpdateCannotBeComposedAsPredicates() {
         TestCondition offset = new TestCondition(Operator.OFFSET, "10");
         TestCondition forUpdate = new TestCondition(Operator.FOR_UPDATE, "");
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> offset.and(Filters.eq("id", 1)));
         Assertions.assertThrows(IllegalArgumentException.class, () -> forUpdate.or(Filters.eq("id", 1)));
-    }
-
-    @Test
-    public void testOr() {
-        TestCondition cond1 = new TestCondition(Operator.GREATER_THAN, "10");
-        TestCondition cond2 = new TestCondition(Operator.LESS_THAN, "5");
-
-        Or or = cond1.or(cond2);
-
-        Assertions.assertNotNull(or);
-        Assertions.assertEquals(Operator.OR, or.operator());
-        Assertions.assertEquals(2, or.getConditions().size());
-        Assertions.assertTrue(or.getConditions().contains(cond1));
-        Assertions.assertTrue(or.getConditions().contains(cond2));
-    }
-
-    @Test
-    public void testNot() {
-        TestCondition condition = new TestCondition(Operator.LIKE, "%test%");
-
-        Not not = condition.not();
-
-        Assertions.assertNotNull(not);
-        Assertions.assertEquals(Operator.NOT, not.operator());
-        Assertions.assertEquals(condition, not.getCondition());
     }
 
     @Test
@@ -480,9 +435,6 @@ public class AbstractConditionTest extends TestBase {
 
         Assertions.assertNull(condition.operator());
     }
-}
-
-class AbstractCondition2026BatchTest extends TestBase {
 
     @Test
     public void testIsClause_StringEdgeCases() {

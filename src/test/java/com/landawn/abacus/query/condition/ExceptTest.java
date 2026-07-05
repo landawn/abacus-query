@@ -1,25 +1,23 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 import java.util.List;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
-class Except2025Test extends TestBase {
-
+public class ExceptTest extends TestBase {
     @Test
     public void testConstructor() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
@@ -43,7 +41,7 @@ class Except2025Test extends TestBase {
         Except except = new Except(subQuery);
         List<Object> params = except.getParameters();
         // Raw SQL SubQuery has no parameters
-        assertEquals(0, (int) params.size());
+        assertEquals(0, params.size());
     }
 
     @Test
@@ -107,7 +105,7 @@ class Except2025Test extends TestBase {
     public void testFindMissingRecords() {
         SubQuery soldProducts = Filters.subQuery("order_items", List.of("product_id"), new GreaterThan("order_date", "2024-01-01"));
         Except except = new Except(soldProducts);
-        assertEquals(1, (int) except.getParameters().size());
+        assertEquals(1, except.getParameters().size());
     }
 
     @Test
@@ -132,38 +130,6 @@ class Except2025Test extends TestBase {
         assertNotEquals(except, "not an Except");
         assertNotEquals(except, new Union(subQuery));
     }
-}
-
-public class ExceptTest extends TestBase {
-
-    @Test
-    public void testConstructor() {
-        SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM customers WHERE status = 'inactive'");
-        Except except = Filters.except(subQuery);
-
-        Assertions.assertNotNull(except);
-        Assertions.assertEquals(Operator.EXCEPT, except.operator());
-        Assertions.assertEquals(subQuery, except.getCondition());
-    }
-
-    @Test
-    public void testGetCondition() {
-        SubQuery subQuery = Filters.subQuery("SELECT product_id FROM discontinued_products");
-        Except except = Filters.except(subQuery);
-
-        SubQuery retrieved = (SubQuery) except.getCondition();
-        Assertions.assertEquals(subQuery, retrieved);
-    }
-
-    @Test
-    public void testToString() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM blacklist");
-        Except except = Filters.except(subQuery);
-
-        String result = except.toString();
-        Assertions.assertTrue(result.contains("EXCEPT"));
-        Assertions.assertTrue(result.contains("SELECT id FROM blacklist"));
-    }
 
     @Test
     public void testToStringWithNamingPolicy() {
@@ -172,18 +138,6 @@ public class ExceptTest extends TestBase {
 
         String result = except.toString(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("EXCEPT"));
-    }
-
-    @Test
-    public void testGetParameters() {
-        SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("customer_id"),
-                Filters.and(Filters.lt("order_date", "2023-01-01"), Filters.eq("status", "cancelled")));
-        Except except = Filters.except(subQuery);
-
-        var params = except.getParameters();
-        Assertions.assertEquals(2, params.size());
-        Assertions.assertTrue(params.contains("2023-01-01"));
-        Assertions.assertTrue(params.contains("cancelled"));
     }
 
     @Test
@@ -201,17 +155,6 @@ public class ExceptTest extends TestBase {
         Assertions.assertNotEquals(except1, except3);
         Assertions.assertNotEquals(except1, null);
         Assertions.assertNotEquals(except1, "string");
-    }
-
-    @Test
-    public void testHashCode() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM inactive_items");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM inactive_items");
-
-        Except except1 = Filters.except(subQuery1);
-        Except except2 = Filters.except(subQuery2);
-
-        Assertions.assertEquals(except1.hashCode(), except2.hashCode());
     }
 
     @Test
@@ -266,7 +209,7 @@ public class ExceptTest extends TestBase {
         Assertions.assertEquals(Operator.MINUS, minus.operator());
 
         // Same subquery
-        Assertions.assertEquals((Condition) except.getCondition(), minus.getCondition());
+        Assertions.assertEquals(except.getCondition(), minus.getCondition());
     }
 
     @Test

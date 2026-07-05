@@ -1,15 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -17,9 +7,20 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Between2025Test extends TestBase {
+import java.time.LocalDate;
+import java.util.Date;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class BetweenTest extends TestBase {
     @Test
     public void testConstructor() {
         Between condition = new Between("age", 18, 65);
@@ -74,7 +75,7 @@ class Between2025Test extends TestBase {
     public void testGetParameters() {
         Between condition = new Between("age", 18, 65);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int) params.size());
+        assertEquals(2, params.size());
         assertEquals(18, (int) params.get(0));
         assertEquals(65, (int) params.get(1));
     }
@@ -83,7 +84,7 @@ class Between2025Test extends TestBase {
     public void testGetParameters_WithNullValues() {
         Between condition = new Between("field", null, null);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int) params.size());
+        assertEquals(2, params.size());
         assertNull(params.get(0));
         assertNull(params.get(1));
     }
@@ -217,20 +218,6 @@ class Between2025Test extends TestBase {
         assertEquals(9.99, (Double) condition.getMinValue());
         assertEquals(99.99, (Double) condition.getMaxValue());
     }
-}
-
-public class BetweenTest extends TestBase {
-
-    @Test
-    public void testConstructor() {
-        Between between = Filters.between("age", 18, 65);
-
-        Assertions.assertNotNull(between);
-        Assertions.assertEquals("age", between.getPropName());
-        Assertions.assertEquals(18, (Integer) (Integer) between.getMinValue());
-        Assertions.assertEquals(65, (Integer) between.getMaxValue());
-        Assertions.assertEquals(Operator.BETWEEN, between.operator());
-    }
 
     @Test
     public void testConstructorWithDifferentTypes() {
@@ -271,36 +258,6 @@ public class BetweenTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             new Between(null, 1, 10);
         });
-    }
-
-    @Test
-    public void testGetPropName() {
-        Between between = Filters.between("temperature", -10, 40);
-        Assertions.assertEquals("temperature", between.getPropName());
-    }
-
-    @Test
-    public void testGetMinValue() {
-        Between between = Filters.between("score", 0, 100);
-        Integer min = between.getMinValue();
-        Assertions.assertEquals(0, min);
-    }
-
-    @Test
-    public void testGetMaxValue() {
-        Between between = Filters.between("percentage", 0.0, 100.0);
-        Double max = between.getMaxValue();
-        Assertions.assertEquals(100.0, max);
-    }
-
-    @Test
-    public void testGetParameters() {
-        Between between = Filters.between("salary", 40000, 80000);
-        List<Object> params = between.getParameters();
-
-        Assertions.assertEquals(2, params.size());
-        Assertions.assertEquals(40000, params.get(0));
-        Assertions.assertEquals(80000, params.get(1));
     }
 
     @Test
@@ -357,48 +314,6 @@ public class BetweenTest extends TestBase {
         Assertions.assertNotEquals(between1, between5); // Different property
         Assertions.assertNotEquals(between1, null);
         Assertions.assertNotEquals(between1, "string");
-    }
-
-    @Test
-    public void testHashCode() {
-        Between between1 = Filters.between("price", 10.0, 50.0);
-        Between between2 = Filters.between("price", 10.0, 50.0);
-
-        Assertions.assertEquals(between1.hashCode(), between2.hashCode());
-    }
-
-    @Test
-    public void testAnd() {
-        Between between = Filters.between("age", 18, 65);
-        Equal eq = Filters.eq("status", "active");
-
-        And and = between.and(eq);
-
-        Assertions.assertNotNull(and);
-        Assertions.assertEquals(2, and.getConditions().size());
-        Assertions.assertTrue(and.getConditions().contains(between));
-        Assertions.assertTrue(and.getConditions().contains(eq));
-    }
-
-    @Test
-    public void testOr() {
-        Between between = Filters.between("salary", 30000, 50000);
-        GreaterThan gt = Filters.gt("experience", 10);
-
-        Or or = between.or(gt);
-
-        Assertions.assertNotNull(or);
-        Assertions.assertEquals(2, or.getConditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        Between between = Filters.between("score", 60, 100);
-
-        Not not = between.not();
-
-        Assertions.assertNotNull(not);
-        Assertions.assertEquals(between, not.getCondition());
     }
 
     @Test

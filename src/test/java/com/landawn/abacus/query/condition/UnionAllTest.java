@@ -1,22 +1,24 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.Strings;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class UnionAll2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.Strings;
+
+@Tag("2025")
+public class UnionAllTest extends TestBase {
     @Test
     public void testConstructor() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
@@ -39,7 +41,7 @@ class UnionAll2025Test extends TestBase {
         SubQuery subQuery = Filters.subQuery("customers", List.of("*"), new Equal("region", "EAST"));
         UnionAll unionAll = new UnionAll(subQuery);
         List<Object> params = unionAll.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("EAST", params.get(0));
     }
 
@@ -129,9 +131,6 @@ class UnionAll2025Test extends TestBase {
         assertNotEquals(unionAll, "not a UnionAll");
         assertNotEquals(unionAll, new Union(subQuery));
     }
-}
-
-public class UnionAllTest extends TestBase {
 
     @Test
     public void testConstructorWithSubQuery() {
@@ -141,22 +140,6 @@ public class UnionAllTest extends TestBase {
         Assertions.assertNotNull(unionAll);
         Assertions.assertEquals(Operator.UNION_ALL, unionAll.operator());
         Assertions.assertEquals(subQuery, unionAll.getCondition());
-    }
-
-    @Test
-    public void testGetCondition() {
-        SubQuery subQuery = Filters.subQuery("SELECT id, name, 'inactive' as status FROM inactive_users");
-        UnionAll unionAll = Filters.unionAll(subQuery);
-
-        Assertions.assertEquals(subQuery, unionAll.getCondition());
-    }
-
-    @Test
-    public void testGetOperator() {
-        SubQuery subQuery = Filters.subQuery("SELECT * FROM test");
-        UnionAll unionAll = Filters.unionAll(subQuery);
-
-        Assertions.assertEquals(Operator.UNION_ALL, unionAll.operator());
     }
 
     @Test
@@ -170,45 +153,11 @@ public class UnionAllTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        SubQuery subQuery = Filters.subQuery("sales", Arrays.asList("product_id", "quantity"), Filters.eq("store_id", 42));
-        UnionAll unionAll = Filters.unionAll(subQuery);
-
-        Assertions.assertEquals(subQuery.getParameters(), unionAll.getParameters());
-        Assertions.assertEquals(1, unionAll.getParameters().size());
-        Assertions.assertEquals(42, unionAll.getParameters().get(0));
-    }
-
-    @Test
     public void testGetParametersWithRawSqlSubQuery() {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM backup_data");
         UnionAll unionAll = Filters.unionAll(subQuery);
 
         Assertions.assertTrue(unionAll.getParameters().isEmpty());
-    }
-
-    @Test
-    public void testToString() {
-        SubQuery subQuery = Filters.subQuery("SELECT * FROM historical_data");
-        UnionAll unionAll = Filters.unionAll(subQuery);
-
-        String result = unionAll.toString();
-        Assertions.assertTrue(result.contains("UNION ALL"));
-        Assertions.assertTrue(result.contains("SELECT * FROM historical_data"));
-    }
-
-    @Test
-    public void testHashCode() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT * FROM table1");
-        SubQuery subQuery2 = Filters.subQuery("SELECT * FROM table1");
-        SubQuery subQuery3 = Filters.subQuery("SELECT * FROM table2");
-
-        UnionAll unionAll1 = Filters.unionAll(subQuery1);
-        UnionAll unionAll2 = Filters.unionAll(subQuery2);
-        UnionAll unionAll3 = Filters.unionAll(subQuery3);
-
-        Assertions.assertEquals(unionAll1.hashCode(), unionAll2.hashCode());
-        Assertions.assertNotEquals(unionAll1.hashCode(), unionAll3.hashCode());
     }
 
     @Test

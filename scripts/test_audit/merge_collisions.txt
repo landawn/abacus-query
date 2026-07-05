@@ -1,0 +1,639 @@
+
+=== src\test\java\com\landawn\abacus\query\AbstractQueryBuilderTest.java ===
+canonical=AbstractQueryBuilderTest removed=['AbstractQueryBuilder2026Test', 'SimpleAbstractQueryBuilderTest', 'AbstractQueryBuilder2026BatchTest']
+
+=== src\test\java\com\landawn\abacus\query\DynamicQueryTest.java ===
+canonical=DynamicQueryTest removed=['SimpleDynamicQueryBuilderTest', 'DynamicQueryJavadocExamples', 'DynamicQuery2026BatchTest']
+  method 'testCreate' from SimpleDynamicQueryBuilderTest vs DynamicQueryTest -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\FiltersTest.java ===
+canonical=Filters2025Test removed=['Filters2026Test', 'FiltersTest', 'FiltersJavadocExamples', 'Filters2026BatchTest']
+  method 'testAlwaysTrue' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testAlwaysFalse' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testNamedProperty' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testExpr' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testBinary' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testEqual' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testEq' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testInCollection' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testGtAndLt' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testGeAndLt' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testGeAndLe' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testGtAndLe' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testNotEqual' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testNe' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testGreaterThan' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testGt' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testGreaterThanOrEqual' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testGe' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testLessThan' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testLt' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testLessThanOrEqual' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testLe' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testBetween' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testNotBetween' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testLike' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testNotLike' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testContains' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testNotContains' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testStartsWith' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testNotStartsWith' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testEndsWith' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testNotEndsWith' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testIsNull' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testIsEmpty' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testIsNullOrZero' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testIsNotNull' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testIsNaN' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testIsNotNaN' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testIsInfinite' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testIsNotInfinite' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testIs' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testIsNot' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testJunction' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testInSubQuery' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testNotInSubQuery' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testAll' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testAny' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testSome' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testExists' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testNotExists' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testUnion' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testUnionAll' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testExcept' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testIntersect' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testMinus' from FiltersTest vs Filters2025Test -> kept-canonical
+  method 'testAnyOfAllEqual_AllNullEntities' from Filters2026BatchTest vs Filters2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\ParsedSqlTest.java ===
+canonical=ParsedSql2025Test removed=['ParsedSqlTest', 'ParsedSqlJavadocExamples', 'ParsedSql2026BatchTest']
+  method 'testSql' from ParsedSqlTest vs ParsedSql2025Test -> kept-canonical
+  method 'testHashCode' from ParsedSqlTest vs ParsedSql2025Test -> kept-canonical
+  method 'testToString' from ParsedSqlTest vs ParsedSql2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\QueryUtilTest.java ===
+canonical=QueryUtil2025Test removed=['QueryUtilTest', 'QueryUtilJavadocExamples', 'QueryUtilFromFilters2025Test', 'QueryUtil2026Batch2Test']
+  method 'testProp2ColumnNameMap' from QueryUtilTest vs QueryUtil2025Test -> kept-canonical
+  method 'testGetColumn2PropNameMap' from QueryUtilTest vs QueryUtil2025Test -> kept-canonical
+  method 'testGetProp2ColumnNameMap' from QueryUtilTest vs QueryUtil2025Test -> kept-canonical
+  method 'testGetSelectPropNames' from QueryUtilTest vs QueryUtil2025Test -> kept-canonical
+  method 'testGetUpdatePropNames' from QueryUtilTest vs QueryUtil2025Test -> kept-canonical
+  method 'testGetIdFieldNames' from QueryUtilTest vs QueryUtil2025Test -> kept-canonical
+  method 'testIsNonColumn' from QueryUtilTest vs QueryUtil2025Test -> kept-canonical
+  method 'testRepeatQuestionMark' from QueryUtilTest vs QueryUtil2025Test -> kept-canonical
+  method 'testGetTableAlias' from QueryUtilTest vs QueryUtil2025Test -> kept-canonical
+  method 'testGetTableNameAndAlias' from QueryUtilTest vs QueryUtil2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\SKTest.java ===
+canonical=SK2025Test removed=['SKTest', 'SKJavadocExamples']
+  method 'testSpecialCharacters' from SKTest vs SK2025Test -> kept-canonical
+  method 'testOperatorCharacters' from SKTest vs SK2025Test -> kept-canonical
+  method 'testComparisonOperators' from SKTest vs SK2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\SortDirectionTest.java ===
+canonical=SortDirection2025Test removed=['SortDirectionTest', 'SortDirectionJavadocExamples', 'SortDirection2026Test']
+  method 'testValueOf' from SortDirectionTest vs SortDirection2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\SqlBuilderTest.java ===
+canonical=SqlBuilderTest removed=['SqlBuilder10Test', 'SqlBuilder11Test', 'SqlBuilder12Test', 'SqlBuilder13Test', 'SqlBuilder14Test', 'SqlBuilderJavadocExamples', 'SqlBuilder15Test', 'SqlBuilder16Test', 'SqlBuilder2026DialectBugFixTest']
+  method 'testDistinct' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testInnerJoin' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testLeftJoin' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testRightJoin' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testFullJoin' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testCrossJoin' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testGroupBy' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testHaving' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testOrderBy' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testOrderByAsc' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testOrderByDesc' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testLimit' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testOffset' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testUnion' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testMultipleJoins' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testSelectWithAlias' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'testDeleteFrom' from SqlBuilder10Test vs SqlBuilderTest -> kept-canonical
+  method 'setUp' from SqlBuilder11Test vs SqlBuilderTest -> kept-canonical
+  nested-class 'PSCTest' from SqlBuilder13Test vs SqlBuilderTest -> skipped
+
+=== src\test\java\com\landawn\abacus\query\SqlDialectPaginationTest.java ===
+canonical=SqlDialectProductInfo2025Test removed=['SqlDialectPaginationTest']
+
+=== src\test\java\com\landawn\abacus\query\SqlMapperTest.java ===
+canonical=SqlMapper2025Test removed=['SqlMapperTest', 'SqlMapperJavadocExamples', 'SqlMapper2026Test', 'SqlMapperApiReviewTest']
+  method 'testKeySet' from SqlMapperTest vs SqlMapper2025Test -> kept-canonical
+  method 'testGet' from SqlMapperTest vs SqlMapper2025Test -> kept-canonical
+  method 'testGetAttrs' from SqlMapperTest vs SqlMapper2025Test -> kept-canonical
+  method 'testAddParsedSql' from SqlMapperTest vs SqlMapper2025Test -> kept-canonical
+  method 'testRemove' from SqlMapperTest vs SqlMapper2025Test -> kept-canonical
+  method 'testCopy' from SqlMapperTest vs SqlMapper2025Test -> kept-canonical
+  method 'testIsEmpty' from SqlMapperTest vs SqlMapper2025Test -> kept-canonical
+  method 'testHashCode' from SqlMapperTest vs SqlMapper2025Test -> kept-canonical
+  method 'testEquals' from SqlMapperTest vs SqlMapper2025Test -> kept-canonical
+  method 'testToString' from SqlMapperTest vs SqlMapper2025Test -> kept-canonical
+  method 'testResultSetTypeMap' from SqlMapperTest vs SqlMapper2025Test -> kept-canonical
+  field 'tempDir' from SqlMapper2026Test vs SqlMapper2025Test -> skipped
+  field 'tempDir' from SqlMapperApiReviewTest vs SqlMapper2025Test -> skipped
+
+=== src\test\java\com\landawn\abacus\query\SqlOperationTest.java ===
+canonical=SqlOperation2025Test removed=['SqlOperationTest', 'SqlOperationJavadocExamples']
+  method 'testToString' from SqlOperationTest vs SqlOperation2025Test -> kept-canonical
+  method 'testValueOf' from SqlOperationTest vs SqlOperation2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\SqlParserTest.java ===
+canonical=SqlParser2025Test removed=['SqlParserTest', 'SqlParser2026BatchTest', 'SqlParserJavadocExamples']
+  method 'testParseEmptyString' from SqlParserTest vs SqlParser2025Test -> kept-canonical
+  method 'testIndexWord' from SqlParserTest vs SqlParser2025Test -> kept-canonical
+  method 'testIndexWordComposite' from SqlParserTest vs SqlParser2025Test -> kept-canonical
+  method 'testNextWord' from SqlParserTest vs SqlParser2025Test -> kept-canonical
+  method 'testRegisterSeparatorChar' from SqlParserTest vs SqlParser2025Test -> kept-canonical
+  method 'testRegisterSeparatorString' from SqlParserTest vs SqlParser2025Test -> kept-canonical
+  method 'testIsSeparator' from SqlParserTest vs SqlParser2025Test -> kept-canonical
+  method 'testIsFunctionName' from SqlParserTest vs SqlParser2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\AbstractConditionTest.java ===
+canonical=AbstractCondition2025Test removed=['AbstractConditionTest', 'AbstractCondition2026BatchTest']
+  method 'testGetOperator' from AbstractConditionTest vs AbstractCondition2025Test -> kept-canonical
+  method 'testAnd' from AbstractConditionTest vs AbstractCondition2025Test -> kept-canonical
+  method 'testOr' from AbstractConditionTest vs AbstractCondition2025Test -> kept-canonical
+  method 'testNot' from AbstractConditionTest vs AbstractCondition2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\AllTest.java ===
+canonical=All2025Test removed=['AllTest']
+  method 'testGetCondition' from AllTest vs All2025Test -> kept-canonical
+  method 'testRejectsStandalonePredicateUse' from AllTest vs All2025Test -> kept-canonical
+  method 'testHashCode' from AllTest vs All2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\AnyTest.java ===
+canonical=Any2025Test removed=['AnyTest']
+  method 'testGetCondition' from AnyTest vs Any2025Test -> kept-canonical
+  method 'testRejectsStandalonePredicateUse' from AnyTest vs Any2025Test -> kept-canonical
+  method 'testHashCode' from AnyTest vs Any2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\BetweenTest.java ===
+canonical=Between2025Test removed=['BetweenTest']
+  method 'testConstructor' from BetweenTest vs Between2025Test -> kept-canonical
+  method 'testGetPropName' from BetweenTest vs Between2025Test -> kept-canonical
+  method 'testGetMinValue' from BetweenTest vs Between2025Test -> kept-canonical
+  method 'testGetMaxValue' from BetweenTest vs Between2025Test -> kept-canonical
+  method 'testGetParameters' from BetweenTest vs Between2025Test -> kept-canonical
+  method 'testHashCode' from BetweenTest vs Between2025Test -> kept-canonical
+  method 'testAnd' from BetweenTest vs Between2025Test -> kept-canonical
+  method 'testOr' from BetweenTest vs Between2025Test -> kept-canonical
+  method 'testNot' from BetweenTest vs Between2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\BinaryTest.java ===
+canonical=Binary2025Test removed=['BinaryTest']
+  method 'testConstructor' from BinaryTest vs Binary2025Test -> kept-canonical
+  method 'testGetPropName' from BinaryTest vs Binary2025Test -> kept-canonical
+  method 'testGetPropValue' from BinaryTest vs Binary2025Test -> kept-canonical
+  method 'testHashCode' from BinaryTest vs Binary2025Test -> kept-canonical
+  method 'testAnd' from BinaryTest vs Binary2025Test -> kept-canonical
+  method 'testOr' from BinaryTest vs Binary2025Test -> kept-canonical
+  method 'testNot' from BinaryTest vs Binary2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\ClauseTest.java ===
+canonical=Clause2025Test removed=['ClauseTest']
+  nested-class 'TestClause' from ClauseTest vs Clause2025Test -> skipped
+  method 'testConstructor' from ClauseTest vs Clause2025Test -> kept-canonical
+  method 'testHashCode' from ClauseTest vs Clause2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\CriteriaTest.java ===
+canonical=Criteria2025Test removed=['CriteriaTest', 'Criteria2026Test', 'CriteriaFromFiltersTest', 'Criteria2026BatchTest', 'Criteria2026Batch2Test', 'CriteriaBugFixTest', 'CriteriaBuilderAdd2025Test']
+  method 'testConstructor' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testPreselect' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testGetParameters' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testToStringWithNamingPolicy' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testHashCode' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testEquals' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testDistinct' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testDistinctBy' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testDistinctByEmpty' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testDistinctRow' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testDistinctRowBy' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testJoinCollection' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testWhereString' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testGroupByWithDirection' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testGroupByCollection' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testGroupByMap' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testGroupByCondition' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testHavingString' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testOrderByMap' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testLimitWithOffset' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testLimitString' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testUnion' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testUnionAll' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testIntersect' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testExcept' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testMinus' from CriteriaTest vs Criteria2025Test -> kept-canonical
+  method 'testComplexCriteria' from CriteriaTest vs Criteria2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\CrossJoinTest.java ===
+canonical=CrossJoin2025Test removed=['CrossJoinTest']
+  method 'testHashCode' from CrossJoinTest vs CrossJoin2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\EqualTest.java ===
+canonical=Equal2025Test removed=['EqualTest']
+  method 'testConstructor' from EqualTest vs Equal2025Test -> kept-canonical
+  method 'testGetParameters' from EqualTest vs Equal2025Test -> kept-canonical
+  method 'testHashCode' from EqualTest vs Equal2025Test -> kept-canonical
+  method 'testAnd' from EqualTest vs Equal2025Test -> kept-canonical
+  method 'testOr' from EqualTest vs Equal2025Test -> kept-canonical
+  method 'testNot' from EqualTest vs Equal2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\ExceptTest.java ===
+canonical=Except2025Test removed=['ExceptTest']
+  method 'testConstructor' from ExceptTest vs Except2025Test -> kept-canonical
+  method 'testGetCondition' from ExceptTest vs Except2025Test -> kept-canonical
+  method 'testToString' from ExceptTest vs Except2025Test -> kept-canonical
+  method 'testGetParameters' from ExceptTest vs Except2025Test -> kept-canonical
+  method 'testHashCode' from ExceptTest vs Except2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\ExistsTest.java ===
+canonical=Exists2025Test removed=['ExistsTest']
+  method 'testGetCondition' from ExistsTest vs Exists2025Test -> kept-canonical
+  method 'testHashCode' from ExistsTest vs Exists2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\ExpressionTest.java ===
+canonical=Expression2025Test removed=['ExpressionTest']
+  method 'testEqual' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testEqualWithNull' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testEq' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testNotEqual' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testNotEqualWithNull' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testNe' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testGreaterThan' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testGt' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testGreaterThanOrEqual' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testGe' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testLessThan' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testLt' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testLessThanOrEqual' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testLe' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testBetween' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testLike' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testIsNull' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testIsNotNull' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testIsEmpty' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testIsNotEmpty' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testAnd' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testOr' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testPlus' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testMinus' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testMulti' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testDivision' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testModulus' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testLShift' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testRShift' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testBitwiseAnd' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testBitwiseOr' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testBitwiseXOr' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testCount' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testAverage' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testSum' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testMin' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testMax' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testAbs' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testAcos' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testAsin' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testAtan' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testCeil' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testCos' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testExp' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testFloor' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testLog' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testLn' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testMod' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testPower' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testSign' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testSin' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testSqrt' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testTan' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testConcat' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testReplace' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testStringLength' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testSubStringWithLength' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testTrim' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testLTrim' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testRTrim' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testLPad' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testRPad' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testLower' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testUpper' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testGetParameters' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testToStringWithNamingPolicy' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testHashCode' from ExpressionTest vs Expression2025Test -> kept-canonical
+  method 'testEquals' from ExpressionTest vs Expression2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\FullJoinTest.java ===
+canonical=FullJoin2025Test removed=['FullJoinTest']
+  method 'testHashCode' from FullJoinTest vs FullJoin2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\GreaterThanOrEqualTest.java ===
+canonical=GreaterThanOrEqual2025Test removed=['GreaterThanOrEqualTest']
+  method 'testConstructor' from GreaterThanOrEqualTest vs GreaterThanOrEqual2025Test -> kept-canonical
+  method 'testHashCode' from GreaterThanOrEqualTest vs GreaterThanOrEqual2025Test -> kept-canonical
+  method 'testGetParameters' from GreaterThanOrEqualTest vs GreaterThanOrEqual2025Test -> kept-canonical
+  method 'testAnd' from GreaterThanOrEqualTest vs GreaterThanOrEqual2025Test -> kept-canonical
+  method 'testOr' from GreaterThanOrEqualTest vs GreaterThanOrEqual2025Test -> kept-canonical
+  method 'testNot' from GreaterThanOrEqualTest vs GreaterThanOrEqual2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\GreaterThanTest.java ===
+canonical=GreaterThan2025Test removed=['GreaterThanTest']
+  method 'testConstructor' from GreaterThanTest vs GreaterThan2025Test -> kept-canonical
+  method 'testGetParameters' from GreaterThanTest vs GreaterThan2025Test -> kept-canonical
+  method 'testHashCode' from GreaterThanTest vs GreaterThan2025Test -> kept-canonical
+  method 'testAnd' from GreaterThanTest vs GreaterThan2025Test -> kept-canonical
+  method 'testOr' from GreaterThanTest vs GreaterThan2025Test -> kept-canonical
+  method 'testNot' from GreaterThanTest vs GreaterThan2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\GroupByTest.java ===
+canonical=GroupBy2025Test removed=['GroupByTest']
+  method 'testConstructorWithCondition' from GroupByTest vs GroupBy2025Test -> kept-canonical
+  method 'testConstructorWithCollectionAndDirection' from GroupByTest vs GroupBy2025Test -> kept-canonical
+  method 'testConstructorWithMap' from GroupByTest vs GroupBy2025Test -> kept-canonical
+  method 'testGetParameters' from GroupByTest vs GroupBy2025Test -> kept-canonical
+  method 'testToString' from GroupByTest vs GroupBy2025Test -> kept-canonical
+  method 'testToStringWithNamingPolicy' from GroupByTest vs GroupBy2025Test -> kept-canonical
+  method 'testHashCode' from GroupByTest vs GroupBy2025Test -> kept-canonical
+  method 'testEquals' from GroupByTest vs GroupBy2025Test -> kept-canonical
+  method 'testConstructorRejectsBlankPropertyNames' from GroupByTest vs GroupBy2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\HavingTest.java ===
+canonical=Having2025Test removed=['HavingTest']
+  method 'testConstructorWithCondition' from HavingTest vs Having2025Test -> kept-canonical
+  method 'testGetParameters' from HavingTest vs Having2025Test -> kept-canonical
+  method 'testToString' from HavingTest vs Having2025Test -> kept-canonical
+  method 'testToStringWithNamingPolicy' from HavingTest vs Having2025Test -> kept-canonical
+  method 'testHashCode' from HavingTest vs Having2025Test -> kept-canonical
+  method 'testEquals' from HavingTest vs Having2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\InSubQueryTest.java ===
+canonical=InSubQuery2025Test removed=['InSubQueryTest']
+  method 'testGetSubQuery' from InSubQueryTest vs InSubQuery2025Test -> kept-canonical
+  method 'testGetParameters' from InSubQueryTest vs InSubQuery2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\InTest.java ===
+canonical=In2025Test removed=['InTest']
+  method 'testGetPropName' from InTest vs In2025Test -> kept-canonical
+  method 'testGetValues' from InTest vs In2025Test -> kept-canonical
+  method 'testGetParameters' from InTest vs In2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\InnerJoinTest.java ===
+canonical=InnerJoin2025Test removed=['InnerJoinTest']
+  method 'testGetJoinEntities' from InnerJoinTest vs InnerJoin2025Test -> kept-canonical
+  method 'testGetCondition' from InnerJoinTest vs InnerJoin2025Test -> kept-canonical
+  method 'testHashCode' from InnerJoinTest vs InnerJoin2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\IntersectTest.java ===
+canonical=Intersect2025Test removed=['IntersectTest']
+  method 'testGetParameters' from IntersectTest vs Intersect2025Test -> kept-canonical
+  method 'testToString' from IntersectTest vs Intersect2025Test -> kept-canonical
+  method 'testHashCode' from IntersectTest vs Intersect2025Test -> kept-canonical
+  method 'testGetCondition' from IntersectTest vs Intersect2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\IsInfiniteTest.java ===
+canonical=IsInfinite2025Test removed=['IsInfiniteTest']
+  method 'testGetParameters' from IsInfiniteTest vs IsInfinite2025Test -> kept-canonical
+  method 'testHashCode' from IsInfiniteTest vs IsInfinite2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\IsNaNTest.java ===
+canonical=IsNaN2025Test removed=['IsNaNTest']
+  method 'testGetParameters' from IsNaNTest vs IsNaN2025Test -> kept-canonical
+  method 'testHashCode' from IsNaNTest vs IsNaN2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\IsNotInfiniteTest.java ===
+canonical=IsNotInfinite2025Test removed=['IsNotInfiniteTest']
+  method 'testGetParameters' from IsNotInfiniteTest vs IsNotInfinite2025Test -> kept-canonical
+  method 'testHashCode' from IsNotInfiniteTest vs IsNotInfinite2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\IsNotNaNTest.java ===
+canonical=IsNotNaN2025Test removed=['IsNotNaNTest']
+  method 'testGetParameters' from IsNotNaNTest vs IsNotNaN2025Test -> kept-canonical
+  method 'testHashCode' from IsNotNaNTest vs IsNotNaN2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\IsNotNullTest.java ===
+canonical=IsNotNull2025Test removed=['IsNotNullTest']
+  method 'testGetParameters' from IsNotNullTest vs IsNotNull2025Test -> kept-canonical
+  method 'testHashCode' from IsNotNullTest vs IsNotNull2025Test -> kept-canonical
+  method 'testEquals' from IsNotNullTest vs IsNotNull2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\IsNotTest.java ===
+canonical=IsNot2025Test removed=['IsNotTest']
+  method 'testGetParameters' from IsNotTest vs IsNot2025Test -> kept-canonical
+  method 'testHashCode' from IsNotTest vs IsNot2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\IsNullTest.java ===
+canonical=IsNull2025Test removed=['IsNullTest']
+  method 'testGetParameters' from IsNullTest vs IsNull2025Test -> kept-canonical
+  method 'testHashCode' from IsNullTest vs IsNull2025Test -> kept-canonical
+  method 'testEquals' from IsNullTest vs IsNull2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\IsTest.java ===
+canonical=Is2025Test removed=['IsTest']
+  method 'testGetParameters' from IsTest vs Is2025Test -> kept-canonical
+  method 'testHashCode' from IsTest vs Is2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\JoinTest.java ===
+canonical=Join2025Test removed=['JoinTest', 'Join2026Batch2Test']
+  method 'testGetJoinEntities' from JoinTest vs Join2025Test -> kept-canonical
+  method 'testGetCondition' from JoinTest vs Join2025Test -> kept-canonical
+  method 'testConstructorRejectsNestedOnConnectorCondition' from JoinTest vs Join2025Test -> kept-canonical
+  method 'testHashCode' from JoinTest vs Join2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\JunctionTest.java ===
+canonical=Junction2025Test removed=['JunctionTest']
+  method 'testConstructorWithOperatorAndConditions' from JunctionTest vs Junction2025Test -> kept-canonical
+  method 'testConstructorWithOperatorAndCollection' from JunctionTest vs Junction2025Test -> kept-canonical
+  method 'testConstructorWithEmptyConditions' from JunctionTest vs Junction2025Test -> kept-canonical
+  method 'testGetConditions' from JunctionTest vs Junction2025Test -> kept-canonical
+  method 'testGetParameters' from JunctionTest vs Junction2025Test -> kept-canonical
+  method 'testToStringWithNamingPolicy' from JunctionTest vs Junction2025Test -> kept-canonical
+  method 'testHashCode' from JunctionTest vs Junction2025Test -> kept-canonical
+  method 'testEquals' from JunctionTest vs Junction2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\LeftJoinTest.java ===
+canonical=LeftJoin2025Test removed=['LeftJoinTest']
+  method 'testGetJoinEntities' from LeftJoinTest vs LeftJoin2025Test -> kept-canonical
+  method 'testGetCondition' from LeftJoinTest vs LeftJoin2025Test -> kept-canonical
+  method 'testHashCode' from LeftJoinTest vs LeftJoin2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\LessThanOrEqualTest.java ===
+canonical=LessThanOrEqual2025Test removed=['LessThanOrEqualTest']
+  method 'testGetParameters' from LessThanOrEqualTest vs LessThanOrEqual2025Test -> kept-canonical
+  method 'testHashCode' from LessThanOrEqualTest vs LessThanOrEqual2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\LessThanTest.java ===
+canonical=LessThan2025Test removed=['LessThanTest']
+  method 'testGetParameters' from LessThanTest vs LessThan2025Test -> kept-canonical
+  method 'testHashCode' from LessThanTest vs LessThan2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\LikeTest.java ===
+canonical=Like2025Test removed=['LikeTest']
+  method 'testGetParameters' from LikeTest vs Like2025Test -> kept-canonical
+  method 'testHashCode' from LikeTest vs Like2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\LimitTest.java ===
+canonical=Limit2025Test removed=['LimitTest', 'Limit2026Batch2Test']
+  method 'testConstructorWithCount' from LimitTest vs Limit2025Test -> kept-canonical
+  method 'testConstructorWithOffsetAndCount' from LimitTest vs Limit2025Test -> kept-canonical
+  method 'testConstructorWithExpression' from LimitTest vs Limit2025Test -> kept-canonical
+  method 'testGetParameters' from LimitTest vs Limit2025Test -> kept-canonical
+  method 'testToStringWithCountOnly' from LimitTest vs Limit2025Test -> kept-canonical
+  method 'testToStringWithOffsetAndCount' from LimitTest vs Limit2025Test -> kept-canonical
+  method 'testHashCodeWithExpression' from LimitTest vs Limit2025Test -> kept-canonical
+  method 'testEqualsWithNull' from LimitTest vs Limit2025Test -> kept-canonical
+  method 'testEqualsWithDifferentClass' from LimitTest vs Limit2025Test -> kept-canonical
+  method 'testEqualsWithExpression' from LimitTest vs Limit2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\MinusTest.java ===
+canonical=Minus2025Test removed=['MinusTest']
+  method 'testGetCondition' from MinusTest vs Minus2025Test -> kept-canonical
+  method 'testGetOperator' from MinusTest vs Minus2025Test -> kept-canonical
+  method 'testGetParameters' from MinusTest vs Minus2025Test -> kept-canonical
+  method 'testToString' from MinusTest vs Minus2025Test -> kept-canonical
+  method 'testHashCode' from MinusTest vs Minus2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\NamedPropertyTest.java ===
+canonical=NamedProperty2025Test removed=['NamedProperty2026Test', 'NamedPropertyTest']
+  method 'testOfMethod' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testOfMethodCaching' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testEq' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testAnyEqualWithCollection' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testAnyEqualWithEmptyCollection' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testNe' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testGt' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testGe' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testLt' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testLe' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testIsNull' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testIsNotNull' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testBetween' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testLike' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testNotLike' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testStartsWith' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testEndsWith' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testContains' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testInWithCollection' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testHashCode' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testEquals' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testToString' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+  method 'testChainedConditions' from NamedPropertyTest vs NamedProperty2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\NaturalJoinTest.java ===
+canonical=NaturalJoin2025Test removed=['NaturalJoinTest']
+  method 'testGetJoinEntities' from NaturalJoinTest vs NaturalJoin2025Test -> kept-canonical
+  method 'testGetCondition' from NaturalJoinTest vs NaturalJoin2025Test -> kept-canonical
+  method 'testHashCode' from NaturalJoinTest vs NaturalJoin2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\NotBetweenTest.java ===
+canonical=NotBetween2025Test removed=['NotBetweenTest']
+
+=== src\test\java\com\landawn\abacus\query\condition\NotEqualTest.java ===
+canonical=NotEqual2025Test removed=['NotEqualTest']
+  method 'testConstructor' from NotEqualTest vs NotEqual2025Test -> kept-canonical
+  method 'testGetParameters' from NotEqualTest vs NotEqual2025Test -> kept-canonical
+  method 'testHashCode' from NotEqualTest vs NotEqual2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\NotExistsTest.java ===
+canonical=NotExistsTest removed=['SimpleNotExistsTest']
+  method 'testGetOperator' from SimpleNotExistsTest vs NotExistsTest -> kept-canonical
+  method 'testGetCondition' from SimpleNotExistsTest vs NotExistsTest -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\NotInSubQueryTest.java ===
+canonical=NotInSubQuery2025Test removed=['NotInSubQueryTest']
+  method 'testGetParameters' from NotInSubQueryTest vs NotInSubQuery2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\NotInTest.java ===
+canonical=NotIn2025Test removed=['NotInTest']
+  method 'testGetParameters' from NotInTest vs NotIn2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\NotLikeTest.java ===
+canonical=NotLike2025Test removed=['NotLikeTest']
+  method 'testConstructor' from NotLikeTest vs NotLike2025Test -> kept-canonical
+  method 'testGetParameters' from NotLikeTest vs NotLike2025Test -> kept-canonical
+  method 'testHashCode' from NotLikeTest vs NotLike2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\NotTest.java ===
+canonical=Not2025Test removed=['NotTest']
+  method 'testGetCondition' from NotTest vs Not2025Test -> kept-canonical
+  method 'testGetOperator' from NotTest vs Not2025Test -> kept-canonical
+  method 'testGetParameters' from NotTest vs Not2025Test -> kept-canonical
+  method 'testHashCode' from NotTest vs Not2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\OnTest.java ===
+canonical=On2025Test removed=['OnTest']
+  method 'testGetCondition' from OnTest vs On2025Test -> kept-canonical
+  method 'testToString' from OnTest vs On2025Test -> kept-canonical
+  method 'testHashCode' from OnTest vs On2025Test -> kept-canonical
+  method 'testConstructorRejectsNestedConnectorCondition' from OnTest vs On2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\OperatorTest.java ===
+canonical=Operator2025Test removed=['OperatorTest']
+  method 'testGetName' from OperatorTest vs Operator2025Test -> kept-canonical
+  method 'testToString' from OperatorTest vs Operator2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\OrTest.java ===
+canonical=Or2025Test removed=['OrTest']
+  method 'testConstructorRejectsOnConnectorOperand' from OrTest vs Or2025Test -> kept-canonical
+  method 'testGetParameters' from OrTest vs Or2025Test -> kept-canonical
+  method 'testHashCode' from OrTest vs Or2025Test -> kept-canonical
+  method 'testAndMethod' from OrTest vs Or2025Test -> kept-canonical
+  method 'testNotMethod' from OrTest vs Or2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\OrderByTest.java ===
+canonical=OrderBy2025Test removed=['OrderByTest']
+  method 'testConstructorWithCondition' from OrderByTest vs OrderBy2025Test -> kept-canonical
+  method 'testConstructorWithSingleProperty' from OrderByTest vs OrderBy2025Test -> kept-canonical
+  method 'testConstructorWithPropertyAndDirection' from OrderByTest vs OrderBy2025Test -> kept-canonical
+  method 'testConstructorWithCollectionAndDirection' from OrderByTest vs OrderBy2025Test -> kept-canonical
+  method 'testConstructorWithMap' from OrderByTest vs OrderBy2025Test -> kept-canonical
+  method 'testGetCondition' from OrderByTest vs OrderBy2025Test -> kept-canonical
+  method 'testToString' from OrderByTest vs OrderBy2025Test -> kept-canonical
+  method 'testHashCode' from OrderByTest vs OrderBy2025Test -> kept-canonical
+  method 'testEquals' from OrderByTest vs OrderBy2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\RightJoinTest.java ===
+canonical=RightJoin2025Test removed=['RightJoinTest']
+  method 'testGetJoinEntities' from RightJoinTest vs RightJoin2025Test -> kept-canonical
+  method 'testGetCondition' from RightJoinTest vs RightJoin2025Test -> kept-canonical
+  method 'testHashCode' from RightJoinTest vs RightJoin2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\SomeTest.java ===
+canonical=Some2025Test removed=['SomeTest']
+  method 'testGetCondition' from SomeTest vs Some2025Test -> kept-canonical
+  method 'testGetOperator' from SomeTest vs Some2025Test -> kept-canonical
+  method 'testRejectsStandalonePredicateUse' from SomeTest vs Some2025Test -> kept-canonical
+  method 'testHashCode' from SomeTest vs Some2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\SubQueryTest.java ===
+canonical=SubQuery2025Test removed=['SubQueryTest', 'SubQuery2026Test']
+  method 'testToStringWithNamingPolicy' from SubQueryTest vs SubQuery2025Test -> kept-canonical
+  method 'testHashCode' from SubQueryTest vs SubQuery2025Test -> kept-canonical
+  method 'testEquals' from SubQueryTest vs SubQuery2025Test -> kept-canonical
+  nested-class 'TestEntity' from SubQueryTest vs SubQuery2025Test -> skipped
+
+=== src\test\java\com\landawn\abacus\query\condition\UnionAllTest.java ===
+canonical=UnionAll2025Test removed=['UnionAllTest']
+  method 'testGetCondition' from UnionAllTest vs UnionAll2025Test -> kept-canonical
+  method 'testGetOperator' from UnionAllTest vs UnionAll2025Test -> kept-canonical
+  method 'testGetParameters' from UnionAllTest vs UnionAll2025Test -> kept-canonical
+  method 'testToString' from UnionAllTest vs UnionAll2025Test -> kept-canonical
+  method 'testHashCode' from UnionAllTest vs UnionAll2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\UnionTest.java ===
+canonical=Union2025Test removed=['UnionTest']
+  method 'testGetCondition' from UnionTest vs Union2025Test -> kept-canonical
+  method 'testGetOperator' from UnionTest vs Union2025Test -> kept-canonical
+  method 'testToString' from UnionTest vs Union2025Test -> kept-canonical
+  method 'testHashCode' from UnionTest vs Union2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\UsingTest.java ===
+canonical=Using2025Test removed=['UsingTest']
+  method 'testGetCondition' from UsingTest vs Using2025Test -> kept-canonical
+  method 'testToString' from UsingTest vs Using2025Test -> kept-canonical
+  method 'testHashCode' from UsingTest vs Using2025Test -> kept-canonical
+
+=== src\test\java\com\landawn\abacus\query\condition\WhereTest.java ===
+canonical=Where2025Test removed=['WhereTest']
+  method 'testHashCode' from WhereTest vs Where2025Test -> kept-canonical

@@ -1,18 +1,18 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Operator2025Test extends TestBase {
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
+import com.landawn.abacus.TestBase;
+
+@Tag("2025")
+public class OperatorTest extends TestBase {
     @Test
     public void testGetOperator_Comparison() {
         assertEquals(Operator.EQUAL, Operator.of("="));
@@ -258,28 +258,6 @@ class Operator2025Test extends TestBase {
         assertNotNull(Operator.USING);
         assertNotNull(Operator.FOR_UPDATE);
         assertNotNull(Operator.EMPTY);
-    }
-}
-
-public class OperatorTest extends TestBase {
-
-    @Test
-    public void testGetName() {
-        Assertions.assertEquals("=", Operator.EQUAL.sqlToken());
-        Assertions.assertEquals("!=", Operator.NOT_EQUAL.sqlToken());
-        Assertions.assertEquals("AND", Operator.AND.sqlToken());
-        Assertions.assertEquals("OR", Operator.OR.sqlToken());
-        Assertions.assertEquals("BETWEEN", Operator.BETWEEN.sqlToken());
-        Assertions.assertEquals("LIKE", Operator.LIKE.sqlToken());
-    }
-
-    @Test
-    public void testToString() {
-        Assertions.assertEquals("=", Operator.EQUAL.toString());
-        Assertions.assertEquals(">", Operator.GREATER_THAN.toString());
-        Assertions.assertEquals("<=", Operator.LESS_THAN_OR_EQUAL.toString());
-        Assertions.assertEquals("IN", Operator.IN.toString());
-        Assertions.assertEquals("NOT IN", Operator.NOT_IN.toString());
     }
 
     @Test

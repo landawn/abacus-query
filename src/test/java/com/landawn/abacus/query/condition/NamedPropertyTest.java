@@ -1,13 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -16,13 +8,23 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+
 /**
  * Comprehensive test class for NamedProperty.
  * Tests all public methods including factory method, condition creation methods, and utilities.
  */
 @Tag("2025")
-class NamedProperty2025Test extends TestBase {
-
+public class NamedPropertyTest extends TestBase {
     @Test
     public void testConstructorWithPropertyName() {
         NamedProperty np = new NamedProperty("age");
@@ -213,7 +215,7 @@ class NamedProperty2025Test extends TestBase {
         assertNotNull(like);
         assertEquals("name", like.getPropName());
         // Like extends Binary which has getValue()
-        assertEquals("John%", ((Binary) like).getPropValue());
+        assertEquals("John%", like.getPropValue());
     }
 
     @Test
@@ -224,7 +226,7 @@ class NamedProperty2025Test extends TestBase {
         assertNotNull(notLike);
         assertEquals("email", notLike.getPropName());
         // NotLike extends Binary which has getValue()
-        assertEquals("%@temp.com", ((Binary) notLike).getPropValue());
+        assertEquals("%@temp.com", notLike.getPropValue());
     }
 
     @Test
@@ -234,7 +236,7 @@ class NamedProperty2025Test extends TestBase {
 
         assertNotNull(startsWith);
         assertEquals("code", startsWith.getPropName());
-        assertTrue(((Binary) startsWith).getPropValue().toString().endsWith("%"));
+        assertTrue(startsWith.getPropValue().toString().endsWith("%"));
     }
 
     @Test
@@ -244,7 +246,7 @@ class NamedProperty2025Test extends TestBase {
 
         assertNotNull(endsWith);
         assertEquals("filename", endsWith.getPropName());
-        assertTrue(((Binary) endsWith).getPropValue().toString().startsWith("%"));
+        assertTrue(endsWith.getPropValue().toString().startsWith("%"));
     }
 
     @Test
@@ -254,7 +256,7 @@ class NamedProperty2025Test extends TestBase {
 
         assertNotNull(contains);
         assertEquals("description", contains.getPropName());
-        String value = ((Binary) contains).getPropValue().toString();
+        String value = contains.getPropValue().toString();
         assertTrue(value.startsWith("%"));
         assertTrue(value.endsWith("%"));
     }
@@ -495,9 +497,6 @@ class NamedProperty2025Test extends TestBase {
 
         assertEquals("user.address.city", np.propName());
     }
-}
-
-class NamedProperty2026Test extends TestBase {
 
     @Test
     public void testNotEqual() {
@@ -742,9 +741,6 @@ class NamedProperty2026Test extends TestBase {
 
         assertEquals(1, condition.getValues().size());
     }
-}
-
-public class NamedPropertyTest extends TestBase {
 
     @Test
     public void testConstructor() {
@@ -769,22 +765,6 @@ public class NamedPropertyTest extends TestBase {
     }
 
     @Test
-    public void testOfMethod() {
-        NamedProperty prop = NamedProperty.of("username");
-        Assertions.assertNotNull(prop);
-        Assertions.assertEquals("username", prop.toString());
-    }
-
-    @Test
-    public void testOfMethodCaching() {
-        NamedProperty prop1 = NamedProperty.of("cachedProperty");
-        NamedProperty prop2 = NamedProperty.of("cachedProperty");
-
-        // Should return the same instance due to caching
-        Assertions.assertSame(prop1, prop2);
-    }
-
-    @Test
     public void testOfMethodWithEmptyString() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             NamedProperty.of("");
@@ -805,27 +785,9 @@ public class NamedPropertyTest extends TestBase {
     }
 
     @Test
-    public void testEq() {
-        NamedProperty prop = NamedProperty.of("status");
-        Equal condition = prop.eq("active");
-
-        Assertions.assertEquals("status", condition.getPropName());
-        Assertions.assertEquals("active", condition.getPropValue());
-    }
-
-    @Test
     public void testAnyEqualWithArray() {
         NamedProperty prop = NamedProperty.of("color");
         Or condition = prop.equalsAny("red", "green", "blue");
-
-        Assertions.assertEquals(3, condition.getConditions().size());
-    }
-
-    @Test
-    public void testAnyEqualWithCollection() {
-        NamedProperty prop = NamedProperty.of("city");
-        List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
-        Or condition = prop.equalsAny(cities);
 
         Assertions.assertEquals(3, condition.getConditions().size());
     }
@@ -849,149 +811,12 @@ public class NamedPropertyTest extends TestBase {
     }
 
     @Test
-    public void testAnyEqualWithEmptyCollection() {
-        NamedProperty prop = NamedProperty.of("city");
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            prop.equalsAny(Arrays.asList());
-        });
-    }
-
-    @Test
-    public void testNe() {
-        NamedProperty prop = NamedProperty.of("status");
-        NotEqual condition = prop.ne("deleted");
-
-        Assertions.assertEquals("status", condition.getPropName());
-        Assertions.assertEquals("deleted", condition.getPropValue());
-    }
-
-    @Test
-    public void testGt() {
-        NamedProperty prop = NamedProperty.of("age");
-        GreaterThan condition = prop.gt(18);
-
-        Assertions.assertEquals("age", condition.getPropName());
-        Assertions.assertEquals(18, (Integer) (Integer) condition.getPropValue());
-    }
-
-    @Test
-    public void testGe() {
-        NamedProperty prop = NamedProperty.of("score");
-        GreaterThanOrEqual condition = prop.ge(60);
-
-        Assertions.assertEquals("score", condition.getPropName());
-        Assertions.assertEquals(60, (Integer) condition.getPropValue());
-    }
-
-    @Test
-    public void testLt() {
-        NamedProperty prop = NamedProperty.of("price");
-        LessThan condition = prop.lt(100);
-
-        Assertions.assertEquals("price", condition.getPropName());
-        Assertions.assertEquals(100, (Integer) condition.getPropValue());
-    }
-
-    @Test
-    public void testLe() {
-        NamedProperty prop = NamedProperty.of("quantity");
-        LessThanOrEqual condition = prop.le(10);
-
-        Assertions.assertEquals("quantity", condition.getPropName());
-        Assertions.assertEquals(10, (Integer) condition.getPropValue());
-    }
-
-    @Test
-    public void testIsNull() {
-        NamedProperty prop = NamedProperty.of("deletedDate");
-        IsNull condition = prop.isNull();
-
-        Assertions.assertEquals("deletedDate", condition.getPropName());
-    }
-
-    @Test
-    public void testIsNotNull() {
-        NamedProperty prop = NamedProperty.of("email");
-        IsNotNull condition = prop.isNotNull();
-
-        Assertions.assertEquals("email", condition.getPropName());
-    }
-
-    @Test
-    public void testBetween() {
-        NamedProperty prop = NamedProperty.of("age");
-        Between condition = prop.between(18, 65);
-
-        Assertions.assertEquals("age", condition.getPropName());
-        Assertions.assertEquals(18, (Integer) (Integer) condition.getMinValue());
-        Assertions.assertEquals(65, (Integer) condition.getMaxValue());
-    }
-
-    // Removed: testBt() - bt() method has been removed. Use between() instead.
-
-    @Test
-    public void testLike() {
-        NamedProperty prop = NamedProperty.of("name");
-        Like condition = prop.like("John%");
-
-        Assertions.assertEquals("name", condition.getPropName());
-        Assertions.assertEquals("John%", condition.getPropValue());
-    }
-
-    @Test
-    public void testNotLike() {
-        NamedProperty prop = NamedProperty.of("email");
-        NotLike condition = prop.notLike("%@temp.com");
-
-        Assertions.assertEquals("email", condition.getPropName());
-        Assertions.assertEquals("%@temp.com", condition.getPropValue());
-    }
-
-    @Test
-    public void testStartsWith() {
-        NamedProperty prop = NamedProperty.of("name");
-        Like condition = prop.startsWith("John");
-
-        Assertions.assertEquals("name", condition.getPropName());
-        Assertions.assertEquals("John%", condition.getPropValue());
-    }
-
-    @Test
-    public void testEndsWith() {
-        NamedProperty prop = NamedProperty.of("email");
-        Like condition = prop.endsWith("@example.com");
-
-        Assertions.assertEquals("email", condition.getPropName());
-        Assertions.assertEquals("%@example.com", condition.getPropValue());
-    }
-
-    @Test
-    public void testContains() {
-        NamedProperty prop = NamedProperty.of("description");
-        Like condition = prop.contains("important");
-
-        Assertions.assertEquals("description", condition.getPropName());
-        Assertions.assertEquals("%important%", condition.getPropValue());
-    }
-
-    @Test
     public void testInWithArray() {
         NamedProperty prop = NamedProperty.of("status");
         In condition = prop.in("active", "pending", "approved");
 
         Assertions.assertEquals("status", condition.getPropName());
         Assertions.assertEquals(3, condition.getValues().size());
-    }
-
-    @Test
-    public void testInWithCollection() {
-        NamedProperty prop = NamedProperty.of("id");
-        Set<Integer> ids = new HashSet<>(Arrays.asList(1, 2, 3, 4, 5));
-        In condition = prop.in(ids);
-
-        Assertions.assertEquals("id", condition.getPropName());
-        Assertions.assertEquals(5, condition.getValues().size());
     }
 
     @Test
@@ -1008,50 +833,6 @@ public class NamedPropertyTest extends TestBase {
         NotIn condition = prop.notIn(new int[] { 4, 5, 6 });
 
         Assertions.assertEquals(Arrays.asList(4, 5, 6), condition.getParameters());
-    }
-
-    @Test
-    public void testHashCode() {
-        NamedProperty prop1 = new NamedProperty("property");
-        NamedProperty prop2 = new NamedProperty("property");
-        NamedProperty prop3 = new NamedProperty("different");
-
-        Assertions.assertEquals(prop1.hashCode(), prop2.hashCode());
-        Assertions.assertNotEquals(prop1.hashCode(), prop3.hashCode());
-    }
-
-    @Test
-    public void testEquals() {
-        NamedProperty prop1 = new NamedProperty("property");
-        NamedProperty prop2 = new NamedProperty("property");
-        NamedProperty prop3 = new NamedProperty("different");
-        NamedProperty prop4 = NamedProperty.of("property");
-
-        Assertions.assertTrue(prop1.equals(prop1));
-        Assertions.assertTrue(prop1.equals(prop2));
-        Assertions.assertFalse(prop1.equals(prop3));
-        Assertions.assertTrue(prop1.equals(prop4));
-        Assertions.assertFalse(prop1.equals(null));
-        Assertions.assertFalse(prop1.equals("not a NamedProperty"));
-    }
-
-    @Test
-    public void testToString() {
-        NamedProperty prop = NamedProperty.of("testProperty");
-        Assertions.assertEquals("testProperty", prop.toString());
-    }
-
-    @Test
-    public void testChainedConditions() {
-        NamedProperty age = NamedProperty.of("age");
-        NamedProperty status = NamedProperty.of("status");
-
-        // Create complex conditions using named properties
-        Or complexCondition = age.equalsAny(25, 30, 35);
-        In statusCondition = status.in(Arrays.asList("active", "pending"));
-
-        Assertions.assertEquals(3, complexCondition.getConditions().size());
-        Assertions.assertEquals(2, statusCondition.getValues().size());
     }
 
     // --- 2nd-pass review verification tests ---

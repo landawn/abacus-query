@@ -1,12 +1,5 @@
 package com.landawn.abacus.query;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.util.ImmutableList;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,9 +7,18 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class ParsedSql2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.ImmutableList;
+
+@Tag("2025")
+public class ParsedSqlTest extends TestBase {
     @Test
     public void testParse_SimpleSelect() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM users");
@@ -374,9 +376,6 @@ class ParsedSql2025Test extends TestBase {
         assertEquals("a", parsed.namedParameters().get(1));
         assertEquals("b", parsed.namedParameters().get(2));
     }
-}
-
-public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testParse_simpleSelect() {
@@ -646,14 +645,6 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
-    public void testSql() {
-        String sql = "SELECT * FROM users WHERE id = :userId";
-        ParsedSql parsed = ParsedSql.parse(sql);
-
-        Assertions.assertEquals("SELECT * FROM users WHERE id = :userId", parsed.originalSql());
-    }
-
-    @Test
     public void testGetParameterizedSql_withNamedParameters() {
         String sql = "SELECT * FROM users WHERE id = :userId AND status = :status";
         ParsedSql parsed = ParsedSql.parse(sql);
@@ -769,20 +760,6 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
-    public void testHashCode() {
-        String sql1 = "SELECT * FROM users WHERE id = :userId";
-        String sql2 = "SELECT * FROM users WHERE id = :userId";
-        String sql3 = "SELECT * FROM users WHERE id = :id";
-
-        ParsedSql parsed1 = ParsedSql.parse(sql1);
-        ParsedSql parsed2 = ParsedSql.parse(sql2);
-        ParsedSql parsed3 = ParsedSql.parse(sql3);
-
-        Assertions.assertEquals(parsed1.hashCode(), parsed2.hashCode());
-        Assertions.assertNotEquals(parsed1.hashCode(), parsed3.hashCode());
-    }
-
-    @Test
     public void testEquals() {
         String sql1 = "SELECT * FROM users WHERE id = :userId";
         String sql2 = "SELECT * FROM users WHERE id = :userId";
@@ -806,16 +783,6 @@ public class ParsedSqlTest extends TestBase {
 
         // Test not equals with different type
         Assertions.assertNotEquals(parsed1, "SELECT * FROM users WHERE id = :userId");
-    }
-
-    @Test
-    public void testToString() {
-        String sql = "SELECT * FROM users WHERE id = :userId";
-        ParsedSql parsed = ParsedSql.parse(sql);
-
-        String str = parsed.toString();
-        Assertions.assertTrue(str.contains("sql=SELECT * FROM users WHERE id = :userId"));
-        Assertions.assertTrue(str.contains("parameterizedSql=SELECT * FROM users WHERE id = ?"));
     }
 
     @Test
@@ -938,9 +905,6 @@ public class ParsedSqlTest extends TestBase {
         Assertions.assertEquals(1, parsed.parameterCount());
         Assertions.assertEquals("id", parsed.namedParameters().get(0));
     }
-}
-
-class ParsedSqlJavadocExamples extends TestBase {
 
     @Test
     public void testParsedSql_classLevelExample() {
@@ -1012,9 +976,6 @@ class ParsedSqlJavadocExamples extends TestBase {
         int count2 = parsed2.parameterCount();
         assertEquals(0, count2);
     }
-}
-
-class ParsedSql2026BatchTest extends TestBase {
 
     @Test
     public void testParse_EmptyIbatisTokenRemainsLiteral() {
@@ -1232,5 +1193,4 @@ class ParsedSql2026BatchTest extends TestBase {
         Assertions.assertEquals(2, parsed.parameterCount());
         Assertions.assertTrue(parsed.namedParameters().isEmpty());
     }
-
 }

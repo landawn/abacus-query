@@ -1,17 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.annotation.Table;
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -20,13 +8,26 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.annotation.Table;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
 /**
  * Comprehensive test class for SubQuery.
  * Tests all public methods including constructors, getters, parameters, copying, and SQL generation.
  */
 @Tag("2025")
-class SubQuery2025Test extends TestBase {
-
+public class SubQueryTest extends TestBase {
     @Test
     public void testConstructorWithRawSQL() {
         String sql = "SELECT id FROM users WHERE status = 'active'";
@@ -425,9 +426,6 @@ class SubQuery2025Test extends TestBase {
         @SuppressWarnings("unused")
         private Long id;
     }
-}
-
-public class SubQueryTest extends TestBase {
 
     @Test
     public void testConstructorWithRawSql() {
@@ -612,18 +610,6 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
-    public void testToStringWithNamingPolicy() {
-        List<String> props = Arrays.asList("user_id", "user_name");
-        Equal condition = Filters.eq("is_active", true);
-        SubQuery subQuery = Filters.subQuery("user_table", props, condition);
-
-        String result = subQuery.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
-        Assertions.assertTrue(result.contains("USER_ID, USER_NAME"));
-        Assertions.assertTrue(result.contains("FROM USER_TABLE"));
-        Assertions.assertTrue(result.contains("IS_ACTIVE"));
-    }
-
-    @Test
     public void testToStringWithNamingPolicyConvertsSelectPropsAndEntity() {
         List<String> props = Arrays.asList("firstName", "lastName");
         SubQuery subQuery = Filters.subQuery("userAccount", props, Filters.eq("isActive", true));
@@ -643,35 +629,6 @@ public class SubQueryTest extends TestBase {
         Assertions.assertTrue(result.contains("SELECT event_id"));
         Assertions.assertTrue(result.contains("FROM audit_log_entries ale"));
         Assertions.assertFalse(result.contains("FROM audit_event_entity"));
-    }
-
-    @Test
-    public void testHashCode() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM users");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM users");
-        SubQuery subQuery3 = Filters.subQuery("SELECT id FROM customers");
-
-        Assertions.assertEquals(subQuery1.hashCode(), subQuery2.hashCode());
-        Assertions.assertNotEquals(subQuery1.hashCode(), subQuery3.hashCode());
-    }
-
-    @Test
-    public void testEquals() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT id FROM users");
-        SubQuery subQuery2 = Filters.subQuery("SELECT id FROM users");
-        SubQuery subQuery3 = Filters.subQuery("SELECT id FROM customers");
-
-        List<String> props = Arrays.asList("id");
-        SubQuery subQuery4 = Filters.subQuery("users", props, Filters.eq("active", true));
-        SubQuery subQuery5 = Filters.subQuery("users", props, Filters.eq("active", true));
-
-        Assertions.assertTrue(subQuery1.equals(subQuery1));
-        Assertions.assertTrue(subQuery1.equals(subQuery2));
-        Assertions.assertFalse(subQuery1.equals(subQuery3));
-        Assertions.assertTrue(subQuery4.equals(subQuery5));
-        Assertions.assertFalse(subQuery1.equals(subQuery4));
-        Assertions.assertFalse(subQuery1.equals(null));
-        Assertions.assertFalse(subQuery1.equals("not a SubQuery"));
     }
 
     @Test
@@ -717,11 +674,6 @@ public class SubQueryTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList("id"), Filters.expr("USING (id)")));
     }
 
-    // Test entity class for constructor test
-    static class TestEntity {
-        // Empty class for testing
-    }
-
     @Table(name = "audit_log_entries", alias = "ale")
     static class AuditEventEntity {
         private Long eventId;
@@ -734,9 +686,6 @@ public class SubQueryTest extends TestBase {
             this.eventId = eventId;
         }
     }
-}
-
-class SubQuery2026Test extends TestBase {
 
     // The default constructor exists for serialization and should only expose empty state safely.
     @Test

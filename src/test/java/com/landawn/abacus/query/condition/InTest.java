@@ -1,10 +1,12 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.query.entity.Account;
-import com.landawn.abacus.util.N;
-import com.landawn.abacus.util.NamingPolicy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -14,19 +16,19 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.N;
+import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
-class In2025Test extends TestBase {
-
+public class InTest extends TestBase {
     @Test
     public void testConstructor_ValidList() {
         List<String> values = Arrays.asList("active", "pending", "approved");
@@ -288,9 +290,6 @@ class In2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
     }
-}
-
-public class InTest extends TestBase {
 
     @Test
     public void testConstructorWithList() {
@@ -322,35 +321,6 @@ public class InTest extends TestBase {
 
         Assertions.assertNotNull(condition);
         Assertions.assertEquals(4, condition.getValues().size());
-    }
-
-    @Test
-    public void testGetPropName() {
-        In condition = new In("category", Arrays.asList("A", "B", "C"));
-        Assertions.assertEquals("category", condition.getPropName());
-    }
-
-    @Test
-    public void testGetValues() {
-        List<String> values = Arrays.asList("red", "green", "blue");
-        In condition = new In("color", values);
-
-        List<?> retrievedValues = condition.getValues();
-        Assertions.assertNotNull(retrievedValues);
-        Assertions.assertEquals(3, retrievedValues.size());
-        Assertions.assertTrue(retrievedValues.containsAll(values));
-    }
-
-    @Test
-    public void testGetParameters() {
-        List<Integer> values = Arrays.asList(10, 20, 30);
-        In condition = new In("value", values);
-
-        List<Object> params = condition.getParameters();
-
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(3, params.size());
-        Assertions.assertEquals(values, params);
     }
 
     @Test

@@ -8,8 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -20,8 +18,7 @@ import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.SK;
 
 @Tag("2025")
-class Limit2025Test extends TestBase {
-
+public class LimitTest extends TestBase {
     @Test
     public void testConstructorWithCount() {
         Limit limit = new Limit(10);
@@ -311,7 +308,7 @@ class Limit2025Test extends TestBase {
         Limit limit = new Limit(10);
         OrderBy orderBy = new OrderBy("id");
 
-        assertNotEquals(limit, (Object) orderBy);
+        assertNotEquals(limit, orderBy);
     }
 
     @Test
@@ -486,35 +483,6 @@ class Limit2025Test extends TestBase {
         // These should not be equal as one uses expression and one uses numeric
         assertNotEquals(limit1, limit2);
     }
-}
-
-public class LimitTest extends TestBase {
-
-    @Test
-    public void testConstructorWithCount() {
-        Limit limit = Filters.limit(10);
-        Assertions.assertEquals(10, limit.getCount());
-        Assertions.assertEquals(0, limit.getOffset());
-        Assertions.assertNull(limit.getLiteral());
-    }
-
-    @Test
-    public void testConstructorWithOffsetAndCount() {
-        Limit limit = Filters.limit(50, 20);
-        Assertions.assertEquals(50, limit.getCount());
-        Assertions.assertEquals(20, limit.getOffset());
-        Assertions.assertNull(limit.getLiteral());
-    }
-
-    @Test
-    public void testConstructorWithExpression() {
-        String expr = "10 OFFSET 20";
-        Limit limit = Filters.limit(expr);
-        Assertions.assertEquals(SK.LIMIT + SK.SPACE + expr, limit.getLiteral());
-        // The recognized integer form is parsed into concrete count/offset (literal is still retained).
-        Assertions.assertEquals(10, limit.getCount());
-        Assertions.assertEquals(20, limit.getOffset());
-    }
 
     @Test
     public void testConstructorWithExpressionTrims() {
@@ -545,39 +513,9 @@ public class LimitTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
-        Limit limit = Filters.limit(10);
-        List<Object> params = limit.getParameters();
-        Assertions.assertNotNull(params);
-        Assertions.assertTrue(params.isEmpty());
-    }
-
-    @Test
-    public void testToStringWithCountOnly() {
-        Limit limit = Filters.limit(10);
-        String result = limit.toString(NamingPolicy.CAMEL_CASE);
-        Assertions.assertEquals("LIMIT 10", result);
-    }
-
-    @Test
-    public void testToStringWithOffsetAndCount() {
-        Limit limit = Filters.limit(50, 20);
-        String result = limit.toString(NamingPolicy.CAMEL_CASE);
-        Assertions.assertEquals("LIMIT 50 OFFSET 20", result);
-    }
-
-    @Test
     public void testConditionReflectsExpressionValue() {
         Limit limit = Filters.limit("10 OFFSET 20");
         Assertions.assertEquals("10 OFFSET 20", limit.getCondition().toString());
-    }
-
-    @Test
-    public void testHashCodeWithExpression() {
-        String expr = "10 OFFSET 20";
-        Limit limit1 = Filters.limit(expr);
-        Limit limit2 = Filters.limit(expr);
-        Assertions.assertEquals(limit1.hashCode(), limit2.hashCode());
     }
 
     @Test
@@ -597,29 +535,6 @@ public class LimitTest extends TestBase {
     }
 
     @Test
-    public void testEqualsWithNull() {
-        Limit limit = Filters.limit(10);
-        Assertions.assertFalse(limit.equals(null));
-    }
-
-    @Test
-    public void testEqualsWithDifferentClass() {
-        Limit limit = Filters.limit(10);
-        Assertions.assertFalse(limit.equals("not a limit"));
-    }
-
-    @Test
-    public void testEqualsWithExpression() {
-        String expr = "10 OFFSET 20";
-        Limit limit1 = Filters.limit(expr);
-        Limit limit2 = Filters.limit(expr);
-        Limit limit3 = Filters.limit("30 OFFSET 40");
-
-        Assertions.assertTrue(limit1.equals(limit2));
-        Assertions.assertFalse(limit1.equals(limit3));
-    }
-
-    @Test
     public void testEqualsWithoutExpression() {
         Limit limit1 = Filters.limit(50, 20);
         Limit limit2 = Filters.limit(50, 20);
@@ -630,9 +545,6 @@ public class LimitTest extends TestBase {
         Assertions.assertFalse(limit1.equals(limit3));
         Assertions.assertFalse(limit1.equals(limit4));
     }
-}
-
-class Limit2026Batch2Test extends TestBase {
 
     @Test
     public void testDefaultConstructor_EmptyState() {

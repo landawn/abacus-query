@@ -1,13 +1,5 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Date;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -15,9 +7,19 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class NotEqual2025Test extends TestBase {
+import java.util.Date;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class NotEqualTest extends TestBase {
     @Test
     public void testConstructor() {
         NotEqual condition = new NotEqual("age", 25);
@@ -72,7 +74,7 @@ class NotEqual2025Test extends TestBase {
     public void testGetParameters() {
         NotEqual condition = new NotEqual("status", "active");
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -80,7 +82,7 @@ class NotEqual2025Test extends TestBase {
     public void testGetParameters_MultipleValues() {
         NotEqual condition = new NotEqual("count", 42);
         List<Object> params = condition.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
 
@@ -191,19 +193,6 @@ class NotEqual2025Test extends TestBase {
         Equal equal = new Equal("field", "value");
         assertNotEquals(notEqual, equal);
     }
-}
-
-public class NotEqualTest extends TestBase {
-
-    @Test
-    public void testConstructor() {
-        NotEqual notEqual = Filters.ne("status", "deleted");
-
-        Assertions.assertNotNull(notEqual);
-        Assertions.assertEquals("status", notEqual.getPropName());
-        Assertions.assertEquals("deleted", notEqual.getPropValue());
-        Assertions.assertEquals(Operator.NOT_EQUAL, notEqual.operator());
-    }
 
     @Test
     public void testConstructorWithNumericValue() {
@@ -227,14 +216,6 @@ public class NotEqualTest extends TestBase {
 
         Assertions.assertEquals("created", notEqual.getPropName());
         Assertions.assertEquals("2024-01-01", notEqual.getPropValue());
-    }
-
-    @Test
-    public void testGetParameters() {
-        NotEqual notEqual = Filters.ne("username", "admin");
-
-        Assertions.assertEquals(1, notEqual.getParameters().size());
-        Assertions.assertEquals("admin", notEqual.getParameters().get(0));
     }
 
     @Test
@@ -270,18 +251,6 @@ public class NotEqualTest extends TestBase {
         Assertions.assertTrue(result.contains("USER_STATUS"));
         Assertions.assertTrue(result.contains("!="));
         Assertions.assertTrue(result.contains("banned"));
-    }
-
-    @Test
-    public void testHashCode() {
-        NotEqual notEqual1 = Filters.ne("status", "deleted");
-        NotEqual notEqual2 = Filters.ne("status", "deleted");
-        NotEqual notEqual3 = Filters.ne("status", "active");
-        NotEqual notEqual4 = Filters.ne("type", "deleted");
-
-        Assertions.assertEquals(notEqual1.hashCode(), notEqual2.hashCode());
-        Assertions.assertNotEquals(notEqual1.hashCode(), notEqual3.hashCode());
-        Assertions.assertNotEquals(notEqual1.hashCode(), notEqual4.hashCode());
     }
 
     @Test

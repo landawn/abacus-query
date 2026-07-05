@@ -1,24 +1,26 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class NotInSubQuery2025Test extends TestBase {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class NotInSubQueryTest extends TestBase {
     @Test
     public void testConstructor_SingleProperty() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
@@ -235,9 +237,6 @@ class NotInSubQuery2025Test extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
     }
-}
-
-public class NotInSubQueryTest extends TestBase {
 
     @Test
     public void testConstructorWithSingleProperty() {
@@ -313,15 +312,6 @@ public class NotInSubQueryTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             Filters.notIn(propNames, (SubQuery) null);
         });
-    }
-
-    @Test
-    public void testGetParameters() {
-        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
-        NotInSubQuery condition = Filters.notIn("userId", subQuery);
-
-        List<Object> params = condition.getParameters();
-        Assertions.assertEquals(subQuery.getParameters(), params);
     }
 
     @Test

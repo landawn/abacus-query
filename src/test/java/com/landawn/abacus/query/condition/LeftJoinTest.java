@@ -1,23 +1,24 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class LeftJoin2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class LeftJoinTest extends TestBase {
     @Test
     public void testConstructor_Simple() {
         LeftJoin join = new LeftJoin("orders");
@@ -38,7 +39,7 @@ class LeftJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("orders o", "order_items oi");
         LeftJoin join = new LeftJoin(entities, new And(Arrays.asList(new Equal("c.id", "o.customer_id"), new Equal("o.id", "oi.order_id"))));
         assertNotNull(join);
-        assertEquals(2, (int) join.getJoinEntities().size());
+        assertEquals(2, join.getJoinEntities().size());
         assertEquals(Operator.LEFT_JOIN, join.operator());
     }
 
@@ -47,7 +48,7 @@ class LeftJoin2025Test extends TestBase {
         List<String> entities = Arrays.asList("table1", "table2");
         LeftJoin join = new LeftJoin(entities, null);
         List<String> result = join.getJoinEntities();
-        assertEquals(2, (int) result.size());
+        assertEquals(2, result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
     }
@@ -76,7 +77,7 @@ class LeftJoin2025Test extends TestBase {
     public void testGetParameters_WithCondition() {
         LeftJoin join = new LeftJoin("orders o", new Equal("status", "active"));
         List<Object> params = join.getParameters();
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
@@ -133,7 +134,7 @@ class LeftJoin2025Test extends TestBase {
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("customers.id", "o.customer_id"), new Equal("o.status", "active")));
         LeftJoin join = new LeftJoin("orders o", andCondition);
-        assertEquals(2, (int) join.getParameters().size());
+        assertEquals(2, join.getParameters().size());
     }
 
     @Test
@@ -155,7 +156,7 @@ class LeftJoin2025Test extends TestBase {
         And multipleConditions = new And(
                 Arrays.asList(new Equal("orders.id", "oi.order_id"), new Equal("oi.status", "active"), new GreaterThan("oi.created_date", "2023-01-01")));
         LeftJoin join = new LeftJoin("order_items oi", multipleConditions);
-        assertEquals(3, (int) join.getParameters().size());
+        assertEquals(3, join.getParameters().size());
     }
 
     @Test
@@ -164,9 +165,6 @@ class LeftJoin2025Test extends TestBase {
         assertNotNull(join.getCondition());
         assertEquals(Operator.LEFT_JOIN, join.operator());
     }
-}
-
-public class LeftJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntity() {
@@ -221,25 +219,6 @@ public class LeftJoinTest extends TestBase {
     }
 
     @Test
-    public void testGetJoinEntities() {
-        LeftJoin join = new LeftJoin("products p");
-        List<String> entities = join.getJoinEntities();
-
-        Assertions.assertNotNull(entities);
-        Assertions.assertEquals(1, entities.size());
-        Assertions.assertEquals("products p", entities.get(0));
-    }
-
-    @Test
-    public void testGetCondition() {
-        Condition condition = Filters.eq("a.id", "b.a_id");
-        LeftJoin join = new LeftJoin("table_b b", condition);
-
-        Condition retrieved = join.getCondition();
-        Assertions.assertEquals(condition, retrieved);
-    }
-
-    @Test
     public void testGetParameters() {
         Condition condition = Filters.and(Filters.eq("o.customer_id", Filters.expr("c.id")), Filters.eq("o.status", "completed"));
         LeftJoin join = new LeftJoin("orders o", condition);
@@ -291,17 +270,6 @@ public class LeftJoinTest extends TestBase {
         Assertions.assertTrue(result.contains("orderTable"));
         Assertions.assertTrue(result.contains("CUSTOMER_ID"));
         Assertions.assertTrue(result.contains("ORDER_ID"));
-    }
-
-    @Test
-    public void testHashCode() {
-        Condition condition = Filters.eq("a", "b");
-        LeftJoin join1 = new LeftJoin("table", condition);
-        LeftJoin join2 = new LeftJoin("table", condition);
-        LeftJoin join3 = new LeftJoin("other", condition);
-
-        Assertions.assertEquals(join1.hashCode(), join2.hashCode());
-        Assertions.assertNotEquals(join1.hashCode(), join3.hashCode());
     }
 
     @Test

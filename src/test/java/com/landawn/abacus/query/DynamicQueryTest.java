@@ -3,7 +3,6 @@ package com.landawn.abacus.query;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,7 +21,6 @@ import com.landawn.abacus.query.DynamicQuery.DynamicSqlBuilder;
 
 @Tag("2025")
 public class DynamicQueryTest extends TestBase {
-
     @Test
     public void testCreate() {
         DynamicSqlBuilder builder = DynamicQuery.builder();
@@ -933,23 +931,6 @@ public class DynamicQueryTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> builder.having().append(null));
         assertThrows(IllegalArgumentException.class, () -> builder.orderBy().append((String) null));
     }
-}
-
-/**
- * Simple unit tests for DynamicSqlBuilder functionality.
- * Tests basic factory method and builder creation.
- */
-class SimpleDynamicQueryBuilderTest extends TestBase {
-
-    @Test
-    void testCreate() {
-        DynamicSqlBuilder builder1 = DynamicQuery.builder();
-        DynamicSqlBuilder builder2 = DynamicQuery.builder();
-
-        assertNotNull(builder1);
-        assertNotNull(builder2);
-        assertNotSame(builder1, builder2); // Should return different instances
-    }
 
     @Test
     void testClauseBuilders() {
@@ -971,12 +952,6 @@ class SimpleDynamicQueryBuilderTest extends TestBase {
         String sql = builder.build();
         assertNotNull(sql);
     }
-}
-
-/**
- * Javadoc usage examples for the DynamicQuery builder live here because DynamicQuery exposes the builder entry point.
- */
-class DynamicQueryJavadocExamples extends TestBase {
 
     @Test
     public void testDynamicQueryBuilder_classLevelExample() {
@@ -1234,9 +1209,6 @@ class DynamicQueryJavadocExamples extends TestBase {
         assertTrue(sql.contains("status = 'active'"));
         assertFalse(sql.contains("role = 'admin'"));
     }
-}
-
-class DynamicQuery2026BatchTest extends TestBase {
 
     // Covers clause builders when the conditional branch is the first text appended.
     @Test

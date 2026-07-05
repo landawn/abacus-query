@@ -1,24 +1,25 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class On2025Test extends TestBase {
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class OnTest extends TestBase {
     @Test
     public void testConstructor_SimpleEquality() {
         On on = new On("orders.customer_id", "customers.id");
@@ -72,7 +73,7 @@ class On2025Test extends TestBase {
         And complexCondition = new And(new Equal("orders.customer_id", "customers.id"), new Equal("orders.status", "active"));
         On on = new On(complexCondition);
         List<Object> params = on.getParameters();
-        assertEquals(2, (int) params.size());
+        assertEquals(2, params.size());
         assertEquals("customers.id", params.get(0));
         assertEquals("active", params.get(1));
     }
@@ -175,11 +176,8 @@ class On2025Test extends TestBase {
     public void testWithAdditionalFilters() {
         And filteredJoin = new And(new Equal("products.category_id", "categories.id"), new Equal("categories.active", true));
         On on = new On(filteredJoin);
-        assertEquals(2, (int) on.getParameters().size());
+        assertEquals(2, on.getParameters().size());
     }
-}
-
-public class OnTest extends TestBase {
 
     @Test
     public void testConstructorWithCondition() {
@@ -283,38 +281,10 @@ public class OnTest extends TestBase {
     }
 
     @Test
-    public void testGetCondition() {
-        Equal joinCondition = Filters.eq("t1.id", Filters.expr("t2.id"));
-        On on = Filters.on(joinCondition);
-
-        Assertions.assertEquals(joinCondition, on.getCondition());
-    }
-
-    @Test
     public void testGetOperator() {
         On on = Filters.on("a.id", "b.a_id");
 
         Assertions.assertEquals(Operator.ON, on.operator());
-    }
-
-    @Test
-    public void testToString() {
-        On on = Filters.on("employees.dept_id", "departments.id");
-
-        String result = on.toString();
-        Assertions.assertTrue(result.contains("ON"));
-        Assertions.assertTrue(result.contains("employees.dept_id"));
-        Assertions.assertTrue(result.contains("departments.id"));
-    }
-
-    @Test
-    public void testHashCode() {
-        On on1 = Filters.on("a.id", "b.a_id");
-        On on2 = Filters.on("a.id", "b.a_id");
-        On on3 = Filters.on("x.id", "y.x_id");
-
-        Assertions.assertEquals(on1.hashCode(), on2.hashCode());
-        Assertions.assertNotEquals(on1.hashCode(), on3.hashCode());
     }
 
     @Test
@@ -383,12 +353,5 @@ public class OnTest extends TestBase {
     public void testConstructorRejectsBlankPropertyNames() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on("   ", "orders.user_id"));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on("users.id", "   "));
-    }
-
-    @Test
-    public void testConstructorRejectsNestedConnectorCondition() {
-        Condition nestedOn = new Junction(Operator.AND, java.util.Arrays.asList(Filters.on("a.id", "b.id"), Filters.eq("b.active", true)), true);
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(nestedOn));
     }
 }

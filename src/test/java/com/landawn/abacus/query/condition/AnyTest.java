@@ -1,21 +1,23 @@
 package com.landawn.abacus.query.condition;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.NamingPolicy;
-import java.util.Arrays;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class Any2025Test extends TestBase {
+import java.util.Arrays;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.NamingPolicy;
+
+@Tag("2025")
+public class AnyTest extends TestBase {
     @Test
     public void testConstructor_WithRawSQLSubQuery() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
@@ -64,7 +66,7 @@ class Any2025Test extends TestBase {
         Any condition = new Any(subQuery);
         List<Object> params = condition.getParameters();
         assertNotNull(params);
-        assertEquals(1, (int) params.size());
+        assertEquals(1, params.size());
         assertEquals("published", params.get(0));
     }
 
@@ -79,7 +81,7 @@ class Any2025Test extends TestBase {
 
     @Test
     public void testToString_WithStructuredQuery() {
-        Condition whereCondition = new LessThan("age", (Object) 30);
+        Condition whereCondition = new LessThan("age", 30);
         SubQuery subQuery = Filters.subQuery("employees", Arrays.asList("salary"), whereCondition);
         Any condition = new Any(subQuery);
         String result = condition.toString(NamingPolicy.NO_CHANGE);
@@ -184,11 +186,11 @@ class Any2025Test extends TestBase {
 
     @Test
     public void testWithMultipleConditions() {
-        And andCondition = new And(Arrays.asList(new Equal("active", true), new GreaterThan("stock", (Object) 0)));
+        And andCondition = new And(Arrays.asList(new Equal("active", true), new GreaterThan("stock", 0)));
         SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), andCondition);
         Any condition = new Any(subQuery);
         List<Object> params = condition.getParameters();
-        assertEquals(2, (int) params.size());
+        assertEquals(2, params.size());
     }
 
     @Test
@@ -209,9 +211,6 @@ class Any2025Test extends TestBase {
         String sql = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("ANY"));
     }
-}
-
-public class AnyTest extends TestBase {
 
     @Test
     public void testConstructor() {
@@ -224,29 +223,12 @@ public class AnyTest extends TestBase {
     }
 
     @Test
-    public void testGetCondition() {
-        SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
-        Any any = Filters.any(subQuery);
-
-        SubQuery retrieved = (SubQuery) any.getCondition();
-        Assertions.assertEquals(subQuery, retrieved);
-    }
-
-    @Test
     public void testToString() {
         SubQuery subQuery = Filters.subQuery("SELECT budget FROM departments");
         Any any = Filters.any(subQuery);
 
         String result = any.toString();
         Assertions.assertEquals("ANY (SELECT budget FROM departments)", result);
-    }
-
-    @Test
-    public void testRejectsStandalonePredicateUse() {
-        Any any = Filters.any(Filters.subQuery("SELECT score FROM exams"));
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.where(any));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> any.or(Filters.eq("active", true)));
     }
 
     @Test
@@ -285,17 +267,6 @@ public class AnyTest extends TestBase {
         Assertions.assertNotEquals(any1, any3);
         Assertions.assertNotEquals(any1, null);
         Assertions.assertNotEquals(any1, "string");
-    }
-
-    @Test
-    public void testHashCode() {
-        SubQuery subQuery1 = Filters.subQuery("SELECT level FROM grades");
-        SubQuery subQuery2 = Filters.subQuery("SELECT level FROM grades");
-
-        Any any1 = Filters.any(subQuery1);
-        Any any2 = Filters.any(subQuery2);
-
-        Assertions.assertEquals(any1.hashCode(), any2.hashCode());
     }
 
     @Test

@@ -1,9 +1,5 @@
 package com.landawn.abacus.query;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.util.SK;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -12,9 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("2025")
-class SqlOperation2025Test extends TestBase {
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.util.SK;
+
+@Tag("2025")
+public class SqlOperationTest extends TestBase {
     @Test
     public void testOf_ValidOperations() {
         assertEquals(SqlOperation.SELECT, SqlOperation.of("SELECT"));
@@ -115,9 +116,6 @@ class SqlOperation2025Test extends TestBase {
             assertEquals(op.sqlToken(), op.toString());
         }
     }
-}
-
-public class SqlOperationTest extends TestBase {
 
     @Test
     public void testGetOperation() {
@@ -172,20 +170,6 @@ public class SqlOperationTest extends TestBase {
         assertEquals("ROLLBACK", SqlOperation.ROLLBACK.sqlToken());
         assertEquals("CALL", SqlOperation.CALL.sqlToken());
         assertEquals("UNKNOWN", SqlOperation.UNKNOWN.sqlToken());
-    }
-
-    @Test
-    public void testToString() {
-        // Test toString() returns the same as getName()
-        for (SqlOperation op : SqlOperation.values()) {
-            assertEquals(op.sqlToken(), op.toString());
-        }
-
-        // Test specific cases
-        assertEquals("SELECT", SqlOperation.SELECT.toString());
-        assertEquals("INSERT", SqlOperation.INSERT.toString());
-        assertEquals("UPDATE", SqlOperation.UPDATE.toString());
-        assertEquals("DELETE", SqlOperation.DELETE.toString());
     }
 
     @Test
@@ -277,32 +261,6 @@ public class SqlOperationTest extends TestBase {
     }
 
     @Test
-    public void testValueOf() {
-        // Test valueOf for all valid enum names
-        assertEquals(SqlOperation.SELECT, SqlOperation.valueOf("SELECT"));
-        assertEquals(SqlOperation.INSERT, SqlOperation.valueOf("INSERT"));
-        assertEquals(SqlOperation.UPDATE, SqlOperation.valueOf("UPDATE"));
-        assertEquals(SqlOperation.DELETE, SqlOperation.valueOf("DELETE"));
-        assertEquals(SqlOperation.MERGE, SqlOperation.valueOf("MERGE"));
-        assertEquals(SqlOperation.CREATE, SqlOperation.valueOf("CREATE"));
-        assertEquals(SqlOperation.DROP, SqlOperation.valueOf("DROP"));
-        assertEquals(SqlOperation.ALTER, SqlOperation.valueOf("ALTER"));
-        assertEquals(SqlOperation.SHOW, SqlOperation.valueOf("SHOW"));
-        assertEquals(SqlOperation.DESCRIBE, SqlOperation.valueOf("DESCRIBE"));
-        assertEquals(SqlOperation.USE, SqlOperation.valueOf("USE"));
-        assertEquals(SqlOperation.RENAME, SqlOperation.valueOf("RENAME"));
-        assertEquals(SqlOperation.BEGIN_TRANSACTION, SqlOperation.valueOf("BEGIN_TRANSACTION"));
-        assertEquals(SqlOperation.COMMIT, SqlOperation.valueOf("COMMIT"));
-        assertEquals(SqlOperation.ROLLBACK, SqlOperation.valueOf("ROLLBACK"));
-        assertEquals(SqlOperation.CALL, SqlOperation.valueOf("CALL"));
-        assertEquals(SqlOperation.UNKNOWN, SqlOperation.valueOf("UNKNOWN"));
-
-        // Test invalid enum name
-        assertThrows(IllegalArgumentException.class, () -> SqlOperation.valueOf("INVALID"));
-        assertThrows(IllegalArgumentException.class, () -> SqlOperation.valueOf("select")); // Case sensitive
-    }
-
-    @Test
     public void testOrdinal() {
         // Test ordinal values are consistent
         assertEquals(0, SqlOperation.SELECT.ordinal());
@@ -384,9 +342,6 @@ public class SqlOperationTest extends TestBase {
         assertEquals("CALL", SqlOperation.CALL.sqlToken());
         assertEquals("UNKNOWN", SqlOperation.UNKNOWN.sqlToken());
     }
-}
-
-class SqlOperationJavadocExamples extends TestBase {
 
     @Test
     public void testSqlOperation_classLevelExample() {

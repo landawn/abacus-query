@@ -1,11 +1,11 @@
 package com.landawn.abacus.query;
 
-import com.landawn.abacus.TestBase;
-import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Criteria;
-import com.landawn.abacus.query.condition.Limit;
-import com.landawn.abacus.query.entity.Account;
-import com.landawn.abacus.util.NamingPolicy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -14,18 +14,20 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.condition.Condition;
+import com.landawn.abacus.query.condition.Criteria;
+import com.landawn.abacus.query.condition.Limit;
+import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class AbstractQueryBuilderTest extends TestBase {
-
     @Test
     public void testConstants() {
         assertNotNull(AbstractQueryBuilder.ALL);
@@ -543,10 +545,6 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals(deprecatedSql, sql, "deprecated set(Class, Set) must delegate to setEntity(Class, Set)");
     }
 
-}
-
-class AbstractQueryBuilder2026Test extends TestBase {
-
     @Test
     public void testSetHandlerForNamedParameter() {
         AbstractQueryBuilder.setHandlerForNamedParameter((sb, propName) -> sb.append("#{").append(propName).append("}"));
@@ -1027,13 +1025,6 @@ class AbstractQueryBuilder2026Test extends TestBase {
 
         assertTrue(output.toString().contains("SELECT id FROM users"));
     }
-}
-
-/**
- * Simple unit tests for AbstractQueryBuilder functionality.
- * Tests basic constants and naming policy functionality.
- */
-class SimpleAbstractQueryBuilderTest extends TestBase {
 
     @BeforeEach
     void setUp() {
@@ -1070,9 +1061,6 @@ class SimpleAbstractQueryBuilderTest extends TestBase {
         assertNotNull(NamingPolicy.SCREAMING_SNAKE_CASE);
         assertNotNull(NamingPolicy.CAMEL_CASE);
     }
-}
-
-class AbstractQueryBuilder2026BatchTest extends TestBase {
 
     @Test
     public void testSet_ObjectStringDelegatesToColumnSet() {
