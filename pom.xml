@@ -36,8 +36,8 @@
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.release>17</maven.compiler.release>
-		<junit.jupiter.version>6.1.0</junit.jupiter.version>
-		<junit.platform.version>6.1.0</junit.platform.version>
+		<junit.jupiter.version>6.1.1</junit.jupiter.version>
+		<junit.platform.version>6.1.1</junit.platform.version>
 		<mockito.version>5.23.0</mockito.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -61,7 +61,7 @@
 		<dependency>
 			<groupId>jakarta.xml.bind</groupId>
 			<artifactId>jakarta.xml.bind-api</artifactId>
-			<version>4.0.4</version>
+			<version>4.0.5</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -152,7 +152,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.5.5</version>
+				<version>3.5.6</version>
 				<configuration>
 					<includes>
 						<include>**/AbacusQueryTestSuite.java</include>
@@ -176,7 +176,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.14</version>
+				<version>0.8.15</version>
 				<executions>
 					<!-- Prepare agent in all modules via inheritance -->
 					<execution>
@@ -199,7 +199,7 @@
 	        <plugin>
 	          <groupId>org.sonatype.central</groupId>
 	          <artifactId>central-publishing-maven-plugin</artifactId>
-	          <version>0.10.0</version>
+	          <version>0.11.0</version>
 	          <extensions>true</extensions>
 	          <configuration>
 	             <publishingServerId>central</publishingServerId>
