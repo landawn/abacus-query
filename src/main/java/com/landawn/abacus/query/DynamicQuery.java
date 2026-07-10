@@ -749,7 +749,11 @@ public final class DynamicQuery {
                 }
 
                 if (moreParts != null) {
-                    selectClause.sb.append(moreParts);
+                    if (selectClause.sb.isEmpty() && !moreParts.isEmpty() && moreParts.charAt(0) == ' ') {
+                        selectClause.sb.append(moreParts, 1, moreParts.length());
+                    } else {
+                        selectClause.sb.append(moreParts);
+                    }
                 }
 
                 final String sql = selectClause.sb.toString();

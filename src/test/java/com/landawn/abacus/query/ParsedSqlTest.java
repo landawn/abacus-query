@@ -1104,6 +1104,30 @@ public class ParsedSqlTest extends TestBase {
         Assertions.assertEquals("b", parsed.namedParameters().get(1));
     }
 
+    @Test
+    public void testParse_IbatisMarkersSeparatedByLiteralText_extractsAllParameters() {
+        ParsedSql parsed = ParsedSql.parse("SELECT pre#{a}mid#{b}post FROM dual");
+        Assertions.assertEquals("SELECT pre?mid?post FROM dual", parsed.parameterizedSql());
+        Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertEquals(Arrays.asList("a", "b"), parsed.namedParameters());
+    }
+
+    @Test
+    public void testParse_IbatisMarkerInsideQuotedToken_remainsLiteral() {
+        ParsedSql parsed = ParsedSql.parse("SELECT '#{ignored}', pre#{actual}post FROM dual");
+        Assertions.assertEquals("SELECT '#{ignored}', pre?post FROM dual", parsed.parameterizedSql());
+        Assertions.assertEquals(1, parsed.parameterCount());
+        Assertions.assertEquals(Arrays.asList("actual"), parsed.namedParameters());
+    }
+
+    @Test
+    public void testParse_WhitespaceVariantsShareCanonicalCacheEntry() {
+        ParsedSql canonical = ParsedSql.parse("SELECT * FROM canonical_cache_test");
+        ParsedSql padded = ParsedSql.parse("  SELECT * FROM canonical_cache_test  ");
+
+        Assertions.assertSame(canonical, padded);
+    }
+
     // Bug fix: when SqlParser produces a single token containing multiple ":named"
     // markers (e.g. ":a:b" with no separator between, since ':' is not a token separator),
     // the previous code extracted only the leading marker and silently embedded later

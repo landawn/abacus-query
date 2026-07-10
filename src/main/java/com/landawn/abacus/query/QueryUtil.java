@@ -125,11 +125,16 @@ public final class QueryUtil {
         ImmutableList<String> result = cache[slot];
 
         if (result == null) {
-            // Defensive immutable copy of the cached prop-name set (order preserved from the
-            // backing LinkedHashSet). Benign if two threads race: both build equal lists and the
-            // last write wins; callers always observe a fully-built immutable list.
-            result = ImmutableList.copyOf(SqlBuilder.loadPropNamesByClass(entityClass)[slot]);
-            cache[slot] = result;
+            synchronized (cache) {
+                result = cache[slot];
+
+                if (result == null) {
+                    // Synchronization safely publishes the immutable list through this otherwise
+                    // plain array and avoids duplicate metadata copies on concurrent first access.
+                    result = ImmutableList.copyOf(SqlBuilder.loadPropNamesByClass(entityClass)[slot]);
+                    cache[slot] = result;
+                }
+            }
         }
 
         return result;

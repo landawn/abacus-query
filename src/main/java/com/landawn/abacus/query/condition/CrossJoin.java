@@ -141,7 +141,7 @@ public class CrossJoin extends Join {
      *            {@code ON} clause. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  a nested ON/USING connector, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public CrossJoin(final String joinEntity, final Condition cond) {
         super(Operator.CROSS_JOIN, joinEntity, cond);
@@ -177,7 +177,7 @@ public class CrossJoin extends Join {
      *            {@code ON} clause. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  a nested ON/USING connector, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public CrossJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.CROSS_JOIN, joinEntities, cond);

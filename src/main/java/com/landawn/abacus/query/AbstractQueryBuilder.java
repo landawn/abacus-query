@@ -4473,7 +4473,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _op = OperationType.QUERY;
 
-        _propOrColumnNames = Array.asList(propOrColumnNames);
+        _propOrColumnNames = new ArrayList<>(Array.asList(propOrColumnNames));
         _propOrColumnNameAliases = null;
 
         calledOpSet.clear();
@@ -4509,7 +4509,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _op = OperationType.QUERY;
 
-        _propOrColumnNames = propOrColumnNames;
+        _propOrColumnNames = new ArrayList<>(propOrColumnNames);
         _propOrColumnNameAliases = null;
 
         calledOpSet.clear();

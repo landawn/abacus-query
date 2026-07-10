@@ -247,7 +247,7 @@ public final class Dsl {
      *
      * <p>This method creates an INSERT statement template with multiple columns. Property names
      * are rendered according to this DSL's naming policy. Values will be provided as parameters
-     * when executing the query.</p>
+     * when executing the query. The supplied array is snapshotted before the builder is returned.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -267,7 +267,7 @@ public final class Dsl {
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.ADD;
-        instance._propOrColumnNames = Array.asList(propOrColumnNames);
+        instance._propOrColumnNames = new ArrayList<>(Array.asList(propOrColumnNames));
 
         return instance;
     }
@@ -802,7 +802,7 @@ public final class Dsl {
      *
      * <p>This method creates a SELECT statement for multiple columns. Property names are
      * rendered according to this DSL's naming policy and aliased back to their original names
-     * to maintain proper object mapping.</p>
+     * to maintain proper object mapping. The supplied array is snapshotted before the builder is returned.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -823,7 +823,7 @@ public final class Dsl {
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.QUERY;
-        instance._propOrColumnNames = Array.asList(propOrColumnNames);
+        instance._propOrColumnNames = new ArrayList<>(Array.asList(propOrColumnNames));
 
         return instance;
     }

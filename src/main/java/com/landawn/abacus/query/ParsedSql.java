@@ -129,20 +129,19 @@ public final class ParsedSql {
                             paramCount++;
                             type |= QUESTION_MARK_TYPE;
                         }
-                    } else if (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)) {
-                        // Bug fix: a single tokenized word may contain multiple iBatis markers
-                        // (e.g. "#{a}#{b}") because none of '#', '{', '}' are token separators
-                        // when preceded/followed by the right context. The previous code extracted
-                        // only the leading "#{...}" marker and silently embedded any subsequent
-                        // "#{...}" markers into the parameterized SQL as literal text, losing
-                        // those parameter bindings entirely. We now process the leading marker and
-                        // then iteratively extract any further "#{...}" markers from the suffix.
+                    } else if (mayContainIbatisParameter(word)) {
+                        // A token may contain multiple iBatis markers and literal text between them
+                        // (for example "#{a}x#{b}"). Scan the complete unquoted token instead of only
+                        // consuming markers at its beginning, so no embedded binding is left as SQL text.
                         final StringBuilder rebuilt = new StringBuilder(word.length() + 4);
                         final StringBuilder ibatisTokenBuilder = new StringBuilder();
 
-                        while (word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)) {
+                        int parameterStartIndex;
+
+                        while ((parameterStartIndex = word.indexOf(LEFT_OF_IBATIS_NAMED_PARAMETER)) >= 0) {
+                            rebuilt.append(word, 0, parameterStartIndex);
                             ibatisTokenBuilder.setLength(0);
-                            ibatisTokenBuilder.append(word);
+                            ibatisTokenBuilder.append(word, parameterStartIndex, word.length());
 
                             while (ibatisTokenBuilder.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER) < 0 && i < size - 1) {
                                 ibatisTokenBuilder.append(words.get(++i));
@@ -290,8 +289,9 @@ public final class ParsedSql {
             throw new IllegalArgumentException("sql must not be null, empty, or blank");
         }
 
+        final String normalizedSql = sql.trim();
         ParsedSql result = null;
-        PoolableAdapter<ParsedSql> w = pool.get(sql);
+        PoolableAdapter<ParsedSql> w = pool.get(normalizedSql);
 
         if (w != null) {
             result = w.value();
@@ -299,13 +299,13 @@ public final class ParsedSql {
 
         if (result == null) {
             synchronized (pool) {
-                w = pool.get(sql);
+                w = pool.get(normalizedSql);
                 if (w != null) {
                     result = w.value();
                 }
                 if (result == null) {
-                    result = new ParsedSql(sql);
-                    pool.put(sql, Poolable.wrap(result, LIVE_TIME, MAX_IDLE_TIME));
+                    result = new ParsedSql(normalizedSql);
+                    pool.put(normalizedSql, Poolable.wrap(result, LIVE_TIME, MAX_IDLE_TIME));
                 }
             }
         }
@@ -466,6 +466,10 @@ public final class ParsedSql {
 
     private static boolean mayContainNamedParameter(final String token) {
         return token.length() >= 2 && token.indexOf(_PREFIX_OF_NAMED_PARAMETER) >= 0 && !isQuotedToken(token);
+    }
+
+    private static boolean mayContainIbatisParameter(final String token) {
+        return token.length() >= 3 && token.indexOf(LEFT_OF_IBATIS_NAMED_PARAMETER) >= 0 && !isQuotedToken(token) && !isCommentOrSpaceToken(token);
     }
 
     private static boolean isQuotedToken(final String token) {

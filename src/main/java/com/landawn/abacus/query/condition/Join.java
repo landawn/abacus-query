@@ -187,7 +187,7 @@ public class Join extends AbstractCondition {
      *            when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with
-     *                                  {@code ON} or {@code USING}, or an empty predicate (a blank {@link Expression}
+     *                                  {@code ON} or {@code USING}, a nested ON/USING connector, or an empty predicate (a blank {@link Expression}
      *                                  or empty {@link Junction})
      */
     public Join(final String joinEntity, final Condition cond) {
@@ -215,7 +215,7 @@ public class Join extends AbstractCondition {
      *            when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with
-     *                                  {@code ON} or {@code USING}, or an empty predicate (a blank {@link Expression}
+     *                                  {@code ON} or {@code USING}, a nested ON/USING connector, or an empty predicate (a blank {@link Expression}
      *                                  or empty {@link Junction})
      */
     protected Join(final Operator operator, final String joinEntity, final Condition cond) {
@@ -249,7 +249,7 @@ public class Join extends AbstractCondition {
      *            when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins
-     *                                  with {@code ON} or {@code USING}, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  with {@code ON} or {@code USING}, a nested ON/USING connector, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public Join(final Collection<String> joinEntities, final Condition cond) {
         this(Operator.JOIN, joinEntities, cond);
@@ -277,7 +277,7 @@ public class Join extends AbstractCondition {
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains
      *                                  {@code null}, empty, or blank elements, or if {@code cond} is a {@link Criteria},
      *                                  a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  a nested ON/USING connector, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition cond) {
         super(operator);

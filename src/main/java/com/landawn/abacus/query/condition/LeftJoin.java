@@ -153,7 +153,7 @@ public class LeftJoin extends Join {
      *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  a nested ON/USING connector, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public LeftJoin(final String joinEntity, final Condition cond) {
         super(Operator.LEFT_JOIN, joinEntity, cond);
@@ -185,7 +185,7 @@ public class LeftJoin extends Join {
      *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  a nested ON/USING connector, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public LeftJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.LEFT_JOIN, joinEntities, cond);

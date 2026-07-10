@@ -13103,4 +13103,32 @@ public class SqlBuilderTest extends TestBase {
         assertNotNull(custom);
         assertNotSame(Dsl.PSC, custom);
     }
+
+    @Test
+    public void testDslVarargsAreSnapshottedBeforeDeferredRendering() {
+        String[] selectColumns = { "firstName" };
+        SqlBuilder selectBuilder = Dsl.PSC.select(selectColumns);
+        selectColumns[0] = "lastName";
+
+        String selectSql = selectBuilder.from("account").build().query();
+        assertTrue(selectSql.contains("first_name"));
+        assertFalse(selectSql.contains("last_name"));
+
+        String[] insertColumns = { "firstName" };
+        SqlBuilder insertBuilder = Dsl.PSC.insert(insertColumns);
+        insertColumns[0] = "lastName";
+
+        assertEquals("INSERT INTO account (first_name) VALUES (?)", insertBuilder.into("account").build().query());
+    }
+
+    @Test
+    public void testSetOperationColumnsAreSnapshottedBeforeDeferredRendering() {
+        List<String> unionColumns = new ArrayList<>(Arrays.asList("legacyId"));
+        SqlBuilder builder = Dsl.PSC.select("id").from("current_records").union(unionColumns);
+        unionColumns.set(0, "mutatedId");
+
+        String sql = builder.from("legacy_records").build().query();
+        assertTrue(sql.contains("legacy_id"));
+        assertFalse(sql.contains("mutated_id"));
+    }
 }

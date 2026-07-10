@@ -1520,6 +1520,14 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
+    public void testBuild_RawOnlyQueryHasNoSyntheticLeadingSpace() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.append("FOR UPDATE");
+
+        assertEquals("FOR UPDATE", builder.build());
+    }
+
+    @Test
     public void testClauseBuildersRejectMutationAfterBuild() {
         DynamicSqlBuilder builder = DynamicQuery.builder();
         DynamicQuery.SelectClause select = builder.select();

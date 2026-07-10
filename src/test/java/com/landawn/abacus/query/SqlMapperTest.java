@@ -1000,6 +1000,22 @@ public class SqlMapperTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> mapper.add("dup", "SELECT 2"));
     }
 
+    @Test
+    public void testAdd_InvalidAttributesDoNotPartiallyMutateMapper() {
+        SqlMapper mapper = new SqlMapper();
+        Map<String, String> attrs = new HashMap<>();
+        attrs.put("timeout", null);
+
+        assertThrows(IllegalArgumentException.class, () -> mapper.add("queryWithInvalidAttrs", "SELECT 1", attrs));
+        assertTrue(mapper.isEmpty());
+        assertFalse(mapper.containsId("queryWithInvalidAttrs"));
+
+        attrs.clear();
+        attrs.put("", "10");
+        assertThrows(IllegalArgumentException.class, () -> mapper.add("queryWithEmptyAttrName", ParsedSql.parse("SELECT 2"), attrs));
+        assertTrue(mapper.isEmpty());
+    }
+
     // ----- load(File...) -----
 
     @Test
@@ -1080,6 +1096,14 @@ public class SqlMapperTest extends TestBase {
     public void testLoadFromInputStream_noSqlMapperElementThrows() {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root></root>";
         InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
+        assertThrows(com.landawn.abacus.exception.ParsingException.class, () -> SqlMapper.load(is));
+    }
+
+    @Test
+    public void testLoadFromInputStream_nestedSqlMapperIsNotAcceptedAsRoot() {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><sqlMapper><sql id=\"q\">SELECT 1</sql></sqlMapper></root>";
+        InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
+
         assertThrows(com.landawn.abacus.exception.ParsingException.class, () -> SqlMapper.load(is));
     }
 

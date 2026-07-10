@@ -29,7 +29,6 @@ import java.util.Objects;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
@@ -75,6 +74,9 @@ import com.landawn.abacus.util.XmlUtil;
  *       {@code SCROLL_SENSITIVE} (see {@link #RESULT_SET_TYPE_MAP})</li>
  *   <li>{@code timeout} - query timeout in seconds</li>
  * </ul>
+ *
+ * <p>Instances are mutable and are not thread-safe. Complete configuration before sharing a mapper,
+ * or provide external synchronization when reads and writes may occur concurrently.</p>
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -189,7 +191,7 @@ public final class SqlMapper {
      *         an invalid id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated)
      *         or a blank SQL body
      * @throws UncheckedIOException if an I/O error occurs reading the files
-     * @throws ParsingException if the XML content is invalid, or if any of the loaded files does not contain a {@code <sqlMapper>} element
+     * @throws ParsingException if the XML content is invalid, or if any loaded document does not have {@code <sqlMapper>} as its root element
      */
     public static SqlMapper load(final String filePaths) {
         N.checkArgNotEmpty(filePaths, "filePaths");
@@ -239,7 +241,7 @@ public final class SqlMapper {
      *         has an invalid id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated)
      *         or a blank SQL body
      * @throws UncheckedIOException if an I/O error occurs reading the files
-     * @throws ParsingException if the XML content is invalid, or if any of the loaded files does not contain a {@code <sqlMapper>} element
+     * @throws ParsingException if the XML content is invalid, or if any loaded document does not have {@code <sqlMapper>} as its root element
      */
     public static SqlMapper load(final File... files) {
         N.checkArgNotEmpty(files, "files");
@@ -272,7 +274,7 @@ public final class SqlMapper {
      * @throws IllegalArgumentException if {@code is} is {@code null}, or if a loaded {@code <sql>} element has an invalid
      *         id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated) or a blank SQL body
      * @throws UncheckedIOException if an I/O error occurs reading the stream
-     * @throws ParsingException if the XML content is invalid, or does not contain a {@code <sqlMapper>} element
+     * @throws ParsingException if the XML content is invalid, or does not have {@code <sqlMapper>} as its root element
      */
     public static SqlMapper load(final InputStream is) {
         N.checkArgNotNull(is, "is");
@@ -313,13 +315,13 @@ public final class SqlMapper {
     private static void loadStream(final SqlMapper sqlMapper, final InputStream is, final String sourceLabel) {
         try {
             final Document doc = XmlUtil.createDOMParser(true, true).parse(is);
-            final NodeList sqlMapperEle = doc.getElementsByTagName(SqlMapper.SQL_MAPPER);
+            final Element sqlMapperElement = doc.getDocumentElement();
 
-            if (0 == sqlMapperEle.getLength()) {
-                throw new ParsingException("No '" + SqlMapper.SQL_MAPPER + "' element found in: " + sourceLabel);
+            if (sqlMapperElement == null || !SqlMapper.SQL_MAPPER.equals(sqlMapperElement.getTagName())) {
+                throw new ParsingException("Root element must be '" + SqlMapper.SQL_MAPPER + "' in: " + sourceLabel);
             }
 
-            final List<Element> sqlElementList = XmlUtil.getElementsByTagName((Element) sqlMapperEle.item(0), SQL);
+            final List<Element> sqlElementList = XmlUtil.getElementsByTagName(sqlMapperElement, SQL);
 
             for (final Element sqlElement : sqlElementList) {
                 final Map<String, String> attrMap = XmlUtil.readAttributes(sqlElement);
@@ -456,7 +458,8 @@ public final class SqlMapper {
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the parsed SQL to associate with the identifier (must not be {@code null})
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, or if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, or if the id is {@code null}/empty, contains whitespace,
+     *                                  exceeds {@link #MAX_ID_LENGTH} characters, or already exists
      */
     public void add(final String id, final ParsedSql sql) {
         N.checkArgNotNull(sql, "sql");
@@ -485,15 +488,19 @@ public final class SqlMapper {
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the parsed SQL to associate with the identifier (must not be {@code null})
-     * @param attrs additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, or if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
+     * @param attrs additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty,
+     *              but keys must be non-empty and values must be non-null
+     * @throws IllegalArgumentException if {@code sql} is {@code null}; if the id is {@code null}/empty, contains whitespace,
+     *                                  exceeds {@link #MAX_ID_LENGTH} characters, or already exists; or if {@code attrs}
+     *                                  contains a {@code null}/empty key or a {@code null} value
      */
     public void add(final String id, final ParsedSql sql, final Map<String, String> attrs) {
         N.checkArgNotNull(sql, "sql");
         checkId(id);
 
+        final ImmutableMap<String, String> immutableAttrs = copyAttributes(attrs);
         sqlMap.put(id, sql);
-        attrsMap.put(id, attrs == null || attrs.isEmpty() ? ImmutableMap.empty() : ImmutableMap.copyOf(attrs));
+        attrsMap.put(id, immutableAttrs);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Added SQL mapping: id='{}'", id);
@@ -513,7 +520,9 @@ public final class SqlMapper {
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the SQL string to parse and store (must not be {@code null} or blank)
-     * @throws IllegalArgumentException if {@code sql} is {@code null} or blank (blank is rejected by {@link ParsedSql#parse(String)}), or if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
+     * @throws IllegalArgumentException if {@code sql} is {@code null} or blank (blank is rejected by {@link ParsedSql#parse(String)}),
+     *                                  or if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH}
+     *                                  characters, or already exists
      */
     public void add(final String id, final String sql) {
         add(id, sql, null);
@@ -534,16 +543,21 @@ public final class SqlMapper {
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the SQL string to parse and store (must not be {@code null} or blank)
-     * @param attrs additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty
-     * @throws IllegalArgumentException if {@code sql} is {@code null} or blank (blank is rejected by {@link ParsedSql#parse(String)}), or if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH} characters, or already exists
+     * @param attrs additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty,
+     *              but keys must be non-empty and values must be non-null
+     * @throws IllegalArgumentException if {@code sql} is {@code null} or blank (blank is rejected by {@link ParsedSql#parse(String)});
+     *                                  if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH}
+     *                                  characters, or already exists; or if {@code attrs} contains a {@code null}/empty key
+     *                                  or a {@code null} value
      */
     public void add(final String id, final String sql, final Map<String, String> attrs) {
         N.checkArgNotNull(sql, "sql");
         checkId(id);
 
         final ParsedSql parsedSql = ParsedSql.parse(sql);
+        final ImmutableMap<String, String> immutableAttrs = copyAttributes(attrs);
         sqlMap.put(id, parsedSql);
-        attrsMap.put(id, attrs == null || attrs.isEmpty() ? ImmutableMap.empty() : ImmutableMap.copyOf(attrs));
+        attrsMap.put(id, immutableAttrs);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Added SQL mapping: id='{}'", id);
@@ -578,6 +592,21 @@ public final class SqlMapper {
         }
     }
 
+    private static ImmutableMap<String, String> copyAttributes(final Map<String, String> attrs) {
+        if (attrs == null || attrs.isEmpty()) {
+            return ImmutableMap.empty();
+        }
+
+        final ImmutableMap<String, String> result = ImmutableMap.copyOf(attrs);
+
+        for (final Map.Entry<String, String> entry : result.entrySet()) {
+            N.checkArgNotEmpty(entry.getKey(), "attribute name");
+            N.checkArgNotNull(entry.getValue(), "attribute value for '" + entry.getKey() + "'");
+        }
+
+        return result;
+    }
+
     /**
      * Returns {@code true} if {@code id} could plausibly be a stored key: non-empty and no longer
      * than {@link #MAX_ID_LENGTH}. Used by the silent lookup/remove methods to skip ids that can
@@ -609,10 +638,10 @@ public final class SqlMapper {
             return;
         }
 
-        sqlMap.remove(id);
-        attrsMap.remove(id);
+        final boolean removedSql = sqlMap.remove(id) != null;
+        final boolean removedAttrs = attrsMap.remove(id) != null;
 
-        if (logger.isDebugEnabled()) {
+        if ((removedSql || removedAttrs) && logger.isDebugEnabled()) {
             logger.debug("Removed SQL mapping: id='{}'", id);
         }
     }
