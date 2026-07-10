@@ -1471,6 +1471,16 @@ public final class SqlParser {
                 bsEscaped = false;
             } else if (ch == '[') {
                 inBracketQuotedIdentifier = true;
+            } else if (ch == '/' && i < toIndex && str.charAt(i + 1) == '*') {
+                // Skip the entire block comment so a '#' or '--' appearing inside it is not
+                // mistaken for a line-comment start during the backward scan (which would
+                // derail the hash-prefixed-identifier heuristic and swallow the identifier).
+                i += 2; // past the opening "/*"
+                while (i < toIndex && !(str.charAt(i) == '*' && str.charAt(i + 1) == '/')) {
+                    i++;
+                }
+                // i now rests on the '*' of the closing "*/" (or at toIndex if unclosed);
+                // the for-loop's i++ advances past it.
             } else if (ch == '-' && i < toIndex && str.charAt(i + 1) == '-') {
                 return i;
             } else if (ch == '#' && isHashLineCommentStartForBackwardScan(str, i)) {

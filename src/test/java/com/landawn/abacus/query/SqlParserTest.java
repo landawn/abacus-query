@@ -2053,6 +2053,19 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
+    public void testParse_hashTempTableAfterBlockCommentContainingHashBeforeKeyword() {
+        // A block comment containing '#' (or '--') BEFORE the FROM/JOIN keyword on the same line
+        // must not derail the hash-prefixed-identifier heuristic: the '#' inside the block comment
+        // is not a line-comment start, so the following '#tmp' temp-table identifier is kept.
+        assertTrue(SqlParser.parse("/* # */ FROM #tmp WHERE id = 1").contains("#tmp"));
+        assertTrue(SqlParser.parse("SELECT /* # */ FROM #tmp WHERE id = 1").contains("#tmp"));
+        assertTrue(SqlParser.parse("/* -- */ FROM #tmp WHERE id = 1").contains("#tmp"));
+        assertTrue(SqlParser.parse("FROM x /* # */ JOIN #tmp WHERE id = 1").contains("#tmp"));
+        // The trailing WHERE clause (same line, after #tmp) must survive too.
+        assertTrue(SqlParser.parse("/* # */ FROM #tmp WHERE id = 1").contains("WHERE"));
+    }
+
+    @Test
     public void testParse_realHashCommentStillStripped() {
         // A genuine MySQL '#' comment must still be stripped (the fix must not over-correct).
         final List<String> words = SqlParser.parse("SELECT 1 # trailing comment\nFROM t");
