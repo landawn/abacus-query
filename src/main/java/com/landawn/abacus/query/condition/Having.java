@@ -127,9 +127,7 @@ public class Having extends Clause {
      *         Filters.between("AVG(rating)", 3.0, 5.0)
      *     )
      * );
-     * // SQL: HAVING ((COUNT(DISTINCT customer_id) > 10)
-     * //          AND (SUM(amount) >= 5000)
-     * //          AND (AVG(rating) BETWEEN 3.0 AND 5.0))
+     * // SQL: HAVING ((COUNT(DISTINCT customer_id) > 10) AND (SUM(amount) >= 5000) AND (AVG(rating) BETWEEN 3.0 AND 5.0))
      * }</pre>
      *
      * @param cond the condition to apply in the HAVING clause. Must not be {@code null}.

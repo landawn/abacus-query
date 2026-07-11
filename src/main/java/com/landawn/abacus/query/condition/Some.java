@@ -42,8 +42,9 @@ package com.landawn.abacus.query.condition;
  * // Used with: price < SOME (SELECT price FROM competitor_products)
  * }</pre>
  *
- * <p>Note: when the subquery returns no rows, {@code x op SOME (...)} is {@code false}
- * for every operator.</p>
+ * <p><b>&#9888;&#65039;</b> When the subquery returns no rows, {@code x op SOME (...)} is {@code false}
+ * for every operator. With returned {@code NULL} values, the result is unknown unless another
+ * comparison is true.</p>
  *
  * <p>Relationship to ANY and ALL:</p>
  * <ul>
@@ -52,7 +53,7 @@ package com.landawn.abacus.query.condition;
  *   <li>SOME/ANY are less restrictive than ALL</li>
  * </ul>
  *
- * <p>Note: although this class extends {@link ComposableCell}, the inherited composition methods
+ * <p><b>&#9888;&#65039;</b> Although this class extends {@link ComposableCell}, the inherited composition methods
  * ({@code and()}, {@code or()}, {@code not()}, {@code xor()}) are unavailable for SOME conditions and throw
  * {@link IllegalArgumentException}, because a quantified-subquery operand can only appear as the
  * right-hand side of a comparison.</p>
@@ -77,7 +78,7 @@ public class Some extends ComposableCell {
      * The SOME operator must be used with a comparison operator in the containing condition.
      *
      * <p>The SOME operator is typically used in scenarios where you want to find records
-     * that meet a criteria compared to at least one value from another dataset. It's
+     * that meet a criterion compared to at least one value from another dataset. It's
      * particularly useful for finding records that exceed minimum thresholds or fall
      * below maximum limits from a dynamic set of values.</p>
      *

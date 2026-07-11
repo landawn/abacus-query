@@ -19,9 +19,8 @@ package com.landawn.abacus.query.condition;
  * The NOT EXISTS operator returns {@code true} if the subquery returns no rows, {@code false} otherwise.
  *
  * <p>NOT EXISTS is particularly useful for checking the absence of related records without
- * retrieving them. It can be more efficient than using NOT IN with large result sets
- * because the database short-circuits to {@code false} as soon as a matching row is found,
- * and it handles NULL values more predictably than NOT IN.</p>
+ * retrieving them. Optimizers may stop once a matching row is established. Relative performance
+ * versus NOT IN is plan-dependent, while NOT EXISTS avoids NOT IN's NULL-sensitive membership semantics.</p>
  * 
  * <p>Key characteristics:</p>
  * <ul>

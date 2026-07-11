@@ -1214,4 +1214,22 @@ public class ExpressionTest extends TestBase {
 
         Assertions.assertNull(firstError.get(), "toString(NamingPolicy) returned a value rendered for the wrong policy under concurrency: " + firstError.get());
     }
+
+    @Test
+    public void testToStringNamingPolicyPreservesHyphenInShortLiteral() {
+        // "price-tax" is SQL subtraction. The short-literal fast path used to hand the whole
+        // literal to NamingPolicy.convert, which swallowed the '-' (CAMEL_CASE -> "priceTax");
+        // hyphen-containing literals must take the parser path, converting each operand independently.
+        assertEquals("price-tax", Expression.of("price-tax").toString(NamingPolicy.CAMEL_CASE));
+        assertEquals("unit_price-tax", Expression.of("unitPrice-tax").toString(NamingPolicy.SNAKE_CASE));
+
+        // Consistent with the >= 16-char parse path, which always preserved the '-'.
+        assertEquals("basePrice-salesTax", Expression.of("base_price-sales_tax").toString(NamingPolicy.CAMEL_CASE));
+
+        // Hyphen-free short literals still use the fast path unchanged.
+        assertEquals("first_name", Expression.of("firstName").toString(NamingPolicy.SNAKE_CASE));
+
+        // The digit-leading pass-through guard is still intact.
+        assertEquals("2faCode", Expression.of("2faCode").toString(NamingPolicy.SNAKE_CASE));
+    }
 }

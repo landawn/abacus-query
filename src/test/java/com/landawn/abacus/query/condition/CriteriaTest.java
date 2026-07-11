@@ -1313,6 +1313,17 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
+    public void testBuilderAddRejectsOperatorTypeMismatchWithActionableException() {
+        for (Operator operator : Arrays.asList(Operator.LIMIT, Operator.UNION, Operator.UNION_ALL, Operator.INTERSECT, Operator.EXCEPT, Operator.MINUS)) {
+            IllegalArgumentException error = Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> Criteria.builder().add(new FakeClauseCondition(operator)));
+
+            Assertions.assertTrue(error.getMessage().contains(operator.toString()), error.getMessage());
+            Assertions.assertTrue(error.getMessage().contains("FakeClauseCondition"), error.getMessage());
+        }
+    }
+
+    @Test
     public void testEmptyCriteria_CollectionsAndEquality() {
         Criteria left = Criteria.builder().build();
         Criteria right = Criteria.builder().build();

@@ -23,8 +23,10 @@ import com.landawn.abacus.util.N;
  * <p>Not every {@code Condition} can be logically combined — for example, SQL clauses
  * ({@link Clause}: WHERE, ORDER BY, …) and {@link Join} operations are structural
  * query components that do not participate in boolean logic. This abstract class marks the
- * conditions that <em>do</em> support logical composition and provides working default
- * implementations for the four operations.</p>
+ * conditions that generally support logical composition and provides the four operations.</p>
+ *
+ * <p><b>&#9888;&#65039;</b> Quantified operands ({@link All}, {@link Any}, and {@link Some}) inherit these methods
+ * for type compatibility but are structural right-hand operands and are rejected when composed directly.</p>
  *
  * <p>Typical implementors include comparison conditions ({@link Binary} and subclasses),
  * range conditions ({@link AbstractBetween}), collection conditions ({@link AbstractIn}),

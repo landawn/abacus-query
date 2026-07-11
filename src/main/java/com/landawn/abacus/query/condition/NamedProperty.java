@@ -26,8 +26,8 @@ import com.landawn.abacus.util.Strings;
 
 /**
  * A utility class that provides a fluent API for creating SQL conditions based on a property name.
- * This class caches instances to avoid creating duplicate objects for the same property name,
- * improving memory efficiency and performance when the same property is referenced multiple times.
+ * The {@link #of(String)} factory uses a bounded cache to reuse recently requested property names.
+ * Direct construction bypasses that cache.
  *
  * <p>NamedProperty simplifies the creation of various SQL conditions by providing convenient
  * methods that automatically include the property name. Instead of repeatedly specifying the
@@ -91,7 +91,7 @@ public class NamedProperty {
 
     /**
      * Creates a NamedProperty with the specified property name.
-     * This constructor is primarily used internally by the {@link #of(String)} factory method.
+     * Directly constructed instances do not participate in the {@link #of(String)} cache.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -111,8 +111,9 @@ public class NamedProperty {
     }
 
     /**
-     * Gets or creates a NamedProperty instance for the specified property name.
-     * This method uses caching to ensure only one instance exists per property name.
+     * Gets or creates a NamedProperty instance for the specified property name using a bounded cache.
+     * Callers must not rely on reference identity: entries may be evicted, and concurrent first access
+     * may create more than one instance.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -138,9 +139,8 @@ public class NamedProperty {
             throw new IllegalArgumentException("Property name must not be null, empty, or blank");
         }
 
-        // ObjectPool inherits the non-atomic AbstractMap computeIfAbsent (its own Javadoc says only
-        // putIfAbsent is atomic), so the get -> putIfAbsent -> re-read dance is what actually keeps the
-        // "one instance per name" caching claim true under concurrent first access.
+        // ObjectPool is bounded and its inherited putIfAbsent is not atomic. This is best-effort reuse;
+        // object identity is deliberately not part of the public contract.
         NamedProperty cached = instancePool.get(propName);
 
         if (cached == null) {

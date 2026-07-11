@@ -95,11 +95,12 @@ public abstract class Clause extends Cell {
      * // SQL: HAVING COUNT(*) > 5
      * }</pre>
      *
-     * @param operator the operator to apply to the condition (must not be {@code null});
-     *                 typically a clause operator such as {@code WHERE}, {@code GROUP_BY}, etc.
+     * @param operator the SQL clause operator to apply to the condition (must not be {@code null}), such as
+     *                 {@code WHERE}, {@code GROUP_BY}, or {@code HAVING}
      * @param cond the condition to wrap (must not be {@code null})
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a {@link Criteria}, another clause
+     * @throws IllegalArgumentException if {@code operator} is not a SQL clause operator; or if {@code cond} is
+     *         {@code null}, a {@link Criteria}, another clause
      *         (e.g. {@code WHERE}, {@code HAVING}), an {@code ON}/{@code USING} condition, an
      *         {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
      *         (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
@@ -111,6 +112,10 @@ public abstract class Clause extends Cell {
     private static Condition validateClauseOperand(final Operator operator, final Condition cond) {
         N.requireNonNull(operator, "operator");
         N.checkArgNotNull(cond, "cond");
+
+        if (!isClause(operator)) {
+            throw new IllegalArgumentException("Clause operator must be a SQL clause operator, but was: " + operator);
+        }
 
         final Operator condOperator = cond.operator();
 

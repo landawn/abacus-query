@@ -232,6 +232,19 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    public void testPostgreSqlRemovePathOperatorIsNotAHashComment() {
+        final String sql = Dsl.PSB.select("payload #- '{address,city}'").from("events").build().query();
+
+        assertEquals("SELECT payload #- '{address,city}' FROM events", sql);
+    }
+
+    @Test
+    public void testCommentTokensInsideSqlServerBracketIdentifierAreAllowed() {
+        assertEquals("SELECT [a--b] FROM records", Dsl.PSB.select("[a--b]").from("records").build().query());
+        assertEquals("SELECT [a]]--b] FROM records", Dsl.PSB.select("[a]]--b]").from("records").build().query());
+    }
+
+    @Test
     public void testCommentTokenAfterBackslashTerminatedQuotedIdentifierIsRejected() {
         // A backslash before the closing quote of a double-quoted or backtick-quoted identifier does NOT escape
         // that quote (backslash escaping applies only inside single-quoted string literals), so the closing quote
@@ -1187,6 +1200,17 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertTrue(sql.contains("local_id"), "default-valued composite id part should be included: " + sql);
         assertTrue(sql.contains("name"), "regular non-null property should be included: " + sql);
         assertEquals(Arrays.asList(7L, 0L, "Alice"), sp.parameters());
+    }
+
+    @Test
+    public void testBatchInsertKeepsDefaultCompositeIdPartWhenAnotherIdIsAssigned() {
+        CompositeIdEntity first = new CompositeIdEntity().setTenantId(7).setLocalId(0).setName("Alice");
+        CompositeIdEntity second = new CompositeIdEntity().setTenantId(8).setLocalId(0).setName("Bob");
+
+        AbstractQueryBuilder.SP sp = Dsl.PSC.batchInsert(Arrays.asList(first, second)).into("composite_id_tbl").build();
+
+        assertEquals("INSERT INTO composite_id_tbl (tenant_id, local_id, name) VALUES (?, ?, ?), (?, ?, ?)", sp.query());
+        assertEquals(Arrays.asList(7L, 0L, "Alice", 8L, 0L, "Bob"), sp.parameters());
     }
 
     @Test

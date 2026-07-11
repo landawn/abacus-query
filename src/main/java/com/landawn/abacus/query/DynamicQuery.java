@@ -128,6 +128,7 @@ public final class DynamicQuery {
 
     /**
      * Builder for constructing dynamic SQL queries clause by clause.
+     * Instances and retained clause handles are mutable and are not thread-safe.
      */
     public static class DynamicSqlBuilder {
 
@@ -168,8 +169,11 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @return the {@link SelectClause} builder for method chaining
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public SelectClause select() {
+            checkNotBuilt();
+
             return selectClause;
         }
 
@@ -185,8 +189,11 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @return the {@link FromClause} builder for method chaining
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public FromClause from() {
+            checkNotBuilt();
+
             return fromClause;
         }
 
@@ -202,8 +209,11 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @return the {@link WhereClause} builder for method chaining
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public WhereClause where() {
+            checkNotBuilt();
+
             if (whereClause == null) {
                 whereClause = new WhereClause(Objectory.createStringBuilder());
             }
@@ -223,8 +233,11 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @return the {@link GroupByClause} builder for method chaining
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public GroupByClause groupBy() {
+            checkNotBuilt();
+
             if (groupByClause == null) {
                 groupByClause = new GroupByClause(Objectory.createStringBuilder());
             }
@@ -244,8 +257,11 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @return the {@link HavingClause} builder for method chaining
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public HavingClause having() {
+            checkNotBuilt();
+
             if (havingClause == null) {
                 havingClause = new HavingClause(Objectory.createStringBuilder());
             }
@@ -265,8 +281,11 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @return the {@link OrderByClause} builder for method chaining
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public OrderByClause orderBy() {
+            checkNotBuilt();
+
             if (orderByClause == null) {
                 orderByClause = new OrderByClause(Objectory.createStringBuilder());
             }
@@ -290,8 +309,10 @@ public final class DynamicQuery {
          * @param count the maximum number of rows to return (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code count} is negative
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public DynamicSqlBuilder limit(final int count) {
+            checkNotBuilt();
             N.checkArgNotNegative(count, "count");
 
             getStringBuilderForMoreParts().append(" LIMIT ").append(count);
@@ -317,11 +338,13 @@ public final class DynamicQuery {
          * @param offset the number of rows to skip (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          * @see #offsetRows(int)
          * @see #fetchNextRows(int)
          * @see #fetchFirstRows(int)
          */
         public DynamicSqlBuilder limit(final int count, final int offset) {
+            checkNotBuilt();
             N.checkArgNotNegative(count, "count");
             N.checkArgNotNegative(offset, "offset");
 
@@ -351,9 +374,11 @@ public final class DynamicQuery {
          * @param offset the number of rows to skip (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code offset} is negative
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          * @see #offsetRows(int)
          */
         public DynamicSqlBuilder offset(final int offset) {
+            checkNotBuilt();
             N.checkArgNotNegative(offset, "offset");
 
             if (offset > 0) {
@@ -377,8 +402,10 @@ public final class DynamicQuery {
          * @param offset the number of rows to skip (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code offset} is negative
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public DynamicSqlBuilder offsetRows(final int offset) {
+            checkNotBuilt();
             N.checkArgNotNegative(offset, "offset");
 
             if (offset > 0) {
@@ -401,8 +428,10 @@ public final class DynamicQuery {
          * @param count the number of rows to fetch (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code count} is negative
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public DynamicSqlBuilder fetchNextRows(final int count) {
+            checkNotBuilt();
             N.checkArgNotNegative(count, "count");
 
             getStringBuilderForMoreParts().append(" FETCH NEXT ").append(count).append(" ROWS ONLY");
@@ -424,9 +453,11 @@ public final class DynamicQuery {
          * @param count the number of rows to fetch (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code count} is negative
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          * @see #offsetRows(int)
          */
         public DynamicSqlBuilder fetchFirstRows(final int count) {
+            checkNotBuilt();
             N.checkArgNotNegative(count, "count");
 
             getStringBuilderForMoreParts().append(" FETCH FIRST ").append(count).append(" ROWS ONLY");
@@ -441,6 +472,14 @@ public final class DynamicQuery {
          * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
          * sub-query (unlike {@code SqlBuilder}'s {@code union(String)}) — raw by design.</p>
          *
+         * <p><b>&#9888;&#65039; Rendering order:</b> this method writes into the builder's trailing buffer, which
+         * {@link #build()} appends <em>after</em> every clause builder ({@code WHERE}, {@code GROUP BY},
+         * {@code HAVING}, {@code ORDER BY}) — regardless of the order in which the methods are invoked.
+         * In particular, combining this method with {@link #orderBy()} renders
+         * {@code ... ORDER BY ... UNION SELECT ...}, which most databases reject. To apply
+         * {@code ORDER BY} to the combined result, call {@code append("ORDER BY ...")} <em>after</em>
+         * this method instead of using {@link #orderBy()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.union("SELECT id, name FROM archived_users");
@@ -450,8 +489,10 @@ public final class DynamicQuery {
          * @param query the complete SQL query to union with (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public DynamicSqlBuilder union(final String query) {
+            checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
             getStringBuilderForMoreParts().append(" UNION ").append(query);
@@ -466,6 +507,14 @@ public final class DynamicQuery {
          * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
          * sub-query (unlike {@code SqlBuilder}'s {@code unionAll(String)}) — raw by design.</p>
          *
+         * <p><b>&#9888;&#65039; Rendering order:</b> this method writes into the builder's trailing buffer, which
+         * {@link #build()} appends <em>after</em> every clause builder ({@code WHERE}, {@code GROUP BY},
+         * {@code HAVING}, {@code ORDER BY}) — regardless of the order in which the methods are invoked.
+         * In particular, combining this method with {@link #orderBy()} renders
+         * {@code ... ORDER BY ... UNION ALL SELECT ...}, which most databases reject. To apply
+         * {@code ORDER BY} to the combined result, call {@code append("ORDER BY ...")} <em>after</em>
+         * this method instead of using {@link #orderBy()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.unionAll("SELECT id, name FROM temp_users");
@@ -475,8 +524,10 @@ public final class DynamicQuery {
          * @param query the complete SQL query to union with (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public DynamicSqlBuilder unionAll(final String query) {
+            checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
             getStringBuilderForMoreParts().append(" UNION ALL ").append(query);
@@ -491,6 +542,14 @@ public final class DynamicQuery {
          * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
          * sub-query (unlike {@code SqlBuilder}'s {@code intersect(String)}) — raw by design.</p>
          *
+         * <p><b>&#9888;&#65039; Rendering order:</b> this method writes into the builder's trailing buffer, which
+         * {@link #build()} appends <em>after</em> every clause builder ({@code WHERE}, {@code GROUP BY},
+         * {@code HAVING}, {@code ORDER BY}) — regardless of the order in which the methods are invoked.
+         * In particular, combining this method with {@link #orderBy()} renders
+         * {@code ... ORDER BY ... INTERSECT SELECT ...}, which most databases reject. To apply
+         * {@code ORDER BY} to the combined result, call {@code append("ORDER BY ...")} <em>after</em>
+         * this method instead of using {@link #orderBy()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.intersect("SELECT user_id FROM premium_users");
@@ -500,8 +559,10 @@ public final class DynamicQuery {
          * @param query the complete SQL query to intersect with (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public DynamicSqlBuilder intersect(final String query) {
+            checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
             getStringBuilderForMoreParts().append(" INTERSECT ").append(query);
@@ -516,6 +577,14 @@ public final class DynamicQuery {
          * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
          * sub-query (unlike {@code SqlBuilder}'s {@code except(String)}) — raw by design.</p>
          *
+         * <p><b>&#9888;&#65039; Rendering order:</b> this method writes into the builder's trailing buffer, which
+         * {@link #build()} appends <em>after</em> every clause builder ({@code WHERE}, {@code GROUP BY},
+         * {@code HAVING}, {@code ORDER BY}) — regardless of the order in which the methods are invoked.
+         * In particular, combining this method with {@link #orderBy()} renders
+         * {@code ... ORDER BY ... EXCEPT SELECT ...}, which most databases reject. To apply
+         * {@code ORDER BY} to the combined result, call {@code append("ORDER BY ...")} <em>after</em>
+         * this method instead of using {@link #orderBy()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.except("SELECT user_id FROM blocked_users");
@@ -525,8 +594,10 @@ public final class DynamicQuery {
          * @param query the complete SQL query whose result rows are subtracted from the current result set (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public DynamicSqlBuilder except(final String query) {
+            checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
             getStringBuilderForMoreParts().append(" EXCEPT ").append(query);
@@ -541,6 +612,14 @@ public final class DynamicQuery {
          * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
          * sub-query (unlike {@code SqlBuilder}'s {@code minus(String)}) — raw by design.</p>
          *
+         * <p><b>&#9888;&#65039; Rendering order:</b> this method writes into the builder's trailing buffer, which
+         * {@link #build()} appends <em>after</em> every clause builder ({@code WHERE}, {@code GROUP BY},
+         * {@code HAVING}, {@code ORDER BY}) — regardless of the order in which the methods are invoked.
+         * In particular, combining this method with {@link #orderBy()} renders
+         * {@code ... ORDER BY ... MINUS SELECT ...}, which most databases reject. To apply
+         * {@code ORDER BY} to the combined result, call {@code append("ORDER BY ...")} <em>after</em>
+         * this method instead of using {@link #orderBy()}.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.minus("SELECT user_id FROM inactive_users");
@@ -550,8 +629,10 @@ public final class DynamicQuery {
          * @param query the complete SQL query whose result rows are subtracted from the current result set (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public DynamicSqlBuilder minus(final String query) {
+            checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
             getStringBuilderForMoreParts().append(" MINUS ").append(query);
@@ -578,6 +659,11 @@ public final class DynamicQuery {
          * possible only when the previously appended raw text already ends with a space and
          * {@code textToAppend} also begins with one).</p>
          *
+         * <p><b>&#9888;&#65039;</b> Like the set-operation methods, this writes into the builder's trailing buffer, which
+         * {@link #build()} appends after every clause builder regardless of invocation order — which is
+         * also why {@code append("ORDER BY ...")} placed after {@link #union(String)} (rather than
+         * {@link #orderBy()}) is the way to order a combined set-operation result.</p>
+         *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * builder.append("LIMIT 10 OFFSET 20");
@@ -588,8 +674,10 @@ public final class DynamicQuery {
          * @param textToAppend the complete raw SQL clause to append verbatim (e.g., {@code "LIMIT 10 OFFSET 20"}) (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code textToAppend} is {@code null}, empty, or blank
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         public DynamicSqlBuilder append(final String textToAppend) {
+            checkNotBuilt();
             checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
             appendRawWithSpace(textToAppend);
@@ -615,9 +703,12 @@ public final class DynamicQuery {
          *                  (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          * @see #append(String)
          */
         public DynamicSqlBuilder appendIf(final boolean condition, final String textToAppend) {
+            checkNotBuilt();
+
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
@@ -643,9 +734,11 @@ public final class DynamicQuery {
          * @param textToAppendWhenFalse the raw SQL clause to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          * @see #append(String)
          */
         public DynamicSqlBuilder appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            checkNotBuilt();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
@@ -673,6 +766,8 @@ public final class DynamicQuery {
         }
 
         private StringBuilder getStringBuilderForMoreParts() {
+            checkNotBuilt();
+
             if (moreParts == null) {
                 moreParts = Objectory.createStringBuilder();
             }
@@ -681,9 +776,24 @@ public final class DynamicQuery {
         }
 
         /**
+         * Verifies this builder is still open, throwing if {@link #build()} has already run.
+         * {@code build()} nulls out {@code selectClause} in its {@code finally} block, so a {@code null}
+         * {@code selectClause} is the closed marker; without this guard, post-build calls would either
+         * NPE or silently write into freshly pooled buffers that are never recycled.
+         *
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@code build()}
+         */
+        private void checkNotBuilt() {
+            if (selectClause == null) {
+                throw new IllegalStateException("This DynamicSqlBuilder has already been closed after build() was called");
+            }
+        }
+
+        /**
          * Builds the final SQL string from all the components and releases resources.
          * This method MUST be called to get the SQL and clean up internal resources.
-         * After calling {@code build()}, this builder instance should not be reused.
+         * After calling {@code build()}, this builder is closed and must not be reused: any subsequent
+         * call to a builder method (including {@code build()} itself) throws {@link IllegalStateException}.
          *
          * <p>The method combines all SQL components in the correct order and returns
          * the complete SQL statement. Internal {@link StringBuilder} objects are recycled
@@ -704,9 +814,7 @@ public final class DynamicQuery {
          */
         public String build() {
             try {
-                if (selectClause == null) {
-                    throw new IllegalStateException("This DynamicSqlBuilder has already been closed after build() was called");
-                }
+                checkNotBuilt();
 
                 if (fromClause != null && !fromClause.sb.isEmpty()) {
                     if (!selectClause.sb.isEmpty()) {
@@ -759,7 +867,7 @@ public final class DynamicQuery {
                 final String sql = selectClause.sb.toString();
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Built dynamic SQL: {}", sql);
+                    logger.debug("Built dynamic SQL metadata. Length: {}", sql.length());
                 }
 
                 return sql;
@@ -819,6 +927,10 @@ public final class DynamicQuery {
         }
 
         final void close() {
+            if (closed) {
+                return; // idempotent: never recycle the same buffer into the pool twice
+            }
+
             closed = true;
             Objectory.recycle(sb);
         }
@@ -841,7 +953,7 @@ public final class DynamicQuery {
      * }</pre>
      *
      * <p>Once the owning {@link DynamicSqlBuilder#build()} completes, this clause is closed: its internal buffer is
-     * released and any subsequent attempt to append to it throws {@link IllegalStateException}.</p>
+     * released and any subsequent operation on it throws {@link IllegalStateException}.</p>
      */
     public static class SelectClause extends ClauseBuilder {
 
@@ -864,6 +976,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code column} is {@code null}, empty, or blank
          */
         public SelectClause append(final String column) {
+            checkOpen();
             checkSqlFragmentNotBlank(column, "column");
 
             startClauseFragment(this, "SELECT ", ", ");
@@ -889,6 +1002,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code column} or {@code alias} is {@code null}, empty, or blank
          */
         public SelectClause append(final String column, final String alias) {
+            checkOpen();
             checkSqlFragmentNotBlank(column, "column");
             checkSqlFragmentNotBlank(alias, "alias");
 
@@ -915,7 +1029,10 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if any element in {@code columns} is {@code null}, empty, or blank
          */
         public SelectClause append(final Collection<String> columns) {
+            checkOpen();
+
             if (N.isEmpty(columns)) {
+                checkOpen();
                 return this;
             }
 
@@ -949,7 +1066,10 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if any key or value in the map is {@code null}, empty, or blank
          */
         public SelectClause append(final Map<String, String> columnsAndAliasMap) {
+            checkOpen();
+
             if (N.isEmpty(columnsAndAliasMap)) {
+                checkOpen();
                 return this;
             }
 
@@ -978,12 +1098,16 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public SelectClause appendIf(final boolean condition, final String textToAppend) {
+            checkOpen();
+
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 startClauseFragment(this, "SELECT ", ", ");
 
                 sb.append(textToAppend);
+            } else {
+                checkOpen();
             }
 
             return this;
@@ -1007,6 +1131,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public SelectClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            checkOpen();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
@@ -1038,7 +1163,7 @@ public final class DynamicQuery {
      * }</pre>
      *
      * <p>Once the owning {@link DynamicSqlBuilder#build()} completes, this clause is closed: its internal buffer is
-     * released and any subsequent attempt to append to it throws {@link IllegalStateException}.</p>
+     * released and any subsequent operation on it throws {@link IllegalStateException}.</p>
      */
     public static class FromClause extends ClauseBuilder {
 
@@ -1061,6 +1186,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code table} is {@code null}, empty, or blank
          */
         public FromClause append(final String table) {
+            checkOpen();
             checkSqlFragmentNotBlank(table, "table");
 
             startClauseFragment(this, "FROM ", ", ");
@@ -1086,6 +1212,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code table} or {@code alias} is {@code null}, empty, or blank
          */
         public FromClause append(final String table, final String alias) {
+            checkOpen();
             checkSqlFragmentNotBlank(table, "table");
             checkSqlFragmentNotBlank(alias, "alias");
 
@@ -1112,7 +1239,10 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if any element in {@code tables} is {@code null}, empty, or blank
          */
         public FromClause append(final Collection<String> tables) {
+            checkOpen();
+
             if (N.isEmpty(tables)) {
+                checkOpen();
                 return this;
             }
 
@@ -1366,12 +1496,16 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public FromClause appendIf(final boolean condition, final String textToAppend) {
+            checkOpen();
+
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 startClauseFragment(this, "FROM ", ", ");
 
                 sb.append(textToAppend);
+            } else {
+                checkOpen();
             }
 
             return this;
@@ -1393,6 +1527,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public FromClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            checkOpen();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
@@ -1426,7 +1561,7 @@ public final class DynamicQuery {
      * }</pre>
      *
      * <p>Once the owning {@link DynamicSqlBuilder#build()} completes, this clause is closed: its internal buffer is
-     * released and any subsequent attempt to append to it throws {@link IllegalStateException}.</p>
+     * released and any subsequent operation on it throws {@link IllegalStateException}.</p>
      */
     public static class WhereClause extends ClauseBuilder {
 
@@ -1452,6 +1587,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
         public WhereClause append(final String cond) {
+            checkOpen();
             checkSqlFragmentNotBlank(cond, "cond");
 
             startClauseFragment(this, "WHERE ", " ");
@@ -1465,7 +1601,7 @@ public final class DynamicQuery {
          * Appends question mark placeholders for parameterized queries.
          * Useful for {@code IN} clauses or multiple parameters.
          *
-         * <p>Note: this method writes only the {@code ?} characters separated by {@code ", "} into the
+         * <p><b>&#9888;&#65039;</b> This method writes only the {@code ?} characters separated by {@code ", "} into the
          * underlying buffer; it does not insert any surrounding whitespace or parentheses. Use the
          * {@link #placeholders(int, String, String)} overload when you also need a prefix/postfix
          * (e.g. parentheses for an {@code IN} list).</p>
@@ -1482,10 +1618,14 @@ public final class DynamicQuery {
          * @param placeholderCount the number of question marks to append (must not be negative)
          * @return this {@link WhereClause} instance for method chaining
          * @throws IllegalArgumentException if {@code placeholderCount} is negative
+         * @throws IllegalStateException if the {@code WHERE} clause has not been initialized by a prior call that actually appended a condition
+         *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
          */
         public WhereClause placeholders(final int placeholderCount) {
             checkOpen();
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
+            requireWhereInitialized();
 
             appendPlaceholders(placeholderCount);
 
@@ -1509,12 +1649,16 @@ public final class DynamicQuery {
          * @param postfix the string to add after the question marks (must not be {@code null})
          * @return this {@link WhereClause} instance for method chaining
          * @throws IllegalArgumentException if {@code placeholderCount} is negative, or if {@code prefix} or {@code postfix} is {@code null}
+         * @throws IllegalStateException if the {@code WHERE} clause has not been initialized by a prior call that actually appended a condition
+         *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
          */
         public WhereClause placeholders(final int placeholderCount, final String prefix, final String postfix) {
             checkOpen();
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
             N.checkArgNotNull(prefix, "prefix");
             N.checkArgNotNull(postfix, "postfix");
+            requireWhereInitialized();
 
             if (placeholderCount > 0) {
                 sb.append(prefix);
@@ -1538,6 +1682,12 @@ public final class DynamicQuery {
                 } else {
                     sb.append('?');
                 }
+            }
+        }
+
+        private void requireWhereInitialized() {
+            if (sb.isEmpty()) {
+                throw new IllegalStateException("WHERE clause must be initialized by append(...), and(...), or or(...) before placeholders can be appended");
             }
         }
 
@@ -1617,12 +1767,16 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public WhereClause appendIf(final boolean condition, final String textToAppend) {
+            checkOpen();
+
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 startClauseFragment(this, "WHERE ", " ");
 
                 sb.append(textToAppend);
+            } else {
+                checkOpen();
             }
 
             return this;
@@ -1646,6 +1800,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public WhereClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            checkOpen();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
@@ -1678,7 +1833,7 @@ public final class DynamicQuery {
      * }</pre>
      *
      * <p>Once the owning {@link DynamicSqlBuilder#build()} completes, this clause is closed: its internal buffer is
-     * released and any subsequent attempt to append to it throws {@link IllegalStateException}.</p>
+     * released and any subsequent operation on it throws {@link IllegalStateException}.</p>
      */
     public static class GroupByClause extends ClauseBuilder {
 
@@ -1701,6 +1856,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code column} is {@code null}, empty, or blank
          */
         public GroupByClause append(final String column) {
+            checkOpen();
             checkSqlFragmentNotBlank(column, "column");
 
             startClauseFragment(this, "GROUP BY ", ", ");
@@ -1726,7 +1882,10 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if any element in {@code columns} is {@code null}, empty, or blank
          */
         public GroupByClause append(final Collection<String> columns) {
+            checkOpen();
+
             if (N.isEmpty(columns)) {
+                checkOpen();
                 return this;
             }
 
@@ -1755,12 +1914,16 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public GroupByClause appendIf(final boolean condition, final String textToAppend) {
+            checkOpen();
+
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 startClauseFragment(this, "GROUP BY ", ", ");
 
                 sb.append(textToAppend);
+            } else {
+                checkOpen();
             }
 
             return this;
@@ -1784,6 +1947,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public GroupByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            checkOpen();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
@@ -1815,7 +1979,7 @@ public final class DynamicQuery {
      * }</pre>
      *
      * <p>Once the owning {@link DynamicSqlBuilder#build()} completes, this clause is closed: its internal buffer is
-     * released and any subsequent attempt to append to it throws {@link IllegalStateException}.</p>
+     * released and any subsequent operation on it throws {@link IllegalStateException}.</p>
      */
     public static class HavingClause extends ClauseBuilder {
 
@@ -1841,6 +2005,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
         public HavingClause append(final String cond) {
+            checkOpen();
             checkSqlFragmentNotBlank(cond, "cond");
 
             startClauseFragment(this, "HAVING ", " ");
@@ -1854,7 +2019,7 @@ public final class DynamicQuery {
          * Appends question mark placeholders for parameterized queries.
          * Useful for {@code IN} clauses or multiple parameters in aggregate conditions.
          *
-         * <p>Note: this method writes only the {@code ?} characters separated by {@code ", "} into the
+         * <p><b>&#9888;&#65039;</b> This method writes only the {@code ?} characters separated by {@code ", "} into the
          * underlying buffer; it does not insert any surrounding whitespace or parentheses. Use the
          * {@link #placeholders(int, String, String)} overload when you also need a prefix/postfix
          * (e.g. parentheses for an {@code IN} list).</p>
@@ -1871,10 +2036,14 @@ public final class DynamicQuery {
          * @param placeholderCount the number of question marks to append (must not be negative)
          * @return this {@link HavingClause} instance for method chaining
          * @throws IllegalArgumentException if {@code placeholderCount} is negative
+         * @throws IllegalStateException if the {@code HAVING} clause has not been initialized by a prior call that actually appended a condition
+         *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
          */
         public HavingClause placeholders(final int placeholderCount) {
             checkOpen();
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
+            requireHavingInitialized();
 
             appendPlaceholders(placeholderCount);
 
@@ -1898,12 +2067,16 @@ public final class DynamicQuery {
          * @param postfix the string to add after the question marks (must not be {@code null})
          * @return this {@link HavingClause} instance for method chaining
          * @throws IllegalArgumentException if {@code placeholderCount} is negative, or if {@code prefix} or {@code postfix} is {@code null}
+         * @throws IllegalStateException if the {@code HAVING} clause has not been initialized by a prior call that actually appended a condition
+         *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
          */
         public HavingClause placeholders(final int placeholderCount, final String prefix, final String postfix) {
             checkOpen();
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
             N.checkArgNotNull(prefix, "prefix");
             N.checkArgNotNull(postfix, "postfix");
+            requireHavingInitialized();
 
             if (placeholderCount > 0) {
                 sb.append(prefix);
@@ -1927,6 +2100,12 @@ public final class DynamicQuery {
                 } else {
                     sb.append('?');
                 }
+            }
+        }
+
+        private void requireHavingInitialized() {
+            if (sb.isEmpty()) {
+                throw new IllegalStateException("HAVING clause must be initialized by append(...), and(...), or or(...) before placeholders can be appended");
             }
         }
 
@@ -2006,12 +2185,16 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public HavingClause appendIf(final boolean condition, final String textToAppend) {
+            checkOpen();
+
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 startClauseFragment(this, "HAVING ", " ");
 
                 sb.append(textToAppend);
+            } else {
+                checkOpen();
             }
 
             return this;
@@ -2035,6 +2218,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public HavingClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            checkOpen();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
@@ -2067,7 +2251,7 @@ public final class DynamicQuery {
      * }</pre>
      *
      * <p>Once the owning {@link DynamicSqlBuilder#build()} completes, this clause is closed: its internal buffer is
-     * released and any subsequent attempt to append to it throws {@link IllegalStateException}.</p>
+     * released and any subsequent operation on it throws {@link IllegalStateException}.</p>
      */
     public static class OrderByClause extends ClauseBuilder {
 
@@ -2090,6 +2274,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code column} is {@code null}, empty, or blank
          */
         public OrderByClause append(final String column) {
+            checkOpen();
             checkSqlFragmentNotBlank(column, "column");
 
             startClauseFragment(this, "ORDER BY ", ", ");
@@ -2116,7 +2301,10 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if any element in {@code columns} is {@code null}, empty, or blank
          */
         public OrderByClause append(final Collection<String> columns) {
+            checkOpen();
+
             if (N.isEmpty(columns)) {
+                checkOpen();
                 return this;
             }
 
@@ -2145,12 +2333,16 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public OrderByClause appendIf(final boolean condition, final String textToAppend) {
+            checkOpen();
+
             if (condition) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 startClauseFragment(this, "ORDER BY ", ", ");
 
                 sb.append(textToAppend);
+            } else {
+                checkOpen();
             }
 
             return this;
@@ -2174,6 +2366,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public OrderByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+            checkOpen();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 

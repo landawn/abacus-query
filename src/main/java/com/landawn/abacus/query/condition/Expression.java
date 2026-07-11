@@ -1066,9 +1066,10 @@ public class Expression extends ComposableCondition {
      * <ul>
      *   <li>{@code null} values become the string {@code "null"}</li>
      *   <li>Strings are wrapped in single quotes and escaped via {@link AbstractCondition#escapeStringLiteral(String)}:
-     *       embedded single and double quotes are backslash-escaped ({@code '} becomes {@code \'}, {@code "} becomes {@code \"});
-     *       backslashes are left as-is except for a defensive guard that appends one extra backslash when the body
-     *       would otherwise end in an unescaped trailing backslash</li>
+     *       embedded unescaped single and double quotes are backslash-escaped ({@code '} becomes {@code \'}, {@code "} becomes {@code \"});
+     *       a backslash shields the character that follows it, so any existing {@code \x} pair — including an
+     *       already-escaped quote such as {@code \'} — is copied verbatim rather than escaped again, plus a defensive
+     *       guard that appends one extra backslash when the body would otherwise end in an unescaped trailing backslash</li>
      *   <li>{@link Number} and {@link Boolean} values are converted via {@code toString()} (no quoting);
      *       {@code NaN}/infinite {@link Float}/{@link Double} values are rejected</li>
      *   <li>{@link Expression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null})</li>
@@ -1784,6 +1785,7 @@ public class Expression extends ComposableCondition {
      * <pre>{@code
      * Expression.of("firstName").toString(NamingPolicy.SNAKE_CASE);          // returns "first_name"
      * Expression.of("firstName = 'John'").toString(NamingPolicy.SNAKE_CASE); // returns "first_name = 'John'" (identifier converted, quoted literal kept)
+     * Expression.of("price-tax").toString(NamingPolicy.CAMEL_CASE);          // returns "price-tax" (SQL subtraction preserved; each operand converted independently)
      * Expression.of("firstName").toString(NamingPolicy.NO_CHANGE);           // returns "firstName"
      * Expression.of("firstName").toString(null);                             // returns "firstName" (null defaults to NO_CHANGE)
      * Expression.of("").toString(NamingPolicy.NO_CHANGE);                    // returns "" (empty literal)
@@ -1804,9 +1806,12 @@ public class Expression extends ComposableCondition {
             return Strings.EMPTY;
         }
 
-        if (literal.length() < 16 && QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher(literal).matches()) {
+        if (literal.length() < 16 && literal.indexOf('-') < 0 && QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher(literal).matches()) {
             // Mirror the parse path below: only tokens starting with an ASCII letter are naming-policy
             // converted; a digit-leading token (e.g. "2faCode") passes through unchanged.
+            // Hyphen-containing literals (e.g. "price-tax", SQL subtraction) are excluded even though the
+            // simple-column pattern accepts '-': CAMEL_CASE/SNAKE_CASE conversion would swallow the '-',
+            // so they take the parser path below, which converts each operand independently.
             if (!Strings.isAsciiAlpha(literal.charAt(0)) || isSqlKeyword(literal)) {
                 return literal;
             }

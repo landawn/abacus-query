@@ -62,9 +62,9 @@ import com.landawn.abacus.util.XmlUtil;
  * </sqlMapper>
  * }</pre>
  * 
- * <p>Recognized XML attributes on {@code <sql>} elements (this class only enforces the {@code id}
- * contract; the remaining attributes are stored verbatim in the per-id attribute map and are
- * interpreted by downstream callers, e.g. a JDBC executor):</p>
+ * <p>Recognized XML attributes on {@code <sql>} elements are copied after basic structural validation
+ * (attribute names must be nonempty and values non-null). This class interprets only the {@code id}
+ * contract; remaining attributes are stored verbatim for downstream callers such as JDBC executors:</p>
  * <ul>
  *   <li>{@code id} - unique identifier for the SQL (required, max {@value #MAX_ID_LENGTH} characters,
  *       must not contain whitespace)</li>
@@ -260,7 +260,7 @@ public final class SqlMapper {
      * Creates a SqlMapper instance by loading SQL definitions from the supplied input stream.
      * The stream content must contain a {@code <sqlMapper>} root element. The caller opens the stream
      * and remains responsible for closing it (typically via try-with-resources); this method does not
-     * call {@code close()} itself, although the underlying XML parser may consume and close the stream.
+     * call {@code close()}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -299,8 +299,7 @@ public final class SqlMapper {
         try (InputStream is = new FileInputStream(file)) {
             loadStream(sqlMapper, is, file.getAbsolutePath());
         } catch (final IOException e) {
-            logger.error(e, "Failed to load SQL mapper due to I/O error: {}", file.getAbsolutePath());
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException("Failed to read SQL mapper file: " + file.getAbsolutePath(), e);
         }
     }
 
@@ -333,11 +332,9 @@ public final class SqlMapper {
                 logger.debug("Loaded {} SQL statements from: {}", sqlElementList.size(), sourceLabel);
             }
         } catch (final IOException e) {
-            logger.error(e, "Failed to load SQL mapper due to I/O error: {}", sourceLabel);
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException("Failed to read SQL mapper XML from: " + sourceLabel, e);
         } catch (final SAXException e) {
-            logger.error(e, "Failed to load SQL mapper due to XML parsing error: {}", sourceLabel);
-            throw new ParsingException(e);
+            throw new ParsingException("Failed to parse SQL mapper XML from: " + sourceLabel, e);
         }
     }
 

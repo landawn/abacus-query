@@ -289,6 +289,12 @@ public class SqlDialectPaginationTest extends TestBase {
         sql = dslFor("Oracle").select("*").from("users").orderBy("id").append(Filters.limit("#{count} OFFSET #{offset}")).build().query();
         assertEquals("SELECT * FROM users ORDER BY id OFFSET #{offset} ROWS FETCH NEXT #{count} ROWS ONLY", sql);
 
+        sql = dslFor("Oracle").select("*").from("users").orderBy("id").append(Filters.limit(":offset, :count")).build().query();
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET :offset ROWS FETCH NEXT :count ROWS ONLY", sql);
+
+        sql = dslFor("DB2").select("*").from("users").orderBy("id").append(Filters.limit("#{offset}, #{count}")).build().query();
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET #{offset} ROWS FETCH NEXT #{count} ROWS ONLY", sql);
+
         sql = dslFor("Microsoft SQL Server").select("*").from("users").orderBy("id").append(Filters.limit("10")).build().query();
         assertEquals("SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
 

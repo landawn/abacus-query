@@ -29,6 +29,9 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>Concrete subclasses include {@link Not}, {@link Exists}, {@link NotExists}, {@link All}, {@link Any}, and {@link Some}.</p>
  *
+ * <p><b>&#9888;&#65039;</b> {@link All}, {@link Any}, and {@link Some} are quantified right-hand operands and
+ * cannot themselves be combined as boolean predicates.</p>
+ *
  * @see Cell
  * @see ComposableCondition
  * @see Not
@@ -180,8 +183,8 @@ public abstract class ComposableCell extends ComposableCondition {
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-        final Condition condition = getCondition();
-        final String conditionString = condition == null ? "" : condition.toString(effectiveNamingPolicy);
+        final Condition cond = getCondition();
+        final String conditionString = cond == null ? "" : cond.toString(effectiveNamingPolicy);
         final Operator op = operator();
         final String opStr = op == null ? Strings.NULL : op.toString();
         return opStr + SK._SPACE + SK._PARENTHESIS_L + conditionString + SK._PARENTHESIS_R;

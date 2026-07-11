@@ -18,15 +18,14 @@ package com.landawn.abacus.query.condition;
  * Represents the SQL EXISTS operator for use with subqueries.
  * The EXISTS operator returns {@code true} if the subquery returns at least one row, {@code false} otherwise.
  * 
- * <p>EXISTS is particularly useful for checking the existence of related records without
- * actually retrieving them. It's often more efficient than using IN with large result sets
- * because it stops processing once it finds the first matching row.</p>
+ * <p>EXISTS is useful for checking the existence of related records without returning values from
+ * the subquery. Optimizers may implement it as a semi-join or stop once existence is established;
+ * relative performance versus IN depends on the database, data, indexes, and query plan.</p>
  * 
  * <p>Key characteristics:</p>
  * <ul>
  *   <li>Returns {@code true} if subquery returns any rows, {@code false} if no rows</li>
- *   <li>More efficient than IN for large datasets - stops at first match</li>
- *   <li>The SELECT clause in the subquery doesn't matter (SELECT 1, SELECT *, etc.)</li>
+ *   <li>The selected values do not affect EXISTS semantics; only row existence matters</li>
  *   <li>Commonly used with correlated subqueries</li>
  *   <li>Can be negated with NOT EXISTS</li>
  * </ul>
@@ -52,9 +51,8 @@ package com.landawn.abacus.query.condition;
  * Exists hasEmployees = new Exists(employeeExists);
  * }</pre>
  * 
- * <p>Performance tip: The SELECT clause in the EXISTS subquery doesn't affect performance
- * (SELECT 1, SELECT *, SELECT column_name are all equivalent) because EXISTS only checks
- * for row existence, not the actual values.</p>
+ * <p>The SELECT list does not affect EXISTS truth semantics, but it may still affect parsing,
+ * permissions, or optimizer choices on a particular database.</p>
  * 
  * @see NotExists
  * @see SubQuery

@@ -194,4 +194,9 @@ public class ClauseTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr("")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(new And()));
     }
+
+    @Test
+    public void testConstructorRejectsNonClauseOperator() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.EQUAL, Filters.eq("id", 1)));
+    }
 }

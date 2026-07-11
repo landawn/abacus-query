@@ -32,6 +32,10 @@ import java.util.Map;
  *   <li>Implementing dynamic filters based on user selections</li>
  * </ul>
  *
+ * <p><b>&#9888;&#65039;</b> SQL {@code NULL} follows three-valued logic. A {@code NULL} column value does
+ * not match, and a nonmatching value compared with a list that contains {@code NULL} evaluates
+ * to unknown rather than false.</p>
+ *
  * <p>Performance considerations:</p>
  * <ul>
  *   <li>Most databases optimize IN conditions well for small to medium lists</li>
@@ -50,7 +54,7 @@ import java.util.Map;
  * // SQL: user_id IN (1, 2, 3, 5, 8)
  *
  * // Filter by categories
- * Set<String> categories = new HashSet<>(Arrays.asList("electronics", "computers"));
+ * Set<String> categories = new LinkedHashSet<>(Arrays.asList("electronics", "computers"));
  * In categoryFilter = new In("category", categories);
  * // SQL: category IN ('electronics', 'computers')
  * }</pre>
@@ -76,7 +80,7 @@ public class In extends AbstractIn {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Filter by multiple categories
-     * Set<String> categories = new HashSet<>(Arrays.asList("electronics", "computers", "phones"));
+     * Set<String> categories = new LinkedHashSet<>(Arrays.asList("electronics", "computers", "phones"));
      * In categoryFilter = new In("category", categories);
      * // SQL: category IN ('electronics', 'computers', 'phones')
      *
@@ -123,7 +127,7 @@ public class In extends AbstractIn {
      *         Arrays.asList(N.asMap("first_name", "John", "last_name", "Doe")));
      * }</pre>
      *
-     * <p><b>Portability note:</b> the row value-list form is supported by MySQL, PostgreSQL,
+     * <p><b>&#9888;&#65039;</b> The row value-list form is supported by MySQL, PostgreSQL,
      * Oracle and DB2, but <i>not</i> by SQL Server (use {@link InSubQuery} there).</p>
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}/blank names)
@@ -132,7 +136,8 @@ public class In extends AbstractIn {
      *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
-     *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
+     *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
+     *                                  or if a bean row does not expose a requested property
      */
     public In(final Collection<String> propNames, final Collection<?> valueRows) {
         super(propNames, Operator.IN, valueRows);

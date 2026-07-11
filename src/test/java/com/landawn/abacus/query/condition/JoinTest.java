@@ -409,4 +409,33 @@ public class JoinTest extends TestBase {
         InnerJoin ij = new InnerJoin("orders o");
         Assertions.assertEquals("INNER JOIN orders o", ij.toString(NamingPolicy.NO_CHANGE));
     }
+
+    @Test
+    public void testConstructorRejectsQuantifiedSubQueryOperand() {
+        // ANY/ALL/SOME are quantified-subquery operands (valid only on the RHS of a comparison);
+        // "JOIN t1 ON ANY (SELECT ...)" is invalid SQL in every dialect, so the constructor must
+        // reject them, consistent with Clause and the composable and()/or()/not() operations.
+        SubQuery sub = Filters.subQuery("SELECT id FROM users");
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("t1", Filters.any(sub)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("t1", Filters.all(sub)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("t1", Filters.some(sub)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Arrays.asList("t1", "t2"), Filters.any(sub)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.join("t1", Filters.any(sub)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("t1", Filters.all(sub)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("t1", Filters.some(sub)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("t1", Filters.any(sub)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("t1", Filters.all(sub)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.crossJoin("t1", Filters.some(sub)));
+
+        // On/Using instances (and a null condition) are still accepted.
+        assertNotNull(new Join("t1", new On("a.id", "b.id")));
+        assertNotNull(new Join("t1", new Using("id")));
+        assertNotNull(new Join("t1", null));
+    }
+
+    @Test
+    public void testConstructorRejectsNonJoinOperator() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Operator.EQUAL, "t1", null));
+    }
 }

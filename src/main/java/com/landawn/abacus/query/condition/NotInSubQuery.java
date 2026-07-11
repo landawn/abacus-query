@@ -25,10 +25,11 @@ import java.util.Collection;
  * dynamic criteria from another query. It supports both single-column and multi-column
  * comparisons, making it suitable for simple exclusions as well as composite key checks.</p>
  *
- * <p>Important considerations:</p>
+ * <p><b>&#9888;&#65039;</b> Important considerations:</p>
  * <ul>
- *   <li>NULL handling: if the subquery returns any NULL value, {@code col NOT IN (subquery)}
- *       evaluates to UNKNOWN for every row (behaves as false in WHERE clauses) and no rows match</li>
+ *   <li>NULL handling: if the subquery returns a NULL, equality with a returned non-null value
+ *       still makes {@code NOT IN} false, while an otherwise nonmatching value becomes unknown.
+ *       Neither result matches a {@code WHERE} clause</li>
  *   <li>Performance: For large result sets, consider using NOT EXISTS instead</li>
  *   <li>Empty subquery results: If subquery returns no rows, all values pass the NOT IN check</li>
  * </ul>

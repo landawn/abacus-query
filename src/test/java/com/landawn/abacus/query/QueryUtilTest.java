@@ -961,4 +961,80 @@ public class QueryUtilTest extends TestBase {
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
+
+    @Test
+    public void testIncludedSubEntityPropertiesExcludeNonColumns() {
+        ImmutableList<String> names = QueryUtil.getSelectPropNames(ParentWithFilteredChild.class, true, null);
+
+        assertTrue(names.contains("child.visible"), names.toString());
+        assertFalse(names.contains("child.hiddenByAnnotation"), names.toString());
+        assertFalse(names.contains("child.hiddenByTable"), names.toString());
+    }
+
+    @Test
+    public void testExcludingSubEntityRootAlsoExcludesExpandedProperties() {
+        Set<String> excluded = Collections.singleton("child");
+        ImmutableList<String> names = QueryUtil.getSelectPropNames(ParentWithFilteredChild.class, true, excluded);
+
+        assertEquals(Collections.singletonList("id"), names);
+
+        String sql = Dsl.PSC.selectFrom(ParentWithFilteredChild.class, true, excluded).build().query();
+        assertEquals("SELECT id AS \"id\" FROM parent_with_filtered_child", sql);
+    }
+
+    static class ParentWithFilteredChild {
+        private long id;
+
+        private FilteredChild child;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public FilteredChild getChild() {
+            return child;
+        }
+
+        public void setChild(final FilteredChild child) {
+            this.child = child;
+        }
+    }
+
+    @Table(nonColumnFields = { "hiddenByTable" })
+    static class FilteredChild {
+        private String visible;
+
+        @NonColumn
+        private String hiddenByAnnotation;
+
+        private String hiddenByTable;
+
+        public String getVisible() {
+            return visible;
+        }
+
+        public void setVisible(final String visible) {
+            this.visible = visible;
+        }
+
+        public String getHiddenByAnnotation() {
+            return hiddenByAnnotation;
+        }
+
+        public void setHiddenByAnnotation(final String hiddenByAnnotation) {
+            this.hiddenByAnnotation = hiddenByAnnotation;
+        }
+
+        public String getHiddenByTable() {
+            return hiddenByTable;
+        }
+
+        public void setHiddenByTable(final String hiddenByTable) {
+            this.hiddenByTable = hiddenByTable;
+        }
+    }
 }

@@ -62,7 +62,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     /**
      * Creates a condition for a single property.
      *
-     * <p>If the subquery is a structured subquery (i.e. it exposes selected property names via
+     * <p><b>&#9888;&#65039;</b> If the subquery is a structured subquery (i.e. it exposes selected property names via
      * {@link SubQuery#getSelectPropNames()}), it must select exactly one column. Raw SQL subqueries
      * are not validated for column arity.</p>
      *
@@ -87,7 +87,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     /**
      * Creates a condition for multiple properties.
      *
-     * <p>If the subquery is a structured subquery (i.e. it exposes selected property names via
+     * <p><b>&#9888;&#65039;</b> If the subquery is a structured subquery (i.e. it exposes selected property names via
      * {@link SubQuery#getSelectPropNames()}), the number of selected columns must match
      * {@code propNames.size()}. Raw SQL subqueries are not validated for column arity.</p>
      *

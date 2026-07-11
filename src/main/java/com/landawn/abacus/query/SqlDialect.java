@@ -52,8 +52,8 @@ import lombok.experimental.Accessors;
  * <p>Fields left unset on the builder remain {@code null}. When a dialect is used by
  * {@link AbstractQueryBuilder}, unset rendering choices are resolved to these defaults:
  * {@link NamingPolicy#SNAKE_CASE}, {@link SqlPolicy#RAW_SQL}, and
- * {@link IdentifierQuote#DOUBLE_QUOTE} (or {@link IdentifierQuote#BACKTICK} when {@link #productInfo}
- * names MySQL or MariaDB). When {@link #productInfo} is set, query builders also adapt
+ * {@link IdentifierQuote#DOUBLE_QUOTE} (or {@link IdentifierQuote#BACKTICK} when {@code productInfo}
+ * names MySQL or MariaDB). When {@code productInfo} is set, query builders also adapt
  * product-specific SQL syntax such as pagination clauses; see {@link AbstractQueryBuilder#limit(int)}.
  * When it is {@code null} or its name is not recognized, builders generate the default
  * {@code LIMIT}/{@code OFFSET} syntax.</p>
@@ -70,7 +70,7 @@ public class SqlDialect {
      * Optional descriptor of the target database product. When set, query builders branch on
      * {@link ProductInfo#name()} to emit product-specific SQL: Oracle, DB2 and SQL Server dialects
      * render pagination with {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY} instead of
-     * {@code LIMIT}/{@code OFFSET}, and a {@code null} {@link #identifierQuote} defaults to
+     * {@code LIMIT}/{@code OFFSET}, and a {@code null} {@code identifierQuote} defaults to
      * {@link IdentifierQuote#BACKTICK} for MySQL/MariaDB. When {@code null}, builders use the default
      * SQL syntax.
      */
@@ -91,7 +91,8 @@ public class SqlDialect {
 
     /**
      * Quote style used for generated aliases and identifiers that need quoting. When {@code null},
-     * builders use {@link IdentifierQuote#DOUBLE_QUOTE}.
+     * builders use {@link IdentifierQuote#DOUBLE_QUOTE}, except for MySQL/MariaDB product metadata,
+     * which defaults to {@link IdentifierQuote#BACKTICK}.
      */
     private IdentifierQuote identifierQuote;
 
@@ -104,7 +105,7 @@ public class SqlDialect {
     public static enum IdentifierQuote {
         /**
          * ANSI/standard SQL double quote ({@code "}). This is the effective default when
-         * {@link #identifierQuote} is {@code null}, except when {@link #productInfo} names MySQL or
+         * {@code identifierQuote} is {@code null}, except when {@code productInfo} names MySQL or
          * MariaDB, in which case {@link #BACKTICK} is the default.
          */
         DOUBLE_QUOTE,
@@ -125,7 +126,7 @@ public class SqlDialect {
         /**
          * Inline values directly into the SQL string as literals.
          *
-         * <p>Use only for trusted values; parameterized or named policies are preferred for user input.</p>
+         * <p><b>&#9888;&#65039;</b> Use only for trusted values; parameterized or named policies are preferred for user input.</p>
          */
         RAW_SQL,
 
@@ -148,7 +149,7 @@ public class SqlDialect {
     /**
      * Immutable descriptor of a database product, holding the product name and version separately.
      *
-     * <p>When attached to a dialect via {@link SqlDialect#productInfo}, the {@link #name()} drives
+     * <p>When attached to a dialect via {@code SqlDialect.productInfo}, the {@link #name()} drives
      * product-specific SQL generation in query builders (for example, Oracle-style
      * {@code FETCH FIRST ... ROWS ONLY} pagination). The name is matched case-insensitively as a
      * substring, so raw JDBC values from {@code DatabaseMetaData.getDatabaseProductName()} such as

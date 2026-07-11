@@ -46,7 +46,7 @@ import com.landawn.abacus.util.Strings;
  *       by property name); see {@link #AbstractIn(Collection, Operator, Collection)} for details.</li>
  * </ul>
  *
- * <p><b>Portability note:</b> the row value-list form is supported by MySQL, PostgreSQL,
+ * <p><b>&#9888;&#65039;</b> The row value-list form is supported by MySQL, PostgreSQL,
  * Oracle and DB2, but <i>not</i> by SQL Server (which only supports the {@code (a, b) IN (subquery)}
  * form — see {@link InSubQuery}).</p>
  *
@@ -127,6 +127,9 @@ public abstract class AbstractIn extends ComposableCondition {
      * collections do not affect this condition. Individual row values may be literal values or
      * {@link Condition} instances; the latter have their parameters spliced into {@link #getParameters()}.
      *
+     * <p><b>&#9888;&#65039;</b> A missing property-name key in a map row is represented as {@code null}; a bean
+     * row that does not expose a requested property is rejected.</p>
+     *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain
      *                  {@code null}, empty, or blank names)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
@@ -136,7 +139,8 @@ public abstract class AbstractIn extends ComposableCondition {
      *               {@link Map} or bean
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
-     *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
+     *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
+     *                                  or if a bean row does not expose a requested property
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final Collection<String> propNames, final Operator operator, final Collection<?> valueRows) {

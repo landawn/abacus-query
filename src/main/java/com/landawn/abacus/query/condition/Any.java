@@ -56,8 +56,9 @@ package com.landawn.abacus.query.condition;
  *   <li>&lt;= ANY: true if less than or equal to at least one value (less than or equal to the maximum)</li>
  * </ul>
  *
- * <p>Note: when the subquery returns no rows, {@code x op ANY (...)} is {@code false}
- * for every operator.</p>
+ * <p><b>&#9888;&#65039;</b> When the subquery returns no rows, {@code x op ANY (...)} is {@code false}
+ * for every operator. With returned {@code NULL} values, the result is unknown unless another
+ * comparison is true.</p>
  *
  * <p>Relationship to ALL and SOME:</p>
  * <ul>
@@ -66,7 +67,7 @@ package com.landawn.abacus.query.condition;
  *   <li>ANY/SOME are less restrictive than ALL</li>
  * </ul>
  *
- * <p>Note: although this class extends {@link ComposableCell}, the inherited composition methods
+ * <p><b>&#9888;&#65039;</b> Although this class extends {@link ComposableCell}, the inherited composition methods
  * ({@code and()}, {@code or()}, {@code not()}, {@code xor()}) are unavailable for ANY conditions and throw
  * {@link IllegalArgumentException}, because a quantified-subquery operand can only appear as the
  * right-hand side of a comparison.</p>

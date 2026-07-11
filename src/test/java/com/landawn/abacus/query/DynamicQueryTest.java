@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.DynamicQuery.DynamicSqlBuilder;
+import com.landawn.abacus.util.Objectory;
 
 @Tag("2025")
 public class DynamicQueryTest extends TestBase {
@@ -1585,5 +1586,150 @@ public class DynamicQueryTest extends TestBase {
         assertThrows(IllegalStateException.class, () -> f.rightJoin("orders o", "u.id = o.uid"));
         assertThrows(IllegalStateException.class, () -> f.fullJoin("orders o", "u.id = o.uid"));
         assertThrows(IllegalStateException.class, () -> f.join("orders o", "u.id = o.uid"));
+    }
+
+    @Test
+    public void testBuilderMethodsRejectUseAfterBuild() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.build();
+
+        // Clause accessors must not return null or resurrect fresh clause buffers.
+        assertThrows(IllegalStateException.class, builder::select);
+        assertThrows(IllegalStateException.class, builder::from);
+        assertThrows(IllegalStateException.class, builder::where);
+        assertThrows(IllegalStateException.class, builder::groupBy);
+        assertThrows(IllegalStateException.class, builder::having);
+        assertThrows(IllegalStateException.class, builder::orderBy);
+
+        // Pagination methods must not silently write into a fresh, leaked moreParts buffer.
+        assertThrows(IllegalStateException.class, () -> builder.limit(10));
+        assertThrows(IllegalStateException.class, () -> builder.limit(10, 20));
+        assertThrows(IllegalStateException.class, () -> builder.offset(20));
+        assertThrows(IllegalStateException.class, () -> builder.offsetRows(20));
+        assertThrows(IllegalStateException.class, () -> builder.fetchNextRows(10));
+        assertThrows(IllegalStateException.class, () -> builder.fetchFirstRows(10));
+
+        // Set operations.
+        assertThrows(IllegalStateException.class, () -> builder.union("SELECT id FROM archived_users"));
+        assertThrows(IllegalStateException.class, () -> builder.unionAll("SELECT id FROM temp_users"));
+        assertThrows(IllegalStateException.class, () -> builder.intersect("SELECT id FROM premium_users"));
+        assertThrows(IllegalStateException.class, () -> builder.except("SELECT id FROM blocked_users"));
+        assertThrows(IllegalStateException.class, () -> builder.minus("SELECT id FROM inactive_users"));
+
+        // Raw appends (appendIf throws even when the condition is false: reuse itself is the misuse).
+        assertThrows(IllegalStateException.class, () -> builder.append("FOR UPDATE"));
+        assertThrows(IllegalStateException.class, () -> builder.appendIf(true, "FOR UPDATE"));
+        assertThrows(IllegalStateException.class, () -> builder.appendIf(false, "FOR UPDATE"));
+        assertThrows(IllegalStateException.class, () -> builder.appendIfOrElse(true, "LIMIT 10", "LIMIT 100"));
+
+        // And build() itself still rejects a second call.
+        assertThrows(IllegalStateException.class, builder::build);
+    }
+
+    @Test
+    public void testRetainedClauseNoOpMethodsRejectUseAfterBuild() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        DynamicQuery.SelectClause select = builder.select().append("region");
+        DynamicQuery.FromClause from = builder.from().append("sales");
+        DynamicQuery.WhereClause where = builder.where().append("active = true");
+        DynamicQuery.GroupByClause groupBy = builder.groupBy().append("region");
+        DynamicQuery.HavingClause having = builder.having().append("COUNT(*) > 0");
+        DynamicQuery.OrderByClause orderBy = builder.orderBy().append("region");
+
+        builder.build();
+
+        assertThrows(IllegalStateException.class, () -> select.append(Collections.emptyList()));
+        assertThrows(IllegalStateException.class, () -> select.append(Collections.emptyMap()));
+        assertThrows(IllegalStateException.class, () -> select.appendIf(false, null));
+        assertThrows(IllegalStateException.class, () -> from.append(Collections.emptyList()));
+        assertThrows(IllegalStateException.class, () -> from.appendIf(false, null));
+        assertThrows(IllegalStateException.class, () -> where.appendIf(false, null));
+        assertThrows(IllegalStateException.class, () -> groupBy.append(Collections.emptyList()));
+        assertThrows(IllegalStateException.class, () -> groupBy.appendIf(false, null));
+        assertThrows(IllegalStateException.class, () -> having.appendIf(false, null));
+        assertThrows(IllegalStateException.class, () -> orderBy.append(Collections.emptyList()));
+        assertThrows(IllegalStateException.class, () -> orderBy.appendIf(false, null));
+
+        // Lifecycle errors take precedence over argument validation after the owning builder is closed.
+        assertThrows(IllegalStateException.class, () -> select.append((String) null));
+        assertThrows(IllegalStateException.class, () -> from.append((String) null));
+        assertThrows(IllegalStateException.class, () -> where.append(null));
+        assertThrows(IllegalStateException.class, () -> groupBy.append((String) null));
+        assertThrows(IllegalStateException.class, () -> having.append(null));
+        assertThrows(IllegalStateException.class, () -> orderBy.append((String) null));
+    }
+
+    @Test
+    public void testWherePlaceholdersRequireInitializedClause() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        DynamicQuery.WhereClause where = builder.where();
+
+        // Without a prior append/and/or, placeholders would emit "... FROM users ?, ?, ?".
+        assertThrows(IllegalStateException.class, () -> where.placeholders(3));
+        assertThrows(IllegalStateException.class, () -> where.placeholders(3, "(", ")"));
+
+        // Argument validation still comes first (matches the FromClause join ordering).
+        assertThrows(IllegalArgumentException.class, () -> where.placeholders(-1));
+        assertThrows(IllegalArgumentException.class, () -> where.placeholders(3, null, ")"));
+
+        // Once initialized, placeholders work as before.
+        where.append("id IN ").placeholders(2, "(", ")");
+        assertEquals("SELECT * FROM users WHERE id IN (?, ?)", builder.build());
+    }
+
+    @Test
+    public void testHavingPlaceholdersRequireInitializedClause() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("region");
+        builder.from().append("sales");
+        builder.groupBy().append("region");
+        DynamicQuery.HavingClause having = builder.having();
+
+        // Without a prior append/and/or, placeholders would emit "... GROUP BY region ?, ?".
+        assertThrows(IllegalStateException.class, () -> having.placeholders(2));
+        assertThrows(IllegalStateException.class, () -> having.placeholders(2, "(", ")"));
+
+        // Argument validation still comes first (matches the FromClause join ordering).
+        assertThrows(IllegalArgumentException.class, () -> having.placeholders(-1));
+        assertThrows(IllegalArgumentException.class, () -> having.placeholders(2, "(", null));
+
+        // Once initialized, placeholders work as before.
+        having.append("COUNT(*) IN ").placeholders(2, "(", ")");
+        assertEquals("SELECT region FROM sales GROUP BY region HAVING COUNT(*) IN (?, ?)", builder.build());
+    }
+
+    @Test
+    public void testSetOperationRendersAfterOrderByRegardlessOfCallOrder() {
+        // Documented behavior: set operations live in the trailing buffer, which build() appends
+        // after every clause builder — orderBy() therefore always renders before the set operator.
+        DynamicSqlBuilder b1 = DynamicQuery.builder();
+        b1.select().append("id");
+        b1.from().append("t1");
+        b1.union("SELECT id FROM t2");
+        b1.orderBy().append("id");
+        assertEquals("SELECT id FROM t1 ORDER BY id UNION SELECT id FROM t2", b1.build());
+
+        // Recommended pattern: order the combined result with append(...) after the set operation.
+        DynamicSqlBuilder b2 = DynamicQuery.builder();
+        b2.select().append("id");
+        b2.from().append("t1");
+        b2.union("SELECT id FROM t2");
+        b2.append("ORDER BY id");
+        assertEquals("SELECT id FROM t1 UNION SELECT id FROM t2 ORDER BY id", b2.build());
+    }
+
+    @Test
+    public void testClauseBuilderCloseIsIdempotent() {
+        DynamicQuery.OrderByClause clause = new DynamicQuery.OrderByClause(Objectory.createStringBuilder());
+        clause.append("id ASC");
+
+        clause.close();
+        clause.close(); // second close must be a no-op (no double recycle into the buffer pool)
+
+        assertThrows(IllegalStateException.class, () -> clause.append("name ASC"));
     }
 }

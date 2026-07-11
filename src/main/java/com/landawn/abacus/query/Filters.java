@@ -2780,10 +2780,10 @@ public class Filters {
     /**
      * Creates an {@link On} clause for JOIN operations with the specified condition.
      *
-     * <p>Note: the example below passes literal column references to {@link #equal(String, Object)},
-     * which renders the right-hand side as a string literal ({@code 'orders.user_id'}), not as a
-     * column reference. To compare two columns, prefer {@link #on(String, String)} or
-     * {@link #expr(String)}.</p>
+     * <p>Note: do not build join conditions with {@link #equal(String, Object)} — it renders the
+     * right-hand side as a quoted string literal ({@code equal("users.id", "orders.user_id")}
+     * produces {@code users.id = 'orders.user_id'}), not as a column reference. To compare two
+     * columns, use {@link #on(String, String)} or {@link #expr(String)} as shown below.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2793,7 +2793,7 @@ public class Filters {
      *
      * @param cond the join condition (must not be {@code null})
      * @return an {@link On} clause
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, or an empty predicate (a blank {@link Expression} or empty junction)
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty junction)
      */
     public static On on(final Condition cond) {
         return new On(cond);
@@ -2878,7 +2878,7 @@ public class Filters {
      *
      * @param columnNames the column names used for joining
      * @return a {@link Using} clause
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank element, or contains a qualified (dotted) column name
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank element, a qualified (dotted) column name, or a name containing {@code ,}, {@code (}, or {@code )}
      * @deprecated It's recommended to use {@link #on(java.util.Map)} (a join takes a single {@code ON}
      *             condition; the map form combines multiple column pairs with {@code AND}) instead of
      *             {@code Using} for better portability and clarity. Replace {@code using("col1", "col2")} with explicit
@@ -2901,7 +2901,7 @@ public class Filters {
      *
      * @param columnNames collection of column names used for joining
      * @return a {@link Using} clause
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank element, or contains a qualified (dotted) column name
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank element, a qualified (dotted) column name, or a name containing {@code ,}, {@code (}, or {@code )}
      * @deprecated It's recommended to use {@link #on(java.util.Map)} (a join takes a single {@code ON}
      *             condition; the map form combines multiple column pairs with {@code AND}) instead of
      *             {@code Using} for better portability and clarity. Replace {@code using(columnList)}
@@ -4024,8 +4024,8 @@ public class Filters {
     /**
      * Creates a SubQuery from an entity class with selected properties and condition.
      * If {@code cond} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria}
-     * or a clause (such as {@link Where}), it will be automatically wrapped in a {@code WHERE} clause
-     * when the subquery is rendered.
+     * or a clause (such as {@link Where}), it is automatically wrapped in a {@code WHERE} clause at
+     * construction time; {@code getCondition()} on the returned subquery returns the wrapping {@link Where}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4084,8 +4084,8 @@ public class Filters {
     /**
      * Creates a SubQuery from an entity name with selected properties and condition.
      * If {@code cond} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria}
-     * or a clause (such as {@link Where}), it will be automatically wrapped in a {@code WHERE} clause
-     * when the subquery is rendered.
+     * or a clause (such as {@link Where}), it is automatically wrapped in a {@code WHERE} clause at
+     * construction time; {@code getCondition()} on the returned subquery returns the wrapping {@link Where}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

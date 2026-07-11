@@ -51,14 +51,17 @@ import com.landawn.abacus.util.Strings;
  *   <li>Runs of whitespace between emitted tokens are collapsed into a single space token
  *       ({@code " "}); leading whitespace before the very first emitted token is dropped, while
  *       trailing whitespace after the last non-space token yields a final {@code " "} token.</li>
- *   <li>Multi-character operators (e.g. {@code >=}, {@code <>}, {@code ->>}) are emitted
+ *   <li>Multi-character operators (e.g. {@code >=}, {@code <>}, {@code ->>}, PostgreSQL
+ *       {@code #-} and {@code @?}) are emitted
  *       as single tokens; additional separators can be registered via
  *       {@link #registerSeparator(String)} / {@link #registerSeparator(char)}.</li>
- *   <li>iBatis/MyBatis {@code #{...}} markers are not split on {@code #}.</li>
+ *   <li>iBatis/MyBatis {@code #{...}} markers and registered PostgreSQL hash operators are
+ *       not mistaken for hash comments.</li>
  *   <li>{@code #} that opens a hash-prefixed identifier (e.g. a temp table name appearing
  *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE},
- *       allowing intervening whitespace or comments) is treated as part of the identifier,
- *       not as a hash comment or separator.</li>
+ *       allowing intervening whitespace or comments, including as a later element of a
+ *       comma-separated list governed by one of those keywords, e.g. {@code "FROM #t1, #t2"})
+ *       is treated as part of the identifier, not as a hash comment or separator.</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -104,6 +107,23 @@ public final class SqlParser {
      */
     private static volatile String[][] multiCharSeparatorsByLen = new String[1][0];
 
+    /**
+     * Fast-reject lookup for {@link #matchMultiCharSeparator}: {@code true} at index {@code c}
+     * if some registered multi-character separator starts with the ASCII character {@code c}.
+     * Rebuilt together with {@link #multiCharSeparatorsByLen} (in
+     * {@link #rebuildMultiCharSeparatorTable()}) so it cannot drift. Most characters are not the
+     * first character of any multi-character separator, so this avoids probing every candidate
+     * bucket for every ordinary character on the parse hot path.
+     */
+    private static volatile boolean[] MULTI_CHAR_SEPARATOR_FIRST_CHAR = new boolean[128];
+
+    /**
+     * {@code true} if any registered multi-character separator starts with a non-ASCII character
+     * (which {@link #MULTI_CHAR_SEPARATOR_FIRST_CHAR} cannot represent); such characters then skip
+     * the fast-reject and fall through to the full candidate probe.
+     */
+    private static volatile boolean multiCharSeparatorNonAsciiFirstChar = false;
+
     static {
         loadDefaultSeparators();
     }
@@ -111,7 +131,8 @@ public final class SqlParser {
     /**
      * Clears the current separator set and repopulates it with the built-in default
      * separators, then rebuilds all derived lookup tables ({@link #maxSeparatorLength},
-     * {@link #ASCII_SEPARATOR} and {@link #multiCharSeparatorsByLen}). Shared by the static
+     * {@link #ASCII_SEPARATOR}, {@link #multiCharSeparatorsByLen},
+     * {@link #MULTI_CHAR_SEPARATOR_FIRST_CHAR}, and {@link #multiCharSeparatorNonAsciiFirstChar}). Shared by the static
      * initializer and {@link #resetSeparators()}.
      */
     private static void loadDefaultSeparators() {
@@ -178,7 +199,9 @@ public final class SqlParser {
         separators.add("->");
         separators.add("#>");
         separators.add("#>>");
+        separators.add("#-");
         separators.add("##");
+        separators.add("@?");
         separators.add("@@");
         separators.add("@-@");
         separators.add("@@@");
@@ -278,7 +301,24 @@ public final class SqlParser {
             table[l] = buckets[l] == null ? EMPTY_STRING_ARRAY : buckets[l].toArray(new String[0]);
         }
 
+        final boolean[] firstCharTable = new boolean[128];
+        boolean nonAsciiFirstChar = false;
+
+        for (final Object separator : separators) {
+            if (separator instanceof final String s && s.length() > 1) {
+                final char first = s.charAt(0);
+
+                if (first < 128) {
+                    firstCharTable[first] = true;
+                } else {
+                    nonAsciiFirstChar = true;
+                }
+            }
+        }
+
         multiCharSeparatorsByLen = table;
+        MULTI_CHAR_SEPARATOR_FIRST_CHAR = firstCharTable;
+        multiCharSeparatorNonAsciiFirstChar = nonAsciiFirstChar;
     }
 
     private static final Map<String, String[]> compositeWords = new ConcurrentHashMap<>(64);
@@ -376,9 +416,6 @@ public final class SqlParser {
             boolean bsEscaped = false;
 
             for (int index = 0; index < sqlLength; index++) {
-                // TODO [performance improvement]. will it improve performance if
-                // change to char array?
-                // char c = sqlCharArray[charIndex];
                 char ch = sql.charAt(index);
 
                 if (quoteChar != 0) {
@@ -427,18 +464,40 @@ public final class SqlParser {
                             break;
                         }
                     }
-                } else if (isHashCommentStart(sql, sqlLength, index)) { // for MySQL only
-                    if (!sb.isEmpty()) {
-                        words.add(sb.toString());
-                        sb.setLength(0);
-                    }
+                } else if (ch == '#') {
+                    // Classify the '#' ONCE per position. Previously the (potentially expensive,
+                    // backward-scanning) hash-prefixed-identifier check ran twice for the same index:
+                    // once via isHashCommentStart and again via isSeparator. The sub-checks below are
+                    // ordered exactly as the isHashCommentStart + isSeparator pair resolved them.
+                    if (index < sqlLength - 1 && sql.charAt(index + 1) == '{') {
+                        // iBatis/MyBatis #{...} parameter marker: '#' is part of the token.
+                        sb.append(ch);
+                    } else if (isLikelyHashPrefixedIdentifier(sql, sqlLength, index)) {
+                        // Hash-prefixed identifier (e.g. a temp table after FROM/JOIN/INTO/UPDATE/TABLE):
+                        // '#' is part of the token.
+                        sb.append(ch);
+                    } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index)) != null) {
+                        // '#'-leading operator such as #>, #>> or ##.
+                        if (!sb.isEmpty()) {
+                            words.add(sb.toString());
+                            sb.setLength(0);
+                        }
 
-                    while (++index < sqlLength) {
-                        ch = sql.charAt(index);
+                        words.add(temp);
+                        index += temp.length() - 1;
+                    } else { // MySQL hash line comment: always discarded. Skip to the end of the line.
+                        if (!sb.isEmpty()) {
+                            words.add(sb.toString());
+                            sb.setLength(0);
+                        }
 
-                        if (ch == ENTER || ch == ENTER_2) {
-                            index--; // back up so the newline is reprocessed by the outer loop as whitespace
-                            break;
+                        while (++index < sqlLength) {
+                            ch = sql.charAt(index);
+
+                            if (ch == ENTER || ch == ENTER_2) {
+                                index--; // back up so the newline is reprocessed by the outer loop as whitespace
+                                break;
+                            }
                         }
                     }
                 } else if (ch == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
@@ -486,18 +545,24 @@ public final class SqlParser {
 
                         appendSpaceAfterSkippedBlockCommentIfNeeded(sql, sqlLength, index, words);
                     }
-                } else if (isSeparator(sql, sqlLength, index, ch)) {
+                } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index)) != null) {
+                    // Multi-character operator (e.g. >=, <>, ->>, :=). Matched before the single-character
+                    // separator lookup (same effective precedence as before, when isSeparator matched it
+                    // and this branch re-matched it) so the match is computed only once.
                     if (!sb.isEmpty()) {
                         words.add(sb.toString());
                         sb.setLength(0);
                     }
 
-                    temp = matchMultiCharSeparator(sql, sqlLength, index);
+                    words.add(temp);
+                    index += temp.length() - 1;
+                } else if (ch < 128 ? ASCII_SEPARATOR[ch] : separators.contains(ch)) {
+                    if (!sb.isEmpty()) {
+                        words.add(sb.toString());
+                        sb.setLength(0);
+                    }
 
-                    if (temp != null) {
-                        words.add(temp);
-                        index += temp.length() - 1;
-                    } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
+                    if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
                         if (!words.isEmpty() && !words.get(words.size() - 1).equals(SK.SPACE)) {
                             words.add(SK.SPACE);
                         }
@@ -623,12 +688,6 @@ public final class SqlParser {
 
         if (subWords == null) {
             subWords = WORD_SPLITTER.splitToArray(word);
-
-            // Only cache genuinely composite words (>1 sub-token). Caching every distinct single
-            // word ever queried grew the map unboundedly; single-token splits are cheap to redo.
-            if (subWords.length > 1) {
-                compositeWords.put(word, subWords);
-            }
         }
 
         //noinspection IfStatementWithIdenticalBranches
@@ -1262,7 +1321,8 @@ public final class SqlParser {
      *   <li>{@code #} followed by <code>{</code> is not considered a separator (MyBatis/iBatis {@code #{...}} syntax)</li>
      *   <li>{@code #} that starts a hash-prefixed identifier (e.g. a temp table name appearing
      *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE},
-     *       with optional whitespace/comments in between) is not considered a separator</li>
+     *       with optional whitespace/comments in between, including as a later element of a
+     *       comma-separated list such as {@code "FROM #t1, #t2"}) is not considered a separator</li>
      *   <li>All registered single-character and multi-character separators are checked</li>
      * </ul>
      *
@@ -1329,6 +1389,22 @@ public final class SqlParser {
         return !isLikelyHashPrefixedIdentifier(str, len, index);
     }
 
+    /**
+     * Decides whether the {@code '#'} at {@code index} starts a hash-prefixed identifier (e.g. a
+     * SQL Server temp table) rather than a MySQL hash comment. The character following the
+     * {@code '#'} must be an identifier character, and scanning backward (skipping whitespace and
+     * comments) must reach one of the {@link #hashIdentifierContextKeywords} ({@code FROM},
+     * {@code JOIN}, {@code INTO}, {@code UPDATE}, {@code TABLE}).
+     *
+     * <p>A comma is treated as a list continuation: for {@code "FROM #t1, #t2"} the backward walk
+     * skips the comma plus the single list element before it (a possibly qualified, quoted or
+     * '#'-prefixed name with an optional alias word) and re-checks from there, so every element of
+     * a comma-separated list governed by a context keyword is recognized. Anything else anchors
+     * the decision: a context keyword means identifier, any other word or character (e.g.
+     * {@code SELECT}, {@code '('}, {@code '='}) means comment, so {@code "SELECT a, #comment"}
+     * remains a MySQL comment. Ambiguous shapes deliberately fall back to the comment
+     * classification.</p>
+     */
     private static boolean isLikelyHashPrefixedIdentifier(final String str, final int len, final int index) {
         if (index >= len - 1) {
             return false;
@@ -1342,26 +1418,138 @@ public final class SqlParser {
 
         int left = skipBackwardWhitespaceAndComments(str, index - 1);
 
-        if (left < 0) {
-            return false;
+        // Walk backward over ","-separated list elements until something other than a list
+        // continuation anchors the decision. Only the first skip above is line-comment-aware;
+        // the per-element steps skip whitespace and block comments only (a line comment between
+        // list elements conservatively yields the comment classification, as before this walk
+        // existed). Each iteration consumes at least the comma (progress is checked), so the
+        // loop terminates.
+        while (left >= 0) {
+            final char ch = str.charAt(left);
+
+            if (ch == ',') {
+                final int beforeComma = skipBackwardWhitespaceAndBlockComments(str, left - 1);
+                final int beforeElement = skipBackwardListElement(str, beforeComma);
+
+                if (beforeElement >= beforeComma) {
+                    // No recognizable list element before the ',' -> not an identifier list.
+                    return false;
+                }
+
+                left = skipBackwardWhitespaceAndBlockComments(str, beforeElement);
+                continue;
+            }
+
+            if (!isIdentifierChar(ch)) {
+                return false;
+            }
+
+            int wordStart = left;
+
+            while (wordStart >= 0 && isIdentifierChar(str.charAt(wordStart))) {
+                wordStart--;
+            }
+
+            final String prevWord = str.substring(wordStart + 1, left + 1).toUpperCase(Locale.ROOT);
+            return hashIdentifierContextKeywords.contains(prevWord);
         }
 
-        int end = left;
+        return false;
+    }
 
-        while (left >= 0 && isIdentifierChar(str.charAt(left))) {
-            left--;
+    /**
+     * Consumes one comma-separated list element backward, starting at {@code start} (which must
+     * already be positioned on a non-whitespace character), for the list walk in
+     * {@link #isLikelyHashPrefixedIdentifier}. An element is at most two whitespace-separated
+     * units (a name plus an optional trailing alias, with a free {@code AS} between them) where
+     * each unit is a dot-qualified chain of segments and each segment is an identifier word
+     * (optionally '#'-prefixed) or a quoted/bracket-quoted identifier.
+     *
+     * <p>Returns the index of the first character before the consumed element (possibly
+     * {@code -1}), or {@code start} unchanged if no element was recognized there. A hash-identifier
+     * context keyword is never consumed: it is left in place for the caller to classify, so
+     * {@code "FROM t1, #t2"} stops in front of {@code FROM} after consuming {@code t1}.</p>
+     */
+    private static int skipBackwardListElement(final String str, final int start) {
+        int left = start;
+        int units = 0;
+
+        outer: while (left >= 0 && units < 2) {
+            final int unitStart = left;
+
+            // Consume one unit: dot-joined segments, scanned backward.
+            while (true) {
+                final char ch = str.charAt(left);
+
+                if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == ']') {
+                    // Quoted / bracket-quoted identifier segment: skip back to the opening quote.
+                    // (Escaped/doubled closing quotes are not un-escaped here; a mismatch makes the
+                    // walk stop early, which conservatively yields the comment classification.)
+                    final char openChar = ch == ']' ? '[' : ch;
+                    int quoteStart = left - 1;
+
+                    while (quoteStart >= 0 && str.charAt(quoteStart) != openChar) {
+                        quoteStart--;
+                    }
+
+                    if (quoteStart < 0) {
+                        break outer; // unbalanced quote -> not a recognizable element
+                    }
+
+                    left = quoteStart - 1;
+                } else if (isIdentifierChar(ch)) {
+                    int wordStart = left;
+
+                    while (wordStart >= 0 && isIdentifierChar(str.charAt(wordStart))) {
+                        wordStart--;
+                    }
+
+                    final String word = str.substring(wordStart + 1, left + 1).toUpperCase(Locale.ROOT);
+
+                    if (hashIdentifierContextKeywords.contains(word)) {
+                        break outer; // the anchor keyword; leave it for the caller to classify
+                    }
+
+                    if ("AS".equals(word) && left == unitStart) {
+                        // "name AS alias": the AS keyword does not count against the unit budget.
+                        left = skipBackwardWhitespaceAndBlockComments(str, wordStart);
+                        continue outer;
+                    }
+
+                    left = wordStart;
+
+                    if (left >= 0 && str.charAt(left) == '#') {
+                        left--; // '#'-prefixed segment: the '#' belongs to the identifier
+                    }
+                } else {
+                    break outer; // e.g. '(' or '=' -> not part of a list element
+                }
+
+                if (left >= 0 && str.charAt(left) == '.') {
+                    left--; // dot-qualified name: the qualifier segment belongs to the same unit
+                    continue;
+                }
+
+                break; // unit complete
+            }
+
+            units++;
+
+            final int beforeGap = skipBackwardWhitespaceAndBlockComments(str, left);
+
+            if (beforeGap < 0 || str.charAt(beforeGap) == ',') {
+                break; // element complete (next list continuation or start of input reached)
+            }
+
+            left = beforeGap; // a second unit (the name before an alias word) may follow
         }
 
-        if (end < left + 1) {
-            return false;
-        }
-
-        final String prevWord = str.substring(left + 1, end + 1).toUpperCase(Locale.ROOT);
-        return hashIdentifierContextKeywords.contains(prevWord);
+        return left;
     }
 
     private static int skipBackwardWhitespaceAndComments(final String str, int left) {
         boolean skipped;
+        int lastLineScanPosition = Integer.MIN_VALUE;
 
         do {
             skipped = false;
@@ -1373,12 +1561,20 @@ public final class SqlParser {
                 skipped = true;
             }
 
-            final int lineStart = lastLineStart(str, left);
-            final int commentIndex = lastLineCommentStart(str, lineStart, left);
+            // The line-comment scan below is the expensive part (it re-walks the current line from
+            // its start). It is a pure function of (str, left), so re-running it at an unchanged
+            // position cannot find anything new: only run it when `left` moved since the last scan.
+            // (For left < 0 it trivially finds nothing, so it is skipped as well.)
+            if (left >= 0 && left != lastLineScanPosition) {
+                lastLineScanPosition = left;
 
-            if (commentIndex >= 0) {
-                left = commentIndex - 1;
-                skipped = true;
+                final int lineStart = lastLineStart(str, left);
+                final int commentIndex = lastLineCommentStart(str, lineStart, left);
+
+                if (commentIndex >= 0) {
+                    left = commentIndex - 1;
+                    skipped = true;
+                }
             }
         } while (skipped);
 
@@ -1540,6 +1736,15 @@ public final class SqlParser {
     }
 
     private static String matchMultiCharSeparator(final String str, final int len, final int index) {
+        if (index < len) {
+            final char first = str.charAt(index);
+
+            // Fast reject: no registered multi-character separator starts with this character.
+            if (first < 128 ? !MULTI_CHAR_SEPARATOR_FIRST_CHAR[first] : !multiCharSeparatorNonAsciiFirstChar) {
+                return null;
+            }
+        }
+
         final String[][] byLen = multiCharSeparatorsByLen;
         // Same cap as before: longest registered separator vs. remaining input length.
         int maxLen = Math.min(maxSeparatorLength.get(), len - index);
@@ -1816,7 +2021,8 @@ public final class SqlParser {
      * literals and SQL comments):
      * </p>
      * <ul>
-     *   <li>an {@code UPDATE}, {@code DELETE} or {@code MERGE} keyword; or</li>
+     *   <li>a top-level {@code UPDATE}, {@code DELETE} or {@code MERGE} keyword (matched only at
+     *       statement-start positions, so e.g. {@code SELECT ... FOR UPDATE} is still accepted); or</li>
      *   <li>an upsert clause that can modify existing rows, namely {@code INSERT OR REPLACE},
      *       {@code ON DUPLICATE KEY UPDATE} (MySQL) or {@code ON CONFLICT ... DO UPDATE}
      *       (PostgreSQL/SQLite). These clauses are recognized outside quoted literals,

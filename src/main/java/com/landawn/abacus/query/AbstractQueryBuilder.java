@@ -138,8 +138,6 @@ import com.landawn.abacus.util.stream.Stream;
 @SuppressWarnings("deprecation")
 public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<This>> { // NOSONAR
 
-    // TODO performance goal: 80% cases (or maybe SQL.length < 1024?) can be composed in 0.1 millisecond. 0.01 millisecond will be fantastic if possible.
-
     protected static final Logger logger = LoggerFactory.getLogger(AbstractQueryBuilder.class);
 
     /** Constant for the {@code ALL} select modifier (the SQL default; opposite of {@code DISTINCT}). */
@@ -315,8 +313,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * product-specific expressions that are not recognized (e.g. a vendor function) do not match and are
      * emitted verbatim.
      */
-    private static final Pattern GENERIC_LIMIT_EXPRESSION_PATTERN = Pattern
-            .compile("LIMIT\\s+(\\d+|\\?|:\\w+|#\\{[^}]+\\})(?:\\s+OFFSET\\s+(\\d+|\\?|:\\w+|#\\{[^}]+\\}))?", Pattern.CASE_INSENSITIVE);
+    private static final String LIMIT_SLOT_PATTERN = "(\\d+|\\?|:\\w+|#\\{[^}]+\\})";
+    private static final Pattern GENERIC_LIMIT_EXPRESSION_PATTERN = Pattern.compile(
+            "LIMIT\\s+" + LIMIT_SLOT_PATTERN + "(?:\\s+OFFSET\\s+" + LIMIT_SLOT_PATTERN + "|\\s*,\\s*" + LIMIT_SLOT_PATTERN + ")?", Pattern.CASE_INSENSITIVE);
 
     /** Char array for the "AND" keyword. */
     protected static final char[] _AND = SK.AND.toCharArray();
@@ -508,11 +507,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final int activeBuilderCount = activeStringBuilderCounter.incrementAndGet();
 
         if (activeBuilderCount > 1024) {
-            logger.error("Too many ({}) StringBuilder instances are created in AbstractQueryBuilder. "
-                    + "The method build() must be called to release resources and close the builder", activeBuilderCount);
+            logger.error("Too many active query builders ({}). Call build() on each builder to release its resources", activeBuilderCount);
         } else if (activeBuilderCount > 512 && logger.isWarnEnabled()) {
-            logger.warn("{} active StringBuilder instances in AbstractQueryBuilder. The method build() must be called to release resources",
-                    activeBuilderCount);
+            logger.warn("{} active query builders. Call build() on each builder to release its resources", activeBuilderCount);
         }
 
         this.sqlDialect = sqlDialect == null ? SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).sqlPolicy(SqlPolicy.RAW_SQL).build() : sqlDialect;
@@ -798,8 +795,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     subEntityClass = (propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type).javaType();
 
-                    subEntityPropNameList = N.newLinkedHashSet(Beans.getPropNameList(subEntityClass));
-                    subEntityPropNameList.removeAll(getSubEntityPropNames(subEntityClass));
+                    subEntityPropNameList = N.newLinkedHashSet();
+
+                    final Table subTableAnno = subEntityClass.getAnnotation(Table.class);
+                    final Set<String> subColumnFields = subTableAnno == null ? N.emptySet() : N.toSet(subTableAnno.columnFields());
+                    final Set<String> subNonColumnFields = subTableAnno == null ? N.emptySet() : N.toSet(subTableAnno.nonColumnFields());
+
+                    for (final PropInfo subPropInfo : ParserUtil.getBeanInfo(subEntityClass).propInfoList) {
+                        if (!subPropInfo.isSubEntity && !QueryUtil.isNonColumn(subColumnFields, subNonColumnFields, subPropInfo)) {
+                            subEntityPropNameList.add(subPropInfo.name);
+                        }
+                    }
 
                     for (final String pn : subEntityPropNameList) {
                         val[0].add(Strings.concat(subEntityPropName, SK.PERIOD, pn));
@@ -1088,7 +1094,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private static void checkSetOperationSubQuery(final String query, final String operationName) {
         checkSqlFragmentNotBlank(query, "query");
 
-        if (!isSubQuery(query)) {
+        if (!isSubQuery(query) || !SqlParser.isReadOnlyQuery(query)) {
             throw new IllegalArgumentException("The query argument to " + operationName
                     + " must be a complete SELECT sub-query (starting with 'SELECT', or containing 'SELECT ... FROM'), but was: \"" + query
                     + "\". To start a new SELECT from a column list, use " + operationName + "(String...) or " + operationName
@@ -1336,7 +1342,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p>The modifier applies only to the current SELECT segment: starting a new set-operation
      * segment ({@code union}, {@code unionAll}, {@code intersect}, {@code except}, {@code minus})
-     * clears it, so each segment can carry its own modifier.</p>
+     * clears it, so each segment can carry its own modifier. A modifier staged after a set operation
+     * that appended a complete sub-query (e.g. {@code union("SELECT ...")}) has no SELECT of its own
+     * to attach to, and {@code build()} fails with an {@link IllegalStateException} rather than
+     * dropping it silently.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3477,9 +3486,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             // The verbatim literal may itself carry an OFFSET portion (e.g. "LIMIT ? OFFSET ?"); consume the
             // OFFSET slot too so a follow-up offset(...) call is rejected instead of silently emitting a
-            // second OFFSET clause. Limit's normalization upper-cases the OFFSET keyword only outside
-            // placeholders, so a case-sensitive check does not misfire on ":offset" / "#{ offset }".
-            if (limit.getLiteral().contains(SK.OFFSET)) {
+            // second OFFSET clause. Matched as a whole, case-sensitive token: Limit's normalization
+            // upper-cases the OFFSET keyword only outside placeholders, so ":offset" / "#{ offset }" do not
+            // misfire, and the whole-token match (unlike a raw substring test) keeps a placeholder name such
+            // as ":rowOFFSETCount" from spuriously consuming the slot.
+            if (SqlParser.indexOfWord(limit.getLiteral(), SK.OFFSET, 0, true) >= 0) {
                 checkIfAlreadyCalled(SK.OFFSET);
             }
 
@@ -3492,7 +3503,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Attempts to re-render a generic {@code LIMIT count [OFFSET offset]} expression in the dialect's
+     * Attempts to re-render a generic {@code LIMIT count [OFFSET offset]} or {@code LIMIT offset, count}
+     * expression in the dialect's
      * FETCH pagination syntax, consuming the same clause slots as {@link #limit(int)} /
      * {@link #limit(int, int)}. Returns {@code false} without emitting anything when the expression
      * does not match {@link #GENERIC_LIMIT_EXPRESSION_PATTERN}, in which case the caller emits it
@@ -3508,8 +3520,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return false;
         }
 
-        final String countToken = matcher.group(1);
-        final String offsetToken = matcher.group(2);
+        final String commaCountToken = matcher.group(3);
+        final String countToken = commaCountToken == null ? matcher.group(1) : commaCountToken;
+        final String offsetToken = commaCountToken == null ? matcher.group(2) : matcher.group(1);
 
         checkIfAlreadyCalled(SK.LIMIT);
 
@@ -3677,6 +3690,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * is rendered with each member
      * parenthesized individually and joined by the junction operator, with no surrounding parentheses.</p>
      *
+     * <p><b>&#9888;&#65039;</b> A {@link Criteria}'s select modifier ({@code DISTINCT} etc.) is <i>not</i> applied by this
+     * method: it belongs to the SELECT list, which has already been rendered by the time a condition is
+     * appended. It is exposed via {@link Criteria#getSelectModifier()} for callers (such as abacus-jdbc)
+     * that render the SELECT themselves.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -3701,7 +3719,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (cond instanceof final Criteria criteria) {
             final Collection<Join> joins = criteria.getJoins();
 
-            // appendPreselect(criteria.distinct());
+            // The criteria's select modifier (criteria.getSelectModifier(), e.g. DISTINCT) is intentionally
+            // not rendered here -- the SELECT list is already emitted; callers such as abacus-jdbc read it
+            // via Criteria.getSelectModifier() and apply it themselves.
 
             if (N.notEmpty(joins)) {
                 for (final Join join : joins) {
@@ -3866,6 +3886,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param cond the condition to append
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code cond} is {@code null}
+     * @throws IllegalStateException if {@code condition} is {@code true} and a clause emitted by {@code cond} has already been set
      */
     @Beta
     public This appendIf(final boolean condition, final Condition cond) {
@@ -3973,7 +3994,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a UNION clause with another SQL query.
-     * <p>The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4004,9 +4025,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
      *
-     * @param query the complete {@code SELECT} sub-query to union (must not be {@code null}, empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM})
+     * @param query the complete read-only {@code SELECT} sub-query to union
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
      */
     public This union(final String query) {
         checkSetOperationSubQuery(query, "union");
@@ -4028,7 +4049,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
      *
-     * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
+     * <p><b>&#9888;&#65039; Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
      * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
      * {@code FROM} keyword), it is treated as a complete sub-query and
      * appended verbatim after the {@code UNION} keyword (no following {@code from(...)} is required).
@@ -4039,10 +4060,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
+     *         or is a single sub-query-like argument that is not read-only
      */
     public This union(final String... propOrColumnNames) {
-        return appendSetOperation(_SPACE_UNION_SPACE, propOrColumnNames);
+        return appendSetOperation(_SPACE_UNION_SPACE, "union", propOrColumnNames);
     }
 
     /**
@@ -4070,7 +4092,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a UNION ALL clause with another SQL query.
-     * <p>The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4101,9 +4123,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
      *
-     * @param query the complete {@code SELECT} sub-query to union all (must not be {@code null}, empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM})
+     * @param query the complete read-only {@code SELECT} sub-query to union all
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
      */
     public This unionAll(final String query) {
         checkSetOperationSubQuery(query, "unionAll");
@@ -4125,7 +4147,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
      *
-     * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
+     * <p><b>&#9888;&#65039; Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
      * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
      * {@code FROM} keyword), it is treated as a complete sub-query and
      * appended verbatim after the {@code UNION ALL} keyword (no following {@code from(...)} is required).
@@ -4136,10 +4158,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
+     *         or is a single sub-query-like argument that is not read-only
      */
     public This unionAll(final String... propOrColumnNames) {
-        return appendSetOperation(_SPACE_UNION_ALL_SPACE, propOrColumnNames);
+        return appendSetOperation(_SPACE_UNION_ALL_SPACE, "unionAll", propOrColumnNames);
     }
 
     /**
@@ -4167,7 +4190,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an INTERSECT clause with another SQL query.
-     * <p>The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4198,9 +4221,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
      * }</pre>
      *
-     * @param query the complete {@code SELECT} sub-query to intersect (must not be {@code null}, empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM})
+     * @param query the complete read-only {@code SELECT} sub-query to intersect
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
      */
     public This intersect(final String query) {
         checkSetOperationSubQuery(query, "intersect");
@@ -4222,7 +4245,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
      * }</pre>
      *
-     * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
+     * <p><b>&#9888;&#65039; Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
      * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
      * {@code FROM} keyword), it is treated as a complete sub-query and
      * appended verbatim after the {@code INTERSECT} keyword (no following {@code from(...)} is required).
@@ -4233,10 +4256,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
+     *         or is a single sub-query-like argument that is not read-only
      */
     public This intersect(final String... propOrColumnNames) {
-        return appendSetOperation(_SPACE_INTERSECT_SPACE, propOrColumnNames);
+        return appendSetOperation(_SPACE_INTERSECT_SPACE, "intersect", propOrColumnNames);
     }
 
     /**
@@ -4264,7 +4288,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an EXCEPT clause with another SQL query.
-     * <p>The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4295,9 +4319,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * @param query the complete {@code SELECT} sub-query to except (must not be {@code null}, empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM})
+     * @param query the complete read-only {@code SELECT} sub-query to except
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
      */
     public This except(final String query) {
         checkSetOperationSubQuery(query, "except");
@@ -4319,7 +4343,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
+     * <p><b>&#9888;&#65039; Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
      * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
      * {@code FROM} keyword), it is treated as a complete sub-query and
      * appended verbatim after the {@code EXCEPT} keyword (no following {@code from(...)} is required).
@@ -4330,10 +4354,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
+     *         or is a single sub-query-like argument that is not read-only
      */
     public This except(final String... propOrColumnNames) {
-        return appendSetOperation(_SPACE_EXCEPT_SPACE, propOrColumnNames);
+        return appendSetOperation(_SPACE_EXCEPT_SPACE, "except", propOrColumnNames);
     }
 
     /**
@@ -4362,7 +4387,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a MINUS clause with another SQL query (Oracle syntax).
      * MINUS is Oracle's equivalent to EXCEPT - returns rows from the first query that don't appear in the second.
-     * <p>The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4393,9 +4418,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * @param query the complete {@code SELECT} sub-query to minus (must not be {@code null}, empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM})
+     * @param query the complete read-only {@code SELECT} sub-query to subtract with MINUS
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
      */
     public This minus(final String query) {
         checkSetOperationSubQuery(query, "minus");
@@ -4417,7 +4442,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * <p><b>Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
+     * <p><b>&#9888;&#65039; Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
      * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
      * {@code FROM} keyword), it is treated as a complete sub-query and
      * appended verbatim after the {@code MINUS} keyword (no following {@code from(...)} is required).
@@ -4428,10 +4453,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
+     *         or is a single sub-query-like argument that is not read-only
      */
     public This minus(final String... propOrColumnNames) {
-        return appendSetOperation(_SPACE_EXCEPT_MINUS_SPACE, propOrColumnNames);
+        return appendSetOperation(_SPACE_EXCEPT_MINUS_SPACE, "minus", propOrColumnNames);
     }
 
     /**
@@ -4464,17 +4490,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * itself a sub-query — appends it directly; otherwise the columns are emitted later by {@code from(...)}.
      *
      * @param keyword the set-operation keyword token (e.g. {@link #_SPACE_UNION_SPACE})
+     * @param operationName the public set-operation method name used in validation messages
      * @param propOrColumnNames the columns of the following SELECT, or a single sub-query string
      * @return this builder instance for method chaining
      */
     @SuppressWarnings("unchecked")
-    private This appendSetOperation(final char[] keyword, final String... propOrColumnNames) {
+    private This appendSetOperation(final char[] keyword, final String operationName, final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
 
         _op = OperationType.QUERY;
 
         _propOrColumnNames = new ArrayList<>(Array.asList(propOrColumnNames));
         _propOrColumnNameAliases = null;
+        _multiSelects = null;
 
         calledOpSet.clear();
         _hasFromBeenSet = false;
@@ -4486,6 +4514,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         // A single sub-query argument is appended directly; otherwise columns are built in from(...).
         if (isSubQuery(propOrColumnNames)) {
+            checkSetOperationSubQuery(propOrColumnNames[0], operationName);
             _sb.append(propOrColumnNames[0]);
 
             _propOrColumnNames = null;
@@ -4511,6 +4540,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _propOrColumnNames = new ArrayList<>(propOrColumnNames);
         _propOrColumnNameAliases = null;
+        _multiSelects = null;
 
         calledOpSet.clear();
         _hasFromBeenSet = false;
@@ -4530,7 +4560,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private This appendSetOperation(final char[] keyword, final This sqlBuilder, final String operationName) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
         N.checkArgument(sqlBuilder != this, "Cannot apply " + operationName + " with the same SqlBuilder instance");
-
         final Map<String, Integer> parentOccurrences = N.isEmpty(_namedParameterNameOccurrences) ? Collections.emptyMap()
                 : new HashMap<>(_namedParameterNameOccurrences);
 
@@ -4550,7 +4579,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             _parameters.addAll(sp.parameters());
         }
 
-        return appendSetOperation(keyword, sql);
+        return appendSetOperation(keyword, operationName, sql);
     }
 
     private String uniquifySetOperationNamedParameters(final String sql, final Map<String, Integer> childOccurrences,
@@ -4625,7 +4654,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 continue;
             }
 
-            if (sql.charAt(i) != ':' || i + 1 >= len || !isSqlParameterNameChar(sql.charAt(i + 1))) {
+            if (sql.charAt(i) != ':' || i + 1 >= len || !isSqlParameterNameChar(sql.charAt(i + 1))
+                    || (i > 0 && (sql.charAt(i - 1) == ':' || isSqlParameterNameChar(sql.charAt(i - 1))))) {
                 continue;
             }
 
@@ -4708,6 +4738,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 // quoted identifiers ("..." / `...`) do not use backslash escaping.
                 if (ch == '\'' && current == '\\' && i + 1 < len) {
                     i++;
+                }
+            }
+
+            return len;
+        }
+
+        if (ch == '[') {
+            for (int i = start + 1; i < len; i++) {
+                if (sql.charAt(i) == ']') {
+                    if (i + 1 < len && sql.charAt(i + 1) == ']') {
+                        i++;
+                    } else {
+                        return i + 1;
+                    }
                 }
             }
 
@@ -4915,7 +4959,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Map<String, Object> values = new HashMap<>();
+     * Map<String, Object> values = new LinkedHashMap<>();
      * values.put("firstName", "John");
      * values.put("lastName", "Doe");
      * String sql = PSC.update("users")
@@ -5236,7 +5280,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @return an SP (SQL-Parameters) pair containing the SQL string and parameter list
-     * @throws IllegalStateException if this method is called after the builder has already been closed by a prior call to {@code build()}
+     * @throws IllegalStateException if this method is called after the builder has already been closed by a prior
+     *         call to {@code build()}, or if the statement is incomplete (e.g. a query segment staged columns or a
+     *         select modifier that no {@code from(...)} rendered, an INSERT has no target table, or an UPDATE has no
+     *         SET columns)
      */
     public SP build() {
         if (_sb == null) {
@@ -5257,11 +5304,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         if (logger.isDebugEnabled()) {
-            if (N.isEmpty(_parameters)) {
-                logger.debug("Built SQL: {}", sql);
-            } else {
-                logger.debug("Built SQL: {} Parameters: {}", sql, _parameters);
-            }
+            logger.debug("Built SQL metadata. Operation: {}, policy: {}, length: {}, parameter count: {}", _op, _sqlPolicy, sql.length(), _parameters.size());
         }
 
         return new SP(sql, ImmutableList.wrap(_parameters));
@@ -5344,7 +5387,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * PSC.deleteFrom("account")
      *    .where(Filters.equal("status", "DELETED"))
      *    .accept((sql, params) -> {
-     *        logger.info("Executing: {} with params: {}", sql, params);
+     *        logger.info("Executing SQL with {} parameters", params.size());
      *        jdbcTemplate.update(sql, params.toArray());
      *    });
      * }</pre>
@@ -5391,25 +5434,55 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                     When {@code false}, the SET list is left to the caller (typically
      *                     {@link #set(Collection)}). Has no effect for non-UPDATE operations.
      * @throws IllegalStateException if the operation is {@code QUERY} but {@code from(...)} has not
-     *         been called and this builder is not in condition-only mode
+     *         been called and this builder is not in condition-only mode; if a query segment started
+     *         by a set operation or {@code INSERT ... SELECT} staged columns (or a select modifier)
+     *         that no {@code from(...)} ever rendered; or if {@code setForUpdate} is {@code true} for
+     *         an UPDATE with no columns staged and no prior {@code set(...)} call
      */
     protected void init(final boolean setForUpdate) {
-        // Note: any change, please take a look at: parse(final Class<?> entityClass, final Condition cond) first.
+        // Note: any change, please take a look at: Dsl.renderCondition(final Condition cond, final Class<?> entityClass) first.
+
+        if (_op == OperationType.ADD && Strings.isEmpty(_tableName)) {
+            throw new IllegalStateException("into() must be called to specify the target table before building an INSERT statement");
+        }
 
         if (!_sb.isEmpty()) {
-            // A set operation (union/intersect/...) stages new columns and resets _hasFromBeenSet, and an
-            // INSERT ... SELECT started by into() likewise still needs its FROM. If the follow-up from(...)
-            // never happens, the staged columns would otherwise be dropped silently here, emitting truncated
-            // SQL such as "SELECT id FROM t UNION ".
-            if (_op == OperationType.QUERY && !_hasFromBeenSet && !_isForConditionOnly && N.notEmpty(_propOrColumnNames)) {
-                throw new IllegalStateException("from() must be called to complete the current query segment "
-                        + "(a set operation or INSERT ... SELECT was started but no from(...) followed)");
+            if (_op == OperationType.UPDATE && setForUpdate && !_setListStarted) {
+                throw new IllegalStateException("set() must be called to specify the columns to update before building an UPDATE statement");
+            }
+
+            if (_op == OperationType.QUERY && !_hasFromBeenSet && !_isForConditionOnly) {
+                // A set operation (union/intersect/...) stages new columns and resets _hasFromBeenSet, and an
+                // INSERT ... SELECT started by into() likewise still needs its FROM. If the follow-up from(...)
+                // never happens, the staged columns would otherwise be dropped silently here, emitting truncated
+                // SQL such as "SELECT id FROM t UNION " or "INSERT INTO account (first_name)". The columns may
+                // be staged in any of the three select forms: plain names, name-alias map, or multi-selects.
+                if (N.notEmpty(_propOrColumnNames) || N.notEmpty(_propOrColumnNameAliases) || N.notEmpty(_multiSelects)) {
+                    throw new IllegalStateException("from() must be called to complete the current query segment "
+                            + "(a set operation or INSERT ... SELECT was started but no from(...) followed)");
+                }
+
+                // A select modifier staged after a verbatim set-operation sub-query (e.g. union("SELECT ..."))
+                // has no pending SELECT to attach to (_selectKeywordEndIdx < 0) and no from(...) can legally
+                // follow, so it would be dropped silently.
+                if (Strings.isNotEmpty(_selectModifier) && _selectKeywordEndIdx < 0) {
+                    throw new IllegalStateException("A select modifier ('" + _selectModifier
+                            + "') was set but there is no SELECT segment to apply it to (the preceding set operation appended a complete sub-query)");
+                }
             }
 
             return;
         }
 
         if (_op == OperationType.UPDATE) {
+            // Finalizing an UPDATE (setForUpdate == true: called from build()/where()/append(...)) with no
+            // columns staged by update(Class, ...) and no prior set(...) call would emit an empty SET list
+            // ("UPDATE t SET  WHERE ..."), so fail fast instead. set(...) itself initializes with
+            // setForUpdate == false and then writes the assignments.
+            if (setForUpdate && !_setListStarted && N.isEmpty(_propOrColumnNames)) {
+                throw new IllegalStateException("set() must be called to specify the columns to update before building an UPDATE statement");
+            }
+
             _sb.append(_UPDATE);
 
             _sb.append(_SPACE);
@@ -5803,8 +5876,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             throw new IllegalArgumentException("SQL comment token is not allowed in column expression: " + expr);
         }
 
-        // TODO performance improvement.
-
         if (expr.length() < 16) {
             final boolean matched = QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher(expr).matches();
 
@@ -5891,6 +5962,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 continue;
             }
 
+            if (ch == '[') {
+                for (i++; i < len; i++) {
+                    if (expr.charAt(i) == ']') {
+                        if (i < len - 1 && expr.charAt(i + 1) == ']') {
+                            i++;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+
+                continue;
+            }
+
             if (ch == '-' && i < len - 1 && expr.charAt(i + 1) == '-') {
                 return true;
             }
@@ -5903,8 +5988,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 if (i < len - 1) {
                     final char nextChar = expr.charAt(i + 1);
 
-                    if (nextChar == '>' || nextChar == '#' || nextChar == '{') {
-                        i++; // consume both chars of the ##, #>, or #{ token as a unit
+                    if (nextChar == '>' || nextChar == '#' || nextChar == '{' || nextChar == '-') {
+                        i++; // consume both chars of the ##, #>, #{, or #- token as a unit
                         continue;
                     }
                 }
@@ -6271,15 +6356,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *   <li>If it is a {@link Map}, every other non-null element must also be a {@code Map} with the
      *       exact same key set; each row is defensively copied and no property is removed.</li>
      *   <li>If it is a bean, every other non-null element must have the same insertable property set;
-     *       a property is removed from every row only when it is {@code null} (or a zero/default ID
-     *       value) across <i>all</i> entities.</li>
+     *       a property is removed from every row only when it is {@code null} across all entities. A
+     *       default-valued ID column is removed only when every row has a completely default ID; for
+     *       composite IDs, assigning any component retains every non-null component column.</li>
      * </ul>
      *
      * @param propsList the collection of entities to convert
      * @return a list of property-value maps suitable for batch insert
-     * @throws IllegalArgumentException if every element is {@code null}, if the first non-null element
-     *         is an empty {@code Map}, if elements have mixed types (some {@code Map}, some bean), or if
-     *         the non-null elements do not all share the same key set / insertable property set
+     * @throws IllegalArgumentException if every element is {@code null}; if a map is empty, has a non-string
+     *         or blank key, or does not share the same key set as the other map rows; if elements have mixed
+     *         types (some {@code Map}, some bean); if bean rows do not share the same insertable property set;
+     *         or if no bean column remains after all-null/default columns are removed
      */
     protected static List<Map<String, Object>> toInsertPropsList(final Collection<?> propsList) {
         final Optional<?> first = N.firstNonNull(propsList);
@@ -6296,6 +6383,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 N.checkArgument(props instanceof Map, "All elements in propsList must be Map when the first non-null element is Map");
                 final Map<String, Object> propsMap = (Map<String, Object>) props;
+
+                for (final Object propName : propsMap.keySet()) {
+                    N.checkArgument(propName instanceof String, "All keys in batch INSERT maps must be String: " + propName);
+                    checkSqlFragmentNotBlank((String) propName, "Batch INSERT map key");
+                }
 
                 if (expectedKeys == null) {
                     N.checkArgument(!propsMap.isEmpty(), "Map at first non-null position in propsList must not be empty");
@@ -6345,11 +6437,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         final ImmutableList<String> idPropNameList = firstEntityBeanInfo.idPropNameList;
+        final boolean removeDefaultIdValues = N.size(idPropNameList) <= 1
+                || Stream.of(newPropsList).allMatch(map -> Stream.of(idPropNameList).allMatch(idPropName -> isDefaultIdPropValue(map.get(idPropName))));
 
         final List<String> nullPropToRemove = Stream.of(propNames).filter(propName -> Stream.of(newPropsList).allMatch(map -> {
             final Object propValue = map.get(propName);
 
-            return propValue == null || (!idPropNameList.isEmpty() && idPropNameList.contains(propName) && isDefaultIdPropValue(propValue));
+            return propValue == null
+                    || (removeDefaultIdValues && !idPropNameList.isEmpty() && idPropNameList.contains(propName) && isDefaultIdPropValue(propValue));
         })).toList();
 
         if (N.notEmpty(nullPropToRemove)) {
@@ -6358,11 +6453,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
         }
 
+        N.checkArgument(!newPropsList.get(0).isEmpty(), "No insertable values remain after removing columns that are null/default in every batch row");
+
         return newPropsList;
     }
 
     /**
-     * Validates that the multi-select list is not empty and that each selection has a non-null entity class.
+     * Validates that the multi-select list is not empty and that each selection has a non-null entity class,
+     * valid selected-property fragments, and a safe result alias.
      *
      * @param multiSelects the list of selections to validate
      */
@@ -6372,6 +6470,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         for (final Selection selection : multiSelects) {
             N.checkArgNotNull(selection, "Selection can't be null in 'multiSelects'");
             N.checkArgNotNull(selection.entityClass(), "Class can't be null in 'multiSelects'");
+
+            if (N.notEmpty(selection.selectPropNames())) {
+                checkSqlFragmentsNotBlank(selection.selectPropNames(), "selection.selectPropNames");
+            }
+
+            if (Strings.isNotEmpty(selection.classAlias())) {
+                Dsl.validateColumnAlias(selection.entityClass().getSimpleName(), selection.classAlias());
+            }
         }
     }
 
@@ -6483,7 +6589,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Database product family resolved once from {@link SqlDialect.ProductInfo}. Drives the
      * product-specific parts of SQL generation: the pagination syntax emitted by {@link #limit(int)},
      * {@link #limit(int, int)} and {@link #offset(int)}, and the identifier quote used when the
-     * dialect leaves {@link SqlDialect#identifierQuote()} unset.
+     * dialect leaves {@code SqlDialect.identifierQuote()} unset.
      */
     enum DialectFamily {
         /** Oracle Database: pagination via {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY}. */

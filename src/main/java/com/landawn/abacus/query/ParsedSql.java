@@ -16,7 +16,6 @@ package com.landawn.abacus.query;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import com.landawn.abacus.pool.KeyedObjectPool;
@@ -99,12 +98,12 @@ public final class ParsedSql {
 
     private final int parameterCount;
 
-    /** Cached hash code. This object is immutable, so {@code Objects.hash(sql)} is computed once. */
+    /** Cached hash code. This object is immutable, so {@code sql.hashCode()} is computed once. */
     private final int hashCode;
 
     private ParsedSql(final String sql) {
         this.sql = sql.trim();
-        hashCode = Objects.hash(this.sql);
+        hashCode = this.sql.hashCode();
 
         final List<String> words = SqlParser.parse(this.sql);
         final String firstOpWord = resolveFirstOpWord(words);
@@ -152,7 +151,7 @@ public final class ParsedSql {
 
                             if (rightBracketIndex < 0) {
                                 throw new IllegalArgumentException(
-                                        "Malformed iBatis/MyBatis parameter: missing closing '}' for token starting with '#{' in SQL: " + sql);
+                                        "Malformed iBatis/MyBatis parameter: missing closing '}' for token starting at character offset " + i);
                             }
 
                             if (rightBracketIndex > 2) {
@@ -290,27 +289,31 @@ public final class ParsedSql {
         }
 
         final String normalizedSql = sql.trim();
-        ParsedSql result = null;
         PoolableAdapter<ParsedSql> w = pool.get(normalizedSql);
+        ParsedSql result = w == null ? null : w.value();
 
-        if (w != null) {
-            result = w.value();
+        if (result != null) {
+            return result;
         }
 
-        if (result == null) {
-            synchronized (pool) {
-                w = pool.get(normalizedSql);
-                if (w != null) {
-                    result = w.value();
-                }
-                if (result == null) {
-                    result = new ParsedSql(normalizedSql);
-                    pool.put(normalizedSql, Poolable.wrap(result, LIVE_TIME, MAX_IDLE_TIME));
-                }
+        // Tokenization is expensive, so construct outside the lock to avoid serializing concurrent
+        // first-touch parses of unrelated SQL strings. ParsedSql is immutable and value-equal, so a
+        // racing thread may build a duplicate; the pooled winner is returned in that case and the
+        // loser's instance is simply discarded.
+        final ParsedSql parsed = new ParsedSql(normalizedSql);
+
+        synchronized (pool) {
+            w = pool.get(normalizedSql);
+            result = w == null ? null : w.value();
+
+            if (result != null) {
+                return result;
             }
+
+            pool.put(normalizedSql, Poolable.wrap(parsed, LIVE_TIME, MAX_IDLE_TIME));
         }
 
-        return result;
+        return parsed;
     }
 
     /**
@@ -333,8 +336,9 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the parameterized SQL with all named parameters replaced by JDBC placeholders ({@code ?}).
-     * This SQL can be used directly with JDBC {@code PreparedStatement}.
+     * Gets the parameterized SQL with named parameters replaced by JDBC placeholders ({@code ?})
+     * for recognized data-operation statements. Other SQL is returned unchanged because this parser
+     * intentionally does not extract parameters from unrecognized operations.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -380,7 +384,8 @@ public final class ParsedSql {
 
     /**
      * Gets the total number of parameters (named or positional) in the SQL.
-     * This count includes all occurrences of {@code ?}, {@code :paramName}, or {@code #{paramName}}.
+     * This count includes parameter occurrences of {@code ?}, {@code :paramName}, or {@code #{paramName}},
+     * but excludes {@code ?} tokens recognized as PostgreSQL JSON operators.
      * Parameters are only counted for recognized data operation statements (see the class-level
      * documentation); for other SQL this returns {@code 0}.
      *

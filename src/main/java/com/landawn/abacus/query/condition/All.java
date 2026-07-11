@@ -20,7 +20,7 @@ package com.landawn.abacus.query.condition;
  *
  * <p>ALL is used with comparison operators (=, !=, &gt;, &lt;, &gt;=, &lt;=) and a subquery.
  * The condition is satisfied only if the comparison is true for every value from the subquery.
- * This provides a way to ensure a value meets a criteria compared to an entire set of values.</p>
+ * This provides a way to ensure a value meets a criterion compared to an entire set of values.</p>
  *
  * <p>Common usage patterns:</p>
  * <ul>
@@ -56,8 +56,9 @@ package com.landawn.abacus.query.condition;
  *   <li>&lt;= ALL: true if less than or equal to the minimum value</li>
  * </ul>
  *
- * <p>Note: when the subquery returns no rows, {@code x op ALL (...)} is vacuously {@code true}
- * for every operator.</p>
+ * <p><b>&#9888;&#65039;</b> When the subquery returns no rows, {@code x op ALL (...)} is vacuously
+ * {@code true} for every operator. With returned {@code NULL} values, the result is unknown unless
+ * another comparison is false.</p>
  *
  * <p>Relationship to ANY and SOME:</p>
  * <ul>
@@ -66,7 +67,7 @@ package com.landawn.abacus.query.condition;
  *   <li>ALL is more restrictive than ANY/SOME</li>
  * </ul>
  *
- * <p>Note: although this class extends {@link ComposableCell}, the inherited composition methods
+ * <p><b>&#9888;&#65039;</b> Although this class extends {@link ComposableCell}, the inherited composition methods
  * ({@code and()}, {@code or()}, {@code not()}, {@code xor()}) are unavailable for ALL conditions and throw
  * {@link IllegalArgumentException}, because a quantified-subquery operand can only appear as the
  * right-hand side of a comparison.</p>

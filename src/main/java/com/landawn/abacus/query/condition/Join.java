@@ -117,7 +117,9 @@ public class Join extends AbstractCondition {
 
     /**
      * Creates a simple JOIN clause for the specified table or entity.
-     * Uses the default {@link Operator#JOIN} operator without any join condition. This form is rarely used
+     * Uses the default {@link Operator#JOIN} operator without any join condition.
+     *
+     * <p><b>&#9888;&#65039;</b> This form is rarely used
      * directly; most databases require an explicit {@code ON} or {@code USING} clause for a plain
      * {@code JOIN}, so this constructor is typically used to build a join fragment incrementally
      * and combine it with a separately specified condition.
@@ -183,11 +185,12 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond the condition appended after the join target. Use {@link On} (or the deprecated {@link Using})
-     *            when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is a
+     * @param cond the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
+     *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; or if {@code cond} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with
-     *                                  {@code ON} or {@code USING}, a nested ON/USING connector, or an empty predicate (a blank {@link Expression}
+     *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
+     *                                  quantified-subquery operand, or an empty predicate (a blank {@link Expression}
      *                                  or empty {@link Junction})
      */
     public Join(final String joinEntity, final Condition cond) {
@@ -211,11 +214,12 @@ public class Join extends AbstractCondition {
      *
      * @param operator the join operator
      * @param joinEntity the table or entity to join with
-     * @param cond the condition appended after the join target. Use {@link On} (or the deprecated {@link Using})
-     *            when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
+     * @param cond the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
+     *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with
-     *                                  {@code ON} or {@code USING}, a nested ON/USING connector, or an empty predicate (a blank {@link Expression}
+     *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
+     *                                  quantified-subquery operand, or an empty predicate (a blank {@link Expression}
      *                                  or empty {@link Junction})
      */
     protected Join(final Operator operator, final String joinEntity, final Condition cond) {
@@ -245,11 +249,12 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with
-     * @param cond the condition appended after the join target. Use {@link On} (or the deprecated {@link Using})
-     *            when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
+     * @param cond the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
+     *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins
-     *                                  with {@code ON} or {@code USING}, a nested ON/USING connector, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  with {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
+     *                                  quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public Join(final Collection<String> joinEntities, final Condition cond) {
         this(Operator.JOIN, joinEntities, cond);
@@ -272,18 +277,30 @@ public class Join extends AbstractCondition {
      *
      * @param operator the join operator
      * @param joinEntities the collection of tables or entities to join with
-     * @param cond the condition appended after the join target. Use {@link On} (or the deprecated {@link Using})
-     *            when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains
-     *                                  {@code null}, empty, or blank elements, or if {@code cond} is a {@link Criteria},
+     * @param cond the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
+     *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
+     * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code joinEntities} is
+     *                                  {@code null} or empty, or contains {@code null}, empty, or blank elements; or
+     *                                  if {@code cond} is a {@link Criteria},
      *                                  a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
-     *                                  a nested ON/USING connector, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
+     *                                  operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition cond) {
         super(operator);
 
+        if (!isJoinOperator(operator)) {
+            throw new IllegalArgumentException(
+                    "Join operator must be JOIN, LEFT JOIN, RIGHT JOIN, FULL JOIN, CROSS JOIN, INNER JOIN, or NATURAL JOIN, but was: " + operator);
+        }
+
         this.joinEntities = copyAndValidateJoinEntities(joinEntities);
         this.condition = validateJoinCondition(cond);
+    }
+
+    private static boolean isJoinOperator(final Operator operator) {
+        return operator == Operator.JOIN || operator == Operator.LEFT_JOIN || operator == Operator.RIGHT_JOIN || operator == Operator.FULL_JOIN
+                || operator == Operator.CROSS_JOIN || operator == Operator.INNER_JOIN || operator == Operator.NATURAL_JOIN;
     }
 
     private static List<String> copyAndValidateJoinEntities(final Collection<String> joinEntities) {
@@ -303,11 +320,10 @@ public class Join extends AbstractCondition {
     }
 
     private static Condition validateJoinCondition(final Condition cond) {
-        if (cond != null && (cond instanceof Criteria || isClause(cond) || isEmptyPredicate(cond) || (cond instanceof Expression && isOnOrUsing(cond))
+        if (cond != null && (cond instanceof Criteria || isClause(cond) || isEmptyPredicate(cond) || isQuantifiedSubQueryOperand(cond)
                 || (!(cond instanceof On) && !(cond instanceof Using) && containsOnOrUsing(cond)))) {
-            // Include the condition text, not just the operator: for a rejected Expression the operator is
-            // EMPTY (literal ""), which would leave the message without any diagnostic payload.
-            throw new IllegalArgumentException("Join condition cannot be a SQL clause, Criteria, empty predicate, or nested ON/USING connector: " + cond);
+            throw new IllegalArgumentException("Join condition type " + cond.getClass().getName()
+                    + " is not allowed: use a non-empty predicate without nested ON/USING or clause/quantified operators");
         }
 
         return cond;
@@ -504,9 +520,9 @@ public class Join extends AbstractCondition {
     /**
      * Checks if this JOIN clause is equal to another object.
      * Two Join instances are equal if they have the same operator, join entities,
-     * and condition. Because the operator participates in the comparison, a {@code Join}
-     * and a subclass such as {@link LeftJoin} are never equal even with identical
-     * entities and condition.
+     * and condition. Because the runtime class participates in the comparison (via a
+     * {@code getClass()} check), a {@code Join} and a subclass such as {@link LeftJoin}
+     * are never equal even with identical entities and condition.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

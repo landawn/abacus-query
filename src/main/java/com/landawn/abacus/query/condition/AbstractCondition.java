@@ -804,7 +804,7 @@ public abstract class AbstractCondition implements Condition {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     protected static void checkPropName(final String propName) {
-        if (Strings.isEmpty(propName) || Strings.isBlank(propName)) {
+        if (Strings.isBlank(propName)) {
             throw new IllegalArgumentException("Property name must not be null, empty, or blank");
         }
     }

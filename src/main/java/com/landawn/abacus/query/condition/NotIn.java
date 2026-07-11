@@ -30,11 +30,12 @@ import java.util.Map;
  *   <li>Finding records that don't match any value in a list</li>
  * </ul>
  *
- * <p>Important considerations:</p>
+ * <p><b>&#9888;&#65039;</b> Important considerations:</p>
  * <ul>
- *   <li>NULL handling: if the list contains a NULL value, {@code col NOT IN (..., NULL, ...)}
- *       evaluates to UNKNOWN for every row (behaves as false in WHERE clauses) and no rows match.
- *       If the column itself is NULL, the comparison is also UNKNOWN and that row is excluded</li>
+ *   <li>NULL handling: if the list contains a NULL value, a value equal to a non-null list member
+ *       still evaluates to false, while any otherwise nonmatching value evaluates to unknown.
+ *       Neither result matches a {@code WHERE} clause. If the column itself is NULL, the comparison
+ *       is also unknown and that row is excluded</li>
  *   <li>Performance: for large lists, consider using NOT EXISTS or a LEFT JOIN / IS NULL pattern</li>
  *   <li>The values collection is copied during construction to ensure immutability</li>
  * </ul>
@@ -47,7 +48,7 @@ import java.util.Map;
  * // SQL: status NOT IN ('deleted', 'archived', 'suspended')
  *
  * // Exclude specific department IDs
- * Set<Integer> excludedDepts = new HashSet<>(Arrays.asList(10, 20, 30));
+ * Set<Integer> excludedDepts = new LinkedHashSet<>(Arrays.asList(10, 20, 30));
  * NotIn deptCondition = new NotIn("department_id", excludedDepts);
  * // SQL: department_id NOT IN (10, 20, 30)
  *
@@ -84,7 +85,7 @@ public class NotIn extends AbstractIn {
      * // SQL: category NOT IN ('discontinued', 'internal', 'test')
      *
      * // Exclude test users by ID
-     * Set<Integer> testUserIds = new HashSet<>(Arrays.asList(1, 2, 999));
+     * Set<Integer> testUserIds = new LinkedHashSet<>(Arrays.asList(1, 2, 999));
      * NotIn excludeUsers = new NotIn("user_id", testUserIds);
      * // SQL: user_id NOT IN (1, 2, 999)
      * }</pre>
@@ -117,7 +118,7 @@ public class NotIn extends AbstractIn {
      * // SQL: (id) NOT IN ((1), (2))
      * }</pre>
      *
-     * <p><b>Portability note:</b> the row value-list form is supported by MySQL, PostgreSQL,
+     * <p><b>&#9888;&#65039;</b> The row value-list form is supported by MySQL, PostgreSQL,
      * Oracle and DB2, but <i>not</i> by SQL Server (use {@link NotInSubQuery} there).</p>
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}/blank names)
@@ -126,7 +127,8 @@ public class NotIn extends AbstractIn {
      *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
-     *                                  unsupported type, or if a positional row's width does not match {@code propNames.size()}
+     *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
+     *                                  or if a bean row does not expose a requested property
      */
     public NotIn(final Collection<String> propNames, final Collection<?> valueRows) {
         super(propNames, Operator.NOT_IN, valueRows);

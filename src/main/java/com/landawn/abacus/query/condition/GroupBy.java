@@ -36,7 +36,7 @@ import com.landawn.abacus.util.N;
  *   <li>Columns in SELECT must either be in GROUP BY or be aggregate functions</li>
  * </ul>
  *
- * <p><b>Note:</b> sort directions in {@code GROUP BY} (e.g. {@code GROUP BY col ASC/DESC})
+ * <p><b>&#9888;&#65039;</b> Sort directions in {@code GROUP BY} (e.g. {@code GROUP BY col ASC/DESC})
  * are non-standard SQL and not supported by all databases. Use them only when targeting
  * a database that explicitly supports this syntax.</p>
  * 
@@ -145,8 +145,8 @@ public class GroupBy extends Clause {
      * matching the behavior of {@link #GroupBy(String...)}.
      *
      * <p>Use an order-preserving collection (such as {@code List} or {@code LinkedHashSet})
-     * to guarantee a predictable grouping order, since the order of columns in a
-     * {@code GROUP BY} clause can affect performance and results.</p>
+     * to guarantee predictable generated SQL. Group-key order can affect performance but does
+     * not by itself order the result rows.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -222,8 +222,8 @@ public class GroupBy extends Clause {
      * Creates a new GROUP BY clause with custom sort directions for each property.
      * This provides maximum flexibility by allowing different sort directions for each
      * grouping column. The map should maintain insertion order (use LinkedHashMap) to
-     * preserve the grouping order, as the order of columns in GROUP BY can affect performance
-     * and results.
+     * preserve the generated grouping order. Group-key order can affect performance but does not
+     * by itself order the result rows.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

@@ -337,6 +337,8 @@ public final class Dsl {
      *
      * <p>This method inspects the entity object and includes all insertable properties of the entity
      * (those not marked with {@code @Transient}, {@code @ReadOnly}, or {@code @ReadOnlyId}).
+     * Properties whose value is {@code null} are also skipped, as are ID properties still holding
+     * their default value (for a composite ID, only when every ID property holds its default value).
      * Property names are rendered according to this DSL's naming policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -364,7 +366,9 @@ public final class Dsl {
      *
      * <p>This method allows fine-grained control over which properties to include in the INSERT
      * statement. Properties in the exclusion set will not be included even if they have values
-     * and are normally insertable.</p>
+     * and are normally insertable. Properties whose value is {@code null} are also skipped, as are
+     * ID properties still holding their default value (for a composite ID, only when every ID
+     * property holds its default value).</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -516,9 +520,10 @@ public final class Dsl {
      * @param entitiesOrProps list of entities or property maps to insert
      * @return a new SqlBuilder instance configured for batch INSERT operation
      * @throws IllegalArgumentException if {@code entitiesOrProps} is null or empty, if every element is
-     *         {@code null}, if the first non-null element is an empty {@code Map}, if elements have
-     *         mixed types (some {@code Map}, some bean), or if the non-null elements do not all share
-     *         the same key set / insertable property set
+     *         {@code null}; if a map is empty, contains a non-string or blank key, or does not share
+     *         the same key set as the other rows; if elements have mixed types (some {@code Map}, some
+     *         bean); if bean rows do not share an insertable property set; or if no bean column remains
+     *         after columns that are null/default in every row are removed
      */
     @Beta
     public SqlBuilder batchInsert(final Collection<?> entitiesOrProps) {
@@ -557,10 +562,10 @@ public final class Dsl {
      *
      * @param tableName the name of the table to update
      * @return a new SqlBuilder instance configured for UPDATE operation
-     * @throws IllegalArgumentException if tableName is null or empty
+     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank
      */
     public SqlBuilder update(final String tableName) {
-        N.checkArgNotEmpty(tableName, SqlBuilder.UPDATE_PART_MSG);
+        N.checkArgument(!Strings.isBlank(tableName), SqlBuilder.UPDATE_PART_MSG);
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
@@ -591,10 +596,10 @@ public final class Dsl {
      * @param tableName the name of the table to update
      * @param entityClass the entity class for property mapping
      * @return a new SqlBuilder instance configured for UPDATE operation
-     * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
+     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, or {@code entityClass} is null
      */
     public SqlBuilder update(final String tableName, final Class<?> entityClass) {
-        N.checkArgNotEmpty(tableName, SqlBuilder.UPDATE_PART_MSG);
+        N.checkArgument(!Strings.isBlank(tableName), SqlBuilder.UPDATE_PART_MSG);
         N.checkArgNotNull(entityClass, SqlBuilder.UPDATE_PART_MSG);
 
         final SqlBuilder instance = createSqlBuilderInstance();
@@ -681,10 +686,10 @@ public final class Dsl {
      *
      * @param tableName the name of the table to delete from
      * @return a new SqlBuilder instance configured for DELETE operation
-     * @throws IllegalArgumentException if tableName is null or empty
+     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank
      */
     public SqlBuilder deleteFrom(final String tableName) {
-        N.checkArgNotEmpty(tableName, SqlBuilder.DELETION_PART_MSG);
+        N.checkArgument(!Strings.isBlank(tableName), SqlBuilder.DELETION_PART_MSG);
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
@@ -712,10 +717,10 @@ public final class Dsl {
      * @param tableName the name of the table to delete from
      * @param entityClass the entity class for property mapping
      * @return a new SqlBuilder instance configured for DELETE operation
-     * @throws IllegalArgumentException if tableName is null or empty, or entityClass is null
+     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, or {@code entityClass} is null
      */
     public SqlBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
-        N.checkArgNotEmpty(tableName, SqlBuilder.DELETION_PART_MSG);
+        N.checkArgument(!Strings.isBlank(tableName), SqlBuilder.DELETION_PART_MSG);
         N.checkArgNotNull(entityClass, SqlBuilder.DELETION_PART_MSG);
 
         final SqlBuilder instance = createSqlBuilderInstance();
@@ -1054,8 +1059,10 @@ public final class Dsl {
      * Creates a SELECT FROM statement with optional sub-entity properties.
      *
      * <p>This convenience method combines SELECT and FROM operations with control over
-     * sub-entity inclusion. When sub-entities are included, appropriate joins may be
-     * generated automatically.</p>
+     * sub-entity inclusion.</p>
+     *
+     * <p><b>&#9888;&#65039;</b> Included sub-entity tables are emitted as comma-separated table references;
+     * no relationship or join predicate is inferred.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1176,8 +1183,10 @@ public final class Dsl {
      * Creates a complete SELECT FROM statement with all options.
      *
      * <p>This method provides maximum flexibility by allowing control over table alias,
-     * sub-entity inclusion, and property exclusion. It handles complex scenarios including
-     * automatic join generation for sub-entities.</p>
+     * sub-entity inclusion, and property exclusion.</p>
+     *
+     * <p><b>&#9888;&#65039;</b> Included sub-entity tables are emitted as comma-separated table references;
+     * no relationship or join predicate is inferred.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1630,8 +1639,10 @@ public final class Dsl {
     }
 
     static void validateColumnAlias(final String propOrColumnName, final String alias) {
-        if (Strings.isBlank(alias) || alias.indexOf('"') >= 0 || alias.indexOf('`') >= 0 || alias.indexOf('\r') >= 0 || alias.indexOf('\n') >= 0
-                || alias.contains("--") || alias.contains("/*") || alias.contains("*/")) {
+        // '#' starts a comment in MySQL and a single quote opens a string literal; both would truncate
+        // or corrupt the statement when the alias is emitted unquoted (e.g. inline "expr AS alias").
+        if (Strings.isBlank(alias) || alias.indexOf('"') >= 0 || alias.indexOf('`') >= 0 || alias.indexOf('\'') >= 0 || alias.indexOf('\r') >= 0
+                || alias.indexOf('\n') >= 0 || alias.contains("--") || alias.contains("/*") || alias.contains("*/") || alias.indexOf('#') >= 0) {
             throw new IllegalArgumentException(
                     "Column alias for '" + propOrColumnName + "' must not be null, blank, quoted, or contain SQL comment tokens: " + alias);
         }

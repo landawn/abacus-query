@@ -140,7 +140,8 @@ public class FullJoin extends Join {
      *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
-     *                                  a nested ON/USING connector, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public FullJoin(final String joinEntity, final Condition cond) {
         super(Operator.FULL_JOIN, joinEntity, cond);
@@ -172,7 +173,8 @@ public class FullJoin extends Join {
      *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
-     *                                  a nested ON/USING connector, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
+     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public FullJoin(final Collection<String> joinEntities, final Condition cond) {
         super(Operator.FULL_JOIN, joinEntities, cond);

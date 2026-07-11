@@ -654,7 +654,7 @@ public class Criteria extends AbstractCondition {
      *     .build();
      * }</pre>
      *
-     * <p>For single-clause clauses (WHERE, GROUP BY, HAVING, ORDER BY, LIMIT),
+     * <p>For singleton clauses (WHERE, GROUP BY, HAVING, ORDER BY, LIMIT),
      * calling the same method again replaces the previous clause.
      * For JOINs and set operations, multiple calls accumulate.</p>
      */
@@ -671,8 +671,11 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Sets the DISTINCT modifier for the query.
-         * DISTINCT removes duplicate rows from the result set when the surrounding
-         * {@code SqlBuilder} renders the {@code SELECT} clause.
+         * The modifier is stored on the built {@code Criteria} and exposed via
+         * {@link Criteria#getSelectModifier()} for external consumers (such as abacus-jdbc) that
+         * render the {@code SELECT} clause. This library's {@code SqlBuilder} does <i>not</i> apply
+         * it when appending a {@code Criteria}; use {@code SqlBuilder}'s own {@code distinct()} or
+         * {@code selectModifier(String)} to get {@code SELECT DISTINCT} in SQL rendered here.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -682,7 +685,6 @@ public class Criteria extends AbstractCondition {
          *     .build();
          * c.getSelectModifier();                 // returns "DISTINCT"
          * c.toString(NamingPolicy.NO_CHANGE);    // returns " DISTINCT WHERE status = 'active'"
-         * // Combined with a SqlBuilder SELECT, renders: SELECT DISTINCT ... WHERE status = 'active'
          * }</pre>
          *
          * @return this Builder instance for method chaining
@@ -724,6 +726,10 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets the DISTINCTROW modifier for the query.
          * DISTINCTROW is similar to DISTINCT but may have database-specific behavior.
+         * Like {@link #distinct()}, the modifier is only exposed via
+         * {@link Criteria#getSelectModifier()} for external consumers; this library's
+         * {@code SqlBuilder} does not apply it when appending a {@code Criteria}; use
+         * {@code SqlBuilder.selectModifier("DISTINCTROW")} to get it in SQL rendered here.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -732,7 +738,6 @@ public class Criteria extends AbstractCondition {
          *     .where(Filters.equal("active", true))
          *     .build();
          * c.getSelectModifier();   // returns "DISTINCTROW"
-         * // Combined with a SqlBuilder SELECT, renders: SELECT DISTINCTROW ... WHERE active = true
          * }</pre>
          *
          * @return this Builder instance for method chaining
@@ -1415,7 +1420,8 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
-         *                                  {@link Expression} or empty {@link Junction}), or is a clause condition
+         *                                  {@link Expression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
+         *                                  quantified operand, or is a clause condition
          *                                  with an operator other than {@code WHERE}
          */
         public Builder where(final Condition cond) {
@@ -1606,7 +1612,8 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
-         *                                  {@link Expression} or empty {@link Junction}), or is a clause condition
+         *                                  {@link Expression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
+         *                                  quantified operand, or is a clause condition
          *                                  with an operator other than {@code GROUP_BY}
          */
         public Builder groupBy(final Condition cond) {
@@ -1821,7 +1828,8 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
-         *                                  {@link Expression} or empty {@link Junction}), or is a clause condition
+         *                                  {@link Expression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
+         *                                  quantified operand, or is a clause condition
          *                                  with an operator other than {@code HAVING}
          */
         public Builder having(final Condition cond) {
@@ -2018,7 +2026,8 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
-         *                                  {@link Expression} or empty {@link Junction}), or is a clause condition
+         *                                  {@link Expression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
+         *                                  quantified operand, or is a clause condition
          *                                  with an operator other than {@code ORDER_BY}
          */
         public Builder orderBy(final Condition cond) {
@@ -2408,7 +2417,7 @@ public class Criteria extends AbstractCondition {
          * // returns " WHERE status = 'active' EXCEPT SELECT user_id FROM blacklist"
          * }</pre>
          *
-         * @param subQuery the subquery to except (must not be {@code null})
+         * @param subQuery the right-hand subquery for the EXCEPT operation (must not be {@code null})
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code subQuery} is {@code null}
          */
@@ -2433,7 +2442,7 @@ public class Criteria extends AbstractCondition {
          * // returns " WHERE registered = true MINUS SELECT user_id FROM inactive_users"
          * }</pre>
          *
-         * @param subQuery the subquery to minus (must not be {@code null})
+         * @param subQuery the right-hand subquery for the MINUS operation (must not be {@code null})
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code subQuery} is {@code null}
          */
@@ -2473,15 +2482,16 @@ public class Criteria extends AbstractCondition {
          * @param cond the condition to add (must not be {@code null})
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, is a nested {@link Criteria}, uses an
-         *         {@code ON}/{@code USING} operator, or is an empty predicate (a blank {@link Expression} or empty
-         *         {@link Junction})
+         *         {@code ON}/{@code USING} operator, is an {@code ANY}/{@code ALL}/{@code SOME} quantified operand,
+         *         is an empty predicate (a blank {@link Expression} or empty {@link Junction}), or reports a routed
+         *         operator without being the corresponding clause type
          */
         public Builder add(final Condition cond) {
             N.checkArgNotNull(cond, "cond");
 
             switch (cond.operator()) {
                 case LIMIT:
-                    limit((Limit) cond);
+                    limit(requireConditionType(cond, Limit.class));
                     break;
 
                 case ORDER_BY:
@@ -2501,23 +2511,23 @@ public class Criteria extends AbstractCondition {
                     break;
 
                 case UNION:
-                    union(((Union) cond).getSubQuery());
+                    union(requireConditionType(cond, Union.class).getSubQuery());
                     break;
 
                 case UNION_ALL:
-                    unionAll(((UnionAll) cond).getSubQuery());
+                    unionAll(requireConditionType(cond, UnionAll.class).getSubQuery());
                     break;
 
                 case INTERSECT:
-                    intersect(((Intersect) cond).getSubQuery());
+                    intersect(requireConditionType(cond, Intersect.class).getSubQuery());
                     break;
 
                 case EXCEPT:
-                    except(((Except) cond).getSubQuery());
+                    except(requireConditionType(cond, Except.class).getSubQuery());
                     break;
 
                 case MINUS:
-                    minus(((Minus) cond).getSubQuery());
+                    minus(requireConditionType(cond, Minus.class).getSubQuery());
                     break;
 
                 default:
@@ -2529,6 +2539,15 @@ public class Criteria extends AbstractCondition {
             }
 
             return this;
+        }
+
+        private static <T extends Condition> T requireConditionType(final Condition cond, final Class<T> expectedType) {
+            if (!expectedType.isInstance(cond)) {
+                throw new IllegalArgumentException("Invalid condition for operator " + cond.operator() + ": expected " + expectedType.getSimpleName()
+                        + " but was " + cond.getClass().getSimpleName());
+            }
+
+            return expectedType.cast(cond);
         }
 
         private void validateClauseCondition(final Condition cond, final Operator expectedOperator, final String methodName) {

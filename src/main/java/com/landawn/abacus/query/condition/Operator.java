@@ -87,7 +87,8 @@ public enum Operator {
     /**
      * NOT operator symbol ({@code !}).
      * A non-standard programmatic token; prefer {@link #NOT} for standard SQL.
-     * Parse-only token: recognized by {@code Operator.of(...)} but not accepted by any condition constructor.
+     * <p><b>&#9888;&#65039;</b> This is a parse-only token: {@link #of(String)} recognizes it, but condition
+     * constructors do not accept it.</p>
      */
     NOT_OP(SK.EXCLAMATION),
 

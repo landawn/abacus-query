@@ -164,6 +164,10 @@ public class And extends Junction {
      * Creates a new AND condition by adding another condition to this AND.
      * This method returns a new AND instance containing all existing conditions plus the new one.
      *
+     * <p><b>&#9888;&#65039;</b> Unlike the inherited {@link ComposableCondition#and(Condition)}, which rejects an empty
+     * junction as its target, this override may be invoked on an empty {@code And}; same-type fluent
+     * chaining from an empty junction is deliberately permitted (only the operand is validated).</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Start with a basic AND

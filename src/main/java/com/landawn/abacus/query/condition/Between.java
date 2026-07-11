@@ -26,7 +26,7 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>Numbers: BETWEEN 1 AND 100</li>
  *   <li>Dates: BETWEEN '2023-01-01' AND '2023-12-31'</li>
- *   <li>Strings: BETWEEN 'A' AND 'M' (alphabetical range)</li>
+ *   <li>Strings: BETWEEN 'A' AND 'M' (ordered according to the database collation)</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -35,7 +35,7 @@ package com.landawn.abacus.query.condition;
  * Between ageRange = new Between("age", 18, 65);
  * // SQL: age BETWEEN 18 AND 65
  *
- * // Date range for current year
+ * // Date range for 2024
  * Between yearRange = new Between("orderDate",
  *     LocalDate.of(2024, 1, 1),
  *     LocalDate.of(2024, 12, 31));
@@ -47,7 +47,7 @@ package com.landawn.abacus.query.condition;
  * Between priceRange = new Between("price", minPrice, maxPrice);
  * // SQL: price BETWEEN (SELECT MIN(price) FROM products) AND (SELECT MAX(price) FROM products)
  *
- * // String range (alphabetical)
+ * // String range (database collation order)
  * Between nameRange = new Between("lastName", "A", "M");
  * // SQL: lastName BETWEEN 'A' AND 'M'
  * }</pre>
@@ -69,6 +69,9 @@ public class Between extends AbstractBetween {
     /**
      * Creates a new BETWEEN condition.
      * The condition checks if the property value falls within the specified range, inclusive.
+     *
+     * <p><b>&#9888;&#65039;</b> If the property value or either bound is SQL {@code NULL}, SQL three-valued
+     * logic makes the predicate unknown rather than true.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

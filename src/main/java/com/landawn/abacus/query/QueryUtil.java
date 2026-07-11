@@ -13,10 +13,12 @@
  */
 package com.landawn.abacus.query;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -202,8 +204,10 @@ public final class QueryUtil {
             result = ImmutableMap.wrap(newProp2ColumnNameMap);
 
             if (namingPropColumnNameMap == null) {
-                namingPropColumnNameMap = Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class));
-                entityTablePropColumnNameMap2.put(entityClass, namingPropColumnNameMap);
+                final Map<NamingPolicy, ImmutableMap<String, Tuple2<String, Boolean>>> newMap = Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class));
+                final Map<NamingPolicy, ImmutableMap<String, Tuple2<String, Boolean>>> existingMap = entityTablePropColumnNameMap2.putIfAbsent(entityClass,
+                        newMap);
+                namingPropColumnNameMap = existingMap == null ? newMap : existingMap;
             }
 
             namingPropColumnNameMap.put(effectiveNamingPolicy, result);
@@ -392,8 +396,9 @@ public final class QueryUtil {
         Map<NamingPolicy, ImmutableMap<String, String>> namingPropColumnMap = entityTablePropColumnNameMap.get(entityClass);
 
         if (namingPropColumnMap == null) {
-            namingPropColumnMap = Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class));
-            entityTablePropColumnNameMap.put(entityClass, namingPropColumnMap);
+            final Map<NamingPolicy, ImmutableMap<String, String>> newMap = Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class));
+            final Map<NamingPolicy, ImmutableMap<String, String>> existingMap = entityTablePropColumnNameMap.putIfAbsent(entityClass, newMap);
+            namingPropColumnMap = existingMap == null ? newMap : existingMap;
         }
 
         namingPropColumnMap.put(namingPolicy, result);
@@ -560,7 +565,9 @@ public final class QueryUtil {
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @param includeSubEntityProperties {@code true} to include nested entity properties, {@code false} for top-level only
-     * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
+     * @param excludedPropNames set of property names to exclude (nullable). When sub-entity properties
+     *        are included, excluding a root such as {@code "address"} also excludes descendants such as
+     *        {@code "address.street"}.
      * @return an immutable list of property names suitable for SELECT operations
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
@@ -578,6 +585,22 @@ public final class QueryUtil {
         }
 
         final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
+
+        if (includeSubEntityProperties) {
+            final List<String> result = new ArrayList<>(val[slot].size());
+
+            outer: for (final String propName : val[slot]) {
+                for (final String excludedPropName : excludedPropNames) {
+                    if (excludedPropName != null && (propName.equals(excludedPropName) || propName.startsWith(excludedPropName + SK.PERIOD))) {
+                        continue outer;
+                    }
+                }
+
+                result.add(propName);
+            }
+
+            return ImmutableList.wrap(result);
+        }
 
         // N.excludeAll returns a freshly-built mutable ArrayList; wrap it (no extra copy) so the
         // exclusion path also returns an immutable list.
@@ -921,7 +944,8 @@ public final class QueryUtil {
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
-     * @param namingPolicy the naming policy to use for table name conversion when {@code @Table} is not present. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
+     * @param namingPolicy the naming policy used when no annotated table name exists. If {@code null},
+     *        defaults to {@code NamingPolicy.SNAKE_CASE}.
      * @return the table name, optionally followed by space and alias
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */

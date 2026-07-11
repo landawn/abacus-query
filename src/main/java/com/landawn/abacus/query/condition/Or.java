@@ -173,6 +173,10 @@ public class Or extends Junction {
      * Each call returns a new OR instance, preserving immutability. The new condition
      * is added to the end of the existing conditions.</p>
      *
+     * <p><b>&#9888;&#65039;</b> Unlike the inherited {@link ComposableCondition#or(Condition)}, which rejects an empty
+     * junction as its target, this override may be invoked on an empty {@code Or}; same-type fluent
+     * chaining from an empty junction is deliberately permitted (only the operand is validated).</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Build condition step by step

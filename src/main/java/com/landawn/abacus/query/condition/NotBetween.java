@@ -31,7 +31,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Implementing "outside business hours" logic</li>
  * </ul>
  *
- * <p>Important notes:</p>
+ * <p><b>&#9888;&#65039;</b> Important notes:</p>
  * <ul>
  *   <li>BETWEEN is inclusive on both sides, so NOT BETWEEN excludes rows whose value equals
  *       either {@code minValue} or {@code maxValue}</li>

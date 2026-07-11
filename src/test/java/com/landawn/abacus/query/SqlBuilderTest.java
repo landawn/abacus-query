@@ -842,6 +842,58 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
+    public void testLimitLiteralPlaceholderNameContainingOffsetKeepsOffsetSlot() {
+        // The raw substring test used to treat the placeholder name as an OFFSET clause,
+        // making the follow-up offset(20) fail with "'OFFSET' has already been set".
+        assertEquals("SELECT id FROM t LIMIT :rowOFFSETCount OFFSET 20",
+                Dsl.NSC.select("id").from("t").append(Filters.limit("LIMIT :rowOFFSETCount")).offset(20).build().query());
+
+        // Literals that really carry the OFFSET keyword still consume the slot.
+        assertThrows(IllegalStateException.class, () -> Dsl.NSC.select("id").from("t").append(Filters.limit("LIMIT :count OFFSET :offset")).offset(20));
+        assertThrows(IllegalStateException.class, () -> Dsl.NSC.select("id").from("t").append(Filters.limit("LIMIT #{count} OFFSET #{offset}")).offset(20));
+    }
+
+    @Test
+    public void testDanglingIntoSegmentThrowsForAliasesAndMultiSelects() {
+        // select(Map).into() without the follow-up from() used to emit a truncated
+        // "INSERT INTO account (first_name)" with no SELECT or VALUES part.
+        Map<String, String> aliases = new LinkedHashMap<>();
+        aliases.put("firstName", "fn");
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select(aliases).into("account").build());
+
+        // Same for select(List<Selection>).into().
+        List<Selection> selections = Arrays.asList(Selection.builder().entityClass(Account.class).build());
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select(selections).into("account").build());
+
+        // Completing the INSERT ... SELECT still works.
+        assertEquals("INSERT INTO backup (first_name) SELECT first_name AS \"fn\" FROM account",
+                Dsl.PSC.select(aliases).into("backup").from("account").build().query());
+    }
+
+    @Test
+    public void testStaleMultiSelectsDoNotLeakAcrossSetOperation() {
+        // The multi-select column list used to survive a verbatim union and be re-emitted by the
+        // next from(), producing two juxtaposed SELECTs ("... UNION SELECT id FROM t2 SELECT ... FROM t3").
+        List<Selection> selections = Arrays.asList(Selection.builder().entityClass(Account.class).build());
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select(selections).from("account").union("SELECT id FROM t2").from("t3"));
+
+        // The verbatim-union compound itself still builds.
+        String sql = Dsl.PSC.select(selections).from("account").union("SELECT id FROM t2").build().query();
+        assertTrue(sql.endsWith(" FROM account UNION SELECT id FROM t2"));
+    }
+
+    @Test
+    public void testSelectModifierAfterVerbatimSetOperationThrows() {
+        // DISTINCT staged after union("SELECT ...") used to be dropped silently: there is no SELECT
+        // keyword to attach it to and no from() can legally follow the verbatim sub-query.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t1").union("SELECT id FROM t2").distinct().build());
+
+        // A modifier staged before a column-list set operation is still rendered by the follow-up from().
+        assertEquals("SELECT id FROM t1 UNION SELECT DISTINCT id, name FROM t2",
+                Dsl.PSC.select("id").from("t1").union("id", "name").distinct().from("t2").build().query());
+    }
+
+    @Test
     public void testSelectSingleExpressionAppliesNamingPolicy() {
         // Documented behavior of Dsl.select(String): identifiers inside the expression ARE converted
         // by the naming policy; function names, keywords and the AS alias are preserved.
@@ -1202,6 +1254,14 @@ public class SqlBuilderTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from(new String[] { "users", "   " }));
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from(Arrays.asList("users", null)));
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from(Arrays.asList("users", "  ")));
+    }
+
+    @Test
+    public void testUpdateAndDeleteRejectBlankTableNames() {
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("   "));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("   ", Account.class));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.deleteFrom("   "));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.deleteFrom("   ", Account.class));
     }
 
     @Test
@@ -2142,10 +2202,15 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testUpdateWithoutSet() {
-        String sql = Dsl.PSC.update("users").where(Filters.eq("id", 1)).build().query();
+        // Used to emit "UPDATE users SET  WHERE id = ?" with an empty SET list; now fails fast.
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.update("users").where(Filters.eq("id", 1)));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.update("users").build());
 
-        assertTrue(sql.contains("UPDATE users SET"));
-        assertTrue(sql.contains("WHERE id = ?"));
+        // update(Class) pre-stages the updatable columns, so no explicit set() is required.
+        String sql = Dsl.PSC.update(Account.class).where(Filters.eq("id", 1)).build().query();
+        assertTrue(sql.startsWith("UPDATE test_account SET "));
+        assertTrue(sql.contains("first_name = ?"));
+        assertTrue(sql.endsWith(" WHERE id = ?"));
     }
 
     @Test
@@ -13019,6 +13084,14 @@ public class SqlBuilderTest extends TestBase {
         aliases.clear();
         aliases.put("firstName", "bad--alias");
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(aliases));
+
+        aliases.clear();
+        aliases.put("firstName", "bad#alias");
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(aliases));
+
+        aliases.clear();
+        aliases.put("firstName", "bad'alias");
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(aliases));
     }
 
     @Test
@@ -13026,6 +13099,10 @@ public class SqlBuilderTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("firstName AS bad--alias").from("account").build());
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("firstName AS bad/*alias").from("account").build());
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("firstName AS bad*/alias").from("account").build());
+        // '#' starts a comment in MySQL and a quote opens a string literal; both would truncate or
+        // corrupt the statement if emitted unquoted after AS.
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("firstName AS x#y").from("account").build());
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("firstName AS x'y").from("account").build());
     }
 
     @Test
@@ -13130,5 +13207,64 @@ public class SqlBuilderTest extends TestBase {
         String sql = builder.from("legacy_records").build().query();
         assertTrue(sql.contains("legacy_id"));
         assertFalse(sql.contains("mutated_id"));
+    }
+
+    @Test
+    public void testIncompleteInsertAndPreSetUpdateFailFast() {
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.insert("id").build());
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.insert("id").append("RETURNING id").build());
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.update("users").append("RETURNING id").build());
+    }
+
+    @Test
+    public void testMultiSelectionsValidateInputs() {
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(new Selection(Account.class, "a", "bad\"alias", Arrays.asList("id"), false, null)));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(new Selection(Account.class, "a", "account", Arrays.asList("   "), false, null)));
+    }
+
+    @Test
+    public void testSetOperationNamedParameterTokenSafety() {
+        SP combined = Dsl.NSC.select("id")
+                .from("current_records")
+                .where(Filters.equal("type", "current"))
+                .union(Dsl.NSC.select("payload::type").from("archived_records").where(Filters.equal("type", "archived")))
+                .build();
+
+        assertTrue(combined.query().contains("payload::type"), combined.query());
+        assertFalse(combined.query().contains("payload::type_2"), combined.query());
+        assertTrue(combined.query().contains(":type_2"), combined.query());
+        assertEquals(Arrays.asList("current", "archived"), combined.parameters());
+    }
+
+    @Test
+    public void testSetOperationRejectsMutationContainingNestedSelect() {
+        SqlBuilder builder = Dsl.PSC.select("id").from("current_records");
+
+        assertThrows(IllegalArgumentException.class, () -> builder.union("UPDATE target SET value = (SELECT value FROM source) FROM target"));
+        assertEquals("SELECT id FROM current_records", builder.build().query());
+    }
+
+    @Test
+    public void testSetOperationVarargsRejectsMutationContainingNestedSelect() {
+        SqlBuilder builder = Dsl.PSC.select("id").from("current_records");
+
+        assertThrows(IllegalArgumentException.class, () -> builder.union(new String[] { "UPDATE target SET value = (SELECT value FROM source) FROM target" }));
+    }
+
+    @Test
+    public void testBatchInsertRejectsRowsWithNoRemainingColumns() {
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.batchInsert(Arrays.asList(new AllNullBatchEntity(), new AllNullBatchEntity())));
+    }
+
+    static final class AllNullBatchEntity {
+        private String value;
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(final String value) {
+            this.value = value;
+        }
     }
 }

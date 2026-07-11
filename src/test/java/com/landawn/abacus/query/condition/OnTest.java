@@ -354,4 +354,16 @@ public class OnTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on("   ", "orders.user_id"));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on("users.id", "   "));
     }
+
+    @Test
+    public void testConstructorRejectsQuantifiedSubQueryOperand() {
+        // ANY/ALL/SOME are quantified-subquery operands (valid only on the RHS of a comparison);
+        // "ON ANY (SELECT ...)" is invalid SQL, so On must reject them like Clause does.
+        SubQuery sub = Filters.subQuery("SELECT id FROM users");
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new On(Filters.any(sub)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new On(Filters.all(sub)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new On(Filters.some(sub)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.any(sub)));
+    }
 }

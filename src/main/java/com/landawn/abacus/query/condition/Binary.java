@@ -211,6 +211,9 @@ public class Binary extends ComposableCondition {
      *   <li>If the value is {@code null} and the operator is {@code =}, {@code !=}, {@code <>}, {@code IS}, or
      *       {@code IS NOT}, an empty list is returned because the SQL is rendered as {@code IS NULL} /
      *       {@code IS NOT NULL} with no bind parameter.</li>
+     *   <li>If the value is {@code null} with any other operator (e.g. {@code LIKE}), a single-element list
+     *       containing {@code null} is returned, mirroring the rendered {@code null} literal
+     *       (see {@link #toString(NamingPolicy)}).</li>
      *   <li>If the operator is {@code null} (only possible for an uninitialized instance), an empty list
      *       is returned.</li>
      *   <li>If the operator is {@code IN} or {@code NOT IN} and the value is a {@link Collection}, each element is
@@ -288,7 +291,10 @@ public class Binary extends ComposableCondition {
      * <p>Normally the format is: {@code propertyName OPERATOR value}.
      * When the value is {@code null} and the operator is {@code =} or {@code IS}, the output is
      * {@code propertyName IS NULL}; when the operator is {@code !=}, {@code <>}, or {@code IS NOT},
-     * the output is {@code propertyName IS NOT NULL}.</p>
+     * the output is {@code propertyName IS NOT NULL}. Only those operators collapse to
+     * {@code IS [NOT] NULL}: a {@code null} value with any other operator renders as the bare
+     * literal {@code null} (e.g. {@code new Like("name", null)} renders {@code "name LIKE null"}),
+     * and {@link #getParameters()} correspondingly returns a single-element list containing {@code null}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

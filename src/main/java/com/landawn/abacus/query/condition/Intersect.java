@@ -54,7 +54,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Performance depends on result set size and database optimization</li>
  *   <li>May use sorting or hashing for duplicate removal</li>
  *   <li>Indexes on columns used in both queries can improve performance</li>
- *   <li>For large datasets, consider alternative approaches like INNER JOIN with EXISTS</li>
+ *   <li>For large datasets, consider alternative approaches like INNER JOIN or EXISTS</li>
  * </ul>
  *
  * <p>Database support:

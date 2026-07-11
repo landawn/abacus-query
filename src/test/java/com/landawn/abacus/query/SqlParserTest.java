@@ -2196,4 +2196,133 @@ public class SqlParserTest extends TestBase {
         assertTrue(SqlParser.isReadOnlyQuery("SELECT a, REPLACE(b, 'x', 'y') FROM t WHERE c IN (SELECT d FROM e)"));
         assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t SELECT REPLACE(name, 'a', 'b') FROM s"));
     }
+
+    // ----------------------------------------------------------------------------------------------
+    // Hash-prefixed identifiers in comma-separated lists (2026-07-10): a '#' element after a comma
+    // in a list governed by FROM/JOIN/INTO/UPDATE/TABLE is an identifier, not a MySQL hash comment.
+    // Outside those contexts (e.g. a SELECT list) a '#' after a comma is still a comment.
+    // ----------------------------------------------------------------------------------------------
+
+    @Test
+    public void testParse_hashTempTableAfterCommaInFromListIsKept() {
+        // Regression: "#t2 WHERE id = 1" used to be swallowed as a MySQL hash comment because the
+        // backward scan from '#t2' landed on ',' instead of the FROM keyword.
+        final List<String> words = SqlParser.parse("SELECT * FROM #t1, #t2 WHERE id = 1");
+
+        assertTrue(words.contains("#t1"), words.toString());
+        assertTrue(words.contains("#t2"), words.toString());
+        assertTrue(words.contains("WHERE"), words.toString());
+        assertTrue(words.contains("1"), words.toString());
+    }
+
+    @Test
+    public void testParse_hashTempTableListAfterIntoKeepsTail() {
+        final List<String> words = SqlParser.parse("SELECT a INTO #t1, #t2 FROM x");
+
+        assertTrue(words.contains("#t2"), words.toString());
+        assertTrue(words.contains("FROM"), words.toString());
+        assertTrue(words.contains("x"), words.toString());
+    }
+
+    @Test
+    public void testReadOnlyAndNoUpdateGates_hashTempTableListDoesNotHideLaterDelete() {
+        // Pre-fix these returned true (fail-open): '#t2' was treated as a comment, hiding the
+        // ';' and the DELETE statement from the mutation-keyword scan.
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT * FROM #t1, #t2; DELETE FROM users"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT * FROM #t1, #t2; DELETE FROM users"));
+    }
+
+    @Test
+    public void testParse_hashAfterCommaInSelectListStaysComment() {
+        // SELECT is not a hash-identifier context keyword, so "SELECT a, #..." remains a MySQL
+        // hash comment even though a comma precedes the '#'.
+        final List<String> words = SqlParser.parse("SELECT a, #comment\nFROM t");
+
+        assertFalse(words.contains("#comment"), words.toString());
+        assertTrue(words.contains("FROM"), words.toString());
+    }
+
+    @Test
+    public void testParse_hashTempTableListElementsWithAliasesAreKept() {
+        // The list element before the comma may carry an alias ("#t1 a1" / "#t1 AS a1"), and the
+        // first element may be a plain (non-'#') table name.
+        assertTrue(SqlParser.parse("SELECT * FROM #t1 a1, #t2 WHERE id = 1").contains("#t2"));
+        assertTrue(SqlParser.parse("SELECT * FROM #t1 AS a1, #t2 WHERE id = 1").contains("#t2"));
+        assertTrue(SqlParser.parse("SELECT * FROM t1, #t2 WHERE id = 1").contains("#t2"));
+    }
+
+    @Test
+    public void testParse_hashTempTableListAcrossLinesIsKept() {
+        // The backward walk may cross a newline between the comma and the earlier list elements.
+        final List<String> words = SqlParser.parse("SELECT * FROM #t1,\n#t2 WHERE id = 1");
+
+        assertTrue(words.contains("#t2"), words.toString());
+        assertTrue(words.contains("WHERE"), words.toString());
+    }
+
+    @Test
+    public void testParse_hashTempTableJoinChainStillKept() {
+        // The keyword-adjacent (comma-less) recognition is unchanged.
+        final List<String> words = SqlParser.parse("SELECT * FROM #t1 JOIN #t2 ON a = b");
+
+        assertTrue(words.contains("#t1"), words.toString());
+        assertTrue(words.contains("#t2"), words.toString());
+    }
+
+    @Test
+    public void testParse_hashAfterCommaOutsideListContextsStaysComment() {
+        // A comma inside SET assignments, IN (...) value lists or GROUP BY lists does not make a
+        // following '#' an identifier: the walk stops at '=', '(' or the non-context keyword.
+        assertFalse(SqlParser.parse("UPDATE t SET a = 1, #note\nb = 2").contains("#note"));
+        assertFalse(SqlParser.parse("SELECT * FROM t WHERE x IN (1, #c\n)").contains("#c"));
+        assertFalse(SqlParser.parse("GROUP BY a, b, #c\nHAVING x = 1").contains("#c"));
+    }
+
+    @Test
+    public void testParse_manyHashTempTablesOnOneLineCompletesQuickly() {
+        // Perf regression guard (2026-07-10): each '#' on a single long line pays a backward scan;
+        // pre-fix the scan ran twice per '#' plus a redundant re-scan (~0.36s/parse for this 25KB
+        // statement; ~0.1s after). The generous bound only guards against gross (worse-than-
+        // quadratic) regressions without being flaky on slow machines.
+        final StringBuilder sb = new StringBuilder("SELECT * FROM #t0");
+
+        for (int i = 1; i <= 800; i++) {
+            sb.append(" JOIN #t").append(i).append(" ON t").append(i - 1).append(".id = t").append(i).append(".id");
+        }
+
+        final String sql = sb.toString();
+
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            for (int i = 0; i < 3; i++) {
+                assertTrue(SqlParser.parse(sql).contains("#t800"));
+            }
+        });
+    }
+
+    @Test
+    public void testRegisterSeparator_multiCharFirstCharFastRejectIsRebuilt() {
+        // ':' is not the first char of any default multi-char separator; registering "::" must be
+        // picked up (exercising the first-char fast-reject rebuild) and resetting must drop it.
+        SqlParser.registerSeparator("::");
+        assertTrue(SqlParser.parse("a::b").contains("::"));
+
+        SqlParser.resetSeparators();
+        assertFalse(SqlParser.parse("a::b").contains("::"));
+    }
+
+    @Test
+    public void testPostgreSqlJsonPathOperatorsAreNotCommentsOrParameters() {
+        final String removePath = "SELECT payload #- '{address,city}' FROM events WHERE id = ?";
+        final List<String> removePathWords = SqlParser.parse(removePath);
+
+        assertTrue(removePathWords.contains("#-"), removePathWords.toString());
+        assertTrue(removePathWords.contains("WHERE"), removePathWords.toString());
+        assertEquals(1, ParsedSql.parse(removePath).parameterCount());
+
+        final String pathPredicate = "SELECT payload @? '$.items[*] ? (@.price > 10)' FROM events WHERE id = ?";
+        final List<String> pathPredicateWords = SqlParser.parse(pathPredicate);
+
+        assertTrue(pathPredicateWords.contains("@?"), pathPredicateWords.toString());
+        assertEquals(1, ParsedSql.parse(pathPredicate).parameterCount());
+    }
 }

@@ -63,29 +63,29 @@ import com.landawn.abacus.util.Strings;
  * parameter style is given by a leading {@code P} (positional {@code ?}), {@code N} (named {@code :name}),
  * or {@code M} (MyBatis/iBATIS {@code #{name}}); the raw/un-parameterized family (which inlines literal
  * values) has no such leading style letter and instead ends in the literal {@code SB}. The naming policy is
- * encoded by a two-letter code: {@code SB}=no change, {@code SC}=snake_case, {@code AC}=UPPER_CASE_WITH_UNDERSCORE,
+ * encoded by a two-letter code: {@code SB}=no change, {@code SC}=snake_case, {@code AC}=SCREAMING_SNAKE_CASE,
  * {@code LC}=lowerCamelCase. For the parameterized families the naming code is the suffix (e.g. {@code PSC}
  * = positional {@code ?} + snake_case), while the raw family puts the naming code first (e.g. {@code SCSB}
- * = snake_case + raw, {@code ACSB} = UPPER_CASE_WITH_UNDERSCORE + raw, {@code LCSB} = lowerCamelCase + raw).
+ * = snake_case + raw, {@code ACSB} = SCREAMING_SNAKE_CASE + raw, {@code LCSB} = lowerCamelCase + raw).
  * The raw-SQL ({@code *CSB}) family is deprecated due to SQL-injection risk; the MyBatis-style ({@code M*})
  * family is also deprecated &mdash; prefer the named ({@code N*}) family instead.
  * <table border="1">
  *   <caption>Predefined Dsl constants</caption>
  *   <tr><th>Constant</th><th>Parameters</th><th>Naming</th><th>Example</th></tr>
  *   <tr><td>{@link Dsl#SCSB}</td><td>inlined values (deprecated)</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = 1}</td></tr>
- *   <tr><td>{@link Dsl#ACSB}</td><td>inlined values (deprecated)</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = 1}</td></tr>
+ *   <tr><td>{@link Dsl#ACSB}</td><td>inlined values (deprecated)</td><td>SCREAMING_SNAKE_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = 1}</td></tr>
  *   <tr><td>{@link Dsl#LCSB}</td><td>inlined values (deprecated)</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = 1}</td></tr>
  *   <tr><td>{@link Dsl#PSB}</td><td>{@code ?}</td><td>no change</td><td>{@code SELECT firstName FROM account WHERE id = ?}</td></tr>
  *   <tr><td>{@link Dsl#PSC}</td><td>{@code ?}</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = ?}</td></tr>
- *   <tr><td>{@link Dsl#PAC}</td><td>{@code ?}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = ?}</td></tr>
+ *   <tr><td>{@link Dsl#PAC}</td><td>{@code ?}</td><td>SCREAMING_SNAKE_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = ?}</td></tr>
  *   <tr><td>{@link Dsl#PLC}</td><td>{@code ?}</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = ?}</td></tr>
  *   <tr><td>{@link Dsl#NSB}</td><td>{@code :name}</td><td>no change</td><td>{@code SELECT firstName FROM account WHERE id = :id}</td></tr>
  *   <tr><td>{@link Dsl#NSC}</td><td>{@code :name}</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = :id}</td></tr>
- *   <tr><td>{@link Dsl#NAC}</td><td>{@code :name}</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = :id}</td></tr>
+ *   <tr><td>{@link Dsl#NAC}</td><td>{@code :name}</td><td>SCREAMING_SNAKE_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = :id}</td></tr>
  *   <tr><td>{@link Dsl#NLC}</td><td>{@code :name}</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = :id}</td></tr>
  *   <tr><td>{@link Dsl#MSB}</td><td>{@code #{name}} (deprecated)</td><td>no change</td><td>{@code SELECT firstName FROM account WHERE id = #{id}}</td></tr>
  *   <tr><td>{@link Dsl#MSC}</td><td>{@code #{name}} (deprecated)</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = #{id}}</td></tr>
- *   <tr><td>{@link Dsl#MAC}</td><td>{@code #{name}} (deprecated)</td><td>UPPER_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = #{id}}</td></tr>
+ *   <tr><td>{@link Dsl#MAC}</td><td>{@code #{name}} (deprecated)</td><td>SCREAMING_SNAKE_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = #{id}}</td></tr>
  *   <tr><td>{@link Dsl#MLC}</td><td>{@code #{name}} (deprecated)</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = #{id}}</td></tr>
  * </table>
  *
@@ -122,8 +122,6 @@ import com.landawn.abacus.util.Strings;
 public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
 
     protected static final Logger logger = LoggerFactory.getLogger(SqlBuilder.class);
-
-    // TODO performance goal: 80% cases (or maybe SQL.length < 1024?) can be composed in 0.1 millisecond. 0.01 millisecond will be fantastic if possible.
 
     /**
      * Constructs a new SqlBuilder with the specified SqlDialect.

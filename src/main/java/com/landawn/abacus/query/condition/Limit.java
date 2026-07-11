@@ -174,7 +174,7 @@ public class Limit extends Clause {
      * grammar — including a float or negative number, a keyword typo, or unrelated syntax — is rejected with
      * an {@link IllegalArgumentException}.</p>
      *
-     * <p>Note: when this condition is rendered by a SQL builder, a parsed expression is emitted in the
+     * <p><b>&#9888;&#65039;</b> When this condition is rendered by a SQL builder, a parsed expression is emitted in the
      * target dialect's pagination syntax from its {@code count}/{@code offset} (so, e.g., MySQL's comma
      * form and the {@code FETCH} forms are re-rendered per dialect). An opaque (placeholder) expression is
      * re-rendered in the dialect's {@code FETCH} syntax only when the dialect paginates with
@@ -197,7 +197,7 @@ public class Limit extends Clause {
      * Limit mysql = new Limit("20, 10");
      * // toString() -> "LIMIT 20, 10"; getCount() -> 10; getOffset() -> 20
      *
-     * // SQL:2008 FETCH form (offset, count parsed; literal kept verbatim)
+     * // SQL:2008 FETCH form (offset and count parsed; normalized literal retained)
      * Limit fetch = new Limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY");
      * // toString() -> "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY"; getCount() -> 20; getOffset() -> 5
      *
@@ -255,7 +255,7 @@ public class Limit extends Clause {
         final String[] slots = matchSlots(literal);
 
         if (slots == null) {
-            throw new IllegalArgumentException("Invalid LIMIT expression: \"" + expr + "\". Supported forms are"
+            throw new IllegalArgumentException("Invalid LIMIT expression. Supported forms are"
                     + " 'LIMIT n', 'LIMIT n OFFSET m', 'LIMIT offset, count' and '[OFFSET m ROWS] FETCH FIRST|NEXT n ROWS ONLY',"
                     + " where each number may be an integer literal or a '?', ':name' or '#{name}' placeholder");
         }

@@ -136,7 +136,8 @@ public class On extends Cell {
      *            {@link Expression}, {@link Equal}, {@link And}, {@link Or}, or {@link Between}.
      *            Must not be {@code null}.
      * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond} is a {@link Criteria},
-     *                                  a SQL clause, an {@code ON}/{@code USING} condition, or an empty predicate
+     *                                  a SQL clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME}
+     *                                  quantified-subquery operand, or an empty predicate
      *                                  (a blank {@link Expression} or empty {@link Junction})
      */
     public On(final Condition cond) {
@@ -146,10 +147,9 @@ public class On extends Cell {
     private static Condition validateOnCondition(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
 
-        if (cond instanceof Criteria || isClause(cond) || containsOnOrUsing(cond) || isEmptyPredicate(cond)) {
-            // Include the condition text, not just the operator: for a rejected Expression the operator is
-            // EMPTY (literal ""), which would leave the message without any diagnostic payload.
-            throw new IllegalArgumentException("ON condition cannot be a SQL clause, Criteria, empty predicate, or ON/USING connector: " + cond);
+        if (cond instanceof Criteria || isClause(cond) || containsOnOrUsing(cond) || isQuantifiedSubQueryOperand(cond) || isEmptyPredicate(cond)) {
+            throw new IllegalArgumentException("ON condition type " + cond.getClass().getName()
+                    + " is not allowed: use a non-empty predicate without clause, quantified, ON, or USING operators");
         }
 
         return cond;

@@ -33,13 +33,12 @@ import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
- * Represents a subquery that can be used within SQL conditions.
- * A subquery is a SELECT statement nested inside another SQL statement.
+ * Represents raw query-expression text or a structured SELECT used within SQL conditions.
  *
  * <p>This class supports two types of subqueries:</p>
  * <ul>
- *   <li><b>Raw SQL subqueries</b> - directly specified SQL strings for maximum flexibility</li>
- *   <li><b>Structured subqueries</b> - built from entity names, property names, and conditions for type safety</li>
+ *   <li><b>Raw subqueries</b> - complete text accepted without SQL syntax validation</li>
+ *   <li><b>Structured subqueries</b> - generated from entity names/classes, property names, and conditions</li>
  * </ul>
  *
  * <p>Subqueries can be used in various contexts:</p>
@@ -143,14 +142,15 @@ public class SubQuery extends AbstractCondition {
      * );
      * }</pre>
      *
-     * <p><b>Note:</b> the entire argument is treated as the complete subquery SQL — not as an
-     * entity/table name (contrast with {@link #SubQuery(String, java.util.Collection, Condition)},
+     * <p><b>&#9888;&#65039;</b> The entire argument is treated as complete raw query-expression text and is not
+     * parsed or syntax-validated. It is not an entity/table name (contrast with
+     * {@link #SubQuery(String, java.util.Collection, Condition)},
      * whose first argument is an entity name). {@code new SubQuery("orders")} would use the text
      * {@code orders} as the whole subquery. Prefer the
      * {@link com.landawn.abacus.query.Filters#subQuery(String) Filters.subQuery} factories,
      * whose overloads make the distinction explicit.</p>
      *
-     * @param sql the SQL SELECT statement (must not be {@code null}, empty, or blank)
+     * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
      */
     public SubQuery(final String sql) {
@@ -173,7 +173,7 @@ public class SubQuery extends AbstractCondition {
      *
      * @param entityName the entity/table name; may be {@code null} or empty, in which case it is
      *            stored as the empty string
-     * @param sql the SQL SELECT statement (must not be {@code null}, empty, or blank)
+     * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
      */
     public SubQuery(final String entityName, final String sql) {
@@ -192,7 +192,7 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Creates a structured subquery with entity name, selected properties, and condition.
-     * This approach provides type safety and automatic SQL generation.
+     * This approach provides automatic SQL generation and name mapping.
      *
      * <p>The generated SQL follows the pattern: SELECT [properties] FROM [entity] WHERE [condition].
      * If the condition is not already a {@link Criteria} or a clause (like WHERE), it will be automatically wrapped in a WHERE clause.</p>
@@ -237,8 +237,8 @@ public class SubQuery extends AbstractCondition {
      * Creates a structured subquery with entity class, selected properties, and condition.
      * The entity name is derived from the class's simple name.
      *
-     * <p>This constructor provides the strongest type safety by using the entity class.
-     * It's particularly useful in JPA-style applications where entity classes represent tables.</p>
+     * <p>Using an entity class enables automatic table and column-name mapping. Property names remain
+     * strings and are not verified against the class by this constructor.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -471,7 +471,10 @@ public class SubQuery extends AbstractCondition {
     /**
      * Gets the list of parameter values from the condition.
      * These are the parameter values that will be bound to the prepared statement placeholders
-     * when the query is executed. For raw SQL subqueries, this returns an empty list.
+     * when the query is executed.
+     *
+     * <p><b>&#9888;&#65039;</b> For raw SQL subqueries this returns an empty list even when the raw text contains
+     * placeholders; raw bindings are managed by the caller.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
