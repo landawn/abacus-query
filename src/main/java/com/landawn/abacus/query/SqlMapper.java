@@ -237,9 +237,9 @@ public final class SqlMapper {
      *
      * @param files one or more XML files to load (must not be {@code null} or empty, and no element may be {@code null})
      * @return a new SqlMapper instance loaded with SQL definitions from the specified files
-     * @throws IllegalArgumentException if {@code files} is {@code null} or empty, or if a loaded {@code <sql>} element
-     *         has an invalid id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated)
-     *         or a blank SQL body
+     * @throws IllegalArgumentException if {@code files} is {@code null} or empty, if any element of {@code files} is
+     *         {@code null}, or if a loaded {@code <sql>} element has an invalid id (empty, containing whitespace,
+     *         exceeding {@link #MAX_ID_LENGTH} characters, or duplicated) or a blank SQL body
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid, or if any loaded document does not have {@code <sqlMapper>} as its root element
      */

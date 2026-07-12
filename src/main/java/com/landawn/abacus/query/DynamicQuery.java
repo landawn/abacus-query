@@ -687,9 +687,9 @@ public final class DynamicQuery {
 
         /**
          * Conditionally appends a raw SQL clause or fragment verbatim to the end of the query.
-         * When {@code condition} is {@code true} this behaves exactly like {@link #append(String)}
+         * When {@code b} is {@code true} this behaves exactly like {@link #append(String)}
          * (a single separating space is inserted only when needed, then the text is emitted unchanged
-         * with no validation, escaping, or interpretation); when {@code condition} is {@code false}
+         * with no validation, escaping, or interpretation); when {@code b} is {@code false}
          * the builder is left unchanged and {@code textToAppend} is not inspected.
          *
          * <p><b>Usage Examples:</b></p>
@@ -699,10 +699,10 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param b the condition to check
-         * @param textToAppend the raw SQL clause to append verbatim if {@code condition} is {@code true}
-         *                  (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
+         * @param textToAppend the raw SQL clause to append verbatim if {@code b} is {@code true}
+         *                  (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          * @see #append(String)
          */
@@ -1093,9 +1093,9 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param b the condition to check
-         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
+         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link SelectClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public SelectClause appendIf(final boolean b, final String textToAppend) {
             checkOpen();
@@ -1599,9 +1599,9 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param b the condition to check
-         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
+         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public FromClause appendIf(final boolean b, final String textToAppend) {
             checkOpen();
@@ -1870,9 +1870,9 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param b the condition to check
-         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
+         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link WhereClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public WhereClause appendIf(final boolean b, final String textToAppend) {
             checkOpen();
@@ -2017,9 +2017,9 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param b the condition to check
-         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
+         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link GroupByClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public GroupByClause appendIf(final boolean b, final String textToAppend) {
             checkOpen();
@@ -2288,9 +2288,9 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param b the condition to check
-         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
+         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link HavingClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public HavingClause appendIf(final boolean b, final String textToAppend) {
             checkOpen();
@@ -2436,9 +2436,9 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param b the condition to check
-         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
+         * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link OrderByClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public OrderByClause appendIf(final boolean b, final String textToAppend) {
             checkOpen();

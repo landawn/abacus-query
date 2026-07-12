@@ -130,11 +130,11 @@ public class In extends AbstractIn {
      * <p><b>&#9888;&#65039;</b> The row value-list form is supported by MySQL, PostgreSQL,
      * Oracle and DB2, but <i>not</i> by SQL Server (use {@link InSubQuery} there).</p>
      *
-     * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}/blank names)
+     * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
      * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be
      *               non-{@code null} and resolve to exactly {@code propNames.size()} values. A row may be a
      *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  or if a bean row does not expose a requested property

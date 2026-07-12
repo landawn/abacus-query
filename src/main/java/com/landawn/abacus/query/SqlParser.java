@@ -1838,7 +1838,7 @@ public final class SqlParser {
      * @param words the list of parsed SQL words/tokens (typically the result of {@link #parse(String)})
      * @param len the exclusive upper bound to search within {@code words} (usually {@code words.size()};
      *            indices {@code >= len} are not examined; values above {@code words.size()} are capped
-     *            at {@code words.size()}
+     *            at {@code words.size()})
      * @param index the index of the word to check; invalid indices return {@code false}
      * @return {@code true} if the word at {@code index} is followed (after zero or more space tokens)
      *         by the {@code "("} token; {@code false} otherwise
@@ -2118,8 +2118,9 @@ public final class SqlParser {
      * violated).
      * <p>
      * Only the leading keywords are examined, after skipping any leading whitespace, line comments
-     * ({@code --}/{@code #}), block comments ({@code /}{@code * ... *}{@code /}) and any leading
-     * {@code WITH} clause; the three keywords {@code INSERT}, {@code OR} and {@code REPLACE} must
+     * ({@code --}/{@code #}), block comments ({@code /}{@code * ... *}{@code /}), any leading
+     * parentheses and any leading {@code WITH} clause; the three keywords {@code INSERT}, {@code OR}
+     * and {@code REPLACE} must
      * appear (case-insensitively) in that order at the start of the actual statement. A plain
      * {@code INSERT}, a SQL Server / Oracle standalone {@code REPLACE}, or any other leading
      * keyword returns {@code false}.

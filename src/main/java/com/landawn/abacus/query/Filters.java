@@ -2793,7 +2793,7 @@ public class Filters {
      *
      * @param cond the join condition (must not be {@code null})
      * @return an {@link On} clause
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty junction)
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     public static On on(final Condition cond) {
         return new On(cond);
