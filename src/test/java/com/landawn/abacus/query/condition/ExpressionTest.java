@@ -199,6 +199,21 @@ public class ExpressionTest extends TestBase {
     }
 
     @Test
+    public void testNotBetween() {
+        assertEquals("age NOT BETWEEN 18 AND 65", Expression.notBetween("age", 18, 65));
+        assertEquals("created NOT BETWEEN '2024-01-01' AND '2024-12-31'", Expression.notBetween("created", "2024-01-01", "2024-12-31"));
+    }
+
+    @Test
+    public void testNotLike() {
+        String result = Expression.notLike("name", "John%");
+
+        assertTrue(result.contains("name"));
+        assertTrue(result.contains("NOT LIKE"));
+        assertTrue(result.contains("'John%'"));
+    }
+
+    @Test
     public void testIsNull() {
         String result = Expression.isNull("middleName");
 

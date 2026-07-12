@@ -698,7 +698,7 @@ public final class DynamicQuery {
          *        .appendIf(locked, "FOR UPDATE");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppend the raw SQL clause to append verbatim if {@code condition} is {@code true}
          *                  (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this builder instance for method chaining
@@ -706,10 +706,10 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          * @see #append(String)
          */
-        public DynamicSqlBuilder appendIf(final boolean condition, final String textToAppend) {
+        public DynamicSqlBuilder appendIf(final boolean b, final String textToAppend) {
             checkNotBuilt();
 
-            if (condition) {
+            if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 appendRawWithSpace(textToAppend);
@@ -729,7 +729,7 @@ public final class DynamicQuery {
          * builder.appendIfOrElse(smallPage, "LIMIT 10", "LIMIT 100");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppendWhenTrue the raw SQL clause to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the raw SQL clause to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
@@ -737,12 +737,12 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          * @see #append(String)
          */
-        public DynamicSqlBuilder appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+        public DynamicSqlBuilder appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkNotBuilt();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            appendRawWithSpace(condition ? textToAppendWhenTrue : textToAppendWhenFalse);
+            appendRawWithSpace(b ? textToAppendWhenTrue : textToAppendWhenFalse);
 
             return this;
         }
@@ -1092,15 +1092,15 @@ public final class DynamicQuery {
          *       .appendIf(includeBonus, "bonus");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this {@link SelectClause} instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
-        public SelectClause appendIf(final boolean condition, final String textToAppend) {
+        public SelectClause appendIf(final boolean b, final String textToAppend) {
             checkOpen();
 
-            if (condition) {
+            if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 startClauseFragment(this, "SELECT ", ", ");
@@ -1124,20 +1124,20 @@ public final class DynamicQuery {
          *                      "first_name");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
-        public SelectClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+        public SelectClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkOpen();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             startClauseFragment(this, "SELECT ", ", ");
 
-            if (condition) {
+            if (b) {
                 sb.append(textToAppendWhenTrue);
             } else {
                 sb.append(textToAppendWhenFalse);
@@ -1423,6 +1423,114 @@ public final class DynamicQuery {
         }
 
         /**
+         * Adds an {@code INNER JOIN} clause with the specified table and no {@code ON} condition.
+         * Use this for join expressions that carry their own condition (or none), or follow it with a
+         * {@code USING}/{@code ON} fragment appended elsewhere.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * from.append("users u").innerJoin("orders o USING (user_id)");
+         * // Generates: FROM users u INNER JOIN orders o USING (user_id)
+         * }</pre>
+         *
+         * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
+         */
+        public FromClause innerJoin(final String joinExpr) {
+            checkOpen();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            requireFromInitialized();
+            sb.append(" INNER JOIN ").append(joinExpr);
+
+            return this;
+        }
+
+        /**
+         * Adds a {@code LEFT JOIN} clause with the specified table and no {@code ON} condition.
+         * Use this for join expressions that carry their own condition (or none), or follow it with a
+         * {@code USING}/{@code ON} fragment appended elsewhere.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * from.append("users u").leftJoin("orders o USING (user_id)");
+         * // Generates: FROM users u LEFT JOIN orders o USING (user_id)
+         * }</pre>
+         *
+         * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
+         */
+        public FromClause leftJoin(final String joinExpr) {
+            checkOpen();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            requireFromInitialized();
+            sb.append(" LEFT JOIN ").append(joinExpr);
+
+            return this;
+        }
+
+        /**
+         * Adds a {@code RIGHT JOIN} clause with the specified table and no {@code ON} condition.
+         * Use this for join expressions that carry their own condition (or none), or follow it with a
+         * {@code USING}/{@code ON} fragment appended elsewhere.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * from.append("orders o").rightJoin("users u USING (user_id)");
+         * // Generates: FROM orders o RIGHT JOIN users u USING (user_id)
+         * }</pre>
+         *
+         * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
+         */
+        public FromClause rightJoin(final String joinExpr) {
+            checkOpen();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            requireFromInitialized();
+            sb.append(" RIGHT JOIN ").append(joinExpr);
+
+            return this;
+        }
+
+        /**
+         * Adds a {@code FULL JOIN} clause with the specified table and no {@code ON} condition.
+         * Use this for join expressions that carry their own condition (or none), or follow it with a
+         * {@code USING}/{@code ON} fragment appended elsewhere.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * from.append("employees e").fullJoin("departments d USING (dept_id)");
+         * // Generates: FROM employees e FULL JOIN departments d USING (dept_id)
+         * }</pre>
+         *
+         * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
+         * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
+         *         or if this clause builder has already been closed by {@code build()}
+         */
+        public FromClause fullJoin(final String joinExpr) {
+            checkOpen();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            requireFromInitialized();
+            sb.append(" FULL JOIN ").append(joinExpr);
+
+            return this;
+        }
+
+        /**
          * Adds a {@code CROSS JOIN} clause with the specified table. A cross join produces the
          * Cartesian product of the two tables and takes no {@code ON} condition.
          *
@@ -1490,15 +1598,15 @@ public final class DynamicQuery {
          * from.appendIf(includeArchive, "archived_users");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
-        public FromClause appendIf(final boolean condition, final String textToAppend) {
+        public FromClause appendIf(final boolean b, final String textToAppend) {
             checkOpen();
 
-            if (condition) {
+            if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 startClauseFragment(this, "FROM ", ", ");
@@ -1520,20 +1628,20 @@ public final class DynamicQuery {
          * from.appendIfOrElse(useArchive, "archived_users", "active_users");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
-        public FromClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+        public FromClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkOpen();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             startClauseFragment(this, "FROM ", ", ");
 
-            if (condition) {
+            if (b) {
                 sb.append(textToAppendWhenTrue);
             } else {
                 sb.append(textToAppendWhenFalse);
@@ -1761,15 +1869,15 @@ public final class DynamicQuery {
          *      .appendIf(filterByDate, "AND created_date > ?");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this {@link WhereClause} instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
-        public WhereClause appendIf(final boolean condition, final String textToAppend) {
+        public WhereClause appendIf(final boolean b, final String textToAppend) {
             checkOpen();
 
-            if (condition) {
+            if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 startClauseFragment(this, "WHERE ", " ");
@@ -1793,20 +1901,20 @@ public final class DynamicQuery {
          *                      "status = 'active'");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
-        public WhereClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+        public WhereClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkOpen();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             startClauseFragment(this, "WHERE ", " ");
 
-            if (condition) {
+            if (b) {
                 sb.append(textToAppendWhenTrue);
             } else {
                 sb.append(textToAppendWhenFalse);
@@ -1908,15 +2016,15 @@ public final class DynamicQuery {
          *        .appendIf(groupByRegion, "region_id");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this {@link GroupByClause} instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
-        public GroupByClause appendIf(final boolean condition, final String textToAppend) {
+        public GroupByClause appendIf(final boolean b, final String textToAppend) {
             checkOpen();
 
-            if (condition) {
+            if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 startClauseFragment(this, "GROUP BY ", ", ");
@@ -1940,20 +2048,20 @@ public final class DynamicQuery {
          *                        "year");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link GroupByClause} instance for method chaining
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
-        public GroupByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+        public GroupByClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkOpen();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             startClauseFragment(this, "GROUP BY ", ", ");
 
-            if (condition) {
+            if (b) {
                 sb.append(textToAppendWhenTrue);
             } else {
                 sb.append(textToAppendWhenFalse);
@@ -2179,15 +2287,15 @@ public final class DynamicQuery {
          *       .appendIf(checkRevenue, "AND SUM(revenue) > ?");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this {@link HavingClause} instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
-        public HavingClause appendIf(final boolean condition, final String textToAppend) {
+        public HavingClause appendIf(final boolean b, final String textToAppend) {
             checkOpen();
 
-            if (condition) {
+            if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 startClauseFragment(this, "HAVING ", " ");
@@ -2211,20 +2319,20 @@ public final class DynamicQuery {
          *                       "COUNT(*) > 10");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
-        public HavingClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+        public HavingClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkOpen();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             startClauseFragment(this, "HAVING ", " ");
 
-            if (condition) {
+            if (b) {
                 sb.append(textToAppendWhenTrue);
             } else {
                 sb.append(textToAppendWhenFalse);
@@ -2327,15 +2435,15 @@ public final class DynamicQuery {
          *        .appendIf(sortByDate, "created_date DESC");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code condition} is {@code true})
          * @return this {@link OrderByClause} instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
-        public OrderByClause appendIf(final boolean condition, final String textToAppend) {
+        public OrderByClause appendIf(final boolean b, final String textToAppend) {
             checkOpen();
 
-            if (condition) {
+            if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
                 startClauseFragment(this, "ORDER BY ", ", ");
@@ -2359,20 +2467,20 @@ public final class DynamicQuery {
          *                        "created_date ASC");
          * }</pre>
          *
-         * @param condition the condition to check
+         * @param b the condition to check
          * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link OrderByClause} instance for method chaining
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
-        public OrderByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+        public OrderByClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkOpen();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             startClauseFragment(this, "ORDER BY ", ", ");
 
-            if (condition) {
+            if (b) {
                 sb.append(textToAppendWhenTrue);
             } else {
                 sb.append(textToAppendWhenFalse);

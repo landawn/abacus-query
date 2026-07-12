@@ -235,6 +235,44 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
+    public void testFromTypedJoinsWithoutOn() {
+        DynamicSqlBuilder inner = DynamicQuery.builder();
+        inner.select().append("*");
+        inner.from().append("users", "u").innerJoin("orders o USING (user_id)");
+        assertEquals("SELECT * FROM users u INNER JOIN orders o USING (user_id)", inner.build());
+
+        DynamicSqlBuilder left = DynamicQuery.builder();
+        left.select().append("*");
+        left.from().append("users", "u").leftJoin("orders o USING (user_id)");
+        assertEquals("SELECT * FROM users u LEFT JOIN orders o USING (user_id)", left.build());
+
+        DynamicSqlBuilder right = DynamicQuery.builder();
+        right.select().append("*");
+        right.from().append("orders", "o").rightJoin("users u USING (user_id)");
+        assertEquals("SELECT * FROM orders o RIGHT JOIN users u USING (user_id)", right.build());
+
+        DynamicSqlBuilder full = DynamicQuery.builder();
+        full.select().append("*");
+        full.from().append("employees", "e").fullJoin("departments d USING (dept_id)");
+        assertEquals("SELECT * FROM employees e FULL JOIN departments d USING (dept_id)", full.build());
+    }
+
+    @Test
+    public void testFromTypedJoinsWithoutOn_Validation() {
+        DynamicSqlBuilder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        assertThrows(IllegalStateException.class, () -> builder.from().innerJoin("orders o"));
+        assertThrows(IllegalStateException.class, () -> builder.from().leftJoin("orders o"));
+        assertThrows(IllegalStateException.class, () -> builder.from().rightJoin("orders o"));
+        assertThrows(IllegalStateException.class, () -> builder.from().fullJoin("orders o"));
+        builder.from().append("users");
+        assertThrows(IllegalArgumentException.class, () -> builder.from().innerJoin("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.from().leftJoin("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.from().rightJoin("   "));
+        assertThrows(IllegalArgumentException.class, () -> builder.from().fullJoin("   "));
+    }
+
+    @Test
     public void testFromCrossJoin() {
         DynamicSqlBuilder builder = DynamicQuery.builder();
         builder.select().append("*");

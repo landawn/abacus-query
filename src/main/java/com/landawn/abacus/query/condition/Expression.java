@@ -518,17 +518,41 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param expr the expression to test
-     * @param min the minimum value (inclusive)
-     * @param max the maximum value (inclusive)
+     * @param minValue the minimum value (inclusive)
+     * @param maxValue the maximum value (inclusive)
      * @return a string representation of the BETWEEN expression
      * @throws IllegalArgumentException if {@code min} or {@code max} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String between(final String expr, final Object min, final Object max) {
-        return link(Operator.BETWEEN, expr, min, max);
+    public static String between(final String expr, final Object minValue, final Object maxValue) {
+        return link(Operator.BETWEEN, expr, minValue, maxValue);
     }
 
     // Removed: bt(String, Object, Object) - non-standard abbreviation.
     // Use between(String, Object, Object) instead.
+
+    /**
+     * Creates a NOT BETWEEN expression for a literal with min and max values.
+     * A value satisfies {@code NOT BETWEEN min AND max} when it is strictly less than {@code min}
+     * or strictly greater than {@code max}, so both ends of the range are excluded.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String expr = Expression.notBetween("age", 18, 65);
+     * // Returns: "age NOT BETWEEN 18 AND 65"
+     *
+     * String expr2 = Expression.notBetween("price", 10.0, 50.0);
+     * // Returns: "price NOT BETWEEN 10.0 AND 50.0"
+     * }</pre>
+     *
+     * @param expr the expression to test
+     * @param min the lower bound of the excluded range (inclusive)
+     * @param max the upper bound of the excluded range (inclusive)
+     * @return a string representation of the NOT BETWEEN expression
+     * @throws IllegalArgumentException if {@code min} or {@code max} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
+     */
+    public static String notBetween(final String expr, final Object min, final Object max) {
+        return link(Operator.NOT_BETWEEN, expr, min, max);
+    }
 
     /**
      * Creates a LIKE expression for pattern matching.
@@ -553,6 +577,28 @@ public class Expression extends ComposableCondition {
      */
     public static String like(final String expr, final String value) {
         return link(Operator.LIKE, expr, value);
+    }
+
+    /**
+     * Creates a NOT LIKE expression for pattern matching.
+     * Use SQL wildcards: % for any sequence of characters, _ for any single character.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * String expr = Expression.notLike("name", "John%");
+     * // Returns: "name NOT LIKE 'John%'"
+     *
+     * String expr2 = Expression.notLike("email", "%@gmail.com");
+     * // Returns: "email NOT LIKE '%@gmail.com'"
+     * }</pre>
+     *
+     * @param expr the expression to match
+     * @param value the pattern to exclude (can include % and _ wildcards); should not be
+     *              {@code null} — a {@code null} renders as the literal {@code null}
+     * @return a string representation of the NOT LIKE expression
+     */
+    public static String notLike(final String expr, final String value) {
+        return link(Operator.NOT_LIKE, expr, value);
     }
 
     /**

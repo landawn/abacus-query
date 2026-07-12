@@ -3882,15 +3882,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE age > ?
      * }</pre>
      *
-     * @param condition if true, the condition will be appended
+     * @param b if true, the condition will be appended
      * @param cond the condition to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code cond} is {@code null}
-     * @throws IllegalStateException if {@code condition} is {@code true} and a clause emitted by {@code cond} has already been set
+     * @throws IllegalArgumentException if {@code b} is {@code true} and {@code cond} is {@code null}
+     * @throws IllegalStateException if {@code b} is {@code true} and a clause emitted by {@code cond} has already been set
      */
     @Beta
-    public This appendIf(final boolean condition, final Condition cond) {
-        if (condition) {
+    public This appendIf(final boolean b, final Condition cond) {
+        if (b) {
             append(cond);
         }
 
@@ -3912,14 +3912,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE id = ? FOR UPDATE
      * }</pre>
      *
-     * @param condition if true, the expression will be appended
+     * @param b if true, the expression will be appended
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code condition} is {@code true} and {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code b} is {@code true} and {@code expr} is {@code null}, empty, or blank
      */
     @Beta
-    public This appendIf(final boolean condition, final String expr) {
-        if (condition) {
+    public This appendIf(final boolean b, final String expr) {
+        if (b) {
             append(expr);
         }
 
@@ -3941,16 +3941,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE status = ?
      * }</pre>
      *
-     * @param condition if true, append condToAppendForTrue; otherwise append condToAppendForFalse
-     * @param condToAppendForTrue the condition to append if condition is true
-     * @param condToAppendForFalse the condition to append if condition is false
+     * @param b if true, append condToAppendForTrue; otherwise append condToAppendForFalse
+     * @param condToAppendForTrue the condition to append if {@code b} is true
+     * @param condToAppendForFalse the condition to append if {@code b} is false
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if the selected condition (the one chosen by {@code condition}) is {@code null}
+     * @throws IllegalArgumentException if the selected condition (the one chosen by {@code b}) is {@code null}
      * @throws IllegalStateException if a clause emitted by the selected condition has already been set
      */
     @Beta
-    public This appendIfOrElse(final boolean condition, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
-        if (condition) {
+    public This appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
+        if (b) {
             append(condToAppendForTrue);
         } else {
             append(condToAppendForFalse);
@@ -3975,15 +3975,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users ORDER BY name ASC
      * }</pre>
      *
-     * @param condition if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
-     * @param exprToAppendForTrue the expression to append if condition is true
-     * @param exprToAppendForFalse the expression to append if condition is false
+     * @param b if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
+     * @param exprToAppendForTrue the expression to append if {@code b} is true
+     * @param exprToAppendForFalse the expression to append if {@code b} is false
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if the selected expression (the one chosen by {@code condition}) is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if the selected expression (the one chosen by {@code b}) is {@code null}, empty, or blank
      */
     @Beta
-    public This appendIfOrElse(final boolean condition, final String exprToAppendForTrue, final String exprToAppendForFalse) {
-        if (condition) {
+    public This appendIfOrElse(final boolean b, final String exprToAppendForTrue, final String exprToAppendForFalse) {
+        if (b) {
             append(exprToAppendForTrue);
         } else {
             append(exprToAppendForFalse);
