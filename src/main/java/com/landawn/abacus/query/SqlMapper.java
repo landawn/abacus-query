@@ -81,10 +81,10 @@ import com.landawn.abacus.util.XmlUtil;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Load from single file
- * SqlMapper mapper = SqlMapper.load("sql/queries.xml");
+ * SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml");
  * 
  * // Load from multiple files
- * SqlMapper mapper = SqlMapper.load("sql/users.xml,sql/orders.xml");
+ * SqlMapper mapper = SqlMapper.loadFrom("sql/users.xml,sql/orders.xml");
  * 
  * // Get parsed SQL
  * ParsedSql sql = mapper.get("findAccountById");
@@ -174,12 +174,12 @@ public final class SqlMapper {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Single file
-     * SqlMapper mapper = SqlMapper.load("config/sql-mapper.xml");
+     * SqlMapper mapper = SqlMapper.loadFrom("config/sql-mapper.xml");
      * 
      * // Multiple files
-     * SqlMapper mapper = SqlMapper.load("sql/users.xml,sql/orders.xml,sql/products.xml");
+     * SqlMapper mapper = SqlMapper.loadFrom("sql/users.xml,sql/orders.xml,sql/products.xml");
      * // or
-     * SqlMapper mapper = SqlMapper.load("sql/users.xml;sql/orders.xml;sql/products.xml");
+     * SqlMapper mapper = SqlMapper.loadFrom("sql/users.xml;sql/orders.xml;sql/products.xml");
      * }</pre>
      *
      * @param filePaths one or more file paths separated by ',' or ';' (must not be {@code null} or empty).
@@ -193,7 +193,7 @@ public final class SqlMapper {
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid, or if any loaded document does not have {@code <sqlMapper>} as its root element
      */
-    public static SqlMapper load(final String filePaths) {
+    public static SqlMapper loadFrom(final String filePaths) {
         N.checkArgNotEmpty(filePaths, "filePaths");
         final String[] rawFilePaths = Splitter.with(SK.COMMA).trimResults().splitToArray(filePaths.replace(SK.SEMICOLON, SK.COMMA));
         final List<String> parsedFilePaths = N.newArrayList(rawFilePaths.length);
@@ -232,7 +232,7 @@ public final class SqlMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlMapper mapper = SqlMapper.load(new File("sql/users.xml"), new File("sql/orders.xml"));
+     * SqlMapper mapper = SqlMapper.loadFrom(new File("sql/users.xml"), new File("sql/orders.xml"));
      * }</pre>
      *
      * @param files one or more XML files to load (must not be {@code null} or empty, and no element may be {@code null})
@@ -243,7 +243,7 @@ public final class SqlMapper {
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid, or if any loaded document does not have {@code <sqlMapper>} as its root element
      */
-    public static SqlMapper load(final File... files) {
+    public static SqlMapper loadFrom(final File... files) {
         N.checkArgNotEmpty(files, "files");
 
         final SqlMapper sqlMapper = new SqlMapper();
@@ -265,7 +265,7 @@ public final class SqlMapper {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * try (InputStream is = new FileInputStream("sql/queries.xml")) {
-     *     SqlMapper mapper = SqlMapper.load(is);
+     *     SqlMapper mapper = SqlMapper.loadFrom(is);
      * }
      * }</pre>
      *
@@ -276,7 +276,7 @@ public final class SqlMapper {
      * @throws UncheckedIOException if an I/O error occurs reading the stream
      * @throws ParsingException if the XML content is invalid, or does not have {@code <sqlMapper>} as its root element
      */
-    public static SqlMapper load(final InputStream is) {
+    public static SqlMapper loadFrom(final InputStream is) {
         N.checkArgNotNull(is, "is");
 
         final SqlMapper sqlMapper = new SqlMapper();
@@ -346,7 +346,7 @@ public final class SqlMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlMapper mapper = SqlMapper.load("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml");
      * ImmutableSet<String> ids = mapper.ids();
      * ids.forEach(id -> System.out.println("Available SQL: " + id));
      * }</pre>
@@ -362,7 +362,7 @@ public final class SqlMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlMapper mapper = SqlMapper.load("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml");
      *
      * ParsedSql sql = mapper.get("findAccountById");
      * if (sql != null) {
@@ -395,7 +395,7 @@ public final class SqlMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlMapper mapper = SqlMapper.load("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml");
      * boolean present = mapper.containsId("findAccountById");
      * boolean absent = mapper.containsId("nonExistentId");   // false
      * }</pre>
@@ -415,7 +415,7 @@ public final class SqlMapper {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql>
-     * SqlMapper mapper = SqlMapper.load("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml");
      *
      * ImmutableMap<String, String> attrs = mapper.getAttributes("batchInsert");
      * if (attrs != null) {
@@ -622,7 +622,7 @@ public final class SqlMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlMapper mapper = SqlMapper.load("sql/queries.xml");
+     * SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml");
      * mapper.remove("deprecatedQuery");
      * // Verify removal
      * boolean removed = mapper.get("deprecatedQuery") == null;
@@ -650,7 +650,7 @@ public final class SqlMapper {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlMapper original = SqlMapper.load("sql/queries.xml");
+     * SqlMapper original = SqlMapper.loadFrom("sql/queries.xml");
      * SqlMapper copy = original.copy();
      *
      * // Modifications to the copy do not affect the original
@@ -672,7 +672,7 @@ public final class SqlMapper {
 
     /**
      * Saves all SQL definitions in this mapper to an XML file.
-     * The output format matches the expected input format for {@link #load(String)}.
+     * The output format matches the expected input format for {@link #loadFrom(String)}.
      * If the file already exists, it will be overwritten.
      *
      * <p>The canonical SQL identifier (the registered map key) is always written as the
@@ -719,7 +719,7 @@ public final class SqlMapper {
 
     /**
      * Writes all SQL definitions in this mapper to the supplied output stream as XML.
-     * The output format matches the expected input format for {@link #load(InputStream)}.
+     * The output format matches the expected input format for {@link #loadFrom(InputStream)}.
      * The stream is flushed but <i>not</i> closed by this method; the caller retains ownership
      * and is responsible for closing it.
      *
@@ -806,7 +806,7 @@ public final class SqlMapper {
      * SqlMapper emptyMapper = new SqlMapper();
      * boolean empty = emptyMapper.isEmpty();  // true
      *
-     * SqlMapper loadedMapper = SqlMapper.load("sql/queries.xml");
+     * SqlMapper loadedMapper = SqlMapper.loadFrom("sql/queries.xml");
      * boolean hasEntries = !loadedMapper.isEmpty();  // true (assuming file has SQL definitions)
      * }</pre>
      *

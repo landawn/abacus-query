@@ -71,6 +71,37 @@ import com.landawn.abacus.util.Strings;
  * // Result: ["SELECT", " ", "*", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">", " ", "25", " ", "ORDER", " ", "BY", " ", "name"]
  * }</pre>
  *
+ * <p id="query-classification"><b>Query classification:</b> the {@link #isSelectQuery(String)},
+ * {@link #isInsertQuery(String)}, {@link #isUpdateQuery(String)}, {@link #isDeleteQuery(String)},
+ * {@link #isInsertOrReplaceQuery(String)}, {@link #isReadOnlyQuery(String)} and
+ * {@link #isNoUpdateQuery(String)} predicates classify a statement as summarized below. Each cell shows
+ * whether the predicate in that column returns {@code true} (Y) or {@code false} (N) for the statement
+ * kind in that row. Note every read-only statement is also a no-update statement, but not vice versa.</p>
+ * <table border="1">
+ * <caption>{@code SqlParser} query-classification predicates by statement kind</caption>
+ * <tr>
+ *   <th>Operation (leading keyword / clause)</th>
+ *   <th>{@code isSelectQuery}</th>
+ *   <th>{@code isInsertQuery}</th>
+ *   <th>{@code isUpdateQuery}</th>
+ *   <th>{@code isDeleteQuery}</th>
+ *   <th>{@code isInsertOrReplaceQuery}</th>
+ *   <th>{@code isReadOnlyQuery}</th>
+ *   <th>{@code isNoUpdateQuery}</th>
+ * </tr>
+ * <tr><td>{@code SELECT}</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>Y</td><td>Y</td></tr>
+ * <tr><td>{@code SELECT ... INTO}</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+ * <tr><td>{@code INSERT}</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>Y</td></tr>
+ * <tr><td>{@code INSERT OR REPLACE}</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>Y</td><td>N</td><td>N</td></tr>
+ * <tr><td>{@code INSERT ... ON DUPLICATE KEY UPDATE}</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+ * <tr><td>{@code INSERT ... ON CONFLICT ... DO UPDATE}</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+ * <tr><td>{@code INSERT ... ON CONFLICT ... DO NOTHING}</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>Y</td></tr>
+ * <tr><td>{@code INSERT OVERWRITE}</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+ * <tr><td>{@code UPDATE}</td><td>N</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+ * <tr><td>{@code DELETE}</td><td>N</td><td>N</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td></tr>
+ * <tr><td>{@code MERGE} / {@code REPLACE} / {@code TRUNCATE} / {@code CREATE} / {@code ALTER} / {@code DROP}</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+ * </table>
+ *
  */
 public final class SqlParser {
 
@@ -1849,6 +1880,10 @@ public final class SqlParser {
      * follows the CTE definitions is examined instead.
      * </p>
      *
+     * <p><b>Comparison with related methods:</b> see the
+     * <a href="#query-classification">query-classification table</a> in the class documentation for how
+     * this predicate relates to the other {@code is...Query} methods.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Valid SELECT queries
@@ -1871,6 +1906,12 @@ public final class SqlParser {
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
      * @return {@code true} if the SQL is a SELECT query, {@code false} otherwise
+     * @see #isInsertQuery(String)
+     * @see #isUpdateQuery(String)
+     * @see #isDeleteQuery(String)
+     * @see #isInsertOrReplaceQuery(String)
+     * @see #isReadOnlyQuery(String)
+     * @see #isNoUpdateQuery(String)
      */
     public static boolean isSelectQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
@@ -1903,9 +1944,18 @@ public final class SqlParser {
      * affect the classification.
      * </p>
      *
+     * <p><b>Comparison with related methods:</b> see the
+     * <a href="#query-classification">query-classification table</a> in the class documentation for how
+     * this predicate relates to the other {@code is...Query} methods.</p>
+     *
      * @param sql the SQL statement to check; may be empty or {@code null}
      * @return {@code true} if the SQL is a read-only SELECT query, {@code false} otherwise
      * @see #isSelectQuery(String)
+     * @see #isInsertQuery(String)
+     * @see #isUpdateQuery(String)
+     * @see #isDeleteQuery(String)
+     * @see #isInsertOrReplaceQuery(String)
+     * @see #isNoUpdateQuery(String)
      */
     public static boolean isReadOnlyQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
@@ -1924,6 +1974,10 @@ public final class SqlParser {
      * statements that start with a {@code WITH} (CTE) clause, the keyword that follows the CTE
      * definitions is examined instead.
      * </p>
+     *
+     * <p><b>Comparison with related methods:</b> see the
+     * <a href="#query-classification">query-classification table</a> in the class documentation for how
+     * this predicate relates to the other {@code is...Query} methods.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1947,6 +2001,12 @@ public final class SqlParser {
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
      * @return {@code true} if the SQL is an INSERT query, {@code false} otherwise
+     * @see #isSelectQuery(String)
+     * @see #isUpdateQuery(String)
+     * @see #isDeleteQuery(String)
+     * @see #isInsertOrReplaceQuery(String)
+     * @see #isReadOnlyQuery(String)
+     * @see #isNoUpdateQuery(String)
      */
     public static boolean isInsertQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
@@ -1954,6 +2014,102 @@ public final class SqlParser {
         }
 
         return "INSERT".equalsIgnoreCase(getLeadingQueryKeyword(sql));
+    }
+
+    /**
+     * Checks if the given SQL statement is an UPDATE query.
+     * <p>
+     * This method performs a case-insensitive check on the leading SQL keyword (after skipping
+     * any leading whitespace, line comments {@code --}/{@code #} and block comments
+     * {@code /}{@code * ... *}{@code /}). Any leading parentheses are skipped as well. For
+     * statements that start with a {@code WITH} (CTE) clause, the keyword that follows the CTE
+     * definitions is examined instead.
+     * </p>
+     *
+     * <p><b>Comparison with related methods:</b> see the
+     * <a href="#query-classification">query-classification table</a> in the class documentation for how
+     * this predicate relates to the other {@code is...Query} methods.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Valid UPDATE queries
+     * boolean result1 = SqlParser.isUpdateQuery("UPDATE users SET name = 'John'");
+     * // result1 = true
+     *
+     * boolean result2 = SqlParser.isUpdateQuery("update products set price = 9.99 where id = 1");
+     * // result2 = true
+     *
+     * // Non-UPDATE queries
+     * boolean result3 = SqlParser.isUpdateQuery("SELECT * FROM users");
+     * // result3 = false
+     *
+     * boolean result4 = SqlParser.isUpdateQuery("DELETE FROM users WHERE id = 1");
+     * // result4 = false
+     * }</pre>
+     *
+     * @param sql the SQL statement to check; may be empty or {@code null}
+     * @return {@code true} if the SQL is an UPDATE query, {@code false} otherwise
+     * @see #isSelectQuery(String)
+     * @see #isInsertQuery(String)
+     * @see #isDeleteQuery(String)
+     * @see #isInsertOrReplaceQuery(String)
+     * @see #isReadOnlyQuery(String)
+     * @see #isNoUpdateQuery(String)
+     */
+    public static boolean isUpdateQuery(final String sql) {
+        if (Strings.isEmpty(sql)) {
+            return false;
+        }
+
+        return "UPDATE".equalsIgnoreCase(getLeadingQueryKeyword(sql));
+    }
+
+    /**
+     * Checks if the given SQL statement is a DELETE query.
+     * <p>
+     * This method performs a case-insensitive check on the leading SQL keyword (after skipping
+     * any leading whitespace, line comments {@code --}/{@code #} and block comments
+     * {@code /}{@code * ... *}{@code /}). Any leading parentheses are skipped as well. For
+     * statements that start with a {@code WITH} (CTE) clause, the keyword that follows the CTE
+     * definitions is examined instead.
+     * </p>
+     *
+     * <p><b>Comparison with related methods:</b> see the
+     * <a href="#query-classification">query-classification table</a> in the class documentation for how
+     * this predicate relates to the other {@code is...Query} methods.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Valid DELETE queries
+     * boolean result1 = SqlParser.isDeleteQuery("DELETE FROM users WHERE id = 1");
+     * // result1 = true
+     *
+     * boolean result2 = SqlParser.isDeleteQuery("delete from products where price < 1");
+     * // result2 = true
+     *
+     * // Non-DELETE queries
+     * boolean result3 = SqlParser.isDeleteQuery("SELECT * FROM users");
+     * // result3 = false
+     *
+     * boolean result4 = SqlParser.isDeleteQuery("UPDATE users SET name = 'John'");
+     * // result4 = false
+     * }</pre>
+     *
+     * @param sql the SQL statement to check; may be empty or {@code null}
+     * @return {@code true} if the SQL is a DELETE query, {@code false} otherwise
+     * @see #isSelectQuery(String)
+     * @see #isInsertQuery(String)
+     * @see #isUpdateQuery(String)
+     * @see #isInsertOrReplaceQuery(String)
+     * @see #isReadOnlyQuery(String)
+     * @see #isNoUpdateQuery(String)
+     */
+    public static boolean isDeleteQuery(final String sql) {
+        if (Strings.isEmpty(sql)) {
+            return false;
+        }
+
+        return "DELETE".equalsIgnoreCase(getLeadingQueryKeyword(sql));
     }
 
     /**
@@ -1969,6 +2125,10 @@ public final class SqlParser {
      * keyword returns {@code false}.
      * </p>
      *
+     * <p><b>Comparison with related methods:</b> see the
+     * <a href="#query-classification">query-classification table</a> in the class documentation for how
+     * this predicate relates to the other {@code is...Query} methods.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * boolean result1 = SqlParser.isInsertOrReplaceQuery("INSERT OR REPLACE INTO t (id) VALUES (1)");
@@ -1980,6 +2140,12 @@ public final class SqlParser {
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
      * @return {@code true} if the SQL begins with {@code INSERT OR REPLACE}, {@code false} otherwise
+     * @see #isSelectQuery(String)
+     * @see #isInsertQuery(String)
+     * @see #isUpdateQuery(String)
+     * @see #isDeleteQuery(String)
+     * @see #isReadOnlyQuery(String)
+     * @see #isNoUpdateQuery(String)
      */
     public static boolean isInsertOrReplaceQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
@@ -2044,11 +2210,43 @@ public final class SqlParser {
      * <i>functions</i> do not affect the classification.
      * </p>
      *
+     * <p><b>Comparison with related methods</b> — whether each predicate returns {@code true} (Y) or
+     * {@code false} (N) for a given kind of statement (note "no-update" is looser than
+     * {@code isReadOnlyQuery}: it also accepts plain {@code INSERT}s that only add new rows):</p>
+     * <table border="1">
+     * <caption>{@code SqlParser} query-classification predicates by statement kind</caption>
+     * <tr>
+     *   <th>Operation (leading keyword / clause)</th>
+     *   <th>{@code isSelectQuery}</th>
+     *   <th>{@code isInsertQuery}</th>
+     *   <th>{@code isUpdateQuery}</th>
+     *   <th>{@code isDeleteQuery}</th>
+     *   <th>{@code isInsertOrReplaceQuery}</th>
+     *   <th>{@code isReadOnlyQuery}</th>
+     *   <th>{@code isNoUpdateQuery}</th>
+     * </tr>
+     * <tr><td>{@code SELECT}</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>Y</td><td>Y</td></tr>
+     * <tr><td>{@code SELECT ... INTO}</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+     * <tr><td>{@code INSERT}</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>Y</td></tr>
+     * <tr><td>{@code INSERT OR REPLACE}</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>Y</td><td>N</td><td>N</td></tr>
+     * <tr><td>{@code INSERT ... ON DUPLICATE KEY UPDATE}</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+     * <tr><td>{@code INSERT ... ON CONFLICT ... DO UPDATE}</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+     * <tr><td>{@code INSERT ... ON CONFLICT ... DO NOTHING}</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>Y</td></tr>
+     * <tr><td>{@code INSERT OVERWRITE}</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+     * <tr><td>{@code UPDATE}</td><td>N</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+     * <tr><td>{@code DELETE}</td><td>N</td><td>N</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td></tr>
+     * <tr><td>{@code MERGE} / {@code REPLACE} / {@code TRUNCATE} / {@code CREATE} / {@code ALTER} / {@code DROP}</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+     * </table>
+     *
      * @param sql the SQL statement to check; may be empty or {@code null}
      * @return {@code true} if the SQL neither updates nor deletes existing rows, {@code false} otherwise
      *         (including for a {@code null} or empty statement)
      * @see #isSelectQuery(String)
      * @see #isInsertQuery(String)
+     * @see #isUpdateQuery(String)
+     * @see #isDeleteQuery(String)
+     * @see #isInsertOrReplaceQuery(String)
+     * @see #isReadOnlyQuery(String)
      */
     public static boolean isNoUpdateQuery(final String sql) {
         if (Strings.isEmpty(sql)) {

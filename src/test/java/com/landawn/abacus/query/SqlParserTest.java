@@ -1447,6 +1447,86 @@ public class SqlParserTest extends TestBase {
     }
 
     // ----------------------------------------------------------------------------------------------
+    // isUpdateQuery(String)
+    // ----------------------------------------------------------------------------------------------
+
+    @Test
+    public void testIsUpdateQuery_basic() {
+        assertTrue(SqlParser.isUpdateQuery("UPDATE users SET name = 'John'"));
+        assertTrue(SqlParser.isUpdateQuery("update products set price = 9.99 where id = 1"));
+        assertTrue(SqlParser.isUpdateQuery("   UPDATE orders SET status = 'shipped'"));
+        assertFalse(SqlParser.isUpdateQuery("SELECT * FROM users"));
+        assertFalse(SqlParser.isUpdateQuery("INSERT INTO users VALUES (1, 'John')"));
+        assertFalse(SqlParser.isUpdateQuery("DELETE FROM users"));
+    }
+
+    @Test
+    public void testIsUpdateQuery_leadingCommentsAndParens() {
+        assertTrue(SqlParser.isUpdateQuery("-- a leading comment\nUPDATE t SET a = 1"));
+        assertTrue(SqlParser.isUpdateQuery("/* block */ UPDATE t SET a = 1"));
+        assertTrue(SqlParser.isUpdateQuery("# hash comment\nUPDATE t SET a = 1"));
+    }
+
+    @Test
+    public void testIsUpdateQuery_withCte() {
+        assertTrue(SqlParser.isUpdateQuery("WITH t AS (SELECT 1) UPDATE x SET a = (SELECT 1 FROM t)"));
+        assertFalse(SqlParser.isUpdateQuery("WITH t AS (SELECT 1) SELECT * FROM t"));
+    }
+
+    @Test
+    public void testIsUpdateQuery_keywordPrefixIsNotAKeyword() {
+        assertFalse(SqlParser.isUpdateQuery("UPDATE1 t SET a = 1"));
+        assertFalse(SqlParser.isUpdateQuery("update_log t SET a = 1"));
+    }
+
+    @Test
+    public void testIsUpdateQuery_nullAndEmpty() {
+        assertFalse(SqlParser.isUpdateQuery(null));
+        assertFalse(SqlParser.isUpdateQuery(""));
+        assertFalse(SqlParser.isUpdateQuery("    "));
+    }
+
+    // ----------------------------------------------------------------------------------------------
+    // isDeleteQuery(String)
+    // ----------------------------------------------------------------------------------------------
+
+    @Test
+    public void testIsDeleteQuery_basic() {
+        assertTrue(SqlParser.isDeleteQuery("DELETE FROM users WHERE id = 1"));
+        assertTrue(SqlParser.isDeleteQuery("delete from products where price < 1"));
+        assertTrue(SqlParser.isDeleteQuery("   DELETE FROM orders"));
+        assertFalse(SqlParser.isDeleteQuery("SELECT * FROM users"));
+        assertFalse(SqlParser.isDeleteQuery("INSERT INTO users VALUES (1, 'John')"));
+        assertFalse(SqlParser.isDeleteQuery("UPDATE users SET name = 'John'"));
+    }
+
+    @Test
+    public void testIsDeleteQuery_leadingCommentsAndParens() {
+        assertTrue(SqlParser.isDeleteQuery("-- a leading comment\nDELETE FROM t"));
+        assertTrue(SqlParser.isDeleteQuery("/* block */ DELETE FROM t"));
+        assertTrue(SqlParser.isDeleteQuery("# hash comment\nDELETE FROM t"));
+    }
+
+    @Test
+    public void testIsDeleteQuery_withCte() {
+        assertTrue(SqlParser.isDeleteQuery("WITH t AS (SELECT 1) DELETE FROM x WHERE id IN (SELECT 1 FROM t)"));
+        assertFalse(SqlParser.isDeleteQuery("WITH t AS (SELECT 1) SELECT * FROM t"));
+    }
+
+    @Test
+    public void testIsDeleteQuery_keywordPrefixIsNotAKeyword() {
+        assertFalse(SqlParser.isDeleteQuery("DELETE1 FROM t"));
+        assertFalse(SqlParser.isDeleteQuery("delete_log FROM t"));
+    }
+
+    @Test
+    public void testIsDeleteQuery_nullAndEmpty() {
+        assertFalse(SqlParser.isDeleteQuery(null));
+        assertFalse(SqlParser.isDeleteQuery(""));
+        assertFalse(SqlParser.isDeleteQuery("    "));
+    }
+
+    // ----------------------------------------------------------------------------------------------
     // isInsertOrReplaceQuery(String)
     // ----------------------------------------------------------------------------------------------
 

@@ -35,7 +35,7 @@ public class SqlMapperTest extends TestBase {
     public void testLoadMissingFilePathThrowsPointedIae() {
         // Regression (2026-07-03): a path that resolves to no file used to surface as a bare NPE
         // from PropertiesUtil.formatPath(null) instead of the documented IllegalArgumentException.
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> SqlMapper.load("no/such/sql-mapper-file-xyz.xml"));
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> SqlMapper.loadFrom("no/such/sql-mapper-file-xyz.xml"));
         assertTrue(e.getMessage().contains("no/such/sql-mapper-file-xyz.xml"));
     }
 
@@ -559,7 +559,7 @@ public class SqlMapperTest extends TestBase {
         }
 
         // Test loading from file
-        SqlMapper mapper = SqlMapper.load(xmlFile.getAbsolutePath());
+        SqlMapper mapper = SqlMapper.loadFrom(xmlFile.getAbsolutePath());
         assertNotNull(mapper);
         assertFalse(mapper.isEmpty());
 
@@ -604,7 +604,7 @@ public class SqlMapperTest extends TestBase {
 
         // Test loading multiple files with comma separator
         String paths = xmlFile1.getAbsolutePath() + "," + xmlFile2.getAbsolutePath();
-        SqlMapper mapper = SqlMapper.load(paths);
+        SqlMapper mapper = SqlMapper.loadFrom(paths);
 
         assertEquals(2, mapper.ids().size());
         assertNotNull(mapper.get("findUser"));
@@ -612,7 +612,7 @@ public class SqlMapperTest extends TestBase {
 
         // Test loading multiple files with semicolon separator
         paths = xmlFile1.getAbsolutePath() + ";" + xmlFile2.getAbsolutePath();
-        mapper = SqlMapper.load(paths);
+        mapper = SqlMapper.loadFrom(paths);
 
         assertEquals(2, mapper.ids().size());
         assertNotNull(mapper.get("findUser"));
@@ -627,7 +627,7 @@ public class SqlMapperTest extends TestBase {
             writer.write("<root></root>\n");
         }
 
-        assertThrows(RuntimeException.class, () -> SqlMapper.load(xmlFile.getAbsolutePath()));
+        assertThrows(RuntimeException.class, () -> SqlMapper.loadFrom(xmlFile.getAbsolutePath()));
     }
 
     @Test
@@ -666,7 +666,7 @@ public class SqlMapperTest extends TestBase {
         assertTrue(outputFile.exists());
 
         // Load saved file and verify
-        SqlMapper loaded = SqlMapper.load(outputFile.getAbsolutePath());
+        SqlMapper loaded = SqlMapper.loadFrom(outputFile.getAbsolutePath());
         assertEquals(mapper.ids(), loaded.ids());
         assertEquals(mapper.get("findUser").originalSql(), loaded.get("findUser").originalSql());
         assertEquals(mapper.get("updateUser").originalSql(), loaded.get("updateUser").originalSql());
@@ -688,7 +688,7 @@ public class SqlMapperTest extends TestBase {
         mapper.saveTo(outputFile);
 
         assertTrue(outputFile.exists());
-        SqlMapper loaded = SqlMapper.load(outputFile.getAbsolutePath());
+        SqlMapper loaded = SqlMapper.loadFrom(outputFile.getAbsolutePath());
         assertNotNull(loaded.get("findUser"));
     }
 
@@ -782,14 +782,14 @@ public class SqlMapperTest extends TestBase {
 
     @Test
     public void testLoad_EmptySegmentsAfterSplit() {
-        assertThrows(IllegalArgumentException.class, () -> SqlMapper.load(" , ; , "));
+        assertThrows(IllegalArgumentException.class, () -> SqlMapper.loadFrom(" , ; , "));
     }
 
     @Test
     public void testLoad_MissingFileWrapsIOException() {
         File directoryPath = tempDir;
 
-        assertThrows(com.landawn.abacus.exception.UncheckedIOException.class, () -> SqlMapper.load(directoryPath.getAbsolutePath()));
+        assertThrows(com.landawn.abacus.exception.UncheckedIOException.class, () -> SqlMapper.loadFrom(directoryPath.getAbsolutePath()));
     }
 
     @Test
@@ -800,7 +800,7 @@ public class SqlMapperTest extends TestBase {
             writer.write("<sqlMapper><sql id=\"findUser\">SELECT 1</sqlMapper>");
         }
 
-        assertThrows(com.landawn.abacus.exception.ParsingException.class, () -> SqlMapper.load(malformed.getAbsolutePath()));
+        assertThrows(com.landawn.abacus.exception.ParsingException.class, () -> SqlMapper.loadFrom(malformed.getAbsolutePath()));
     }
 
     @Test
@@ -852,7 +852,7 @@ public class SqlMapperTest extends TestBase {
         File output = new File(tempDir, "attrs-id-roundtrip.xml");
         mapper.saveTo(output);
 
-        SqlMapper reloaded = SqlMapper.load(output.getAbsolutePath());
+        SqlMapper reloaded = SqlMapper.loadFrom(output.getAbsolutePath());
         assertNotNull(reloaded.get("realId"));
         assertNull(reloaded.get("evil"));
         assertEquals("50", reloaded.getAttributes("realId").get("batchSize"));
@@ -867,7 +867,7 @@ public class SqlMapperTest extends TestBase {
         File output = new File(tempDir, "special-chars-roundtrip.xml");
         mapper.saveTo(output);
 
-        SqlMapper reloaded = SqlMapper.load(output.getAbsolutePath());
+        SqlMapper reloaded = SqlMapper.loadFrom(output.getAbsolutePath());
         assertEquals("SELECT * FROM t WHERE a < 10 AND b > 5 AND c = 'a&b'", reloaded.get("findGreater").originalSql());
     }
 
@@ -1016,7 +1016,7 @@ public class SqlMapperTest extends TestBase {
         assertTrue(mapper.isEmpty());
     }
 
-    // ----- load(File...) -----
+    // ----- loadFrom(File...) -----
 
     @Test
     public void testLoadFromFiles() throws IOException {
@@ -1029,7 +1029,7 @@ public class SqlMapperTest extends TestBase {
             w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sqlMapper>\n  <sql id=\"findOrder\">SELECT * FROM orders</sql>\n</sqlMapper>\n");
         }
 
-        SqlMapper mapper = SqlMapper.load(f1, f2);
+        SqlMapper mapper = SqlMapper.loadFrom(f1, f2);
         assertEquals(2, mapper.size());
         assertTrue(mapper.containsId("findUser"));
         assertTrue(mapper.containsId("findOrder"));
@@ -1042,14 +1042,14 @@ public class SqlMapperTest extends TestBase {
             w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sqlMapper>\n  <sql id=\"findUser\" fetchSize=\"10\">SELECT * FROM users</sql>\n</sqlMapper>\n");
         }
 
-        SqlMapper mapper = SqlMapper.load(f1);
+        SqlMapper mapper = SqlMapper.loadFrom(f1);
         assertEquals(1, mapper.size());
         assertEquals("10", mapper.getAttributes("findUser").get("fetchSize"));
     }
 
     @Test
     public void testLoadFromFiles_emptyArrayThrows() {
-        assertThrows(IllegalArgumentException.class, () -> SqlMapper.load(new File[0]));
+        assertThrows(IllegalArgumentException.class, () -> SqlMapper.loadFrom(new File[0]));
     }
 
     @Test
@@ -1058,7 +1058,7 @@ public class SqlMapperTest extends TestBase {
         try (FileWriter w = new FileWriter(f1)) {
             w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sqlMapper>\n  <sql id=\"findUser\">SELECT 1</sql>\n</sqlMapper>\n");
         }
-        assertThrows(IllegalArgumentException.class, () -> SqlMapper.load(f1, (File) null));
+        assertThrows(IllegalArgumentException.class, () -> SqlMapper.loadFrom(f1, (File) null));
     }
 
     @Test
@@ -1071,17 +1071,17 @@ public class SqlMapperTest extends TestBase {
         try (FileWriter w = new FileWriter(f2)) {
             w.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<sqlMapper>\n  <sql id=\"dup\">SELECT 2</sql>\n</sqlMapper>\n");
         }
-        assertThrows(IllegalArgumentException.class, () -> SqlMapper.load(f1, f2));
+        assertThrows(IllegalArgumentException.class, () -> SqlMapper.loadFrom(f1, f2));
     }
 
-    // ----- load(InputStream) -----
+    // ----- loadFrom(InputStream) -----
 
     @Test
     public void testLoadFromInputStream() {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sqlMapper><sql id=\"findUser\" timeout=\"5\">SELECT * FROM users</sql></sqlMapper>";
         InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
 
-        SqlMapper mapper = SqlMapper.load(is);
+        SqlMapper mapper = SqlMapper.loadFrom(is);
         assertEquals(1, mapper.size());
         assertEquals("SELECT * FROM users", mapper.get("findUser").originalSql());
         assertEquals("5", mapper.getAttributes("findUser").get("timeout"));
@@ -1089,14 +1089,14 @@ public class SqlMapperTest extends TestBase {
 
     @Test
     public void testLoadFromInputStream_nullThrows() {
-        assertThrows(IllegalArgumentException.class, () -> SqlMapper.load((InputStream) null));
+        assertThrows(IllegalArgumentException.class, () -> SqlMapper.loadFrom((InputStream) null));
     }
 
     @Test
     public void testLoadFromInputStream_noSqlMapperElementThrows() {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root></root>";
         InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
-        assertThrows(com.landawn.abacus.exception.ParsingException.class, () -> SqlMapper.load(is));
+        assertThrows(com.landawn.abacus.exception.ParsingException.class, () -> SqlMapper.loadFrom(is));
     }
 
     @Test
@@ -1104,16 +1104,16 @@ public class SqlMapperTest extends TestBase {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><sqlMapper><sql id=\"q\">SELECT 1</sql></sqlMapper></root>";
         InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
 
-        assertThrows(com.landawn.abacus.exception.ParsingException.class, () -> SqlMapper.load(is));
+        assertThrows(com.landawn.abacus.exception.ParsingException.class, () -> SqlMapper.loadFrom(is));
     }
 
     @Test
     public void testLoadFromInputStream_callerCanCloseInTryWithResources() throws IOException {
-        // The caller opens the stream and closes it via try-with-resources; load() must not
+        // The caller opens the stream and closes it via try-with-resources; loadFrom() must not
         // throw or interfere with that (the underlying parser may consume/close the stream).
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sqlMapper><sql id=\"q\">SELECT 1</sql></sqlMapper>";
         try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
-            SqlMapper mapper = SqlMapper.load(is);
+            SqlMapper mapper = SqlMapper.loadFrom(is);
             assertEquals(1, mapper.size());
             assertEquals("SELECT 1", mapper.get("q").originalSql());
         }
@@ -1146,7 +1146,7 @@ public class SqlMapperTest extends TestBase {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         mapper.saveTo(baos);
 
-        SqlMapper loaded = SqlMapper.load(new ByteArrayInputStream(baos.toByteArray()));
+        SqlMapper loaded = SqlMapper.loadFrom(new ByteArrayInputStream(baos.toByteArray()));
         assertEquals(mapper.ids(), loaded.ids());
         assertEquals("SELECT * FROM users WHERE id = ?", loaded.get("findUser").originalSql());
         assertEquals("100", loaded.getAttributes("findUser").get("batchSize"));
@@ -1180,7 +1180,7 @@ public class SqlMapperTest extends TestBase {
         assertTrue(out.exists());
 
         try (InputStream is = new FileInputStream(out)) {
-            SqlMapper loaded = SqlMapper.load(is);
+            SqlMapper loaded = SqlMapper.loadFrom(is);
             assertEquals("SELECT 1", loaded.get("q").originalSql());
         }
     }

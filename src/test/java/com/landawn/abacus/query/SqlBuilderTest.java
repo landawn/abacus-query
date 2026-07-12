@@ -3477,35 +3477,19 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
-        public void testRenderCondition_equivalentToDeprecatedFromCondition() {
+        public void testFromCondition_singleArg_equivalentToNullEntityClass() {
             Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000));
 
-            String viaRender = Dsl.SCSB.renderCondition(cond, Account.class).build().query();
-            String viaFrom = Dsl.SCSB.fromCondition(cond, Account.class).build().query();
-
-            Assertions.assertEquals(viaFrom, viaRender);
-            Assertions.assertTrue(viaRender.contains("AND"));
-        }
-
-        @Test
-        public void testRenderCondition_nullCondition() {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.SCSB.renderCondition(null, Account.class));
-        }
-
-        @Test
-        public void testRenderCondition_singleArg_equivalentToNullEntityClass() {
-            Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000));
-
-            String viaSingleArg = Dsl.SCSB.renderCondition(cond).build().query();
-            String viaNullClass = Dsl.SCSB.renderCondition(Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000)), null).build().query();
+            String viaSingleArg = Dsl.SCSB.fromCondition(cond).build().query();
+            String viaNullClass = Dsl.SCSB.fromCondition(Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000)), null).build().query();
 
             Assertions.assertEquals(viaNullClass, viaSingleArg);
             Assertions.assertTrue(viaSingleArg.contains("AND"));
         }
 
         @Test
-        public void testRenderCondition_singleArg_nullCondition() {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.SCSB.renderCondition(null));
+        public void testFromCondition_singleArg_nullCondition() {
+            Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.SCSB.fromCondition(null));
         }
 
         @Test

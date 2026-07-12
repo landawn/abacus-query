@@ -5440,7 +5440,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         an UPDATE with no columns staged and no prior {@code set(...)} call
      */
     protected void init(final boolean setForUpdate) {
-        // Note: any change, please take a look at: Dsl.renderCondition(final Condition cond, final Class<?> entityClass) first.
+        // Note: any change, please take a look at: Dsl.fromCondition(final Condition cond, final Class<?> entityClass) first.
 
         if (_op == OperationType.ADD && Strings.isEmpty(_tableName)) {
             throw new IllegalStateException("into() must be called to specify the target table before building an INSERT statement");

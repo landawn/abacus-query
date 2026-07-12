@@ -273,7 +273,7 @@ Keep SQL statements out of Java source, referenced by short IDs.
 ```java
 import com.landawn.abacus.query.SqlMapper;
 
-SqlMapper mapper = SqlMapper.load("sqlMapper.xml");
+SqlMapper mapper = SqlMapper.loadFrom("sqlMapper.xml");
 String sql = mapper.get("findAccountById").parameterizedSql();
 ```
 
