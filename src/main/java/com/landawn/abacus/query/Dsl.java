@@ -517,28 +517,28 @@ public final class Dsl {
      * // sqlPair.parameters(): ["John", "Doe", "Jane", "Smith", "Bob", "Johnson"]
      * }</pre>
      *
-     * @param entitiesOrProps list of entities or property maps to insert
+     * @param entitiesOrPropMaps list of entities or property maps to insert
      * @return a new SqlBuilder instance configured for batch INSERT operation
-     * @throws IllegalArgumentException if {@code entitiesOrProps} is null or empty, if every element is
+     * @throws IllegalArgumentException if {@code entitiesOrPropMaps} is null or empty, if every element is
      *         {@code null}; if a map is empty, contains a non-string or blank key, or does not share
      *         the same key set as the other rows; if elements have mixed types (some {@code Map}, some
      *         bean); if bean rows do not share an insertable property set; or if no bean column remains
      *         after columns that are null/default in every row are removed
      */
     @Beta
-    public SqlBuilder batchInsert(final Collection<?> entitiesOrProps) {
-        N.checkArgNotEmpty(entitiesOrProps, SqlBuilder.INSERTION_PART_MSG);
+    public SqlBuilder batchInsert(final Collection<?> entitiesOrPropMaps) {
+        N.checkArgNotEmpty(entitiesOrPropMaps, SqlBuilder.INSERTION_PART_MSG);
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.ADD;
-        final Optional<?> first = N.firstNonNull(entitiesOrProps);
+        final Optional<?> first = N.firstNonNull(entitiesOrPropMaps);
 
         if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
             instance.setEntityClass(first.get().getClass());
         }
 
-        instance._propsList = SqlBuilder.toInsertPropsList(entitiesOrProps);
+        instance._propsList = SqlBuilder.toInsertPropsList(entitiesOrPropMaps);
 
         return instance;
     }
@@ -1341,7 +1341,7 @@ public final class Dsl {
      * List<Selection> selections = Arrays.asList(
      *     Selection.builder().entityClass(Account.class).tableAlias("a").classAlias("account").build(),
      *     Selection.builder().entityClass(Order.class).tableAlias("o").classAlias("order")
-     *         .selectPropNames(Arrays.asList("id", "total")).build(),
+     *         .includedPropNames(Arrays.asList("id", "total")).build(),
      *     Selection.builder().entityClass(Product.class).tableAlias("p").classAlias("product")
      *         .excludedPropNames(N.asSet("description")).build()
      * );
@@ -1354,18 +1354,18 @@ public final class Dsl {
      *                 .build().query();
      * }</pre>
      *
-     * @param multiSelects list of Selection objects defining what to select from each entity
+     * @param selections list of Selection objects defining what to select from each entity
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
+     * @throws IllegalArgumentException if selections is null, empty, or contains invalid data
      */
-    public SqlBuilder select(final List<Selection> multiSelects) {
-        SqlBuilder.checkMultiSelects(multiSelects);
+    public SqlBuilder select(final List<Selection> selections) {
+        SqlBuilder.checkMultiSelects(selections);
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.QUERY;
-        instance.setEntityClass(multiSelects.get(0).entityClass());
-        instance._multiSelects = new ArrayList<>(multiSelects);
+        instance.setEntityClass(selections.get(0).entityClass());
+        instance._multiSelects = new ArrayList<>(selections);
 
         return instance;
     }
@@ -1496,16 +1496,16 @@ public final class Dsl {
      *                 .build().query();
      * }</pre>
      *
-     * @param multiSelects list of Selection objects defining what to select from each entity
+     * @param selections list of Selection objects defining what to select from each entity
      * @return a new SqlBuilder instance with SELECT and FROM configured
-     * @throws IllegalArgumentException if multiSelects is null, empty, or contains invalid data
+     * @throws IllegalArgumentException if selections is null, empty, or contains invalid data
      */
-    public SqlBuilder selectFrom(final List<Selection> multiSelects) {
-        SqlBuilder.checkMultiSelects(multiSelects);
+    public SqlBuilder selectFrom(final List<Selection> selections) {
+        SqlBuilder.checkMultiSelects(selections);
 
-        final String fromClause = SqlBuilder.getFromClause(multiSelects, namingPolicy);
+        final String fromClause = SqlBuilder.getFromClause(selections, namingPolicy);
 
-        return select(multiSelects).from(fromClause);
+        return select(selections).from(fromClause);
     }
 
     /**
@@ -1579,20 +1579,20 @@ public final class Dsl {
      * // Output: (first_name = ?) AND (email LIKE ?)
      * }</pre>
      *
-     * @param cond the condition to render (must not be {@code null})
+     * @param condition the condition to render (must not be {@code null})
      * @param entityClass the entity class used for property-to-column mapping (may be {@code null})
      * @return a new SqlBuilder instance containing the rendered condition SQL
-     * @throws IllegalArgumentException if cond is null
+     * @throws IllegalArgumentException if {@code condition} is {@code null}
      */
-    public SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass) {
-        N.checkArgNotNull(cond, "cond");
+    public SqlBuilder fromCondition(final Condition condition, final Class<?> entityClass) {
+        N.checkArgNotNull(condition, "condition");
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance.setEntityClass(entityClass);
         instance._op = OperationType.QUERY;
         instance._isForConditionOnly = true;
-        instance.append(cond);
+        instance.append(condition);
 
         return instance;
     }
@@ -1601,7 +1601,7 @@ public final class Dsl {
      * Renders a condition as a standalone SQL fragment without an entity class.
      * Property names are converted according to this Dsl's naming policy only; no
      * property-to-column mapping is applied. Equivalent to
-     * {@code fromCondition(cond, null)}.
+     * {@code fromCondition(condition, null)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1609,13 +1609,13 @@ public final class Dsl {
      * // Output: first_name = ?
      * }</pre>
      *
-     * @param cond the condition to render (must not be {@code null})
+     * @param condition the condition to render (must not be {@code null})
      * @return a new SqlBuilder instance containing the rendered condition SQL
-     * @throws IllegalArgumentException if cond is null
+     * @throws IllegalArgumentException if {@code condition} is {@code null}
      * @see #fromCondition(Condition, Class)
      */
-    public SqlBuilder fromCondition(final Condition cond) {
-        return fromCondition(cond, null);
+    public SqlBuilder fromCondition(final Condition condition) {
+        return fromCondition(condition, null);
     }
 
     static void validateColumnAliases(final Map<String, String> propOrColumnNameAliases) {

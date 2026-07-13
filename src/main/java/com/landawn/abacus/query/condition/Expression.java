@@ -214,17 +214,17 @@ public class Expression extends ComposableCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Expression expr = new Expression("price * quantity");
-     * String literal = expr.getLiteral();   // Returns "price * quantity"
+     * String literal = expr.literal();   // Returns "price * quantity"
      *
      * Expression expr2 = Expression.of("CURRENT_TIMESTAMP");
-     * String literal2 = expr2.getLiteral();   // Returns "CURRENT_TIMESTAMP"
+     * String literal2 = expr2.literal();   // Returns "CURRENT_TIMESTAMP"
      * }</pre>
      *
      * @return the SQL expression string; never {@code null} for instances created via the public
      *         constructor or {@link #of(String)}, but may be {@code null} for uninitialized instances
      *         produced by the package-private default constructor (e.g., during Kryo deserialization)
      */
-    public String getLiteral() {
+    public String literal() {
         return literal;
     }
 
@@ -545,13 +545,13 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param expr the expression to test
-     * @param min the lower bound of the excluded range (inclusive)
-     * @param max the upper bound of the excluded range (inclusive)
+     * @param minValue the lower bound of the excluded range (inclusive)
+     * @param maxValue the upper bound of the excluded range (inclusive)
      * @return a string representation of the NOT BETWEEN expression
      * @throws IllegalArgumentException if {@code min} or {@code max} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String notBetween(final String expr, final Object min, final Object max) {
-        return link(Operator.NOT_BETWEEN, expr, min, max);
+    public static String notBetween(final String expr, final Object minValue, final Object maxValue) {
+        return link(Operator.NOT_BETWEEN, expr, minValue, maxValue);
     }
 
     /**
@@ -722,12 +722,12 @@ public class Expression extends ComposableCondition {
      * // Returns: "base_salary + 5000 + bonus"
      * }</pre>
      *
-     * @param objects the values to add
+     * @param operands the values to add
      * @return a string representation of the addition expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String plus(final Object... objects) {
-        return link(PLUS, objects);
+    public static String plus(final Object... operands) {
+        return link(PLUS, operands);
     }
 
     /**
@@ -744,12 +744,12 @@ public class Expression extends ComposableCondition {
      * // Returns: "price - 10"
      * }</pre>
      *
-     * @param objects the values to subtract
+     * @param operands the values to subtract
      * @return a string representation of the subtraction expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String subtract(final Object... objects) {
-        return link(MINUS, objects);
+    public static String subtract(final Object... operands) {
+        return link(MINUS, operands);
     }
 
     /**
@@ -796,12 +796,12 @@ public class Expression extends ComposableCondition {
      * // Returns: "hours * 60"
      * }</pre>
      *
-     * @param objects the values to multiply
+     * @param operands the values to multiply
      * @return a string representation of the multiplication expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String multiply(final Object... objects) {
-        return link(ASTERISK, objects);
+    public static String multiply(final Object... operands) {
+        return link(ASTERISK, operands);
     }
 
     /**
@@ -950,7 +950,7 @@ public class Expression extends ComposableCondition {
      * {@link Operator#EQUAL} renders as {@code "literal IS NULL"}, while
      * {@link Operator#NOT_EQUAL} and {@link Operator#NOT_EQUAL_ANSI} render as
      * {@code "literal IS NOT NULL"}. For all other operators (or non-null values)
-     * the value is normalized via {@link #normalize(Object)}.</p>
+     * the value is rendered via {@link #renderValue(Object)}.</p>
      *
      * @param operator the operator to use
      * @param literal the left-hand side literal
@@ -974,7 +974,7 @@ public class Expression extends ComposableCondition {
             sb.append(SK._SPACE);
             sb.append(operator.sqlToken());
             sb.append(SK._SPACE);
-            sb.append(normalize(value));
+            sb.append(renderValue(value));
 
             return sb.toString();
         } finally {
@@ -986,7 +986,7 @@ public class Expression extends ComposableCondition {
      * Renders a range expression of the form {@code "literal <op> min AND max"}.
      * Used by {@link #between(String, Object, Object)} (with {@link Operator#BETWEEN}); the
      * connector between {@code min} and {@code max} is always the literal {@code AND}.
-     * Both {@code min} and {@code max} are normalized via {@link #normalize(Object)}.
+     * Both {@code min} and {@code max} are rendered via {@link #renderValue(Object)}.
      *
      * @param operator the range operator (typically {@link Operator#BETWEEN})
      * @param literal the left-hand side literal
@@ -1004,11 +1004,11 @@ public class Expression extends ComposableCondition {
             sb.append(SK._SPACE);
             sb.append(operator.sqlToken());
             sb.append(SK._SPACE);
-            sb.append(normalize(min));
+            sb.append(renderValue(min));
             sb.append(SK._SPACE);
             sb.append(SK.AND);
             sb.append(SK._SPACE);
-            sb.append(normalize(max));
+            sb.append(renderValue(max));
 
             return sb.toString();
         } finally {
@@ -1075,7 +1075,7 @@ public class Expression extends ComposableCondition {
 
     /**
      * Joins the SQL representations of multiple objects using the given symbol.
-     * Each object is rendered through {@link #normalize(Object)}. The {@code linkedSymbol}
+     * Each object is rendered through {@link #renderValue(Object)}. The {@code linkedSymbol}
      * is automatically padded with surrounding spaces unless it is already
      * {@link com.landawn.abacus.util.SK#SPACE} or {@link com.landawn.abacus.util.SK#COMMA_SPACE}.
      *
@@ -1097,7 +1097,7 @@ public class Expression extends ComposableCondition {
                     sb.append(linkedSymbol);
                 }
 
-                sb.append(normalize(objects[i]));
+                sb.append(renderValue(objects[i]));
             }
 
             return sb.toString();
@@ -1125,24 +1125,24 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression.normalize("text");                      // returns "'text'"
-     * Expression.normalize("O'Brien");                   // returns "'O\'Brien'" (single quote backslash-escaped)
-     * Expression.normalize("say \"hi\"");                // returns "'say \"hi\"'" (double quote backslash-escaped)
-     * Expression.normalize(123);                         // returns "123"
-     * Expression.normalize(45.67);                       // returns "45.67"
-     * Expression.normalize(null);                        // returns "null"
-     * Expression.normalize(true);                        // returns "true"
-     * Expression.normalize(false);                       // returns "false"
-     * Expression.normalize(new Expression("COUNT(*)"));  // returns "COUNT(*)" (the expression's literal)
-     * Expression.normalize(Double.NaN);                  // throws IllegalArgumentException
+     * Expression.renderValue("text");                      // returns "'text'"
+     * Expression.renderValue("O'Brien");                   // returns "'O\'Brien'" (single quote backslash-escaped)
+     * Expression.renderValue("say \"hi\"");                // returns "'say \"hi\"'" (double quote backslash-escaped)
+     * Expression.renderValue(123);                         // returns "123"
+     * Expression.renderValue(45.67);                       // returns "45.67"
+     * Expression.renderValue(null);                        // returns "null"
+     * Expression.renderValue(true);                        // returns "true"
+     * Expression.renderValue(false);                       // returns "false"
+     * Expression.renderValue(new Expression("COUNT(*)"));  // returns "COUNT(*)" (the expression's literal)
+     * Expression.renderValue(Double.NaN);                  // throws IllegalArgumentException
      * }</pre>
      *
-     * @param value the value to normalize
+     * @param value the value to render
      * @return the SQL representation of the value
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      *             (these have no portable SQL literal form; use {@link IsNaN}/{@link IsInfinite} instead)
      */
-    public static String normalize(final Object value) {
+    public static String renderValue(final Object value) {
         if (value == null) {
             return NULL_STRING;
         }
@@ -1153,7 +1153,7 @@ public class Expression extends ComposableCondition {
             AbstractCondition.checkFiniteNumber(value);
             return value.toString();
         } else if (value instanceof Expression) {
-            final String exprLiteral = ((Expression) value).getLiteral();
+            final String exprLiteral = ((Expression) value).literal();
             return exprLiteral != null ? exprLiteral : NULL_STRING;
         } else if (value instanceof Condition) {
             final String conditionStr = value.toString();
@@ -1543,12 +1543,12 @@ public class Expression extends ComposableCondition {
      * // Returns: "CONCAT(city, ', ')"
      * }</pre>
      *
-     * @param str1 the first operand (column reference or pre-quoted literal)
-     * @param str2 the second operand (column reference or pre-quoted literal)
+     * @param expr1 the first SQL expression (column reference or pre-quoted literal)
+     * @param expr2 the second SQL expression (column reference or pre-quoted literal)
      * @return a CONCAT function string of the form {@code CONCAT(str1, str2)}
      */
-    public static String concat(final String str1, final String str2) {
-        return function(CONCAT, str1, str2);
+    public static String concat(final String expr1, final String expr2) {
+        return function(CONCAT, expr1, expr2);
     }
 
     /**
@@ -1564,13 +1564,13 @@ public class Expression extends ComposableCondition {
      * // Returns: "REPLACE(phone, '-', '')"
      * }</pre>
      *
-     * @param str the string to search in
+     * @param expr the SQL expression to search in
      * @param oldString the string to search for
      * @param replacement the replacement string
      * @return a REPLACE function string
      */
-    public static String replace(final String str, final String oldString, final String replacement) {
-        return function(REPLACE, str, oldString, replacement);
+    public static String replace(final String expr, final String oldString, final String replacement) {
+        return function(REPLACE, expr, oldString, replacement);
     }
 
     /**
@@ -1583,11 +1583,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.length("description");   // Returns: "LENGTH(description)"
      * }</pre>
      *
-     * @param str the string to get length of
+     * @param expr the SQL expression whose length is returned
      * @return a LENGTH function string
      */
-    public static String length(final String str) {
-        return function(LENGTH, str);
+    public static String length(final String expr) {
+        return function(LENGTH, expr);
     }
 
     /**
@@ -1600,12 +1600,12 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.substr("code", 3);   // Returns: "SUBSTR(code, 3)"
      * }</pre>
      *
-     * @param str the string to extract from
+     * @param expr the SQL expression to extract from
      * @param fromIndex the starting position (1-based)
      * @return a SUBSTR function string
      */
-    public static String substr(final String str, final int fromIndex) {
-        return function(SUBSTR, str, fromIndex);
+    public static String substr(final String expr, final int fromIndex) {
+        return function(SUBSTR, expr, fromIndex);
     }
 
     /**
@@ -1618,13 +1618,13 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.substr("zip", 1, 5);    // Returns: "SUBSTR(zip, 1, 5)"
      * }</pre>
      *
-     * @param str the string to extract from
+     * @param expr the SQL expression to extract from
      * @param fromIndex the starting position (1-based)
      * @param length the number of characters to extract
      * @return a SUBSTR function string
      */
-    public static String substr(final String str, final int fromIndex, final int length) {
-        return function(SUBSTR, str, fromIndex, length);
+    public static String substr(final String expr, final int fromIndex, final int length) {
+        return function(SUBSTR, expr, fromIndex, length);
     }
 
     /**
@@ -1637,11 +1637,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.trim("user_name");   // Returns: "TRIM(user_name)"
      * }</pre>
      *
-     * @param str the string to trim
+     * @param expr the SQL expression to trim
      * @return a TRIM function string
      */
-    public static String trim(final String str) {
-        return function(TRIM, str);
+    public static String trim(final String expr) {
+        return function(TRIM, expr);
     }
 
     /**
@@ -1654,11 +1654,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.ltrim("address");   // Returns: "LTRIM(address)"
      * }</pre>
      *
-     * @param str the string to left trim
+     * @param expr the SQL expression to left trim
      * @return an LTRIM function string
      */
-    public static String ltrim(final String str) {
-        return function(LTRIM, str);
+    public static String ltrim(final String expr) {
+        return function(LTRIM, expr);
     }
 
     /**
@@ -1671,11 +1671,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.rtrim("description");   // Returns: "RTRIM(description)"
      * }</pre>
      *
-     * @param str the string to right trim
+     * @param expr the SQL expression to right trim
      * @return an RTRIM function string
      */
-    public static String rtrim(final String str) {
-        return function(RTRIM, str);
+    public static String rtrim(final String expr) {
+        return function(RTRIM, expr);
     }
 
     /**
@@ -1688,13 +1688,13 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.lpad("code", 5, "' '");   // Returns: "LPAD(code, 5, ' ')"
      * }</pre>
      *
-     * @param str the string to pad
+     * @param expr the SQL expression to pad
      * @param length the total length after padding
-     * @param padStr the string to pad with
+     * @param padExpr the SQL expression to pad with
      * @return an LPAD function string
      */
-    public static String lpad(final String str, final int length, final String padStr) {
-        return function(LPAD, str, length, padStr);
+    public static String lpad(final String expr, final int length, final String padExpr) {
+        return function(LPAD, expr, length, padExpr);
     }
 
     /**
@@ -1707,13 +1707,13 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.rpad("code", 10, "'X'");   // Returns: "RPAD(code, 10, 'X')"
      * }</pre>
      *
-     * @param str the string to pad
+     * @param expr the SQL expression to pad
      * @param length the total length after padding
-     * @param padStr the string to pad with
+     * @param padExpr the SQL expression to pad with
      * @return an RPAD function string
      */
-    public static String rpad(final String str, final int length, final String padStr) {
-        return function(RPAD, str, length, padStr);
+    public static String rpad(final String expr, final int length, final String padExpr) {
+        return function(RPAD, expr, length, padExpr);
     }
 
     /**
@@ -1726,11 +1726,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.lower("COUNTRY");   // Returns: "LOWER(COUNTRY)"
      * }</pre>
      *
-     * @param str the string to convert to lowercase
+     * @param expr the SQL expression to convert to lowercase
      * @return a LOWER function string
      */
-    public static String lower(final String str) {
-        return function(LOWER, str);
+    public static String lower(final String expr) {
+        return function(LOWER, expr);
     }
 
     /**
@@ -1743,11 +1743,11 @@ public class Expression extends ComposableCondition {
      * String expr2 = Expression.upper("country_code");   // Returns: "UPPER(country_code)"
      * }</pre>
      *
-     * @param str the string to convert to uppercase
+     * @param expr the SQL expression to convert to uppercase
      * @return an UPPER function string
      */
-    public static String upper(final String str) {
-        return function(UPPER, str);
+    public static String upper(final String expr) {
+        return function(UPPER, expr);
     }
 
     /**
@@ -1756,15 +1756,15 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * ImmutableList<Object> params = Expression.of("price * quantity").getParameters();   // returns []
+     * ImmutableList<Object> params = Expression.of("price * quantity").parameters();   // returns []
      * boolean empty = params.isEmpty();                                                   // returns true
-     * Expression.of("id = 5").getParameters();                                            // returns [] (value is part of the literal, not a parameter)
+     * Expression.of("id = 5").parameters();                                            // returns [] (value is part of the literal, not a parameter)
      * }</pre>
      *
      * @return an empty immutable list
      */
     @Override
-    public ImmutableList<Object> getParameters() {
+    public ImmutableList<Object> parameters() {
         return ImmutableList.empty();
     }
 
@@ -1852,7 +1852,7 @@ public class Expression extends ComposableCondition {
             return Strings.EMPTY;
         }
 
-        if (literal.length() < 16 && literal.indexOf('-') < 0 && QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher(literal).matches()) {
+        if (literal.length() < 16 && literal.indexOf('-') < 0 && QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher(literal).matches()) {
             // Mirror the parse path below: only tokens starting with an ASCII letter are naming-policy
             // converted; a digit-leading token (e.g. "2faCode") passes through unchanged.
             // Hyphen-containing literals (e.g. "price-tax", SQL subtraction) are excluded even though the

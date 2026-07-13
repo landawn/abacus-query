@@ -68,15 +68,15 @@ public class RightJoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_Empty() {
+    public void testParameters_Empty() {
         RightJoin join = new RightJoin("orders");
-        assertTrue(join.getParameters().isEmpty());
+        assertTrue(join.parameters().isEmpty());
     }
 
     @Test
-    public void testGetParameters_WithCondition() {
+    public void testParameters_WithCondition() {
         RightJoin join = new RightJoin("products", new Equal("active", true));
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
         assertEquals(1, params.size());
         assertEquals(true, params.get(0));
     }
@@ -134,7 +134,7 @@ public class RightJoinTest extends TestBase {
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("orders.product_id", "products.id"), new Equal("products.active", true)));
         RightJoin join = new RightJoin("products", andCondition);
-        assertEquals(2, join.getParameters().size());
+        assertEquals(2, join.parameters().size());
     }
 
     @Test
@@ -195,7 +195,7 @@ public class RightJoinTest extends TestBase {
         RightJoin join = Filters.rightJoin("products", complexCondition);
 
         Assertions.assertEquals(complexCondition, join.getCondition());
-        Assertions.assertEquals(1, join.getParameters().size());
+        Assertions.assertEquals(1, join.parameters().size());
     }
 
     @Test
@@ -211,20 +211,20 @@ public class RightJoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Equal activeCondition = Filters.eq("active", true);
         RightJoin join = Filters.rightJoin("users", activeCondition);
 
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals(true, params.get(0));
     }
 
     @Test
-    public void testGetParametersNoCondition() {
+    public void testParametersNoCondition() {
         RightJoin join = Filters.rightJoin("products");
 
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
     }
@@ -297,7 +297,7 @@ public class RightJoinTest extends TestBase {
         RightJoin activeProducts = Filters.rightJoin("products", complexCondition);
 
         // Gets all active products with price > 0, even if they have no sales
-        Assertions.assertEquals(2, activeProducts.getParameters().size());
+        Assertions.assertEquals(2, activeProducts.parameters().size());
     }
 
     @Test

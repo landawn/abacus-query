@@ -51,20 +51,20 @@ public class AnyTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_EmptyForRawSQL() {
+    public void testParameters_EmptyForRawSQL() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM items");
         Any condition = new Any(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertTrue(params.isEmpty());
     }
 
     @Test
-    public void testGetParameters_WithConditionParameters() {
+    public void testParameters_WithConditionParameters() {
         Condition whereCondition = new Equal("status", "published");
         SubQuery subQuery = Filters.subQuery("articles", Arrays.asList("views"), whereCondition);
         Any condition = new Any(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertEquals(1, params.size());
         assertEquals("published", params.get(0));
@@ -189,7 +189,7 @@ public class AnyTest extends TestBase {
         And andCondition = new And(Arrays.asList(new Equal("active", true), new GreaterThan("stock", 0)));
         SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), andCondition);
         Any condition = new Any(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(2, params.size());
     }
 
@@ -242,12 +242,12 @@ public class AnyTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         // Create a subquery with parameters
         SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), Filters.eq("category", "Electronics"));
         Any any = Filters.any(subQuery);
 
-        var params = any.getParameters();
+        var params = any.parameters();
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals("Electronics", params.get(0));
     }
@@ -277,7 +277,7 @@ public class AnyTest extends TestBase {
 
         Any any = Filters.any(complexSubQuery);
 
-        var params = any.getParameters();
+        var params = any.parameters();
         Assertions.assertEquals(3, params.size());
         Assertions.assertTrue(params.contains("West"));
         Assertions.assertTrue(params.contains(50));

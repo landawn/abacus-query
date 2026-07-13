@@ -93,9 +93,9 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
-    public void testGetConditions() {
+    public void testConditions() {
         Criteria criteria = Criteria.builder().build();
-        List<Condition> conditions = criteria.getConditions();
+        List<Condition> conditions = criteria.conditions();
         assertNotNull(conditions);
     }
 
@@ -109,9 +109,9 @@ public class CriteriaTest extends TestBase {
     // testClear removed - Criteria is now immutable
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Criteria criteria = Criteria.builder().where(Filters.equal("age", 30)).build();
-        List<Object> params = criteria.getParameters();
+        List<Object> params = criteria.parameters();
         assertNotNull(params);
     }
 
@@ -388,10 +388,10 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
-    public void testGetConditionsMultipleTypes() {
+    public void testConditionsMultipleTypes() {
         Criteria criteria = Criteria.builder().where(Filters.equal("name", "John")).groupBy("department").having("COUNT(*) > 5").orderBy("name").build();
 
-        List<Condition> conditions = criteria.getConditions();
+        List<Condition> conditions = criteria.conditions();
         assertNotNull(conditions);
         assertTrue(conditions.size() > 0);
     }
@@ -406,21 +406,21 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersWithMultipleConditions() {
+    public void testParametersWithMultipleConditions() {
         Criteria criteria = Criteria.builder()
                 .where(Filters.equal("name", "John"))
                 .where(Filters.equal("age", 30))
                 .where(Filters.equal("status", "active"))
                 .build();
 
-        List<Object> params = criteria.getParameters();
+        List<Object> params = criteria.parameters();
         assertNotNull(params);
     }
 
     @Test
     public void testEmptyCriteria() {
         Criteria criteria = Criteria.builder().build();
-        assertTrue(criteria.getConditions().isEmpty());
+        assertTrue(criteria.conditions().isEmpty());
         assertTrue(criteria.getJoins().isEmpty());
     }
 
@@ -564,18 +564,18 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersEmpty() {
+    public void testParametersEmpty() {
         Criteria criteria = Criteria.builder().build();
-        List<Object> params = criteria.getParameters();
+        List<Object> params = criteria.parameters();
         assertNotNull(params);
         assertTrue(params.isEmpty());
     }
 
     @Test
-    public void testGetParametersIncludesGroupByAndOrderByConditions() {
+    public void testParametersIncludesGroupByAndOrderByConditions() {
         Criteria criteria = Criteria.builder().groupBy(Filters.equal("department", "Engineering")).orderBy(Filters.equal("priority", "HIGH")).build();
 
-        List<Object> params = criteria.getParameters();
+        List<Object> params = criteria.parameters();
         assertEquals(Arrays.asList("Engineering", "HIGH"), params);
     }
 
@@ -715,7 +715,7 @@ public class CriteriaTest extends TestBase {
                 .build();
 
         // Only latest values should exist
-        assertEquals(5, criteria.getConditions().size());
+        assertEquals(5, criteria.conditions().size());
     }
 
     @Test
@@ -914,15 +914,8 @@ public class CriteriaTest extends TestBase {
         Assertions.assertEquals(1, joins1.size());
         Assertions.assertEquals(Operator.CROSS_JOIN, joins1.get(0).operator());
 
-        Equal eq = Filters.eq("active", true);
-        Criteria criteria2 = Criteria.builder().crossJoin("colors", eq).build();
-        List<Join> joins2 = criteria2.getJoins();
-        Assertions.assertEquals(1, joins2.size());
-        Assertions.assertEquals(Operator.CROSS_JOIN, joins2.get(0).operator());
-        Assertions.assertEquals(eq, joins2.get(0).getCondition());
-
         List<String> tables = Arrays.asList("sizes", "colors");
-        Criteria criteria3 = Criteria.builder().crossJoin(tables, eq).build();
+        Criteria criteria3 = Criteria.builder().crossJoin(tables).build();
         List<Join> joins3 = criteria3.getJoins();
         Assertions.assertEquals(1, joins3.size());
         Assertions.assertEquals(Operator.CROSS_JOIN, joins3.get(0).operator());
@@ -936,16 +929,12 @@ public class CriteriaTest extends TestBase {
         Assertions.assertEquals(1, joins1.size());
         Assertions.assertEquals(Operator.NATURAL_JOIN, joins1.get(0).operator());
 
-        Equal eq = Filters.eq("status", "active");
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Criteria.builder().naturalJoin("employees", eq).build());
-
         List<String> tables = Arrays.asList("employees", "departments");
-        Criteria criteria3 = Criteria.builder().naturalJoin(tables, null).build();
+        Criteria criteria3 = Criteria.builder().naturalJoin(tables).build();
         List<Join> joins3 = criteria3.getJoins();
         Assertions.assertEquals(1, joins3.size());
         Assertions.assertEquals(Operator.NATURAL_JOIN, joins3.get(0).operator());
         Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Criteria.builder().naturalJoin(tables, eq).build());
     }
 
     @Test
@@ -1143,8 +1132,8 @@ public class CriteriaTest extends TestBase {
         final Criteria rebuilt = original.toBuilder().where(Filters.eq("status", "ACTIVE")).build();
 
         assertEquals("DISTINCT", rebuilt.getSelectModifier());
-        assertEquals(0, original.getParameters().size());
-        assertEquals(1, rebuilt.getParameters().size());
+        assertEquals(0, original.parameters().size());
+        assertEquals(1, rebuilt.parameters().size());
         assertTrue(original.toString(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
         assertFalse(original.toString(NamingPolicy.NO_CHANGE).contains("status"));
         assertTrue(rebuilt.toString(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
@@ -1176,17 +1165,17 @@ public class CriteriaTest extends TestBase {
         // Same selectModifier, same toString, same parameter list and order.
         assertEquals(original.getSelectModifier(), rebuilt.getSelectModifier());
         assertEquals(original.toString(NamingPolicy.NO_CHANGE), rebuilt.toString(NamingPolicy.NO_CHANGE));
-        assertEquals(original.getParameters(), rebuilt.getParameters());
+        assertEquals(original.parameters(), rebuilt.parameters());
         assertEquals(original, rebuilt);
         assertEquals(original.hashCode(), rebuilt.hashCode());
     }
 
     /**
-     * Second-pass locking test: {@code getParameters()} must collect parameters from every
+     * Second-pass locking test: {@code parameters()} must collect parameters from every
      * clause (joins, where, groupBy, having, set ops, orderBy, limit) in SQL emission order.
      */
     @Test
-    public void testGetParametersOrderingAcrossAllClauses() {
+    public void testParametersOrderingAcrossAllClauses() {
         final SubQuery sub = new SubQuery("u2", Arrays.asList("id"), Filters.eq("subParam", 100));
         final Criteria criteria = Criteria.builder()
                 .leftJoin("orders", Filters.eq("joinP", 1))
@@ -1195,7 +1184,7 @@ public class CriteriaTest extends TestBase {
                 .union(sub)
                 .build();
 
-        final List<Object> params = criteria.getParameters();
+        final List<Object> params = criteria.parameters();
         // Expected order per SQL emission: join, where, groupBy, having, setOps, orderBy, limit
         assertEquals(Arrays.asList(1, 2, 3, 100), params);
     }
@@ -1261,7 +1250,7 @@ public class CriteriaTest extends TestBase {
         }
 
         @Override
-        public com.landawn.abacus.util.ImmutableList<Object> getParameters() {
+        public com.landawn.abacus.util.ImmutableList<Object> parameters() {
             return com.landawn.abacus.util.ImmutableList.empty();
         }
 
@@ -1332,7 +1321,7 @@ public class CriteriaTest extends TestBase {
         Assertions.assertTrue(left.getJoins().isEmpty());
         Assertions.assertTrue(left.getSetOperations().isEmpty());
         Assertions.assertTrue(left.findConditions(Operator.WHERE).isEmpty());
-        Assertions.assertTrue(left.getParameters().isEmpty());
+        Assertions.assertTrue(left.parameters().isEmpty());
         Assertions.assertEquals(left, right);
         Assertions.assertEquals(left.hashCode(), right.hashCode());
         Assertions.assertNotEquals(left, distinct);

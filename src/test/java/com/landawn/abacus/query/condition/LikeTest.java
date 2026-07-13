@@ -69,17 +69,17 @@ public class LikeTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Like condition = new Like("status", "active");
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
     @Test
-    public void testGetParameters_MultipleValues() {
+    public void testParameters_MultipleValues() {
         Like condition = new Like("count", 42);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
@@ -157,7 +157,7 @@ public class LikeTest extends TestBase {
         Like cond1 = new Like("a", 1);
         Like cond2 = new Like("b", 2);
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -165,7 +165,7 @@ public class LikeTest extends TestBase {
         Like cond1 = new Like("a", 1);
         Like cond2 = new Like("b", 2);
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test

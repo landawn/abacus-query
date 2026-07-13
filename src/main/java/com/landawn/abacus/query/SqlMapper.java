@@ -226,6 +226,38 @@ public final class SqlMapper {
     }
 
     /**
+     * Creates a SqlMapper by loading separately supplied file paths.
+     *
+     * @param firstFilePath the first XML mapper path; must not be {@code null} or empty
+     * @param additionalFilePaths additional XML mapper paths; no element may be {@code null} or empty
+     * @return a new mapper containing definitions from every supplied path
+     */
+    public static SqlMapper loadFrom(final String firstFilePath, final String... additionalFilePaths) {
+        N.checkArgNotEmpty(firstFilePath, "firstFilePath");
+        N.checkArgNotNull(additionalFilePaths, "additionalFilePaths");
+
+        final SqlMapper sqlMapper = new SqlMapper();
+        loadPath(sqlMapper, firstFilePath);
+
+        for (final String filePath : additionalFilePaths) {
+            N.checkArgNotEmpty(filePath, "additionalFilePath");
+            loadPath(sqlMapper, filePath);
+        }
+
+        return sqlMapper;
+    }
+
+    private static void loadPath(final SqlMapper sqlMapper, final String filePath) {
+        final File foundFile = PropertiesUtil.findFile(filePath);
+
+        if (foundFile == null) {
+            throw new IllegalArgumentException("No file found for path: " + filePath);
+        }
+
+        loadFile(sqlMapper, PropertiesUtil.formatPath(foundFile));
+    }
+
+    /**
      * Creates a SqlMapper instance by loading SQL definitions from one or more XML files.
      * Each file must contain a {@code <sqlMapper>} root element; definitions from all files are merged
      * into a single mapper. Duplicate ids across files are rejected, just as within a single file.
@@ -269,18 +301,18 @@ public final class SqlMapper {
      * }
      * }</pre>
      *
-     * @param is the input stream to read the XML SQL definitions from (must not be {@code null})
+     * @param inputStream the input stream to read the XML SQL definitions from (must not be {@code null})
      * @return a new SqlMapper instance loaded with SQL definitions from the stream
      * @throws IllegalArgumentException if {@code is} is {@code null}, or if a loaded {@code <sql>} element has an invalid
      *         id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated) or a blank SQL body
      * @throws UncheckedIOException if an I/O error occurs reading the stream
      * @throws ParsingException if the XML content is invalid, or does not have {@code <sqlMapper>} as its root element
      */
-    public static SqlMapper loadFrom(final InputStream is) {
-        N.checkArgNotNull(is, "is");
+    public static SqlMapper loadFrom(final InputStream inputStream) {
+        N.checkArgNotNull(inputStream, "inputStream");
 
         final SqlMapper sqlMapper = new SqlMapper();
-        loadStream(sqlMapper, is, "input stream");
+        loadStream(sqlMapper, inputStream, "input stream");
 
         return sqlMapper;
     }
@@ -296,24 +328,24 @@ public final class SqlMapper {
             logger.info("Loading SQL mapper from file: {}", file.getAbsolutePath());
         }
 
-        try (InputStream is = new FileInputStream(file)) {
-            loadStream(sqlMapper, is, file.getAbsolutePath());
+        try (InputStream inputStream = new FileInputStream(file)) {
+            loadStream(sqlMapper, inputStream, file.getAbsolutePath());
         } catch (final IOException e) {
             throw new UncheckedIOException("Failed to read SQL mapper file: " + file.getAbsolutePath(), e);
         }
     }
 
     /**
-     * Parses the XML from {@code is} and merges its {@code <sql>} definitions into {@code sqlMapper}.
+     * Parses the XML from {@code inputStream} and merges its {@code <sql>} definitions into {@code sqlMapper}.
      * The stream is not closed by this method.
      *
      * @param sqlMapper the mapper to populate
-     * @param is the input stream to read
+     * @param inputStream the input stream to read
      * @param sourceLabel a human-readable label identifying the source, used in log and error messages
      */
-    private static void loadStream(final SqlMapper sqlMapper, final InputStream is, final String sourceLabel) {
+    private static void loadStream(final SqlMapper sqlMapper, final InputStream inputStream, final String sourceLabel) {
         try {
-            final Document doc = XmlUtil.createDOMParser(true, true).parse(is);
+            final Document doc = XmlUtil.createDOMParser(true, true).parse(inputStream);
             final Element sqlMapperElement = doc.getDocumentElement();
 
             if (sqlMapperElement == null || !SqlMapper.SQL_MAPPER.equals(sqlMapperElement.getTagName())) {
@@ -485,17 +517,17 @@ public final class SqlMapper {
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the parsed SQL to associate with the identifier (must not be {@code null})
-     * @param attrs additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty,
+     * @param attributes additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty,
      *              but keys must be non-empty and values must be non-null
      * @throws IllegalArgumentException if {@code sql} is {@code null}; if the id is {@code null}/empty, contains whitespace,
      *                                  exceeds {@link #MAX_ID_LENGTH} characters, or already exists; or if {@code attrs}
      *                                  contains a {@code null}/empty key or a {@code null} value
      */
-    public void add(final String id, final ParsedSql sql, final Map<String, String> attrs) {
+    public void add(final String id, final ParsedSql sql, final Map<String, String> attributes) {
         N.checkArgNotNull(sql, "sql");
         checkId(id);
 
-        final ImmutableMap<String, String> immutableAttrs = copyAttributes(attrs);
+        final ImmutableMap<String, String> immutableAttrs = copyAttributes(attributes);
         sqlMap.put(id, sql);
         attrsMap.put(id, immutableAttrs);
 
@@ -540,19 +572,19 @@ public final class SqlMapper {
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the SQL string to parse and store (must not be {@code null} or blank)
-     * @param attrs additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty,
+     * @param attributes additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty,
      *              but keys must be non-empty and values must be non-null
      * @throws IllegalArgumentException if {@code sql} is {@code null} or blank (blank is rejected by {@link ParsedSql#parse(String)});
      *                                  if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH}
      *                                  characters, or already exists; or if {@code attrs} contains a {@code null}/empty key
      *                                  or a {@code null} value
      */
-    public void add(final String id, final String sql, final Map<String, String> attrs) {
+    public void add(final String id, final String sql, final Map<String, String> attributes) {
         N.checkArgNotNull(sql, "sql");
         checkId(id);
 
         final ParsedSql parsedSql = ParsedSql.parse(sql);
-        final ImmutableMap<String, String> immutableAttrs = copyAttributes(attrs);
+        final ImmutableMap<String, String> immutableAttrs = copyAttributes(attributes);
         sqlMap.put(id, parsedSql);
         attrsMap.put(id, immutableAttrs);
 
@@ -718,6 +750,16 @@ public final class SqlMapper {
     }
 
     /**
+     * Writes this mapper to the specified file path.
+     *
+     * @param filePath the target file path; must not be {@code null} or empty
+     */
+    public void saveTo(final String filePath) {
+        N.checkArgNotEmpty(filePath, "filePath");
+        saveTo(new File(filePath));
+    }
+
+    /**
      * Writes all SQL definitions in this mapper to the supplied output stream as XML.
      * The output format matches the expected input format for {@link #loadFrom(InputStream)}.
      * The stream is flushed but <i>not</i> closed by this method; the caller retains ownership
@@ -736,12 +778,12 @@ public final class SqlMapper {
      * }
      * }</pre>
      *
-     * @param os the output stream to write to (not closed by this method)
+     * @param outputStream the output stream to write to (not closed by this method)
      * @throws IllegalArgumentException if {@code os} is {@code null}
      * @throws UncheckedIOException if an I/O error occurs while writing to the stream
      */
-    public void saveTo(final OutputStream os) {
-        N.checkArgNotNull(os, "os");
+    public void saveTo(final OutputStream outputStream) {
+        N.checkArgNotNull(outputStream, "outputStream");
 
         try {
             final Document doc = XmlUtil.createDOMParser(true, true).newDocument();
@@ -773,9 +815,9 @@ public final class SqlMapper {
 
             doc.appendChild(sqlMapperNode);
 
-            XmlUtil.transform(doc, os);
+            XmlUtil.transform(doc, outputStream);
 
-            os.flush();
+            outputStream.flush();
         } catch (final IOException e) {
             throw new UncheckedIOException(e);
         }

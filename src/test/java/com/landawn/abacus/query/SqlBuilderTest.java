@@ -13098,7 +13098,7 @@ public class SqlBuilderTest extends TestBase {
             }
 
             @Override
-            public ImmutableList<Object> getParameters() {
+            public ImmutableList<Object> parameters() {
                 return ImmutableList.empty();
             }
 

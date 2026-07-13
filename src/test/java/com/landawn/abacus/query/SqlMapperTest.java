@@ -1184,4 +1184,22 @@ public class SqlMapperTest extends TestBase {
             assertEquals("SELECT 1", loaded.get("q").originalSql());
         }
     }
+
+    @Test
+    public void testStringPathSaveAndStructuredPathLoad() {
+        SqlMapper first = new SqlMapper();
+        first.add("q1", "SELECT 1");
+        File firstFile = new File(tempDir, "first.xml");
+        first.saveTo(firstFile.getAbsolutePath());
+
+        SqlMapper second = new SqlMapper();
+        second.add("q2", "SELECT 2");
+        File secondFile = new File(tempDir, "second.xml");
+        second.saveTo(secondFile.getAbsolutePath());
+
+        SqlMapper loaded = SqlMapper.loadFrom(firstFile.getAbsolutePath(), secondFile.getAbsolutePath());
+        assertEquals(2, loaded.size());
+        assertEquals("SELECT 1", loaded.get("q1").originalSql());
+        assertEquals("SELECT 2", loaded.get("q2").originalSql());
+    }
 }

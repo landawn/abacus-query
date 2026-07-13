@@ -136,15 +136,15 @@ public class FullJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond the condition appended after the join target. Use {@link On} (or the deprecated {@link Using}) when the SQL should
+     * @param joinCondition the condition appended after the join target. Use {@link On} (or the deprecated {@link Using}) when the SQL should
      *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is a
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
      *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
-    public FullJoin(final String joinEntity, final Condition cond) {
-        super(Operator.FULL_JOIN, joinEntity, cond);
+    public FullJoin(final String joinEntity, final Condition joinCondition) {
+        super(Operator.FULL_JOIN, joinEntity, joinCondition);
     }
 
     /**
@@ -169,14 +169,14 @@ public class FullJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param cond the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using}) when the SQL should
+     * @param joinCondition the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using}) when the SQL should
      *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
-     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or if {@code joinCondition} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
      *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
-    public FullJoin(final Collection<String> joinEntities, final Condition cond) {
-        super(Operator.FULL_JOIN, joinEntities, cond);
+    public FullJoin(final Collection<String> joinEntities, final Condition joinCondition) {
+        super(Operator.FULL_JOIN, joinEntities, joinCondition);
     }
 }

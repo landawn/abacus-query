@@ -40,11 +40,11 @@ public class ClauseTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Condition condition = Filters.between("age", 18, 65);
         TestClause clause = new TestClause(Operator.WHERE, condition);
 
-        java.util.List<Object> params = clause.getParameters();
+        java.util.List<Object> params = clause.parameters();
 
         assertNotNull(params);
         assertEquals(2, params.size());
@@ -136,7 +136,7 @@ public class ClauseTest extends TestBase {
         Condition complex = Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18), Filters.isNotNull("email"));
         TestClause clause = new TestClause(Operator.WHERE, complex);
 
-        java.util.List<Object> params = clause.getParameters();
+        java.util.List<Object> params = clause.parameters();
         assertEquals(2, params.size());
     }
 
@@ -149,8 +149,8 @@ public class ClauseTest extends TestBase {
         Condition retrieved = clause.getCondition();
         Assertions.assertEquals(gt, retrieved);
 
-        // Test getParameters
-        var params = clause.getParameters();
+        // Test parameters
+        var params = clause.parameters();
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals(100, params.get(0));
     }

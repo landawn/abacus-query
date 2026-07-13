@@ -202,12 +202,12 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersFromCondition() {
+    public void testParametersFromCondition() {
         Condition condition = Filters.and(Filters.eq("status", "active"), Filters.between("age", 18, 65));
 
         SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), condition);
 
-        List<Object> params = subQuery.getParameters();
+        List<Object> params = subQuery.parameters();
 
         assertEquals(3, params.size());
         assertEquals("active", params.get(0));
@@ -216,20 +216,20 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersEmptyForRawSQL() {
+    public void testParametersEmptyForRawSQL() {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM users");
 
-        List<Object> params = subQuery.getParameters();
+        List<Object> params = subQuery.parameters();
 
         assertNotNull(params);
         assertEquals(0, params.size());
     }
 
     @Test
-    public void testGetParametersEmptyForNullCondition() {
+    public void testParametersEmptyForNullCondition() {
         SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
 
-        List<Object> params = subQuery.getParameters();
+        List<Object> params = subQuery.parameters();
 
         assertNotNull(params);
         assertEquals(0, params.size());
@@ -567,22 +567,22 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         List<String> props = Arrays.asList("id", "name");
         And condition = Filters.and(Filters.eq("active", true), Filters.gt("age", 18));
         SubQuery subQuery = Filters.subQuery("users", props, condition);
 
-        List<Object> params = subQuery.getParameters();
+        List<Object> params = subQuery.parameters();
         Assertions.assertEquals(2, params.size());
         Assertions.assertTrue(params.contains(true));
         Assertions.assertTrue(params.contains(18));
     }
 
     @Test
-    public void testGetParametersWithNoCondition() {
+    public void testParametersWithNoCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM users");
 
-        List<Object> params = subQuery.getParameters();
+        List<Object> params = subQuery.parameters();
         Assertions.assertTrue(params.isEmpty());
     }
 
@@ -652,7 +652,7 @@ public class SubQueryTest extends TestBase {
         Assertions.assertTrue(result.contains("SELECT"));
         Assertions.assertTrue(result.contains("id, email, created"));
         Assertions.assertTrue(result.contains("FROM users"));
-        Assertions.assertEquals(3, subQuery.getParameters().size());
+        Assertions.assertEquals(3, subQuery.parameters().size());
     }
 
     @Test
@@ -695,7 +695,7 @@ public class SubQueryTest extends TestBase {
         Assertions.assertNull(subQuery.getEntityName());
         Assertions.assertNull(subQuery.getEntityClass());
         Assertions.assertNull(subQuery.sql());
-        Assertions.assertTrue(subQuery.getParameters().isEmpty());
+        Assertions.assertTrue(subQuery.parameters().isEmpty());
     }
 
     @Test
@@ -732,5 +732,24 @@ public class SubQueryTest extends TestBase {
 
         Assertions.assertEquals(2, props.size());
         Assertions.assertThrows(UnsupportedOperationException.class, () -> props.add("extra"));
+    }
+
+    @Test
+    public void testSinglePropertyStructuredConstructorsAndRawSqlAccessor() throws Exception {
+        SubQuery byName = new SubQuery("users", "id", Filters.eq("active", true));
+        Assertions.assertEquals(Arrays.asList("id"), byName.getSelectPropNames());
+        Assertions.assertNull(byName.getRawSql());
+
+        SubQuery byClass = new SubQuery(SinglePropEntity.class, "id", Filters.eq("active", true));
+        Assertions.assertEquals(Arrays.asList("id"), byClass.getSelectPropNames());
+
+        SubQuery raw = new SubQuery("SELECT id FROM users");
+        Assertions.assertEquals("SELECT id FROM users", raw.getRawSql());
+        Assertions.assertEquals(raw.getRawSql(), raw.sql());
+        Assertions.assertTrue(SubQuery.class.getConstructor(String.class, String.class).isAnnotationPresent(Deprecated.class));
+    }
+
+    private static final class SinglePropEntity {
+        private long id;
     }
 }

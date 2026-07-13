@@ -55,9 +55,9 @@ public class IsNotInfiniteTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         IsNotInfinite condition = new IsNotInfinite("growthRate");
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertTrue(params.isEmpty());
     }
@@ -136,7 +136,7 @@ public class IsNotInfiniteTest extends TestBase {
         IsNotInfinite cond1 = new IsNotInfinite("val1");
         IsNotInfinite cond2 = new IsNotInfinite("val2");
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -144,7 +144,7 @@ public class IsNotInfiniteTest extends TestBase {
         IsNotInfinite cond1 = new IsNotInfinite("value1");
         IsNotInfinite cond2 = new IsNotInfinite("value2");
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -196,7 +196,7 @@ public class IsNotInfiniteTest extends TestBase {
         IsNotNaN nan = new IsNotNaN("value");
 
         And combined = infinite.and(nan);
-        assertEquals(Integer.valueOf(2), combined.getConditions().size());
+        assertEquals(Integer.valueOf(2), combined.conditions().size());
     }
 
     @Test

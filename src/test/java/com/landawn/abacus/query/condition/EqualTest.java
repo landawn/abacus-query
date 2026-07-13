@@ -72,17 +72,17 @@ public class EqualTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Equal condition = new Equal("status", "active");
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
     @Test
-    public void testGetParameters_MultipleValues() {
+    public void testParameters_MultipleValues() {
         Equal condition = new Equal("count", 42);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
@@ -161,7 +161,7 @@ public class EqualTest extends TestBase {
         Equal cond1 = new Equal("a", 1);
         Equal cond2 = new Equal("b", 2);
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -169,7 +169,7 @@ public class EqualTest extends TestBase {
         Equal cond1 = new Equal("a", 1);
         Equal cond2 = new Equal("b", 2);
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -356,6 +356,6 @@ public class EqualTest extends TestBase {
         And complex = status.and(age).and(salary).and(type);
 
         Assertions.assertNotNull(complex);
-        Assertions.assertEquals(4, complex.getConditions().size());
+        Assertions.assertEquals(4, complex.conditions().size());
     }
 }

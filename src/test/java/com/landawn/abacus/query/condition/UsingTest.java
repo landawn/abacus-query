@@ -80,9 +80,9 @@ public class UsingTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Using using = new Using("customer_id");
-        List<Object> params = using.getParameters();
+        List<Object> params = using.parameters();
         assertNotNull(params);
     }
 

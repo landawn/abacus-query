@@ -71,17 +71,17 @@ public class NotEqualTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         NotEqual condition = new NotEqual("status", "active");
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
     @Test
-    public void testGetParameters_MultipleValues() {
+    public void testParameters_MultipleValues() {
         NotEqual condition = new NotEqual("count", 42);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
@@ -159,7 +159,7 @@ public class NotEqualTest extends TestBase {
         NotEqual cond1 = new NotEqual("a", 1);
         NotEqual cond2 = new NotEqual("b", 2);
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -167,7 +167,7 @@ public class NotEqualTest extends TestBase {
         NotEqual cond1 = new NotEqual("a", 1);
         NotEqual cond2 = new NotEqual("b", 2);
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -219,10 +219,10 @@ public class NotEqualTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersWithNull() {
+    public void testParametersWithNull() {
         NotEqual notEqual = Filters.ne("value", null);
 
-        Assertions.assertTrue(notEqual.getParameters().isEmpty());
+        Assertions.assertTrue(notEqual.parameters().isEmpty());
     }
 
     @Test

@@ -165,11 +165,11 @@ public class OrderByTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         OrderBy orderBy = new OrderBy("column");
 
-        assertNotNull(orderBy.getParameters());
-        assertTrue(orderBy.getParameters().isEmpty());
+        assertNotNull(orderBy.parameters());
+        assertTrue(orderBy.parameters().isEmpty());
     }
 
     @Test
@@ -246,7 +246,7 @@ public class OrderByTest extends TestBase {
     public void testEmptyParameterList() {
         OrderBy orderBy = new OrderBy("col1", "col2");
 
-        assertEquals(0, orderBy.getParameters().size());
+        assertEquals(0, orderBy.parameters().size());
     }
 
     @Test

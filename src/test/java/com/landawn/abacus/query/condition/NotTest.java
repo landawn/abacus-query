@@ -58,21 +58,21 @@ public class NotTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Equal innerCondition = new Equal("name", "John");
         Not condition = new Not(innerCondition);
 
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals("John", params.get(0));
     }
 
     @Test
-    public void testGetParameters_ComplexCondition() {
+    public void testParameters_ComplexCondition() {
         Between between = new Between("age", 18, 65);
         Not condition = new Not(between);
 
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(2, params.size());
         assertEquals(18, (int) params.get(0));
         assertEquals(65, (int) params.get(1));
@@ -143,7 +143,7 @@ public class NotTest extends TestBase {
         And innerAnd = new And(new Equal("status", "active"), new GreaterThan("age", 18));
         Not condition = new Not(innerAnd);
 
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(2, params.size());
     }
 
@@ -157,9 +157,9 @@ public class NotTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_NullCondition() {
+    public void testParameters_NullCondition() {
         Not condition = new Not(new Equal("field", null));
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
 
         assertEquals(0, params.size());
     }
@@ -227,7 +227,7 @@ public class NotTest extends TestBase {
         Not notAndCondition = Filters.not(Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18), Filters.like("email", "%@company.com")));
 
         Assertions.assertNotNull(notAndCondition);
-        Assertions.assertEquals(3, notAndCondition.getParameters().size());
+        Assertions.assertEquals(3, notAndCondition.parameters().size());
     }
 
     @Test

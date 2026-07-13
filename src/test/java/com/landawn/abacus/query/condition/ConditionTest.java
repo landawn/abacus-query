@@ -190,9 +190,9 @@ public class ConditionTest extends TestBase {
         Or result = a.xor(b);
 
         // The result should be an Or with 2 conditions (each an And)
-        assertEquals(2, result.getConditions().size());
-        assertTrue(result.getConditions().get(0) instanceof And);
-        assertTrue(result.getConditions().get(1) instanceof And);
+        assertEquals(2, result.conditions().size());
+        assertTrue(result.conditions().get(0) instanceof And);
+        assertTrue(result.conditions().get(1) instanceof And);
     }
 
     // Tests for not() method
@@ -220,36 +220,36 @@ public class ConditionTest extends TestBase {
         assertEquals(Operator.NOT, result.operator());
     }
 
-    // Tests for getParameters() method
+    // Tests for parameters() method
 
     @Test
-    void testGetParametersNeverReturnsNull() {
-        assertNotNull(simpleCondition.getParameters());
-        assertNotNull(complexCondition.getParameters());
+    void testParametersNeverReturnsNull() {
+        assertNotNull(simpleCondition.parameters());
+        assertNotNull(complexCondition.parameters());
 
         // Test with condition that has no parameters
         Condition noParamCondition = Filters.isNull("field");
-        assertNotNull(noParamCondition.getParameters());
+        assertNotNull(noParamCondition.parameters());
     }
 
     @Test
-    void testGetParametersReturnsCorrectParameters() {
-        List<Object> params = simpleCondition.getParameters();
+    void testParametersReturnsCorrectParameters() {
+        List<Object> params = simpleCondition.parameters();
         assertTrue(params.contains("John"));
 
         // Test with multiple parameters
         Condition betweenCondition = Filters.between("age", 18, 65);
-        List<Object> betweenParams = betweenCondition.getParameters();
+        List<Object> betweenParams = betweenCondition.parameters();
         assertEquals(2, betweenParams.size());
         assertTrue(betweenParams.contains(18));
         assertTrue(betweenParams.contains(65));
     }
 
     @Test
-    void testGetParametersWithInCondition() {
+    void testParametersWithInCondition() {
         List<String> values = Arrays.asList("active", "pending", "processing");
         Condition inCondition = Filters.in("status", values);
-        List<Object> params = inCondition.getParameters();
+        List<Object> params = inCondition.parameters();
 
         assertEquals(values.size(), params.size());
         for (String value : values) {
@@ -258,8 +258,8 @@ public class ConditionTest extends TestBase {
     }
 
     @Test
-    void testGetParametersWithComplexCondition() {
-        List<Object> params = complexCondition.getParameters();
+    void testParametersWithComplexCondition() {
+        List<Object> params = complexCondition.parameters();
 
         // Complex condition should contain parameters from all sub-conditions
         assertTrue(params.contains(18));
@@ -267,8 +267,8 @@ public class ConditionTest extends TestBase {
     }
 
     @Test
-    void testGetParametersReturnsImmutableList() {
-        List<Object> params = simpleCondition.getParameters();
+    void testParametersReturnsImmutableList() {
+        List<Object> params = simpleCondition.parameters();
 
         // Should not be able to modify the returned list
         assertThrows(UnsupportedOperationException.class, () -> params.add("newValue"));
@@ -337,7 +337,7 @@ public class ConditionTest extends TestBase {
         ComposableCondition condition2 = Filters.gt("age", 25);
         Condition combined = condition1.and(condition2);
 
-        List<Object> params = combined.getParameters();
+        List<Object> params = combined.parameters();
         assertEquals(2, params.size());
         assertTrue(params.contains("John"));
         assertTrue(params.contains(25));
@@ -352,7 +352,7 @@ public class ConditionTest extends TestBase {
         assertNotNull(nullCondition);
         assertEquals(Operator.EQUAL, nullCondition.operator());
 
-        List<Object> params = nullCondition.getParameters();
+        List<Object> params = nullCondition.parameters();
         assertEquals(0, params.size());
     }
 
@@ -361,7 +361,7 @@ public class ConditionTest extends TestBase {
         Condition emptyCondition = Filters.eq("field", "");
 
         assertNotNull(emptyCondition);
-        List<Object> params = emptyCondition.getParameters();
+        List<Object> params = emptyCondition.parameters();
         assertEquals(1, params.size());
         assertEquals("", params.get(0));
     }
@@ -372,7 +372,7 @@ public class ConditionTest extends TestBase {
         List<Integer> largeList = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         Condition inCondition = Filters.in("id", largeList);
 
-        List<Object> params = inCondition.getParameters();
+        List<Object> params = inCondition.parameters();
         assertEquals(largeList.size(), params.size());
     }
 
@@ -389,7 +389,7 @@ public class ConditionTest extends TestBase {
         assertEquals(Operator.AND, chain.operator());
 
         // Should still be able to get parameters
-        List<Object> params = chain.getParameters();
+        List<Object> params = chain.parameters();
         assertEquals(100, params.size());
     }
 
@@ -398,7 +398,7 @@ public class ConditionTest extends TestBase {
     @Test
     void testImmutabilityContract() {
         // Test that conditions are immutable
-        List<Object> originalParams = simpleCondition.getParameters();
+        List<Object> originalParams = simpleCondition.parameters();
         Operator originalOperator = simpleCondition.operator();
 
         // Composable operations should not modify original
@@ -407,7 +407,7 @@ public class ConditionTest extends TestBase {
         simpleCondition.not();
 
         // Original should remain unchanged
-        assertEquals(originalParams, simpleCondition.getParameters());
+        assertEquals(originalParams, simpleCondition.parameters());
         assertEquals(originalOperator, simpleCondition.operator());
     }
 
@@ -439,7 +439,7 @@ public class ConditionTest extends TestBase {
         }
 
         // Original condition should remain unchanged
-        assertNotNull(condition.getParameters());
+        assertNotNull(condition.parameters());
         assertEquals(Operator.EQUAL, condition.operator());
     }
 }

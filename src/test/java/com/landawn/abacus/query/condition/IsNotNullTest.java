@@ -102,9 +102,9 @@ public class IsNotNullTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         IsNotNull condition = new IsNotNull("field");
-        assertTrue(condition.getParameters().isEmpty() || condition.getParameters().size() == 1);
+        assertTrue(condition.parameters().isEmpty() || condition.parameters().size() == 1);
     }
 
     @Test
@@ -120,7 +120,7 @@ public class IsNotNullTest extends TestBase {
         IsNotNull cond1 = new IsNotNull("email");
         IsNotNull cond2 = new IsNotNull("phone");
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -128,7 +128,7 @@ public class IsNotNullTest extends TestBase {
         IsNotNull cond1 = new IsNotNull("email");
         IsNotNull cond2 = new IsNotNull("phone");
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test

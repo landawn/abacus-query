@@ -101,15 +101,15 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY CASE WHEN age < 30 THEN 'Young' ELSE 'Senior' END
      * }</pre>
      *
-     * @param cond the grouping condition or expression. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a {@link Criteria}, another clause,
+     * @param condition the grouping condition or expression. Must not be {@code null}.
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a {@link Criteria}, another clause,
      *             an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
      *             operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which
      *             can be nested inside a clause
      * @see Filters#expr(String)
      */
-    public GroupBy(final Condition cond) {
-        super(Operator.GROUP_BY, cond);
+    public GroupBy(final Condition condition) {
+        super(Operator.GROUP_BY, condition);
     }
 
     /**
@@ -183,12 +183,12 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY order_date ASC
      * }</pre>
      *
-     * @param propName the property name to group by. Must not be {@code null}, empty, or blank.
+     * @param propOrColumnName the property or column name to group by. Must not be {@code null}, empty, or blank.
      * @param direction the sort direction (ASC or DESC). Must not be {@code null}.
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      */
-    public GroupBy(final String propName, final SortDirection direction) {
-        this(Filters.expr(AbstractCondition.createSortExpression(propName, direction)));
+    public GroupBy(final String propOrColumnName, final SortDirection direction) {
+        this(Filters.expr(AbstractCondition.createSortExpression(propOrColumnName, direction)));
     }
 
     /**

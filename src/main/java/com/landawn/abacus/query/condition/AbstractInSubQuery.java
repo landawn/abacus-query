@@ -69,12 +69,13 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param subQuery the subquery (must not be {@code null})
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code subQuery} is
+     * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
+     *             if {@code propName} is {@code null}, empty, or blank, if {@code subQuery} is
      *             {@code null}, or if the subquery is structured and selects a number of columns other than 1
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractInSubQuery(final String propName, final Operator operator, final SubQuery subQuery) {
-        super(operator);
+        super(validateOperator(operator));
 
         checkPropName(propName);
         N.checkArgNotNull(subQuery, "subQuery");
@@ -94,18 +95,31 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param subQuery the subquery (must not be {@code null})
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is
+     * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
+     *             if {@code propNames} is {@code null}/empty, if any element is
      *             {@code null}, empty, or blank, if {@code subQuery} is {@code null}, or if the subquery is structured and
      *             its number of selected columns does not match {@code propNames.size()}
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractInSubQuery(final Collection<String> propNames, final Operator operator, final SubQuery subQuery) {
-        super(operator);
+        super(validateOperator(operator));
 
         this.propNames = copyAndValidatePropNames(propNames);
         N.checkArgNotNull(subQuery, "subQuery");
         validateSubQuerySelectArity(this.propNames, subQuery);
         this.subQuery = subQuery;
+    }
+
+    private static Operator validateOperator(final Operator operator) {
+        if (operator == null) {
+            throw new NullPointerException("operator");
+        }
+
+        if (operator != Operator.IN && operator != Operator.NOT_IN) {
+            throw new IllegalArgumentException("Only IN and NOT_IN are supported: " + operator);
+        }
+
+        return operator;
     }
 
     /**
@@ -188,23 +202,23 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * // Raw SQL subquery has no bind parameters -> empty list
      * SubQuery raw = new SubQuery("SELECT id FROM departments WHERE active = true");
      * InSubQuery inSub = new InSubQuery("deptId", raw);
-     * List<Object> p1 = inSub.getParameters();   // [] (empty)
+     * List<Object> p1 = inSub.parameters();   // [] (empty)
      *
      * // Structured subquery with a parameterized condition -> subquery's params
      * SubQuery structured = Filters.subQuery("departments", Arrays.asList("id"), Filters.eq("active", true));
      * InSubQuery inSub2 = new InSubQuery("deptId", structured);
-     * List<Object> p2 = inSub2.getParameters();   // [true]
+     * List<Object> p2 = inSub2.parameters();   // [true]
      * }</pre>
      *
      * @return an immutable list of parameter values from the subquery; an empty immutable list
      *         if the subquery is {@code null} (only possible for an uninitialized instance)
      */
     @Override
-    public ImmutableList<Object> getParameters() {
+    public ImmutableList<Object> parameters() {
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
-            result = subQuery == null ? ImmutableList.empty() : subQuery.getParameters();
+            result = subQuery == null ? ImmutableList.empty() : subQuery.parameters();
             cachedParameters = result;
         }
 

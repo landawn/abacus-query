@@ -113,11 +113,11 @@ public class GroupByTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         GroupBy groupBy = new GroupBy("department");
 
-        assertNotNull(groupBy.getParameters());
-        assertTrue(groupBy.getParameters().isEmpty());
+        assertNotNull(groupBy.parameters());
+        assertTrue(groupBy.parameters().isEmpty());
     }
 
     @Test
@@ -195,7 +195,7 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy = new GroupBy(props, SortDirection.ASC);
 
         // GroupBy should not have parameters
-        assertEquals(0, groupBy.getParameters().size());
+        assertEquals(0, groupBy.parameters().size());
     }
 
     @Test

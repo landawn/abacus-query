@@ -219,7 +219,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         } else if (cond instanceof final ComposableCell cell) {
             appendParenthesizedCondition(cell.operator(), cell.getCondition());
         } else if (cond instanceof final Junction junction) {
-            final List<Condition> conditionList = junction.getConditions();
+            final List<Condition> conditionList = junction.conditions();
 
             if (N.isEmpty(conditionList)) {
                 throw new IllegalArgumentException("Junction condition (" + junction.operator() + ") must contain at least one element");
@@ -267,7 +267,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                 }
             }
         } else if (cond instanceof Expression) {
-            appendStringExpr(((Expression) cond).getLiteral(), false);
+            appendStringExpr(((Expression) cond).literal(), false);
         } else {
             throw new IllegalArgumentException("Unsupported condition type: " + cond.getClass().getName());
         }

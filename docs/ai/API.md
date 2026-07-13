@@ -1,7 +1,7 @@
 # abacus-query API Index (v4.8.8)
 - Build: unknown
 - Java: 17
-- Generated: 2026-07-04
+- Generated: 2026-07-12
 
 ## Packages
 - com.landawn.abacus.query
@@ -236,10 +236,10 @@ Base class for fluent SQL builders.
 - **Parameters:**
   - `exprs` (`String[]`) — the join condition expressions (must not be {@code null} or empty, and no element may be {@code null} , empty, or blank)
 - **Returns:** this SqlBuilder instance for method chaining
-- **Signature:** `public This on(final Condition cond)`
+- **Signature:** `public This on(final Condition condition)`
 - **Summary:** Adds an ON clause with a condition object for join conditions.
 - **Parameters:**
-  - `cond` (`Condition`) — the join condition (must not be {@code null} )
+  - `condition` (`Condition`) — the join condition (must not be {@code null} )
 - **Returns:** this SqlBuilder instance for method chaining
 ##### using(...) -> This
 - **Signature:** `public This using(final String expr)`
@@ -263,17 +263,17 @@ Base class for fluent SQL builders.
 - **Parameters:**
   - `expr` (`String`) — the WHERE condition expression (must not be {@code null} , empty, or blank)
 - **Returns:** this SqlBuilder instance for method chaining
-- **Signature:** `public This where(final Condition cond)`
+- **Signature:** `public This where(final Condition condition)`
 - **Summary:** Adds a WHERE clause with a condition object.
 - **Parameters:**
-  - `cond` (`Condition`) — the WHERE condition (must not be {@code null} )
+  - `condition` (`Condition`) — the WHERE condition (must not be {@code null} )
 - **Returns:** this SqlBuilder instance for method chaining
 - **See also:** Filters
 ##### groupByAsc(...) -> This
-- **Signature:** `@Beta public This groupByAsc(final String expr)`
+- **Signature:** `@Beta public This groupByAsc(final String propOrColumnName)`
 - **Summary:** Adds a GROUP BY ASC clause with a single column.
 - **Parameters:**
-  - `expr` (`String`) — the column to group by ascending
+  - `propOrColumnName` (`String`) — the property or column name to group by ascending
 - **Returns:** this SqlBuilder instance for method chaining
 - **Signature:** `@Beta public This groupByAsc(final String... propOrColumnNames)`
 - **Summary:** Adds a GROUP BY ASC clause with multiple columns.
@@ -286,10 +286,10 @@ Base class for fluent SQL builders.
   - `propOrColumnNames` (`Collection<String>`) — the collection of columns to group by ascending
 - **Returns:** this SqlBuilder instance for method chaining
 ##### groupByDesc(...) -> This
-- **Signature:** `@Beta public This groupByDesc(final String expr)`
+- **Signature:** `@Beta public This groupByDesc(final String propOrColumnName)`
 - **Summary:** Adds a GROUP BY DESC clause with a single column.
 - **Parameters:**
-  - `expr` (`String`) — the column to group by descending
+  - `propOrColumnName` (`String`) — the property or column name to group by descending
 - **Returns:** this SqlBuilder instance for method chaining
 - **Signature:** `@Beta public This groupByDesc(final String... propOrColumnNames)`
 - **Summary:** Adds a GROUP BY DESC clause with multiple columns.
@@ -302,10 +302,10 @@ Base class for fluent SQL builders.
   - `propOrColumnNames` (`Collection<String>`) — the collection of columns to group by descending
 - **Returns:** this SqlBuilder instance for method chaining
 ##### groupBy(...) -> This
-- **Signature:** `public This groupBy(final String expr)`
+- **Signature:** `public This groupBy(final String propOrColumnName)`
 - **Summary:** Adds a GROUP BY clause with a single column.
 - **Parameters:**
-  - `expr` (`String`) — the column to group by (must not be {@code null} , empty, or blank)
+  - `propOrColumnName` (`String`) — the property or column name to group by (must not be {@code null} , empty, or blank)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Signature:** `public This groupBy(final String... propOrColumnNames)`
 - **Summary:** Adds a GROUP BY clause with multiple columns.
@@ -340,17 +340,17 @@ Base class for fluent SQL builders.
 - **Parameters:**
   - `expr` (`String`) — the HAVING condition expression (must not be {@code null} , empty, or blank)
 - **Returns:** this SqlBuilder instance for method chaining
-- **Signature:** `public This having(final Condition cond)`
+- **Signature:** `public This having(final Condition condition)`
 - **Summary:** Adds a HAVING clause with a condition object.
 - **Parameters:**
-  - `cond` (`Condition`) — the HAVING condition (must not be {@code null} )
+  - `condition` (`Condition`) — the HAVING condition (must not be {@code null} )
 - **Returns:** this SqlBuilder instance for method chaining
 - **See also:** Filters
 ##### orderByAsc(...) -> This
-- **Signature:** `@Beta public This orderByAsc(final String expr)`
+- **Signature:** `@Beta public This orderByAsc(final String propOrColumnName)`
 - **Summary:** Adds an ORDER BY ASC clause with a single column.
 - **Parameters:**
-  - `expr` (`String`) — the column to order by ascending
+  - `propOrColumnName` (`String`) — the property or column name to order by ascending
 - **Returns:** this SqlBuilder instance for method chaining
 - **Signature:** `@Beta public This orderByAsc(final String... propOrColumnNames)`
 - **Summary:** Adds an ORDER BY ASC clause with multiple columns.
@@ -363,10 +363,10 @@ Base class for fluent SQL builders.
   - `propOrColumnNames` (`Collection<String>`) — the collection of columns to order by ascending
 - **Returns:** this SqlBuilder instance for method chaining
 ##### orderByDesc(...) -> This
-- **Signature:** `@Beta public This orderByDesc(final String expr)`
+- **Signature:** `@Beta public This orderByDesc(final String propOrColumnName)`
 - **Summary:** Adds an ORDER BY DESC clause with a single column.
 - **Parameters:**
-  - `expr` (`String`) — the column to order by descending
+  - `propOrColumnName` (`String`) — the property or column name to order by descending
 - **Returns:** this SqlBuilder instance for method chaining
 - **Signature:** `@Beta public This orderByDesc(final String... propOrColumnNames)`
 - **Summary:** Adds an ORDER BY DESC clause with multiple columns.
@@ -379,10 +379,10 @@ Base class for fluent SQL builders.
   - `propOrColumnNames` (`Collection<String>`) — the collection of columns to order by descending
 - **Returns:** this SqlBuilder instance for method chaining
 ##### orderBy(...) -> This
-- **Signature:** `public This orderBy(final String expr)`
+- **Signature:** `public This orderBy(final String propOrColumnName)`
 - **Summary:** Adds an ORDER BY clause with a single column.
 - **Parameters:**
-  - `expr` (`String`) — the column to order by (must not be {@code null} , empty, or blank)
+  - `propOrColumnName` (`String`) — the property or column name to order by (must not be {@code null} , empty, or blank)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Signature:** `public This orderBy(final String... propOrColumnNames)`
 - **Summary:** Adds an ORDER BY clause with multiple columns.
@@ -455,10 +455,10 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **See also:** #limit(int), #limit(int, int)
 ##### append(...) -> This
-- **Signature:** `@Beta public This append(final Condition cond)`
+- **Signature:** `@Beta public This append(final Condition condition)`
 - **Summary:** Appends a condition to the SQL statement.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to append
+  - `condition` (`Condition`) — the condition to append
 - **Returns:** this SqlBuilder instance for method chaining
 - **See also:** Filters
 - **Signature:** `public This append(final String expr)`
@@ -470,32 +470,32 @@ Base class for fluent SQL builders.
   - `expr` (`String`) — the expression to append
 - **Returns:** this SqlBuilder instance for method chaining
 ##### appendIf(...) -> This
-- **Signature:** `@Beta public This appendIf(final boolean condition, final Condition cond)`
+- **Signature:** `@Beta public This appendIf(final boolean b, final Condition condition)`
 - **Summary:** Conditionally appends a condition to the SQL statement.
 - **Parameters:**
-  - `condition` (`boolean`) — if true, the condition will be appended
-  - `cond` (`Condition`) — the condition to append
+  - `b` (`boolean`) — if true, the condition will be appended
+  - `condition` (`Condition`) — the condition to append
 - **Returns:** this SqlBuilder instance for method chaining
-- **Signature:** `@Beta public This appendIf(final boolean condition, final String expr)`
+- **Signature:** `@Beta public This appendIf(final boolean b, final String expr)`
 - **Summary:** Conditionally appends a string expression to the SQL statement.
 - **Parameters:**
-  - `condition` (`boolean`) — if true, the expression will be appended
+  - `b` (`boolean`) — if true, the expression will be appended
   - `expr` (`String`) — the expression to append
 - **Returns:** this SqlBuilder instance for method chaining
 ##### appendIfOrElse(...) -> This
-- **Signature:** `@Beta public This appendIfOrElse(final boolean condition, final Condition condToAppendForTrue, final Condition condToAppendForFalse)`
+- **Signature:** `@Beta public This appendIfOrElse(final boolean b, final Condition conditionToAppendForTrue, final Condition conditionToAppendForFalse)`
 - **Summary:** Conditionally appends one of two conditions based on a boolean value.
 - **Parameters:**
-  - `condition` (`boolean`) — if true, append condToAppendForTrue; otherwise append condToAppendForFalse
-  - `condToAppendForTrue` (`Condition`) — the condition to append if condition is true
-  - `condToAppendForFalse` (`Condition`) — the condition to append if condition is false
+  - `b` (`boolean`) — if true, append condToAppendForTrue; otherwise append condToAppendForFalse
+  - `conditionToAppendForTrue` (`Condition`) — the condition to append if {@code b} is true
+  - `conditionToAppendForFalse` (`Condition`) — the condition to append if {@code b} is false
 - **Returns:** this SqlBuilder instance for method chaining
-- **Signature:** `@Beta public This appendIfOrElse(final boolean condition, final String exprToAppendForTrue, final String exprToAppendForFalse)`
+- **Signature:** `@Beta public This appendIfOrElse(final boolean b, final String exprToAppendForTrue, final String exprToAppendForFalse)`
 - **Summary:** Conditionally appends one of two string expressions based on a boolean value.
 - **Parameters:**
-  - `condition` (`boolean`) — if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
-  - `exprToAppendForTrue` (`String`) — the expression to append if condition is true
-  - `exprToAppendForFalse` (`String`) — the expression to append if condition is false
+  - `b` (`boolean`) — if true, append exprToAppendForTrue; otherwise append exprToAppendForFalse
+  - `exprToAppendForTrue` (`String`) — the expression to append if {@code b} is true
+  - `exprToAppendForFalse` (`String`) — the expression to append if {@code b} is false
 - **Returns:** this SqlBuilder instance for method chaining
 ##### union(...) -> This
 - **Signature:** `public This union(final This sqlBuilder)`
@@ -506,7 +506,7 @@ Base class for fluent SQL builders.
 - **Signature:** `public This union(final String query)`
 - **Summary:** Adds a UNION clause with a SQL query string.
 - **Parameters:**
-  - `query` (`String`) — the complete {@code SELECT} sub-query to union (must not be {@code null} , empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM} )
+  - `query` (`String`) — the complete read-only {@code SELECT} sub-query to union
 - **Returns:** this SqlBuilder instance for method chaining
 - **Signature:** `public This union(final String... propOrColumnNames)`
 - **Summary:** Starts a new SELECT query for UNION operation.
@@ -529,7 +529,7 @@ Base class for fluent SQL builders.
 - **Signature:** `public This unionAll(final String query)`
 - **Summary:** Adds a UNION ALL clause with a SQL query string.
 - **Parameters:**
-  - `query` (`String`) — the complete {@code SELECT} sub-query to union all (must not be {@code null} , empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM} )
+  - `query` (`String`) — the complete read-only {@code SELECT} sub-query to union all
 - **Returns:** this SqlBuilder instance for method chaining
 - **Signature:** `public This unionAll(final String... propOrColumnNames)`
 - **Summary:** Starts a new SELECT query for UNION ALL operation.
@@ -552,7 +552,7 @@ Base class for fluent SQL builders.
 - **Signature:** `public This intersect(final String query)`
 - **Summary:** Adds an INTERSECT clause with a SQL query string.
 - **Parameters:**
-  - `query` (`String`) — the complete {@code SELECT} sub-query to intersect (must not be {@code null} , empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM} )
+  - `query` (`String`) — the complete read-only {@code SELECT} sub-query to intersect
 - **Returns:** this SqlBuilder instance for method chaining
 - **Signature:** `public This intersect(final String... propOrColumnNames)`
 - **Summary:** Starts a new SELECT query for INTERSECT operation.
@@ -575,7 +575,7 @@ Base class for fluent SQL builders.
 - **Signature:** `public This except(final String query)`
 - **Summary:** Adds an EXCEPT clause with a SQL query string.
 - **Parameters:**
-  - `query` (`String`) — the complete {@code SELECT} sub-query to except (must not be {@code null} , empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM} )
+  - `query` (`String`) — the complete read-only {@code SELECT} sub-query to except
 - **Returns:** this SqlBuilder instance for method chaining
 - **Signature:** `public This except(final String... propOrColumnNames)`
 - **Summary:** Starts a new SELECT query for EXCEPT operation.
@@ -598,7 +598,7 @@ Base class for fluent SQL builders.
 - **Signature:** `public This minus(final String query)`
 - **Summary:** Adds a MINUS clause with a SQL query string (Oracle syntax).
 - **Parameters:**
-  - `query` (`String`) — the complete {@code SELECT} sub-query to minus (must not be {@code null} , empty, or blank, and must start with {@code SELECT} or contain {@code SELECT ... FROM} )
+  - `query` (`String`) — the complete read-only {@code SELECT} sub-query to subtract with MINUS
 - **Returns:** this SqlBuilder instance for method chaining
 - **Signature:** `public This minus(final String... propOrColumnNames)`
 - **Summary:** Starts a new SELECT query for MINUS operation (Oracle syntax).
@@ -697,17 +697,17 @@ Base class for fluent SQL builders.
   - (none)
 - **Returns:** an SP (SQL-Parameters) pair containing the SQL string and parameter list
 ##### apply(...) -> T
-- **Signature:** `@Beta public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> func) throws E`
+- **Signature:** `@Beta public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> function) throws E`
 - **Summary:** Applies a function to the SQL-Parameters pair and returns the result.
 - **Parameters:**
-  - `func` (`Throwables.Function<? super SP, T, E>`) — the function to apply to the SP pair
+  - `function` (`Throwables.Function<? super SP, T, E>`) — the function to apply to the SP pair
 - **Returns:** the result of applying the function
 - **Throws:**
   - `E` — if the function throws an exception
-- **Signature:** `@Beta public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> func) throws E`
+- **Signature:** `@Beta public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> function) throws E`
 - **Summary:** Applies a bi-function to the SQL string and parameters separately and returns the result.
 - **Parameters:**
-  - `func` (`Throwables.BiFunction<? super String, ? super List<Object>, T, E>`) — the bi-function to apply to the SQL and parameters
+  - `function` (`Throwables.BiFunction<? super String, ? super List<Object>, T, E>`) — the bi-function to apply to the SQL and parameters
 - **Returns:** the result of applying the function
 - **Throws:**
   - `E` — if the function throws an exception
@@ -806,6 +806,8 @@ Entry point for building SQL statements with a fixed {@link SqlDialect} (naming 
 - **Returns:** a new SqlBuilder instance configured for INSERT operation
 - **Signature:** `public SqlBuilder insert(final Object entity)`
 - **Summary:** Creates an INSERT statement from an entity object.
+- **Contract:**
+  - Properties whose value is {@code null} are also skipped, as are ID properties still holding their default value (for a composite ID, only when every ID property holds its default value).
 - **Parameters:**
   - `entity` (`Object`) — the entity object to insert
 - **Returns:** a new SqlBuilder instance configured for INSERT operation
@@ -813,6 +815,7 @@ Entry point for building SQL statements with a fixed {@link SqlDialect} (naming 
 - **Summary:** Creates an INSERT statement from an entity object with excluded properties.
 - **Contract:**
   - Properties in the exclusion set will not be included even if they have values and are normally insertable.
+  - Properties whose value is {@code null} are also skipped, as are ID properties still holding their default value (for a composite ID, only when every ID property holds its default value).
 - **Parameters:**
   - `entity` (`Object`) — the entity object to insert
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the insert
@@ -841,10 +844,10 @@ Entry point for building SQL statements with a fixed {@link SqlDialect} (naming 
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the insert
 - **Returns:** a new SqlBuilder instance configured for INSERT operation
 ##### batchInsert(...) -> SqlBuilder
-- **Signature:** `@Beta public SqlBuilder batchInsert(final Collection<?> entitiesOrProps)`
+- **Signature:** `@Beta public SqlBuilder batchInsert(final Collection<?> entitiesOrPropMaps)`
 - **Summary:** Generates a MySQL-style batch INSERT statement.
 - **Parameters:**
-  - `entitiesOrProps` (`Collection<?>`) — list of entities or property maps to insert
+  - `entitiesOrPropMaps` (`Collection<?>`) — list of entities or property maps to insert
 - **Returns:** a new SqlBuilder instance configured for batch INSERT operation
 ##### update(...) -> SqlBuilder
 - **Signature:** `public SqlBuilder update(final String tableName)`
@@ -973,10 +976,10 @@ Entry point for building SQL statements with a fixed {@link SqlDialect} (naming 
   - `selection` (`Selection`) — the selection descriptor defining the entity, aliases, and property filtering; must not be {@code null}
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **See also:** #select(List), Selection
-- **Signature:** `public SqlBuilder select(final List<Selection> multiSelects)`
+- **Signature:** `public SqlBuilder select(final List<Selection> selections)`
 - **Summary:** Creates a SELECT statement for multiple entities using Selection descriptors.
 - **Parameters:**
-  - `multiSelects` (`List<Selection>`) — list of Selection objects defining what to select from each entity
+  - `selections` (`List<Selection>`) — list of Selection objects defining what to select from each entity
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 ##### selectFrom(...) -> SqlBuilder
 - **Signature:** `public SqlBuilder selectFrom(final Class<?> entityClass)`
@@ -992,8 +995,6 @@ Entry point for building SQL statements with a fixed {@link SqlDialect} (naming 
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Signature:** `public SqlBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties)`
 - **Summary:** Creates a SELECT FROM statement with optional sub-entity properties.
-- **Contract:**
-  - When sub-entities are included, appropriate joins may be generated automatically.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to select from
   - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
@@ -1063,10 +1064,10 @@ Entry point for building SQL statements with a fixed {@link SqlDialect} (naming 
   - `selection` (`Selection`) — the selection descriptor defining the entity, aliases, and property filtering; must not be {@code null}
 - **Returns:** a new SqlBuilder instance with SELECT and FROM configured
 - **See also:** #selectFrom(List), Selection
-- **Signature:** `public SqlBuilder selectFrom(final List<Selection> multiSelects)`
+- **Signature:** `public SqlBuilder selectFrom(final List<Selection> selections)`
 - **Summary:** Creates a SELECT FROM statement for multiple entity selections.
 - **Parameters:**
-  - `multiSelects` (`List<Selection>`) — list of Selection objects defining what to select from each entity
+  - `selections` (`List<Selection>`) — list of Selection objects defining what to select from each entity
 - **Returns:** a new SqlBuilder instance with SELECT and FROM configured
 ##### count(...) -> SqlBuilder
 - **Signature:** `public SqlBuilder count(final String tableName)`
@@ -1079,26 +1080,19 @@ Entry point for building SQL statements with a fixed {@link SqlDialect} (naming 
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to count
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
-##### renderCondition(...) -> SqlBuilder
-- **Signature:** `public SqlBuilder renderCondition(final Condition cond, final Class<?> entityClass)`
+##### fromCondition(...) -> SqlBuilder
+- **Signature:** `public SqlBuilder fromCondition(final Condition condition, final Class<?> entityClass)`
 - **Summary:** Renders a condition as a standalone SQL fragment, using the given entity class for property-to-column mapping.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to render (must not be {@code null} )
+  - `condition` (`Condition`) — the condition to render (must not be {@code null} )
   - `entityClass` (`Class<?>`) — the entity class used for property-to-column mapping (may be {@code null} )
 - **Returns:** a new SqlBuilder instance containing the rendered condition SQL
-- **Signature:** `public SqlBuilder renderCondition(final Condition cond)`
+- **Signature:** `public SqlBuilder fromCondition(final Condition condition)`
 - **Summary:** Renders a condition as a standalone SQL fragment without an entity class.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to render (must not be {@code null} )
+  - `condition` (`Condition`) — the condition to render (must not be {@code null} )
 - **Returns:** a new SqlBuilder instance containing the rendered condition SQL
-- **See also:** #renderCondition(Condition, Class)
-##### fromCondition(...) -> SqlBuilder
-- **Signature:** `@Deprecated public SqlBuilder fromCondition(final Condition cond, final Class<?> entityClass)`
-- **Summary:** Renders a condition as a standalone SQL fragment, using the given entity class for property-to-column mapping.
-- **Parameters:**
-  - `cond` (`Condition`) — the condition to render (must not be {@code null} )
-  - `entityClass` (`Class<?>`) — the entity class used for property-to-column mapping (may be {@code null} )
-- **Returns:** a new SqlBuilder instance containing the rendered condition SQL
+- **See also:** #fromCondition(Condition, Class)
 
 ### Class DynamicQuery (com.landawn.abacus.query.DynamicQuery)
 Entry point for fluently creating dynamic SQL queries programmatically.
@@ -1255,22 +1249,22 @@ Builder for constructing dynamic SQL queries clause by clause.
   - `textToAppend` (`String`) — the complete raw SQL clause to append verbatim (e.g., {@code "LIMIT 10 OFFSET 20"} ) (must not be {@code null} , empty, or blank)
 - **Returns:** this builder instance for method chaining
 ##### appendIf(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder appendIf(final boolean condition, final String textToAppend)`
+- **Signature:** `public DynamicSqlBuilder appendIf(final boolean b, final String textToAppend)`
 - **Summary:** Conditionally appends a raw SQL clause or fragment verbatim to the end of the query.
 - **Contract:**
-  - When {@code condition} is {@code true} this behaves exactly like {@link #append(String)} (a single separating space is inserted only when needed, then the text is emitted unchanged with no validation, escaping, or interpretation); when {@code condition} is {@code false} the builder is left unchanged and {@code textToAppend} is not inspected.
+  - When {@code b} is {@code true} this behaves exactly like {@link #append(String)} (a single separating space is inserted only when needed, then the text is emitted unchanged with no validation, escaping, or interpretation); when {@code b} is {@code false} the builder is left unchanged and {@code textToAppend} is not inspected.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
-  - `textToAppend` (`String`) — the raw SQL clause to append verbatim if {@code condition} is {@code true} (must not be {@code null} , empty, or blank when {@code condition} is {@code true} )
+  - `b` (`boolean`) — the condition to check
+  - `textToAppend` (`String`) — the raw SQL clause to append verbatim if {@code b} is {@code true} (must not be {@code null} , empty, or blank when {@code b} is {@code true} )
 - **Returns:** this builder instance for method chaining
 - **See also:** #append(String)
 ##### appendIfOrElse(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
+- **Signature:** `public DynamicSqlBuilder appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
 - **Summary:** Appends one of two raw SQL clauses verbatim to the end of the query based on a boolean condition.
 - **Contract:**
   - Always appends something, choosing between the two options; the chosen text is emitted exactly as {@link #append(String)} would emit it (a single separating space is inserted only when needed, with no validation, escaping, or interpretation).
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
+  - `b` (`boolean`) — the condition to check
   - `textToAppendWhenTrue` (`String`) — the raw SQL clause to append if condition is true (must not be {@code null} , empty, or blank)
   - `textToAppendWhenFalse` (`String`) — the raw SQL clause to append if condition is false (must not be {@code null} , empty, or blank)
 - **Returns:** this builder instance for method chaining
@@ -1280,7 +1274,7 @@ Builder for constructing dynamic SQL queries clause by clause.
 - **Summary:** Builds the final SQL string from all the components and releases resources.
 - **Contract:**
   - This method MUST be called to get the SQL and clean up internal resources.
-  - After calling {@code build()} , this builder instance should not be reused.
+  - After calling {@code build()} , this builder is closed and must not be reused: any subsequent call to a builder method (including {@code build()} itself) throws {@link IllegalStateException} .
 - **Parameters:**
   - (none)
 - **Returns:** the complete SQL query string
@@ -1317,28 +1311,28 @@ Builder class for constructing the {@code SELECT} clause of a SQL query.
 - **Parameters:**
   - `columns` (`Collection<String>`) — collection of column names to select (may be {@code null} or empty; individual elements must not be {@code null} , empty, or blank)
 - **Returns:** this {@link SelectClause} instance for method chaining
-- **Signature:** `public SelectClause append(final Map<String, String> columnsAndAliasMap)`
+- **Signature:** `public SelectClause append(final Map<String, String> columnAliases)`
 - **Summary:** Appends multiple columns with their aliases to the {@code SELECT} clause.
 - **Contract:**
   - If the map is empty, this method does nothing.
   - Columns are emitted in the map's iteration order, so use a {@link java.util.LinkedHashMap} if a stable column order matters.
 - **Parameters:**
-  - `columnsAndAliasMap` (`Map<String, String>`) — map where keys are column names and values are aliases (may be {@code null} or empty; individual keys and values must not be {@code null} , empty, or blank)
+  - `columnAliases` (`Map<String, String>`) — map where keys are column names and values are aliases (may be {@code null} or empty; individual keys and values must not be {@code null} , empty, or blank)
 - **Returns:** this {@link SelectClause} instance for method chaining
 ##### appendIf(...) -> SelectClause
-- **Signature:** `public SelectClause appendIf(final boolean condition, final String textToAppend)`
+- **Signature:** `public SelectClause appendIf(final boolean b, final String textToAppend)`
 - **Summary:** Conditionally appends a string to the {@code SELECT} clause based on a boolean condition.
 - **Contract:**
   - The string is only appended if the condition is true.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
-  - `textToAppend` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank when {@code condition} is {@code true} )
+  - `b` (`boolean`) — the condition to check
+  - `textToAppend` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank when {@code b} is {@code true} )
 - **Returns:** this {@link SelectClause} instance for method chaining
 ##### appendIfOrElse(...) -> SelectClause
-- **Signature:** `public SelectClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
+- **Signature:** `public SelectClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
 - **Summary:** Appends one of two strings to the {@code SELECT} clause based on a boolean condition.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
+  - `b` (`boolean`) — the condition to check
   - `textToAppendWhenTrue` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank)
   - `textToAppendWhenFalse` (`String`) — the string to append if condition is false (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link SelectClause} instance for method chaining
@@ -1376,11 +1370,11 @@ Builder class for constructing the {@code FROM} clause of a SQL query.
   - `tables` (`Collection<String>`) — collection of table names to add (may be {@code null} or empty; individual elements must not be {@code null} , empty, or blank)
 - **Returns:** this {@link FromClause} instance for method chaining
 ##### join(...) -> FromClause
-- **Signature:** `public FromClause join(final String joinExpr, final String on)`
+- **Signature:** `public FromClause join(final String joinExpr, final String expr)`
 - **Summary:** Adds a {@code JOIN} clause (implicit {@code INNER JOIN} ) with the specified table and join condition.
 - **Parameters:**
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be {@code null} , empty, or blank)
-  - `on` (`String`) — the join condition (must not be {@code null} , empty, or blank)
+  - `expr` (`String`) — the join condition (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link FromClause} instance for method chaining
 - **Signature:** `public FromClause join(final String joinExpr)`
 - **Summary:** Adds a {@code JOIN} clause (implicit {@code INNER JOIN} ) with the specified table and no {@code ON} condition.
@@ -1388,32 +1382,52 @@ Builder class for constructing the {@code FROM} clause of a SQL query.
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be {@code null} , empty, or blank)
 - **Returns:** this {@link FromClause} instance for method chaining
 ##### innerJoin(...) -> FromClause
-- **Signature:** `public FromClause innerJoin(final String joinExpr, final String on)`
+- **Signature:** `public FromClause innerJoin(final String joinExpr, final String expr)`
 - **Summary:** Adds an {@code INNER JOIN} clause with the specified table and join condition.
 - **Parameters:**
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be {@code null} , empty, or blank)
-  - `on` (`String`) — the join condition (must not be {@code null} , empty, or blank)
+  - `expr` (`String`) — the join condition (must not be {@code null} , empty, or blank)
+- **Returns:** this {@link FromClause} instance for method chaining
+- **Signature:** `public FromClause innerJoin(final String joinExpr)`
+- **Summary:** Adds an {@code INNER JOIN} clause with the specified table and no {@code ON} condition.
+- **Parameters:**
+  - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be {@code null} , empty, or blank)
 - **Returns:** this {@link FromClause} instance for method chaining
 ##### leftJoin(...) -> FromClause
-- **Signature:** `public FromClause leftJoin(final String joinExpr, final String on)`
+- **Signature:** `public FromClause leftJoin(final String joinExpr, final String expr)`
 - **Summary:** Adds a {@code LEFT JOIN} clause with the specified table and join condition.
 - **Parameters:**
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be {@code null} , empty, or blank)
-  - `on` (`String`) — the join condition (must not be {@code null} , empty, or blank)
+  - `expr` (`String`) — the join condition (must not be {@code null} , empty, or blank)
+- **Returns:** this {@link FromClause} instance for method chaining
+- **Signature:** `public FromClause leftJoin(final String joinExpr)`
+- **Summary:** Adds a {@code LEFT JOIN} clause with the specified table and no {@code ON} condition.
+- **Parameters:**
+  - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be {@code null} , empty, or blank)
 - **Returns:** this {@link FromClause} instance for method chaining
 ##### rightJoin(...) -> FromClause
-- **Signature:** `public FromClause rightJoin(final String joinExpr, final String on)`
+- **Signature:** `public FromClause rightJoin(final String joinExpr, final String expr)`
 - **Summary:** Adds a {@code RIGHT JOIN} clause with the specified table and join condition.
 - **Parameters:**
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be {@code null} , empty, or blank)
-  - `on` (`String`) — the join condition (must not be {@code null} , empty, or blank)
+  - `expr` (`String`) — the join condition (must not be {@code null} , empty, or blank)
+- **Returns:** this {@link FromClause} instance for method chaining
+- **Signature:** `public FromClause rightJoin(final String joinExpr)`
+- **Summary:** Adds a {@code RIGHT JOIN} clause with the specified table and no {@code ON} condition.
+- **Parameters:**
+  - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be {@code null} , empty, or blank)
 - **Returns:** this {@link FromClause} instance for method chaining
 ##### fullJoin(...) -> FromClause
-- **Signature:** `public FromClause fullJoin(final String joinExpr, final String on)`
+- **Signature:** `public FromClause fullJoin(final String joinExpr, final String expr)`
 - **Summary:** Adds a {@code FULL JOIN} clause with the specified table and join condition.
 - **Parameters:**
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be {@code null} , empty, or blank)
-  - `on` (`String`) — the join condition (must not be {@code null} , empty, or blank)
+  - `expr` (`String`) — the join condition (must not be {@code null} , empty, or blank)
+- **Returns:** this {@link FromClause} instance for method chaining
+- **Signature:** `public FromClause fullJoin(final String joinExpr)`
+- **Summary:** Adds a {@code FULL JOIN} clause with the specified table and no {@code ON} condition.
+- **Parameters:**
+  - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be {@code null} , empty, or blank)
 - **Returns:** this {@link FromClause} instance for method chaining
 ##### crossJoin(...) -> FromClause
 - **Signature:** `public FromClause crossJoin(final String joinExpr)`
@@ -1428,19 +1442,19 @@ Builder class for constructing the {@code FROM} clause of a SQL query.
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be {@code null} , empty, or blank)
 - **Returns:** this {@link FromClause} instance for method chaining
 ##### appendIf(...) -> FromClause
-- **Signature:** `public FromClause appendIf(final boolean condition, final String textToAppend)`
+- **Signature:** `public FromClause appendIf(final boolean b, final String textToAppend)`
 - **Summary:** Conditionally appends a string to the {@code FROM} clause based on a boolean condition.
 - **Contract:**
   - The string is only appended if the condition is true.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
-  - `textToAppend` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank when {@code condition} is {@code true} )
+  - `b` (`boolean`) — the condition to check
+  - `textToAppend` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank when {@code b} is {@code true} )
 - **Returns:** this {@link FromClause} instance for method chaining
 ##### appendIfOrElse(...) -> FromClause
-- **Signature:** `public FromClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
+- **Signature:** `public FromClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
 - **Summary:** Appends one of two strings to the {@code FROM} clause based on a boolean condition.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
+  - `b` (`boolean`) — the condition to check
   - `textToAppendWhenTrue` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank)
   - `textToAppendWhenFalse` (`String`) — the string to append if condition is false (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link FromClause} instance for method chaining
@@ -1459,12 +1473,12 @@ Builder class for constructing the {@code WHERE} clause of a SQL query.
 
 #### Public Instance Methods
 ##### append(...) -> WhereClause
-- **Signature:** `public WhereClause append(final String cond)`
+- **Signature:** `public WhereClause append(final String expr)`
 - **Summary:** Appends a condition to the {@code WHERE} clause.
 - **Contract:**
   - <p> Unlike {@link #and(String)} / {@link #or(String)} , this method does <em> not </em> insert a logical connective \\u2014 the caller must include any required {@code AND} / {@code OR} in the argument.
 - **Parameters:**
-  - `cond` (`String`) — the condition to append (must not be {@code null} , empty, or blank)
+  - `expr` (`String`) — the SQL expression to append (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link WhereClause} instance for method chaining
 ##### placeholders(...) -> WhereClause
 - **Signature:** `public WhereClause placeholders(final int placeholderCount)`
@@ -1485,35 +1499,35 @@ Builder class for constructing the {@code WHERE} clause of a SQL query.
   - `postfix` (`String`) — the string to add after the question marks (must not be {@code null} )
 - **Returns:** this {@link WhereClause} instance for method chaining
 ##### and(...) -> WhereClause
-- **Signature:** `public WhereClause and(final String cond)`
+- **Signature:** `public WhereClause and(final String expr)`
 - **Summary:** Adds an {@code AND} condition to the {@code WHERE} clause.
 - **Contract:**
   - If called before any {@link #append(String)} , this acts as the first condition and emits {@code WHERE cond} with no leading {@code AND} .
 - **Parameters:**
-  - `cond` (`String`) — the condition to add with {@code AND} (must not be {@code null} , empty, or blank)
+  - `expr` (`String`) — the SQL expression to add with {@code AND} (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link WhereClause} instance for method chaining
 ##### or(...) -> WhereClause
-- **Signature:** `public WhereClause or(final String cond)`
+- **Signature:** `public WhereClause or(final String expr)`
 - **Summary:** Adds an {@code OR} condition to the {@code WHERE} clause.
 - **Contract:**
   - If called before any {@link #append(String)} , this acts as the first condition and emits {@code WHERE cond} with no leading {@code OR} .
 - **Parameters:**
-  - `cond` (`String`) — the condition to add with {@code OR} (must not be {@code null} , empty, or blank)
+  - `expr` (`String`) — the SQL expression to add with {@code OR} (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link WhereClause} instance for method chaining
 ##### appendIf(...) -> WhereClause
-- **Signature:** `public WhereClause appendIf(final boolean condition, final String textToAppend)`
+- **Signature:** `public WhereClause appendIf(final boolean b, final String textToAppend)`
 - **Summary:** Conditionally appends a string to the {@code WHERE} clause based on a boolean condition.
 - **Contract:**
   - The string is only appended if the condition is true.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
-  - `textToAppend` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank when {@code condition} is {@code true} )
+  - `b` (`boolean`) — the condition to check
+  - `textToAppend` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank when {@code b} is {@code true} )
 - **Returns:** this {@link WhereClause} instance for method chaining
 ##### appendIfOrElse(...) -> WhereClause
-- **Signature:** `public WhereClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
+- **Signature:** `public WhereClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
 - **Summary:** Appends one of two strings to the {@code WHERE} clause based on a boolean condition.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
+  - `b` (`boolean`) — the condition to check
   - `textToAppendWhenTrue` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank)
   - `textToAppendWhenFalse` (`String`) — the string to append if condition is false (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link WhereClause} instance for method chaining
@@ -1532,10 +1546,10 @@ Builder class for constructing the {@code GROUP BY} clause of a SQL query.
 
 #### Public Instance Methods
 ##### append(...) -> GroupByClause
-- **Signature:** `public GroupByClause append(final String column)`
+- **Signature:** `public GroupByClause append(final String propOrColumnName)`
 - **Summary:** Appends a column to the {@code GROUP BY} clause.
 - **Parameters:**
-  - `column` (`String`) — the column name to group by (must not be {@code null} , empty, or blank)
+  - `propOrColumnName` (`String`) — the property or column name to group by (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link GroupByClause} instance for method chaining
 - **Signature:** `public GroupByClause append(final Collection<String> columns)`
 - **Summary:** Appends multiple columns to the {@code GROUP BY} clause.
@@ -1545,19 +1559,19 @@ Builder class for constructing the {@code GROUP BY} clause of a SQL query.
   - `columns` (`Collection<String>`) — collection of column names to group by (may be {@code null} or empty; individual elements must not be {@code null} , empty, or blank)
 - **Returns:** this {@link GroupByClause} instance for method chaining
 ##### appendIf(...) -> GroupByClause
-- **Signature:** `public GroupByClause appendIf(final boolean condition, final String textToAppend)`
+- **Signature:** `public GroupByClause appendIf(final boolean b, final String textToAppend)`
 - **Summary:** Conditionally appends a string to the {@code GROUP BY} clause based on a boolean condition.
 - **Contract:**
   - The string is only appended if the condition is true.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
-  - `textToAppend` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank when {@code condition} is {@code true} )
+  - `b` (`boolean`) — the condition to check
+  - `textToAppend` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank when {@code b} is {@code true} )
 - **Returns:** this {@link GroupByClause} instance for method chaining
 ##### appendIfOrElse(...) -> GroupByClause
-- **Signature:** `public GroupByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
+- **Signature:** `public GroupByClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
 - **Summary:** Appends one of two strings to the {@code GROUP BY} clause based on a boolean condition.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
+  - `b` (`boolean`) — the condition to check
   - `textToAppendWhenTrue` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank)
   - `textToAppendWhenFalse` (`String`) — the string to append if condition is false (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link GroupByClause} instance for method chaining
@@ -1576,12 +1590,12 @@ Builder class for constructing the {@code HAVING} clause of a SQL query.
 
 #### Public Instance Methods
 ##### append(...) -> HavingClause
-- **Signature:** `public HavingClause append(final String cond)`
+- **Signature:** `public HavingClause append(final String expr)`
 - **Summary:** Appends a condition to the {@code HAVING} clause.
 - **Contract:**
   - <p> Unlike {@link #and(String)} / {@link #or(String)} , this method does <em> not </em> insert a logical connective \\u2014 the caller must include any required {@code AND} / {@code OR} in the argument.
 - **Parameters:**
-  - `cond` (`String`) — the condition to append (must not be {@code null} , empty, or blank)
+  - `expr` (`String`) — the SQL expression to append (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link HavingClause} instance for method chaining
 ##### placeholders(...) -> HavingClause
 - **Signature:** `public HavingClause placeholders(final int placeholderCount)`
@@ -1602,35 +1616,35 @@ Builder class for constructing the {@code HAVING} clause of a SQL query.
   - `postfix` (`String`) — the string to add after the question marks (must not be {@code null} )
 - **Returns:** this {@link HavingClause} instance for method chaining
 ##### and(...) -> HavingClause
-- **Signature:** `public HavingClause and(final String cond)`
+- **Signature:** `public HavingClause and(final String expr)`
 - **Summary:** Adds an {@code AND} condition to the {@code HAVING} clause.
 - **Contract:**
   - If called before any {@link #append(String)} , this acts as the first condition and emits {@code HAVING cond} with no leading {@code AND} .
 - **Parameters:**
-  - `cond` (`String`) — the condition to add with {@code AND} (must not be {@code null} , empty, or blank)
+  - `expr` (`String`) — the SQL expression to add with {@code AND} (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link HavingClause} instance for method chaining
 ##### or(...) -> HavingClause
-- **Signature:** `public HavingClause or(final String cond)`
+- **Signature:** `public HavingClause or(final String expr)`
 - **Summary:** Adds an {@code OR} condition to the {@code HAVING} clause.
 - **Contract:**
   - If called before any {@link #append(String)} , this acts as the first condition and emits {@code HAVING cond} with no leading {@code OR} .
 - **Parameters:**
-  - `cond` (`String`) — the condition to add with {@code OR} (must not be {@code null} , empty, or blank)
+  - `expr` (`String`) — the SQL expression to add with {@code OR} (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link HavingClause} instance for method chaining
 ##### appendIf(...) -> HavingClause
-- **Signature:** `public HavingClause appendIf(final boolean condition, final String textToAppend)`
+- **Signature:** `public HavingClause appendIf(final boolean b, final String textToAppend)`
 - **Summary:** Conditionally appends a string to the {@code HAVING} clause based on a boolean condition.
 - **Contract:**
   - The string is only appended if the condition is true.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
-  - `textToAppend` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank when {@code condition} is {@code true} )
+  - `b` (`boolean`) — the condition to check
+  - `textToAppend` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank when {@code b} is {@code true} )
 - **Returns:** this {@link HavingClause} instance for method chaining
 ##### appendIfOrElse(...) -> HavingClause
-- **Signature:** `public HavingClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
+- **Signature:** `public HavingClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
 - **Summary:** Appends one of two strings to the {@code HAVING} clause based on a boolean condition.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
+  - `b` (`boolean`) — the condition to check
   - `textToAppendWhenTrue` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank)
   - `textToAppendWhenFalse` (`String`) — the string to append if condition is false (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link HavingClause} instance for method chaining
@@ -1649,10 +1663,10 @@ Builder class for constructing the {@code ORDER BY} clause of a SQL query.
 
 #### Public Instance Methods
 ##### append(...) -> OrderByClause
-- **Signature:** `public OrderByClause append(final String column)`
+- **Signature:** `public OrderByClause append(final String propOrColumnName)`
 - **Summary:** Appends a column (with optional sort direction) to the {@code ORDER BY} clause.
 - **Parameters:**
-  - `column` (`String`) — the column name with optional {@code ASC} / {@code DESC} (must not be {@code null} , empty, or blank)
+  - `propOrColumnName` (`String`) — the property or column name with optional {@code ASC} / {@code DESC} (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link OrderByClause} instance for method chaining
 - **Signature:** `public OrderByClause append(final Collection<String> columns)`
 - **Summary:** Appends multiple columns to the {@code ORDER BY} clause.
@@ -1662,19 +1676,19 @@ Builder class for constructing the {@code ORDER BY} clause of a SQL query.
   - `columns` (`Collection<String>`) — collection of column names with optional sort directions (may be {@code null} or empty; individual elements must not be {@code null} , empty, or blank)
 - **Returns:** this {@link OrderByClause} instance for method chaining
 ##### appendIf(...) -> OrderByClause
-- **Signature:** `public OrderByClause appendIf(final boolean condition, final String textToAppend)`
+- **Signature:** `public OrderByClause appendIf(final boolean b, final String textToAppend)`
 - **Summary:** Conditionally appends a string to the {@code ORDER BY} clause based on a boolean condition.
 - **Contract:**
   - The string is only appended if the condition is true.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
-  - `textToAppend` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank when {@code condition} is {@code true} )
+  - `b` (`boolean`) — the condition to check
+  - `textToAppend` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank when {@code b} is {@code true} )
 - **Returns:** this {@link OrderByClause} instance for method chaining
 ##### appendIfOrElse(...) -> OrderByClause
-- **Signature:** `public OrderByClause appendIfOrElse(final boolean condition, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
+- **Signature:** `public OrderByClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
 - **Summary:** Appends one of two strings to the {@code ORDER BY} clause based on a boolean condition.
 - **Parameters:**
-  - `condition` (`boolean`) — the condition to check
+  - `b` (`boolean`) — the condition to check
   - `textToAppendWhenTrue` (`String`) — the string to append if condition is true (must not be {@code null} , empty, or blank)
   - `textToAppendWhenFalse` (`String`) — the string to append if condition is false (must not be {@code null} , empty, or blank)
 - **Returns:** this {@link OrderByClause} instance for method chaining
@@ -1714,10 +1728,10 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `literal` (`String`) — the SQL expression as a string (must not be {@code null} )
 - **Returns:** an {@link Expression} instance
 ##### not(...) -> Not
-- **Signature:** `public static Not not(final Condition cond)`
+- **Signature:** `public static Not not(final Condition condition)`
 - **Summary:** Creates a negation condition that represents the logical {@code NOT} of the provided condition.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to negate (must not be {@code null} and must be a composable condition)
+  - `condition` (`Condition`) — the condition to negate (must not be {@code null} and must be a composable condition)
 - **Returns:** a {@link Not} condition that wraps and negates the provided condition
 - **See also:** Not, Condition
 ##### binary(...) -> Binary
@@ -1728,7 +1742,7 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - <p> The {@code operator} must be a valid binary comparison or membership operator: one of {@link Operator#EQUAL} , {@link Operator#NOT_EQUAL} , {@link Operator#NOT_EQUAL_ANSI} , {@link Operator#GREATER_THAN} , {@link Operator#GREATER_THAN_OR_EQUAL} , {@link Operator#LESS_THAN} , {@link Operator#LESS_THAN_OR_EQUAL} , {@link Operator#LIKE} , {@link Operator#NOT_LIKE} , {@link Operator#IS} , {@link Operator#IS_NOT} , {@link Operator#IN} , or {@link Operator#NOT_IN} .
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be {@code null} , empty, or blank)
-  - `operator` (`Operator`) — the binary comparison/membership operator to use (must not be {@code null} and must be a valid binary operator; structural operators are rejected)
+  - `operator` (`Operator`) — the binary comparison operator to use (must not be {@code null} ; membership and structural operators are rejected)
   - `propValue` (`Object`) — the value to compare against; may be a literal, {@code null} , or another {@link Condition} such as a {@link SubQuery} . For an {@code IN} / {@code NOT_IN} operator, a {@link Collection} or array value is copied defensively and must be non-empty.
 - **Returns:** a {@link Binary} condition
 - **Signature:** `public static Binary binary(final String propName, final Operator operator)`
@@ -1737,7 +1751,7 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - The condition uses a question mark ( {@code ?} ) placeholder in place of the value, which is provided later when the statement is executed.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be {@code null} , empty, or blank)
-  - `operator` (`Operator`) — the binary comparison/membership operator to use (must not be {@code null} and must be a valid binary operator; structural operators are rejected)
+  - `operator` (`Operator`) — the binary comparison operator to use (must not be {@code null} ; membership and structural operators are rejected)
 - **Returns:** a {@link Binary} condition with a {@code ?} placeholder value
 - **See also:** #binary(String, Operator, Object)
 ##### equal(...) -> Equal
@@ -1778,11 +1792,11 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Parameters:**
   - `entity` (`Object`) — the entity object whose properties will be used
 - **Returns:** an {@link Or} condition
-- **Signature:** `public static Or anyEqual(final Object entity, final Collection<String> selectPropNames)`
+- **Signature:** `public static Or anyEqual(final Object entity, final Collection<String> includedPropNames)`
 - **Summary:** Creates an {@code OR} condition from an entity object using only the specified properties.
 - **Parameters:**
   - `entity` (`Object`) — the entity object
-  - `selectPropNames` (`Collection<String>`) — the property names to include (must not be empty)
+  - `includedPropNames` (`Collection<String>`) — the property names to include (must not be empty)
 - **Returns:** an {@link Or} condition
 - **Signature:** `public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2)`
 - **Summary:** Creates an {@code OR} condition with two property-value pairs across <b> different </b> columns/properties.
@@ -1813,11 +1827,11 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Parameters:**
   - `entity` (`Object`) — the entity object whose properties will be used
 - **Returns:** an {@link And} condition
-- **Signature:** `public static And allEqual(final Object entity, final Collection<String> selectPropNames)`
+- **Signature:** `public static And allEqual(final Object entity, final Collection<String> includedPropNames)`
 - **Summary:** Creates an {@code AND} condition from an entity object using only the specified properties.
 - **Parameters:**
   - `entity` (`Object`) — the entity object
-  - `selectPropNames` (`Collection<String>`) — the property names to include (must not be empty)
+  - `includedPropNames` (`Collection<String>`) — the property names to include (must not be empty)
 - **Returns:** an {@link And} condition
 - **Signature:** `public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2)`
 - **Summary:** Creates an {@code AND} condition with two property-value pairs across <b> different </b> columns/properties.
@@ -1838,18 +1852,18 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `propValue3` (`Object`) — third property value
 - **Returns:** an {@link And} condition
 ##### anyOfAllEqual(...) -> Or
-- **Signature:** `@Beta public static Or anyOfAllEqual(final Collection<?> entitiesOrMaps)`
+- **Signature:** `@Beta public static Or anyOfAllEqual(final Collection<?> entitiesOrPropMaps)`
 - **Summary:** Creates an {@code OR} condition from a collection of property maps or entities, where each non-null element forms an {@code AND} condition.
 - **Contract:**
   - If the first non-null element is a {@link Map} , all non-null elements must be maps with {@link String} keys.
 - **Parameters:**
-  - `entitiesOrMaps` (`Collection<?>`) — collection of property maps or entity objects (must not be empty)
+  - `entitiesOrPropMaps` (`Collection<?>`) — collection of property maps or entity objects (must not be empty)
 - **Returns:** an {@link Or} condition
-- **Signature:** `@Beta public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> selectPropNames)`
+- **Signature:** `@Beta public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> includedPropNames)`
 - **Summary:** Creates an {@code OR} condition from a collection of entities using only specified properties.
 - **Parameters:**
   - `entities` (`Collection<?>`) — collection of entity objects (must not be empty)
-  - `selectPropNames` (`Collection<String>`) — the property names to include (must not be empty)
+  - `includedPropNames` (`Collection<String>`) — the property names to include (must not be empty)
 - **Returns:** an {@link Or} condition
 ##### gtAndLt(...) -> And
 - **Signature:** `public static And gtAndLt(final String propName, final Object minValue, final Object maxValue)`
@@ -2086,11 +2100,17 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Returns:** a {@link NotBetween} condition with parameter placeholders
 - **See also:** com.landawn.abacus.query.SqlBuilder
 ##### like(...) -> Like
-- **Signature:** `public static Like like(final String propName, final String propValue)`
+- **Signature:** `public static Like like(final String propName, final String pattern)`
 - **Summary:** Creates a {@link Like} condition for pattern matching.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `propValue` (`String`) — the pattern to match (can include SQL wildcards). Passing {@code null} renders as {@code propName LIKE null} , which is not a meaningful SQL comparison; do not pass {@code null} (the {@link #contains(String, String)} / {@link #startsWith(String, String)} siblings reject a {@code null} value)
+  - `pattern` (`String`) — the pattern to match (can include SQL wildcards). Passing {@code null} renders as {@code propName LIKE null} , which is not a meaningful SQL comparison; do not pass {@code null} (the {@link #contains(String, String)} / {@link #startsWith(String, String)} siblings reject a {@code null} value)
+- **Returns:** a {@link Like} condition
+- **Signature:** `public static Like like(final String propName, final Object propValue)`
+- **Summary:** Creates a {@link Like} condition with a non-string operand such as an expression or subquery.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name
+  - `propValue` (`Object`) — the operand to compare with {@code LIKE} ; may be a literal or another condition
 - **Returns:** a {@link Like} condition
 - **Signature:** `public static Like like(final String propName)`
 - **Summary:** Creates a parameterized {@link Like} condition for use with prepared statements.
@@ -2099,11 +2119,17 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Returns:** a {@link Like} condition with a parameter placeholder
 - **See also:** com.landawn.abacus.query.SqlBuilder
 ##### notLike(...) -> NotLike
-- **Signature:** `public static NotLike notLike(final String propName, final String propValue)`
+- **Signature:** `public static NotLike notLike(final String propName, final String pattern)`
 - **Summary:** Creates a {@link NotLike} condition for pattern matching exclusion.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `propValue` (`String`) — the pattern to exclude (can include SQL wildcards). Passing {@code null} renders as {@code propName NOT LIKE null} , which is not a meaningful SQL comparison; do not pass {@code null} (the {@link #notContains(String, String)} sibling rejects a {@code null} value)
+  - `pattern` (`String`) — the pattern to exclude (can include SQL wildcards). Passing {@code null} renders as {@code propName NOT LIKE null} , which is not a meaningful SQL comparison; do not pass {@code null} (the {@link #notContains(String, String)} sibling rejects a {@code null} value)
+- **Returns:** a {@link NotLike} condition
+- **Signature:** `public static NotLike notLike(final String propName, final Object propValue)`
+- **Summary:** Creates a {@link NotLike} condition with a non-string operand such as an expression or subquery.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name
+  - `propValue` (`Object`) — the operand to compare with {@code NOT LIKE} ; may be a literal or another condition
 - **Returns:** a {@link NotLike} condition
 - **Signature:** `public static NotLike notLike(final String propName)`
 - **Summary:** Creates a parameterized {@link NotLike} condition for use with prepared statements.
@@ -2309,10 +2335,10 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine; {@code null} or empty is permitted and yields an empty junction
 - **Returns:** a {@link Junction} with the specified operator
 ##### where(...) -> Where
-- **Signature:** `public static Where where(final Condition cond)`
+- **Signature:** `public static Where where(final Condition condition)`
 - **Summary:** Creates a {@link Where} clause with the specified condition.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition for the {@code WHERE} clause (must not be {@code null} )
+  - `condition` (`Condition`) — the condition for the {@code WHERE} clause (must not be {@code null} )
 - **Returns:** a {@link Where} clause
 - **Signature:** `public static Where where(final String expr)`
 - **Summary:** Creates a {@link Where} clause from a raw SQL expression string.
@@ -2320,10 +2346,10 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `expr` (`String`) — the SQL expression as a string (must not be {@code null} , empty, or blank)
 - **Returns:** a {@link Where} clause
 ##### groupByAsc(...) -> GroupBy
-- **Signature:** `public static GroupBy groupByAsc(final String propName)`
+- **Signature:** `public static GroupBy groupByAsc(final String propOrColumnName)`
 - **Summary:** Creates a {@link GroupBy} clause with ascending order for a single property.
 - **Parameters:**
-  - `propName` (`String`) — the property/column name to group by ascending
+  - `propOrColumnName` (`String`) — the property/column name to group by ascending
 - **Returns:** a {@link GroupBy} clause
 - **Signature:** `public static GroupBy groupByAsc(final String... propNames)`
 - **Summary:** Creates a {@link GroupBy} clause with ascending order for the specified properties.
@@ -2336,10 +2362,10 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `propNames` (`Collection<String>`) — collection of property/column names to group by ascending
 - **Returns:** a {@link GroupBy} clause
 ##### groupByDesc(...) -> GroupBy
-- **Signature:** `public static GroupBy groupByDesc(final String propName)`
+- **Signature:** `public static GroupBy groupByDesc(final String propOrColumnName)`
 - **Summary:** Creates a {@link GroupBy} clause with descending order for a single property.
 - **Parameters:**
-  - `propName` (`String`) — the property/column name to group by descending
+  - `propOrColumnName` (`String`) — the property/column name to group by descending
 - **Returns:** a {@link GroupBy} clause
 - **Signature:** `public static GroupBy groupByDesc(final String... propNames)`
 - **Summary:** Creates a {@link GroupBy} clause with descending order for the specified properties.
@@ -2399,16 +2425,16 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Parameters:**
   - `groupings` (`Map<String, SortDirection>`) — map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
 - **Returns:** a {@link GroupBy} clause
-- **Signature:** `public static GroupBy groupBy(final Condition cond)`
+- **Signature:** `public static GroupBy groupBy(final Condition condition)`
 - **Summary:** Creates a {@link GroupBy} clause with a custom condition.
 - **Parameters:**
-  - `cond` (`Condition`) — the grouping condition (must not be {@code null} )
+  - `condition` (`Condition`) — the grouping condition (must not be {@code null} )
 - **Returns:** a {@link GroupBy} clause
 ##### having(...) -> Having
-- **Signature:** `public static Having having(final Condition cond)`
+- **Signature:** `public static Having having(final Condition condition)`
 - **Summary:** Creates a {@link Having} clause with the specified condition.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition for the {@code HAVING} clause (must not be {@code null} )
+  - `condition` (`Condition`) — the condition for the {@code HAVING} clause (must not be {@code null} )
 - **Returns:** a {@link Having} clause
 - **Signature:** `public static Having having(final String expr)`
 - **Summary:** Creates a {@link Having} clause from a raw SQL expression string.
@@ -2416,10 +2442,10 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `expr` (`String`) — the SQL expression as a string (must not be {@code null} , empty, or blank)
 - **Returns:** a {@link Having} clause
 ##### orderByAsc(...) -> OrderBy
-- **Signature:** `public static OrderBy orderByAsc(final String propName)`
+- **Signature:** `public static OrderBy orderByAsc(final String propOrColumnName)`
 - **Summary:** Creates an {@link OrderBy} clause with ascending order for a single property.
 - **Parameters:**
-  - `propName` (`String`) — the property/column name to order by ascending
+  - `propOrColumnName` (`String`) — the property/column name to order by ascending
 - **Returns:** an {@link OrderBy} clause
 - **Signature:** `public static OrderBy orderByAsc(final String... propNames)`
 - **Summary:** Creates an {@link OrderBy} clause with ascending order for the specified properties.
@@ -2432,10 +2458,10 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `propNames` (`Collection<String>`) — collection of property/column names to order by ascending
 - **Returns:** an {@link OrderBy} clause
 ##### orderByDesc(...) -> OrderBy
-- **Signature:** `public static OrderBy orderByDesc(final String propName)`
+- **Signature:** `public static OrderBy orderByDesc(final String propOrColumnName)`
 - **Summary:** Creates an {@link OrderBy} clause with descending order for a single property.
 - **Parameters:**
-  - `propName` (`String`) — the property/column name to order by descending
+  - `propOrColumnName` (`String`) — the property/column name to order by descending
 - **Returns:** an {@link OrderBy} clause
 - **Signature:** `public static OrderBy orderByDesc(final String... propNames)`
 - **Summary:** Creates an {@link OrderBy} clause with descending order for the specified properties.
@@ -2495,18 +2521,18 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Parameters:**
   - `orders` (`Map<String, SortDirection>`) — map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
 - **Returns:** an {@link OrderBy} clause
-- **Signature:** `public static OrderBy orderBy(final Condition cond)`
+- **Signature:** `public static OrderBy orderBy(final Condition condition)`
 - **Summary:** Creates an {@link OrderBy} clause with a custom condition.
 - **Contract:**
   - <p> <b> Usage Examples: </b> </p> <pre> {@code OrderBy orderBy = Filters.orderBy( Filters.expr("CASE WHEN status = 'urgent' THEN 1 ELSE 2 END, created_date DESC") ); // Results in SQL like: ORDER BY CASE WHEN status = 'urgent' THEN 1 ELSE 2 END, created_date DESC } </pre>
 - **Parameters:**
-  - `cond` (`Condition`) — the ordering condition (must not be {@code null} )
+  - `condition` (`Condition`) — the ordering condition (must not be {@code null} )
 - **Returns:** an {@link OrderBy} clause
 ##### on(...) -> On
-- **Signature:** `public static On on(final Condition cond)`
+- **Signature:** `public static On on(final Condition condition)`
 - **Summary:** Creates an {@link On} clause for JOIN operations with the specified condition.
 - **Parameters:**
-  - `cond` (`Condition`) — the join condition (must not be {@code null} )
+  - `condition` (`Condition`) — the join condition (must not be {@code null} )
 - **Returns:** an {@link On} clause
 - **Signature:** `public static On on(final String expr)`
 - **Summary:** Creates an {@link On} clause from a raw SQL expression string for JOIN operations.
@@ -2543,17 +2569,17 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to join
 - **Returns:** a {@link Join} clause
-- **Signature:** `public static Join join(final String joinEntity, final Condition cond)`
+- **Signature:** `public static Join join(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a {@link Join} clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** a {@link Join} clause
-- **Signature:** `public static Join join(final Collection<String> joinEntities, final Condition cond)`
+- **Signature:** `public static Join join(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a {@link Join} clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** a {@link Join} clause
 ##### leftJoin(...) -> LeftJoin
 - **Signature:** `public static LeftJoin leftJoin(final String joinEntity)`
@@ -2561,17 +2587,17 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to left join
 - **Returns:** a {@link LeftJoin} clause
-- **Signature:** `public static LeftJoin leftJoin(final String joinEntity, final Condition cond)`
+- **Signature:** `public static LeftJoin leftJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a LEFT JOIN clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to left join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** a {@link LeftJoin} clause
-- **Signature:** `public static LeftJoin leftJoin(final Collection<String> joinEntities, final Condition cond)`
+- **Signature:** `public static LeftJoin leftJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a LEFT JOIN clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to left join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** a {@link LeftJoin} clause
 ##### rightJoin(...) -> RightJoin
 - **Signature:** `public static RightJoin rightJoin(final String joinEntity)`
@@ -2579,17 +2605,17 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to right join
 - **Returns:** a {@link RightJoin} clause
-- **Signature:** `public static RightJoin rightJoin(final String joinEntity, final Condition cond)`
+- **Signature:** `public static RightJoin rightJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a RIGHT JOIN clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to right join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** a {@link RightJoin} clause
-- **Signature:** `public static RightJoin rightJoin(final Collection<String> joinEntities, final Condition cond)`
+- **Signature:** `public static RightJoin rightJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a RIGHT JOIN clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to right join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** a {@link RightJoin} clause
 ##### crossJoin(...) -> CrossJoin
 - **Signature:** `public static CrossJoin crossJoin(final String joinEntity)`
@@ -2597,19 +2623,10 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to cross join
 - **Returns:** a {@link CrossJoin} clause
-- **Signature:** `public static CrossJoin crossJoin(final String joinEntity, final Condition cond)`
-- **Summary:** Creates a CROSS JOIN clause with the specified entity and optional condition.
-- **Contract:**
-  - <p> <b> Usage Examples: </b> </p> <pre> {@code CrossJoin join = Filters.crossJoin("sizes", Filters.equal("active", true)); // Results in SQL like: CROSS JOIN sizes ON active = true // (a non-ON condition is prefixed with the ON keyword when rendered) } </pre>
+- **Signature:** `public static CrossJoin crossJoin(final Collection<String> joinEntities)`
+- **Summary:** Creates a conditionless CROSS JOIN for multiple entities.
 - **Parameters:**
-  - `joinEntity` (`String`) — the entity/table name to cross join
-  - `cond` (`Condition`) — the optional join condition
-- **Returns:** a {@link CrossJoin} clause
-- **Signature:** `public static CrossJoin crossJoin(final Collection<String> joinEntities, final Condition cond)`
-- **Summary:** Creates a CROSS JOIN clause with multiple entities and optional condition.
-- **Parameters:**
-  - `joinEntities` (`Collection<String>`) — collection of entity/table names to cross join
-  - `cond` (`Condition`) — the optional join condition
+  - `joinEntities` (`Collection<String>`) — the entity/table names to cross join
 - **Returns:** a {@link CrossJoin} clause
 ##### fullJoin(...) -> FullJoin
 - **Signature:** `public static FullJoin fullJoin(final String joinEntity)`
@@ -2619,17 +2636,17 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to full join
 - **Returns:** a {@link FullJoin} clause
-- **Signature:** `public static FullJoin fullJoin(final String joinEntity, final Condition cond)`
+- **Signature:** `public static FullJoin fullJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a FULL JOIN clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to full join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** a {@link FullJoin} clause
-- **Signature:** `public static FullJoin fullJoin(final Collection<String> joinEntities, final Condition cond)`
+- **Signature:** `public static FullJoin fullJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a FULL JOIN clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to full join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** a {@link FullJoin} clause
 ##### innerJoin(...) -> InnerJoin
 - **Signature:** `public static InnerJoin innerJoin(final String joinEntity)`
@@ -2637,17 +2654,17 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to inner join
 - **Returns:** an {@link InnerJoin} clause
-- **Signature:** `public static InnerJoin innerJoin(final String joinEntity, final Condition cond)`
+- **Signature:** `public static InnerJoin innerJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates an INNER JOIN clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to inner join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** an {@link InnerJoin} clause
-- **Signature:** `public static InnerJoin innerJoin(final Collection<String> joinEntities, final Condition cond)`
+- **Signature:** `public static InnerJoin innerJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates an INNER JOIN clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to inner join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** an {@link InnerJoin} clause
 ##### naturalJoin(...) -> NaturalJoin
 - **Signature:** `public static NaturalJoin naturalJoin(final String joinEntity)`
@@ -2655,21 +2672,10 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to natural join
 - **Returns:** a {@link NaturalJoin} clause
-- **Signature:** `@Deprecated public static NaturalJoin naturalJoin(final String joinEntity, final Condition cond)`
-- **Summary:** Creates a NATURAL JOIN clause with the specified entity.
-- **Contract:**
-  - A NATURAL JOIN derives its join predicate implicitly from columns with matching names and therefore does not accept an explicit condition: {@code cond} must be {@code null} .
+- **Signature:** `public static NaturalJoin naturalJoin(final Collection<String> joinEntities)`
+- **Summary:** Creates a conditionless NATURAL JOIN for multiple entities.
 - **Parameters:**
-  - `joinEntity` (`String`) — the entity/table name to natural join
-  - `cond` (`Condition`) — must be {@code null} ; a NATURAL JOIN cannot carry an explicit condition
-- **Returns:** a {@link NaturalJoin} clause
-- **Signature:** `@Deprecated public static NaturalJoin naturalJoin(final Collection<String> joinEntities, final Condition cond)`
-- **Summary:** Creates a NATURAL JOIN clause with multiple entities.
-- **Contract:**
-  - As with the single-entity overload, a NATURAL JOIN cannot carry an explicit condition, so {@code cond} must be {@code null} ; this form exists only for API symmetry with the other join factories.
-- **Parameters:**
-  - `joinEntities` (`Collection<String>`) — collection of entity/table names to natural join
-  - `cond` (`Condition`) — must be {@code null} ; a NATURAL JOIN cannot carry an explicit condition
+  - `joinEntities` (`Collection<String>`) — the entity/table names to natural join
 - **Returns:** a {@link NaturalJoin} clause
 ##### in(...) -> In
 - **Signature:** `public static In in(final String propName, final boolean[] values)`
@@ -2720,7 +2726,7 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `propName` (`String`) — the property/column name
   - `values` (`double[]`) — array of double values
 - **Returns:** an {@link In} condition
-- **Signature:** `public static In in(final String propName, final Object[] values)`
+- **Signature:** `public static In in(final String propName, final Object... values)`
 - **Summary:** Creates an IN condition with an array of object values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
@@ -2803,7 +2809,7 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `propName` (`String`) — the property/column name
   - `values` (`double[]`) — array of double values to exclude
 - **Returns:** a {@link NotIn} condition
-- **Signature:** `public static NotIn notIn(final String propName, final Object[] values)`
+- **Signature:** `public static NotIn notIn(final String propName, final Object... values)`
 - **Summary:** Creates a NOT IN condition with an array of object values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
@@ -2910,15 +2916,22 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `subQuery` (`SubQuery`) — the subquery to subtract
 - **Returns:** a {@link Minus} clause
 ##### subQuery(...) -> SubQuery
-- **Signature:** `public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition cond)`
+- **Signature:** `public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition)`
 - **Summary:** Creates a SubQuery from an entity class with selected properties and condition.
 - **Contract:**
-  - If {@code cond} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria} or a clause (such as {@link Where} ), it will be automatically wrapped in a {@code WHERE} clause when the subquery is rendered.
+  - If {@code condition} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria} or a clause (such as {@link Where} ), it is automatically wrapped in a {@code WHERE} clause at construction time; {@code getCondition()} on the returned subquery returns the wrapping {@link Where} .
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class representing the table (must not be {@code null} )
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be {@code null} or empty, and must not contain {@code null} , empty, or blank elements)
-  - `cond` (`Condition`) — the WHERE condition for the subquery; may be {@code null} for no WHERE clause
+  - `condition` (`Condition`) — the WHERE condition for the subquery; may be {@code null} for no WHERE clause
 - **Returns:** a {@link SubQuery}
+- **Signature:** `public static SubQuery subQuery(final Class<?> entityClass, final String propName, final Condition condition)`
+- **Summary:** Creates a structured single-property subquery for an entity class.
+- **Parameters:**
+  - `entityClass` (`Class<?>`) — the entity class
+  - `propName` (`String`) — the property to select
+  - `condition` (`Condition`) — the optional query condition
+- **Returns:** a structured subquery
 - **Signature:** `public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final String expr)`
 - **Summary:** Creates a SubQuery from an entity class with selected properties and a raw SQL condition string.
 - **Parameters:**
@@ -2927,15 +2940,22 @@ Factory class for creating SQL {@link Condition} objects used in query construct
   - `expr` (`String`) — the WHERE condition as a raw SQL string (must not be {@code null} ; may be empty for no filter condition)
 - **Returns:** a {@link SubQuery}
 - **See also:** #subQuery(String, Collection, String)
-- **Signature:** `public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final Condition cond)`
+- **Signature:** `public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final Condition condition)`
 - **Summary:** Creates a SubQuery from an entity name with selected properties and condition.
 - **Contract:**
-  - If {@code cond} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria} or a clause (such as {@link Where} ), it will be automatically wrapped in a {@code WHERE} clause when the subquery is rendered.
+  - If {@code condition} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria} or a clause (such as {@link Where} ), it is automatically wrapped in a {@code WHERE} clause at construction time; {@code getCondition()} on the returned subquery returns the wrapping {@link Where} .
 - **Parameters:**
   - `entityName` (`String`) — the entity/table name (must not be {@code null} , empty, or blank)
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be {@code null} or empty, and must not contain {@code null} , empty, or blank elements)
-  - `cond` (`Condition`) — the WHERE condition for the subquery; may be {@code null} for no WHERE clause
+  - `condition` (`Condition`) — the WHERE condition for the subquery; may be {@code null} for no WHERE clause
 - **Returns:** a {@link SubQuery}
+- **Signature:** `public static SubQuery subQuery(final String entityName, final String propName, final Condition condition)`
+- **Summary:** Creates a structured single-property subquery for an entity name.
+- **Parameters:**
+  - `entityName` (`String`) — the entity/table name
+  - `propName` (`String`) — the property to select
+  - `condition` (`Condition`) — the optional query condition
+- **Returns:** a structured subquery
 - **Signature:** `public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final String expr)`
 - **Summary:** Creates a SubQuery from an entity name with selected properties and a raw SQL condition string.
 - **Parameters:**
@@ -3013,7 +3033,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
 - **Returns:** the trimmed original SQL string
 ##### parameterizedSql(...) -> String
 - **Signature:** `public String parameterizedSql()`
-- **Summary:** Gets the parameterized SQL with all named parameters replaced by JDBC placeholders ( {@code ?} ).
+- **Summary:** Gets the parameterized SQL with named parameters replaced by JDBC placeholders ( {@code ?} ) for recognized data-operation statements.
 - **Parameters:**
   - (none)
 - **Returns:** the parameterized SQL string with {@code ?} placeholders
@@ -3116,7 +3136,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be {@code null} )
   - `includeSubEntityProperties` (`boolean`) — {@code true} to include nested entity properties, {@code false} for top-level only
-  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude (nullable). When sub-entity properties are included, excluding a root such as {@code "address"} also excludes descendants such as {@code "address.street"} .
 - **Returns:** an immutable list of property names suitable for SELECT operations
 - **Signature:** `@Internal public static ImmutableList<String> getSelectPropNames(final Object entity, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
 - **Summary:** Gets the property names to be used for SELECT operations on the given entity instance.
@@ -3191,7 +3211,7 @@ Utility class for handling database query operations, entity-column mappings, an
   - The alias comes from {@link Table#alias()} and is appended after a space when present.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be {@code null} )
-  - `namingPolicy` (`NamingPolicy`) — the naming policy to use for table name conversion when {@code @Table} is not present. If {@code null} , defaults to {@code NamingPolicy.SNAKE_CASE} .
+  - `namingPolicy` (`NamingPolicy`) — the naming policy used when no annotated table name exists. If {@code null} , defaults to {@code NamingPolicy.SNAKE_CASE} .
 - **Returns:** the table name, optionally followed by space and alias
 
 #### Public Instance Methods
@@ -3207,7 +3227,17 @@ Represents a selection specification for SQL queries, particularly useful for co
 - (none)
 
 #### Public Static Methods
-- (none)
+##### builder(...) -> SelectionBuilder
+- **Signature:** `public static SelectionBuilder builder(final Class<?> entityClass)`
+- **Summary:** Creates a builder with the required entity class already set.
+- **Parameters:**
+  - `entityClass` (`Class<?>`) — the entity class to select; must not be {@code null}
+- **Returns:** a new selection builder
+- **Signature:** `public static SelectionBuilder builder()`
+- **Summary:** Creates an unconstrained selection builder for compatibility.
+- **Parameters:**
+  - (none)
+- **Returns:** a new selection builder
 
 #### Public Instance Methods
 ##### <init>(...) -> void
@@ -3215,13 +3245,13 @@ Represents a selection specification for SQL queries, particularly useful for co
 - **Summary:** Creates a new empty Selection instance.
 - **Parameters:**
   - (none)
-##### selectPropNames(...) -> Selection
-- **Signature:** `public Selection selectPropNames(final Collection<String> selectPropNames)`
+##### includedPropNames(...) -> Selection
+- **Signature:** `public Selection includedPropNames(final Collection<String> includedPropNames)`
 - **Summary:** Sets the property names to include in this selection.
 - **Parameters:**
-  - `selectPropNames` (`Collection<String>`) — the property names to include; {@code null} means all properties
+  - `includedPropNames` (`Collection<String>`) — the property names to include; {@code null} means all properties
 - **Returns:** this {@code Selection} instance for method chaining
-- **Signature:** `public Collection<String> selectPropNames()`
+- **Signature:** `public Collection<String> includedPropNames()`
 - **Summary:** Returns the property names to include in this selection.
 - **Contract:**
   - Returns {@code null} when no specific properties have been set.
@@ -3241,6 +3271,62 @@ Represents a selection specification for SQL queries, particularly useful for co
 - **Parameters:**
   - (none)
 - **Returns:** an immutable view of the excluded property names, or {@code null} if none was set
+
+### Class SelectionBuilder (com.landawn.abacus.query.Selection.SelectionBuilder)
+Builder for {@link Selection} instances.
+
+**Thread-safety:** unspecified
+**Nullability:** unspecified
+
+#### Public Constructors
+- (none)
+
+#### Public Static Methods
+- (none)
+
+#### Public Instance Methods
+##### entityClass(...) -> SelectionBuilder
+- **Signature:** `public SelectionBuilder entityClass(final Class<?> entityClass)`
+- **Summary:** Sets the entity class.
+- **Parameters:**
+  - `entityClass` (`Class<?>`) — the entity class
+- **Returns:** this builder
+##### tableAlias(...) -> SelectionBuilder
+- **Signature:** `public SelectionBuilder tableAlias(final String tableAlias)`
+- **Summary:** Sets the table alias.
+- **Parameters:**
+  - `tableAlias` (`String`) — the table alias
+- **Returns:** this builder
+##### classAlias(...) -> SelectionBuilder
+- **Signature:** `public SelectionBuilder classAlias(final String classAlias)`
+- **Summary:** Sets the result class alias.
+- **Parameters:**
+  - `classAlias` (`String`) — the class alias
+- **Returns:** this builder
+##### includedPropNames(...) -> SelectionBuilder
+- **Signature:** `public SelectionBuilder includedPropNames(final Collection<String> includedPropNames)`
+- **Summary:** Sets included property names.
+- **Parameters:**
+  - `includedPropNames` (`Collection<String>`) — the included names
+- **Returns:** this builder
+##### includeSubEntityProperties(...) -> SelectionBuilder
+- **Signature:** `public SelectionBuilder includeSubEntityProperties(final boolean includeSubEntityProperties)`
+- **Summary:** Sets whether sub-entity properties are included.
+- **Parameters:**
+  - `includeSubEntityProperties` (`boolean`) — the inclusion flag
+- **Returns:** this builder
+##### excludedPropNames(...) -> SelectionBuilder
+- **Signature:** `public SelectionBuilder excludedPropNames(final Set<String> excludedPropNames)`
+- **Summary:** Sets excluded property names.
+- **Parameters:**
+  - `excludedPropNames` (`Set<String>`) — the excluded names
+- **Returns:** this builder
+##### build(...) -> Selection
+- **Signature:** `public Selection build()`
+- **Summary:** Builds a selection, defensively copying its property collections.
+- **Parameters:**
+  - (none)
+- **Returns:** the new selection
 
 ### Enum SortDirection (com.landawn.abacus.query.SortDirection)
 Enumeration representing the sort direction for database queries and collections.
@@ -3312,7 +3398,7 @@ Immutable configuration object used by {@link Dsl} to render generated SQL.
 
 #### Public Instance Methods
 ##### <init>(...) -> void
-- **Signature:** `class SqlDialect { /** * Optional descriptor of the target database product. When set, query builders branch on * {@link ProductInfo#name()} to emit product-specific SQL: Oracle, DB2 and SQL Server dialects * render pagination with {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY} instead of * {@code LIMIT}/{@code OFFSET}, and a {@code null} {@link #identifierQuote} defaults to * {@link IdentifierQuote#BACKTICK} for MySQL/MariaDB. When {@code null}, builders use the default * SQL syntax. */ private ProductInfo productInfo; /** * Naming policy used to translate Java property names into generated SQL identifiers. For example, * {@link NamingPolicy#SNAKE_CASE} renders {@code firstName} as {@code first_name}. When {@code null}, * builders use {@link NamingPolicy#SNAKE_CASE}. */ private NamingPolicy namingPolicy; /** * Parameter rendering policy for values supplied to builder operations. When {@code null}, builders * use {@link SqlPolicy#RAW_SQL}. */ private SqlPolicy sqlPolicy; /** * Quote style used for generated aliases and identifiers that need quoting. When {@code null}, * builders use {@link IdentifierQuote#DOUBLE_QUOTE}. */ private IdentifierQuote identifierQuote; /** * Identifier quoting style used by SQL builders. * * <p>The enum currently distinguishes the two quote characters supported by this builder: * ANSI double quotes and MySQL-style backticks.</p> */ public static enum IdentifierQuote { /** * ANSI/standard SQL double quote ({@code "}). This is the effective default when * {@link #identifierQuote} is {@code null}, except when {@link #productInfo} names MySQL or * MariaDB, in which case {@link #BACKTICK} is the default. */ DOUBLE_QUOTE, /** * MySQL/MariaDB-style backtick ({@code `}). */ BACKTICK; } /** * Defines how values supplied to query builders are represented in generated SQL. * * <p>This setting controls value placeholders only. It does not change table/column naming, * identifier quoting, or database-specific SQL syntax.</p> */ public static enum SqlPolicy { /** * Inline values directly into the SQL string as literals. * * <p>Use only for trusted values; parameterized or named policies are preferred for user input.</p> */ RAW_SQL, /** * Render each value as a positional {@code ?} placeholder and collect parameter values in order. */ PARAMETERIZED_SQL, /** * Render values as named placeholders, such as {@code :id} or {@code :firstName}. */ NAMED_SQL, /** * Render values as iBATIS/MyBatis-style named placeholders, such as {@code #{id}}. */ IBATIS_SQL } /** * Immutable descriptor of a database product, holding the product name and version separately. * * <p>When attached to a dialect via {@link SqlDialect#productInfo}, the {@link #name()} drives * product-specific SQL generation in query builders (for example, Oracle-style * {@code FETCH FIRST ... ROWS ONLY} pagination). The name is matched case-insensitively as a * substring, so raw JDBC values from {@code DatabaseMetaData.getDatabaseProductName()} such as * {@code "Microsoft SQL Server"} or {@code "Oracle Database 19c"} are recognized. The * {@link #version()} can be compared numerically via {@link #isVersionAtLeast(String)} and * {@link #isVersionAtMost(String)}.</p> * * @param name the database product name, such as {@code "MySQL"} or {@code "PostgreSQL"} * @param version the database product version, such as {@code "9.7"} or {@code "18"}; a {@code null} * version is normalized to an empty string, so {@link #version()} never returns {@code null}. * Comparable via {@link #isVersionAtLeast(String)} / {@link #isVersionAtMost(String)} */ public record ProductInfo(String name, String version) { /** * Canonical constructor that normalizes a {@code null} {@code version} to an empty string, so * {@link #version()} never returns {@code null} and an absent version has a single canonical * representation. This keeps {@code equals}/{@code hashCode} consistent whether the version was * omitted (via {@link #of(String)}) or passed as {@code null}. */ public ProductInfo { version = version == null ? "" : version; } /** * Creates a {@code ProductInfo} with the given product name and no version (an empty {@link #version()}). * * @param name the database product name, such as {@code "Oracle"} or {@code "MySQL"} * @return a new {@code ProductInfo} with the given name and an empty ({@code ""}) version */ public static ProductInfo of(final String name) { return new ProductInfo(name, ""); } /** * Creates a {@code ProductInfo} with the given product name and version. * * @param name the database product name, such as {@code "Oracle"} or {@code "MySQL"} * @param version the database product version, such as {@code "19c"} or {@code "9.7"} * @return a new {@code ProductInfo} with the given name and version */ public static ProductInfo of(final String name, final String version) { return new ProductInfo(name, version); } /** * Returns whether this descriptor names MySQL. The match is a case-insensitive substring test * against {@link #name()}. This is distinct from {@link #isMariaDB()}, although both share the * same {@code LIMIT}/{@code OFFSET} pagination and backtick-quoting behavior in query builders. * Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code "mysql"} (case-insensitively) */ public boolean isMySQL() { return Strings.containsIgnoreCase(name, "mysql"); } /** * Returns whether this descriptor names MariaDB. The match is a case-insensitive substring test * against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code "mariadb"} (case-insensitively) */ public boolean isMariaDB() { return Strings.containsIgnoreCase(name, "mariadb"); } /** * Returns whether this descriptor names PostgreSQL. The match is a case-insensitive substring * test against {@link #name()} (the substring {@code "postgres"} also matches {@code "PostgreSQL"}). * Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code "postgres"} (case-insensitively) */ public boolean isPostgreSQL() { return Strings.containsIgnoreCase(name, "postgres"); } /** * Returns whether this descriptor names Microsoft SQL Server. The match is a case-insensitive * substring test against {@link #name()}, so raw JDBC values such as {@code "Microsoft SQL Server"} * are recognized. Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code "sql server"} or {@code "sqlserver"} (case-insensitively) */ public boolean isSQLServer() { return Strings.containsIgnoreCase(name, "sql server") || Strings.containsIgnoreCase(name, "sqlserver"); } /** * Returns whether this descriptor names Oracle Database. The match is a case-insensitive * substring test against {@link #name()}, so raw JDBC values from * {@code DatabaseMetaData.getDatabaseProductName()} such as {@code "Oracle Database 19c"} * are recognized. Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code "oracle"} (case-insensitively) */ public boolean isOracle() { return Strings.containsIgnoreCase(name, "oracle"); } /** * Returns whether this descriptor names IBM DB2. The match is a case-insensitive substring * test against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code "db2"} (case-insensitively) */ public boolean isDB2() { return Strings.containsIgnoreCase(name, "db2"); } /** * Returns whether this descriptor names H2 Database. The match is a case-insensitive substring * test against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code "h2"} (case-insensitively) */ public boolean isH2() { return Strings.containsIgnoreCase(name, "h2"); } /** * Returns whether this descriptor names SQLite. The match is a case-insensitive substring test * against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}. * * @return {@code true} if {@link #name()} contains {@code "sqlite"} (case-insensitively) */ public boolean isSQLite() { return Strings.containsIgnoreCase(name, "sqlite"); } /** * Returns whether this product's {@link #version()} is greater than or equal to the given version. * * <p>Versions are compared by their leading dot-separated run of integer components: for example * {@code "8.0.32"} parses to {@code [8, 0, 32]} and {@code "19c"} to {@code [19]} (parsing stops at * the first character that is neither a digit nor a dot). Missing trailing components are treated as * {@code 0}, so {@code "8.0"} equals {@code "8.0.0"} and is less than {@code "8.1"}.</p> * * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code minVersion} * is {@code null}, blank, or does not begin with an integer component. This makes the method safe for * feature-gating: an unknown or unparseable version simply fails the check.</p> * * @param minVersion the minimum version to compare against, such as {@code "8.0"} or {@code "19"} * @return {@code true} if this product's version parses and is greater than or equal to {@code minVersion}; * {@code false} otherwise, including when either version is not comparable * @see #isVersionAtMost(String) */ public boolean isVersionAtLeast(final String minVersion) { final long[] mine = parseVersionComponents(version()); final long[] other = parseVersionComponents(minVersion); return mine != null && other != null && compareVersionComponents(mine, other) >= 0; } /** * Returns whether this product's {@link #version()} is less than or equal to the given version. * * <p>Versions are compared by their leading dot-separated run of integer components; see * {@link #isVersionAtLeast(String)} for the parsing and padding rules.</p> * * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code maxVersion} * is {@code null}, blank, or does not begin with an integer component.</p> * * @param maxVersion the maximum version to compare against, such as {@code "8.0"} or {@code "19"} * @return {@code true} if this product's version parses and is less than or equal to {@code maxVersion}; * {@code false} otherwise, including when either version is not comparable * @see #isVersionAtLeast(String) */ public boolean isVersionAtMost(final String maxVersion) { final long[] mine = parseVersionComponents(version()); final long[] other = parseVersionComponents(maxVersion); return mine != null && other != null && compareVersionComponents(mine, other) <= 0; } /** * Parses the leading dot-separated run of integer components of a version string (for example * {@code "8.0.32"} to {@code [8, 0, 32]} and {@code "19c"} to {@code [19]}), or {@code null} when the * string is {@code null}, blank, does not begin with a digit, or has an unparseable component. */ private static long[] parseVersionComponents(final String version) { if (Strings.isBlank(version)) { return null; } final String trimmed = version.trim(); if (!Character.isDigit(trimmed.charAt(0))) { return null; } int end = 0; while (end < trimmed.length() && (Character.isDigit(trimmed.charAt(end)) || trimmed.charAt(end) == '.')) { end++; } final String[] parts = trimmed.substring(0, end).split("\\."); final long[] components = new long[parts.length]; try { for (int i = 0; i < parts.length; i++) { components[i] = Long.parseLong(parts[i]); } } catch (final NumberFormatException e) { return null; } return components; } /** * Compares two version-component arrays element by element, treating missing trailing components as * {@code 0}. Returns a negative, zero, or positive value when {@code a} is respectively less than, * equal to, or greater than {@code b}. */ private static int compareVersionComponents(final long[] a, final long[] b) { final int len = Math.max(a.length, b.length); for (int i = 0; i < len; i++) { final long av = i < a.length ? a[i] : 0L; final long bv = i < b.length ? b[i] : 0L; if (av != bv) { return av < bv ? -1 : 1; } } return 0; } } }`
+- **Signature:** `class SqlDialect { /** * Optional descriptor of the target database product. When set, query builders branch on * {@link ProductInfo#name()} to emit product-specific SQL: Oracle, DB2 and SQL Server dialects * render pagination with {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY} instead of * {@code LIMIT}/{@code OFFSET}, and a {@code null} {@code identifierQuote} defaults to * {@link IdentifierQuote#BACKTICK} for MySQL/MariaDB. When {@code null}, builders use the default * SQL syntax. */ private ProductInfo productInfo; /** * Naming policy used to translate Java property names into generated SQL identifiers. For example, * {@link NamingPolicy#SNAKE_CASE} renders {@code firstName} as {@code first_name}. When {@code null}, * builders use {@link NamingPolicy#SNAKE_CASE}. */ private NamingPolicy namingPolicy; /** * Parameter rendering policy for values supplied to builder operations. When {@code null}, builders * use {@link SqlPolicy#RAW_SQL}. */ private SqlPolicy sqlPolicy; /** * Quote style used for generated aliases and identifiers that need quoting. When {@code null}, * builders use {@link IdentifierQuote#DOUBLE_QUOTE}, except for MySQL/MariaDB product metadata, * which defaults to {@link IdentifierQuote#BACKTICK}. */ private IdentifierQuote identifierQuote; /** * Identifier quoting style used by SQL builders. * * <p>The enum currently distinguishes the two quote characters supported by this builder: * ANSI double quotes and MySQL-style backticks.</p> */ public static enum IdentifierQuote { /** * ANSI/standard SQL double quote ({@code "}). This is the effective default when * {@code identifierQuote} is {@code null}, except when {@code productInfo} names MySQL or * MariaDB, in which case {@link #BACKTICK} is the default. */ DOUBLE_QUOTE, /** * MySQL/MariaDB-style backtick ({@code `}). */ BACKTICK; } /** * Defines how values supplied to query builders are represented in generated SQL. * * <p>This setting controls value placeholders only. It does not change table/column naming, * identifier quoting, or database-specific SQL syntax.</p> */ public static enum SqlPolicy { /** * Inline values directly into the SQL string as literals. * * <p><b>&#9888;&#65039;</b> Use only for trusted values; parameterized or named policies are preferred for user input.</p> */ RAW_SQL, /** * Render each value as a positional {@code ?} placeholder and collect parameter values in order. */ PARAMETERIZED_SQL, /** * Render values as named placeholders, such as {@code :id} or {@code :firstName}. */ NAMED_SQL, /** * Render values as iBATIS/MyBatis-style named placeholders, such as {@code #{id}}. */ IBATIS_SQL } /** * Immutable descriptor of a database product, holding the product name and version separately. * * <p>When attached to a dialect via {@code SqlDialect.productInfo}, the {@link #name()} drives * product-specific SQL generation in query builders (for example, Oracle-style * {@code FETCH FIRST ... ROWS ONLY} pagination). The name is matched case-insensitively as a * substring, so raw JDBC values from {@code DatabaseMetaData.getDatabaseProductName()} such as * {@code "Microsoft SQL Server"} or {@code "Oracle Database 19c"} are recognized. The * {@link #version()} can be compared numerically via {@link #isVersionAtLeast(String)} and * {@link #isVersionAtMost(String)}.</p> * * @param name the nonblank database product name, such as {@code "MySQL"} or {@code "PostgreSQL"} * @param version the database product version, such as {@code "9.7"} or {@code "18"}; a {@code null} * version is normalized to an empty string, so {@link #version()} never returns {@code null}. * Comparable via {@link #isVersionAtLeast(String)} / {@link #isVersionAtMost(String)} */ public record ProductInfo(String name, String version) { /** * Canonical constructor that requires a nonblank product name and normalizes a {@code null} {@code version} to an empty string, so * {@link #version()} never returns {@code null} and an absent version has a single canonical * representation. This keeps {@code equals}/{@code hashCode} consistent whether the version was * omitted (via {@link #of(String)}) or passed as {@code null}. * * @throws IllegalArgumentException if {@code name} is {@code null}, empty, or blank */ public ProductInfo { if (Strings.isBlank(name)) { throw new IllegalArgumentException("Database product name must not be null, empty, or blank"); } version = version == null ? "" : version; } /** * Creates a {@code ProductInfo} with the given product name and no version (an empty {@link #version()}). * * @param name the database product name, such as {@code "Oracle"} or {@code "MySQL"} * @return a new {@code ProductInfo} with the given name and an empty ({@code ""}) version */ public static ProductInfo of(final String name) { return new ProductInfo(name, ""); } /** * Creates a {@code ProductInfo} with the given product name and version. * * @param name the database product name, such as {@code "Oracle"} or {@code "MySQL"} * @param version the database product version, such as {@code "19c"} or {@code "9.7"} * @return a new {@code ProductInfo} with the given name and version */ public static ProductInfo of(final String name, final String version) { return new ProductInfo(name, version); } /** * Returns whether this descriptor names MySQL. The match is a case-insensitive substring test * against {@link #name()}. This is distinct from {@link #isMariaDB()}, although both share the * same {@code LIMIT}/{@code OFFSET} pagination and backtick-quoting behavior in query builders. * * @return {@code true} if {@link #name()} contains {@code "mysql"} (case-insensitively) */ public boolean isMySQL() { return Strings.containsIgnoreCase(name, "mysql"); } /** * Returns whether this descriptor names MariaDB. The match is a case-insensitive substring test * against {@link #name()}.. * * @return {@code true} if {@link #name()} contains {@code "mariadb"} (case-insensitively) */ public boolean isMariaDB() { return Strings.containsIgnoreCase(name, "mariadb"); } /** * Returns whether this descriptor names PostgreSQL. The match is a case-insensitive substring * test against {@link #name()} (the substring {@code "postgres"} also matches {@code "PostgreSQL"}). * * @return {@code true} if {@link #name()} contains {@code "postgres"} (case-insensitively) */ public boolean isPostgreSQL() { return Strings.containsIgnoreCase(name, "postgres"); } /** * Returns whether this descriptor names Microsoft SQL Server. The match is a case-insensitive * substring test against {@link #name()}, so raw JDBC values such as {@code "Microsoft SQL Server"} * are recognized.. * * @return {@code true} if {@link #name()} contains {@code "sql server"} or {@code "sqlserver"} (case-insensitively) */ public boolean isSQLServer() { return Strings.containsIgnoreCase(name, "sql server") || Strings.containsIgnoreCase(name, "sqlserver"); } /** * Returns whether this descriptor names Oracle Database. The match is a case-insensitive * substring test against {@link #name()}, so raw JDBC values from * {@code DatabaseMetaData.getDatabaseProductName()} such as {@code "Oracle Database 19c"} * are recognized.. * * @return {@code true} if {@link #name()} contains {@code "oracle"} (case-insensitively) */ public boolean isOracle() { return Strings.containsIgnoreCase(name, "oracle"); } /** * Returns whether this descriptor names IBM DB2. The match is a case-insensitive substring * test against {@link #name()}.. * * @return {@code true} if {@link #name()} contains {@code "db2"} (case-insensitively) */ public boolean isDB2() { return Strings.containsIgnoreCase(name, "db2"); } /** * Returns whether this descriptor names H2 Database. The match is a case-insensitive substring * test against {@link #name()}.. * * @return {@code true} if {@link #name()} contains {@code "h2"} (case-insensitively) */ public boolean isH2() { return Strings.containsIgnoreCase(name, "h2"); } /** * Returns whether this descriptor names SQLite. The match is a case-insensitive substring test * against {@link #name()}.. * * @return {@code true} if {@link #name()} contains {@code "sqlite"} (case-insensitively) */ public boolean isSQLite() { return Strings.containsIgnoreCase(name, "sqlite"); } /** * Returns whether this product's {@link #version()} is greater than or equal to the given version. * * <p>Versions are compared by their leading dot-separated run of integer components: for example * {@code "8.0.32"} parses to {@code [8, 0, 32]} and {@code "19c"} to {@code [19]} (parsing stops at * the first character that is neither a digit nor a dot). Missing trailing components are treated as * {@code 0}, so {@code "8.0"} equals {@code "8.0.0"} and is less than {@code "8.1"}.</p> * * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code minVersion} * is {@code null}, blank, or does not begin with an integer component. This makes the method safe for * feature-gating: an unknown or unparseable version simply fails the check.</p> * * @param minVersion the minimum version to compare against, such as {@code "8.0"} or {@code "19"} * @return {@code true} if this product's version parses and is greater than or equal to {@code minVersion}; * {@code false} otherwise, including when either version is not comparable * @see #isVersionAtMost(String) */ public boolean isVersionAtLeast(final String minVersion) { final long[] mine = parseVersionComponents(version()); final long[] other = parseVersionComponents(minVersion); return mine != null && other != null && compareVersionComponents(mine, other) >= 0; } /** * Returns whether this product's {@link #version()} is less than or equal to the given version. * * <p>Versions are compared by their leading dot-separated run of integer components; see * {@link #isVersionAtLeast(String)} for the parsing and padding rules.</p> * * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code maxVersion} * is {@code null}, blank, or does not begin with an integer component.</p> * * @param maxVersion the maximum version to compare against, such as {@code "8.0"} or {@code "19"} * @return {@code true} if this product's version parses and is less than or equal to {@code maxVersion}; * {@code false} otherwise, including when either version is not comparable * @see #isVersionAtLeast(String) */ public boolean isVersionAtMost(final String maxVersion) { final long[] mine = parseVersionComponents(version()); final long[] other = parseVersionComponents(maxVersion); return mine != null && other != null && compareVersionComponents(mine, other) <= 0; } /** * Parses the leading dot-separated run of integer components of a version string (for example * {@code "8.0.32"} to {@code [8, 0, 32]} and {@code "19c"} to {@code [19]}), or {@code null} when the * string is {@code null}, blank, does not begin with a digit, or has an unparseable component. */ private static long[] parseVersionComponents(final String version) { if (Strings.isBlank(version)) { return null; } final String trimmed = version.trim(); if (!Character.isDigit(trimmed.charAt(0))) { return null; } int end = 0; while (end < trimmed.length() && (Character.isDigit(trimmed.charAt(end)) || trimmed.charAt(end) == '.')) { end++; } final String[] parts = trimmed.substring(0, end).split("\\."); final long[] components = new long[parts.length]; try { for (int i = 0; i < parts.length; i++) { components[i] = Long.parseLong(parts[i]); } } catch (final NumberFormatException e) { return null; } return components; } /** * Compares two version-component arrays element by element, treating missing trailing components as * {@code 0}. Returns a negative, zero, or positive value when {@code a} is respectively less than, * equal to, or greater than {@code b}. */ private static int compareVersionComponents(final long[] a, final long[] b) { final int len = Math.max(a.length, b.length); for (int i = 0; i < len; i++) { final long av = i < a.length ? a[i] : 0L; final long bv = i < b.length ? b[i] : 0L; if (av != bv) { return av < bv ? -1 : 1; } } return 0; } } }`
 - **Parameters:**
   - (none)
 
@@ -3372,71 +3458,55 @@ Immutable descriptor of a database product, holding the product name and version
 #### Public Instance Methods
 ##### <init>(...) -> void
 - **Signature:** `public ProductInfo`
-- **Summary:** Canonical constructor that normalizes a {@code null} {@code version} to an empty string, so {@link #version()} never returns {@code null} and an absent version has a single canonical representation.
+- **Summary:** Canonical constructor that requires a nonblank product name and normalizes a {@code null} {@code version} to an empty string, so {@link #version()} never returns {@code null} and an absent version has a single canonical representation.
 - **Parameters:**
   - `name` (`String`)
   - `version` (`String`)
 ##### isMySQL(...) -> boolean
 - **Signature:** `public boolean isMySQL()`
 - **Summary:** Returns whether this descriptor names MySQL.
-- **Contract:**
-  - Returns {@code false} when {@link #name()} is {@code null} .
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if {@link #name()} contains {@code "mysql"} (case-insensitively)
 ##### isMariaDB(...) -> boolean
 - **Signature:** `public boolean isMariaDB()`
 - **Summary:** Returns whether this descriptor names MariaDB.
-- **Contract:**
-  - Returns {@code false} when {@link #name()} is {@code null} .
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if {@link #name()} contains {@code "mariadb"} (case-insensitively)
 ##### isPostgreSQL(...) -> boolean
 - **Signature:** `public boolean isPostgreSQL()`
 - **Summary:** Returns whether this descriptor names PostgreSQL.
-- **Contract:**
-  - Returns {@code false} when {@link #name()} is {@code null} .
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if {@link #name()} contains {@code "postgres"} (case-insensitively)
 ##### isSQLServer(...) -> boolean
 - **Signature:** `public boolean isSQLServer()`
 - **Summary:** Returns whether this descriptor names Microsoft SQL Server.
-- **Contract:**
-  - Returns {@code false} when {@link #name()} is {@code null} .
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if {@link #name()} contains {@code "sql server"} or {@code "sqlserver"} (case-insensitively)
 ##### isOracle(...) -> boolean
 - **Signature:** `public boolean isOracle()`
 - **Summary:** Returns whether this descriptor names Oracle Database.
-- **Contract:**
-  - Returns {@code false} when {@link #name()} is {@code null} .
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if {@link #name()} contains {@code "oracle"} (case-insensitively)
 ##### isDB2(...) -> boolean
 - **Signature:** `public boolean isDB2()`
 - **Summary:** Returns whether this descriptor names IBM DB2.
-- **Contract:**
-  - Returns {@code false} when {@link #name()} is {@code null} .
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if {@link #name()} contains {@code "db2"} (case-insensitively)
 ##### isH2(...) -> boolean
 - **Signature:** `public boolean isH2()`
 - **Summary:** Returns whether this descriptor names H2 Database.
-- **Contract:**
-  - Returns {@code false} when {@link #name()} is {@code null} .
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if {@link #name()} contains {@code "h2"} (case-insensitively)
 ##### isSQLite(...) -> boolean
 - **Signature:** `public boolean isSQLite()`
 - **Summary:** Returns whether this descriptor names SQLite.
-- **Contract:**
-  - Returns {@code false} when {@link #name()} is {@code null} .
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if {@link #name()} contains {@code "sqlite"} (case-insensitively)
@@ -3469,25 +3539,31 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - (none)
 
 #### Public Static Methods
-##### load(...) -> SqlMapper
-- **Signature:** `public static SqlMapper load(final String filePaths)`
+##### loadFrom(...) -> SqlMapper
+- **Signature:** `public static SqlMapper loadFrom(final String filePaths)`
 - **Summary:** Creates a SqlMapper instance by loading SQL definitions from one or more XML files.
 - **Parameters:**
   - `filePaths` (`String`) — one or more file paths separated by ',' or ';' (must not be {@code null} or empty). Each path is resolved against the literal location first; when no file exists there, the common configuration directories are searched as a fallback
 - **Returns:** a new SqlMapper instance loaded with SQL definitions from the specified files
-- **Signature:** `public static SqlMapper load(final File... files)`
+- **Signature:** `public static SqlMapper loadFrom(final String firstFilePath, final String... additionalFilePaths)`
+- **Summary:** Creates a SqlMapper by loading separately supplied file paths.
+- **Parameters:**
+  - `firstFilePath` (`String`) — the first XML mapper path; must not be {@code null} or empty
+  - `additionalFilePaths` (`String[]`) — additional XML mapper paths; no element may be {@code null} or empty
+- **Returns:** a new mapper containing definitions from every supplied path
+- **Signature:** `public static SqlMapper loadFrom(final File... files)`
 - **Summary:** Creates a SqlMapper instance by loading SQL definitions from one or more XML files.
 - **Contract:**
   - Each file must contain a {@code <sqlMapper>} root element; definitions from all files are merged into a single mapper.
 - **Parameters:**
   - `files` (`File[]`) — one or more XML files to load (must not be {@code null} or empty, and no element may be {@code null} )
 - **Returns:** a new SqlMapper instance loaded with SQL definitions from the specified files
-- **Signature:** `public static SqlMapper load(final InputStream is)`
+- **Signature:** `public static SqlMapper loadFrom(final InputStream inputStream)`
 - **Summary:** Creates a SqlMapper instance by loading SQL definitions from the supplied input stream.
 - **Contract:**
   - The stream content must contain a {@code <sqlMapper>} root element.
 - **Parameters:**
-  - `is` (`InputStream`) — the input stream to read the XML SQL definitions from (must not be {@code null} )
+  - `inputStream` (`InputStream`) — the input stream to read the XML SQL definitions from (must not be {@code null} )
 - **Returns:** a new SqlMapper instance loaded with SQL definitions from the stream
 
 #### Public Instance Methods
@@ -3506,7 +3582,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Signature:** `public ParsedSql get(final String id)`
 - **Summary:** Retrieves the parsed SQL associated with the specified identifier.
 - **Contract:**
-  - <p> <b> Usage Examples: </b> </p> <pre> {@code SqlMapper mapper = SqlMapper.load("sql/queries.xml"); ParsedSql sql = mapper.get("findAccountById"); if (sql != null) { String parameterizedSql = sql.parameterizedSql(); // Use with PreparedStatement PreparedStatement stmt = connection.prepareStatement(parameterizedSql); } // Returns null for unknown ids ParsedSql unknown = mapper.get("nonExistentId"); // unknown is null } </pre>
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml"); ParsedSql sql = mapper.get("findAccountById"); if (sql != null) { String parameterizedSql = sql.parameterizedSql(); // Use with PreparedStatement PreparedStatement stmt = connection.prepareStatement(parameterizedSql); } // Returns null for unknown ids ParsedSql unknown = mapper.get("nonExistentId"); // unknown is null } </pre>
 - **Parameters:**
   - `id` (`String`) — the SQL identifier to look up
 - **Returns:** the {@link ParsedSql} object, or {@code null} if the id is {@code null} , empty, exceeds {@link #MAX_ID_LENGTH} characters, or is not found
@@ -3523,7 +3599,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Signature:** `public ImmutableMap<String, String> getAttributes(final String id)`
 - **Summary:** Retrieves the attributes associated with the specified SQL identifier.
 - **Contract:**
-  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql> SqlMapper mapper = SqlMapper.load("sql/queries.xml"); ImmutableMap<String, String> attrs = mapper.getAttributes("batchInsert"); if (attrs != null) { String batchSize = attrs.get("batchSize"); // "100" String timeout = attrs.get("timeout"); // "30" } // Returns null for unknown ids ImmutableMap<String, String> unknown = mapper.getAttributes("nonExistentId"); // unknown is null } </pre>
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql> SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml"); ImmutableMap<String, String> attrs = mapper.getAttributes("batchInsert"); if (attrs != null) { String batchSize = attrs.get("batchSize"); // "100" String timeout = attrs.get("timeout"); // "30" } // Returns null for unknown ids ImmutableMap<String, String> unknown = mapper.getAttributes("nonExistentId"); // unknown is null } </pre>
 - **Parameters:**
   - `id` (`String`) — the SQL identifier to look up
 - **Returns:** an immutable map of attribute names to values, or {@code null} if the id is {@code null} , empty, exceeds {@link #MAX_ID_LENGTH} characters, or is not found
@@ -3535,25 +3611,25 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Parameters:**
   - `id` (`String`) — the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
   - `sql` (`ParsedSql`) — the parsed SQL to associate with the identifier (must not be {@code null} )
-- **Signature:** `public void add(final String id, final ParsedSql sql, final Map<String, String> attrs)`
+- **Signature:** `public void add(final String id, final ParsedSql sql, final Map<String, String> attributes)`
 - **Summary:** Adds a parsed SQL with the specified identifier and attributes.
 - **Contract:**
   - This method validates the ID and throws an exception if an SQL with the same ID already exists.
 - **Parameters:**
   - `id` (`String`) — the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
   - `sql` (`ParsedSql`) — the parsed SQL to associate with the identifier (must not be {@code null} )
-  - `attrs` (`Map<String, String>`) — additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty
+  - `attributes` (`Map<String, String>`) — additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty, but keys must be non-empty and values must be non-null
 - **Signature:** `public void add(final String id, final String sql)`
 - **Summary:** Adds a SQL string with the specified identifier and no attributes.
 - **Parameters:**
   - `id` (`String`) — the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
   - `sql` (`String`) — the SQL string to parse and store (must not be {@code null} or blank)
-- **Signature:** `public void add(final String id, final String sql, final Map<String, String> attrs)`
+- **Signature:** `public void add(final String id, final String sql, final Map<String, String> attributes)`
 - **Summary:** Adds a SQL string with the specified identifier and attributes.
 - **Parameters:**
   - `id` (`String`) — the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
   - `sql` (`String`) — the SQL string to parse and store (must not be {@code null} or blank)
-  - `attrs` (`Map<String, String>`) — additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty
+  - `attributes` (`Map<String, String>`) — additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty, but keys must be non-empty and values must be non-null
 ##### remove(...) -> void
 - **Signature:** `public void remove(final String id)`
 - **Summary:** Removes the SQL and its attributes associated with the specified identifier.
@@ -3575,12 +3651,16 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
   - <p> The canonical SQL identifier (the registered map key) is always written as the {@code id} attribute and is protected from being overridden: any stray {@code id} entry in a SQL's attributes map is ignored when emitting attributes.
 - **Parameters:**
   - `file` (`File`) — the file to write to (will be created if it doesn't exist; parent directories will be created if needed)
-- **Signature:** `public void saveTo(final OutputStream os)`
+- **Signature:** `public void saveTo(final String filePath)`
+- **Summary:** Writes this mapper to the specified file path.
+- **Parameters:**
+  - `filePath` (`String`) — the target file path; must not be {@code null} or empty
+- **Signature:** `public void saveTo(final OutputStream outputStream)`
 - **Summary:** Writes all SQL definitions in this mapper to the supplied output stream as XML.
 - **Contract:**
   - <p> The canonical SQL identifier (the registered map key) is always written as the {@code id} attribute and is protected from being overridden: any stray {@code id} entry in a SQL's attributes map is ignored when emitting attributes.
 - **Parameters:**
-  - `os` (`OutputStream`) — the output stream to write to (not closed by this method)
+  - `outputStream` (`OutputStream`) — the output stream to write to (not closed by this method)
 ##### size(...) -> int
 - **Signature:** `public int size()`
 - **Summary:** Returns the number of SQL definitions registered in this mapper.
@@ -3632,6 +3712,12 @@ Enumeration representing SQL operation types.
 - **Parameters:**
   - `name` (`String`) — the SQL operation name to look up (case-insensitive); may be {@code null}
 - **Returns:** the corresponding {@code SqlOperation} enum value, or {@code null} if {@code name} is {@code null} or no matching operation is found
+##### from(...) -> SqlOperation
+- **Signature:** `public static SqlOperation from(final String token)`
+- **Summary:** Resolves an operation token, returning {@link #UNKNOWN} for {@code null} or unsupported input.
+- **Parameters:**
+  - `token` (`String`) — the SQL operation token or enum constant name; may be {@code null}
+- **Returns:** the resolved operation, or {@link #UNKNOWN} when no operation matches
 
 #### Public Instance Methods
 ##### sqlToken(...) -> String
@@ -3740,22 +3826,22 @@ A utility class for parsing SQL statements into individual words and tokens.
 - **Parameters:**
   - (none)
 ##### isFunctionName(...) -> boolean
-- **Signature:** `public static boolean isFunctionName(final List<String> words, final int index)`
+- **Signature:** `public static boolean isFunctionName(final List<String> tokens, final int index)`
 - **Summary:** Determines if a word at a specific position in a parsed word list represents a function name.
 - **Contract:**
   - Determines if a word at a specific position in a parsed word list represents a function name.
   - A word is considered a function name if it is followed by the opening parenthesis token, either immediately or after whitespace.
 - **Parameters:**
-  - `words` (`List<String>`) — the list of parsed SQL words/tokens (typically the result of {@link #parse(String)} )
+  - `tokens` (`List<String>`) — the parsed SQL tokens (typically the result of {@link #parse(String)} )
   - `index` (`int`) — the index of the word to check; invalid indices return {@code false}
 - **Returns:** {@code true} if the word at {@code index} is followed (after zero or more space tokens) by the {@code "("} token; {@code false} otherwise
-- **Signature:** `@Deprecated public static boolean isFunctionName(final List<String> words, final int len, final int index)`
+- **Signature:** `@Deprecated public static boolean isFunctionName(final List<String> tokens, final int len, final int index)`
 - **Summary:** Determines if a word at a specific position in a parsed word list represents a function name, examining only the tokens below the given exclusive upper bound.
 - **Contract:**
   - Determines if a word at a specific position in a parsed word list represents a function name, examining only the tokens below the given exclusive upper bound.
 - **Parameters:**
-  - `words` (`List<String>`) — the list of parsed SQL words/tokens (typically the result of {@link #parse(String)} )
-  - `len` (`int`) — the exclusive upper bound to search within {@code words} (usually {@code words.size()} ; indices {@code >= len} are not examined; values above {@code words.size()} are capped at {@code words.size()}
+  - `tokens` (`List<String>`) — the parsed SQL tokens (typically the result of {@link #parse(String)} )
+  - `len` (`int`) — the exclusive upper bound to search within {@code words} (usually {@code words.size()} ; indices {@code >= len} are not examined; values above {@code words.size()} are capped at {@code words.size()} )
   - `index` (`int`) — the index of the word to check; invalid indices return {@code false}
 - **Returns:** {@code true} if the word at {@code index} is followed (after zero or more space tokens) by the {@code "("} token; {@code false} otherwise
 ##### isSelectQuery(...) -> boolean
@@ -3766,6 +3852,7 @@ A utility class for parsing SQL statements into individual words and tokens.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or {@code null}
 - **Returns:** {@code true} if the SQL is a SELECT query, {@code false} otherwise
+- **See also:** #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String), #isNoUpdateQuery(String)
 ##### isReadOnlyQuery(...) -> boolean
 - **Signature:** `public static boolean isReadOnlyQuery(final String sql)`
 - **Summary:** Checks whether the given SQL statement is read-only, i.e.
@@ -3775,7 +3862,7 @@ A utility class for parsing SQL statements into individual words and tokens.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or {@code null}
 - **Returns:** {@code true} if the SQL is a read-only SELECT query, {@code false} otherwise
-- **See also:** #isSelectQuery(String)
+- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isNoUpdateQuery(String)
 ##### isInsertQuery(...) -> boolean
 - **Signature:** `public static boolean isInsertQuery(final String sql)`
 - **Summary:** Checks if the given SQL statement is an INSERT query.
@@ -3784,24 +3871,44 @@ A utility class for parsing SQL statements into individual words and tokens.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or {@code null}
 - **Returns:** {@code true} if the SQL is an INSERT query, {@code false} otherwise
+- **See also:** #isSelectQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String), #isNoUpdateQuery(String)
+##### isUpdateQuery(...) -> boolean
+- **Signature:** `public static boolean isUpdateQuery(final String sql)`
+- **Summary:** Checks if the given SQL statement is an UPDATE query.
+- **Contract:**
+  - Checks if the given SQL statement is an UPDATE query.
+- **Parameters:**
+  - `sql` (`String`) — the SQL statement to check; may be empty or {@code null}
+- **Returns:** {@code true} if the SQL is an UPDATE query, {@code false} otherwise
+- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String), #isNoUpdateQuery(String)
+##### isDeleteQuery(...) -> boolean
+- **Signature:** `public static boolean isDeleteQuery(final String sql)`
+- **Summary:** Checks if the given SQL statement is a DELETE query.
+- **Contract:**
+  - Checks if the given SQL statement is a DELETE query.
+- **Parameters:**
+  - `sql` (`String`) — the SQL statement to check; may be empty or {@code null}
+- **Returns:** {@code true} if the SQL is a DELETE query, {@code false} otherwise
+- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String), #isNoUpdateQuery(String)
 ##### isInsertOrReplaceQuery(...) -> boolean
 - **Signature:** `public static boolean isInsertOrReplaceQuery(final String sql)`
 - **Summary:** Checks whether the given SQL statement begins with an {@code INSERT OR REPLACE} clause (the SQLite upsert form that overwrites an existing row when a uniqueness constraint is violated).
 - **Contract:**
   - Checks whether the given SQL statement begins with an {@code INSERT OR REPLACE} clause (the SQLite upsert form that overwrites an existing row when a uniqueness constraint is violated).
-  - *} {@code /} ) and any leading {@code WITH} clause; the three keywords {@code INSERT} , {@code OR} and {@code REPLACE} must appear (case-insensitively) in that order at the start of the actual statement.
+  - *} {@code /} ), any leading parentheses and any leading {@code WITH} clause; the three keywords {@code INSERT} , {@code OR} and {@code REPLACE} must appear (case-insensitively) in that order at the start of the actual statement.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or {@code null}
 - **Returns:** {@code true} if the SQL begins with {@code INSERT OR REPLACE} , {@code false} otherwise
+- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isReadOnlyQuery(String), #isNoUpdateQuery(String)
 ##### isNoUpdateQuery(...) -> boolean
 - **Signature:** `public static boolean isNoUpdateQuery(final String sql)`
 - **Summary:** Checks whether the given SQL statement neither updates nor deletes existing rows.
 - **Contract:**
-  - <p> A statement qualifies as "no-update" only if its leading keyword is {@code SELECT} or {@code INSERT} <i> and </i> it contains none of the following (matching outside of quoted string literals and SQL comments): </p> <ul> <li> an {@code UPDATE} , {@code DELETE} or {@code MERGE} keyword; or </li> <li> an upsert clause that can modify existing rows, namely {@code INSERT OR REPLACE} , {@code ON DUPLICATE KEY UPDATE} (MySQL) or {@code ON CONFLICT ...
+  - <p> A statement qualifies as "no-update" only if its leading keyword is {@code SELECT} or {@code INSERT} <i> and </i> it contains none of the following (matching outside of quoted string literals and SQL comments): </p> <ul> <li> a top-level {@code UPDATE} , {@code DELETE} or {@code MERGE} keyword (matched only at statement-start positions, so e.g.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or {@code null}
 - **Returns:** {@code true} if the SQL neither updates nor deletes existing rows, {@code false} otherwise (including for a {@code null} or empty statement)
-- **See also:** #isSelectQuery(String), #isInsertQuery(String)
+- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String)
 
 #### Public Instance Methods
 - (none)
@@ -3838,8 +3945,8 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
 - **Parameters:**
   - (none)
 - **Returns:** the configured maximum value, which may be a literal, a {@link SubQuery} , any other {@link Condition} , or {@code null}
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `@Override public ImmutableList<Object> getParameters()`
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Gets the parameters for this condition.
 - **Contract:**
   - If either bound is a {@link Condition} (typically a {@link SubQuery} ), its parameters are spliced in place of the bound itself.
@@ -3933,8 +4040,8 @@ Abstract base class for IN and NOT IN conditions in SQL queries.
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if this condition renders in row value constructor form, {@code false} for the scalar form
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `@Override public ImmutableList<Object> getParameters()`
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Gets the parameter values for this condition, flattened in declaration order.
 - **Parameters:**
   - (none)
@@ -3994,8 +4101,8 @@ Abstract base class for IN and NOT IN subquery conditions in SQL queries.
 - **Parameters:**
   - (none)
 - **Returns:** the subquery, or {@code null} for an uninitialized instance
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `@Override public ImmutableList<Object> getParameters()`
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Gets the list of parameters from the subquery.
 - **Parameters:**
   - (none)
@@ -4077,10 +4184,10 @@ Represents a composable AND condition that combines multiple conditions.
 - **Parameters:**
   - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine with AND logic; may be {@code null} or empty
 ##### and(...) -> And
-- **Signature:** `@Override public And and(final Condition cond)`
+- **Signature:** `@Override public And and(final Condition condition)`
 - **Summary:** Creates a new AND condition by adding another condition to this AND.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to add to this AND. Must not be {@code null} and must be composable (i.e. not a {@link Criteria} , a {@link Clause} , an {@code ON} / {@code USING} connector, an {@code ANY} / {@code ALL} / {@code SOME} quantified-subquery operand, or an empty predicate).
+  - `condition` (`Condition`) — the condition to add to this AND. Must not be {@code null} and must be composable (i.e. not a {@link Criteria} , a {@link Clause} , an {@code ON} / {@code USING} connector, an {@code ANY} / {@code ALL} / {@code SOME} quantified-subquery operand, or an empty predicate).
 - **Returns:** a new {@link And} condition containing all existing conditions plus the new one
 
 ### Class Any (com.landawn.abacus.query.condition.Any)
@@ -4128,7 +4235,8 @@ Represents a BETWEEN condition in SQL queries.
 - **Summary:** Creates a new BETWEEN condition.
 - **Contract:**
   - The condition checks if the property value falls within the specified range, inclusive.
-  - <p> <b> Usage Example: </b> </p> <pre> {@code // Check if age is between 18 and 65 (inclusive) Between ageRange = new Between("age", 18, 65); // Use with subqueries for a dynamic range SubQuery avgMinus10 = Filters.subQuery("SELECT AVG(score) - 10 FROM scores"); SubQuery avgPlus10 = Filters.subQuery("SELECT AVG(score) + 10 FROM scores"); Between nearAverage = new Between("score", avgMinus10, avgPlus10); // SQL: score BETWEEN (SELECT AVG(score) - 10 FROM scores) AND (SELECT AVG(score) + 10 FROM scores) } </pre>
+  - <p> <b> &#9888; &#65039; </b> If the property value or either bound is SQL {@code NULL} , SQL three-valued logic makes the predicate unknown rather than true.
+  - </p> <p> <b> Usage Example: </b> </p> <pre> {@code // Check if age is between 18 and 65 (inclusive) Between ageRange = new Between("age", 18, 65); // Use with subqueries for a dynamic range SubQuery avgMinus10 = Filters.subQuery("SELECT AVG(score) - 10 FROM scores"); SubQuery avgPlus10 = Filters.subQuery("SELECT AVG(score) + 10 FROM scores"); Between nearAverage = new Between("score", avgMinus10, avgPlus10); // SQL: score BETWEEN (SELECT AVG(score) - 10 FROM scores) AND (SELECT AVG(score) + 10 FROM scores) } </pre>
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be {@code null} , empty, or blank)
   - `minValue` (`Object`) — the minimum value (inclusive); may be a literal value, a {@link SubQuery} , or any other {@link Condition} (may be {@code null} )
@@ -4166,11 +4274,23 @@ Base class for binary conditions that compare a property with a value.
 - **Parameters:**
   - (none)
 - **Returns:** the property value, cast to the requested type
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `@Override public ImmutableList<Object> getParameters()`
+- **Signature:** `public <T> T getPropValue(final Class<T> valueType)`
+- **Summary:** Returns the property value cast by the supplied runtime type.
+- **Parameters:**
+  - `valueType` (`Class<T>`) — the requested value type; must not be {@code null}
+- **Returns:** the property value cast to {@code valueType} , or {@code null} when the stored value is {@code null}
+##### propValue(...) -> Object
+- **Signature:** `public Object propValue()`
+- **Summary:** Returns the property value without an unchecked generic cast.
+- **Parameters:**
+  - (none)
+- **Returns:** the property value, which may be {@code null}
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Gets the parameters for this condition.
 - **Contract:**
   - <ul> <li> If the value is {@code null} and the operator is {@code =} , {@code !=} , {@code <>} , {@code IS} , or {@code IS NOT} , an empty list is returned because the SQL is rendered as {@code IS NULL} / {@code IS NOT NULL} with no bind parameter.
+  - </li> <li> If the value is {@code null} with any other operator (e.g.
   - </li> <li> If the operator is {@code null} (only possible for an uninitialized instance), an empty list is returned.
   - </li> <li> If the operator is {@code IN} or {@code NOT IN} and the value is a {@link Collection} , each element is added as a parameter; any element that is itself a {@link Condition} has its own parameters spliced in.
   - </li> <li> If the value is a {@link Condition} (e.g., a subquery), the subquery's own parameters are returned.
@@ -4223,8 +4343,8 @@ Represents a condition cell that wraps another condition with an operator.
 - **Parameters:**
   - (none)
 - **Returns:** the wrapped condition; never {@code null} for instances created via the protected constructor, but may be {@code null} for uninitialized instances produced by the package-private default constructor (e.g., during Kryo deserialization)
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `@Override public ImmutableList<Object> getParameters()`
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Gets the parameters from the wrapped condition.
 - **Parameters:**
   - (none)
@@ -4291,8 +4411,8 @@ A composable variant of {@link Cell} that supports logical composition via AND/O
 - **Parameters:**
   - (none)
 - **Returns:** the wrapped condition; never {@code null} for instances created via the protected constructor, but may be {@code null} for uninitialized instances produced by the package-private default constructor (e.g., during Kryo deserialization)
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `@Override public ImmutableList<Object> getParameters()`
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Gets the parameters from the wrapped condition.
 - **Parameters:**
   - (none)
@@ -4344,28 +4464,28 @@ A {@link Condition} that supports logical composition via {@code and()} , {@code
   - (none)
 - **Returns:** a new {@link Not} condition wrapping this condition
 ##### and(...) -> And
-- **Signature:** `public And and(final Condition cond)`
+- **Signature:** `public And and(final Condition condition)`
 - **Summary:** Creates a new AND condition combining this condition with another.
 - **Contract:**
   - Both conditions must be true for the result to be true.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to AND with this condition (must not be {@code null} )
+  - `condition` (`Condition`) — the condition to AND with this condition (must not be {@code null} )
 - **Returns:** a new {@link And} condition containing both conditions
 ##### or(...) -> Or
-- **Signature:** `public Or or(final Condition cond)`
+- **Signature:** `public Or or(final Condition condition)`
 - **Summary:** Creates a new OR condition combining this condition with another.
 - **Contract:**
   - At least one condition must be true for the result to be true.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to OR with this condition (must not be {@code null} )
+  - `condition` (`Condition`) — the condition to OR with this condition (must not be {@code null} )
 - **Returns:** a new {@link Or} condition containing both conditions
 ##### xor(...) -> Or
-- **Signature:** `public Or xor(final Condition cond)`
+- **Signature:** `public Or xor(final Condition condition)`
 - **Summary:** Creates a new XOR (exclusive OR) condition combining this condition with another.
 - **Contract:**
   - Exactly one of the two conditions must be true for the result to be true.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to XOR with this condition (must not be {@code null} )
+  - `condition` (`Condition`) — the condition to XOR with this condition (must not be {@code null} )
 - **Returns:** a composable condition representing the exclusive-or {@code (this AND NOT cond) OR (NOT this AND cond)}
 
 ### Interface Condition (com.landawn.abacus.query.condition.Condition)
@@ -4387,8 +4507,8 @@ The base interface for all query conditions.
 - **Parameters:**
   - (none)
 - **Returns:** the operator for this condition
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `ImmutableList<Object> getParameters()`
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `ImmutableList<Object> parameters()`
 - **Summary:** Gets the list of parameter values associated with this condition.
 - **Parameters:**
   - (none)
@@ -4479,8 +4599,8 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Parameters:**
   - (none)
 - **Returns:** the {@link Limit} clause, or {@code null}
-##### getConditions(...) -> ImmutableList<Condition>
-- **Signature:** `public ImmutableList<Condition> getConditions()`
+##### conditions(...) -> ImmutableList<Condition>
+- **Signature:** `public ImmutableList<Condition> conditions()`
 - **Summary:** Returns all conditions (clauses) in this criteria in the order they were added.
 - **Parameters:**
   - (none)
@@ -4491,8 +4611,8 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Parameters:**
   - `operator` (`Operator`) — the operator to match (may be {@code null} , in which case this returns an empty list since {@link AbstractCondition} disallows null operators)
 - **Returns:** an immutable list of matching conditions; empty if none found
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `@Override public ImmutableList<Object> getParameters()`
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Collects parameters from all conditions in SQL clause order: JOIN, WHERE, GROUP BY, HAVING, set operations, ORDER BY, LIMIT.
 - **Parameters:**
   - (none)
@@ -4541,7 +4661,7 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 - **Signature:** `public Builder distinct()`
 - **Summary:** Sets the DISTINCT modifier for the query.
 - **Contract:**
-  - DISTINCT removes duplicate rows from the result set when the surrounding {@code SqlBuilder} renders the {@code SELECT} clause.
+  - This library's {@code SqlBuilder} does <i> not </i> apply it when appending a {@code Criteria} ; use {@code SqlBuilder} 's own {@code distinct()} or {@code selectModifier(String)} to get {@code SELECT DISTINCT} in SQL rendered here.
 - **Parameters:**
   - (none)
 - **Returns:** this Builder instance for method chaining
@@ -4557,6 +4677,8 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 ##### distinctRow(...) -> Builder
 - **Signature:** `public Builder distinctRow()`
 - **Summary:** Sets the DISTINCTROW modifier for the query.
+- **Contract:**
+  - Like {@link #distinct()} , the modifier is only exposed via {@link Criteria#getSelectModifier()} for external consumers; this library's {@code SqlBuilder} does not apply it when appending a {@code Criteria} ; use {@code SqlBuilder.selectModifier("DISTINCTROW")} to get it in SQL rendered here.
 - **Parameters:**
   - (none)
 - **Returns:** this Builder instance for method chaining
@@ -4590,17 +4712,17 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public Builder join(final String joinEntity, final Condition cond)`
+- **Signature:** `public Builder join(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Adds a plain JOIN (no explicit type keyword) with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public Builder join(final Collection<String> joinEntities, final Condition cond)`
+- **Signature:** `public Builder join(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Adds a plain JOIN (no explicit type keyword) with multiple entities and a condition to this criteria.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** this Builder instance for method chaining
 ##### innerJoin(...) -> Builder
 - **Signature:** `public Builder innerJoin(final String joinEntity)`
@@ -4608,17 +4730,17 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public Builder innerJoin(final String joinEntity, final Condition cond)`
+- **Signature:** `public Builder innerJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Adds an INNER JOIN with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public Builder innerJoin(final Collection<String> joinEntities, final Condition cond)`
+- **Signature:** `public Builder innerJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Adds an INNER JOIN with multiple entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** this Builder instance for method chaining
 ##### leftJoin(...) -> Builder
 - **Signature:** `public Builder leftJoin(final String joinEntity)`
@@ -4626,17 +4748,17 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public Builder leftJoin(final String joinEntity, final Condition cond)`
+- **Signature:** `public Builder leftJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Adds a LEFT JOIN with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public Builder leftJoin(final Collection<String> joinEntities, final Condition cond)`
+- **Signature:** `public Builder leftJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Adds a LEFT JOIN with multiple entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** this Builder instance for method chaining
 ##### rightJoin(...) -> Builder
 - **Signature:** `public Builder rightJoin(final String joinEntity)`
@@ -4644,17 +4766,17 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public Builder rightJoin(final String joinEntity, final Condition cond)`
+- **Signature:** `public Builder rightJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Adds a RIGHT JOIN with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public Builder rightJoin(final Collection<String> joinEntities, final Condition cond)`
+- **Signature:** `public Builder rightJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Adds a RIGHT JOIN with multiple entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** this Builder instance for method chaining
 ##### fullJoin(...) -> Builder
 - **Signature:** `public Builder fullJoin(final String joinEntity)`
@@ -4662,17 +4784,17 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public Builder fullJoin(final String joinEntity, final Condition cond)`
+- **Signature:** `public Builder fullJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Adds a FULL JOIN with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public Builder fullJoin(final Collection<String> joinEntities, final Condition cond)`
+- **Signature:** `public Builder fullJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Adds a FULL JOIN with multiple entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `cond` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition
 - **Returns:** this Builder instance for method chaining
 ##### crossJoin(...) -> Builder
 - **Signature:** `public Builder crossJoin(final String joinEntity)`
@@ -4680,47 +4802,29 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `public Builder crossJoin(final String joinEntity, final Condition cond)`
-- **Summary:** Adds a CROSS JOIN with a condition to this criteria.
+- **Signature:** `public Builder crossJoin(final Collection<String> joinEntities)`
+- **Summary:** Adds a conditionless CROSS JOIN for multiple entities.
 - **Parameters:**
-  - `joinEntity` (`String`) — the table or entity to join
-  - `cond` (`Condition`) — the join condition
-- **Returns:** this Builder instance for method chaining
-- **Signature:** `public Builder crossJoin(final Collection<String> joinEntities, final Condition cond)`
-- **Summary:** Adds a CROSS JOIN with multiple entities and a condition.
-- **Parameters:**
-  - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `cond` (`Condition`) — the join condition
-- **Returns:** this Builder instance for method chaining
+  - `joinEntities` (`Collection<String>`) — the entity/table names to cross join
+- **Returns:** this builder
 ##### naturalJoin(...) -> Builder
 - **Signature:** `public Builder naturalJoin(final String joinEntity)`
 - **Summary:** Adds a NATURAL JOIN to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining
-- **Signature:** `@Deprecated public Builder naturalJoin(final String joinEntity, final Condition cond)`
-- **Summary:** Adds a NATURAL JOIN to this criteria.
-- **Contract:**
-  - A NATURAL JOIN derives its join predicate implicitly from columns with matching names, so it does <b> not </b> accept an explicit condition; {@code cond} must be {@code null} .
+- **Signature:** `public Builder naturalJoin(final Collection<String> joinEntities)`
+- **Summary:** Adds a conditionless NATURAL JOIN for multiple entities.
 - **Parameters:**
-  - `joinEntity` (`String`) — the table or entity to join
-  - `cond` (`Condition`) — must be {@code null} ; a NATURAL JOIN cannot carry an explicit condition
-- **Returns:** this Builder instance for method chaining
-- **Signature:** `@Deprecated public Builder naturalJoin(final Collection<String> joinEntities, final Condition cond)`
-- **Summary:** Adds a NATURAL JOIN with multiple entities to this criteria.
-- **Contract:**
-  - A NATURAL JOIN derives its join predicate implicitly, so it does <b> not </b> accept an explicit condition; {@code cond} must be {@code null} .
-- **Parameters:**
-  - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `cond` (`Condition`) — must be {@code null} ; a NATURAL JOIN cannot carry an explicit condition
-- **Returns:** this Builder instance for method chaining
+  - `joinEntities` (`Collection<String>`) — the entity/table names to natural join
+- **Returns:** this builder
 ##### where(...) -> Builder
-- **Signature:** `public Builder where(final Condition cond)`
+- **Signature:** `public Builder where(final Condition condition)`
 - **Summary:** Sets or replaces the WHERE clause.
 - **Contract:**
   - If a WHERE clause already exists, it will be replaced.
 - **Parameters:**
-  - `cond` (`Condition`) — the WHERE condition (must not be {@code null} ); if its operator is already {@link Operator#WHERE} it is added directly, otherwise it is wrapped in a {@link Where}
+  - `condition` (`Condition`) — the WHERE condition (must not be {@code null} ); if its operator is already {@link Operator#WHERE} it is added directly, otherwise it is wrapped in a {@link Where}
 - **Returns:** this Builder instance for method chaining
 - **Signature:** `public Builder where(final String expr)`
 - **Summary:** Sets or replaces the WHERE clause using a string expression.
@@ -4730,12 +4834,12 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
   - `expr` (`String`) — the WHERE condition as a string (must not be {@code null} , empty, or blank)
 - **Returns:** this Builder instance for method chaining
 ##### groupByAsc(...) -> Builder
-- **Signature:** `public Builder groupByAsc(final String propName)`
+- **Signature:** `public Builder groupByAsc(final String propOrColumnName)`
 - **Summary:** Sets or replaces the GROUP BY clause with a single column in ascending order.
 - **Contract:**
   - If a GROUP BY clause already exists, it will be replaced.
 - **Parameters:**
-  - `propName` (`String`) — the property name to group by ascending
+  - `propOrColumnName` (`String`) — the property or column name to group by ascending
 - **Returns:** this Builder instance for method chaining
 - **Signature:** `public Builder groupByAsc(final String... propNames)`
 - **Summary:** Sets or replaces the GROUP BY clause with ascending order.
@@ -4752,12 +4856,12 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
   - `propNames` (`Collection<String>`) — the collection of property names to group by ascending (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet} to preserve the column order)
 - **Returns:** this Builder instance for method chaining
 ##### groupByDesc(...) -> Builder
-- **Signature:** `public Builder groupByDesc(final String propName)`
+- **Signature:** `public Builder groupByDesc(final String propOrColumnName)`
 - **Summary:** Sets or replaces the GROUP BY clause with a single column in descending order.
 - **Contract:**
   - If a GROUP BY clause already exists, it will be replaced.
 - **Parameters:**
-  - `propName` (`String`) — the property name to group by descending
+  - `propOrColumnName` (`String`) — the property or column name to group by descending
 - **Returns:** this Builder instance for method chaining
 - **Signature:** `public Builder groupByDesc(final String... propNames)`
 - **Summary:** Sets or replaces the GROUP BY clause with descending order.
@@ -4774,12 +4878,12 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
   - `propNames` (`Collection<String>`) — the collection of property names to group by descending (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet} to preserve the column order)
 - **Returns:** this Builder instance for method chaining
 ##### groupBy(...) -> Builder
-- **Signature:** `public Builder groupBy(final Condition cond)`
+- **Signature:** `public Builder groupBy(final Condition condition)`
 - **Summary:** Sets or replaces the GROUP BY clause.
 - **Contract:**
   - If a GROUP BY clause already exists, it will be replaced.
 - **Parameters:**
-  - `cond` (`Condition`) — the GROUP BY condition (must not be {@code null} ); if its operator is already {@link Operator#GROUP_BY} it is added directly, otherwise it is wrapped in a {@link GroupBy}
+  - `condition` (`Condition`) — the GROUP BY condition (must not be {@code null} ); if its operator is already {@link Operator#GROUP_BY} it is added directly, otherwise it is wrapped in a {@link GroupBy}
 - **Returns:** this Builder instance for method chaining
 - **Signature:** `public Builder groupBy(final String... propNames)`
 - **Summary:** Sets or replaces the GROUP BY clause with property names.
@@ -4842,12 +4946,12 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
   - `groupings` (`Map<String, SortDirection>`) — a map of property names to sort directions
 - **Returns:** this Builder instance for method chaining
 ##### having(...) -> Builder
-- **Signature:** `public Builder having(final Condition cond)`
+- **Signature:** `public Builder having(final Condition condition)`
 - **Summary:** Sets or replaces the HAVING clause.
 - **Contract:**
   - If a HAVING clause already exists, it will be replaced.
 - **Parameters:**
-  - `cond` (`Condition`) — the HAVING condition (must not be {@code null} ); if its operator is already {@link Operator#HAVING} it is added directly, otherwise it is wrapped in a {@link Having}
+  - `condition` (`Condition`) — the HAVING condition (must not be {@code null} ); if its operator is already {@link Operator#HAVING} it is added directly, otherwise it is wrapped in a {@link Having}
 - **Returns:** this Builder instance for method chaining
 - **Signature:** `public Builder having(final String expr)`
 - **Summary:** Sets or replaces the HAVING clause using a string expression.
@@ -4857,12 +4961,12 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
   - `expr` (`String`) — the HAVING condition as a string (must not be {@code null} , empty, or blank)
 - **Returns:** this Builder instance for method chaining
 ##### orderByAsc(...) -> Builder
-- **Signature:** `public Builder orderByAsc(final String propName)`
+- **Signature:** `public Builder orderByAsc(final String propOrColumnName)`
 - **Summary:** Sets or replaces the ORDER BY clause with a single column in ascending order.
 - **Contract:**
   - If an ORDER BY clause already exists, it will be replaced.
 - **Parameters:**
-  - `propName` (`String`) — the property name to order by ascending
+  - `propOrColumnName` (`String`) — the property or column name to order by ascending
 - **Returns:** this Builder instance for method chaining
 - **Signature:** `public Builder orderByAsc(final String... propNames)`
 - **Summary:** Sets or replaces the ORDER BY clause with ascending order.
@@ -4879,12 +4983,12 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
   - `propNames` (`Collection<String>`) — the collection of property names to order by ascending (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet} to preserve the column order)
 - **Returns:** this Builder instance for method chaining
 ##### orderByDesc(...) -> Builder
-- **Signature:** `public Builder orderByDesc(final String propName)`
+- **Signature:** `public Builder orderByDesc(final String propOrColumnName)`
 - **Summary:** Sets or replaces the ORDER BY clause with a single column in descending order.
 - **Contract:**
   - If an ORDER BY clause already exists, it will be replaced.
 - **Parameters:**
-  - `propName` (`String`) — the property name to order by descending
+  - `propOrColumnName` (`String`) — the property or column name to order by descending
 - **Returns:** this Builder instance for method chaining
 - **Signature:** `public Builder orderByDesc(final String... propNames)`
 - **Summary:** Sets or replaces the ORDER BY clause with descending order.
@@ -4901,12 +5005,12 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
   - `propNames` (`Collection<String>`) — the collection of property names to order by descending (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet} to preserve the column order)
 - **Returns:** this Builder instance for method chaining
 ##### orderBy(...) -> Builder
-- **Signature:** `public Builder orderBy(final Condition cond)`
+- **Signature:** `public Builder orderBy(final Condition condition)`
 - **Summary:** Sets or replaces the ORDER BY clause.
 - **Contract:**
   - If an ORDER BY clause already exists, it will be replaced.
 - **Parameters:**
-  - `cond` (`Condition`) — the ORDER BY condition (must not be {@code null} ); if its operator is already {@link Operator#ORDER_BY} it is added directly, otherwise it is wrapped in an {@link OrderBy}
+  - `condition` (`Condition`) — the ORDER BY condition (must not be {@code null} ); if its operator is already {@link Operator#ORDER_BY} it is added directly, otherwise it is wrapped in an {@link OrderBy}
 - **Returns:** this Builder instance for method chaining
 - **Signature:** `public Builder orderBy(final String... propNames)`
 - **Summary:** Sets or replaces the ORDER BY clause with property names.
@@ -4969,12 +5073,12 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
   - `orders` (`Map<String, SortDirection>`) — a map of property names to sort directions
 - **Returns:** this Builder instance for method chaining
 ##### limit(...) -> Builder
-- **Signature:** `public Builder limit(final Limit cond)`
+- **Signature:** `public Builder limit(final Limit condition)`
 - **Summary:** Sets or replaces the LIMIT clause.
 - **Contract:**
   - If a LIMIT clause already exists, it will be replaced.
 - **Parameters:**
-  - `cond` (`Limit`) — the LIMIT condition (must not be {@code null} ); its operator must be {@link Operator#LIMIT} , which is guaranteed for any {@link Limit} instance
+  - `condition` (`Limit`) — the LIMIT condition (must not be {@code null} ); its operator must be {@link Operator#LIMIT} , which is guaranteed for any {@link Limit} instance
 - **Returns:** this Builder instance for method chaining
 - **Signature:** `public Builder limit(final int count)`
 - **Summary:** Sets or replaces the LIMIT clause with a count.
@@ -5021,19 +5125,19 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 - **Signature:** `public Builder except(final SubQuery subQuery)`
 - **Summary:** Adds an EXCEPT operation with a subquery.
 - **Parameters:**
-  - `subQuery` (`SubQuery`) — the subquery to except (must not be {@code null} )
+  - `subQuery` (`SubQuery`) — the right-hand subquery for the EXCEPT operation (must not be {@code null} )
 - **Returns:** this Builder instance for method chaining
 ##### minus(...) -> Builder
 - **Signature:** `public Builder minus(final SubQuery subQuery)`
 - **Summary:** Adds a MINUS operation with a subquery.
 - **Parameters:**
-  - `subQuery` (`SubQuery`) — the subquery to minus (must not be {@code null} )
+  - `subQuery` (`SubQuery`) — the right-hand subquery for the MINUS operation (must not be {@code null} )
 - **Returns:** this Builder instance for method chaining
 ##### add(...) -> Builder
-- **Signature:** `public Builder add(final Condition cond)`
+- **Signature:** `public Builder add(final Condition condition)`
 - **Summary:** Adds a condition to this builder, routing it to the appropriate clause based on its operator.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to add (must not be {@code null} )
+  - `condition` (`Condition`) — the condition to add (must not be {@code null} )
 - **Returns:** this Builder instance for method chaining
 ##### build(...) -> Criteria
 - **Signature:** `public Criteria build()`
@@ -5062,16 +5166,6 @@ Represents a CROSS JOIN operation in SQL queries.
   - <p> <b> Usage Examples: </b> </p> <pre> {@code // Simple cross join - all combinations CrossJoin join = new CrossJoin("colors"); // SQL: CROSS JOIN colors // If products has 10 rows and colors has 5 rows, result has 50 rows // Cross join with table alias CrossJoin aliasJoin = new CrossJoin("available_sizes s"); // SQL: CROSS JOIN available_sizes s } </pre>
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
-- **Signature:** `public CrossJoin(final String joinEntity, final Condition cond)`
-- **Summary:** Creates a CROSS JOIN clause with a join condition.
-- **Parameters:**
-  - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `cond` (`Condition`) — the condition appended after the join target. Supplying any condition (including an {@link On} ) produces non-standard CROSS JOIN SQL, since a standard CROSS JOIN takes no {@code ON} clause. Any non-clause {@link Condition} is allowed and can be {@code null} .
-- **Signature:** `public CrossJoin(final Collection<String> joinEntities, final Condition cond)`
-- **Summary:** Creates a CROSS JOIN clause with multiple tables/entities and a join condition.
-- **Parameters:**
-  - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `cond` (`Condition`) — the condition appended after the joined table list. Supplying any condition (including an {@link On} ) produces non-standard CROSS JOIN SQL, since a standard CROSS JOIN takes no {@code ON} clause. Any non-clause {@link Condition} is allowed and can be {@code null} .
 - **Signature:** `public CrossJoin(final Collection<String> joinEntities)`
 - **Summary:** Creates a CROSS JOIN clause with multiple tables/entities and no join condition.
 - **Parameters:**
@@ -5261,13 +5355,23 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be {@code null} \\u2014 a {@code null} renders as the literal {@code null}
 - **Returns:** a string representation of the less-than-or-equal expression
 ##### between(...) -> String
-- **Signature:** `public static String between(final String expr, final Object min, final Object max)`
+- **Signature:** `public static String between(final String expr, final Object minValue, final Object maxValue)`
 - **Summary:** Creates a BETWEEN expression for a literal with min and max values.
 - **Parameters:**
   - `expr` (`String`) — the expression to test
-  - `min` (`Object`) — the minimum value (inclusive)
-  - `max` (`Object`) — the maximum value (inclusive)
+  - `minValue` (`Object`) — the minimum value (inclusive)
+  - `maxValue` (`Object`) — the maximum value (inclusive)
 - **Returns:** a string representation of the BETWEEN expression
+##### notBetween(...) -> String
+- **Signature:** `public static String notBetween(final String expr, final Object minValue, final Object maxValue)`
+- **Summary:** Creates a NOT BETWEEN expression for a literal with min and max values.
+- **Contract:**
+  - A value satisfies {@code NOT BETWEEN min AND max} when it is strictly less than {@code min} or strictly greater than {@code max} , so both ends of the range are excluded.
+- **Parameters:**
+  - `expr` (`String`) — the expression to test
+  - `minValue` (`Object`) — the lower bound of the excluded range (inclusive)
+  - `maxValue` (`Object`) — the upper bound of the excluded range (inclusive)
+- **Returns:** a string representation of the NOT BETWEEN expression
 ##### like(...) -> String
 - **Signature:** `public static String like(final String expr, final String value)`
 - **Summary:** Creates a LIKE expression for pattern matching.
@@ -5275,6 +5379,13 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to match
   - `value` (`String`) — the pattern to match against (can include % and _ wildcards); should not be {@code null} \\u2014 a {@code null} renders as the literal {@code null}
 - **Returns:** a string representation of the LIKE expression
+##### notLike(...) -> String
+- **Signature:** `public static String notLike(final String expr, final String value)`
+- **Summary:** Creates a NOT LIKE expression for pattern matching.
+- **Parameters:**
+  - `expr` (`String`) — the expression to match
+  - `value` (`String`) — the pattern to exclude (can include % and _ wildcards); should not be {@code null} \\u2014 a {@code null} renders as the literal {@code null}
+- **Returns:** a string representation of the NOT LIKE expression
 ##### isNull(...) -> String
 - **Signature:** `public static String isNull(final String expr)`
 - **Summary:** Creates an IS NULL expression for the specified literal.
@@ -5316,16 +5427,16 @@ Represents a raw SQL expression that can be used in queries.
   - `exprs` (`String[]`) — the expressions to combine with OR
 - **Returns:** a string representation of the OR expression
 ##### plus(...) -> String
-- **Signature:** `public static String plus(final Object... objects)`
+- **Signature:** `public static String plus(final Object... operands)`
 - **Summary:** Creates an addition expression for the given objects.
 - **Parameters:**
-  - `objects` (`Object[]`) — the values to add
+  - `operands` (`Object[]`) — the values to add
 - **Returns:** a string representation of the addition expression
 ##### subtract(...) -> String
-- **Signature:** `public static String subtract(final Object... objects)`
+- **Signature:** `public static String subtract(final Object... operands)`
 - **Summary:** Creates a subtraction expression for the given objects.
 - **Parameters:**
-  - `objects` (`Object[]`) — the values to subtract
+  - `operands` (`Object[]`) — the values to subtract
 - **Returns:** a string representation of the subtraction expression
 ##### minus(...) -> String
 - **Signature:** `@Deprecated public static String minus(final Object... objects)`
@@ -5334,10 +5445,10 @@ Represents a raw SQL expression that can be used in queries.
   - `objects` (`Object[]`) — the values to subtract
 - **Returns:** a string representation of the subtraction expression
 ##### multiply(...) -> String
-- **Signature:** `public static String multiply(final Object... objects)`
+- **Signature:** `public static String multiply(final Object... operands)`
 - **Summary:** Creates a multiplication expression for the given objects.
 - **Parameters:**
-  - `objects` (`Object[]`) — the values to multiply
+  - `operands` (`Object[]`) — the values to multiply
 - **Returns:** a string representation of the multiplication expression
 ##### divide(...) -> String
 - **Signature:** `public static String divide(final Object... objects)`
@@ -5381,13 +5492,13 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `objects` (`Object[]`) — the values for bitwise XOR operation
 - **Returns:** a string representation of the bitwise XOR expression
-##### normalize(...) -> String
-- **Signature:** `public static String normalize(final Object value)`
+##### renderValue(...) -> String
+- **Signature:** `public static String renderValue(final Object value)`
 - **Summary:** Converts a value to its SQL representation.
 - **Contract:**
-  - This method performs SQL escaping and formatting: <ul> <li> {@code null} values become the string {@code "null"} </li> <li> Strings are wrapped in single quotes and escaped via {@link AbstractCondition#escapeStringLiteral(String)} : embedded single and double quotes are backslash-escaped ( {@code '} becomes {@code \\'} , {@code "} becomes {@code \\"} ); backslashes are left as-is except for a defensive guard that appends one extra backslash when the body would otherwise end in an unescaped trailing backslash </li> <li> {@link Number} and {@link Boolean} values are converted via {@code toString()} (no quoting); {@code NaN} /infinite {@link Float} / {@link Double} values are rejected </li> <li> {@link Expression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null} ) </li> <li> {@link SubQuery} instances render their {@code toString()} wrapped in parentheses; other {@link Condition} s use their {@code toString()} verbatim </li> <li> Other objects are converted via {@link N#stringOf(Object)} , then quoted and escaped </li> </ul> <p> <b> Usage Examples: </b> </p> <pre> {@code Expression.normalize("text"); // returns "'text'" Expression.normalize("O'Brien"); // returns "'O\\'Brien'" (single quote backslash-escaped) Expression.normalize("say \\"hi\\""); // returns "'say \\"hi\\"'" (double quote backslash-escaped) Expression.normalize(123); // returns "123" Expression.normalize(45.67); // returns "45.67" Expression.normalize(null); // returns "null" Expression.normalize(true); // returns "true" Expression.normalize(false); // returns "false" Expression.normalize(new Expression("COUNT(*)")); // returns "COUNT(*)" (the expression's literal) Expression.normalize(Double.NaN); // throws IllegalArgumentException } </pre>
+  - This method performs SQL escaping and formatting: <ul> <li> {@code null} values become the string {@code "null"} </li> <li> Strings are wrapped in single quotes and escaped via {@link AbstractCondition#escapeStringLiteral(String)} : embedded unescaped single and double quotes are backslash-escaped ( {@code '} becomes {@code \\'} , {@code "} becomes {@code \\"} ); a backslash shields the character that follows it, so any existing {@code \\x} pair \\u2014 including an already-escaped quote such as {@code \\'} \\u2014 is copied verbatim rather than escaped again, plus a defensive guard that appends one extra backslash when the body would otherwise end in an unescaped trailing backslash </li> <li> {@link Number} and {@link Boolean} values are converted via {@code toString()} (no quoting); {@code NaN} /infinite {@link Float} / {@link Double} values are rejected </li> <li> {@link Expression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null} ) </li> <li> {@link SubQuery} instances render their {@code toString()} wrapped in parentheses; other {@link Condition} s use their {@code toString()} verbatim </li> <li> Other objects are converted via {@link N#stringOf(Object)} , then quoted and escaped </li> </ul> <p> <b> Usage Examples: </b> </p> <pre> {@code Expression.renderValue("text"); // returns "'text'" Expression.renderValue("O'Brien"); // returns "'O\\'Brien'" (single quote backslash-escaped) Expression.renderValue("say \\"hi\\""); // returns "'say \\"hi\\"'" (double quote backslash-escaped) Expression.renderValue(123); // returns "123" Expression.renderValue(45.67); // returns "45.67" Expression.renderValue(null); // returns "null" Expression.renderValue(true); // returns "true" Expression.renderValue(false); // returns "false" Expression.renderValue(new Expression("COUNT(*)")); // returns "COUNT(*)" (the expression's literal) Expression.renderValue(Double.NaN); // throws IllegalArgumentException } </pre>
 - **Parameters:**
-  - `value` (`Object`) — the value to normalize
+  - `value` (`Object`) — the value to render
 - **Returns:** the SQL representation of the value
 ##### count(...) -> String
 - **Signature:** `public static String count(final String expr)`
@@ -5519,85 +5630,85 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to calculate tangent of
 - **Returns:** a TAN function string
 ##### concat(...) -> String
-- **Signature:** `public static String concat(final String str1, final String str2)`
+- **Signature:** `public static String concat(final String expr1, final String expr2)`
 - **Summary:** Creates a CONCAT function expression that concatenates two operands.
 - **Parameters:**
-  - `str1` (`String`) — the first operand (column reference or pre-quoted literal)
-  - `str2` (`String`) — the second operand (column reference or pre-quoted literal)
+  - `expr1` (`String`) — the first SQL expression (column reference or pre-quoted literal)
+  - `expr2` (`String`) — the second SQL expression (column reference or pre-quoted literal)
 - **Returns:** a CONCAT function string of the form {@code CONCAT(str1, str2)}
 ##### replace(...) -> String
-- **Signature:** `public static String replace(final String str, final String oldString, final String replacement)`
+- **Signature:** `public static String replace(final String expr, final String oldString, final String replacement)`
 - **Summary:** Creates a REPLACE function expression.
 - **Parameters:**
-  - `str` (`String`) — the string to search in
+  - `expr` (`String`) — the SQL expression to search in
   - `oldString` (`String`) — the string to search for
   - `replacement` (`String`) — the replacement string
 - **Returns:** a REPLACE function string
 ##### length(...) -> String
-- **Signature:** `public static String length(final String str)`
+- **Signature:** `public static String length(final String expr)`
 - **Summary:** Creates a LENGTH function expression.
 - **Parameters:**
-  - `str` (`String`) — the string to get length of
+  - `expr` (`String`) — the SQL expression whose length is returned
 - **Returns:** a LENGTH function string
 ##### substr(...) -> String
-- **Signature:** `public static String substr(final String str, final int fromIndex)`
+- **Signature:** `public static String substr(final String expr, final int fromIndex)`
 - **Summary:** Creates a SUBSTR function expression starting from a position.
 - **Parameters:**
-  - `str` (`String`) — the string to extract from
+  - `expr` (`String`) — the SQL expression to extract from
   - `fromIndex` (`int`) — the starting position (1-based)
 - **Returns:** a SUBSTR function string
-- **Signature:** `public static String substr(final String str, final int fromIndex, final int length)`
+- **Signature:** `public static String substr(final String expr, final int fromIndex, final int length)`
 - **Summary:** Creates a SUBSTR function expression with start position and length.
 - **Parameters:**
-  - `str` (`String`) — the string to extract from
+  - `expr` (`String`) — the SQL expression to extract from
   - `fromIndex` (`int`) — the starting position (1-based)
   - `length` (`int`) — the number of characters to extract
 - **Returns:** a SUBSTR function string
 ##### trim(...) -> String
-- **Signature:** `public static String trim(final String str)`
+- **Signature:** `public static String trim(final String expr)`
 - **Summary:** Creates a TRIM function expression.
 - **Parameters:**
-  - `str` (`String`) — the string to trim
+  - `expr` (`String`) — the SQL expression to trim
 - **Returns:** a TRIM function string
 ##### ltrim(...) -> String
-- **Signature:** `public static String ltrim(final String str)`
+- **Signature:** `public static String ltrim(final String expr)`
 - **Summary:** Creates an LTRIM (left trim) function expression.
 - **Parameters:**
-  - `str` (`String`) — the string to left trim
+  - `expr` (`String`) — the SQL expression to left trim
 - **Returns:** an LTRIM function string
 ##### rtrim(...) -> String
-- **Signature:** `public static String rtrim(final String str)`
+- **Signature:** `public static String rtrim(final String expr)`
 - **Summary:** Creates an RTRIM (right trim) function expression.
 - **Parameters:**
-  - `str` (`String`) — the string to right trim
+  - `expr` (`String`) — the SQL expression to right trim
 - **Returns:** an RTRIM function string
 ##### lpad(...) -> String
-- **Signature:** `public static String lpad(final String str, final int length, final String padStr)`
+- **Signature:** `public static String lpad(final String expr, final int length, final String padExpr)`
 - **Summary:** Creates an LPAD (left pad) function expression.
 - **Parameters:**
-  - `str` (`String`) — the string to pad
+  - `expr` (`String`) — the SQL expression to pad
   - `length` (`int`) — the total length after padding
-  - `padStr` (`String`) — the string to pad with
+  - `padExpr` (`String`) — the SQL expression to pad with
 - **Returns:** an LPAD function string
 ##### rpad(...) -> String
-- **Signature:** `public static String rpad(final String str, final int length, final String padStr)`
+- **Signature:** `public static String rpad(final String expr, final int length, final String padExpr)`
 - **Summary:** Creates an RPAD (right pad) function expression.
 - **Parameters:**
-  - `str` (`String`) — the string to pad
+  - `expr` (`String`) — the SQL expression to pad
   - `length` (`int`) — the total length after padding
-  - `padStr` (`String`) — the string to pad with
+  - `padExpr` (`String`) — the SQL expression to pad with
 - **Returns:** an RPAD function string
 ##### lower(...) -> String
-- **Signature:** `public static String lower(final String str)`
+- **Signature:** `public static String lower(final String expr)`
 - **Summary:** Creates a LOWER function expression.
 - **Parameters:**
-  - `str` (`String`) — the string to convert to lowercase
+  - `expr` (`String`) — the SQL expression to convert to lowercase
 - **Returns:** a LOWER function string
 ##### upper(...) -> String
-- **Signature:** `public static String upper(final String str)`
+- **Signature:** `public static String upper(final String expr)`
 - **Summary:** Creates an UPPER function expression.
 - **Parameters:**
-  - `str` (`String`) — the string to convert to uppercase
+  - `expr` (`String`) — the SQL expression to convert to uppercase
 - **Returns:** an UPPER function string
 
 #### Public Instance Methods
@@ -5608,14 +5719,14 @@ Represents a raw SQL expression that can be used in queries.
   - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code Expression expr1 = new Expression("CURRENT_TIMESTAMP"); Expression expr2 = new Expression("price * quantity"); Expression expr3 = new Expression("CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END"); Expression expr4 = new Expression("COALESCE(middle_name, '')"); // expr4.toString() returns: "COALESCE(middle_name, '')" } </pre>
 - **Parameters:**
   - `literal` (`String`) — the SQL expression as a string (must not be {@code null} )
-##### getLiteral(...) -> String
-- **Signature:** `public String getLiteral()`
+##### literal(...) -> String
+- **Signature:** `public String literal()`
 - **Summary:** Gets the SQL literal string of this expression.
 - **Parameters:**
   - (none)
 - **Returns:** the SQL expression string; never {@code null} for instances created via the public constructor or {@link #of(String)} , but may be {@code null} for uninitialized instances produced by the package-private default constructor (e.g., during Kryo deserialization)
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `@Override public ImmutableList<Object> getParameters()`
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Returns an empty list as expressions have no parameters.
 - **Parameters:**
   - (none)
@@ -5662,16 +5773,16 @@ Represents a FULL JOIN (a.k.a.
 - **Summary:** Creates a FULL JOIN clause for the specified table or entity without a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
-- **Signature:** `public FullJoin(final String joinEntity, final Condition cond)`
+- **Signature:** `public FullJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a FULL JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `cond` (`Condition`) — the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
-- **Signature:** `public FullJoin(final Collection<String> joinEntities, final Condition cond)`
+  - `joinCondition` (`Condition`) — the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
+- **Signature:** `public FullJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a FULL JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `cond` (`Condition`) — the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
+  - `joinCondition` (`Condition`) — the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
 
 ### Class GreaterThan (com.landawn.abacus.query.condition.GreaterThan)
 Represents a greater-than ( &gt; ) comparison condition in SQL-like queries.
@@ -5733,12 +5844,12 @@ Represents a GROUP BY clause in SQL queries.
 
 #### Public Instance Methods
 ##### <init>(...) -> void
-- **Signature:** `public GroupBy(final Condition cond)`
+- **Signature:** `public GroupBy(final Condition condition)`
 - **Summary:** Creates a new GROUP BY clause with the specified condition.
 - **Contract:**
   - <p> <b> Usage Examples: </b> </p> <pre> {@code // Group by year extracted from date GroupBy byYear = new GroupBy(Filters.expr("YEAR(order_date)")); // SQL: GROUP BY YEAR(order_date) // Group by calculated expression GroupBy byRange = new GroupBy(Filters.expr("CASE WHEN age < 30 THEN 'Young' ELSE 'Senior' END")); // SQL: GROUP BY CASE WHEN age < 30 THEN 'Young' ELSE 'Senior' END } </pre>
 - **Parameters:**
-  - `cond` (`Condition`) — the grouping condition or expression. Must not be {@code null} .
+  - `condition` (`Condition`) — the grouping condition or expression. Must not be {@code null} .
 - **See also:** Filters#expr(String)
 - **Signature:** `public GroupBy(final String... propNames)`
 - **Summary:** Creates a new GROUP BY clause with the specified property names.
@@ -5748,10 +5859,10 @@ Represents a GROUP BY clause in SQL queries.
 - **Summary:** Creates a new GROUP BY clause with the property names supplied as a collection.
 - **Parameters:**
   - `propNames` (`Collection<String>`) — the collection of property names to group by, in iteration order. Must not be {@code null} or empty and must not contain {@code null} , empty, or blank elements.
-- **Signature:** `public GroupBy(final String propName, final SortDirection direction)`
+- **Signature:** `public GroupBy(final String propOrColumnName, final SortDirection direction)`
 - **Summary:** Creates a new GROUP BY clause with a single property and sort direction.
 - **Parameters:**
-  - `propName` (`String`) — the property name to group by. Must not be {@code null} , empty, or blank.
+  - `propOrColumnName` (`String`) — the property or column name to group by. Must not be {@code null} , empty, or blank.
   - `direction` (`SortDirection`) — the sort direction (ASC or DESC). Must not be {@code null} .
 - **Signature:** `public GroupBy(final Collection<String> propNames, final SortDirection direction)`
 - **Summary:** Creates a new GROUP BY clause with multiple properties and a single sort direction.
@@ -5763,7 +5874,7 @@ Represents a GROUP BY clause in SQL queries.
 - **Signature:** `public GroupBy(final Map<String, SortDirection> groupings)`
 - **Summary:** Creates a new GROUP BY clause with custom sort directions for each property.
 - **Contract:**
-  - The map should maintain insertion order (use LinkedHashMap) to preserve the grouping order, as the order of columns in GROUP BY can affect performance and results.
+  - The map should maintain insertion order (use LinkedHashMap) to preserve the generated grouping order.
 - **Parameters:**
   - `groupings` (`Map<String, SortDirection>`) — a map of property names to their sort directions. Should be a {@code LinkedHashMap} to maintain order. Must not be {@code null} or empty; keys must not be {@code null} , empty, or blank and values must not be {@code null} .
 
@@ -5781,10 +5892,10 @@ Represents a HAVING clause in SQL queries.
 
 #### Public Instance Methods
 ##### <init>(...) -> void
-- **Signature:** `public Having(final Condition cond)`
+- **Signature:** `public Having(final Condition condition)`
 - **Summary:** Creates a new HAVING clause with the specified condition.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to apply in the HAVING clause. Must not be {@code null} .
+  - `condition` (`Condition`) — the condition to apply in the HAVING clause. Must not be {@code null} .
 
 ### Class In (com.landawn.abacus.query.condition.In)
 Represents an IN condition in SQL-like queries.
@@ -5812,7 +5923,7 @@ Represents an IN condition in SQL-like queries.
 - **Contract:**
   - Each element of {@code valueRows} must resolve to exactly {@code propNames.size()} values.
 - **Parameters:**
-  - `propNames` (`Collection<String>`) — the property/column names (must not be {@code null} or empty and must not contain {@code null} /blank names)
+  - `propNames` (`Collection<String>`) — the property/column names (must not be {@code null} or empty and must not contain {@code null} , empty, or blank names)
   - `valueRows` (`Collection<?>`) — the collection of value rows (must not be {@code null} or empty); each row must be non- {@code null} and resolve to exactly {@code propNames.size()} values. A row may be a {@link Collection} , {@link Iterable} , object array, {@link Map} or bean
 
 ### Class InSubQuery (com.landawn.abacus.query.condition.InSubQuery)
@@ -5864,16 +5975,16 @@ Represents an INNER JOIN clause in SQL queries.
 - **Summary:** Creates an INNER JOIN clause for the specified table or entity without a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
-- **Signature:** `public InnerJoin(final String joinEntity, final Condition cond)`
+- **Signature:** `public InnerJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates an INNER JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `cond` (`Condition`) — the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
-- **Signature:** `public InnerJoin(final Collection<String> joinEntities, final Condition cond)`
+  - `joinCondition` (`Condition`) — the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
+- **Signature:** `public InnerJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates an INNER JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `cond` (`Condition`) — the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
+  - `joinCondition` (`Condition`) — the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
 
 ### Class Intersect (com.landawn.abacus.query.condition.Intersect)
 Represents an INTERSECT clause in SQL queries.
@@ -6094,18 +6205,18 @@ Base class for SQL JOIN operations.
 - **Summary:** Creates a simple JOIN clause for the specified table or entity.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-- **Signature:** `public Join(final String joinEntity, final Condition cond)`
+- **Signature:** `public Join(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a JOIN clause with a condition.
 - **Contract:**
   - This specifies how the tables are related and which rows should be combined.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `cond` (`Condition`) — the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
-- **Signature:** `public Join(final Collection<String> joinEntities, final Condition cond)`
+  - `joinCondition` (`Condition`) — the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null} .
+- **Signature:** `public Join(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a JOIN clause with multiple tables or entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with
-  - `cond` (`Condition`) — the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
+  - `joinCondition` (`Condition`) — the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null} .
 ##### getJoinEntities(...) -> ImmutableList<String>
 - **Signature:** `public ImmutableList<String> getJoinEntities()`
 - **Summary:** Gets the list of tables or entities involved in this join.
@@ -6121,8 +6232,8 @@ Base class for SQL JOIN operations.
 - **Parameters:**
   - (none)
 - **Returns:** the join condition, or {@code null} if no condition was specified
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `@Override public ImmutableList<Object> getParameters()`
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Gets all parameters from the join condition.
 - **Contract:**
   - Returns an empty list if there's no condition or the condition has no parameters.
@@ -6178,14 +6289,14 @@ Base class for composable junction conditions that combine multiple conditions.
 - **Parameters:**
   - `operator` (`Operator`) — the composable operator to use; must be {@link Operator#AND} or {@link Operator#OR}
   - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine; may be {@code null} or empty (treated as no conditions)
-##### getConditions(...) -> ImmutableList<Condition>
-- **Signature:** `public ImmutableList<Condition> getConditions()`
+##### conditions(...) -> ImmutableList<Condition>
+- **Signature:** `public ImmutableList<Condition> conditions()`
 - **Summary:** Gets the list of conditions contained in this junction.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable view of the list of conditions in this junction
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `@Override public ImmutableList<Object> getParameters()`
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Gets all parameters from all conditions in this junction.
 - **Parameters:**
   - (none)
@@ -6232,16 +6343,16 @@ Represents a LEFT JOIN clause in SQL queries.
 - **Summary:** Creates a LEFT JOIN clause for the specified table or entity without a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
-- **Signature:** `public LeftJoin(final String joinEntity, final Condition cond)`
+- **Signature:** `public LeftJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a LEFT JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `cond` (`Condition`) — the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
-- **Signature:** `public LeftJoin(final Collection<String> joinEntities, final Condition cond)`
+  - `joinCondition` (`Condition`) — the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
+- **Signature:** `public LeftJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a LEFT JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `cond` (`Condition`) — the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
+  - `joinCondition` (`Condition`) — the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
 
 ### Class LessThan (com.landawn.abacus.query.condition.LessThan)
 Represents a less-than ( &lt; ) comparison condition in SQL-like queries.
@@ -6342,12 +6453,12 @@ Represents a LIMIT clause in SQL queries to restrict the number of rows returned
   - If the expression starts with a digit, {@code '?'} , {@code ':'} , or <code> "#{" </code> , a {@code "LIMIT "} prefix is added automatically; otherwise it is used as-is.
   - </b> When every number slot is an integer literal, {@link #getCount()} and {@link #getOffset()} return their concrete values.
   - When a slot is a placeholder (or an integer literal that overflows {@code int} ), the value stays unresolved and opaque: {@link #getCount()} returns {@link Integer#MAX_VALUE} and {@link #getOffset()} returns {@code 0} .
-  - </p> <p> Note: when this condition is rendered by a SQL builder, a parsed expression is emitted in the target dialect's pagination syntax from its {@code count} / {@code offset} (so, e.g., MySQL's comma form and the {@code FETCH} forms are re-rendered per dialect).
+  - </p> <p> <b> &#9888; &#65039; </b> When this condition is rendered by a SQL builder, a parsed expression is emitted in the target dialect's pagination syntax from its {@code count} / {@code offset} (so, e.g., MySQL's comma form and the {@code FETCH} forms are re-rendered per dialect).
   - An opaque (placeholder) expression is re-rendered in the dialect's {@code FETCH} syntax only when the dialect paginates with {@code OFFSET} / {@code FETCH} (Oracle, DB2 or SQL Server, per {@link com.landawn.abacus.query.SqlDialect.ProductInfo} ) and it is a generic {@code LIMIT count \[OFFSET offset\]} form; otherwise it is emitted verbatim.
 - **Parameters:**
   - `expr` (`String`) — the LIMIT expression as a string. Must not be {@code null} , empty, or blank, and must match one of the accepted forms.
-##### getLiteral(...) -> String
-- **Signature:** `public String getLiteral()`
+##### literal(...) -> String
+- **Signature:** `public String literal()`
 - **Summary:** Returns the LIMIT literal string if one was provided.
 - **Contract:**
   - Returns the LIMIT literal string if one was provided.
@@ -6360,12 +6471,12 @@ Represents a LIMIT clause in SQL queries to restrict the number of rows returned
 - **Signature:** `public boolean hasLiteral()`
 - **Summary:** Checks whether this Limit was created from a string expression (see {@link #Limit(String)} ).
 - **Contract:**
-  - When this returns {@code true} , {@link #getLiteral()} is non-null and is what gets rendered; {@link #getCount()} / {@link #getOffset()} may hold sentinel values ( {@link Integer#MAX_VALUE} /0) if the expression stayed opaque.
-  - When it returns {@code false} , the Limit was created with numeric count/offset parameters and {@link #getLiteral()} returns {@code null} .
+  - When this returns {@code true} , {@link #literal()} is non-null and is what gets rendered; {@link #getCount()} / {@link #getOffset()} may hold sentinel values ( {@link Integer#MAX_VALUE} /0) if the expression stayed opaque.
+  - When it returns {@code false} , the Limit was created with numeric count/offset parameters and {@link #literal()} returns {@code null} .
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if this Limit was constructed from a string expression, {@code false} otherwise
-- **See also:** #getLiteral()
+- **See also:** #literal()
 ##### getCount(...) -> int
 - **Signature:** `public int getCount()`
 - **Summary:** Gets the maximum number of rows to return.
@@ -6378,8 +6489,30 @@ Represents a LIMIT clause in SQL queries to restrict the number of rows returned
 - **Parameters:**
   - (none)
 - **Returns:** the offset value, or 0 if constructed with only count or with an opaque (unparsed) string expression
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `@Override public ImmutableList<Object> getParameters()`
+##### isResolved(...) -> boolean
+- **Signature:** `public boolean isResolved()`
+- **Summary:** Returns whether the count and offset are resolved numeric values rather than sentinels for an opaque expression.
+- **Parameters:**
+  - (none)
+- **Returns:** {@code true} for numeric limits and parsed numeric expressions; {@code false} for opaque expressions
+##### getResolvedCount(...) -> OptionalInt
+- **Signature:** `public OptionalInt getResolvedCount()`
+- **Summary:** Returns the resolved row count when available.
+- **Contract:**
+  - Returns the resolved row count when available.
+- **Parameters:**
+  - (none)
+- **Returns:** the resolved count, or an empty optional for an opaque expression
+##### getResolvedOffset(...) -> OptionalInt
+- **Signature:** `public OptionalInt getResolvedOffset()`
+- **Summary:** Returns the resolved row offset when available.
+- **Contract:**
+  - Returns the resolved row offset when available.
+- **Parameters:**
+  - (none)
+- **Returns:** the resolved offset, or an empty optional for an opaque expression
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Gets the parameters for this LIMIT clause.
 - **Contract:**
   - <p> If the expression form ( {@link #Limit(String)} ) contains placeholders ( {@code ?} or named parameters), this class does not track them; the caller is responsible for binding those values separately when preparing the statement.
@@ -6454,7 +6587,9 @@ A utility class that provides a fluent API for creating SQL conditions based on 
 #### Public Static Methods
 ##### of(...) -> NamedProperty
 - **Signature:** `public static NamedProperty of(final String propName)`
-- **Summary:** Gets or creates a NamedProperty instance for the specified property name.
+- **Summary:** Gets or creates a NamedProperty instance for the specified property name using a bounded cache.
+- **Contract:**
+  - Callers must not rely on reference identity: entries may be evicted, and concurrent first access may create more than one instance.
 - **Parameters:**
   - `propName` (`String`) — the property name. Must not be null, empty, or blank. A {@code null} argument causes an {@code IllegalArgumentException} (null is treated like a blank string by the internal {@code Strings.isBlank} check).
 - **Returns:** a cached or new NamedProperty instance
@@ -6607,6 +6742,12 @@ A utility class that provides a fluent API for creating SQL conditions based on 
   - (none)
 - **Returns:** an IsNull condition for this property
 - **See also:** IsNull, Filters#isNull(String)
+##### isNullOrEmpty(...) -> Or
+- **Signature:** `public Or isNullOrEmpty()`
+- **Summary:** Creates a condition matching {@code null} or empty values for this property.
+- **Parameters:**
+  - (none)
+- **Returns:** an OR condition combining null and empty checks
 ##### isNotNull(...) -> IsNotNull
 - **Signature:** `public IsNotNull isNotNull()`
 - **Summary:** Creates an IS NOT NULL condition for this property.
@@ -6616,6 +6757,12 @@ A utility class that provides a fluent API for creating SQL conditions based on 
   - (none)
 - **Returns:** an IsNotNull condition for this property
 - **See also:** IsNotNull, Filters#isNotNull(String)
+##### isNotNullAndNotEmpty(...) -> And
+- **Signature:** `public And isNotNullAndNotEmpty()`
+- **Summary:** Creates a condition requiring this property to be both non-null and non-empty.
+- **Parameters:**
+  - (none)
+- **Returns:** an AND condition combining non-null and non-empty checks
 ##### isNaN(...) -> IsNaN
 - **Signature:** `public IsNaN isNaN()`
 - **Summary:** Creates an IS NAN condition for this property.
@@ -6856,20 +7003,6 @@ Represents a NATURAL JOIN clause in SQL queries.
   - <p> <b> Usage Examples: </b> </p> <pre> {@code // If 'orders' and 'customers' both have 'customer_id' column NaturalJoin join = new NaturalJoin("customers"); // SQL: NATURAL JOIN customers // Automatically joins on orders.customer_id = customers.customer_id } </pre>
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
-- **Signature:** `@Deprecated public NaturalJoin(final String joinEntity, final Condition cond)`
-- **Summary:** Creates a NATURAL JOIN clause for the specified table or entity.
-- **Contract:**
-  - This constructor exists only for API symmetry with the other {@link Join} subclasses; {@code cond} must be {@code null} .
-- **Parameters:**
-  - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `cond` (`Condition`) — must be {@code null} ; a NATURAL JOIN cannot carry an explicit condition
-- **Signature:** `@Deprecated public NaturalJoin(final Collection<String> joinEntities, final Condition cond)`
-- **Summary:** Creates a NATURAL JOIN clause with multiple tables/entities.
-- **Contract:**
-  - <p> As with the other constructors, a NATURAL JOIN cannot carry an explicit condition, so {@code cond} must be {@code null} ; it exists only for API symmetry with the other {@link Join} subclasses.
-- **Parameters:**
-  - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `cond` (`Condition`) — must be {@code null} ; a NATURAL JOIN cannot carry an explicit condition
 - **Signature:** `public NaturalJoin(final Collection<String> joinEntities)`
 - **Summary:** Creates a NATURAL JOIN clause with multiple tables/entities.
 - **Parameters:**
@@ -6889,12 +7022,12 @@ Represents a logical NOT condition in SQL queries.
 
 #### Public Instance Methods
 ##### <init>(...) -> void
-- **Signature:** `public Not(final Condition cond)`
+- **Signature:** `public Not(final Condition condition)`
 - **Summary:** Creates a new NOT condition that negates the specified condition.
 - **Contract:**
   - The resulting condition will be true when the input condition is false, and false when the input condition is true.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to be negated; must not be {@code null} . May be any composable condition, including simple comparisons, logical junctions ( {@link And} , {@link Or} ), or subquery conditions. It should not be a clause condition (such as {@link Where} or {@link Having} ), since those are not meant to be composed.
+  - `condition` (`Condition`) — the condition to be negated; must not be {@code null} . May be any composable condition, including simple comparisons, logical junctions ( {@link And} , {@link Or} ), or subquery conditions. It should not be a clause condition (such as {@link Where} or {@link Having} ), since those are not meant to be composed.
 
 ### Class NotBetween (com.landawn.abacus.query.condition.NotBetween)
 Represents a NOT BETWEEN condition in SQL queries.
@@ -6990,7 +7123,7 @@ Represents a NOT IN condition in SQL queries.
 - **Contract:**
   - Each element of {@code valueRows} must resolve to exactly {@code propNames.size()} values.
 - **Parameters:**
-  - `propNames` (`Collection<String>`) — the property/column names (must not be {@code null} or empty and must not contain {@code null} /blank names)
+  - `propNames` (`Collection<String>`) — the property/column names (must not be {@code null} or empty and must not contain {@code null} , empty, or blank names)
   - `valueRows` (`Collection<?>`) — the collection of value rows (must not be {@code null} or empty); each row must be non- {@code null} and resolve to exactly {@code propNames.size()} values. A row may be a {@link Collection} , {@link Iterable} , object array, {@link Map} or bean
 
 ### Class NotInSubQuery (com.landawn.abacus.query.condition.NotInSubQuery)
@@ -7056,10 +7189,10 @@ Represents an ON clause used in SQL JOIN operations.
 
 #### Public Instance Methods
 ##### <init>(...) -> void
-- **Signature:** `public On(final Condition cond)`
+- **Signature:** `public On(final Condition condition)`
 - **Summary:** Creates an ON clause with a custom condition.
 - **Parameters:**
-  - `cond` (`Condition`) — the join condition. Any non-clause, non- {@code null} condition is allowed, including {@link Expression} , {@link Equal} , {@link And} , {@link Or} , or {@link Between} . Must not be {@code null} .
+  - `condition` (`Condition`) — the join condition. Any non-clause, non- {@code null} condition is allowed, including {@link Expression} , {@link Equal} , {@link And} , {@link Or} , or {@link Between} . Must not be {@code null} .
 - **Signature:** `public On(final String leftPropName, final String rightPropName)`
 - **Summary:** Creates an ON clause for simple column equality between tables.
 - **Parameters:**
@@ -7130,12 +7263,12 @@ Represents a composable OR condition that combines multiple conditions.
 - **Parameters:**
   - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine with OR logic; may be {@code null} or empty
 ##### or(...) -> Or
-- **Signature:** `@Override public Or or(final Condition cond)`
+- **Signature:** `@Override public Or or(final Condition condition)`
 - **Summary:** Creates a new Or condition by adding another condition to this OR.
 - **Contract:**
   - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Build condition step by step Or or = new Or(Filters.equal("type", "A")) .or(Filters.equal("type", "B")) .or(Filters.equal("type", "C")); // SQL: ((type = 'A') OR (type = 'B') OR (type = 'C')) // Add conditions conditionally Or baseOr = new Or(Filters.equal("status", "active")); if (includeInactive) { baseOr = baseOr.or(Filters.equal("status", "inactive")); } if (includePending) { baseOr = baseOr.or(Filters.equal("status", "pending")); } // Results vary based on flags } </pre>
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to add to this OR. Must not be {@code null} and must be composable (i.e. not a {@link Criteria} , a {@link Clause} , an {@code ON} / {@code USING} connector, an {@code ANY} / {@code ALL} / {@code SOME} quantified-subquery operand, or an empty predicate).
+  - `condition` (`Condition`) — the condition to add to this OR. Must not be {@code null} and must be composable (i.e. not a {@link Criteria} , a {@link Clause} , an {@code ON} / {@code USING} connector, an {@code ANY} / {@code ALL} / {@code SOME} quantified-subquery operand, or an empty predicate).
 - **Returns:** a new {@link Or} condition containing all existing conditions plus the new one
 
 ### Class OrderBy (com.landawn.abacus.query.condition.OrderBy)
@@ -7152,13 +7285,13 @@ Represents an ORDER BY clause in SQL queries, used to specify the sort order of 
 
 #### Public Instance Methods
 ##### <init>(...) -> void
-- **Signature:** `public OrderBy(final Condition cond)`
+- **Signature:** `public OrderBy(final Condition condition)`
 - **Summary:** Creates an ORDER BY clause with a custom condition.
 - **Contract:**
   - <p> Use this constructor when you need to order by calculated values, case expressions, or other complex SQL expressions.
   - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Order by CASE expression Condition expr = Filters.expr("CASE WHEN status='urgent' THEN 1 ELSE 2 END"); OrderBy orderBy = new OrderBy(expr); // SQL: ORDER BY CASE WHEN status='urgent' THEN 1 ELSE 2 END // Order by calculated field Condition calcExpr = Filters.expr("(price * quantity) DESC"); OrderBy totalOrder = new OrderBy(calcExpr); // SQL: ORDER BY (price * quantity) DESC } </pre>
 - **Parameters:**
-  - `cond` (`Condition`) — the ordering condition. Must not be {@code null} .
+  - `condition` (`Condition`) — the ordering condition. Must not be {@code null} .
 - **See also:** Filters#expr(String)
 - **Signature:** `public OrderBy(final String... propNames)`
 - **Summary:** Creates an ORDER BY clause with multiple property names.
@@ -7168,10 +7301,10 @@ Represents an ORDER BY clause in SQL queries, used to specify the sort order of 
 - **Summary:** Creates an ORDER BY clause with multiple property names supplied as a collection.
 - **Parameters:**
   - `propNames` (`Collection<String>`) — the collection of property names to sort by, in iteration order. Must not be {@code null} or empty and must not contain {@code null} , empty, or blank elements.
-- **Signature:** `public OrderBy(final String propName, final SortDirection direction)`
+- **Signature:** `public OrderBy(final String propOrColumnName, final SortDirection direction)`
 - **Summary:** Creates an ORDER BY clause with a single property and sort direction.
 - **Parameters:**
-  - `propName` (`String`) — the property name to sort by. Must not be {@code null} , empty, or blank.
+  - `propOrColumnName` (`String`) — the property or column name to sort by. Must not be {@code null} , empty, or blank.
   - `direction` (`SortDirection`) — the sort direction (ASC or DESC). Must not be {@code null} .
 - **Signature:** `public OrderBy(final Collection<String> propNames, final SortDirection direction)`
 - **Summary:** Creates an ORDER BY clause with multiple properties and a single sort direction.
@@ -7205,16 +7338,16 @@ Represents a RIGHT JOIN clause in SQL queries.
 - **Summary:** Creates a RIGHT JOIN clause for the specified table or entity without a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
-- **Signature:** `public RightJoin(final String joinEntity, final Condition cond)`
+- **Signature:** `public RightJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a RIGHT JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `cond` (`Condition`) — the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
-- **Signature:** `public RightJoin(final Collection<String> joinEntities, final Condition cond)`
+  - `joinCondition` (`Condition`) — the condition appended after the join target. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
+- **Signature:** `public RightJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a RIGHT JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `cond` (`Condition`) — the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
+  - `joinCondition` (`Condition`) — the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using} ) when the SQL should include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null} .
 
 ### Class Some (com.landawn.abacus.query.condition.Some)
 Represents the SQL SOME operator for use with subqueries.
@@ -7244,7 +7377,7 @@ Represents the SQL SOME operator for use with subqueries.
 - **Returns:** the {@link SubQuery} supplied at construction time
 
 ### Class SubQuery (com.landawn.abacus.query.condition.SubQuery)
-Represents a subquery that can be used within SQL conditions.
+Represents raw query-expression text or a structured SELECT used within SQL conditions.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -7260,38 +7393,56 @@ Represents a subquery that can be used within SQL conditions.
 - **Signature:** `public SubQuery(final String sql)`
 - **Summary:** Creates a subquery with raw SQL.
 - **Parameters:**
-  - `sql` (`String`) — the SQL SELECT statement (must not be {@code null} , empty, or blank)
-- **Signature:** `public SubQuery(final String entityName, final String sql)`
+  - `sql` (`String`) — complete raw query-expression text (must not be {@code null} , empty, or blank)
+- **Signature:** `@Deprecated public SubQuery(final String entityName, final String sql)`
 - **Summary:** Creates a subquery with an entity name and raw SQL.
 - **Contract:**
   - The entity name is for reference only when using raw SQL and doesn't affect the query.
 - **Parameters:**
   - `entityName` (`String`) — the entity/table name; may be {@code null} or empty, in which case it is stored as the empty string
-  - `sql` (`String`) — the SQL SELECT statement (must not be {@code null} , empty, or blank)
-- **Signature:** `public SubQuery(final String entityName, final Collection<String> propNames, final Condition cond)`
+  - `sql` (`String`) — complete raw query-expression text (must not be {@code null} , empty, or blank)
+- **Signature:** `public SubQuery(final String entityName, final String propName, final Condition condition)`
+- **Summary:** Creates a structured single-property subquery for an entity name.
+- **Parameters:**
+  - `entityName` (`String`) — the entity/table name
+  - `propName` (`String`) — the property to select
+  - `condition` (`Condition`) — the optional query condition
+- **Signature:** `public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition)`
 - **Summary:** Creates a structured subquery with entity name, selected properties, and condition.
 - **Contract:**
   - If the condition is not already a {@link Criteria} or a clause (like WHERE), it will be automatically wrapped in a WHERE clause.
 - **Parameters:**
   - `entityName` (`String`) — the entity/table name (must not be {@code null} , empty, or blank)
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be {@code null} or empty and must not contain {@code null} , empty, or blank names)
-  - `cond` (`Condition`) — the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE). May be {@code null} to select without a WHERE clause.
-- **Signature:** `public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition cond)`
+  - `condition` (`Condition`) — the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE). May be {@code null} to select without a WHERE clause.
+- **Signature:** `public SubQuery(final Class<?> entityClass, final String propName, final Condition condition)`
+- **Summary:** Creates a structured single-property subquery for an entity class.
+- **Parameters:**
+  - `entityClass` (`Class<?>`) — the entity class
+  - `propName` (`String`) — the property to select
+  - `condition` (`Condition`) — the optional query condition
+- **Signature:** `public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition)`
 - **Summary:** Creates a structured subquery with entity class, selected properties, and condition.
 - **Contract:**
   - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Type-safe subquery construction SubQuery subQuery = Filters.subQuery(Product.class, Arrays.asList("id", "categoryId"), Filters.like("name", "%electronics%") ); // SQL: SELECT id, categoryId FROM <Product-table-name> WHERE name LIKE '%electronics%' // (the FROM target is resolved from the entity class via QueryUtil \\u2014 for a class without // table-mapping annotations it falls back to the class's simple name "Product"; column-name // mapping for the selected properties is also applied when available) // With complex conditions SubQuery activeProducts = Filters.subQuery(Product.class, Arrays.asList("id", "name", "price"), Filters.and( Filters.equal("active", true), Filters.between("price", 10, 100) ) ); } </pre>
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class (must not be {@code null} )
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be {@code null} or empty and must not contain {@code null} , empty, or blank names)
-  - `cond` (`Condition`) — the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE). May be {@code null} to select without a WHERE clause.
-##### sql(...) -> String
-- **Signature:** `public String sql()`
+  - `condition` (`Condition`) — the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE). May be {@code null} to select without a WHERE clause.
+##### getRawSql(...) -> String
+- **Signature:** `public String getRawSql()`
 - **Summary:** Returns the raw SQL script if this is a raw SQL subquery.
 - **Contract:**
   - Returns the raw SQL script if this is a raw SQL subquery.
 - **Parameters:**
   - (none)
 - **Returns:** the SQL script, or {@code null} if this is a structured subquery
+##### sql(...) -> String
+- **Signature:** `public String sql()`
+- **Summary:** Compatibility alias for {@link #getRawSql()} .
+- **Parameters:**
+  - (none)
+- **Returns:** the raw SQL text, or {@code null} for a structured subquery
 ##### getEntityName(...) -> String
 - **Signature:** `public String getEntityName()`
 - **Summary:** Gets the entity/table name for this subquery.
@@ -7320,11 +7471,12 @@ Represents a subquery that can be used within SQL conditions.
 - **Parameters:**
   - (none)
 - **Returns:** the WHERE condition, or {@code null} if no condition or raw SQL subquery
-##### getParameters(...) -> ImmutableList<Object>
-- **Signature:** `@Override public ImmutableList<Object> getParameters()`
+##### parameters(...) -> ImmutableList<Object>
+- **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Gets the list of parameter values from the condition.
 - **Contract:**
   - These are the parameter values that will be bound to the prepared statement placeholders when the query is executed.
+  - <p> <b> &#9888; &#65039; </b> For raw SQL subqueries this returns an empty list even when the raw text contains placeholders; raw bindings are managed by the caller.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameter values, or an empty immutable list if no condition or raw SQL subquery
@@ -7430,13 +7582,13 @@ Represents a USING clause in SQL JOIN operations.
 - **Contract:**
   - The columns must exist with identical names in both tables being joined.
 - **Parameters:**
-  - `columnNames` (`String[]`) — variable number of column names to join on. All columns must exist in both tables with identical names. Must not be {@code null} or empty, and individual names must not be {@code null} , empty, or blank. Names must be unqualified (cannot contain a {@code .} ).
+  - `columnNames` (`String[]`) — variable number of column names to join on. All columns must exist in both tables with identical names. Must not be {@code null} or empty, and individual names must not be {@code null} , empty, or blank. Names must be unqualified (cannot contain a {@code .} ) and must each be a single column name (cannot contain {@code ,} , {@code (} , or {@code )} ).
 - **Signature:** `@Deprecated public Using(final Collection<String> columnNames)`
 - **Summary:** Creates a USING clause with a collection of column names.
 - **Contract:**
   - This constructor is useful when column names are determined dynamically or retrieved from metadata/configuration.
 - **Parameters:**
-  - `columnNames` (`Collection<String>`) — collection of column names to join on. Must not be {@code null} or empty, and individual names must not be {@code null} , empty, or blank. Names must be unqualified (cannot contain a {@code .} ). Order matters for some databases; use a {@code LinkedHashSet} or {@code List} to preserve insertion order.
+  - `columnNames` (`Collection<String>`) — collection of column names to join on. Must not be {@code null} or empty, and individual names must not be {@code null} , empty, or blank. Names must be unqualified (cannot contain a {@code .} ) and must each be a single column name (cannot contain {@code ,} , {@code (} , or {@code )} ). Order matters for some databases; use a {@code LinkedHashSet} or {@code List} to preserve insertion order.
 ##### getColumnNames(...) -> ImmutableList<String>
 - **Signature:** `public ImmutableList<String> getColumnNames()`
 - **Summary:** Gets the validated column names this USING clause joins on, in the order they were supplied.
@@ -7458,8 +7610,8 @@ Represents a WHERE clause in SQL queries.
 
 #### Public Instance Methods
 ##### <init>(...) -> void
-- **Signature:** `public Where(final Condition cond)`
+- **Signature:** `public Where(final Condition condition)`
 - **Summary:** Creates a WHERE clause with the specified condition.
 - **Parameters:**
-  - `cond` (`Condition`) — the condition to apply in the WHERE clause. Must not be {@code null} .
+  - `condition` (`Condition`) — the condition to apply in the WHERE clause. Must not be {@code null} .
 

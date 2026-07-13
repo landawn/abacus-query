@@ -61,7 +61,7 @@ import lombok.experimental.Accessors;
  * @see Dsl#forDialect(SqlDialect)
  * @see AbstractQueryBuilder
  */
-@Builder
+@Builder(toBuilder = true)
 @Value
 @Accessors(fluent = true)
 public class SqlDialect {
@@ -157,7 +157,7 @@ public class SqlDialect {
      * {@link #version()} can be compared numerically via {@link #isVersionAtLeast(String)} and
      * {@link #isVersionAtMost(String)}.</p>
      *
-     * @param name the database product name, such as {@code "MySQL"} or {@code "PostgreSQL"}
+     * @param name the nonblank database product name, such as {@code "MySQL"} or {@code "PostgreSQL"}
      * @param version the database product version, such as {@code "9.7"} or {@code "18"}; a {@code null}
      *        version is normalized to an empty string, so {@link #version()} never returns {@code null}.
      *        Comparable via {@link #isVersionAtLeast(String)} / {@link #isVersionAtMost(String)}
@@ -165,12 +165,18 @@ public class SqlDialect {
     public record ProductInfo(String name, String version) {
 
         /**
-         * Canonical constructor that normalizes a {@code null} {@code version} to an empty string, so
+         * Canonical constructor that requires a nonblank product name and normalizes a {@code null} {@code version} to an empty string, so
          * {@link #version()} never returns {@code null} and an absent version has a single canonical
          * representation. This keeps {@code equals}/{@code hashCode} consistent whether the version was
          * omitted (via {@link #of(String)}) or passed as {@code null}.
+         *
+         * @throws IllegalArgumentException if {@code name} is {@code null}, empty, or blank
          */
         public ProductInfo {
+            if (Strings.isBlank(name)) {
+                throw new IllegalArgumentException("Database product name must not be null, empty, or blank");
+            }
+
             version = version == null ? "" : version;
         }
 
@@ -199,7 +205,6 @@ public class SqlDialect {
          * Returns whether this descriptor names MySQL. The match is a case-insensitive substring test
          * against {@link #name()}. This is distinct from {@link #isMariaDB()}, although both share the
          * same {@code LIMIT}/{@code OFFSET} pagination and backtick-quoting behavior in query builders.
-         * Returns {@code false} when {@link #name()} is {@code null}.
          *
          * @return {@code true} if {@link #name()} contains {@code "mysql"} (case-insensitively)
          */
@@ -209,7 +214,7 @@ public class SqlDialect {
 
         /**
          * Returns whether this descriptor names MariaDB. The match is a case-insensitive substring test
-         * against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}.
+         * against {@link #name()}..
          *
          * @return {@code true} if {@link #name()} contains {@code "mariadb"} (case-insensitively)
          */
@@ -220,7 +225,6 @@ public class SqlDialect {
         /**
          * Returns whether this descriptor names PostgreSQL. The match is a case-insensitive substring
          * test against {@link #name()} (the substring {@code "postgres"} also matches {@code "PostgreSQL"}).
-         * Returns {@code false} when {@link #name()} is {@code null}.
          *
          * @return {@code true} if {@link #name()} contains {@code "postgres"} (case-insensitively)
          */
@@ -231,7 +235,7 @@ public class SqlDialect {
         /**
          * Returns whether this descriptor names Microsoft SQL Server. The match is a case-insensitive
          * substring test against {@link #name()}, so raw JDBC values such as {@code "Microsoft SQL Server"}
-         * are recognized. Returns {@code false} when {@link #name()} is {@code null}.
+         * are recognized..
          *
          * @return {@code true} if {@link #name()} contains {@code "sql server"} or {@code "sqlserver"} (case-insensitively)
          */
@@ -243,7 +247,7 @@ public class SqlDialect {
          * Returns whether this descriptor names Oracle Database. The match is a case-insensitive
          * substring test against {@link #name()}, so raw JDBC values from
          * {@code DatabaseMetaData.getDatabaseProductName()} such as {@code "Oracle Database 19c"}
-         * are recognized. Returns {@code false} when {@link #name()} is {@code null}.
+         * are recognized..
          *
          * @return {@code true} if {@link #name()} contains {@code "oracle"} (case-insensitively)
          */
@@ -253,7 +257,7 @@ public class SqlDialect {
 
         /**
          * Returns whether this descriptor names IBM DB2. The match is a case-insensitive substring
-         * test against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}.
+         * test against {@link #name()}..
          *
          * @return {@code true} if {@link #name()} contains {@code "db2"} (case-insensitively)
          */
@@ -263,7 +267,7 @@ public class SqlDialect {
 
         /**
          * Returns whether this descriptor names H2 Database. The match is a case-insensitive substring
-         * test against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}.
+         * test against {@link #name()}..
          *
          * @return {@code true} if {@link #name()} contains {@code "h2"} (case-insensitively)
          */
@@ -273,7 +277,7 @@ public class SqlDialect {
 
         /**
          * Returns whether this descriptor names SQLite. The match is a case-insensitive substring test
-         * against {@link #name()}. Returns {@code false} when {@link #name()} is {@code null}.
+         * against {@link #name()}..
          *
          * @return {@code true} if {@link #name()} contains {@code "sqlite"} (case-insensitively)
          */

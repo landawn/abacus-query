@@ -59,20 +59,20 @@ public class SomeTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_EmptyForRawSQL() {
+    public void testParameters_EmptyForRawSQL() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM items");
         Some condition = new Some(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertTrue(params.isEmpty());
     }
 
     @Test
-    public void testGetParameters_WithConditionParameters() {
+    public void testParameters_WithConditionParameters() {
         Condition whereCondition = new Equal("approved", true);
         SubQuery subQuery = Filters.subQuery("requests", Arrays.asList("amount"), whereCondition);
         Some condition = new Some(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertEquals(1, params.size());
         assertEquals(true, params.get(0));
@@ -202,7 +202,7 @@ public class SomeTest extends TestBase {
         And andCondition = new And(Arrays.asList(new Equal("available", true), new GreaterThan("stock", 10)));
         SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), andCondition);
         Some condition = new Some(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(2, params.size());
     }
 
@@ -240,25 +240,25 @@ public class SomeTest extends TestBase {
         Some some = Filters.some(subQuery);
 
         Assertions.assertEquals(subQuery, some.getCondition());
-        Assertions.assertEquals(2, some.getParameters().size());
+        Assertions.assertEquals(2, some.parameters().size());
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), Filters.eq("category", "electronics"));
         Some some = Filters.some(subQuery);
 
-        Assertions.assertEquals(subQuery.getParameters(), some.getParameters());
-        Assertions.assertEquals(1, some.getParameters().size());
-        Assertions.assertEquals("electronics", some.getParameters().get(0));
+        Assertions.assertEquals(subQuery.parameters(), some.parameters());
+        Assertions.assertEquals(1, some.parameters().size());
+        Assertions.assertEquals("electronics", some.parameters().get(0));
     }
 
     @Test
-    public void testGetParametersWithRawSqlSubQuery() {
+    public void testParametersWithRawSqlSubQuery() {
         SubQuery subQuery = Filters.subQuery("SELECT value FROM config");
         Some some = Filters.some(subQuery);
 
-        Assertions.assertTrue(some.getParameters().isEmpty());
+        Assertions.assertTrue(some.parameters().isEmpty());
     }
 
     @Test
@@ -305,8 +305,8 @@ public class SomeTest extends TestBase {
         Some some = Filters.some(competitorPrices);
 
         // Would be used like: price < SOME (SELECT price FROM competitor_products WHERE category = 'electronics')
-        Assertions.assertEquals(1, some.getParameters().size());
-        Assertions.assertEquals("electronics", some.getParameters().get(0));
+        Assertions.assertEquals(1, some.parameters().size());
+        Assertions.assertEquals("electronics", some.parameters().get(0));
     }
 
     @Test
@@ -317,6 +317,6 @@ public class SomeTest extends TestBase {
         Some some = Filters.some(deptBudgets);
 
         // Would be used like: project_cost < SOME (SELECT budget FROM departments WHERE active = true AND fiscal_year > 2023)
-        Assertions.assertEquals(2, some.getParameters().size());
+        Assertions.assertEquals(2, some.parameters().size());
     }
 }

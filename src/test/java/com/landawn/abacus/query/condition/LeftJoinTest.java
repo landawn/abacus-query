@@ -68,15 +68,15 @@ public class LeftJoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_Empty() {
+    public void testParameters_Empty() {
         LeftJoin join = new LeftJoin("orders");
-        assertTrue(join.getParameters().isEmpty());
+        assertTrue(join.parameters().isEmpty());
     }
 
     @Test
-    public void testGetParameters_WithCondition() {
+    public void testParameters_WithCondition() {
         LeftJoin join = new LeftJoin("orders o", new Equal("status", "active"));
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
@@ -134,7 +134,7 @@ public class LeftJoinTest extends TestBase {
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("customers.id", "o.customer_id"), new Equal("o.status", "active")));
         LeftJoin join = new LeftJoin("orders o", andCondition);
-        assertEquals(2, join.getParameters().size());
+        assertEquals(2, join.parameters().size());
     }
 
     @Test
@@ -156,7 +156,7 @@ public class LeftJoinTest extends TestBase {
         And multipleConditions = new And(
                 Arrays.asList(new Equal("orders.id", "oi.order_id"), new Equal("oi.status", "active"), new GreaterThan("oi.created_date", "2023-01-01")));
         LeftJoin join = new LeftJoin("order_items oi", multipleConditions);
-        assertEquals(3, join.getParameters().size());
+        assertEquals(3, join.parameters().size());
     }
 
     @Test
@@ -219,11 +219,11 @@ public class LeftJoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Condition condition = Filters.and(Filters.eq("o.customer_id", Filters.expr("c.id")), Filters.eq("o.status", "completed"));
         LeftJoin join = new LeftJoin("orders o", condition);
 
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
 
         Assertions.assertNotNull(params);
         Assertions.assertEquals(1, params.size());
@@ -231,9 +231,9 @@ public class LeftJoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersNoCondition() {
+    public void testParametersNoCondition() {
         LeftJoin join = new LeftJoin("orders");
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
 
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());

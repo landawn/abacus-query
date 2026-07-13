@@ -36,10 +36,10 @@ public class ComposableCellTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         final TestComposableCell cell = new TestComposableCell(Operator.NOT, Filters.between("age", 18, 65));
 
-        assertEquals(Arrays.asList(18, 65), cell.getParameters());
+        assertEquals(Arrays.asList(18, 65), cell.parameters());
     }
 
     @Test
@@ -90,7 +90,7 @@ public class ComposableCellTest extends TestBase {
         final EmptyComposableCell right = new EmptyComposableCell();
 
         assertTrue(left.getCondition() == null);
-        assertTrue(left.getParameters().isEmpty());
+        assertTrue(left.parameters().isEmpty());
         assertEquals(left, right);
         assertEquals(left.hashCode(), right.hashCode());
     }

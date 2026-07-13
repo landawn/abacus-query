@@ -32,14 +32,14 @@ public class ExpressionTest extends TestBase {
         Expression expr = new Expression(literal);
 
         assertNotNull(expr);
-        assertEquals(literal, expr.getLiteral());
+        assertEquals(literal, expr.literal());
     }
 
     @Test
-    public void testGetLiteral() {
+    public void testLiteral() {
         Expression expr = new Expression("price * 1.1");
 
-        assertEquals("price * 1.1", expr.getLiteral());
+        assertEquals("price * 1.1", expr.literal());
     }
 
     @Test
@@ -638,46 +638,46 @@ public class ExpressionTest extends TestBase {
 
     // Utility methods
     @Test
-    public void testFormalizeString() {
-        String result = Expression.normalize("text");
+    public void testRenderValueString() {
+        String result = Expression.renderValue("text");
 
         assertEquals("'text'", result);
     }
 
     @Test
-    public void testFormalizeNumber() {
-        String result = Expression.normalize(123);
+    public void testRenderValueNumber() {
+        String result = Expression.renderValue(123);
 
         assertEquals("123", result);
     }
 
     @Test
-    public void testFormalizeBoolean() {
-        String result = Expression.normalize(true);
+    public void testRenderValueBoolean() {
+        String result = Expression.renderValue(true);
 
         assertEquals("true", result);
     }
 
     @Test
-    public void testFormalizeNull() {
-        String result = Expression.normalize(null);
+    public void testRenderValueNull() {
+        String result = Expression.renderValue(null);
 
         assertEquals("null", result);
     }
 
     @Test
-    public void testFormalizeExpression() {
+    public void testRenderValueExpression() {
         Expression expr = new Expression("column_name");
-        String result = Expression.normalize(expr);
+        String result = Expression.renderValue(expr);
 
         assertEquals("column_name", result);
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Expression expr = new Expression("price * 1.1");
 
-        List<Object> params = expr.getParameters();
+        List<Object> params = expr.parameters();
 
         assertNotNull(params);
         assertEquals(0, params.size());
@@ -772,7 +772,7 @@ public class ExpressionTest extends TestBase {
     //        Expression.Expr expr = new Expression.Expr("test");
     //
     //        assertNotNull(expr);
-    //        assertEquals("test", expr.getLiteral());
+    //        assertEquals("test", expr.literal());
     //    }
 
     // Removed: testBt() - bt() method has been removed. Use between() instead.
@@ -904,22 +904,22 @@ public class ExpressionTest extends TestBase {
     }
 
     @Test
-    public void testFormalizeCharSequence() {
-        String result = Expression.normalize(new StringBuilder("test"));
+    public void testRenderValueCharSequence() {
+        String result = Expression.renderValue(new StringBuilder("test"));
 
         assertEquals("'test'", result);
     }
 
     @Test
-    public void testFormalizeDouble() {
-        String result = Expression.normalize(3.14);
+    public void testRenderValueDouble() {
+        String result = Expression.renderValue(3.14);
 
         assertEquals("3.14", result);
     }
 
     @Test
-    public void testFormalizeLong() {
-        String result = Expression.normalize(999L);
+    public void testRenderValueLong() {
+        String result = Expression.renderValue(999L);
 
         assertEquals("999", result);
     }
@@ -943,7 +943,7 @@ public class ExpressionTest extends TestBase {
     public void testConstructor() {
         Expression expr = new Expression("price * 0.9");
         Assertions.assertNotNull(expr);
-        Assertions.assertEquals("price * 0.9", expr.getLiteral());
+        Assertions.assertEquals("price * 0.9", expr.literal());
         Assertions.assertEquals(Operator.EMPTY, expr.operator());
     }
 
@@ -953,23 +953,23 @@ public class ExpressionTest extends TestBase {
         Expression expr2 = Expression.of("CURRENT_TIMESTAMP");
 
         Assertions.assertSame(expr1, expr2); // Should be cached
-        Assertions.assertEquals("CURRENT_TIMESTAMP", expr1.getLiteral());
+        Assertions.assertEquals("CURRENT_TIMESTAMP", expr1.literal());
     }
 
     @Test
-    public void testFormalize() {
-        Assertions.assertEquals("'text'", Expression.normalize("text"));
-        Assertions.assertEquals("123", Expression.normalize(123));
-        Assertions.assertEquals("null", Expression.normalize(null));
+    public void testRenderValue() {
+        Assertions.assertEquals("'text'", Expression.renderValue("text"));
+        Assertions.assertEquals("123", Expression.renderValue(123));
+        Assertions.assertEquals("null", Expression.renderValue(null));
 
         Expression expr = Expression.of("CURRENT_DATE");
-        Assertions.assertEquals("CURRENT_DATE", Expression.normalize(expr));
+        Assertions.assertEquals("CURRENT_DATE", Expression.renderValue(expr));
     }
 
     @Test
-    public void testNormalizeSubQueryCondition() {
+    public void testRenderValueSubQueryCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
-        Assertions.assertEquals("(SELECT id FROM users)", Expression.normalize(subQuery));
+        Assertions.assertEquals("(SELECT id FROM users)", Expression.renderValue(subQuery));
     }
 
     @Test
@@ -993,7 +993,7 @@ public class ExpressionTest extends TestBase {
     //    @Test
     //    public void testExprClass() {
     //        Expression.Expr expr = new Expression.Expr("test expression");
-    //        Assertions.assertEquals("test expression", expr.getLiteral());
+    //        Assertions.assertEquals("test expression", expr.literal());
     //        Assertions.assertTrue(expr instanceof Expression);
     //    }
 
@@ -1001,16 +1001,16 @@ public class ExpressionTest extends TestBase {
     public void testDefaultConstructor_EmptyState_Batch2() {
         Expression expr = new Expression();
 
-        Assertions.assertNull(expr.getLiteral());
+        Assertions.assertNull(expr.literal());
         Assertions.assertEquals("null", expr.toString());
-        Assertions.assertEquals("null", Expression.normalize(expr));
+        Assertions.assertEquals("null", Expression.renderValue(expr));
     }
 
     @Test
-    public void testNormalize_ConditionWithoutSubQuery_Batch2() {
-        String normalized = Expression.normalize(Filters.eq("id", 1));
+    public void testRenderValue_ConditionWithoutSubQuery_Batch2() {
+        String rendered = Expression.renderValue(Filters.eq("id", 1));
 
-        Assertions.assertEquals("id = 1", normalized);
+        Assertions.assertEquals("id = 1", rendered);
     }
 
     @Test
@@ -1084,17 +1084,17 @@ public class ExpressionTest extends TestBase {
     // ---------------------------------------------------------------------
 
     /**
-     * Regression (Pass 3): {@link Expression#normalize(Object)} must reject NaN / Infinity
+     * Regression (Pass 3): {@link Expression#renderValue(Object)} must reject NaN / Infinity
      * because they have no portable SQL literal form (the previous behavior emitted a bare
      * {@code NaN} or {@code Infinity} token that most dialects reject).
      */
     @Test
-    public void testNormalize_RejectsNaNAndInfinity_Pass3() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.normalize(Double.NaN));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.normalize(Double.POSITIVE_INFINITY));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.normalize(Double.NEGATIVE_INFINITY));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.normalize(Float.NaN));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.normalize(Float.POSITIVE_INFINITY));
+    public void testRenderValue_RejectsNaNAndInfinity_Pass3() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.renderValue(Double.NaN));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.renderValue(Double.POSITIVE_INFINITY));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.renderValue(Double.NEGATIVE_INFINITY));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.renderValue(Float.NaN));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.renderValue(Float.POSITIVE_INFINITY));
     }
 
     /**
@@ -1103,9 +1103,9 @@ public class ExpressionTest extends TestBase {
      * parsing). The escape helper must keep the literal balanced.
      */
     @Test
-    public void testNormalize_TrailingBackslashStaysBalanced_Pass3() {
+    public void testRenderValue_TrailingBackslashStaysBalanced_Pass3() {
         String input = "x" + (char) 92; // x followed by one backslash
-        String result = Expression.normalize(input);
+        String result = Expression.renderValue(input);
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.startsWith("'") && result.endsWith("'"), "Output must be quoted, got: " + result);
         String body = result.substring(1, result.length() - 1);
@@ -1122,12 +1122,12 @@ public class ExpressionTest extends TestBase {
      * via {@code Object.toString()}.
      */
     @Test
-    public void testNormalize_DateLikeValuesAreQuoted_Pass3() {
-        String dateResult = Expression.normalize(new java.util.Date(0L));
+    public void testRenderValue_DateLikeValuesAreQuoted_Pass3() {
+        String dateResult = Expression.renderValue(new java.util.Date(0L));
         Assertions.assertNotNull(dateResult);
         Assertions.assertTrue(dateResult.startsWith("'") && dateResult.endsWith("'"), "Date literal must be quoted, got: " + dateResult);
 
-        String ldtResult = Expression.normalize(java.time.LocalDateTime.of(2024, 1, 1, 0, 0));
+        String ldtResult = Expression.renderValue(java.time.LocalDateTime.of(2024, 1, 1, 0, 0));
         Assertions.assertNotNull(ldtResult);
         Assertions.assertTrue(ldtResult.startsWith("'") && ldtResult.endsWith("'"), "LocalDateTime literal must be quoted, got: " + ldtResult);
         Assertions.assertTrue(ldtResult.contains("2024"));

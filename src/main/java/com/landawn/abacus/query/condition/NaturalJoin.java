@@ -106,65 +106,6 @@ public class NaturalJoin extends Join {
     }
 
     /**
-     * Creates a NATURAL JOIN clause for the specified table or entity.
-     * The join automatically uses all columns with matching names between the tables.
-     *
-     * <p>A NATURAL JOIN derives its join predicate implicitly and therefore does not accept an
-     * explicit condition. This constructor exists only for API symmetry with the other {@link Join}
-     * subclasses; {@code cond} must be {@code null}. To apply an additional filter, place it in the
-     * enclosing query's {@code WHERE} clause instead.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * NaturalJoin join = new NaturalJoin("orders", null);
-     * // SQL: NATURAL JOIN orders
-     * }</pre>
-     *
-     * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is non-{@code null}
-     * @deprecated a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and
-     *             throws for any other value. Use {@link #NaturalJoin(String)} instead, and place any additional
-     *             filter in the enclosing query's {@code WHERE} clause.
-     */
-    @Deprecated
-    public NaturalJoin(final String joinEntity, final Condition cond) {
-        super(Operator.NATURAL_JOIN, joinEntity, validateNaturalJoinCondition(cond));
-    }
-
-    /**
-     * Creates a NATURAL JOIN clause with multiple tables/entities.
-     * The rendered SQL is {@code NATURAL JOIN (t1, t2, ...)};
-     * because most databases do not accept a comma-separated list after {@code NATURAL JOIN}, this
-     * form is rarely directly executable and is provided mainly for symmetry with the other join
-     * subclasses. Prefer chaining individual {@link NaturalJoin} clauses for portable SQL.
-     *
-     * <p>As with the other constructors, a NATURAL JOIN cannot carry an explicit condition, so
-     * {@code cond} must be {@code null}; it exists only for API symmetry with the other {@link Join}
-     * subclasses.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Join customers, orders, and products naturally
-     * List<String> tables = Arrays.asList("customers", "orders", "products");
-     * NaturalJoin join = new NaturalJoin(tables, null);
-     * // SQL: NATURAL JOIN (customers, orders, products)
-     * }</pre>
-     *
-     * @param joinEntities the collection of tables or entities to join with.
-     * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
-     *                                  or if {@code cond} is non-{@code null}
-     * @deprecated a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and
-     *             throws for any other value. Use {@link #NaturalJoin(Collection)} instead, and place any additional
-     *             filter in the enclosing query's {@code WHERE} clause.
-     */
-    @Deprecated
-    public NaturalJoin(final Collection<String> joinEntities, final Condition cond) {
-        super(Operator.NATURAL_JOIN, joinEntities, validateNaturalJoinCondition(cond));
-    }
-
-    /**
      * Creates a NATURAL JOIN clause with multiple tables/entities.
      * The rendered SQL is {@code NATURAL JOIN (t1, t2, ...)};
      * because most databases do not accept a comma-separated list after {@code NATURAL JOIN}, this
@@ -172,7 +113,7 @@ public class NaturalJoin extends Join {
      * subclasses. Prefer chaining individual {@link NaturalJoin} clauses for portable SQL.
      *
      * <p>Because a NATURAL JOIN derives its join predicate implicitly, no condition is needed; this is
-     * a convenience equivalent to {@code new NaturalJoin(joinEntities, null)}.
+     * a convenience for joining the supplied entities without an explicit condition.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -189,11 +130,4 @@ public class NaturalJoin extends Join {
         super(Operator.NATURAL_JOIN, joinEntities, null);
     }
 
-    private static Condition validateNaturalJoinCondition(final Condition cond) {
-        if (cond != null) {
-            throw new IllegalArgumentException("NATURAL JOIN does not support explicit join conditions");
-        }
-
-        return null;
-    }
 }

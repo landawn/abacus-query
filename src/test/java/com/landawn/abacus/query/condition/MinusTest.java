@@ -36,10 +36,10 @@ public class MinusTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         SubQuery subQuery = Filters.subQuery("sales", List.of("product_id"), new Equal("region", "WEST"));
         Minus minus = new Minus(subQuery);
-        List<Object> params = minus.getParameters();
+        List<Object> params = minus.parameters();
         assertEquals(1, params.size());
         assertEquals("WEST", params.get(0));
     }
@@ -112,7 +112,7 @@ public class MinusTest extends TestBase {
     public void testFindUnassignedEmployees() {
         SubQuery assignedEmployees = Filters.subQuery("project_assignments", List.of("employee_id"), new Equal("status", "ACTIVE"));
         Minus minus = new Minus(assignedEmployees);
-        assertEquals(1, minus.getParameters().size());
+        assertEquals(1, minus.parameters().size());
     }
 
     @Test
@@ -155,15 +155,15 @@ public class MinusTest extends TestBase {
         Minus minus = Filters.minus(subQuery);
 
         Assertions.assertEquals(subQuery, minus.getCondition());
-        Assertions.assertEquals(2, minus.getParameters().size());
+        Assertions.assertEquals(2, minus.parameters().size());
     }
 
     @Test
-    public void testGetParametersWithRawSqlSubQuery() {
+    public void testParametersWithRawSqlSubQuery() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM archived_records");
         Minus minus = Filters.minus(subQuery);
 
-        Assertions.assertTrue(minus.getParameters().isEmpty());
+        Assertions.assertTrue(minus.parameters().isEmpty());
     }
 
     @Test
@@ -200,7 +200,7 @@ public class MinusTest extends TestBase {
         SubQuery recentCustomers = Filters.subQuery("orders", Arrays.asList("customer_id"), Filters.gt("order_date", "2023-01-01"));
         Minus minus = Filters.minus(recentCustomers);
 
-        Assertions.assertEquals(1, minus.getParameters().size());
-        Assertions.assertEquals("2023-01-01", minus.getParameters().get(0));
+        Assertions.assertEquals(1, minus.parameters().size());
+        Assertions.assertEquals("2023-01-01", minus.parameters().get(0));
     }
 }

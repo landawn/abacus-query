@@ -36,10 +36,10 @@ public class UnionTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         SubQuery subQuery = Filters.subQuery("customers", List.of("*"), new Equal("status", "active"));
         Union union = new Union(subQuery);
-        List<Object> params = union.getParameters();
+        List<Object> params = union.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
@@ -140,8 +140,8 @@ public class UnionTest extends TestBase {
         Union union = Filters.union(subQuery);
 
         // Test inherited methods from Clause
-        Assertions.assertNotNull(union.getParameters());
-        Assertions.assertEquals(subQuery.getParameters(), union.getParameters());
+        Assertions.assertNotNull(union.parameters());
+        Assertions.assertEquals(subQuery.parameters(), union.parameters());
     }
 
     @Test
@@ -151,7 +151,7 @@ public class UnionTest extends TestBase {
         Union union = Filters.union(subQuery);
 
         Assertions.assertEquals(subQuery, union.getCondition());
-        Assertions.assertEquals(2, union.getParameters().size());
+        Assertions.assertEquals(2, union.parameters().size());
     }
 
     @Test

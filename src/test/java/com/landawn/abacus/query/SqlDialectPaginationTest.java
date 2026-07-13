@@ -54,11 +54,10 @@ public class SqlDialectPaginationTest extends TestBase {
     }
 
     @Test
-    public void testNullNameAndUnknownProductReturnFalse() {
-        final ProductInfo nullName = ProductInfo.of(null);
-        assertFalse(nullName.isOracle());
-        assertFalse(nullName.isMySQL());
-        assertFalse(nullName.isSQLServer());
+    public void testInvalidNamesAreRejectedAndUnknownProductReturnsFalse() {
+        assertThrows(IllegalArgumentException.class, () -> ProductInfo.of(null));
+        assertThrows(IllegalArgumentException.class, () -> ProductInfo.of(""));
+        assertThrows(IllegalArgumentException.class, () -> ProductInfo.of(" "));
 
         final ProductInfo unknown = ProductInfo.of("FancyNewDB");
         assertFalse(unknown.isOracle());
@@ -250,9 +249,7 @@ public class SqlDialectPaginationTest extends TestBase {
         sql = Dsl.PSC.select("*").from("users").limit(10).offset(20).build().query();
         assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
 
-        // Blank product name is treated the same as no product info.
-        sql = dslFor(" ").select("*").from("users").limit(10).build().query();
-        assertEquals("SELECT * FROM users LIMIT 10", sql);
+        assertThrows(IllegalArgumentException.class, () -> dslFor(" "));
     }
 
     @Test
@@ -365,6 +362,17 @@ public class SqlDialectPaginationTest extends TestBase {
         final ProductInfo nameAndVersion = ProductInfo.of("Oracle", "19c");
         assertEquals("Oracle", nameAndVersion.name());
         assertEquals("19c", nameAndVersion.version());
+    }
+
+    @Test
+    public void testDialectToBuilderAndProductNameValidation() {
+        SqlDialect base = SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).build();
+        SqlDialect variant = base.toBuilder().identifierQuote(SqlDialect.IdentifierQuote.BACKTICK).build();
+        assertEquals(NamingPolicy.SNAKE_CASE, variant.namingPolicy());
+        assertEquals(SqlDialect.IdentifierQuote.BACKTICK, variant.identifierQuote());
+
+        assertThrows(IllegalArgumentException.class, () -> new ProductInfo(null, "1"));
+        assertThrows(IllegalArgumentException.class, () -> ProductInfo.of(" "));
     }
 
     public static class QdpUser {

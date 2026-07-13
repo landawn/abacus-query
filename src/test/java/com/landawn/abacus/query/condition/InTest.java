@@ -97,11 +97,11 @@ public class InTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         List<String> values = Arrays.asList("active", "pending", "approved");
         In condition = new In("status", values);
 
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(3, params.size());
         assertEquals("active", params.get(0));
         assertEquals("pending", params.get(1));
@@ -109,21 +109,21 @@ public class InTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_Integers() {
+    public void testParameters_Integers() {
         List<Integer> values = Arrays.asList(10, 20, 30);
         In condition = new In("id", values);
 
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(3, params.size());
         assertEquals(Integer.valueOf(10), params.get(0));
     }
 
     @Test
-    public void testGetParameters_WithNestedConditionValues() {
+    public void testParameters_WithNestedConditionValues() {
         Equal nested = Filters.equal("status", "active");
         In condition = new In("id", Arrays.asList(nested, 2));
 
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(Arrays.asList("active", 2), params);
     }
 
@@ -223,7 +223,7 @@ public class InTest extends TestBase {
         List<String> statuses = Arrays.asList("active", "pending", "approved");
         In statusCheck = new In("status", statuses);
 
-        assertEquals(3, statusCheck.getParameters().size());
+        assertEquals(3, statusCheck.parameters().size());
         assertTrue(statusCheck.toString(NamingPolicy.NO_CHANGE).contains("IN"));
     }
 
@@ -233,7 +233,7 @@ public class InTest extends TestBase {
         List<Integer> userIds = Arrays.asList(1, 2, 3, 5, 8);
         In userFilter = new In("user_id", userIds);
 
-        assertEquals(5, userFilter.getParameters().size());
+        assertEquals(5, userFilter.parameters().size());
     }
 
     @Test
@@ -242,7 +242,7 @@ public class InTest extends TestBase {
         Set<String> categories = new HashSet<>(Arrays.asList("electronics", "computers"));
         In categoryFilter = new In("category", categories);
 
-        assertEquals(2, categoryFilter.getParameters().size());
+        assertEquals(2, categoryFilter.parameters().size());
     }
 
     @Test
@@ -262,7 +262,7 @@ public class InTest extends TestBase {
         List<Integer> largeList = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         In condition = new In("id", largeList);
 
-        assertEquals(10, condition.getParameters().size());
+        assertEquals(10, condition.parameters().size());
     }
 
     @Test
@@ -271,7 +271,7 @@ public class InTest extends TestBase {
         In cond2 = new In("type", Arrays.asList("premium", "gold"));
         And result = cond1.and(cond2);
         assertNotNull(result);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -280,7 +280,7 @@ public class InTest extends TestBase {
         In cond2 = new In("status", Arrays.asList("pending"));
         Or result = cond1.or(cond2);
         assertNotNull(result);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -391,7 +391,7 @@ public class InTest extends TestBase {
         In condition = new In("id", values);
 
         Assertions.assertEquals(1000, condition.getValues().size());
-        Assertions.assertEquals(1000, condition.getParameters().size());
+        Assertions.assertEquals(1000, condition.parameters().size());
     }
 
     @Test
@@ -441,10 +441,10 @@ public class InTest extends TestBase {
     }
 
     @Test
-    public void testMultiColumn_GetParameters_FlattensRowMajor() {
+    public void testMultiColumn_Parameters_FlattensRowMajor() {
         In condition = new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(3, 4)));
 
-        assertEquals(Arrays.asList(1, 2, 3, 4), condition.getParameters());
+        assertEquals(Arrays.asList(1, 2, 3, 4), condition.parameters());
     }
 
     @Test
@@ -487,7 +487,7 @@ public class InTest extends TestBase {
         assertEquals(Arrays.asList("a"), new ArrayList<>(condition.getPropNames()));
         assertEquals("a", condition.getPropName());
         assertEquals(Arrays.asList(Arrays.asList(1), Arrays.asList(2)), condition.getValues());
-        assertEquals(Arrays.asList(1, 2), condition.getParameters());
+        assertEquals(Arrays.asList(1, 2), condition.parameters());
         assertEquals("(a) IN ((1), (2))", condition.toString(NamingPolicy.NO_CHANGE));
 
         In scalar = new In("a", Arrays.asList(1, 2));
@@ -526,7 +526,7 @@ public class InTest extends TestBase {
         assertEquals(2, condition.getValues().size());
         assertEquals(Arrays.asList("John", "Doe"), condition.getValues().get(0));
         assertEquals(Arrays.asList("Jane", "Roe"), condition.getValues().get(1));
-        assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), condition.getParameters());
+        assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), condition.parameters());
         assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.NO_CHANGE));
     }
 
@@ -581,7 +581,7 @@ public class InTest extends TestBase {
                 Arrays.asList(Arrays.asList("John", "Doe"), new Object[] { "Max", "Coe" }, mapRow, beanRow));
 
         assertEquals(4, condition.getValues().size());
-        assertEquals(Arrays.asList("John", "Doe", "Max", "Coe", "Jane", "Roe", "Sam", "Poe"), condition.getParameters());
+        assertEquals(Arrays.asList("John", "Doe", "Max", "Coe", "Jane", "Roe", "Sam", "Poe"), condition.parameters());
     }
 
     @Test

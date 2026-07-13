@@ -66,24 +66,34 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
+    public void testSafeValueAccessors() {
+        Binary condition = new Binary("age", Operator.EQUAL, 30);
+        assertEquals(30, condition.propValue());
+        assertEquals(Integer.valueOf(30), condition.getPropValue(Integer.class));
+        assertThrows(ClassCastException.class, () -> condition.getPropValue(String.class));
+        assertThrows(NullPointerException.class, () -> condition.getPropValue(null));
+        assertNull(new Binary("age", Operator.EQUAL, null).getPropValue(Integer.class));
+    }
+
+    @Test
     public void testGetOperator() {
         Binary condition = new Binary("field", Operator.NOT_EQUAL, "value");
         assertEquals(Operator.NOT_EQUAL, condition.operator());
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Binary condition = new Binary("status", Operator.EQUAL, "active");
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
     @Test
-    public void testGetParameters_WithCondition() {
+    public void testParameters_WithCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         Binary condition = new Binary("userId", Operator.IN, subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
     }
 
@@ -211,7 +221,7 @@ public class BinaryTest extends TestBase {
         Binary cond1 = new Binary("a", Operator.EQUAL, 1);
         Binary cond2 = new Binary("b", Operator.EQUAL, 2);
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -219,7 +229,7 @@ public class BinaryTest extends TestBase {
         Binary cond1 = new Binary("a", Operator.EQUAL, 1);
         Binary cond2 = new Binary("b", Operator.EQUAL, 2);
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -284,21 +294,21 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersWithLiteralValue() {
+    public void testParametersWithLiteralValue() {
         Binary binary = Filters.binary("score", Operator.LESS_THAN, 80.5);
-        List<Object> params = binary.getParameters();
+        List<Object> params = binary.parameters();
 
         Assertions.assertEquals(1, params.size());
         Assertions.assertEquals(80.5, params.get(0));
     }
 
     @Test
-    public void testGetParametersWithConditionValue() {
+    public void testParametersWithConditionValue() {
         SubQuery subQuery = Filters.subQuery("SELECT MAX(price) FROM products");
         Binary binary = Filters.binary("price", Operator.EQUAL, subQuery);
 
-        List<Object> params = binary.getParameters();
-        Assertions.assertEquals(subQuery.getParameters(), params);
+        List<Object> params = binary.parameters();
+        Assertions.assertEquals(subQuery.parameters(), params);
     }
 
     @Test
@@ -413,9 +423,9 @@ public class BinaryTest extends TestBase {
         Binary notIn = Filters.binary("prop", Operator.NOT_IN, Arrays.asList("a", "b"));
 
         Assertions.assertEquals("prop IN (1, 2, 3)", in.toString());
-        Assertions.assertEquals(Arrays.asList(1, 2, 3), in.getParameters());
+        Assertions.assertEquals(Arrays.asList(1, 2, 3), in.parameters());
         Assertions.assertEquals("prop NOT IN ('a', 'b')", notIn.toString());
-        Assertions.assertEquals(Arrays.asList("a", "b"), notIn.getParameters());
+        Assertions.assertEquals(Arrays.asList("a", "b"), notIn.parameters());
     }
 
     @Test
@@ -428,7 +438,7 @@ public class BinaryTest extends TestBase {
         values.clear();
 
         assertEquals("id IN (1)", in.toString());
-        assertEquals(Arrays.asList(1), in.getParameters());
+        assertEquals(Arrays.asList(1), in.parameters());
         assertEquals(hash, in.hashCode());
     }
 
@@ -437,7 +447,7 @@ public class BinaryTest extends TestBase {
         final Binary in = Filters.binary("id", Operator.IN, new int[] { 1, 2 });
 
         assertEquals("id IN (1, 2)", in.toString());
-        assertEquals(Arrays.asList(1, 2), in.getParameters());
+        assertEquals(Arrays.asList(1, 2), in.parameters());
 
         assertThrows(IllegalArgumentException.class, () -> Filters.binary("id", Operator.IN, new int[0]));
         assertThrows(IllegalArgumentException.class, () -> Filters.binary("id", Operator.IN, 1));
@@ -467,7 +477,7 @@ public class BinaryTest extends TestBase {
         Equal condition = Filters.eq("deletedAt", null);
 
         assertEquals("deletedAt IS NULL", condition.toString());
-        assertTrue(condition.getParameters().isEmpty());
+        assertTrue(condition.parameters().isEmpty());
     }
 
     @Test
@@ -475,7 +485,7 @@ public class BinaryTest extends TestBase {
         NotEqual condition = Filters.ne("deletedAt", null);
 
         assertEquals("deletedAt IS NOT NULL", condition.toString());
-        assertTrue(condition.getParameters().isEmpty());
+        assertTrue(condition.parameters().isEmpty());
     }
 
     @Test
@@ -483,7 +493,7 @@ public class BinaryTest extends TestBase {
         Is condition = Filters.is("deletedAt", null);
 
         assertEquals("deletedAt IS NULL", condition.toString());
-        assertTrue(condition.getParameters().isEmpty());
+        assertTrue(condition.parameters().isEmpty());
     }
 
     @Test
@@ -491,7 +501,7 @@ public class BinaryTest extends TestBase {
         IsNot condition = Filters.isNot("deletedAt", null);
 
         assertEquals("deletedAt IS NOT NULL", condition.toString());
-        assertTrue(condition.getParameters().isEmpty());
+        assertTrue(condition.parameters().isEmpty());
     }
 
     @Test
@@ -500,7 +510,7 @@ public class BinaryTest extends TestBase {
                 .where(Filters.and(Filters.eq("deletedAt", null), Filters.is("archivedAt", null), Filters.eq("status", "ACTIVE")))
                 .build();
 
-        List<Object> parameters = criteria.getParameters();
+        List<Object> parameters = criteria.parameters();
 
         assertEquals(1, parameters.size());
         assertEquals("ACTIVE", parameters.get(0));
@@ -516,11 +526,11 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
-    public void testDefaultConstructorGetParameters() {
+    public void testDefaultConstructorParameters() {
         Binary binary = new Binary();
 
-        Assertions.assertNotNull(binary.getParameters());
-        Assertions.assertTrue(binary.getParameters().isEmpty());
+        Assertions.assertNotNull(binary.parameters());
+        Assertions.assertTrue(binary.parameters().isEmpty());
     }
 
     @Test
@@ -535,15 +545,15 @@ public class BinaryTest extends TestBase {
     }
 
     /**
-     * Second-pass locking test: when propValue is a SubQuery, getParameters() must delegate
-     * to the SubQuery's getParameters() (not return the SubQuery as a single parameter).
+     * Second-pass locking test: when propValue is a SubQuery, parameters() must delegate
+     * to the SubQuery's parameters() (not return the SubQuery as a single parameter).
      */
     @Test
-    public void testGetParametersDelegatesToSubQueryPropValue() {
+    public void testParametersDelegatesToSubQueryPropValue() {
         SubQuery sub = new SubQuery("users", java.util.Arrays.asList("id"), Filters.eq("active", true));
         Binary binary = new Binary("userId", Operator.EQUAL, sub);
 
-        List<Object> params = binary.getParameters();
+        List<Object> params = binary.parameters();
 
         // SubQuery's condition has one parameter (true). Binary must surface that, not the SubQuery itself.
         assertEquals(1, params.size());

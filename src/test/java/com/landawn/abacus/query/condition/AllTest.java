@@ -59,20 +59,20 @@ public class AllTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_EmptyForRawSQL() {
+    public void testParameters_EmptyForRawSQL() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
         All condition = new All(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertTrue(params.isEmpty());
     }
 
     @Test
-    public void testGetParameters_WithConditionParameters() {
+    public void testParameters_WithConditionParameters() {
         Condition whereCondition = new Equal("category", "Premium");
         SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), whereCondition);
         All condition = new All(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertEquals(1, params.size());
         assertEquals("Premium", params.get(0));
@@ -197,7 +197,7 @@ public class AllTest extends TestBase {
         And andCondition = new And(Arrays.asList(new Equal("active", true), new Equal("category", "Electronics")));
         SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), andCondition);
         All condition = new All(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(2, params.size());
     }
 
@@ -239,11 +239,11 @@ public class AllTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price"), Filters.and(Filters.eq("category", "Premium"), Filters.eq("active", true)));
         All all = Filters.all(subQuery);
 
-        var params = all.getParameters();
+        var params = all.parameters();
         Assertions.assertEquals(2, params.size());
         Assertions.assertTrue(params.contains("Premium"));
         Assertions.assertTrue(params.contains(true));
@@ -300,7 +300,7 @@ public class AllTest extends TestBase {
                 Filters.and(Filters.eq("region", "Europe"), Filters.eq("product_type", "Premium"), Filters.eq("active", true)));
         All allCompetitorPrices = Filters.all(competitorPrices);
 
-        var params = allCompetitorPrices.getParameters();
+        var params = allCompetitorPrices.parameters();
         Assertions.assertEquals(3, params.size());
         Assertions.assertTrue(params.contains("Europe"));
         Assertions.assertTrue(params.contains("Premium"));

@@ -36,10 +36,10 @@ public class ExceptTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         SubQuery subQuery = Filters.subQuery("SELECT skill_id FROM job_requirements WHERE job_id = 123");
         Except except = new Except(subQuery);
-        List<Object> params = except.getParameters();
+        List<Object> params = except.parameters();
         // Raw SQL SubQuery has no parameters
         assertEquals(0, params.size());
     }
@@ -105,7 +105,7 @@ public class ExceptTest extends TestBase {
     public void testFindMissingRecords() {
         SubQuery soldProducts = Filters.subQuery("order_items", List.of("product_id"), new GreaterThan("order_date", "2024-01-01"));
         Except except = new Except(soldProducts);
-        assertEquals(1, except.getParameters().size());
+        assertEquals(1, except.parameters().size());
     }
 
     @Test
@@ -164,7 +164,7 @@ public class ExceptTest extends TestBase {
         Except activeWithoutOrders = Filters.except(customersWithOrders);
 
         Assertions.assertNotNull(activeWithoutOrders);
-        var params = activeWithoutOrders.getParameters();
+        var params = activeWithoutOrders.parameters();
         Assertions.assertTrue(params.contains("2023-01-01"));
 
         // Find products not sold recently
@@ -180,7 +180,7 @@ public class ExceptTest extends TestBase {
         Except nonManagement = Filters.except(managers);
 
         Assertions.assertNotNull(nonManagement);
-        params = nonManagement.getParameters();
+        params = nonManagement.parameters();
         Assertions.assertEquals(3, params.size());
     }
 
@@ -221,7 +221,7 @@ public class ExceptTest extends TestBase {
 
         Except except = Filters.except(complexSubQuery);
 
-        var params = except.getParameters();
+        var params = except.parameters();
         Assertions.assertEquals(4, params.size());
         Assertions.assertTrue(params.contains("Remote"));
         Assertions.assertTrue(params.contains("contractor"));

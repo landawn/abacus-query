@@ -59,7 +59,7 @@ import com.landawn.abacus.util.NamingPolicy;
  *     .where(combined);
  *
  * // Get parameters for prepared statements
- * ImmutableList<Object> params = combined.getParameters();   // [18, "active"]
+ * ImmutableList<Object> params = combined.parameters();   // [18, "active"]
  * }</pre>
  * 
  * @see Filters
@@ -98,19 +98,19 @@ public interface Condition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition eq = Filters.equal("name", "John");
-     * ImmutableList<Object> params = eq.getParameters();   // ["John"]
+     * ImmutableList<Object> params = eq.parameters();   // ["John"]
      *
      * Condition between = Filters.between("age", 18, 65);
-     * ImmutableList<Object> rangeParams = between.getParameters();   // [18, 65]
+     * ImmutableList<Object> rangeParams = between.parameters();   // [18, 65]
      *
      * Condition combined = Filters.and(eq, between);
-     * ImmutableList<Object> allParams = combined.getParameters();   // ["John", 18, 65]
+     * ImmutableList<Object> allParams = combined.parameters();   // ["John", 18, 65]
      * }</pre>
      *
      * @return an immutable list of parameter values; never {@code null} (an empty list is returned
      *         when there are no parameters)
      */
-    ImmutableList<Object> getParameters();
+    ImmutableList<Object> parameters();
 
     /**
      * Returns a string representation of this condition using the specified naming policy.

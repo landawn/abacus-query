@@ -65,10 +65,10 @@ public final class QueryUtil {
      * 
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * boolean isValid = PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("column_name").matches();
+     * boolean isValid = SIMPLE_COLUMN_NAME_PATTERN.matcher("column_name").matches();
      * }</pre>
      */
-    public static final Pattern PATTERN_FOR_SIMPLE_COLUMN_NAME = Pattern.compile("^[a-zA-Z0-9_-]+$");
+    public static final Pattern SIMPLE_COLUMN_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
 
     private QueryUtil() {
         // utility class — no instances

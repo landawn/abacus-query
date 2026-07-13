@@ -49,20 +49,20 @@ public class HavingTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Having having = new Having(Filters.gt("SUM(amount)", 1000));
 
-        assertNotNull(having.getParameters());
-        assertEquals(1, having.getParameters().size());
-        assertEquals(1000, having.getParameters().get(0));
+        assertNotNull(having.parameters());
+        assertEquals(1, having.parameters().size());
+        assertEquals(1000, having.parameters().get(0));
     }
 
     @Test
-    public void testGetParametersWithMultipleConditions() {
+    public void testParametersWithMultipleConditions() {
         Condition condition = Filters.and(Filters.gt("COUNT(*)", 5), Filters.lt("AVG(price)", 100));
         Having having = new Having(condition);
 
-        assertEquals(2, having.getParameters().size());
+        assertEquals(2, having.parameters().size());
     }
 
     @Test
@@ -122,8 +122,8 @@ public class HavingTest extends TestBase {
         Having having = new Having(Filters.lt("MIN(age)", 18));
 
         assertNotNull(having);
-        assertEquals(1, having.getParameters().size());
-        assertEquals(18, having.getParameters().get(0));
+        assertEquals(1, having.parameters().size());
+        assertEquals(18, having.parameters().get(0));
     }
 
     @Test
@@ -132,7 +132,7 @@ public class HavingTest extends TestBase {
         Having having = new Having(complex);
 
         assertNotNull(having);
-        assertEquals(3, having.getParameters().size());
+        assertEquals(3, having.parameters().size());
     }
 
     @Test
@@ -175,9 +175,9 @@ public class HavingTest extends TestBase {
     public void testWithBetweenCondition() {
         Having having = new Having(Filters.between("AVG(age)", 25, 40));
 
-        assertEquals(2, having.getParameters().size());
-        assertEquals(25, having.getParameters().get(0));
-        assertEquals(40, having.getParameters().get(1));
+        assertEquals(2, having.parameters().size());
+        assertEquals(25, having.parameters().get(0));
+        assertEquals(40, having.parameters().get(1));
     }
 
     @Test
@@ -185,7 +185,7 @@ public class HavingTest extends TestBase {
         Condition condition = Filters.and(Filters.gt("COUNT(*)", 5), Filters.gt("SUM(amount)", 10000), Filters.lt("AVG(price)", 500));
         Having having = new Having(condition);
 
-        assertEquals(3, having.getParameters().size());
+        assertEquals(3, having.parameters().size());
         String result = having.toString();
         assertTrue(result.contains("COUNT"));
         assertTrue(result.contains("SUM"));
@@ -197,7 +197,7 @@ public class HavingTest extends TestBase {
         Having having = new Having(Filters.isNotNull("COUNT(*)"));
 
         assertNotNull(having);
-        assertEquals(0, having.getParameters().size());
+        assertEquals(0, having.parameters().size());
     }
 
     @Test
@@ -227,7 +227,7 @@ public class HavingTest extends TestBase {
     @Test
     public void testWithIsNull() {
         Having having = new Having(Filters.isNull("MAX(deletedAt)"));
-        assertEquals(0, having.getParameters().size());
+        assertEquals(0, having.parameters().size());
     }
 
     @Test
@@ -241,11 +241,11 @@ public class HavingTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersWithMultipleValues() {
+    public void testParametersWithMultipleValues() {
         Condition innerCondition = Filters.between("AVG(price)", 100, 500);
         Having having = new Having(innerCondition);
 
-        List<Object> params = having.getParameters();
+        List<Object> params = having.parameters();
         Assertions.assertNotNull(params);
         Assertions.assertEquals(2, params.size());
         Assertions.assertEquals(100, params.get(0));

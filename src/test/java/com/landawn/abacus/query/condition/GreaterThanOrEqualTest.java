@@ -70,17 +70,17 @@ public class GreaterThanOrEqualTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("status", "active");
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
     @Test
-    public void testGetParameters_MultipleValues() {
+    public void testParameters_MultipleValues() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("count", 42);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
@@ -158,7 +158,7 @@ public class GreaterThanOrEqualTest extends TestBase {
         GreaterThanOrEqual cond1 = new GreaterThanOrEqual("a", 1);
         GreaterThanOrEqual cond2 = new GreaterThanOrEqual("b", 2);
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -166,7 +166,7 @@ public class GreaterThanOrEqualTest extends TestBase {
         GreaterThanOrEqual cond1 = new GreaterThanOrEqual("a", 1);
         GreaterThanOrEqual cond2 = new GreaterThanOrEqual("b", 2);
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test

@@ -22,6 +22,16 @@ public class AbstractBetweenTest extends TestBase {
         TestAbstractBetween(final String propName, final Object minValue, final Object maxValue) {
             super(propName, Operator.BETWEEN, minValue, maxValue);
         }
+
+        TestAbstractBetween(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
+            super(propName, operator, minValue, maxValue);
+        }
+    }
+
+    @Test
+    public void testRejectsUnsupportedOperator() {
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("age", Operator.EQUAL, 18, 65));
+        org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () -> new TestAbstractBetween("age", null, 18, 65));
     }
 
     private static final class EmptyAbstractBetween extends AbstractBetween {
@@ -53,19 +63,19 @@ public class AbstractBetweenTest extends TestBase {
 
     // Verifies literal and nested-condition parameter expansion.
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         final TestAbstractBetween condition = new TestAbstractBetween("age", 18, 65);
 
-        assertEquals(Arrays.asList(18, 65), condition.getParameters());
+        assertEquals(Arrays.asList(18, 65), condition.parameters());
     }
 
     @Test
-    public void testGetParameters_ConditionValues() {
+    public void testParameters_ConditionValues() {
         final SubQuery minValue = Filters.subQuery("scores", Arrays.asList("min_score"), Filters.eq("status", "ACTIVE"));
         final SubQuery maxValue = Filters.subQuery("scores", Arrays.asList("max_score"), Filters.eq("status", "INACTIVE"));
         final TestAbstractBetween condition = new TestAbstractBetween("score", minValue, maxValue);
 
-        final List<Object> parameters = condition.getParameters();
+        final List<Object> parameters = condition.parameters();
 
         assertEquals(Arrays.asList("ACTIVE", "INACTIVE"), parameters);
     }
@@ -143,7 +153,7 @@ public class AbstractBetweenTest extends TestBase {
         assertNull(left.getPropName());
         assertNull(left.getMinValue());
         assertNull(left.getMaxValue());
-        assertEquals(Arrays.asList(null, null), left.getParameters());
+        assertEquals(Arrays.asList(null, null), left.parameters());
         assertEquals(left, right);
         assertEquals(left.hashCode(), right.hashCode());
     }

@@ -35,7 +35,7 @@ import com.landawn.abacus.util.Strings;
  * and set operations like {@link Union}/{@link UnionAll}/{@link Intersect}/{@link Except}/{@link Minus}).
  *
  * <p>Instances are effectively immutable once built: the constituent conditions list is final
- * and never mutated post-construction, and all collection accessors ({@link #getConditions()},
+ * and never mutated post-construction, and all collection accessors ({@link #conditions()},
  * {@link #getJoins()}, {@link #getSetOperations()}, {@link #findConditions(Operator)}) return
  * unmodifiable lists.</p>
  *
@@ -295,16 +295,16 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria.builder().build().getConditions();   // returns [] (empty list)
+     * Criteria.builder().build().conditions();   // returns [] (empty list)
      *
      * Criteria c = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").build();
-     * c.getConditions().size();                      // returns 2
-     * c.getConditions().clear();                     // throws UnsupportedOperationException (unmodifiable view)
+     * c.conditions().size();                      // returns 2
+     * c.conditions().clear();                     // throws UnsupportedOperationException (unmodifiable view)
      * }</pre>
      *
      * @return an immutable list of all conditions
      */
-    public ImmutableList<Condition> getConditions() {
+    public ImmutableList<Condition> conditions() {
         ImmutableList<Condition> view = cachedConditionsView;
 
         if (view == null) {
@@ -352,17 +352,17 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria.builder().build().getParameters();   // returns [] (empty list)
+     * Criteria.builder().build().parameters();   // returns [] (empty list)
      *
      * Criteria c = Criteria.builder().where(Filters.eq("status", "active")).limit(10).build();
-     * c.getParameters();   // returns ["active"] (the literal LIMIT count carries no parameter)
+     * c.parameters();   // returns ["active"] (the literal LIMIT count carries no parameter)
      * }</pre>
      *
      * @return an immutable list of all parameters collected from the constituent clauses;
      *         empty if this criteria has no conditions or if none of the conditions carry parameters
      */
     @Override
-    public ImmutableList<Object> getParameters() {
+    public ImmutableList<Object> parameters() {
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
@@ -429,34 +429,34 @@ public class Criteria extends AbstractCondition {
 
         if (joins != null) {
             for (final Join join : joins) {
-                parameters.addAll(join.getParameters());
+                parameters.addAll(join.parameters());
             }
         }
 
         if (where != null) {
-            parameters.addAll(where.getParameters());
+            parameters.addAll(where.parameters());
         }
 
         if (groupBy != null) {
-            parameters.addAll(groupBy.getParameters());
+            parameters.addAll(groupBy.parameters());
         }
 
         if (having != null) {
-            parameters.addAll(having.getParameters());
+            parameters.addAll(having.parameters());
         }
 
         if (setOperations != null) {
             for (final Condition cond : setOperations) {
-                parameters.addAll(cond.getParameters());
+                parameters.addAll(cond.parameters());
             }
         }
 
         if (orderBy != null) {
-            parameters.addAll(orderBy.getParameters());
+            parameters.addAll(orderBy.parameters());
         }
 
         if (limit != null) {
-            parameters.addAll(limit.getParameters());
+            parameters.addAll(limit.parameters());
         }
 
         return ImmutableList.wrap(parameters);
@@ -888,13 +888,13 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param cond the join condition
+         * @param joinCondition the join condition
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code condition}
          *                                  is not valid for a JOIN
          */
-        public Builder join(final String joinEntity, final Condition cond) {
-            addConditions(new Join(joinEntity, cond));
+        public Builder join(final String joinEntity, final Condition joinCondition) {
+            addConditions(new Join(joinEntity, joinCondition));
 
             return this;
         }
@@ -917,13 +917,13 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param cond the join condition
+         * @param joinCondition the join condition
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, or if {@code condition} is not valid for a JOIN
          */
-        public Builder join(final Collection<String> joinEntities, final Condition cond) {
-            addConditions(new Join(joinEntities, cond));
+        public Builder join(final Collection<String> joinEntities, final Condition joinCondition) {
+            addConditions(new Join(joinEntities, joinCondition));
 
             return this;
         }
@@ -969,13 +969,13 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param cond the join condition
+         * @param joinCondition the join condition
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code condition}
          *                                  is not valid for a JOIN
          */
-        public Builder innerJoin(final String joinEntity, final Condition cond) {
-            addConditions(new InnerJoin(joinEntity, cond));
+        public Builder innerJoin(final String joinEntity, final Condition joinCondition) {
+            addConditions(new InnerJoin(joinEntity, joinCondition));
 
             return this;
         }
@@ -997,13 +997,13 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param cond the join condition
+         * @param joinCondition the join condition
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, or if {@code condition} is not valid for a JOIN
          */
-        public Builder innerJoin(final Collection<String> joinEntities, final Condition cond) {
-            addConditions(new InnerJoin(joinEntities, cond));
+        public Builder innerJoin(final Collection<String> joinEntities, final Condition joinCondition) {
+            addConditions(new InnerJoin(joinEntities, joinCondition));
 
             return this;
         }
@@ -1045,13 +1045,13 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param cond the join condition
+         * @param joinCondition the join condition
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code condition}
          *                                  is not valid for a JOIN
          */
-        public Builder leftJoin(final String joinEntity, final Condition cond) {
-            addConditions(new LeftJoin(joinEntity, cond));
+        public Builder leftJoin(final String joinEntity, final Condition joinCondition) {
+            addConditions(new LeftJoin(joinEntity, joinCondition));
 
             return this;
         }
@@ -1073,13 +1073,13 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param cond the join condition
+         * @param joinCondition the join condition
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, or if {@code condition} is not valid for a JOIN
          */
-        public Builder leftJoin(final Collection<String> joinEntities, final Condition cond) {
-            addConditions(new LeftJoin(joinEntities, cond));
+        public Builder leftJoin(final Collection<String> joinEntities, final Condition joinCondition) {
+            addConditions(new LeftJoin(joinEntities, joinCondition));
 
             return this;
         }
@@ -1121,13 +1121,13 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param cond the join condition
+         * @param joinCondition the join condition
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code condition}
          *                                  is not valid for a JOIN
          */
-        public Builder rightJoin(final String joinEntity, final Condition cond) {
-            addConditions(new RightJoin(joinEntity, cond));
+        public Builder rightJoin(final String joinEntity, final Condition joinCondition) {
+            addConditions(new RightJoin(joinEntity, joinCondition));
 
             return this;
         }
@@ -1149,13 +1149,13 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param cond the join condition
+         * @param joinCondition the join condition
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, or if {@code condition} is not valid for a JOIN
          */
-        public Builder rightJoin(final Collection<String> joinEntities, final Condition cond) {
-            addConditions(new RightJoin(joinEntities, cond));
+        public Builder rightJoin(final Collection<String> joinEntities, final Condition joinCondition) {
+            addConditions(new RightJoin(joinEntities, joinCondition));
 
             return this;
         }
@@ -1197,13 +1197,13 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param cond the join condition
+         * @param joinCondition the join condition
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code condition}
          *                                  is not valid for a JOIN
          */
-        public Builder fullJoin(final String joinEntity, final Condition cond) {
-            addConditions(new FullJoin(joinEntity, cond));
+        public Builder fullJoin(final String joinEntity, final Condition joinCondition) {
+            addConditions(new FullJoin(joinEntity, joinCondition));
 
             return this;
         }
@@ -1225,13 +1225,13 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param cond the join condition
+         * @param joinCondition the join condition
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, or if {@code condition} is not valid for a JOIN
          */
-        public Builder fullJoin(final Collection<String> joinEntities, final Condition cond) {
-            addConditions(new FullJoin(joinEntities, cond));
+        public Builder fullJoin(final Collection<String> joinEntities, final Condition joinCondition) {
+            addConditions(new FullJoin(joinEntities, joinCondition));
 
             return this;
         }
@@ -1259,57 +1259,14 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Adds a CROSS JOIN with a condition to this criteria.
+         * Adds a conditionless CROSS JOIN for multiple entities.
          *
-         * <p><b>Usage Examples:</b></p>
-         * <pre>{@code
-         * // A non-On/Using condition (e.g. Equal) has the ON keyword prepended by the join.
-         * Criteria c = Criteria.builder()
-         *     .crossJoin("colors", Filters.eq("active", true))
-         *     .build();
-         * c.toString(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors ON active = true"
-         *
-         * // An On condition renders with the ON keyword.
-         * Criteria c2 = Criteria.builder().crossJoin("colors", Filters.on("a", "b")).build();
-         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors ON a = b"
-         * }</pre>
-         *
-         * @param joinEntity the table or entity to join
-         * @param cond the join condition
-         * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond}
-         *                                  is not valid for a JOIN
+         * @param joinEntities the entity/table names to cross join
+         * @return this builder
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a null, empty, or blank name
          */
-        public Builder crossJoin(final String joinEntity, final Condition cond) {
-            addConditions(new CrossJoin(joinEntity, cond));
-
-            return this;
-        }
-
-        /**
-         * Adds a CROSS JOIN with multiple entities and a condition.
-         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
-         *
-         * <p><b>Usage Examples:</b></p>
-         * <pre>{@code
-         * Criteria c = Criteria.builder()
-         *     .crossJoin(Arrays.asList("a", "b"), Filters.on("x", "y"))
-         *     .build();
-         * c.toString(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN (a, b) ON x = y"
-         *
-         * // A single-element collection is rendered without parentheses.
-         * Criteria c2 = Criteria.builder().crossJoin(Arrays.asList("a"), Filters.on("x", "y")).build();
-         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN a ON x = y"
-         * }</pre>
-         *
-         * @param joinEntities the collection of tables/entities to join
-         * @param cond the join condition
-         * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code cond} is not valid for a JOIN
-         */
-        public Builder crossJoin(final Collection<String> joinEntities, final Condition cond) {
-            addConditions(new CrossJoin(joinEntities, cond));
+        public Builder crossJoin(final Collection<String> joinEntities) {
+            addConditions(new CrossJoin(joinEntities));
 
             return this;
         }
@@ -1337,64 +1294,14 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Adds a NATURAL JOIN to this criteria. A NATURAL JOIN derives its join predicate implicitly
-         * from columns with matching names, so it does <b>not</b> accept an explicit condition;
-         * {@code cond} must be {@code null}. This overload exists only for API symmetry with the other
-         * join methods. To apply an additional filter, place it in the {@code WHERE} clause instead.
+         * Adds a conditionless NATURAL JOIN for multiple entities.
          *
-         * <p><b>Usage Examples:</b></p>
-         * <pre>{@code
-         * Criteria c = Criteria.builder().naturalJoin("employees", null).build();
-         * c.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees"
-         *
-         * // Any non-null condition is rejected.
-         * Criteria.builder().naturalJoin("employees", Filters.eq("status", "active"));   // throws IllegalArgumentException
-         * }</pre>
-         *
-         * @param joinEntity the table or entity to join
-         * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
-         * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is non-{@code null}
-         * @deprecated a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and
-         *             throws for any other value. Use {@link #naturalJoin(String)} instead, and place any additional
-         *             filter in the {@code WHERE} clause.
+         * @param joinEntities the entity/table names to natural join
+         * @return this builder
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a null, empty, or blank name
          */
-        @Deprecated
-        public Builder naturalJoin(final String joinEntity, final Condition cond) {
-            addConditions(new NaturalJoin(joinEntity, cond));
-
-            return this;
-        }
-
-        /**
-         * Adds a NATURAL JOIN with multiple entities to this criteria.
-         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
-         * A NATURAL JOIN derives its join predicate implicitly, so it does <b>not</b> accept an explicit
-         * condition; {@code cond} must be {@code null}. This overload exists only for API symmetry with the
-         * other join methods.
-         *
-         * <p><b>Usage Examples:</b></p>
-         * <pre>{@code
-         * Criteria c = Criteria.builder().naturalJoin(Arrays.asList("a", "b"), null).build();
-         * c.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN (a, b)"
-         *
-         * // A single-element collection is rendered without parentheses.
-         * Criteria c2 = Criteria.builder().naturalJoin(Arrays.asList("a"), null).build();
-         * c2.toString(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN a"
-         * }</pre>
-         *
-         * @param joinEntities the collection of tables/entities to join
-         * @param cond must be {@code null}; a NATURAL JOIN cannot carry an explicit condition
-         * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code cond} is non-{@code null}
-         * @deprecated a NATURAL JOIN cannot carry an explicit condition, so this overload accepts only {@code null} and
-         *             throws for any other value. Use the condition-less {@link NaturalJoin#NaturalJoin(Collection)}
-         *             constructor instead, and place any additional filter in the {@code WHERE} clause.
-         */
-        @Deprecated
-        public Builder naturalJoin(final Collection<String> joinEntities, final Condition cond) {
-            addConditions(new NaturalJoin(joinEntities, cond));
+        public Builder naturalJoin(final Collection<String> joinEntities) {
+            addConditions(new NaturalJoin(joinEntities));
 
             return this;
         }
@@ -1415,24 +1322,24 @@ public class Criteria extends AbstractCondition {
          * Criteria.builder().where(new GroupBy("x"));   // throws IllegalArgumentException (wrong clause)
          * }</pre>
          *
-         * @param cond the WHERE condition (must not be {@code null}); if its operator is already
+         * @param condition the WHERE condition (must not be {@code null}); if its operator is already
          *             {@link Operator#WHERE} it is added directly, otherwise it is wrapped in a {@link Where}
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
+         * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
          *                                  {@link Expression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, or is a clause condition
          *                                  with an operator other than {@code WHERE}
          */
-        public Builder where(final Condition cond) {
-            N.checkArgNotNull(cond, "cond");
+        public Builder where(final Condition condition) {
+            N.checkArgNotNull(condition, "condition");
 
-            validateClauseCondition(cond, Operator.WHERE, "where");
+            validateClauseCondition(condition, Operator.WHERE, "where");
 
-            if (cond.operator() == Operator.WHERE) {
-                addConditions(cond);
+            if (condition.operator() == Operator.WHERE) {
+                addConditions(condition);
             } else {
-                addConditions(new Where(cond));
+                addConditions(new Where(condition));
             }
 
             return this;
@@ -1476,12 +1383,12 @@ public class Criteria extends AbstractCondition {
          * // SQL: GROUP BY category ASC
          * }</pre>
          *
-         * @param propName the property name to group by ascending
+         * @param propOrColumnName the property or column name to group by ascending
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
          */
-        public Builder groupByAsc(final String propName) {
-            addConditions(Filters.groupByAsc(propName));
+        public Builder groupByAsc(final String propOrColumnName) {
+            addConditions(Filters.groupByAsc(propOrColumnName));
 
             return this;
         }
@@ -1541,12 +1448,12 @@ public class Criteria extends AbstractCondition {
          * // SQL: GROUP BY sales DESC
          * }</pre>
          *
-         * @param propName the property name to group by descending
+         * @param propOrColumnName the property or column name to group by descending
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
          */
-        public Builder groupByDesc(final String propName) {
-            addConditions(Filters.groupByDesc(propName));
+        public Builder groupByDesc(final String propOrColumnName) {
+            addConditions(Filters.groupByDesc(propOrColumnName));
 
             return this;
         }
@@ -1607,24 +1514,24 @@ public class Criteria extends AbstractCondition {
          * Criteria.builder().groupBy((Condition) null);   // throws IllegalArgumentException
          * }</pre>
          *
-         * @param cond the GROUP BY condition (must not be {@code null}); if its operator is already
+         * @param condition the GROUP BY condition (must not be {@code null}); if its operator is already
          *             {@link Operator#GROUP_BY} it is added directly, otherwise it is wrapped in a {@link GroupBy}
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
+         * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
          *                                  {@link Expression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, or is a clause condition
          *                                  with an operator other than {@code GROUP_BY}
          */
-        public Builder groupBy(final Condition cond) {
-            N.checkArgNotNull(cond, "cond");
+        public Builder groupBy(final Condition condition) {
+            N.checkArgNotNull(condition, "condition");
 
-            validateClauseCondition(cond, Operator.GROUP_BY, "groupBy");
+            validateClauseCondition(condition, Operator.GROUP_BY, "groupBy");
 
-            if (cond.operator() == Operator.GROUP_BY) {
-                addConditions(cond);
+            if (condition.operator() == Operator.GROUP_BY) {
+                addConditions(condition);
             } else {
-                addConditions(new GroupBy(cond));
+                addConditions(new GroupBy(condition));
             }
 
             return this;
@@ -1823,24 +1730,24 @@ public class Criteria extends AbstractCondition {
          * Criteria.builder().having((Condition) null);   // throws IllegalArgumentException
          * }</pre>
          *
-         * @param cond the HAVING condition (must not be {@code null}); if its operator is already
+         * @param condition the HAVING condition (must not be {@code null}); if its operator is already
          *             {@link Operator#HAVING} it is added directly, otherwise it is wrapped in a {@link Having}
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
+         * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
          *                                  {@link Expression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, or is a clause condition
          *                                  with an operator other than {@code HAVING}
          */
-        public Builder having(final Condition cond) {
-            N.checkArgNotNull(cond, "cond");
+        public Builder having(final Condition condition) {
+            N.checkArgNotNull(condition, "condition");
 
-            validateClauseCondition(cond, Operator.HAVING, "having");
+            validateClauseCondition(condition, Operator.HAVING, "having");
 
-            if (cond.operator() == Operator.HAVING) {
-                addConditions(cond);
+            if (condition.operator() == Operator.HAVING) {
+                addConditions(condition);
             } else {
-                addConditions(new Having(cond));
+                addConditions(new Having(condition));
             }
 
             return this;
@@ -1886,12 +1793,12 @@ public class Criteria extends AbstractCondition {
          * // SQL: ORDER BY lastName ASC
          * }</pre>
          *
-         * @param propName the property name to order by ascending
+         * @param propOrColumnName the property or column name to order by ascending
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
          */
-        public Builder orderByAsc(final String propName) {
-            addConditions(Filters.orderByAsc(propName));
+        public Builder orderByAsc(final String propOrColumnName) {
+            addConditions(Filters.orderByAsc(propOrColumnName));
 
             return this;
         }
@@ -1953,12 +1860,12 @@ public class Criteria extends AbstractCondition {
          * // SQL: ORDER BY score DESC
          * }</pre>
          *
-         * @param propName the property name to order by descending
+         * @param propOrColumnName the property or column name to order by descending
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
          */
-        public Builder orderByDesc(final String propName) {
-            addConditions(Filters.orderByDesc(propName));
+        public Builder orderByDesc(final String propOrColumnName) {
+            addConditions(Filters.orderByDesc(propOrColumnName));
 
             return this;
         }
@@ -2021,24 +1928,24 @@ public class Criteria extends AbstractCondition {
          * Criteria.builder().orderBy((Condition) null);   // throws IllegalArgumentException
          * }</pre>
          *
-         * @param cond the ORDER BY condition (must not be {@code null}); if its operator is already
+         * @param condition the ORDER BY condition (must not be {@code null}); if its operator is already
          *             {@link Operator#ORDER_BY} it is added directly, otherwise it is wrapped in an {@link OrderBy}
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is {@code null}, is a {@link Criteria},
+         * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
          *                                  {@link Expression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, or is a clause condition
          *                                  with an operator other than {@code ORDER_BY}
          */
-        public Builder orderBy(final Condition cond) {
-            N.checkArgNotNull(cond, "cond");
+        public Builder orderBy(final Condition condition) {
+            N.checkArgNotNull(condition, "condition");
 
-            validateClauseCondition(cond, Operator.ORDER_BY, "orderBy");
+            validateClauseCondition(condition, Operator.ORDER_BY, "orderBy");
 
-            if (cond.operator() == Operator.ORDER_BY) {
-                addConditions(cond);
+            if (condition.operator() == Operator.ORDER_BY) {
+                addConditions(condition);
             } else {
-                addConditions(new OrderBy(cond));
+                addConditions(new OrderBy(condition));
             }
 
             return this;
@@ -2234,13 +2141,13 @@ public class Criteria extends AbstractCondition {
          * Criteria.builder().limit((Limit) null);   // throws IllegalArgumentException
          * }</pre>
          *
-         * @param cond the LIMIT condition (must not be {@code null}); its operator must be
+         * @param condition the LIMIT condition (must not be {@code null}); its operator must be
          *             {@link Operator#LIMIT}, which is guaranteed for any {@link Limit} instance
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is {@code null}
+         * @throws IllegalArgumentException if {@code condition} is {@code null}
          */
-        public Builder limit(final Limit cond) {
-            addConditions(cond);
+        public Builder limit(final Limit condition) {
+            addConditions(condition);
 
             return this;
         }
@@ -2479,62 +2386,62 @@ public class Criteria extends AbstractCondition {
          *     .build();
          * }</pre>
          *
-         * @param cond the condition to add (must not be {@code null})
+         * @param condition the condition to add (must not be {@code null})
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is {@code null}, is a nested {@link Criteria}, uses an
+         * @throws IllegalArgumentException if {@code condition} is {@code null}, is a nested {@link Criteria}, uses an
          *         {@code ON}/{@code USING} operator, is an {@code ANY}/{@code ALL}/{@code SOME} quantified operand,
          *         is an empty predicate (a blank {@link Expression} or empty {@link Junction}), or reports a routed
          *         operator without being the corresponding clause type
          */
-        public Builder add(final Condition cond) {
-            N.checkArgNotNull(cond, "cond");
+        public Builder add(final Condition condition) {
+            N.checkArgNotNull(condition, "condition");
 
-            switch (cond.operator()) {
+            switch (condition.operator()) {
                 case LIMIT:
-                    limit(requireConditionType(cond, Limit.class));
+                    limit(requireConditionType(condition, Limit.class));
                     break;
 
                 case ORDER_BY:
-                    orderBy(cond);
+                    orderBy(condition);
                     break;
 
                 case GROUP_BY:
-                    groupBy(cond);
+                    groupBy(condition);
                     break;
 
                 case HAVING:
-                    having(cond);
+                    having(condition);
                     break;
 
                 case WHERE:
-                    where(cond);
+                    where(condition);
                     break;
 
                 case UNION:
-                    union(requireConditionType(cond, Union.class).getSubQuery());
+                    union(requireConditionType(condition, Union.class).getSubQuery());
                     break;
 
                 case UNION_ALL:
-                    unionAll(requireConditionType(cond, UnionAll.class).getSubQuery());
+                    unionAll(requireConditionType(condition, UnionAll.class).getSubQuery());
                     break;
 
                 case INTERSECT:
-                    intersect(requireConditionType(cond, Intersect.class).getSubQuery());
+                    intersect(requireConditionType(condition, Intersect.class).getSubQuery());
                     break;
 
                 case EXCEPT:
-                    except(requireConditionType(cond, Except.class).getSubQuery());
+                    except(requireConditionType(condition, Except.class).getSubQuery());
                     break;
 
                 case MINUS:
-                    minus(requireConditionType(cond, Minus.class).getSubQuery());
+                    minus(requireConditionType(condition, Minus.class).getSubQuery());
                     break;
 
                 default:
-                    if (cond instanceof Join) {
-                        addConditions(cond);
+                    if (condition instanceof Join) {
+                        addConditions(condition);
                     } else {
-                        where(cond);
+                        where(condition);
                     }
             }
 

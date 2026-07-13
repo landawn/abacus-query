@@ -118,21 +118,21 @@ public class InSubQueryTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
 
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
     }
 
     @Test
-    public void testGetParameters_WithSubQueryParams() {
+    public void testParameters_WithSubQueryParams() {
         Equal statusCondition = new Equal("status", "active");
         SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), statusCondition);
         InSubQuery condition = new InSubQuery("user_id", subQuery);
 
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
     }
 
@@ -269,7 +269,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("categories", Arrays.asList("id"), activeCondition);
         InSubQuery condition = new InSubQuery("category_id", subQuery);
 
-        assertNotNull(condition.getParameters());
+        assertNotNull(condition.parameters());
     }
 
     @Test
@@ -280,7 +280,7 @@ public class InSubQueryTest extends TestBase {
         InSubQuery cond2 = new InSubQuery("userId", subQuery2);
         And result = cond1.and(cond2);
         assertNotNull(result);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -291,7 +291,7 @@ public class InSubQueryTest extends TestBase {
         InSubQuery cond2 = new InSubQuery("userId", subQuery2);
         Or result = cond1.or(cond2);
         assertNotNull(result);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -368,11 +368,11 @@ public class InSubQueryTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersWithMultipleValues() {
+    public void testParametersWithMultipleValues() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM products WHERE price BETWEEN ? AND ?");
         InSubQuery condition = new InSubQuery("product_id", subQuery);
 
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
 
         Assertions.assertNotNull(params);
     }

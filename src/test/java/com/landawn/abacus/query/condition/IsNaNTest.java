@@ -43,9 +43,9 @@ public class IsNaNTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         IsNaN condition = new IsNaN("value");
-        assertTrue(condition.getParameters().isEmpty());
+        assertTrue(condition.parameters().isEmpty());
     }
 
     @Test
@@ -161,7 +161,7 @@ public class IsNaNTest extends TestBase {
     public void testUsageExample_ValidateSensorReadings() {
         IsNaN sensorError = new IsNaN("pressure_reading");
         assertNotNull(sensorError);
-        assertTrue(sensorError.getParameters().isEmpty());
+        assertTrue(sensorError.parameters().isEmpty());
     }
 
     @Test

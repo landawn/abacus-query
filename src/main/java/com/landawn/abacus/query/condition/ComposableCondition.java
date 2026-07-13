@@ -92,7 +92,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      * // SQL: ((age > 18) AND (status = 'active'))
      * }</pre>
      *
-     * @param cond the condition to AND with this condition (must not be {@code null})
+     * @param condition the condition to AND with this condition (must not be {@code null})
      * @return a new {@link And} condition containing both conditions
      * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or {@code cond}
      *                                  is non-composable — a {@link Criteria}, a SQL clause, an
@@ -100,12 +100,12 @@ public abstract class ComposableCondition extends AbstractCondition {
      *                                  quantified-subquery operand, or an empty predicate (a blank
      *                                  {@link Expression} or empty {@link Junction})
      */
-    public And and(final Condition cond) {
-        N.checkArgNotNull(cond, "cond");
+    public And and(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
         validateComposableOperand(this, "and");
-        validateComposableOperand(cond, "and");
+        validateComposableOperand(condition, "and");
 
-        return new And(this, cond);
+        return new And(this, condition);
     }
 
     /**
@@ -120,7 +120,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      * // SQL: ((role = 'admin') OR (role = 'manager'))
      * }</pre>
      *
-     * @param cond the condition to OR with this condition (must not be {@code null})
+     * @param condition the condition to OR with this condition (must not be {@code null})
      * @return a new {@link Or} condition containing both conditions
      * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or {@code cond}
      *                                  is non-composable — a {@link Criteria}, a SQL clause, an
@@ -128,12 +128,12 @@ public abstract class ComposableCondition extends AbstractCondition {
      *                                  quantified-subquery operand, or an empty predicate (a blank
      *                                  {@link Expression} or empty {@link Junction})
      */
-    public Or or(final Condition cond) {
-        N.checkArgNotNull(cond, "cond");
+    public Or or(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
         validateComposableOperand(this, "or");
-        validateComposableOperand(cond, "or");
+        validateComposableOperand(condition, "or");
 
-        return new Or(this, cond);
+        return new Or(this, condition);
     }
 
     /**
@@ -155,7 +155,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      * //  so the nested And inside the outer Or picks up an extra layer of parens)
      * }</pre>
      *
-     * @param cond the condition to XOR with this condition (must not be {@code null})
+     * @param condition the condition to XOR with this condition (must not be {@code null})
      * @return a composable condition representing the exclusive-or {@code (this AND NOT cond) OR (NOT this AND cond)}
      * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or {@code cond}
      *                                  is non-composable — a {@link Criteria}, a SQL clause, an
@@ -163,11 +163,11 @@ public abstract class ComposableCondition extends AbstractCondition {
      *                                  quantified-subquery operand, or an empty predicate (a blank
      *                                  {@link Expression} or empty {@link Junction})
      */
-    public Or xor(final Condition cond) {
-        N.checkArgNotNull(cond, "cond");
+    public Or xor(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
         validateComposableOperand(this, "xor");
-        validateComposableOperand(cond, "xor");
+        validateComposableOperand(condition, "xor");
 
-        return new Or(new And(this, new Not(cond)), new And(new Not(this), cond));
+        return new Or(new And(this, new Not(condition)), new And(new Not(this), condition));
     }
 }

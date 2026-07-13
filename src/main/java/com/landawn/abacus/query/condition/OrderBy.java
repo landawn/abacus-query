@@ -97,15 +97,15 @@ public class OrderBy extends Clause {
      * // SQL: ORDER BY (price * quantity) DESC
      * }</pre>
      *
-     * @param cond the ordering condition. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is a {@link Criteria}, another clause,
+     * @param condition the ordering condition. Must not be {@code null}.
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a {@link Criteria}, another clause,
      *             an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
      *             operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which
      *             can be nested inside a clause
      * @see Filters#expr(String)
      */
-    public OrderBy(final Condition cond) {
-        super(Operator.ORDER_BY, cond);
+    public OrderBy(final Condition condition) {
+        super(Operator.ORDER_BY, condition);
     }
 
     /**
@@ -178,12 +178,12 @@ public class OrderBy extends Clause {
      * // SQL: ORDER BY created_date ASC
      * }</pre>
      *
-     * @param propName the property name to sort by. Must not be {@code null}, empty, or blank.
+     * @param propOrColumnName the property or column name to sort by. Must not be {@code null}, empty, or blank.
      * @param direction the sort direction (ASC or DESC). Must not be {@code null}.
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      */
-    public OrderBy(final String propName, final SortDirection direction) {
-        this(Filters.expr(AbstractCondition.createSortExpression(propName, direction)));
+    public OrderBy(final String propOrColumnName, final SortDirection direction) {
+        this(Filters.expr(AbstractCondition.createSortExpression(propOrColumnName, direction)));
     }
 
     /**

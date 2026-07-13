@@ -99,9 +99,9 @@ public class NotBetweenTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_Simple() {
+    public void testParameters_Simple() {
         NotBetween condition = new NotBetween("age", 18, 65);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
 
         assertEquals(2, params.size());
         assertEquals(Integer.valueOf(18), params.get(0));
@@ -109,19 +109,19 @@ public class NotBetweenTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_WithConditionValues() {
+    public void testParameters_WithConditionValues() {
         Expression minExpr = new Expression("MIN(age)");
         Expression maxExpr = new Expression("MAX(age)");
         NotBetween condition = new NotBetween("score", minExpr, maxExpr);
 
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
     }
 
     @Test
-    public void testGetParameters_NullValues() {
+    public void testParameters_NullValues() {
         NotBetween condition = new NotBetween("score", null, null);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
 
         assertEquals(2, params.size());
         assertNull(params.get(0));
@@ -232,7 +232,7 @@ public class NotBetweenTest extends TestBase {
 
         assertTrue(sql.contains("price"));
         assertTrue(sql.contains("NOT BETWEEN"));
-        assertEquals(2, priceRange.getParameters().size());
+        assertEquals(2, priceRange.parameters().size());
     }
 
     @Test
@@ -249,7 +249,7 @@ public class NotBetweenTest extends TestBase {
     public void testUseCaseScenario_AbnormalTemperature() {
         // Exclude normal temperature range
         NotBetween abnormalTemp = new NotBetween("temperature", 36.0, 37.5);
-        List<Object> params = abnormalTemp.getParameters();
+        List<Object> params = abnormalTemp.parameters();
 
         assertEquals(2, params.size());
         assertEquals(36.0, (Double) params.get(0));
@@ -262,7 +262,7 @@ public class NotBetweenTest extends TestBase {
         NotBetween cond2 = new NotBetween("salary", 30000, 100000);
         And result = cond1.and(cond2);
         assertNotNull(result);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -271,7 +271,7 @@ public class NotBetweenTest extends TestBase {
         NotBetween cond2 = new NotBetween("age", 50, 65);
         Or result = cond1.or(cond2);
         assertNotNull(result);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -317,23 +317,23 @@ public class NotBetweenTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         NotBetween notBetween = Filters.notBetween("salary", 30000, 80000);
 
-        List<Object> params = notBetween.getParameters();
+        List<Object> params = notBetween.parameters();
         Assertions.assertEquals(2, params.size());
         Assertions.assertEquals(30000, params.get(0));
         Assertions.assertEquals(80000, params.get(1));
     }
 
     @Test
-    public void testGetParametersWithConditionValues() {
+    public void testParametersWithConditionValues() {
         Expression minExpr = Filters.expr("(SELECT MIN(salary) FROM employees)");
         Expression maxExpr = Filters.expr("(SELECT AVG(salary) FROM employees)");
         NotBetween notBetween = Filters.notBetween("salary", minExpr, maxExpr);
 
-        List<Object> params = notBetween.getParameters();
-        Assertions.assertEquals(minExpr.getParameters().size() + maxExpr.getParameters().size(), params.size());
+        List<Object> params = notBetween.parameters();
+        Assertions.assertEquals(minExpr.parameters().size() + maxExpr.parameters().size(), params.size());
     }
 
     @Test
@@ -404,7 +404,7 @@ public class NotBetweenTest extends TestBase {
         Assertions.assertNull(notBetween.getMinValue());
         Assertions.assertNull(notBetween.getMaxValue());
 
-        List<Object> params = notBetween.getParameters();
+        List<Object> params = notBetween.parameters();
         Assertions.assertEquals(2, params.size());
         Assertions.assertNull(params.get(0));
         Assertions.assertNull(params.get(1));

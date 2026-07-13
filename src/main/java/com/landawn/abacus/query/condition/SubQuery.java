@@ -176,6 +176,7 @@ public class SubQuery extends AbstractCondition {
      * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
      */
+    @Deprecated
     public SubQuery(final String entityName, final String sql) {
         super(Operator.EMPTY);
         this.entityName = entityName == null ? Strings.EMPTY : entityName;
@@ -188,6 +189,17 @@ public class SubQuery extends AbstractCondition {
         propNames = null;
         condition = null;
         this.sql = sql;
+    }
+
+    /**
+     * Creates a structured single-property subquery for an entity name.
+     *
+     * @param entityName the entity/table name
+     * @param propName the property to select
+     * @param condition the optional query condition
+     */
+    public SubQuery(final String entityName, final String propName, final Condition condition) {
+        this(entityName, java.util.Collections.singletonList(propName), condition);
     }
 
     /**
@@ -211,14 +223,14 @@ public class SubQuery extends AbstractCondition {
      *
      * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
      * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
-     * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
+     * @param condition the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
      *             May be {@code null} to select without a WHERE clause.
      * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank, if {@code propNames} is
-     *             {@code null} or empty, if {@code propNames} contains {@code null}, empty, or blank names, if {@code cond}
-     *             uses an {@link Operator#ON ON}/{@link Operator#USING USING} operator, or if {@code cond} is a
+     *             {@code null} or empty, if {@code propNames} contains {@code null}, empty, or blank names, if {@code condition}
+     *             uses an {@link Operator#ON ON}/{@link Operator#USING USING} operator, or if {@code condition} is a
      *             {@link Criteria} that carries a SELECT modifier (e.g. {@code DISTINCT}) — none of which are valid here
      */
-    public SubQuery(final String entityName, final Collection<String> propNames, final Condition cond) {
+    public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
 
         if (Strings.isBlank(entityName)) {
@@ -228,9 +240,20 @@ public class SubQuery extends AbstractCondition {
         this.entityName = entityName;
         this.entityClass = null;
         this.propNames = copyAndValidatePropNames(propNames);
-        this.condition = normalizeCondition(cond);
+        this.condition = normalizeCondition(condition);
 
         sql = null;
+    }
+
+    /**
+     * Creates a structured single-property subquery for an entity class.
+     *
+     * @param entityClass the entity class
+     * @param propName the property to select
+     * @param condition the optional query condition
+     */
+    public SubQuery(final Class<?> entityClass, final String propName, final Condition condition) {
+        this(entityClass, java.util.Collections.singletonList(propName), condition);
     }
 
     /**
@@ -264,14 +287,14 @@ public class SubQuery extends AbstractCondition {
      *
      * @param entityClass the entity class (must not be {@code null})
      * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
-     * @param cond the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
+     * @param condition the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
      *             May be {@code null} to select without a WHERE clause.
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propNames} is {@code null}
-     *             or empty, if {@code propNames} contains {@code null}, empty, or blank names, if {@code cond} uses an
-     *             {@link Operator#ON ON}/{@link Operator#USING USING} operator, or if {@code cond} is a
+     *             or empty, if {@code propNames} contains {@code null}, empty, or blank names, if {@code condition} uses an
+     *             {@link Operator#ON ON}/{@link Operator#USING USING} operator, or if {@code condition} is a
      *             {@link Criteria} that carries a SELECT modifier (e.g. {@code DISTINCT}) — none of which are valid here
      */
-    public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition cond) {
+    public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
 
         if (entityClass == null) {
@@ -281,7 +304,7 @@ public class SubQuery extends AbstractCondition {
         this.entityName = ClassUtil.getSimpleClassName(entityClass);
         this.entityClass = entityClass;
         this.propNames = copyAndValidatePropNames(propNames);
-        this.condition = normalizeCondition(cond);
+        this.condition = normalizeCondition(condition);
 
         sql = null;
     }
@@ -305,8 +328,17 @@ public class SubQuery extends AbstractCondition {
      *
      * @return the SQL script, or {@code null} if this is a structured subquery
      */
-    public String sql() {
+    public String getRawSql() {
         return sql;
+    }
+
+    /**
+     * Compatibility alias for {@link #getRawSql()}.
+     *
+     * @return the raw SQL text, or {@code null} for a structured subquery
+     */
+    public String sql() {
+        return getRawSql();
     }
 
     /**
@@ -432,7 +464,7 @@ public class SubQuery extends AbstractCondition {
             return cond;
         }
 
-        if (cond instanceof Expression && Strings.isBlank(((Expression) cond).getLiteral())) {
+        if (cond instanceof Expression && Strings.isBlank(((Expression) cond).literal())) {
             return null;
         }
 
@@ -481,28 +513,28 @@ public class SubQuery extends AbstractCondition {
      * // Structured subquery: parameters are collected from the condition (in order)
      * Condition cond = Filters.and(Filters.equal("status", "active"), Filters.between("age", 18, 65));
      * SubQuery structured = Filters.subQuery("users", Arrays.asList("id"), cond);
-     * List<Object> params = structured.getParameters();
+     * List<Object> params = structured.parameters();
      * // returns ["active", 18, 65]
      *
      * // Raw SQL subquery: no bound parameters
      * SubQuery raw = Filters.subQuery("SELECT * FROM users");
-     * List<Object> rawParams = raw.getParameters();
+     * List<Object> rawParams = raw.parameters();
      * // returns [] (empty immutable list)
      *
      * // Structured subquery without a condition: also empty
      * SubQuery noCond = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
-     * List<Object> noCondParams = noCond.getParameters();
+     * List<Object> noCondParams = noCond.parameters();
      * // returns [] (empty immutable list)
      * }</pre>
      *
      * @return an immutable list of parameter values, or an empty immutable list if no condition or raw SQL subquery
      */
     @Override
-    public ImmutableList<Object> getParameters() {
+    public ImmutableList<Object> parameters() {
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
-            result = condition == null ? ImmutableList.empty() : condition.getParameters();
+            result = condition == null ? ImmutableList.empty() : condition.parameters();
             cachedParameters = result;
         }
 

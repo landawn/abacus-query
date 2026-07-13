@@ -55,9 +55,9 @@ public class IsInfiniteTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         IsInfinite condition = new IsInfinite("divisionResult");
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertTrue(params.isEmpty());
     }
@@ -136,7 +136,7 @@ public class IsInfiniteTest extends TestBase {
         IsInfinite cond1 = new IsInfinite("val1");
         IsInfinite cond2 = new IsInfinite("val2");
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -144,7 +144,7 @@ public class IsInfiniteTest extends TestBase {
         IsInfinite cond1 = new IsInfinite("value1");
         IsInfinite cond2 = new IsInfinite("value2");
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test

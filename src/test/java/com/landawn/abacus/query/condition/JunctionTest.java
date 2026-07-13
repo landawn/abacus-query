@@ -33,7 +33,7 @@ public class JunctionTest extends TestBase {
 
         assertNotNull(junction);
         assertEquals(Operator.AND, junction.operator());
-        assertEquals(2, junction.getConditions().size());
+        assertEquals(2, junction.conditions().size());
     }
 
     @Test
@@ -44,7 +44,7 @@ public class JunctionTest extends TestBase {
 
         assertNotNull(junction);
         assertEquals(Operator.OR, junction.operator());
-        assertEquals(3, junction.getConditions().size());
+        assertEquals(3, junction.conditions().size());
     }
 
     @Test
@@ -53,7 +53,7 @@ public class JunctionTest extends TestBase {
 
         assertNotNull(junction);
         assertEquals(Operator.AND, junction.operator());
-        assertEquals(0, junction.getConditions().size());
+        assertEquals(0, junction.conditions().size());
     }
 
     @Test
@@ -72,12 +72,12 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testGetConditions() {
+    public void testConditions() {
         Equal cond1 = Filters.eq("name", "John");
         LessThan cond2 = Filters.lt("price", 100);
 
         Junction junction = new Junction(Operator.AND, cond1, cond2);
-        List<Condition> conditions = junction.getConditions();
+        List<Condition> conditions = junction.conditions();
 
         assertNotNull(conditions);
         assertEquals(2, conditions.size());
@@ -86,11 +86,11 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.between("age", 18, 65),
                 Filters.in("city", new String[] { "NYC", "LA" }));
 
-        List<Object> params = junction.getParameters();
+        List<Object> params = junction.parameters();
 
         assertNotNull(params);
         assertEquals(5, params.size());
@@ -102,22 +102,22 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersEmpty() {
+    public void testParametersEmpty() {
         Junction junction = new Junction(Operator.OR);
 
-        List<Object> params = junction.getParameters();
+        List<Object> params = junction.parameters();
 
         assertNotNull(params);
         assertEquals(0, params.size());
     }
 
     @Test
-    public void testGetParametersNested() {
+    public void testParametersNested() {
         Junction innerJunction = new Junction(Operator.OR, Filters.eq("city", "NYC"), Filters.eq("city", "LA"));
 
         Junction outerJunction = new Junction(Operator.AND, Filters.eq("status", "active"), innerJunction);
 
-        List<Object> params = outerJunction.getParameters();
+        List<Object> params = outerJunction.parameters();
 
         assertEquals(3, params.size());
         assertEquals("active", params.get(0));
@@ -128,10 +128,10 @@ public class JunctionTest extends TestBase {
     @Test
     public void testCopyPreservesConditions() {
         Junction original = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
-        Junction copy = new Junction(original.operator(), original.getConditions());
+        Junction copy = new Junction(original.operator(), original.conditions());
 
-        assertEquals(original.getConditions(), copy.getConditions());
-        assertNotEquals(original.getConditions(), List.of());
+        assertEquals(original.conditions(), copy.conditions());
+        assertNotEquals(original.conditions(), List.of());
     }
 
     @Test
@@ -259,7 +259,7 @@ public class JunctionTest extends TestBase {
         Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.between("age", 18, 65), Filters.isNotNull("email"),
                 Filters.like("name", "John%"));
 
-        assertEquals(4, junction.getConditions().size());
+        assertEquals(4, junction.conditions().size());
         String sql = junction.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("AND"));
     }
@@ -268,7 +268,7 @@ public class JunctionTest extends TestBase {
     public void testComplexJunctionOrOperation() {
         Junction junction = new Junction(Operator.OR, Filters.eq("priority", 1), Filters.eq("urgent", true), Filters.lt("deadline", "2025-01-01"));
 
-        assertEquals(3, junction.getConditions().size());
+        assertEquals(3, junction.conditions().size());
         String sql = junction.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("OR"));
     }
@@ -277,14 +277,14 @@ public class JunctionTest extends TestBase {
     public void testJunctionWithSingleCondition() {
         Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"));
 
-        assertEquals(1, junction.getConditions().size());
+        assertEquals(1, junction.conditions().size());
         assertFalse(junction.toString(NamingPolicy.NO_CHANGE).isEmpty());
     }
 
     @Test
     public void testJunctionConditionsListIsUnmodifiable() {
         Junction junction = new Junction(Operator.AND);
-        List<Condition> conditions = junction.getConditions();
+        List<Condition> conditions = junction.conditions();
 
         assertThrows(UnsupportedOperationException.class, () -> conditions.add(Filters.eq("test", "value")));
     }
@@ -310,7 +310,7 @@ public class JunctionTest extends TestBase {
     @Test
     public void testToString_WithNullConditionInList() {
         Junction junction = new Junction(Operator.AND);
-        // Access package-private field directly since getConditions() now returns an unmodifiable view
+        // Access package-private field directly since conditions() now returns an unmodifiable view
         junction.conditions.add(Filters.eq("a", 1));
         junction.conditions.add(null);
         junction.conditions.add(Filters.eq("b", 2));
@@ -322,13 +322,13 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_WithNullConditionInList() {
+    public void testParameters_WithNullConditionInList() {
         Junction junction = new Junction(Operator.AND);
         junction.conditions.add(Filters.eq("a", 1));
         junction.conditions.add(null);
         junction.conditions.add(Filters.eq("b", 2));
 
-        List<Object> params = junction.getParameters();
+        List<Object> params = junction.parameters();
         assertEquals(2, params.size());
         assertEquals(1, params.get(0));
         assertEquals(2, params.get(1));
@@ -435,15 +435,15 @@ public class JunctionTest extends TestBase {
     }
 
     /**
-     * Second-pass locking test: getParameters() must recursively collect parameters from
+     * Second-pass locking test: parameters() must recursively collect parameters from
      * nested junctions in left-to-right (depth-first) order.
      */
     @Test
-    public void testGetParametersRecursesIntoNestedJunctions() {
+    public void testParametersRecursesIntoNestedJunctions() {
         Junction inner = new Junction(Operator.AND, Filters.eq("a", 1), Filters.eq("b", 2));
         Junction outer = new Junction(Operator.OR, Filters.eq("c", 3), inner, Filters.eq("d", 4));
 
-        List<Object> params = outer.getParameters();
+        List<Object> params = outer.parameters();
 
         Assertions.assertEquals(Arrays.asList(3, 1, 2, 4), params);
     }

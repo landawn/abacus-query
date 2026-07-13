@@ -44,19 +44,19 @@ public class WhereTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Equal condition = new Equal("status", "active");
         Where where = new Where(condition);
-        List<Object> params = where.getParameters();
+        List<Object> params = where.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
     @Test
-    public void testGetParameters_MultipleValues() {
+    public void testParameters_MultipleValues() {
         And complexCondition = new And(Arrays.asList(new Equal("status", "active"), new GreaterThan("balance", 1000)));
         Where where = new Where(complexCondition);
-        List<Object> params = where.getParameters();
+        List<Object> params = where.parameters();
         assertEquals(2, params.size());
     }
 
@@ -122,21 +122,21 @@ public class WhereTest extends TestBase {
         Like condition = new Like("name", "%John%");
         Where where = new Where(condition);
         assertNotNull(where);
-        assertEquals(1, where.getParameters().size());
+        assertEquals(1, where.parameters().size());
     }
 
     @Test
     public void testWithBetween() {
         Between condition = new Between("age", 18, 65);
         Where where = new Where(condition);
-        assertEquals(2, where.getParameters().size());
+        assertEquals(2, where.parameters().size());
     }
 
     @Test
     public void testWithInOperator() {
         In condition = new In("status", Arrays.asList("active", "pending", "approved"));
         Where where = new Where(condition);
-        assertEquals(3, where.getParameters().size());
+        assertEquals(3, where.parameters().size());
     }
 
     @Test
@@ -148,7 +148,7 @@ public class WhereTest extends TestBase {
     public void testWithOrCondition() {
         Or orCondition = new Or(new Equal("type", "A"), new Equal("type", "B"));
         Where where = new Where(orCondition);
-        assertEquals(2, where.getParameters().size());
+        assertEquals(2, where.parameters().size());
     }
 
     @Test
@@ -170,7 +170,7 @@ public class WhereTest extends TestBase {
     public void testWithIsNull() {
         IsNull condition = new IsNull("deletedAt");
         Where where = new Where(condition);
-        assertEquals(0, where.getParameters().size());
+        assertEquals(0, where.parameters().size());
     }
 
     @Test

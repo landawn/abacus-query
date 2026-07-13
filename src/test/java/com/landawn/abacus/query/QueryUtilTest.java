@@ -879,9 +879,9 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testQueryUtil_patternForAlphanumericColumnName() {
-        boolean isValid = QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("column_name").matches();
+        boolean isValid = QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("column_name").matches();
         assertTrue(isValid);
-        boolean isInvalid = QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("column name").matches();
+        boolean isInvalid = QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("column name").matches();
         assertFalse(isInvalid);
     }
 
@@ -901,12 +901,12 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testPatternForAlphanumericColumnName() {
-        assertNotNull(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME);
-        assertTrue(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("user_name").matches());
-        assertTrue(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("user123").matches());
-        assertTrue(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("user-name").matches());
-        assertFalse(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("user.name").matches());
-        assertFalse(QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher("user name").matches());
+        assertNotNull(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN);
+        assertTrue(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user_name").matches());
+        assertTrue(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user123").matches());
+        assertTrue(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user-name").matches());
+        assertFalse(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user.name").matches());
+        assertFalse(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user name").matches());
     }
 
     @Test

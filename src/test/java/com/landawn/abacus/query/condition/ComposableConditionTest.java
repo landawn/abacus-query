@@ -24,7 +24,7 @@ public class ComposableConditionTest extends TestBase {
         private final String propName;
 
         @Override
-        public ImmutableList<Object> getParameters() {
+        public ImmutableList<Object> parameters() {
             return ImmutableList.of(value);
         }
 
@@ -52,7 +52,7 @@ public class ComposableConditionTest extends TestBase {
         final And result = left.and(right);
 
         assertEquals(Operator.AND, result.operator());
-        assertEquals(2, result.getConditions().size());
+        assertEquals(2, result.conditions().size());
     }
 
     @Test
@@ -70,7 +70,7 @@ public class ComposableConditionTest extends TestBase {
         final Or result = left.or(right);
 
         assertEquals(Operator.OR, result.operator());
-        assertEquals(2, result.getConditions().size());
+        assertEquals(2, result.conditions().size());
     }
 
     @Test
@@ -89,9 +89,9 @@ public class ComposableConditionTest extends TestBase {
         final Or result = left.xor(right);
 
         assertEquals(Operator.OR, result.operator());
-        assertEquals(2, result.getConditions().size());
-        assertTrue(result.getConditions().get(0) instanceof And);
-        assertTrue(result.getConditions().get(1) instanceof And);
+        assertEquals(2, result.conditions().size());
+        assertTrue(result.conditions().get(0) instanceof And);
+        assertTrue(result.conditions().get(1) instanceof And);
     }
 
     @Test

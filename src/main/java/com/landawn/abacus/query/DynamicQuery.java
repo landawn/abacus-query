@@ -1060,24 +1060,24 @@ public final class DynamicQuery {
          * // Generates: SELECT first_name AS fname, last_name AS lname
          * }</pre>
          *
-         * @param columnsAndAliasMap map where keys are column names and values are aliases (may be {@code null} or empty;
+         * @param columnAliases map where keys are column names and values are aliases (may be {@code null} or empty;
          *        individual keys and values must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
          * @throws IllegalArgumentException if any key or value in the map is {@code null}, empty, or blank
          */
-        public SelectClause append(final Map<String, String> columnsAndAliasMap) {
+        public SelectClause append(final Map<String, String> columnAliases) {
             checkOpen();
 
-            if (N.isEmpty(columnsAndAliasMap)) {
+            if (N.isEmpty(columnAliases)) {
                 checkOpen();
                 return this;
             }
 
-            checkSqlFragmentMapNotBlank(columnsAndAliasMap, "columnsAndAliasMap");
+            checkSqlFragmentMapNotBlank(columnAliases, "columnAliases");
 
             startClauseFragment(this, "SELECT ", ", ");
 
-            sb.append(Strings.joinEntries(columnsAndAliasMap, ", ", " AS "));
+            sb.append(Strings.joinEntries(columnAliases, ", ", " AS "));
 
             return this;
         }
@@ -1265,19 +1265,19 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
-         * @param on the join condition (must not be {@code null}, empty, or blank)
+         * @param expr the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
          *         or if this clause builder has already been closed by {@code build()}
          */
-        public FromClause join(final String joinExpr, final String on) {
+        public FromClause join(final String joinExpr, final String expr) {
             checkOpen();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
-            checkSqlFragmentNotBlank(on, "on");
+            checkSqlFragmentNotBlank(expr, "expr");
             requireFromInitialized();
-            sb.append(" JOIN ").append(joinExpr).append(" ON ").append(on);
+            sb.append(" JOIN ").append(joinExpr).append(" ON ").append(expr);
 
             return this;
         }
@@ -1293,19 +1293,19 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
-         * @param on the join condition (must not be {@code null}, empty, or blank)
+         * @param expr the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
          *         or if this clause builder has already been closed by {@code build()}
          */
-        public FromClause innerJoin(final String joinExpr, final String on) {
+        public FromClause innerJoin(final String joinExpr, final String expr) {
             checkOpen();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
-            checkSqlFragmentNotBlank(on, "on");
+            checkSqlFragmentNotBlank(expr, "expr");
             requireFromInitialized();
-            sb.append(" INNER JOIN ").append(joinExpr).append(" ON ").append(on);
+            sb.append(" INNER JOIN ").append(joinExpr).append(" ON ").append(expr);
 
             return this;
         }
@@ -1321,19 +1321,19 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
-         * @param on the join condition (must not be {@code null}, empty, or blank)
+         * @param expr the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
          *         or if this clause builder has already been closed by {@code build()}
          */
-        public FromClause leftJoin(final String joinExpr, final String on) {
+        public FromClause leftJoin(final String joinExpr, final String expr) {
             checkOpen();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
-            checkSqlFragmentNotBlank(on, "on");
+            checkSqlFragmentNotBlank(expr, "expr");
             requireFromInitialized();
-            sb.append(" LEFT JOIN ").append(joinExpr).append(" ON ").append(on);
+            sb.append(" LEFT JOIN ").append(joinExpr).append(" ON ").append(expr);
 
             return this;
         }
@@ -1349,19 +1349,19 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
-         * @param on the join condition (must not be {@code null}, empty, or blank)
+         * @param expr the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
          *         or if this clause builder has already been closed by {@code build()}
          */
-        public FromClause rightJoin(final String joinExpr, final String on) {
+        public FromClause rightJoin(final String joinExpr, final String expr) {
             checkOpen();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
-            checkSqlFragmentNotBlank(on, "on");
+            checkSqlFragmentNotBlank(expr, "expr");
             requireFromInitialized();
-            sb.append(" RIGHT JOIN ").append(joinExpr).append(" ON ").append(on);
+            sb.append(" RIGHT JOIN ").append(joinExpr).append(" ON ").append(expr);
 
             return this;
         }
@@ -1378,19 +1378,19 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
-         * @param on the join condition (must not be {@code null}, empty, or blank)
+         * @param expr the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code joinExpr} or {@code on} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
          * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
          *         or if this clause builder has already been closed by {@code build()}
          */
-        public FromClause fullJoin(final String joinExpr, final String on) {
+        public FromClause fullJoin(final String joinExpr, final String expr) {
             checkOpen();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
-            checkSqlFragmentNotBlank(on, "on");
+            checkSqlFragmentNotBlank(expr, "expr");
             requireFromInitialized();
-            sb.append(" FULL JOIN ").append(joinExpr).append(" ON ").append(on);
+            sb.append(" FULL JOIN ").append(joinExpr).append(" ON ").append(expr);
 
             return this;
         }
@@ -1690,17 +1690,17 @@ public final class DynamicQuery {
          * // Generates: WHERE active = true AND deleted = false
          * }</pre>
          *
-         * @param cond the condition to append (must not be {@code null}, empty, or blank)
+         * @param expr the SQL expression to append (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
-        public WhereClause append(final String cond) {
+        public WhereClause append(final String expr) {
             checkOpen();
-            checkSqlFragmentNotBlank(cond, "cond");
+            checkSqlFragmentNotBlank(expr, "expr");
 
             startClauseFragment(this, "WHERE ", " ");
 
-            sb.append(cond);
+            sb.append(expr);
 
             return this;
         }
@@ -1810,13 +1810,13 @@ public final class DynamicQuery {
          * // Generates: WHERE active = true AND age >= 18 AND country = ?
          * }</pre>
          *
-         * @param cond the condition to add with {@code AND} (must not be {@code null}, empty, or blank)
+         * @param expr the SQL expression to add with {@code AND} (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
-        public WhereClause and(final String cond) {
+        public WhereClause and(final String expr) {
             checkOpen();
-            checkSqlFragmentNotBlank(cond, "cond");
+            checkSqlFragmentNotBlank(expr, "expr");
 
             if (sb.isEmpty()) {
                 sb.append("WHERE ");
@@ -1824,7 +1824,7 @@ public final class DynamicQuery {
                 sb.append(" AND ");
             }
 
-            sb.append(cond);
+            sb.append(expr);
 
             return this;
         }
@@ -1840,13 +1840,13 @@ public final class DynamicQuery {
          * // Generates: WHERE role = 'admin' OR role = 'moderator'
          * }</pre>
          *
-         * @param cond the condition to add with {@code OR} (must not be {@code null}, empty, or blank)
+         * @param expr the SQL expression to add with {@code OR} (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
-        public WhereClause or(final String cond) {
+        public WhereClause or(final String expr) {
             checkOpen();
-            checkSqlFragmentNotBlank(cond, "cond");
+            checkSqlFragmentNotBlank(expr, "expr");
 
             if (sb.isEmpty()) {
                 sb.append("WHERE ");
@@ -1854,7 +1854,7 @@ public final class DynamicQuery {
                 sb.append(" OR ");
             }
 
-            sb.append(cond);
+            sb.append(expr);
 
             return this;
         }
@@ -1959,17 +1959,17 @@ public final class DynamicQuery {
          * // Generates: GROUP BY category, subcategory
          * }</pre>
          *
-         * @param column the column name to group by (must not be {@code null}, empty, or blank)
+         * @param propOrColumnName the property or column name to group by (must not be {@code null}, empty, or blank)
          * @return this {@link GroupByClause} instance for method chaining
          * @throws IllegalArgumentException if {@code column} is {@code null}, empty, or blank
          */
-        public GroupByClause append(final String column) {
+        public GroupByClause append(final String propOrColumnName) {
             checkOpen();
-            checkSqlFragmentNotBlank(column, "column");
+            checkSqlFragmentNotBlank(propOrColumnName, "propOrColumnName");
 
             startClauseFragment(this, "GROUP BY ", ", ");
 
-            sb.append(column);
+            sb.append(propOrColumnName);
 
             return this;
         }
@@ -2108,17 +2108,17 @@ public final class DynamicQuery {
          * // Generates: HAVING SUM(amount) > 1000
          * }</pre>
          *
-         * @param cond the condition to append (must not be {@code null}, empty, or blank)
+         * @param expr the SQL expression to append (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
-        public HavingClause append(final String cond) {
+        public HavingClause append(final String expr) {
             checkOpen();
-            checkSqlFragmentNotBlank(cond, "cond");
+            checkSqlFragmentNotBlank(expr, "expr");
 
             startClauseFragment(this, "HAVING ", " ");
 
-            sb.append(cond);
+            sb.append(expr);
 
             return this;
         }
@@ -2228,13 +2228,13 @@ public final class DynamicQuery {
          * // Generates: HAVING COUNT(*) > 5 AND MAX(price) < 1000
          * }</pre>
          *
-         * @param cond the condition to add with {@code AND} (must not be {@code null}, empty, or blank)
+         * @param expr the SQL expression to add with {@code AND} (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
-        public HavingClause and(final String cond) {
+        public HavingClause and(final String expr) {
             checkOpen();
-            checkSqlFragmentNotBlank(cond, "cond");
+            checkSqlFragmentNotBlank(expr, "expr");
 
             if (sb.isEmpty()) {
                 sb.append("HAVING ");
@@ -2242,7 +2242,7 @@ public final class DynamicQuery {
                 sb.append(" AND ");
             }
 
-            sb.append(cond);
+            sb.append(expr);
 
             return this;
         }
@@ -2258,13 +2258,13 @@ public final class DynamicQuery {
          * // Generates: HAVING MIN(score) > 80 OR AVG(score) > 90
          * }</pre>
          *
-         * @param cond the condition to add with {@code OR} (must not be {@code null}, empty, or blank)
+         * @param expr the SQL expression to add with {@code OR} (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
          * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
          */
-        public HavingClause or(final String cond) {
+        public HavingClause or(final String expr) {
             checkOpen();
-            checkSqlFragmentNotBlank(cond, "cond");
+            checkSqlFragmentNotBlank(expr, "expr");
 
             if (sb.isEmpty()) {
                 sb.append("HAVING ");
@@ -2272,7 +2272,7 @@ public final class DynamicQuery {
                 sb.append(" OR ");
             }
 
-            sb.append(cond);
+            sb.append(expr);
 
             return this;
         }
@@ -2377,17 +2377,17 @@ public final class DynamicQuery {
          * // Generates: ORDER BY created_date DESC, name ASC
          * }</pre>
          *
-         * @param column the column name with optional {@code ASC}/{@code DESC} (must not be {@code null}, empty, or blank)
+         * @param propOrColumnName the property or column name with optional {@code ASC}/{@code DESC} (must not be {@code null}, empty, or blank)
          * @return this {@link OrderByClause} instance for method chaining
          * @throws IllegalArgumentException if {@code column} is {@code null}, empty, or blank
          */
-        public OrderByClause append(final String column) {
+        public OrderByClause append(final String propOrColumnName) {
             checkOpen();
-            checkSqlFragmentNotBlank(column, "column");
+            checkSqlFragmentNotBlank(propOrColumnName, "propOrColumnName");
 
             startClauseFragment(this, "ORDER BY ", ", ");
 
-            sb.append(column);
+            sb.append(propOrColumnName);
 
             return this;
         }

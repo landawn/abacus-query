@@ -35,10 +35,10 @@ public class IntersectTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         SubQuery subQuery = Filters.subQuery("SELECT product_id FROM promotions WHERE discount > 0");
         Intersect intersect = new Intersect(subQuery);
-        List<Object> params = intersect.getParameters();
+        List<Object> params = intersect.parameters();
         // Raw SQL SubQuery has no parameters
         assertEquals(0, params.size());
     }
@@ -105,7 +105,7 @@ public class IntersectTest extends TestBase {
         SubQuery onSale = Filters.subQuery("SELECT product_id FROM promotions WHERE discount > 0");
         Intersect intersect = new Intersect(onSale);
         // Raw SQL SubQuery has no parameters
-        assertEquals(0, intersect.getParameters().size());
+        assertEquals(0, intersect.parameters().size());
     }
 
     @Test
@@ -152,11 +152,11 @@ public class IntersectTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersWithMultipleValues() {
+    public void testParametersWithMultipleValues() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table WHERE value BETWEEN ? AND ?");
         Intersect intersect = new Intersect(subQuery);
 
-        List<Object> params = intersect.getParameters();
+        List<Object> params = intersect.parameters();
 
         Assertions.assertNotNull(params);
     }
@@ -202,7 +202,7 @@ public class IntersectTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table");
         Intersect intersect = new Intersect(subQuery);
 
-        List<Object> params = intersect.getParameters();
+        List<Object> params = intersect.parameters();
 
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());

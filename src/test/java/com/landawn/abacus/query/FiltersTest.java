@@ -176,7 +176,7 @@ public class FiltersTest extends TestBase {
 
         Or or = Filters.anyEqual(props);
         assertNotNull(or);
-        assertEquals(2, or.getConditions().size());
+        assertEquals(2, or.conditions().size());
     }
 
     @Test
@@ -193,11 +193,11 @@ public class FiltersTest extends TestBase {
 
         Or or = Filters.anyEqual(account, Arrays.asList("id", "firstName"));
 
-        assertEquals(2, or.getConditions().size());
-        assertEquals("id", ((Equal) or.getConditions().get(0)).getPropName());
-        assertEquals(Long.valueOf(7L), ((Equal) or.getConditions().get(0)).getPropValue());
-        assertEquals("firstName", ((Equal) or.getConditions().get(1)).getPropName());
-        assertEquals("Jane", ((Equal) or.getConditions().get(1)).getPropValue());
+        assertEquals(2, or.conditions().size());
+        assertEquals("id", ((Equal) or.conditions().get(0)).getPropName());
+        assertEquals(Long.valueOf(7L), ((Equal) or.conditions().get(0)).getPropValue());
+        assertEquals("firstName", ((Equal) or.conditions().get(1)).getPropName());
+        assertEquals("Jane", ((Equal) or.conditions().get(1)).getPropValue());
     }
 
     @Test
@@ -216,14 +216,14 @@ public class FiltersTest extends TestBase {
     public void testAnyEqualTwoProps() {
         Or or = Filters.anyEqual("name", "John", "age", 30);
         assertNotNull(or);
-        assertEquals(2, or.getConditions().size());
+        assertEquals(2, or.conditions().size());
     }
 
     @Test
     public void testAnyEqualThreeProps() {
         Or or = Filters.anyEqual("name", "John", "age", 30, "status", "active");
         assertNotNull(or);
-        assertEquals(3, or.getConditions().size());
+        assertEquals(3, or.conditions().size());
     }
 
     @Test
@@ -234,7 +234,7 @@ public class FiltersTest extends TestBase {
 
         And and = Filters.allEqual(props);
         assertNotNull(and);
-        assertEquals(2, and.getConditions().size());
+        assertEquals(2, and.conditions().size());
     }
 
     @Test
@@ -251,11 +251,11 @@ public class FiltersTest extends TestBase {
 
         And and = Filters.allEqual(account, Arrays.asList("id", "lastName"));
 
-        assertEquals(2, and.getConditions().size());
-        assertEquals("id", ((Equal) and.getConditions().get(0)).getPropName());
-        assertEquals(Long.valueOf(9L), ((Equal) and.getConditions().get(0)).getPropValue());
-        assertEquals("lastName", ((Equal) and.getConditions().get(1)).getPropName());
-        assertEquals("Doe", ((Equal) and.getConditions().get(1)).getPropValue());
+        assertEquals(2, and.conditions().size());
+        assertEquals("id", ((Equal) and.conditions().get(0)).getPropName());
+        assertEquals(Long.valueOf(9L), ((Equal) and.conditions().get(0)).getPropValue());
+        assertEquals("lastName", ((Equal) and.conditions().get(1)).getPropName());
+        assertEquals("Doe", ((Equal) and.conditions().get(1)).getPropValue());
     }
 
     @Test
@@ -274,42 +274,42 @@ public class FiltersTest extends TestBase {
     public void testAllEqualTwoProps() {
         And and = Filters.allEqual("status", "active", "verified", true);
         assertNotNull(and);
-        assertEquals(2, and.getConditions().size());
+        assertEquals(2, and.conditions().size());
     }
 
     @Test
     public void testAllEqualThreeProps() {
         And and = Filters.allEqual("name", "John", "age", 30, "status", "active");
         assertNotNull(and);
-        assertEquals(3, and.getConditions().size());
+        assertEquals(3, and.conditions().size());
     }
 
     @Test
     public void testGtAndLt() {
         And and = Filters.gtAndLt("age", 18, 65);
         assertNotNull(and);
-        assertEquals(2, and.getConditions().size());
+        assertEquals(2, and.conditions().size());
     }
 
     @Test
     public void testGeAndLt() {
         And and = Filters.geAndLt("age", 18, 65);
         assertNotNull(and);
-        assertEquals(2, and.getConditions().size());
+        assertEquals(2, and.conditions().size());
     }
 
     @Test
     public void testGeAndLe() {
         And and = Filters.geAndLe("age", 18, 65);
         assertNotNull(and);
-        assertEquals(2, and.getConditions().size());
+        assertEquals(2, and.conditions().size());
     }
 
     @Test
     public void testGtAndLe() {
         And and = Filters.gtAndLe("age", 18, 65);
         assertNotNull(and);
-        assertEquals(2, and.getConditions().size());
+        assertEquals(2, and.conditions().size());
     }
 
     @Test
@@ -516,7 +516,7 @@ public class FiltersTest extends TestBase {
         Condition cond2 = Filters.equal("name", "Jane");
         Or or = Filters.or(cond1, cond2);
         assertNotNull(or);
-        assertEquals(2, or.getConditions().size());
+        assertEquals(2, or.conditions().size());
     }
 
     @Test
@@ -525,7 +525,7 @@ public class FiltersTest extends TestBase {
         Condition cond2 = Filters.equal("status", "pending");
         Or or = Filters.or(Arrays.asList(cond1, cond2));
         assertNotNull(or);
-        assertEquals(2, or.getConditions().size());
+        assertEquals(2, or.conditions().size());
     }
 
     @Test
@@ -534,7 +534,7 @@ public class FiltersTest extends TestBase {
         Condition cond2 = Filters.greaterThan("age", 18);
         And and = Filters.and(cond1, cond2);
         assertNotNull(and);
-        assertEquals(2, and.getConditions().size());
+        assertEquals(2, and.conditions().size());
     }
 
     @Test
@@ -543,7 +543,7 @@ public class FiltersTest extends TestBase {
         Condition cond2 = Filters.notEqual("status", "deleted");
         And and = Filters.and(Arrays.asList(cond1, cond2));
         assertNotNull(and);
-        assertEquals(2, and.getConditions().size());
+        assertEquals(2, and.conditions().size());
     }
 
     @Test
@@ -799,8 +799,8 @@ public class FiltersTest extends TestBase {
 
         Or or = Filters.anyOfAllEqual(propsSet);
 
-        assertEquals(2, or.getConditions().size());
-        assertTrue(or.getParameters().containsAll(Arrays.asList("active", "A", "pending", "B")));
+        assertEquals(2, or.conditions().size());
+        assertTrue(or.parameters().containsAll(Arrays.asList("active", "A", "pending", "B")));
     }
 
     @Test
@@ -988,17 +988,9 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
-    public void testCrossJoinEntityWithCondition() {
-        Condition condition = Filters.expr("users.id = orders.user_id");
-        com.landawn.abacus.query.condition.CrossJoin crossJoin = Filters.crossJoin("orders", condition);
-        assertNotNull(crossJoin);
-    }
-
-    @Test
-    public void testCrossJoinEntitiesWithCondition() {
-        Condition condition = Filters.expr("id = user_id");
-        com.landawn.abacus.query.condition.CrossJoin crossJoin = Filters.crossJoin(Arrays.asList("orders", "payments"), condition);
-        assertNotNull(crossJoin);
+    public void testCrossJoinEntities() {
+        com.landawn.abacus.query.condition.CrossJoin crossJoin = Filters.crossJoin(Arrays.asList("orders", "payments"));
+        assertEquals(2, crossJoin.getJoinEntities().size());
     }
 
     @Test
@@ -1048,15 +1040,9 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
-    public void testNaturalJoinEntityWithCondition() {
-        Condition condition = Filters.expr("users.id = orders.user_id");
-        assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin("orders", condition));
-    }
-
-    @Test
-    public void testNaturalJoinEntitiesWithCondition() {
-        Condition condition = Filters.expr("id = user_id");
-        assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin(Arrays.asList("orders", "payments"), condition));
+    public void testNaturalJoinEntities() {
+        com.landawn.abacus.query.condition.NaturalJoin naturalJoin = Filters.naturalJoin(Arrays.asList("orders", "payments"));
+        assertEquals(2, naturalJoin.getJoinEntities().size());
     }
 
     @Test
@@ -1081,35 +1067,35 @@ public class FiltersTest extends TestBase {
     public void testInFloatArray() {
         com.landawn.abacus.query.condition.In in = Filters.in("ratio", new float[] { 0.25f, 0.5f, 0.75f });
         assertNotNull(in);
-        assertEquals(3, in.getParameters().size());
+        assertEquals(3, in.parameters().size());
     }
 
     @Test
     public void testInShortArray() {
         com.landawn.abacus.query.condition.In in = Filters.in("level", new short[] { 1, 2, 3 });
         assertNotNull(in);
-        assertEquals(3, in.getParameters().size());
+        assertEquals(3, in.parameters().size());
     }
 
     @Test
     public void testInByteArray() {
         com.landawn.abacus.query.condition.In in = Filters.in("flag", new byte[] { 0, 1, 2 });
         assertNotNull(in);
-        assertEquals(3, in.getParameters().size());
+        assertEquals(3, in.parameters().size());
     }
 
     @Test
     public void testInBooleanArray() {
         com.landawn.abacus.query.condition.In in = Filters.in("active", new boolean[] { true, false });
         assertNotNull(in);
-        assertEquals(2, in.getParameters().size());
+        assertEquals(2, in.parameters().size());
     }
 
     @Test
     public void testInCharArray() {
         com.landawn.abacus.query.condition.In in = Filters.in("grade", new char[] { 'A', 'B', 'C' });
         assertNotNull(in);
-        assertEquals(3, in.getParameters().size());
+        assertEquals(3, in.parameters().size());
     }
 
     @Test
@@ -1165,35 +1151,35 @@ public class FiltersTest extends TestBase {
     public void testNotInFloatArray() {
         com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("ratio", new float[] { 0.0f, 1.0f });
         assertNotNull(notIn);
-        assertEquals(2, notIn.getParameters().size());
+        assertEquals(2, notIn.parameters().size());
     }
 
     @Test
     public void testNotInShortArray() {
         com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("level", new short[] { 0, 9 });
         assertNotNull(notIn);
-        assertEquals(2, notIn.getParameters().size());
+        assertEquals(2, notIn.parameters().size());
     }
 
     @Test
     public void testNotInByteArray() {
         com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("flag", new byte[] { 0, 1 });
         assertNotNull(notIn);
-        assertEquals(2, notIn.getParameters().size());
+        assertEquals(2, notIn.parameters().size());
     }
 
     @Test
     public void testNotInBooleanArray() {
         com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("active", new boolean[] { false });
         assertNotNull(notIn);
-        assertEquals(1, notIn.getParameters().size());
+        assertEquals(1, notIn.parameters().size());
     }
 
     @Test
     public void testNotInCharArray() {
         com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("grade", new char[] { 'D', 'F' });
         assertNotNull(notIn);
-        assertEquals(2, notIn.getParameters().size());
+        assertEquals(2, notIn.parameters().size());
     }
 
     @Test
@@ -1404,7 +1390,7 @@ public class FiltersTest extends TestBase {
         Limit limit = Filters.limit(literal);
 
         // The SQL:2008 FETCH form is parsed into concrete count/offset while its literal is retained.
-        assertEquals(literal, limit.getLiteral());
+        assertEquals(literal, limit.literal());
         assertEquals(20, limit.getCount());
         assertEquals(5, limit.getOffset());
     }
@@ -1416,9 +1402,9 @@ public class FiltersTest extends TestBase {
         final And condition = Filters.id2Cond(entityId);
 
         assertEquals(Operator.AND, condition.operator());
-        assertEquals(2, condition.getConditions().size());
-        assertEquals(2, condition.getParameters().size());
-        Assertions.assertTrue(condition.getParameters().containsAll(Arrays.asList(1, 100)));
+        assertEquals(2, condition.conditions().size());
+        assertEquals(2, condition.parameters().size());
+        Assertions.assertTrue(condition.parameters().containsAll(Arrays.asList(1, 100)));
     }
 
     @Test
@@ -1427,8 +1413,8 @@ public class FiltersTest extends TestBase {
 
         final And condition = Filters.id2Cond(entityId);
 
-        assertEquals(1, condition.getConditions().size());
-        assertEquals(Arrays.asList(1), condition.getParameters());
+        assertEquals(1, condition.conditions().size());
+        assertEquals(Arrays.asList(1), condition.parameters());
     }
 
     @Test
@@ -1443,9 +1429,9 @@ public class FiltersTest extends TestBase {
         final Or condition = Filters.id2Cond(entityIds);
 
         assertEquals(Operator.OR, condition.operator());
-        assertEquals(2, condition.getConditions().size());
-        assertEquals(4, condition.getParameters().size());
-        Assertions.assertTrue(condition.getParameters().containsAll(Arrays.asList(1, 100, 2, 200)));
+        assertEquals(2, condition.conditions().size());
+        assertEquals(4, condition.parameters().size());
+        Assertions.assertTrue(condition.parameters().containsAll(Arrays.asList(1, 100, 2, 200)));
     }
 
     @Test
@@ -1460,9 +1446,9 @@ public class FiltersTest extends TestBase {
         final And condition = Filters.idToCond(entityId);
 
         assertEquals(Operator.AND, condition.operator());
-        assertEquals(2, condition.getConditions().size());
-        assertEquals(2, condition.getParameters().size());
-        Assertions.assertTrue(condition.getParameters().containsAll(Arrays.asList(1, 100)));
+        assertEquals(2, condition.conditions().size());
+        assertEquals(2, condition.parameters().size());
+        Assertions.assertTrue(condition.parameters().containsAll(Arrays.asList(1, 100)));
     }
 
     @Test
@@ -1471,8 +1457,8 @@ public class FiltersTest extends TestBase {
 
         final And condition = Filters.idToCond(entityId);
 
-        assertEquals(1, condition.getConditions().size());
-        assertEquals(Arrays.asList(1), condition.getParameters());
+        assertEquals(1, condition.conditions().size());
+        assertEquals(Arrays.asList(1), condition.parameters());
     }
 
     @Test
@@ -1487,9 +1473,9 @@ public class FiltersTest extends TestBase {
         final Or condition = Filters.idToCond(entityIds);
 
         assertEquals(Operator.OR, condition.operator());
-        assertEquals(2, condition.getConditions().size());
-        assertEquals(4, condition.getParameters().size());
-        Assertions.assertTrue(condition.getParameters().containsAll(Arrays.asList(1, 100, 2, 200)));
+        assertEquals(2, condition.conditions().size());
+        assertEquals(4, condition.parameters().size());
+        Assertions.assertTrue(condition.parameters().containsAll(Arrays.asList(1, 100, 2, 200)));
     }
 
     @Test
@@ -1505,8 +1491,8 @@ public class FiltersTest extends TestBase {
 
         final Or condition = Filters.anyEqual(props);
 
-        assertEquals(1, condition.getConditions().size());
-        assertEquals("status", ((Equal) condition.getConditions().get(0)).getPropName());
+        assertEquals(1, condition.conditions().size());
+        assertEquals("status", ((Equal) condition.conditions().get(0)).getPropName());
     }
 
     @Test
@@ -1518,9 +1504,9 @@ public class FiltersTest extends TestBase {
 
         final Or condition = Filters.anyEqual(props);
 
-        assertEquals(3, condition.getConditions().size());
-        assertEquals("status", ((Equal) condition.getConditions().get(0)).getPropName());
-        assertEquals("verified", ((Equal) condition.getConditions().get(2)).getPropName());
+        assertEquals(3, condition.conditions().size());
+        assertEquals("status", ((Equal) condition.conditions().get(0)).getPropName());
+        assertEquals("verified", ((Equal) condition.conditions().get(2)).getPropName());
     }
 
     @Test
@@ -1530,8 +1516,8 @@ public class FiltersTest extends TestBase {
 
         final And condition = Filters.allEqual(props);
 
-        assertEquals(1, condition.getConditions().size());
-        assertEquals("status", ((Equal) condition.getConditions().get(0)).getPropName());
+        assertEquals(1, condition.conditions().size());
+        assertEquals("status", ((Equal) condition.conditions().get(0)).getPropName());
     }
 
     @Test
@@ -1543,9 +1529,9 @@ public class FiltersTest extends TestBase {
 
         final And condition = Filters.allEqual(props);
 
-        assertEquals(3, condition.getConditions().size());
-        assertEquals("status", ((Equal) condition.getConditions().get(0)).getPropName());
-        assertEquals("verified", ((Equal) condition.getConditions().get(2)).getPropName());
+        assertEquals(3, condition.conditions().size());
+        assertEquals("status", ((Equal) condition.conditions().get(0)).getPropName());
+        assertEquals("verified", ((Equal) condition.conditions().get(2)).getPropName());
     }
 
     @Test
@@ -1554,8 +1540,8 @@ public class FiltersTest extends TestBase {
 
         final Or condition = Filters.anyEqual(account, Arrays.asList("id"));
 
-        assertEquals(1, condition.getConditions().size());
-        assertEquals(Long.valueOf(17L), ((Equal) condition.getConditions().get(0)).getPropValue());
+        assertEquals(1, condition.conditions().size());
+        assertEquals(Long.valueOf(17L), ((Equal) condition.conditions().get(0)).getPropValue());
     }
 
     @Test
@@ -1564,9 +1550,9 @@ public class FiltersTest extends TestBase {
 
         final And condition = Filters.allEqual(account, Arrays.asList("id", "firstName", "lastName"));
 
-        assertEquals(3, condition.getConditions().size());
-        assertEquals("id", ((Equal) condition.getConditions().get(0)).getPropName());
-        assertEquals("lastName", ((Equal) condition.getConditions().get(2)).getPropName());
+        assertEquals(3, condition.conditions().size());
+        assertEquals("id", ((Equal) condition.conditions().get(0)).getPropName());
+        assertEquals("lastName", ((Equal) condition.conditions().get(2)).getPropName());
     }
 
     @Test
@@ -1580,8 +1566,8 @@ public class FiltersTest extends TestBase {
 
         final Or condition = Filters.anyOfAllEqual(Arrays.asList(null, account, null), Arrays.asList("id", "firstName"));
 
-        assertEquals(1, condition.getConditions().size());
-        assertEquals(2, condition.getParameters().size());
+        assertEquals(1, condition.conditions().size());
+        assertEquals(2, condition.parameters().size());
     }
 
     @Test
@@ -1590,8 +1576,8 @@ public class FiltersTest extends TestBase {
 
         final And condition = Filters.id2Cond(entityId);
 
-        assertEquals(3, condition.getConditions().size());
-        Assertions.assertTrue(condition.getParameters().containsAll(Arrays.asList(1, 2, 3)));
+        assertEquals(3, condition.conditions().size());
+        Assertions.assertTrue(condition.parameters().containsAll(Arrays.asList(1, 2, 3)));
     }
 
     @Test
@@ -1599,7 +1585,7 @@ public class FiltersTest extends TestBase {
         final And condition = Filters.isNotNullAndNotEmpty("email");
 
         assertEquals(Operator.AND, condition.operator());
-        assertEquals(2, condition.getConditions().size());
+        assertEquals(2, condition.conditions().size());
         Assertions.assertTrue(condition.toString().contains("IS NOT NULL"));
         Assertions.assertTrue(condition.toString().contains("!= ''"));
     }
@@ -1609,7 +1595,7 @@ public class FiltersTest extends TestBase {
         final And condition = Filters.isNotNullAndNotZero("quantity");
 
         assertEquals(Operator.AND, condition.operator());
-        assertEquals(2, condition.getConditions().size());
+        assertEquals(2, condition.conditions().size());
         Assertions.assertTrue(condition.toString().contains("IS NOT NULL"));
         Assertions.assertTrue(condition.toString().contains("!= 0"));
     }
@@ -1618,7 +1604,7 @@ public class FiltersTest extends TestBase {
     public void testAnyEqualWithArray() {
         Or or = Filters.anyEqual("status", "active", "pending", "approved");
         Assertions.assertNotNull(or);
-        Assertions.assertEquals(2, or.getConditions().size());
+        Assertions.assertEquals(2, or.conditions().size());
     }
 
     @Test
@@ -1630,21 +1616,21 @@ public class FiltersTest extends TestBase {
 
         Or or = Filters.anyEqual(props);
         Assertions.assertNotNull(or);
-        Assertions.assertEquals(3, or.getConditions().size());
+        Assertions.assertEquals(3, or.conditions().size());
     }
 
     @Test
     public void testAnyEqualWithTwoProperties() {
         Or or = Filters.anyEqual("name", "John", "age", 25);
         Assertions.assertNotNull(or);
-        Assertions.assertEquals(2, or.getConditions().size());
+        Assertions.assertEquals(2, or.conditions().size());
     }
 
     @Test
     public void testAnyEqualWithThreeProperties() {
         Or or = Filters.anyEqual("name", "John", "age", 25, "status", "active");
         Assertions.assertNotNull(or);
-        Assertions.assertEquals(3, or.getConditions().size());
+        Assertions.assertEquals(3, or.conditions().size());
     }
 
     @Test
@@ -1655,21 +1641,21 @@ public class FiltersTest extends TestBase {
 
         And and = Filters.allEqual(props);
         Assertions.assertNotNull(and);
-        Assertions.assertEquals(2, and.getConditions().size());
+        Assertions.assertEquals(2, and.conditions().size());
     }
 
     @Test
     public void testAllEqualWithTwoProperties() {
         And and = Filters.allEqual("name", "John", "age", 25);
         Assertions.assertNotNull(and);
-        Assertions.assertEquals(2, and.getConditions().size());
+        Assertions.assertEquals(2, and.conditions().size());
     }
 
     @Test
     public void testAllEqualWithThreeProperties() {
         And and = Filters.allEqual("name", "John", "age", 25, "status", "active");
         Assertions.assertNotNull(and);
-        Assertions.assertEquals(3, and.getConditions().size());
+        Assertions.assertEquals(3, and.conditions().size());
     }
 
     @Test
@@ -1679,13 +1665,13 @@ public class FiltersTest extends TestBase {
         Condition cond2 = Filters.eq("status", "pending");
         Or or1 = Filters.or(cond1, cond2);
         Assertions.assertNotNull(or1);
-        Assertions.assertEquals(2, or1.getConditions().size());
+        Assertions.assertEquals(2, or1.conditions().size());
 
         // Test with collection of conditions
         List<Condition> conditions = Arrays.asList(cond1, cond2);
         Or or2 = Filters.or(conditions);
         Assertions.assertNotNull(or2);
-        Assertions.assertEquals(2, or2.getConditions().size());
+        Assertions.assertEquals(2, or2.conditions().size());
     }
 
     @Test
@@ -1695,13 +1681,13 @@ public class FiltersTest extends TestBase {
         Condition cond2 = Filters.lt("age", 65);
         And and1 = Filters.and(cond1, cond2);
         Assertions.assertNotNull(and1);
-        Assertions.assertEquals(2, and1.getConditions().size());
+        Assertions.assertEquals(2, and1.conditions().size());
 
         // Test with collection of conditions
         List<Condition> conditions = Arrays.asList(cond1, cond2);
         And and2 = Filters.and(conditions);
         Assertions.assertNotNull(and2);
-        Assertions.assertEquals(2, and2.getConditions().size());
+        Assertions.assertEquals(2, and2.conditions().size());
     }
 
     @Test
@@ -1928,14 +1914,9 @@ public class FiltersTest extends TestBase {
         CrossJoin crossJoin1 = Filters.crossJoin("products");
         Assertions.assertNotNull(crossJoin1);
 
-        // Test with entity name and condition
-        Condition condition = Filters.expr("1=1");
-        CrossJoin crossJoin2 = Filters.crossJoin("products", condition);
-        Assertions.assertNotNull(crossJoin2);
-
-        // Test with collection of entities and condition
+        // Test with a collection of entities
         List<String> entities = Arrays.asList("products", "categories");
-        CrossJoin crossJoin3 = Filters.crossJoin(entities, condition);
+        CrossJoin crossJoin3 = Filters.crossJoin(entities);
         Assertions.assertNotNull(crossJoin3);
     }
 
@@ -1979,13 +1960,9 @@ public class FiltersTest extends TestBase {
         NaturalJoin naturalJoin1 = Filters.naturalJoin("departments");
         Assertions.assertNotNull(naturalJoin1);
 
-        // NATURAL JOIN does not support explicit conditions.
-        Condition condition = Filters.expr("TRUE");
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.naturalJoin("departments", condition));
-
-        // Test with collection of entities and no condition
+        // Test with a collection of entities
         List<String> entities = Arrays.asList("employees", "departments");
-        NaturalJoin naturalJoin3 = Filters.naturalJoin(entities, null);
+        NaturalJoin naturalJoin3 = Filters.naturalJoin(entities);
         Assertions.assertNotNull(naturalJoin3);
     }
 
@@ -2228,7 +2205,7 @@ public class FiltersTest extends TestBase {
     public void testFilters_expr() {
         Expression expr = Filters.expr("UPPER(name) = 'JOHN'");
         assertNotNull(expr);
-        assertEquals("UPPER(name) = 'JOHN'", expr.getLiteral());
+        assertEquals("UPPER(name) = 'JOHN'", expr.literal());
     }
 
     @Test
@@ -2560,7 +2537,7 @@ public class FiltersTest extends TestBase {
 
         And condition = Filters.allEqual(account, Arrays.asList("firstName"));
 
-        assertEquals(1, condition.getConditions().size());
+        assertEquals(1, condition.conditions().size());
     }
 
     @Test
@@ -2571,7 +2548,7 @@ public class FiltersTest extends TestBase {
 
         And condition = Filters.allEqual(account, Arrays.asList("firstName", "lastName"));
 
-        assertEquals(2, condition.getConditions().size());
+        assertEquals(2, condition.conditions().size());
     }
 
     @Test
@@ -2656,48 +2633,48 @@ public class FiltersTest extends TestBase {
     @Test
     public void test2ndPass_gtAndLt_usesGtAndLt() {
         And c = Filters.gtAndLt("age", 18, 65);
-        assertEquals(2, c.getConditions().size());
-        assertEquals(Operator.GREATER_THAN, c.getConditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN, c.getConditions().get(1).operator());
+        assertEquals(2, c.conditions().size());
+        assertEquals(Operator.GREATER_THAN, c.conditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN, c.conditions().get(1).operator());
     }
 
     @Test
     public void test2ndPass_geAndLt_usesGeAndLt() {
         And c = Filters.geAndLt("price", 100, 500);
-        assertEquals(2, c.getConditions().size());
-        assertEquals(Operator.GREATER_THAN_OR_EQUAL, c.getConditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN, c.getConditions().get(1).operator());
+        assertEquals(2, c.conditions().size());
+        assertEquals(Operator.GREATER_THAN_OR_EQUAL, c.conditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN, c.conditions().get(1).operator());
     }
 
     @Test
     public void test2ndPass_geAndLe_usesGeAndLe() {
         And c = Filters.geAndLe("score", 0, 100);
-        assertEquals(2, c.getConditions().size());
-        assertEquals(Operator.GREATER_THAN_OR_EQUAL, c.getConditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN_OR_EQUAL, c.getConditions().get(1).operator());
+        assertEquals(2, c.conditions().size());
+        assertEquals(Operator.GREATER_THAN_OR_EQUAL, c.conditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN_OR_EQUAL, c.conditions().get(1).operator());
     }
 
     @Test
     public void test2ndPass_gtAndLe_usesGtAndLe() {
         And c = Filters.gtAndLe("temp", -10, 40);
-        assertEquals(2, c.getConditions().size());
-        assertEquals(Operator.GREATER_THAN, c.getConditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN_OR_EQUAL, c.getConditions().get(1).operator());
+        assertEquals(2, c.conditions().size());
+        assertEquals(Operator.GREATER_THAN, c.conditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN_OR_EQUAL, c.conditions().get(1).operator());
     }
 
     @Test
     public void test2ndPass_parameterized_gtAndLt_geAndLt_geAndLe_gtAndLe_useCorrectOperators() {
-        assertEquals(Operator.GREATER_THAN, Filters.gtAndLt("c").getConditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN, Filters.gtAndLt("c").getConditions().get(1).operator());
+        assertEquals(Operator.GREATER_THAN, Filters.gtAndLt("c").conditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN, Filters.gtAndLt("c").conditions().get(1).operator());
 
-        assertEquals(Operator.GREATER_THAN_OR_EQUAL, Filters.geAndLt("c").getConditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN, Filters.geAndLt("c").getConditions().get(1).operator());
+        assertEquals(Operator.GREATER_THAN_OR_EQUAL, Filters.geAndLt("c").conditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN, Filters.geAndLt("c").conditions().get(1).operator());
 
-        assertEquals(Operator.GREATER_THAN_OR_EQUAL, Filters.geAndLe("c").getConditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN_OR_EQUAL, Filters.geAndLe("c").getConditions().get(1).operator());
+        assertEquals(Operator.GREATER_THAN_OR_EQUAL, Filters.geAndLe("c").conditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN_OR_EQUAL, Filters.geAndLe("c").conditions().get(1).operator());
 
-        assertEquals(Operator.GREATER_THAN, Filters.gtAndLe("c").getConditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN_OR_EQUAL, Filters.gtAndLe("c").getConditions().get(1).operator());
+        assertEquals(Operator.GREATER_THAN, Filters.gtAndLe("c").conditions().get(0).operator());
+        assertEquals(Operator.LESS_THAN_OR_EQUAL, Filters.gtAndLe("c").conditions().get(1).operator());
     }
 
     @Test
@@ -2800,5 +2777,26 @@ public class FiltersTest extends TestBase {
         // Should produce "col BETWEEN ? AND ?" (both placeholders are QME Expressions)
         String s = b.toString();
         assertTrue(s.contains("BETWEEN ? AND ?"), "Expected 'BETWEEN ? AND ?' but got: " + s);
+    }
+
+    @Test
+    public void testBinaryRejectsMembershipOperators() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("status", Operator.IN));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("status", Operator.NOT_IN));
+    }
+
+    @Test
+    public void testLikeObjectOperandsAndVarargsIn() {
+        SubQuery subQuery = Filters.subQuery("SELECT pattern FROM patterns");
+        assertEquals(subQuery, Filters.like("name", (Object) subQuery).propValue());
+        Expression expression = Filters.expr("LOWER(pattern)");
+        assertEquals(expression, Filters.notLike("name", (Object) expression).propValue());
+        assertEquals(Arrays.asList("NEW", "OPEN"), Filters.in("status", "NEW", "OPEN").parameters());
+        assertEquals(Arrays.asList("CLOSED", "DELETED"), Filters.notIn("status", "CLOSED", "DELETED").parameters());
+    }
+
+    @Test
+    public void testFiltersIsFinal() {
+        assertTrue(java.lang.reflect.Modifier.isFinal(Filters.class.getModifiers()));
     }
 }

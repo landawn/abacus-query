@@ -70,17 +70,17 @@ public class IsTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Is condition = new Is("status", "active");
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
     @Test
-    public void testGetParameters_MultipleValues() {
+    public void testParameters_MultipleValues() {
         Is condition = new Is("count", 42);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
@@ -158,7 +158,7 @@ public class IsTest extends TestBase {
         Is cond1 = new Is("a", 1);
         Is cond2 = new Is("b", 2);
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -166,7 +166,7 @@ public class IsTest extends TestBase {
         Is cond1 = new Is("a", 1);
         Is cond2 = new Is("b", 2);
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -196,9 +196,9 @@ public class IsTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersWithNull() {
+    public void testParametersWithNull() {
         Is condition = new Is("name", null);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         Assertions.assertNotNull(params);
         Assertions.assertEquals(0, params.size());
     }

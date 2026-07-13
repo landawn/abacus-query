@@ -70,17 +70,17 @@ public class NotLikeTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         NotLike condition = new NotLike("status", "active");
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
     @Test
-    public void testGetParameters_MultipleValues() {
+    public void testParameters_MultipleValues() {
         NotLike condition = new NotLike("count", 42);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
@@ -158,7 +158,7 @@ public class NotLikeTest extends TestBase {
         NotLike cond1 = new NotLike("a", 1);
         NotLike cond2 = new NotLike("b", 2);
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -166,7 +166,7 @@ public class NotLikeTest extends TestBase {
         NotLike cond1 = new NotLike("a", 1);
         NotLike cond2 = new NotLike("b", 2);
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -278,7 +278,7 @@ public class NotLikeTest extends TestBase {
         NotLike notLike = Filters.notLike("name", null);
 
         Assertions.assertNull(notLike.getPropValue());
-        Assertions.assertTrue(notLike.getParameters().size() == 1);
+        Assertions.assertTrue(notLike.parameters().size() == 1);
     }
 
     @Test

@@ -17,6 +17,7 @@ package com.landawn.abacus.query.condition;
 import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.Locale;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -77,6 +78,8 @@ public class Limit extends Clause {
     private int offset;
 
     private String literal;
+
+    private boolean resolved;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -145,6 +148,7 @@ public class Limit extends Clause {
 
         this.count = count;
         this.offset = offset;
+        this.resolved = true;
     }
 
     /**
@@ -155,7 +159,7 @@ public class Limit extends Clause {
      * {@code ROW}/{@code ROWS}, {@code ONLY}) are upper-cased (parameter names inside {@code #{...}} or after
      * {@code :} keep their original case). If the expression starts with a digit, {@code '?'}, {@code ':'}, or
      * <code>"#{"</code>, a {@code "LIMIT "} prefix is added automatically; otherwise it is used as-is. This
-     * formatted string is what {@link #getLiteral()} and {@link #toString(NamingPolicy)} return.</p>
+     * formatted string is what {@link #literal()} and {@link #toString(NamingPolicy)} return.</p>
      *
      * <p><b>Accepted grammar.</b> Each number slot below is either an integer literal or a {@code ?} /
      * {@code :name} / <code>#{name}</code> placeholder:</p>
@@ -229,13 +233,14 @@ public class Limit extends Clause {
         this.literal = prepared.literal;
         this.count = prepared.count;
         this.offset = prepared.offset;
+        this.resolved = prepared.resolved;
     }
 
     /**
      * Immutable carrier for the values a {@link #Limit(String)} needs, computed once by {@link #prepare(String)}
      * so they can be handed to the private constructor before its mandatory {@code super(...)} call.
      */
-    private record Prepared(String conditionExpr, String literal, int count, int offset) {
+    private record Prepared(String conditionExpr, String literal, int count, int offset, boolean resolved) {
     }
 
     /**
@@ -270,10 +275,10 @@ public class Limit extends Clause {
         // A placeholder slot (or an integer literal that overflows int) leaves the value unresolved: the
         // expression is accepted but stays opaque (count == MAX_VALUE, offset == 0), rendered from its literal.
         if (count == null || offset == null) {
-            return new Prepared(conditionExpr, literal, Integer.MAX_VALUE, 0);
+            return new Prepared(conditionExpr, literal, Integer.MAX_VALUE, 0, false);
         }
 
-        return new Prepared(conditionExpr, literal, count, offset);
+        return new Prepared(conditionExpr, literal, count, offset, true);
     }
 
     /**
@@ -288,31 +293,31 @@ public class Limit extends Clause {
      * <pre>{@code
      * // Limit created with a string expression (retained even though it is parsed)
      * Limit customLimit = new Limit("10 OFFSET 20");
-     * String literal = customLimit.getLiteral();
+     * String literal = customLimit.literal();
      * // Returns: "LIMIT 10 OFFSET 20"
      *
      * // A FETCH-style expression keeps its verbatim literal
      * Limit fetch = new Limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY");
-     * // fetch.getLiteral() returns: "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY"
+     * // fetch.literal() returns: "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY"
      *
      * // Limit created with count/offset returns null
      * Limit numericLimit = new Limit(20, 10);
-     * String noLiteral = numericLimit.getLiteral();
+     * String noLiteral = numericLimit.literal();
      * // Returns: null
      * }</pre>
      *
      * @return the LIMIT literal string, or {@code null} if constructed with count/offset parameters
      */
-    public String getLiteral() {
+    public String literal() {
         return literal;
     }
 
     /**
      * Checks whether this Limit was created from a string expression (see {@link #Limit(String)}).
-     * When this returns {@code true}, {@link #getLiteral()} is non-null and is what gets rendered;
+     * When this returns {@code true}, {@link #literal()} is non-null and is what gets rendered;
      * {@link #getCount()}/{@link #getOffset()} may hold sentinel values ({@link Integer#MAX_VALUE}/0)
      * if the expression stayed opaque. When it returns {@code false}, the Limit was created with
-     * numeric count/offset parameters and {@link #getLiteral()} returns {@code null}.
+     * numeric count/offset parameters and {@link #literal()} returns {@code null}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -321,7 +326,7 @@ public class Limit extends Clause {
      * }</pre>
      *
      * @return {@code true} if this Limit was constructed from a string expression, {@code false} otherwise
-     * @see #getLiteral()
+     * @see #literal()
      */
     public boolean hasLiteral() {
         return literal != null;
@@ -399,6 +404,33 @@ public class Limit extends Clause {
     }
 
     /**
+     * Returns whether the count and offset are resolved numeric values rather than sentinels for an opaque expression.
+     *
+     * @return {@code true} for numeric limits and parsed numeric expressions; {@code false} for opaque expressions
+     */
+    public boolean isResolved() {
+        return resolved;
+    }
+
+    /**
+     * Returns the resolved row count when available.
+     *
+     * @return the resolved count, or an empty optional for an opaque expression
+     */
+    public OptionalInt getResolvedCount() {
+        return isResolved() ? OptionalInt.of(count) : OptionalInt.empty();
+    }
+
+    /**
+     * Returns the resolved row offset when available.
+     *
+     * @return the resolved offset, or an empty optional for an opaque expression
+     */
+    public OptionalInt getResolvedOffset() {
+        return isResolved() ? OptionalInt.of(offset) : OptionalInt.empty();
+    }
+
+    /**
      * Gets the parameters for this LIMIT clause.
      * LIMIT clauses do not have bindable parameters as the count and offset
      * are typically part of the SQL structure itself, not parameterized values.
@@ -410,17 +442,17 @@ public class Limit extends Clause {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * new Limit(10).getParameters();              // returns [] (empty, immutable)
-     * new Limit(10, 20).getParameters();          // returns []
+     * new Limit(10).parameters();              // returns [] (empty, immutable)
+     * new Limit(10, 20).parameters();          // returns []
      *
      * // Edge: even an expression containing a placeholder yields no bound parameters
-     * new Limit("? OFFSET ?").getParameters();    // returns []
+     * new Limit("? OFFSET ?").parameters();    // returns []
      * }</pre>
      *
      * @return an empty immutable list as LIMIT has no parameters
      */
     @Override
-    public ImmutableList<Object> getParameters() {
+    public ImmutableList<Object> parameters() {
         return ImmutableList.empty();
     }
 

@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Filters;
 
 /**
  * Comprehensive test class for NamedProperty.
@@ -114,7 +115,7 @@ public class NamedPropertyTest extends TestBase {
         Or or = np.equalsAny("red", "green", "blue");
 
         assertNotNull(or);
-        assertEquals(3, or.getConditions().size());
+        assertEquals(3, or.conditions().size());
     }
 
     @Test
@@ -125,7 +126,7 @@ public class NamedPropertyTest extends TestBase {
         Or or = np.equalsAny(cities);
 
         assertNotNull(or);
-        assertEquals(3, or.getConditions().size());
+        assertEquals(3, or.conditions().size());
     }
 
     @Test
@@ -362,7 +363,7 @@ public class NamedPropertyTest extends TestBase {
 
         Or or = priority.equalsAny(1, 2, 3, 4, 5);
 
-        assertEquals(5, or.getConditions().size());
+        assertEquals(5, or.conditions().size());
     }
 
     @Test
@@ -432,7 +433,7 @@ public class NamedPropertyTest extends TestBase {
 
         Or or = type.equalsAny("A", "B", "C", "D");
 
-        assertEquals(4, or.getConditions().size());
+        assertEquals(4, or.conditions().size());
     }
 
     @Test
@@ -442,7 +443,7 @@ public class NamedPropertyTest extends TestBase {
         Or or = status.equalsAny("active");
 
         assertNotNull(or);
-        assertEquals(1, or.getConditions().size());
+        assertEquals(1, or.conditions().size());
     }
 
     @Test
@@ -586,10 +587,10 @@ public class NamedPropertyTest extends TestBase {
         final Or condition = property.equalsAny(new long[] { 1001L, 1002L, 1003L });
 
         assertNotNull(condition);
-        assertEquals(3, condition.getConditions().size());
-        assertEquals(Long.valueOf(1001L), ((Equal) condition.getConditions().get(0)).getPropValue());
-        assertEquals(Long.valueOf(1002L), ((Equal) condition.getConditions().get(1)).getPropValue());
-        assertEquals(Long.valueOf(1003L), ((Equal) condition.getConditions().get(2)).getPropValue());
+        assertEquals(3, condition.conditions().size());
+        assertEquals(Long.valueOf(1001L), ((Equal) condition.conditions().get(0)).getPropValue());
+        assertEquals(Long.valueOf(1002L), ((Equal) condition.conditions().get(1)).getPropValue());
+        assertEquals(Long.valueOf(1003L), ((Equal) condition.conditions().get(2)).getPropValue());
     }
 
     @Test
@@ -597,7 +598,7 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("id");
         final Or condition = property.equalsAny(new long[] { 42L });
 
-        assertEquals(1, condition.getConditions().size());
+        assertEquals(1, condition.conditions().size());
     }
 
     @Test
@@ -613,10 +614,10 @@ public class NamedPropertyTest extends TestBase {
         final Or condition = property.equalsAny(new double[] { 1.5, 2.0, 2.5 });
 
         assertNotNull(condition);
-        assertEquals(3, condition.getConditions().size());
-        assertEquals(Double.valueOf(1.5), ((Equal) condition.getConditions().get(0)).getPropValue());
-        assertEquals(Double.valueOf(2.0), ((Equal) condition.getConditions().get(1)).getPropValue());
-        assertEquals(Double.valueOf(2.5), ((Equal) condition.getConditions().get(2)).getPropValue());
+        assertEquals(3, condition.conditions().size());
+        assertEquals(Double.valueOf(1.5), ((Equal) condition.conditions().get(0)).getPropValue());
+        assertEquals(Double.valueOf(2.0), ((Equal) condition.conditions().get(1)).getPropValue());
+        assertEquals(Double.valueOf(2.5), ((Equal) condition.conditions().get(2)).getPropValue());
     }
 
     @Test
@@ -624,7 +625,7 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("score");
         final Or condition = property.equalsAny(new double[] { 99.9 });
 
-        assertEquals(1, condition.getConditions().size());
+        assertEquals(1, condition.conditions().size());
     }
 
     @Test
@@ -789,7 +790,7 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty prop = NamedProperty.of("color");
         Or condition = prop.equalsAny("red", "green", "blue");
 
-        Assertions.assertEquals(3, condition.getConditions().size());
+        Assertions.assertEquals(3, condition.conditions().size());
     }
 
     @Test
@@ -797,8 +798,8 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty prop = NamedProperty.of("priority");
         Or condition = prop.equalsAny(new int[] { 1, 2, 3 });
 
-        Assertions.assertEquals(3, condition.getConditions().size());
-        Assertions.assertEquals(Integer.valueOf(1), ((Equal) condition.getConditions().get(0)).getPropValue());
+        Assertions.assertEquals(3, condition.conditions().size());
+        Assertions.assertEquals(Integer.valueOf(1), ((Equal) condition.conditions().get(0)).getPropValue());
     }
 
     @Test
@@ -824,7 +825,7 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty prop = NamedProperty.of("id");
         In condition = prop.in(new int[] { 1, 2, 3 });
 
-        Assertions.assertEquals(Arrays.asList(1, 2, 3), condition.getParameters());
+        Assertions.assertEquals(Arrays.asList(1, 2, 3), condition.parameters());
     }
 
     @Test
@@ -832,7 +833,7 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty prop = NamedProperty.of("id");
         NotIn condition = prop.notIn(new int[] { 4, 5, 6 });
 
-        Assertions.assertEquals(Arrays.asList(4, 5, 6), condition.getParameters());
+        Assertions.assertEquals(Arrays.asList(4, 5, 6), condition.parameters());
     }
 
     // --- 2nd-pass review verification tests ---
@@ -941,5 +942,11 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty leadSpace = NamedProperty.of(" zzz_uniq");
         assertNotSame(noSpace, leadSpace);
         Assertions.assertNotEquals(noSpace, leadSpace);
+    }
+
+    @Test
+    public void testNullEmptySymmetry() {
+        assertEquals(Filters.isNullOrEmpty("name"), NamedProperty.of("name").isNullOrEmpty());
+        assertEquals(Filters.isNotNullAndNotEmpty("name"), NamedProperty.of("name").isNotNullAndNotEmpty());
     }
 }

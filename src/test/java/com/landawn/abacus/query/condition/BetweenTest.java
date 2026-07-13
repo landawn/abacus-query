@@ -72,18 +72,18 @@ public class BetweenTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Between condition = new Between("age", 18, 65);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(2, params.size());
         assertEquals(18, (int) params.get(0));
         assertEquals(65, (int) params.get(1));
     }
 
     @Test
-    public void testGetParameters_WithNullValues() {
+    public void testParameters_WithNullValues() {
         Between condition = new Between("field", null, null);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(2, params.size());
         assertNull(params.get(0));
         assertNull(params.get(1));
@@ -171,7 +171,7 @@ public class BetweenTest extends TestBase {
         Between cond1 = new Between("age", 18, 65);
         Between cond2 = new Between("salary", 30000, 100000);
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -179,7 +179,7 @@ public class BetweenTest extends TestBase {
         Between cond1 = new Between("age", 18, 30);
         Between cond2 = new Between("age", 50, 65);
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -261,12 +261,12 @@ public class BetweenTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersWithConditionValues() {
+    public void testParametersWithConditionValues() {
         SubQuery minQuery = Filters.subQuery("SELECT MIN(price) FROM products");
         SubQuery maxQuery = Filters.subQuery("SELECT MAX(price) FROM products");
         Between between = new Between("price", minQuery, maxQuery);
 
-        List<Object> params = between.getParameters();
+        List<Object> params = between.parameters();
         // Should get parameters from both subqueries
         Assertions.assertNotNull(params);
     }
@@ -345,6 +345,6 @@ public class BetweenTest extends TestBase {
         And complexCondition = dateRange.and(priceRange).and(Filters.eq("status", "active")).and(Filters.between("quantity", 0, 5).not());
 
         Assertions.assertNotNull(complexCondition);
-        Assertions.assertEquals(4, complexCondition.getConditions().size());
+        Assertions.assertEquals(4, complexCondition.conditions().size());
     }
 }

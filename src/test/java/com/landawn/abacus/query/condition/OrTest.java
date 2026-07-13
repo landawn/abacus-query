@@ -27,7 +27,7 @@ public class OrTest extends TestBase {
         Equal cond2 = new Equal("b", 2);
         Or junction = new Or(cond1, cond2);
 
-        assertEquals(2, junction.getConditions().size());
+        assertEquals(2, junction.conditions().size());
         assertEquals(Operator.OR, junction.operator());
     }
 
@@ -38,20 +38,20 @@ public class OrTest extends TestBase {
         List<Condition> conditions = Arrays.asList(cond1, cond2);
 
         Or junction = new Or(conditions);
-        assertEquals(2, junction.getConditions().size());
+        assertEquals(2, junction.conditions().size());
     }
 
     @Test
     public void testConstructor_SingleCondition() {
         Equal cond = new Equal("status", "active");
         Or junction = new Or(cond);
-        assertEquals((Object) Integer.valueOf(1), junction.getConditions().size());
+        assertEquals((Object) Integer.valueOf(1), junction.conditions().size());
     }
 
     @Test
     public void testConstructor_EmptyConditions() {
         Or junction = new Or();
-        assertEquals(Integer.valueOf(0), junction.getConditions().size());
+        assertEquals(Integer.valueOf(0), junction.conditions().size());
     }
 
     @Test
@@ -65,29 +65,29 @@ public class OrTest extends TestBase {
     }
 
     @Test
-    public void testGetConditions() {
+    public void testConditions() {
         Equal cond1 = new Equal("a", 1);
         Equal cond2 = new Equal("b", 2);
         Or junction = new Or(cond1, cond2);
 
-        List<Condition> conditions = junction.getConditions();
+        List<Condition> conditions = junction.conditions();
         assertNotNull(conditions);
         assertEquals(2, conditions.size());
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Or junction = new Or(new Equal("a", 1), new Equal("b", "test"));
-        List<Object> params = junction.getParameters();
+        List<Object> params = junction.parameters();
         assertEquals(2, params.size());
         assertEquals(Integer.valueOf(1), params.get(0));
         assertEquals("test", params.get(1));
     }
 
     @Test
-    public void testGetParameters_EmptyConditions() {
+    public void testParameters_EmptyConditions() {
         Or junction = new Or();
-        List<Object> params = junction.getParameters();
+        List<Object> params = junction.parameters();
         assertEquals(0, params.size());
     }
 
@@ -157,8 +157,8 @@ public class OrTest extends TestBase {
         Or original = new Or(cond1, cond2);
         Or extended = original.or(cond3);
 
-        assertEquals(Integer.valueOf(3), extended.getConditions().size());
-        assertEquals(2, original.getConditions().size());
+        assertEquals(Integer.valueOf(3), extended.conditions().size());
+        assertEquals(2, original.conditions().size());
     }
 
     @Test
@@ -178,8 +178,8 @@ public class OrTest extends TestBase {
         Or inner = new Or(new Equal("a", 1), new Equal("b", 2));
         Or outer = new Or(inner, new Equal("c", 3));
 
-        assertEquals(2, outer.getConditions().size());
-        List<Object> params = outer.getParameters();
+        assertEquals(2, outer.conditions().size());
+        List<Object> params = outer.parameters();
         assertEquals(3, params.size());
     }
 
@@ -190,7 +190,7 @@ public class OrTest extends TestBase {
         And result = or.and(cond);
 
         assertNotNull(result);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
         assertEquals(Operator.AND, result.operator());
     }
 
@@ -202,7 +202,7 @@ public class OrTest extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
         Or innerCondition = (Or) result.getCondition();
-        assertEquals(2, innerCondition.getConditions().size());
+        assertEquals(2, innerCondition.conditions().size());
     }
 
     @Test
@@ -254,7 +254,7 @@ public class OrTest extends TestBase {
 
         Assertions.assertNotNull(or);
         Assertions.assertEquals(Operator.OR, or.operator());
-        Assertions.assertEquals(3, or.getConditions().size());
+        Assertions.assertEquals(3, or.conditions().size());
     }
 
     @Test
@@ -262,7 +262,7 @@ public class OrTest extends TestBase {
         Or or = Filters.or();
 
         Assertions.assertNotNull(or);
-        Assertions.assertEquals(0, or.getConditions().size());
+        Assertions.assertEquals(0, or.conditions().size());
     }
 
     @Test
@@ -271,7 +271,7 @@ public class OrTest extends TestBase {
 
         Or or = Filters.or(conditions);
 
-        Assertions.assertEquals(2, or.getConditions().size());
+        Assertions.assertEquals(2, or.conditions().size());
     }
 
     @Test
@@ -280,14 +280,14 @@ public class OrTest extends TestBase {
         Or result = or.or(Filters.eq("type", "B"));
 
         Assertions.assertNotSame(or, result);
-        Assertions.assertEquals(2, result.getConditions().size());
+        Assertions.assertEquals(2, result.conditions().size());
     }
 
     @Test
     public void testOrMethodChaining() {
         Or or = Filters.or(Filters.eq("type", "A")).or(Filters.eq("type", "B")).or(Filters.eq("type", "C"));
 
-        Assertions.assertEquals(3, or.getConditions().size());
+        Assertions.assertEquals(3, or.conditions().size());
     }
 
     @Test
@@ -296,7 +296,7 @@ public class OrTest extends TestBase {
         Equal eq2 = Filters.eq("status", "pending");
 
         Or or = Filters.or(eq1, eq2);
-        List<Condition> conditions = or.getConditions();
+        List<Condition> conditions = or.conditions();
 
         Assertions.assertEquals(2, conditions.size());
         Assertions.assertTrue(conditions.contains(eq1));
@@ -333,7 +333,7 @@ public class OrTest extends TestBase {
         Or or = Filters.or(Filters.and(Filters.eq("category", "electronics"), Filters.gt("price", 100)),
                 Filters.and(Filters.eq("category", "books"), Filters.gt("price", 50)), Filters.eq("featured", true));
 
-        Assertions.assertEquals(3, or.getConditions().size());
-        Assertions.assertTrue(or.getParameters().size() >= 5);
+        Assertions.assertEquals(3, or.conditions().size());
+        Assertions.assertTrue(or.parameters().size() >= 5);
     }
 }

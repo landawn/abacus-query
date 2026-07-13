@@ -207,6 +207,17 @@ public enum SqlOperation {
     }
 
     /**
+     * Resolves an operation token, returning {@link #UNKNOWN} for {@code null} or unsupported input.
+     *
+     * @param token the SQL operation token or enum constant name; may be {@code null}
+     * @return the resolved operation, or {@link #UNKNOWN} when no operation matches
+     */
+    public static SqlOperation from(final String token) {
+        final SqlOperation operation = of(token);
+        return operation == null ? UNKNOWN : operation;
+    }
+
+    /**
      * Returns the SQL text representation of this operation.
      *
      * <p>This method returns the canonical SQL keyword associated with this operation.

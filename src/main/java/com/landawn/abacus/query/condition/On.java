@@ -132,16 +132,16 @@ public class On extends Cell {
      * // SQL: INNER JOIN salary_grades ON ((emp.salary >= salary_grades.min_salary) AND (emp.salary <= salary_grades.max_salary))
      * }</pre>
      *
-     * @param cond the join condition. Any non-clause, non-{@code null} condition is allowed, including
+     * @param condition the join condition. Any non-clause, non-{@code null} condition is allowed, including
      *            {@link Expression}, {@link Equal}, {@link And}, {@link Or}, or {@link Between}.
      *            Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond} is a {@link Criteria},
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is a {@link Criteria},
      *                                  a SQL clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME}
      *                                  quantified-subquery operand, or an empty predicate
      *                                  (a blank {@link Expression} or empty {@link Junction})
      */
-    public On(final Condition cond) {
-        super(Operator.ON, validateOnCondition(cond));
+    public On(final Condition condition) {
+        super(Operator.ON, validateOnCondition(condition));
     }
 
     private static Condition validateOnCondition(final Condition cond) {

@@ -228,7 +228,7 @@ public class Junction extends ComposableCondition {
      * Junction and = new Junction(Operator.AND,
      *     new Equal("status", "active"),
      *     new GreaterThan("age", 18));
-     * List<Condition> conditions = and.getConditions();
+     * List<Condition> conditions = and.conditions();
      * // conditions = [Equal("status", "active"), GreaterThan("age", 18)]
      * conditions.size();             // returns 2
      * conditions.get(0).toString();  // returns "status = 'active'"
@@ -237,12 +237,12 @@ public class Junction extends ComposableCondition {
      * conditions.add(new Equal("x", 1));   // throws UnsupportedOperationException
      *
      * // Edge: an empty junction returns an empty list
-     * new Junction(Operator.AND).getConditions().isEmpty();   // returns true
+     * new Junction(Operator.AND).conditions().isEmpty();   // returns true
      * }</pre>
      *
      * @return an immutable view of the list of conditions in this junction
      */
-    public ImmutableList<Condition> getConditions() {
+    public ImmutableList<Condition> conditions() {
         ImmutableList<Condition> view = cachedConditionsView;
 
         if (view == null) {
@@ -305,21 +305,21 @@ public class Junction extends ComposableCondition {
      * Junction and = new Junction(Operator.AND,
      *     new Equal("status", "active"),
      *     new Between("age", 18, 65));
-     * and.getParameters();          // returns ["active", 18, 65]
+     * and.parameters();          // returns ["active", 18, 65]
      *
      * // Edge: an empty junction has no parameters
      * Junction empty = new Junction(Operator.AND);
-     * empty.getParameters();        // returns [] (empty, immutable)
+     * empty.parameters();        // returns [] (empty, immutable)
      *
      * // Edge: conditions without bound values contribute nothing
      * Junction noParams = new Junction(Operator.OR, new IsNotNull("email"));
-     * noParams.getParameters();     // returns []
+     * noParams.parameters();     // returns []
      * }</pre>
      *
      * @return an immutable list containing all parameters from all conditions
      */
     @Override
-    public ImmutableList<Object> getParameters() {
+    public ImmutableList<Object> parameters() {
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
@@ -327,7 +327,7 @@ public class Junction extends ComposableCondition {
 
             for (final Condition condition : conditions) {
                 if (condition != null) {
-                    parameters.addAll(condition.getParameters());
+                    parameters.addAll(condition.parameters());
                 }
             }
 

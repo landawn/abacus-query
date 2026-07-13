@@ -28,7 +28,7 @@ public class AndTest extends TestBase {
         Equal cond2 = new Equal("b", 2);
         And junction = new And(cond1, cond2);
 
-        assertEquals(2, junction.getConditions().size());
+        assertEquals(2, junction.conditions().size());
         assertEquals(Operator.AND, junction.operator());
     }
 
@@ -39,20 +39,20 @@ public class AndTest extends TestBase {
         List<Condition> conditions = Arrays.asList(cond1, cond2);
 
         And junction = new And(conditions);
-        assertEquals(2, junction.getConditions().size());
+        assertEquals(2, junction.conditions().size());
     }
 
     @Test
     public void testConstructor_SingleCondition() {
         Equal cond = new Equal("status", "active");
         And junction = new And(cond);
-        assertEquals((Object) Integer.valueOf(1), junction.getConditions().size());
+        assertEquals((Object) Integer.valueOf(1), junction.conditions().size());
     }
 
     @Test
     public void testConstructor_EmptyConditions() {
         And junction = new And();
-        assertEquals(Integer.valueOf(0), junction.getConditions().size());
+        assertEquals(Integer.valueOf(0), junction.conditions().size());
     }
 
     @Test
@@ -66,29 +66,29 @@ public class AndTest extends TestBase {
     }
 
     @Test
-    public void testGetConditions() {
+    public void testConditions() {
         Equal cond1 = new Equal("a", 1);
         Equal cond2 = new Equal("b", 2);
         And junction = new And(cond1, cond2);
 
-        List<Condition> conditions = junction.getConditions();
+        List<Condition> conditions = junction.conditions();
         assertNotNull(conditions);
         assertEquals(2, conditions.size());
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         And junction = new And(new Equal("a", 1), new Equal("b", "test"));
-        List<Object> params = junction.getParameters();
+        List<Object> params = junction.parameters();
         assertEquals(2, params.size());
         assertEquals(Integer.valueOf(1), params.get(0));
         assertEquals("test", params.get(1));
     }
 
     @Test
-    public void testGetParameters_EmptyConditions() {
+    public void testParameters_EmptyConditions() {
         And junction = new And();
-        List<Object> params = junction.getParameters();
+        List<Object> params = junction.parameters();
         assertEquals(0, params.size());
     }
 
@@ -158,8 +158,8 @@ public class AndTest extends TestBase {
         And original = new And(cond1, cond2);
         And extended = original.and(cond3);
 
-        assertEquals(Integer.valueOf(3), extended.getConditions().size());
-        assertEquals(2, original.getConditions().size());
+        assertEquals(Integer.valueOf(3), extended.conditions().size());
+        assertEquals(2, original.conditions().size());
     }
 
     @Test
@@ -179,8 +179,8 @@ public class AndTest extends TestBase {
         And inner = new And(new Equal("a", 1), new Equal("b", 2));
         And outer = new And(inner, new Equal("c", 3));
 
-        assertEquals(2, outer.getConditions().size());
-        List<Object> params = outer.getParameters();
+        assertEquals(2, outer.conditions().size());
+        List<Object> params = outer.parameters();
         assertEquals(3, params.size());
     }
 
@@ -191,7 +191,7 @@ public class AndTest extends TestBase {
         Or result = and.or(cond);
 
         assertNotNull(result);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
         assertEquals(Operator.OR, result.operator());
     }
 
@@ -203,7 +203,7 @@ public class AndTest extends TestBase {
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
         And innerCondition = (And) result.getCondition();
-        assertEquals(2, innerCondition.getConditions().size());
+        assertEquals(2, innerCondition.conditions().size());
     }
 
     @Test
@@ -255,9 +255,9 @@ public class AndTest extends TestBase {
 
         Assertions.assertNotNull(and);
         Assertions.assertEquals(Operator.AND, and.operator());
-        Assertions.assertEquals(2, and.getConditions().size());
-        Assertions.assertTrue(and.getConditions().contains(eq1));
-        Assertions.assertTrue(and.getConditions().contains(gt));
+        Assertions.assertEquals(2, and.conditions().size());
+        Assertions.assertTrue(and.conditions().contains(eq1));
+        Assertions.assertTrue(and.conditions().contains(gt));
     }
 
     @Test
@@ -267,7 +267,7 @@ public class AndTest extends TestBase {
         And and = Filters.and(conditions);
 
         Assertions.assertNotNull(and);
-        Assertions.assertEquals(3, and.getConditions().size());
+        Assertions.assertEquals(3, and.conditions().size());
     }
 
     @Test
@@ -275,14 +275,14 @@ public class AndTest extends TestBase {
         And and = Filters.and();
 
         Assertions.assertNotNull(and);
-        Assertions.assertEquals(0, and.getConditions().size());
+        Assertions.assertEquals(0, and.conditions().size());
     }
 
     @Test
     public void testConstructorWithNullCollection() {
         And and = Filters.and((Collection<Condition>) null);
 
-        assertTrue(and.getConditions().isEmpty());
+        assertTrue(and.conditions().isEmpty());
     }
 
     @Test
@@ -335,7 +335,7 @@ public class AndTest extends TestBase {
 
         Assertions.assertNotNull(or);
         Assertions.assertEquals(Operator.OR, or.operator());
-        Assertions.assertEquals(2, or.getConditions().size());
+        Assertions.assertEquals(2, or.conditions().size());
     }
 
     @Test
@@ -357,8 +357,8 @@ public class AndTest extends TestBase {
 
         And complex = Filters.and(nested1, nested2);
 
-        Assertions.assertEquals(2, complex.getConditions().size());
-        List<Object> params = complex.getParameters();
+        Assertions.assertEquals(2, complex.conditions().size());
+        List<Object> params = complex.parameters();
         Assertions.assertEquals(4, params.size());
     }
 }

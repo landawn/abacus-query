@@ -22,6 +22,23 @@ public class AbstractInTest extends TestBase {
         TestAbstractIn(final String propName, final List<?> values) {
             super(propName, Operator.IN, values);
         }
+
+        TestAbstractIn(final String propName, final Operator operator, final List<?> values) {
+            super(propName, operator, values);
+        }
+    }
+
+    private static final class TestRowAbstractIn extends AbstractIn {
+        TestRowAbstractIn(final Operator operator) {
+            super(Arrays.asList("a", "b"), operator, Arrays.asList(Arrays.asList(1, 2)));
+        }
+    }
+
+    @Test
+    public void testRejectsUnsupportedOperator() {
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("status", Operator.EQUAL, Arrays.asList("A")));
+        assertThrows(IllegalArgumentException.class, () -> new TestRowAbstractIn(Operator.EQUAL));
+        assertThrows(NullPointerException.class, () -> new TestAbstractIn("status", null, Arrays.asList("A")));
     }
 
     private static final class EmptyAbstractIn extends AbstractIn {
@@ -53,17 +70,17 @@ public class AbstractInTest extends TestBase {
 
     // Verifies direct values and nested condition values are flattened into parameters.
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         final TestAbstractIn condition = new TestAbstractIn("status", Arrays.asList("ACTIVE", "PENDING"));
 
-        assertEquals(Arrays.asList("ACTIVE", "PENDING"), condition.getParameters());
+        assertEquals(Arrays.asList("ACTIVE", "PENDING"), condition.parameters());
     }
 
     @Test
-    public void testGetParameters_ConditionValues() {
+    public void testParameters_ConditionValues() {
         final TestAbstractIn condition = new TestAbstractIn("id", Arrays.asList(Filters.eq("status", "ACTIVE"), 2));
 
-        assertEquals(Arrays.asList("ACTIVE", 2), condition.getParameters());
+        assertEquals(Arrays.asList("ACTIVE", 2), condition.parameters());
     }
 
     @Test
@@ -127,7 +144,7 @@ public class AbstractInTest extends TestBase {
 
         assertNull(left.getPropName());
         assertTrue(left.getValues().isEmpty());
-        assertTrue(left.getParameters().isEmpty());
+        assertTrue(left.parameters().isEmpty());
         assertEquals(left, right);
         assertEquals(left.hashCode(), right.hashCode());
     }

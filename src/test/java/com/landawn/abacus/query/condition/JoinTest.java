@@ -65,15 +65,15 @@ public class JoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_Empty() {
+    public void testParameters_Empty() {
         Join join = new Join("orders");
-        assertTrue(join.getParameters().isEmpty());
+        assertTrue(join.parameters().isEmpty());
     }
 
     @Test
-    public void testGetParameters_WithCondition() {
+    public void testParameters_WithCondition() {
         Join join = new Join("orders o", new Equal("status", "active"));
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
@@ -131,7 +131,7 @@ public class JoinTest extends TestBase {
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("o.customer_id", "c.id"), new GreaterThan("o.total", 100)));
         Join join = new Join("orders o", andCondition);
-        assertEquals(2, join.getParameters().size());
+        assertEquals(2, join.parameters().size());
     }
 
     @Test
@@ -230,11 +230,11 @@ public class JoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Condition condition = Filters.and(Filters.eq("status", "active"), Filters.gt("amount", 100));
         Join join = new Join("orders", condition);
 
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
 
         Assertions.assertNotNull(params);
         Assertions.assertEquals(2, params.size());
@@ -243,9 +243,9 @@ public class JoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersNoCondition() {
+    public void testParametersNoCondition() {
         Join join = new Join("products");
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
 
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
@@ -355,7 +355,7 @@ public class JoinTest extends TestBase {
         Join same = new Join();
 
         Assertions.assertTrue(join.getJoinEntities().isEmpty());
-        Assertions.assertTrue(join.getParameters().isEmpty());
+        Assertions.assertTrue(join.parameters().isEmpty());
         Assertions.assertEquals(join, same);
         Assertions.assertEquals(join.hashCode(), same.hashCode());
     }
@@ -426,7 +426,6 @@ public class JoinTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("t1", Filters.some(sub)));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("t1", Filters.any(sub)));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("t1", Filters.all(sub)));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.crossJoin("t1", Filters.some(sub)));
 
         // On/Using instances (and a null condition) are still accepted.
         assertNotNull(new Join("t1", new On("a.id", "b.id")));

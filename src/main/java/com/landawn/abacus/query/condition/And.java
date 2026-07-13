@@ -184,25 +184,25 @@ public class And extends Junction {
      * // extended is a new instance with all conditions
      * }</pre>
      *
-     * @param cond the condition to add to this AND. Must not be {@code null} and must be
+     * @param condition the condition to add to this AND. Must not be {@code null} and must be
      *             composable (i.e. not a {@link Criteria}, a {@link Clause}, an {@code ON}/{@code USING} connector,
      *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate).
      * @return a new {@link And} condition containing all existing conditions plus the new one
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond} is non-composable —
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is non-composable —
      *             a {@link Criteria}, a {@link Clause} condition (such as {@link Where} or {@link OrderBy}),
      *             an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
      *             operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     @Override
-    public And and(final Condition cond) {
-        N.checkArgNotNull(cond, "cond");
-        validateComposableOperand(cond, "and");
+    public And and(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
+        validateComposableOperand(condition, "and");
 
         final List<Condition> conditionList = new ArrayList<>(this.conditions.size() + 1);
 
         conditionList.addAll(this.conditions);
 
-        conditionList.add(cond);
+        conditionList.add(condition);
 
         return new And(conditionList, true);
     }

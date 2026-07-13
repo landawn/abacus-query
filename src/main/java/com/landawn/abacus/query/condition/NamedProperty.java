@@ -576,6 +576,15 @@ public class NamedProperty {
     }
 
     /**
+     * Creates a condition matching {@code null} or empty values for this property.
+     *
+     * @return an OR condition combining null and empty checks
+     */
+    public Or isNullOrEmpty() {
+        return Filters.isNullOrEmpty(propName);
+    }
+
+    /**
      * Creates an IS NOT NULL condition for this property.
      * This generates a condition that checks if the property value is not NULL in the database.
      *
@@ -592,6 +601,15 @@ public class NamedProperty {
      */
     public IsNotNull isNotNull() {
         return Filters.isNotNull(propName);
+    }
+
+    /**
+     * Creates a condition requiring this property to be both non-null and non-empty.
+     *
+     * @return an AND condition combining non-null and non-empty checks
+     */
+    public And isNotNullAndNotEmpty() {
+        return Filters.isNotNullAndNotEmpty(propName);
     }
 
     /**

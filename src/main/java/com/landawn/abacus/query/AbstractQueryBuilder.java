@@ -306,7 +306,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Matches the generic {@code LIMIT count [OFFSET offset]} expressions that reach the builder as an
-     * unparsed {@link Limit#getLiteral() literal}, where each token is an integer literal or a {@code ?} /
+     * unparsed {@link Limit#literal() literal}, where each token is an integer literal or a {@code ?} /
      * {@code :name} / <code>#{name}</code> parameter placeholder. In practice the integer-only forms are
      * parsed into concrete count/offset by {@link Limit#Limit(String)} and rendered via {@link #limit(int)} /
      * {@link #limit(int, int)}, so this pattern normally handles the placeholder-bearing forms. Deliberately
@@ -1176,7 +1176,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final List<String> allPropNames = new ArrayList<>();
 
             for (final Selection selection : _multiSelects) {
-                final Collection<String> selectPropNames = N.notEmpty(selection.selectPropNames()) ? selection.selectPropNames()
+                final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
                         : QueryUtil.getSelectPropNames(selection.entityClass(), selection.includeSubEntityProperties(), selection.excludedPropNames());
                 allPropNames.addAll(selectPropNames);
             }
@@ -1679,7 +1679,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 selectionClassAlias = selection.classAlias();
                 selectionWithClassAlias = Strings.isNotEmpty(selectionClassAlias);
 
-                final Collection<String> selectPropNames = N.notEmpty(selection.selectPropNames()) ? selection.selectPropNames()
+                final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
                         : QueryUtil.getSelectPropNames(selectionEntityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
 
                 for (final String propName : selectPropNames) {
@@ -2337,16 +2337,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
-     * @param cond the join condition (must not be {@code null})
+     * @param condition the join condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
-    public This on(final Condition cond) {
-        N.checkArgNotNull(cond, "cond");
+    public This on(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
 
         _sb.append(_SPACE_ON_SPACE);
 
-        appendCondition(cond);
+        appendCondition(condition);
 
         return (This) this;
     }
@@ -2495,14 +2495,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE age > ?
      * }</pre>
      *
-     * @param cond the WHERE condition (must not be {@code null})
+     * @param condition the WHERE condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      * @throws IllegalStateException if {@code WHERE} has already been set on this builder
      * @see Filters
      */
-    public This where(final Condition cond) {
-        N.checkArgNotNull(cond, "cond");
+    public This where(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
 
         checkIfAlreadyCalled(SK.WHERE);
 
@@ -2510,7 +2510,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _sb.append(_SPACE_WHERE_SPACE);
 
-        appendCondition(cond);
+        appendCondition(condition);
 
         return (This) this;
     }
@@ -2528,14 +2528,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT category, COUNT(*) FROM products GROUP BY category ASC
      * }</pre>
      *
-     * @param expr the column to group by ascending
+     * @param propOrColumnName the property or column name to group by ascending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     @Beta
-    public This groupByAsc(final String expr) {
-        return groupBy(expr, SortDirection.ASC);
+    public This groupByAsc(final String propOrColumnName) {
+        return groupBy(propOrColumnName, SortDirection.ASC);
     }
 
     /**
@@ -2598,14 +2598,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT category, COUNT(*) FROM products GROUP BY category DESC
      * }</pre>
      *
-     * @param expr the column to group by descending
+     * @param propOrColumnName the property or column name to group by descending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     @Beta
-    public This groupByDesc(final String expr) {
-        return groupBy(expr, SortDirection.DESC);
+    public This groupByDesc(final String propOrColumnName) {
+        return groupBy(propOrColumnName, SortDirection.DESC);
     }
 
     /**
@@ -2667,19 +2667,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT category, COUNT(*) FROM products GROUP BY category
      * }</pre>
      *
-     * @param expr the column to group by (must not be {@code null}, empty, or blank)
+     * @param propOrColumnName the property or column name to group by (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
-    public This groupBy(final String expr) {
-        checkSqlFragmentNotBlank(expr, "expr");
+    public This groupBy(final String propOrColumnName) {
+        checkSqlFragmentNotBlank(propOrColumnName, "propOrColumnName");
 
         checkIfAlreadyCalled(SK.GROUP_BY);
 
         _sb.append(_SPACE_GROUP_BY_SPACE);
 
-        appendColumnName(expr);
+        appendColumnName(propOrColumnName);
 
         return (This) this;
     }
@@ -2920,20 +2920,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT category, COUNT(*) AS count FROM products GROUP BY category HAVING COUNT(*) > ?
      * }</pre>
      *
-     * @param cond the HAVING condition (must not be {@code null})
+     * @param condition the HAVING condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      * @throws IllegalStateException if {@code HAVING} has already been set on this builder
      * @see Filters
      */
-    public This having(final Condition cond) {
-        N.checkArgNotNull(cond, "cond");
+    public This having(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
 
         checkIfAlreadyCalled(SK.HAVING);
 
         _sb.append(_SPACE_HAVING_SPACE);
 
-        appendCondition(cond);
+        appendCondition(condition);
 
         return (This) this;
     }
@@ -2951,14 +2951,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users ORDER BY name ASC
      * }</pre>
      *
-     * @param expr the column to order by ascending
+     * @param propOrColumnName the property or column name to order by ascending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     @Beta
-    public This orderByAsc(final String expr) {
-        return orderBy(expr, SortDirection.ASC);
+    public This orderByAsc(final String propOrColumnName) {
+        return orderBy(propOrColumnName, SortDirection.ASC);
     }
 
     /**
@@ -3021,14 +3021,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users ORDER BY created_date DESC
      * }</pre>
      *
-     * @param expr the column to order by descending
+     * @param propOrColumnName the property or column name to order by descending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     @Beta
-    public This orderByDesc(final String expr) {
-        return orderBy(expr, SortDirection.DESC);
+    public This orderByDesc(final String propOrColumnName) {
+        return orderBy(propOrColumnName, SortDirection.DESC);
     }
 
     /**
@@ -3090,19 +3090,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users ORDER BY name
      * }</pre>
      *
-     * @param expr the column to order by (must not be {@code null}, empty, or blank)
+     * @param propOrColumnName the property or column name to order by (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
-    public This orderBy(final String expr) {
-        checkSqlFragmentNotBlank(expr, "expr");
+    public This orderBy(final String propOrColumnName) {
+        checkSqlFragmentNotBlank(propOrColumnName, "propOrColumnName");
 
         checkIfAlreadyCalled(SK.ORDER_BY);
 
         _sb.append(_SPACE_ORDER_BY_SPACE);
 
-        appendColumnName(expr);
+        appendColumnName(propOrColumnName);
 
         return (This) this;
     }
@@ -3477,8 +3477,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // the sentinel count == MAX_VALUE / offset == 0; render it from its literal. Everything else —
         // the numeric constructors and string expressions parsed into concrete count/offset — is emitted
         // in the dialect's pagination syntax via limit(int) / limit(int, int).
-        if (Strings.isNotEmpty(limit.getLiteral()) && limit.getCount() == Integer.MAX_VALUE && limit.getOffset() == 0) {
-            if (usesFetchPagination() && appendLimitExpressionInFetchSyntax(limit.getLiteral())) {
+        if (Strings.isNotEmpty(limit.literal()) && !limit.isResolved()) {
+            if (usesFetchPagination() && appendLimitExpressionInFetchSyntax(limit.literal())) {
                 return;
             }
 
@@ -3490,11 +3490,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             // upper-cases the OFFSET keyword only outside placeholders, so ":offset" / "#{ offset }" do not
             // misfire, and the whole-token match (unlike a raw substring test) keeps a placeholder name such
             // as ":rowOFFSETCount" from spuriously consuming the slot.
-            if (SqlParser.indexOfWord(limit.getLiteral(), SK.OFFSET, 0, true) >= 0) {
+            if (SqlParser.indexOfWord(limit.literal(), SK.OFFSET, 0, true) >= 0) {
                 checkIfAlreadyCalled(SK.OFFSET);
             }
 
-            _sb.append(_SPACE).append(limit.getLiteral());
+            _sb.append(_SPACE).append(limit.literal());
         } else if (limit.getOffset() > 0) {
             limit(limit.getCount(), limit.getOffset());
         } else {
@@ -3510,7 +3510,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * does not match {@link #GENERIC_LIMIT_EXPRESSION_PATTERN}, in which case the caller emits it
      * verbatim.
      *
-     * @param expression the normalized limit expression from {@link Limit#getLiteral()}
+     * @param expression the normalized limit expression from {@link Limit#literal()}
      * @return {@code true} if the expression was rendered in FETCH pagination syntax
      */
     private boolean appendLimitExpressionInFetchSyntax(final String expression) {
@@ -3704,19 +3704,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE (age > ?) AND (age < ?)
      * }</pre>
      *
-     * @param cond the condition to append
+     * @param condition the condition to append
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code cond} is {@code null}
      * @throws IllegalStateException if a clause it emits has already been set
      * @see Filters
      */
     @Beta
-    public This append(final Condition cond) {
-        N.checkArgNotNull(cond, "cond");
+    public This append(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
 
         init(true);
 
-        if (cond instanceof final Criteria criteria) {
+        if (condition instanceof final Criteria criteria) {
             final Collection<Join> joins = criteria.getJoins();
 
             // The criteria's select modifier (criteria.getSelectModifier(), e.g. DISTINCT) is intentionally
@@ -3804,22 +3804,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (limit != null) {
                 appendLimit(limit);
             }
-        } else if (cond instanceof Clause) {
-            if (cond instanceof final Limit limit) {
+        } else if (condition instanceof Clause) {
+            if (condition instanceof final Limit limit) {
                 appendLimit(limit);
             } else {
-                if (cond.operator() == Operator.WHERE) {
+                if (condition.operator() == Operator.WHERE) {
                     checkIfAlreadyCalled(SK.WHERE);
-                } else if (cond.operator() == Operator.GROUP_BY) {
+                } else if (condition.operator() == Operator.GROUP_BY) {
                     checkIfAlreadyCalled(SK.GROUP_BY);
-                } else if (cond.operator() == Operator.HAVING) {
+                } else if (condition.operator() == Operator.HAVING) {
                     checkIfAlreadyCalled(SK.HAVING);
-                } else if (cond.operator() == Operator.ORDER_BY) {
+                } else if (condition.operator() == Operator.ORDER_BY) {
                     checkIfAlreadyCalled(SK.ORDER_BY);
                 }
 
-                _sb.append(_SPACE).append(cond.operator()).append(_SPACE);
-                appendCondition(((Clause) cond).getCondition());
+                _sb.append(_SPACE).append(condition.operator()).append(_SPACE);
+                appendCondition(((Clause) condition).getCondition());
             }
         } else {
             if (!_isForConditionOnly) {
@@ -3827,7 +3827,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 _sb.append(_SPACE_WHERE_SPACE);
             }
 
-            appendCondition(cond);
+            appendCondition(condition);
         }
 
         return (This) this;
@@ -3883,15 +3883,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param b if true, the condition will be appended
-     * @param cond the condition to append
+     * @param condition the condition to append
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code b} is {@code true} and {@code cond} is {@code null}
      * @throws IllegalStateException if {@code b} is {@code true} and a clause emitted by {@code cond} has already been set
      */
     @Beta
-    public This appendIf(final boolean b, final Condition cond) {
+    public This appendIf(final boolean b, final Condition condition) {
         if (b) {
-            append(cond);
+            append(condition);
         }
 
         return (This) this;
@@ -3942,18 +3942,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param b if true, append condToAppendForTrue; otherwise append condToAppendForFalse
-     * @param condToAppendForTrue the condition to append if {@code b} is true
-     * @param condToAppendForFalse the condition to append if {@code b} is false
+     * @param conditionToAppendForTrue the condition to append if {@code b} is true
+     * @param conditionToAppendForFalse the condition to append if {@code b} is false
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if the selected condition (the one chosen by {@code b}) is {@code null}
      * @throws IllegalStateException if a clause emitted by the selected condition has already been set
      */
     @Beta
-    public This appendIfOrElse(final boolean b, final Condition condToAppendForTrue, final Condition condToAppendForFalse) {
+    public This appendIfOrElse(final boolean b, final Condition conditionToAppendForTrue, final Condition conditionToAppendForFalse) {
         if (b) {
-            append(condToAppendForTrue);
+            append(conditionToAppendForTrue);
         } else {
-            append(condToAppendForFalse);
+            append(conditionToAppendForFalse);
         }
 
         return (This) this;
@@ -5324,13 +5324,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param <T> the return type of the function
      * @param <E> the exception type that may be thrown
-     * @param func the function to apply to the SP pair
+     * @param function the function to apply to the SP pair
      * @return the result of applying the function
      * @throws E if the function throws an exception
      */
     @Beta
-    public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> func) throws E {
-        return func.apply(build());
+    public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> function) throws E {
+        return function.apply(build());
     }
 
     /**
@@ -5347,15 +5347,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param <T> the return type of the function
      * @param <E> the exception type that may be thrown
-     * @param func the bi-function to apply to the SQL and parameters
+     * @param function the bi-function to apply to the SQL and parameters
      * @return the result of applying the function
      * @throws E if the function throws an exception
      */
     @Beta
-    public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> func) throws E {
+    public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> function) throws E {
         final SP sP = build();
 
-        return func.apply(sP.query, sP.parameters);
+        return function.apply(sP.query, sP.parameters);
     }
 
     /**
@@ -5534,7 +5534,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         } else if (propValue instanceof Condition) {
             appendConditionAsParameter((Condition) propValue);
         } else {
-            _sb.append(Expression.normalize(propValue));
+            _sb.append(Expression.renderValue(propValue));
         }
     }
 
@@ -5840,7 +5840,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Appends the given condition to the SQL string builder.
      *
-     * @param cond the condition to append
+     * @param condition the condition to append
      */
     protected abstract void appendCondition(final Condition cond);
 
@@ -5848,7 +5848,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Appends the given condition as a parameter value expression. If the condition is a {@code SubQuery},
      * it is wrapped in parentheses; otherwise, it is appended directly.
      *
-     * @param cond the condition to append
+     * @param condition the condition to append
      */
     protected void appendConditionAsParameter(final Condition cond) {
         if (cond instanceof SubQuery) {
@@ -5877,7 +5877,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         if (expr.length() < 16) {
-            final boolean matched = QueryUtil.PATTERN_FOR_SIMPLE_COLUMN_NAME.matcher(expr).matches();
+            final boolean matched = QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher(expr).matches();
 
             if (matched) {
                 if (isFromAppendColumn) {
@@ -6471,8 +6471,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             N.checkArgNotNull(selection, "Selection can't be null in 'multiSelects'");
             N.checkArgNotNull(selection.entityClass(), "Class can't be null in 'multiSelects'");
 
-            if (N.notEmpty(selection.selectPropNames())) {
-                checkSqlFragmentsNotBlank(selection.selectPropNames(), "selection.selectPropNames");
+            if (N.notEmpty(selection.includedPropNames())) {
+                checkSqlFragmentsNotBlank(selection.includedPropNames(), "selection.includedPropNames");
             }
 
             if (Strings.isNotEmpty(selection.classAlias())) {
@@ -6517,9 +6517,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     sb.append(' ').append(selection.tableAlias());
                 }
 
-                if (N.notEmpty(selection.selectPropNames()) || selection.includeSubEntityProperties()) {
+                if (N.notEmpty(selection.includedPropNames()) || selection.includeSubEntityProperties()) {
                     final Class<?> entityClass = selection.entityClass();
-                    final Collection<String> selectPropNames = N.notEmpty(selection.selectPropNames()) ? selection.selectPropNames()
+                    final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
                             : QueryUtil.getSelectPropNames(entityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
                     final Set<String> excludedPropNames = selection.excludedPropNames();
                     final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);

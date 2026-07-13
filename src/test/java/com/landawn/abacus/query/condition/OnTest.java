@@ -62,17 +62,17 @@ public class OnTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_Empty() {
+    public void testParameters_Empty() {
         On on = new On("a.id", "b.id");
-        List<Object> params = on.getParameters();
+        List<Object> params = on.parameters();
         assertNotNull(params);
     }
 
     @Test
-    public void testGetParameters_WithValues() {
+    public void testParameters_WithValues() {
         And complexCondition = new And(new Equal("orders.customer_id", "customers.id"), new Equal("orders.status", "active"));
         On on = new On(complexCondition);
-        List<Object> params = on.getParameters();
+        List<Object> params = on.parameters();
         assertEquals(2, params.size());
         assertEquals("customers.id", params.get(0));
         assertEquals("active", params.get(1));
@@ -176,7 +176,7 @@ public class OnTest extends TestBase {
     public void testWithAdditionalFilters() {
         And filteredJoin = new And(new Equal("products.category_id", "categories.id"), new Equal("categories.active", true));
         On on = new On(filteredJoin);
-        assertEquals(2, on.getParameters().size());
+        assertEquals(2, on.parameters().size());
     }
 
     @Test
@@ -267,7 +267,7 @@ public class OnTest extends TestBase {
 
         Assertions.assertTrue(condition instanceof And);
         And and = (And) condition;
-        Assertions.assertEquals(2, and.getConditions().size());
+        Assertions.assertEquals(2, and.conditions().size());
     }
 
     @Test
@@ -337,7 +337,7 @@ public class OnTest extends TestBase {
         On on = Filters.on(complexJoin);
 
         Assertions.assertEquals(complexJoin, on.getCondition());
-        Assertions.assertEquals(2, on.getCondition().getParameters().size());
+        Assertions.assertEquals(2, on.getCondition().parameters().size());
     }
 
     @Test

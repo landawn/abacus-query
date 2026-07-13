@@ -205,6 +205,28 @@ public class Binary extends ComposableCondition {
     }
 
     /**
+     * Returns the property value without an unchecked generic cast.
+     *
+     * @return the property value, which may be {@code null}
+     */
+    public Object propValue() {
+        return propValue;
+    }
+
+    /**
+     * Returns the property value cast by the supplied runtime type.
+     *
+     * @param <T> the requested value type
+     * @param valueType the requested value type; must not be {@code null}
+     * @return the property value cast to {@code valueType}, or {@code null} when the stored value is {@code null}
+     * @throws NullPointerException if {@code valueType} is {@code null}
+     * @throws ClassCastException if the stored value is not assignable to {@code valueType}
+     */
+    public <T> T getPropValue(final Class<T> valueType) {
+        return java.util.Objects.requireNonNull(valueType, "valueType").cast(propValue);
+    }
+
+    /**
      * Gets the parameters for this condition.
      *
      * <ul>
@@ -226,22 +248,22 @@ public class Binary extends ComposableCondition {
      * <pre>{@code
      * // Literal value -> single-element list
      * Binary eq = new Equal("age", 25);
-     * List<Object> p1 = eq.getParameters();   // [25]
+     * List<Object> p1 = eq.parameters();   // [25]
      *
      * // Null value with = or != -> empty list (rendered as IS NULL / IS NOT NULL)
      * Binary nullEq = new Equal("name", (Object) null);
-     * List<Object> p2 = nullEq.getParameters();   // [] (empty)
+     * List<Object> p2 = nullEq.parameters();   // [] (empty)
      *
      * // Subquery value -> the subquery's own parameters
      * SubQuery sub = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
      * Binary eqSub = new Equal("userId", sub);
-     * List<Object> p3 = eqSub.getParameters();   // [true] (the subquery's params)
+     * List<Object> p3 = eqSub.parameters();   // [true] (the subquery's params)
      * }</pre>
      *
      * @return an immutable list of parameter values; never {@code null}
      */
     @Override
-    public ImmutableList<Object> getParameters() {
+    public ImmutableList<Object> parameters() {
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
@@ -269,7 +291,7 @@ public class Binary extends ComposableCondition {
 
             for (final Object value : values) {
                 if (value instanceof Condition) {
-                    parameters.addAll(((Condition) value).getParameters());
+                    parameters.addAll(((Condition) value).parameters());
                 } else {
                     parameters.add(value);
                 }
@@ -279,7 +301,7 @@ public class Binary extends ComposableCondition {
         }
 
         if (propValue instanceof Condition) {
-            return ((Condition) propValue).getParameters();
+            return ((Condition) propValue).parameters();
         } else {
             return ImmutableList.of(propValue);
         }
@@ -294,7 +316,7 @@ public class Binary extends ComposableCondition {
      * the output is {@code propertyName IS NOT NULL}. Only those operators collapse to
      * {@code IS [NOT] NULL}: a {@code null} value with any other operator renders as the bare
      * literal {@code null} (e.g. {@code new Like("name", null)} renders {@code "name LIKE null"}),
-     * and {@link #getParameters()} correspondingly returns a single-element list containing {@code null}.</p>
+     * and {@link #parameters()} correspondingly returns a single-element list containing {@code null}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

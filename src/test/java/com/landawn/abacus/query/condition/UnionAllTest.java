@@ -37,10 +37,10 @@ public class UnionAllTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         SubQuery subQuery = Filters.subQuery("customers", List.of("*"), new Equal("region", "EAST"));
         UnionAll unionAll = new UnionAll(subQuery);
-        List<Object> params = unionAll.getParameters();
+        List<Object> params = unionAll.parameters();
         assertEquals(1, params.size());
         assertEquals("EAST", params.get(0));
     }
@@ -149,15 +149,15 @@ public class UnionAllTest extends TestBase {
         UnionAll unionAll = Filters.unionAll(subQuery);
 
         Assertions.assertEquals(subQuery, unionAll.getCondition());
-        Assertions.assertEquals(2, unionAll.getParameters().size());
+        Assertions.assertEquals(2, unionAll.parameters().size());
     }
 
     @Test
-    public void testGetParametersWithRawSqlSubQuery() {
+    public void testParametersWithRawSqlSubQuery() {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM backup_data");
         UnionAll unionAll = Filters.unionAll(subQuery);
 
-        Assertions.assertTrue(unionAll.getParameters().isEmpty());
+        Assertions.assertTrue(unionAll.parameters().isEmpty());
     }
 
     @Test
@@ -209,8 +209,8 @@ public class UnionAllTest extends TestBase {
         UnionAll allOrders = Filters.unionAll(westRegion);
 
         // Keeps all orders, even duplicates
-        Assertions.assertEquals(1, allOrders.getParameters().size());
-        Assertions.assertEquals("WEST", allOrders.getParameters().get(0));
+        Assertions.assertEquals(1, allOrders.parameters().size());
+        Assertions.assertEquals("WEST", allOrders.parameters().get(0));
     }
 
     @Test

@@ -66,22 +66,35 @@ public abstract class AbstractBetween extends ComposableCondition {
      * @param minValue the lower bound of the range; inclusive for {@code BETWEEN}, and the lower edge of the
      *                 excluded range for {@code NOT_BETWEEN} (values strictly below it match); may be a
      *                 literal value, a {@link SubQuery}, or any other {@link Condition} whose
-     *                 parameters will be spliced into {@link #getParameters()}; may be {@code null}
+     *                 parameters will be spliced into {@link #parameters()}; may be {@code null}
      * @param maxValue the upper bound of the range; inclusive for {@code BETWEEN}, and the upper edge of the
      *                 excluded range for {@code NOT_BETWEEN} (values strictly above it match); may be a
      *                 literal value, a {@link SubQuery}, or any other {@link Condition} whose
-     *                 parameters will be spliced into {@link #getParameters()}; may be {@code null}
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     *                 parameters will be spliced into {@link #parameters()}; may be {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or {@code operator}
+     *                                  is neither {@link Operator#BETWEEN} nor {@link Operator#NOT_BETWEEN}
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractBetween(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
-        super(operator);
+        super(validateOperator(operator));
 
         checkPropName(propName);
 
         this.propName = propName;
         this.minValue = minValue;
         this.maxValue = maxValue;
+    }
+
+    private static Operator validateOperator(final Operator operator) {
+        if (operator == null) {
+            throw new NullPointerException("operator");
+        }
+
+        if (operator != Operator.BETWEEN && operator != Operator.NOT_BETWEEN) {
+            throw new IllegalArgumentException("Only BETWEEN and NOT_BETWEEN are supported: " + operator);
+        }
+
+        return operator;
     }
 
     /**
@@ -149,23 +162,23 @@ public abstract class AbstractBetween extends ComposableCondition {
      * <pre>{@code
      * // Literal bounds -> [min, max]
      * Between between = new Between("age", 18, 65);
-     * List<Object> p1 = between.getParameters();   // [18, 65]
+     * List<Object> p1 = between.parameters();   // [18, 65]
      *
      * // Null bounds are kept as-is
      * Between nullBounds = new Between("age", (Object) null, (Object) null);
-     * List<Object> p2 = nullBounds.getParameters();   // [null, null]
+     * List<Object> p2 = nullBounds.parameters();   // [null, null]
      *
      * // A Condition bound has its parameters spliced in
      * SubQuery sub = Filters.subQuery("config", Arrays.asList("minAge"), Filters.eq("active", true));
      * Between subBound = new Between("age", sub, 65);
-     * List<Object> p3 = subBound.getParameters();   // [true, 65]
+     * List<Object> p3 = subBound.parameters();   // [true, 65]
      * }</pre>
      *
      * @return an immutable list containing {@code [minValue, maxValue]}, or their respective
      *         parameters spliced in where a bound is itself a {@link Condition}
      */
     @Override
-    public ImmutableList<Object> getParameters() {
+    public ImmutableList<Object> parameters() {
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
@@ -180,13 +193,13 @@ public abstract class AbstractBetween extends ComposableCondition {
         final List<Object> parameters = new ArrayList<>(2);
 
         if (minValue instanceof Condition) {
-            parameters.addAll(((Condition) minValue).getParameters());
+            parameters.addAll(((Condition) minValue).parameters());
         } else {
             parameters.add(minValue);
         }
 
         if (maxValue instanceof Condition) {
-            parameters.addAll(((Condition) maxValue).getParameters());
+            parameters.addAll(((Condition) maxValue).parameters());
         } else {
             parameters.add(maxValue);
         }

@@ -83,13 +83,13 @@ public abstract class ComposableCell extends ComposableCondition {
      * }</pre>
      *
      * @param operator the operator to apply to the condition (must not be {@code null})
-     * @param cond the condition to wrap (must not be {@code null})
+     * @param condition the condition to wrap (must not be {@code null})
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code null}
      */
-    protected ComposableCell(final Operator operator, final Condition cond) {
+    protected ComposableCell(final Operator operator, final Condition condition) {
         super(operator);
-        this.condition = N.checkArgNotNull(cond, "cond");
+        this.condition = N.checkArgNotNull(condition, "condition");
     }
 
     /**
@@ -122,19 +122,19 @@ public abstract class ComposableCell extends ComposableCondition {
 
     /**
      * Gets the parameters from the wrapped condition.
-     * This method delegates to the wrapped condition's getParameters method.
+     * This method delegates to the wrapped condition's parameters method.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Not not = new Not(Filters.between("age", 18, 65));
-     * not.getParameters();          // returns [18, 65]
+     * not.parameters();          // returns [18, 65]
      *
      * Not single = new Not(Filters.eq("active", true));
-     * single.getParameters();       // returns [true]
+     * single.parameters();       // returns [true]
      *
      * // Edge: a wrapped SubQuery with no bound parameters yields an empty list
      * Exists exists = new Exists(Filters.subQuery("SELECT 1"));
-     * exists.getParameters();       // returns [] (empty, immutable)
+     * exists.parameters();       // returns [] (empty, immutable)
      *
      * // Edge: the returned list reflects the wrapped condition only and is immutable
      * }</pre>
@@ -142,11 +142,11 @@ public abstract class ComposableCell extends ComposableCondition {
      * @return an immutable list of parameters from the wrapped condition, or an empty immutable list if no condition is set
      */
     @Override
-    public ImmutableList<Object> getParameters() {
+    public ImmutableList<Object> parameters() {
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
-            result = (condition == null) ? ImmutableList.empty() : condition.getParameters();
+            result = (condition == null) ? ImmutableList.empty() : condition.parameters();
             cachedParameters = result;
         }
 

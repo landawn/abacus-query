@@ -41,7 +41,7 @@ public class AbstractConditionTest extends TestBase {
         And result = cond1.and(cond2);
         assertNotNull(result);
         assertEquals(Operator.AND, result.operator());
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -58,7 +58,7 @@ public class AbstractConditionTest extends TestBase {
         Or result = cond1.or(cond2);
         assertNotNull(result);
         assertEquals(Operator.OR, result.operator());
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -95,7 +95,7 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testParameter2String_Null() {
         Equal condition = new Equal("name", null);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(0, params.size());
     }
 
@@ -113,7 +113,7 @@ public class AbstractConditionTest extends TestBase {
         Equal cond3 = new Equal("c", 3);
 
         And and = cond1.and(cond2).and(cond3);
-        assertEquals(3, and.getConditions().size());
+        assertEquals(3, and.conditions().size());
     }
 
     @Test
@@ -249,7 +249,7 @@ public class AbstractConditionTest extends TestBase {
         }
 
         @Override
-        public ImmutableList<Object> getParameters() {
+        public ImmutableList<Object> parameters() {
             return value == null ? ImmutableList.empty() : ImmutableList.of(value);
         }
 
@@ -410,7 +410,7 @@ public class AbstractConditionTest extends TestBase {
         Or complex = and1.or(and2);
 
         Assertions.assertNotNull(complex);
-        Assertions.assertEquals(2, complex.getConditions().size());
+        Assertions.assertEquals(2, complex.conditions().size());
 
         // Test NOT of complex condition
         Not notComplex = complex.not();
@@ -423,7 +423,7 @@ public class AbstractConditionTest extends TestBase {
         // Test condition with null operator (through default constructor)
         AbstractCondition condition = new AbstractCondition() {
             @Override
-            public ImmutableList<Object> getParameters() {
+            public ImmutableList<Object> parameters() {
                 return ImmutableList.empty();
             }
 

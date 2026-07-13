@@ -185,16 +185,16 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param cond the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
+     * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; or if {@code cond} is a
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; or if {@code joinCondition} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with
      *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
      *                                  quantified-subquery operand, or an empty predicate (a blank {@link Expression}
      *                                  or empty {@link Junction})
      */
-    public Join(final String joinEntity, final Condition cond) {
-        this(Operator.JOIN, joinEntity, cond);
+    public Join(final String joinEntity, final Condition joinCondition) {
+        this(Operator.JOIN, joinEntity, joinCondition);
     }
 
     /**
@@ -206,24 +206,24 @@ public class Join extends AbstractCondition {
      * <pre>{@code
      * // Used internally by LeftJoin
      * public class LeftJoin extends Join {
-     *     public LeftJoin(String joinEntity, Condition cond) {
-     *         super(Operator.LEFT_JOIN, joinEntity, cond);
+     *     public LeftJoin(String joinEntity, Condition joinCondition) {
+     *         super(Operator.LEFT_JOIN, joinEntity, joinCondition);
      *     }
      * }
      * }</pre>
      *
      * @param operator the join operator
      * @param joinEntity the table or entity to join with
-     * @param cond the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
+     * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code cond} is a
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is a
      *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with
      *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
      *                                  quantified-subquery operand, or an empty predicate (a blank {@link Expression}
      *                                  or empty {@link Junction})
      */
-    protected Join(final Operator operator, final String joinEntity, final Condition cond) {
-        this(operator, Collections.singletonList(joinEntity), cond);
+    protected Join(final Operator operator, final String joinEntity, final Condition joinCondition) {
+        this(operator, Collections.singletonList(joinEntity), joinCondition);
     }
 
     /**
@@ -249,15 +249,15 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with
-     * @param cond the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
+     * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
-     *                                  or if {@code cond} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins
+     *                                  or if {@code joinCondition} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins
      *                                  with {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
      *                                  quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
-    public Join(final Collection<String> joinEntities, final Condition cond) {
-        this(Operator.JOIN, joinEntities, cond);
+    public Join(final Collection<String> joinEntities, final Condition joinCondition) {
+        this(Operator.JOIN, joinEntities, joinCondition);
     }
 
     /**
@@ -269,24 +269,24 @@ public class Join extends AbstractCondition {
      * <pre>{@code
      * // Used internally by subclasses
      * public class RightJoin extends Join {
-     *     public RightJoin(Collection<String> joinEntities, Condition cond) {
-     *         super(Operator.RIGHT_JOIN, joinEntities, cond);
+     *     public RightJoin(Collection<String> joinEntities, Condition joinCondition) {
+     *         super(Operator.RIGHT_JOIN, joinEntities, joinCondition);
      *     }
      * }
      * }</pre>
      *
      * @param operator the join operator
      * @param joinEntities the collection of tables or entities to join with
-     * @param cond the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
+     * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
      * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code joinEntities} is
      *                                  {@code null} or empty, or contains {@code null}, empty, or blank elements; or
-     *                                  if {@code cond} is a {@link Criteria},
+     *                                  if {@code joinCondition} is a {@link Criteria},
      *                                  a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
      *                                  operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
-    protected Join(final Operator operator, final Collection<String> joinEntities, final Condition cond) {
+    protected Join(final Operator operator, final Collection<String> joinEntities, final Condition joinCondition) {
         super(operator);
 
         if (!isJoinOperator(operator)) {
@@ -295,7 +295,7 @@ public class Join extends AbstractCondition {
         }
 
         this.joinEntities = copyAndValidateJoinEntities(joinEntities);
-        this.condition = validateJoinCondition(cond);
+        this.condition = validateJoinCondition(joinCondition);
     }
 
     private static boolean isJoinOperator(final Operator operator) {
@@ -319,14 +319,15 @@ public class Join extends AbstractCondition {
         return copy;
     }
 
-    private static Condition validateJoinCondition(final Condition cond) {
-        if (cond != null && (cond instanceof Criteria || isClause(cond) || isEmptyPredicate(cond) || isQuantifiedSubQueryOperand(cond)
-                || (!(cond instanceof On) && !(cond instanceof Using) && containsOnOrUsing(cond)))) {
-            throw new IllegalArgumentException("Join condition type " + cond.getClass().getName()
+    private static Condition validateJoinCondition(final Condition joinCondition) {
+        if (joinCondition != null && (joinCondition instanceof Criteria || isClause(joinCondition) || isEmptyPredicate(joinCondition)
+                || isQuantifiedSubQueryOperand(joinCondition)
+                || (!(joinCondition instanceof On) && !(joinCondition instanceof Using) && containsOnOrUsing(joinCondition)))) {
+            throw new IllegalArgumentException("Join condition type " + joinCondition.getClass().getName()
                     + " is not allowed: use a non-empty predicate without nested ON/USING or clause/quantified operators");
         }
 
-        return cond;
+        return joinCondition;
     }
 
     /**
@@ -405,24 +406,24 @@ public class Join extends AbstractCondition {
      * <pre>{@code
      * // Condition with a bound value
      * Join valueJoin = new Join("products p", Filters.equal("p.active", true));
-     * valueJoin.getParameters();    // returns [true]
+     * valueJoin.parameters();    // returns [true]
      *
      * // Edge: an ON condition compares columns and has no bound parameters
      * Join onJoin = new Join("orders o", new On("customers.id", "o.customer_id"));
-     * onJoin.getParameters();       // returns [] (empty, immutable)
+     * onJoin.parameters();       // returns [] (empty, immutable)
      *
      * // Edge: no condition at all -> empty list
-     * new Join("products").getParameters();   // returns []
+     * new Join("products").parameters();   // returns []
      * }</pre>
      *
      * @return an immutable list of parameters from the condition, or an empty immutable list if no condition
      */
     @Override
-    public ImmutableList<Object> getParameters() {
+    public ImmutableList<Object> parameters() {
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
-            result = (condition == null) ? ImmutableList.empty() : condition.getParameters();
+            result = (condition == null) ? ImmutableList.empty() : condition.parameters();
             cachedParameters = result;
         }
 

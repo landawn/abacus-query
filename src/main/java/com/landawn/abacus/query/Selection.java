@@ -22,7 +22,6 @@ import java.util.Set;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableSet;
 
-import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -45,7 +44,7 @@ import lombok.experimental.Accessors;
  * // Simple selection
  * Selection userSelection = new Selection()
  *     .entityClass(User.class)
- *     .selectPropNames(Arrays.asList("id", "name", "email"));
+ *     .includedPropNames(Arrays.asList("id", "name", "email"));
  *
  * // Selection with aliases
  * Selection orderSelection = new Selection()
@@ -67,21 +66,20 @@ import lombok.experimental.Accessors;
  * // Multi-table selection: build one Selection per table and collect them into a List
  * List<Selection> selections = List.of(
  *     Selection.builder().entityClass(User.class).tableAlias("u").classAlias("user")
- *         .selectPropNames(Arrays.asList("id", "name")).build(),
+ *         .includedPropNames(Arrays.asList("id", "name")).build(),
  *     Selection.builder().entityClass(Order.class).tableAlias("o").classAlias("order").build());
  * // ... then pass to Dsl.PSC.select(selections) / selectFrom(selections)
  * }</pre>
  *
  * <p>Note: {@code entityClass}, {@code tableAlias}, {@code classAlias}, and
  * {@code includeSubEntityProperties} use Lombok-generated fluent accessors (a no-arg getter and a
- * single-arg setter sharing the field name), while {@code selectPropNames} and {@code excludedPropNames}
+ * single-arg setter sharing the field name), while {@code includedPropNames} and {@code excludedPropNames}
  * have hand-written accessors that defensively copy on write and return immutable views on read.</p>
  *
  * @see Dsl#select(List)
  * @see Dsl#selectFrom(List)
  * @see SqlBuilder
  */
-@Builder
 @Data
 @Accessors(fluent = true)
 public final class Selection {
@@ -95,7 +93,7 @@ public final class Selection {
      * Selection selection = new Selection()
      *     .entityClass(User.class)
      *     .tableAlias("u")
-     *     .selectPropNames(Arrays.asList("id", "name"));
+     *     .includedPropNames(Arrays.asList("id", "name"));
      * }</pre>
      */
     public Selection() {
@@ -105,7 +103,7 @@ public final class Selection {
     private Class<?> entityClass;
     private String tableAlias;
     private String classAlias;
-    private Collection<String> selectPropNames;
+    private Collection<String> includedPropNames;
     private boolean includeSubEntityProperties;
     private Set<String> excludedPropNames;
 
@@ -113,7 +111,7 @@ public final class Selection {
      * Creates a fully populated {@code Selection} from the given values.
      *
      * <p>This all-args constructor is intentionally package-private and defensively copies the
-     * {@code selectPropNames} and {@code excludedPropNames} collections so that the {@code Selection}
+     * {@code includedPropNames} and {@code excludedPropNames} collections so that the {@code Selection}
      * does not retain a reference to (or share mutable state with) the caller-supplied collections.
      * External code should use the no-arg constructor with the fluent setters, or
      * {@code builder()}.</p>
@@ -121,16 +119,16 @@ public final class Selection {
      * @param entityClass the entity class to select from
      * @param tableAlias the alias to use for the table in SQL (can be {@code null})
      * @param classAlias the alias to use for result mapping (can be {@code null})
-     * @param selectPropNames the property names to include; copied defensively, {@code null} is preserved as {@code null}
+     * @param includedPropNames the property names to include; copied defensively, {@code null} is preserved as {@code null}
      * @param includeSubEntityProperties whether to include properties from sub-entities
      * @param excludedPropNames the property names to exclude; copied defensively, {@code null} is preserved as {@code null}
      */
-    Selection(final Class<?> entityClass, final String tableAlias, final String classAlias, final Collection<String> selectPropNames,
+    Selection(final Class<?> entityClass, final String tableAlias, final String classAlias, final Collection<String> includedPropNames,
             final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
         this.entityClass = entityClass;
         this.tableAlias = tableAlias;
         this.classAlias = classAlias;
-        this.selectPropNames = selectPropNames == null ? null : new ArrayList<>(selectPropNames);
+        this.includedPropNames = includedPropNames == null ? null : new ArrayList<>(includedPropNames);
         this.includeSubEntityProperties = includeSubEntityProperties;
         this.excludedPropNames = excludedPropNames == null ? null : new LinkedHashSet<>(excludedPropNames);
     }
@@ -141,11 +139,11 @@ public final class Selection {
      * <p>The supplied collection is copied defensively, so subsequent mutations of the argument do not
      * affect this {@code Selection}. Passing {@code null} clears the selection (meaning "all properties").</p>
      *
-     * @param selectPropNames the property names to include; {@code null} means all properties
+     * @param includedPropNames the property names to include; {@code null} means all properties
      * @return this {@code Selection} instance for method chaining
      */
-    public Selection selectPropNames(final Collection<String> selectPropNames) {
-        this.selectPropNames = selectPropNames == null ? null : new ArrayList<>(selectPropNames);
+    public Selection includedPropNames(final Collection<String> includedPropNames) {
+        this.includedPropNames = includedPropNames == null ? null : new ArrayList<>(includedPropNames);
         return this;
     }
 
@@ -157,8 +155,115 @@ public final class Selection {
      *
      * @return an immutable view of the selected property names, or {@code null} if none was set
      */
-    public Collection<String> selectPropNames() {
-        return selectPropNames == null ? null : ImmutableList.wrap((List<String>) selectPropNames);
+    public Collection<String> includedPropNames() {
+        return includedPropNames == null ? null : ImmutableList.wrap((List<String>) includedPropNames);
+    }
+
+    /**
+     * Creates a builder with the required entity class already set.
+     *
+     * @param entityClass the entity class to select; must not be {@code null}
+     * @return a new selection builder
+     */
+    public static SelectionBuilder builder(final Class<?> entityClass) {
+        return builder().entityClass(java.util.Objects.requireNonNull(entityClass, "entityClass"));
+    }
+
+    /**
+     * Creates an unconstrained selection builder for compatibility.
+     *
+     * @return a new selection builder
+     */
+    public static SelectionBuilder builder() {
+        return new SelectionBuilder();
+    }
+
+    /**
+     * Builder for {@link Selection} instances.
+     *
+     * <p>This builder is declared explicitly so it is visible consistently to Java compilation,
+     * IDEs, and Javadoc generation.</p>
+     */
+    public static final class SelectionBuilder {
+        private Class<?> entityClass;
+        private String tableAlias;
+        private String classAlias;
+        private Collection<String> includedPropNames;
+        private boolean includeSubEntityProperties;
+        private Set<String> excludedPropNames;
+
+        private SelectionBuilder() {
+            // Created through Selection.builder(...).
+        }
+
+        /**
+         * Sets the entity class.
+         * @param entityClass the entity class
+         * @return this builder
+         */
+        public SelectionBuilder entityClass(final Class<?> entityClass) {
+            this.entityClass = entityClass;
+            return this;
+        }
+
+        /**
+         * Sets the table alias.
+         * @param tableAlias the table alias
+         * @return this builder
+         */
+        public SelectionBuilder tableAlias(final String tableAlias) {
+            this.tableAlias = tableAlias;
+            return this;
+        }
+
+        /**
+         * Sets the result class alias.
+         * @param classAlias the class alias
+         * @return this builder
+         */
+        public SelectionBuilder classAlias(final String classAlias) {
+            this.classAlias = classAlias;
+            return this;
+        }
+
+        /**
+         * Sets included property names.
+         * @param includedPropNames the included names
+         * @return this builder
+         */
+        public SelectionBuilder includedPropNames(final Collection<String> includedPropNames) {
+            this.includedPropNames = includedPropNames;
+            return this;
+        }
+
+        /**
+         * Sets whether sub-entity properties are included.
+         * @param includeSubEntityProperties the inclusion flag
+         * @return this builder
+         */
+        public SelectionBuilder includeSubEntityProperties(final boolean includeSubEntityProperties) {
+            this.includeSubEntityProperties = includeSubEntityProperties;
+            return this;
+        }
+
+        /**
+         * Sets excluded property names.
+         * @param excludedPropNames the excluded names
+         * @return this builder
+         */
+        public SelectionBuilder excludedPropNames(final Set<String> excludedPropNames) {
+            this.excludedPropNames = excludedPropNames;
+            return this;
+        }
+
+        /**
+         * Builds a selection, defensively copying its property collections.
+         *
+         * @return the new selection
+         */
+        public Selection build() {
+            return new Selection(entityClass, tableAlias, classAlias, includedPropNames, includeSubEntityProperties, excludedPropNames);
+        }
     }
 
     /**

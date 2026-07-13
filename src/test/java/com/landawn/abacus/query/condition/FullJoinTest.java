@@ -68,15 +68,15 @@ public class FullJoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_Empty() {
+    public void testParameters_Empty() {
         FullJoin join = new FullJoin("orders");
-        assertTrue(join.getParameters().isEmpty());
+        assertTrue(join.parameters().isEmpty());
     }
 
     @Test
-    public void testGetParameters_WithCondition() {
+    public void testParameters_WithCondition() {
         FullJoin join = new FullJoin("products", new Equal("active", true));
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
         assertEquals(1, params.size());
         assertEquals(true, params.get(0));
     }
@@ -230,21 +230,21 @@ public class FullJoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Between between = Filters.between("salary", 40000, 80000);
         FullJoin join = Filters.fullJoin("employees", between);
 
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
         Assertions.assertEquals(2, params.size());
         Assertions.assertEquals(40000, params.get(0));
         Assertions.assertEquals(80000, params.get(1));
     }
 
     @Test
-    public void testGetParametersWithoutCondition() {
+    public void testParametersWithoutCondition() {
         FullJoin join = Filters.fullJoin("departments");
 
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
     }

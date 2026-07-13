@@ -117,11 +117,11 @@ public class NotInSubQueryTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
 
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
     }
 
@@ -215,7 +215,7 @@ public class NotInSubQueryTest extends TestBase {
         NotInSubQuery cond2 = new NotInSubQuery("userId", subQuery2);
         And result = cond1.and(cond2);
         assertNotNull(result);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -226,7 +226,7 @@ public class NotInSubQueryTest extends TestBase {
         NotInSubQuery cond2 = new NotInSubQuery("userId", subQuery2);
         Or result = cond1.or(cond2);
         assertNotNull(result);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test

@@ -89,17 +89,18 @@ public abstract class AbstractIn extends ComposableCondition {
      * Creates a new single-column IN or NOT IN condition. The given values are copied into an internal
      * {@link ArrayList}, so later mutations to the supplied collection do not affect this
      * condition. Individual elements may be literal values or {@link Condition} instances; the
-     * latter have their parameters spliced into {@link #getParameters()}.
+     * latter have their parameters spliced into {@link #parameters()}.
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param values the collection of values to check membership against (must not be {@code null} or empty);
      *               elements may be {@code null}
-     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank or {@code values} is {@code null}/empty
+     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, {@code values} is {@code null}/empty,
+     *                                  or {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN}
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final String propName, final Operator operator, final Collection<?> values) {
-        super(operator);
+        super(validateOperator(operator));
 
         checkPropName(propName);
         N.checkArgNotEmpty(values, "values");
@@ -125,7 +126,7 @@ public abstract class AbstractIn extends ComposableCondition {
      * </ul>
      * Both the property names and each row are copied internally, so later mutations to the supplied
      * collections do not affect this condition. Individual row values may be literal values or
-     * {@link Condition} instances; the latter have their parameters spliced into {@link #getParameters()}.
+     * {@link Condition} instances; the latter have their parameters spliced into {@link #parameters()}.
      *
      * <p><b>&#9888;&#65039;</b> A missing property-name key in a map row is represented as {@code null}; a bean
      * row that does not expose a requested property is rejected.</p>
@@ -137,14 +138,15 @@ public abstract class AbstractIn extends ComposableCondition {
      *               non-{@code null} and resolve to exactly {@code propNames.size()} values (which may be
      *               {@code null}). A row may be a {@link Collection}, {@link Iterable}, object array,
      *               {@link Map} or bean
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
+     * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
+     *                                  if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  or if a bean row does not expose a requested property
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final Collection<String> propNames, final Operator operator, final Collection<?> valueRows) {
-        super(operator);
+        super(validateOperator(operator));
 
         this.propNames = copyAndValidatePropNames(propNames);
         this.rowValueConstructor = true;
@@ -162,6 +164,18 @@ public abstract class AbstractIn extends ComposableCondition {
         }
 
         this.values = copy;
+    }
+
+    private static Operator validateOperator(final Operator operator) {
+        if (operator == null) {
+            throw new NullPointerException("operator");
+        }
+
+        if (operator != Operator.IN && operator != Operator.NOT_IN) {
+            throw new IllegalArgumentException("Only IN and NOT_IN are supported: " + operator);
+        }
+
+        return operator;
     }
 
     /**
@@ -333,18 +347,18 @@ public abstract class AbstractIn extends ComposableCondition {
      * <pre>{@code
      * // String values listed in order
      * In in = new In("status", Arrays.asList("active", "pending"));
-     * List<Object> p1 = in.getParameters();   // ["active", "pending"]
+     * List<Object> p1 = in.parameters();   // ["active", "pending"]
      *
      * // Numeric values
      * In nums = new In("id", Arrays.asList(1, 2, 3));
-     * List<Object> p2 = nums.getParameters();   // [1, 2, 3]
+     * List<Object> p2 = nums.parameters();   // [1, 2, 3]
      * }</pre>
      *
      * @return an immutable list of parameter values, or an empty immutable list for an uninitialized instance
      *         (e.g. created via the no-arg constructor for deserialization)
      */
     @Override
-    public ImmutableList<Object> getParameters() {
+    public ImmutableList<Object> parameters() {
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
@@ -379,7 +393,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
     private static void addParameter(final List<Object> parameters, final Object value) {
         if (value instanceof Condition) {
-            parameters.addAll(((Condition) value).getParameters());
+            parameters.addAll(((Condition) value).parameters());
         } else {
             parameters.add(value);
         }

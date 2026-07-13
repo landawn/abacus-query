@@ -30,6 +30,23 @@ public class AbstractInSubQueryTest extends TestBase {
         TestAbstractInSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
             super(propNames, Operator.IN, subQuery);
         }
+
+        TestAbstractInSubQuery(final String propName, final Operator operator, final SubQuery subQuery) {
+            super(propName, operator, subQuery);
+        }
+
+        TestAbstractInSubQuery(final Collection<String> propNames, final Operator operator, final SubQuery subQuery) {
+            super(propNames, operator, subQuery);
+        }
+    }
+
+    @Test
+    public void testRejectsUnsupportedOperator() {
+        SubQuery one = Filters.subQuery("SELECT id FROM users");
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery("id", Operator.EQUAL, one));
+        assertThrows(IllegalArgumentException.class,
+                () -> new TestAbstractInSubQuery(Arrays.asList("a", "b"), Operator.EQUAL, Filters.subQuery("SELECT a, b FROM t")));
+        assertThrows(NullPointerException.class, () -> new TestAbstractInSubQuery("id", null, one));
     }
 
     @Test
@@ -67,11 +84,11 @@ public class AbstractInSubQueryTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE"));
         final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id", subQuery);
 
-        assertEquals(Arrays.asList("ACTIVE"), condition.getParameters());
+        assertEquals(Arrays.asList("ACTIVE"), condition.parameters());
     }
 
     @Test
@@ -144,7 +161,7 @@ public class AbstractInSubQueryTest extends TestBase {
 
         assertEquals(null, condition.getPropName());
         assertTrue(condition.getPropNames().isEmpty());
-        assertTrue(condition.getParameters().isEmpty());
+        assertTrue(condition.parameters().isEmpty());
     }
 
     @Test

@@ -186,7 +186,7 @@ public abstract class AbstractCondition implements Condition {
         }
 
         if (cond instanceof Expression) {
-            final String literal = ((Expression) cond).getLiteral();
+            final String literal = ((Expression) cond).literal();
 
             if (Strings.isEmpty(literal)) {
                 return false;
@@ -224,7 +224,7 @@ public abstract class AbstractCondition implements Condition {
         }
 
         if (cond instanceof Expression) {
-            final String literal = ((Expression) cond).getLiteral();
+            final String literal = ((Expression) cond).literal();
 
             if (Strings.isEmpty(literal)) {
                 return false;
@@ -299,7 +299,7 @@ public abstract class AbstractCondition implements Condition {
         }
 
         if (cond instanceof Junction) {
-            for (final Condition child : ((Junction) cond).getConditions()) {
+            for (final Condition child : ((Junction) cond).conditions()) {
                 if (containsOnOrUsing(child)) {
                     return true;
                 }
@@ -395,7 +395,7 @@ public abstract class AbstractCondition implements Condition {
      * Single quotes and double quotes are backslash-escaped via {@link com.landawn.abacus.util.Strings#quoteEscaped},
      * and a trailing-backslash guard is applied so that the closing {@code '} quote cannot be consumed
      * as an escape sequence. This is a defense-in-depth helper used by
-     * {@link #formatParameter(Object, NamingPolicy)} and by {@link Expression#normalize(Object)};
+     * {@link #formatParameter(Object, NamingPolicy)} and by {@link Expression#renderValue(Object)};
      * callers must still emit the surrounding {@code '} quotes.
      *
      * <p>Note: this is dialect-tolerant escaping (backslash-style, with an extra trailing-backslash
@@ -747,11 +747,11 @@ public abstract class AbstractCondition implements Condition {
      */
     protected static boolean isEmptyPredicate(final Condition cond) {
         if (cond instanceof Expression) {
-            return Strings.isBlank(((Expression) cond).getLiteral());
+            return Strings.isBlank(((Expression) cond).literal());
         }
 
         if (cond instanceof Junction) {
-            return N.isEmpty(((Junction) cond).getConditions());
+            return N.isEmpty(((Junction) cond).conditions());
         }
 
         return false;

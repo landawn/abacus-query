@@ -68,15 +68,15 @@ public class InnerJoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_Empty() {
+    public void testParameters_Empty() {
         InnerJoin join = new InnerJoin("orders");
-        assertTrue(join.getParameters().isEmpty());
+        assertTrue(join.parameters().isEmpty());
     }
 
     @Test
-    public void testGetParameters_WithCondition() {
+    public void testParameters_WithCondition() {
         InnerJoin join = new InnerJoin("orders o", new Equal("status", "active"));
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
@@ -134,7 +134,7 @@ public class InnerJoinTest extends TestBase {
     public void testComplexCondition() {
         And andCondition = new And(Arrays.asList(new Equal("o.customer_id", "c.id"), new GreaterThan("o.total", 100)));
         InnerJoin join = new InnerJoin("orders o", andCondition);
-        assertEquals(2, join.getParameters().size());
+        assertEquals(2, join.parameters().size());
     }
 
     @Test
@@ -149,7 +149,7 @@ public class InnerJoinTest extends TestBase {
         And compositeKey = new And(Arrays.asList(new Equal("orders.id", "oi.order_id"), new Equal("orders.version", "oi.order_version")));
         InnerJoin join = new InnerJoin("order_items oi", compositeKey);
         assertNotNull(join.getCondition());
-        assertEquals(2, join.getParameters().size());
+        assertEquals(2, join.parameters().size());
     }
 
     @Test
@@ -157,7 +157,7 @@ public class InnerJoinTest extends TestBase {
         And multipleConditions = new And(
                 Arrays.asList(new Equal("order_items.product_id", "p.id"), new Equal("p.active", true), new GreaterThan("p.stock", 0)));
         InnerJoin join = new InnerJoin("products p", multipleConditions);
-        assertEquals(3, join.getParameters().size());
+        assertEquals(3, join.parameters().size());
     }
 
     @Test
@@ -213,11 +213,11 @@ public class InnerJoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         Condition condition = Filters.and(Filters.eq("o.customer_id", Filters.expr("c.id")), Filters.eq("o.status", "completed"), Filters.gt("o.total", 100));
         InnerJoin join = new InnerJoin("orders o", condition);
 
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
 
         Assertions.assertNotNull(params);
         Assertions.assertEquals(2, params.size());
@@ -226,9 +226,9 @@ public class InnerJoinTest extends TestBase {
     }
 
     @Test
-    public void testGetParametersNoCondition() {
+    public void testParametersNoCondition() {
         InnerJoin join = new InnerJoin("products");
-        List<Object> params = join.getParameters();
+        List<Object> params = join.parameters();
 
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());

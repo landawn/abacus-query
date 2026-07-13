@@ -52,20 +52,20 @@ public class NotExistsTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_EmptyForRawSQL() {
+    public void testParameters_EmptyForRawSQL() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders");
         NotExists condition = new NotExists(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertTrue(params.isEmpty());
     }
 
     @Test
-    public void testGetParameters_WithConditionParameters() {
+    public void testParameters_WithConditionParameters() {
         Condition whereCondition = new Equal("status", "cancelled");
         SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), whereCondition);
         NotExists condition = new NotExists(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertEquals(1, params.size());
         assertEquals("cancelled", params.get(0));
@@ -170,7 +170,7 @@ public class NotExistsTest extends TestBase {
         And andCondition = new And(Arrays.asList(new Equal("cancelled", true), new LessThan("amount", 10)));
         SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), andCondition);
         NotExists condition = new NotExists(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(2, params.size());
     }
 
@@ -214,9 +214,9 @@ public class NotExistsTest extends TestBase {
     }
 
     @Test
-    void testGetParameters() {
+    void testParameters() {
         // Simple SubQuery without parameters should return empty list
-        assertNotNull(notExistsCondition.getParameters());
+        assertNotNull(notExistsCondition.parameters());
     }
 
     @Test

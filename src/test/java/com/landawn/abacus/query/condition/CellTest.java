@@ -30,10 +30,10 @@ public class CellTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         final TestCell cell = new TestCell(Operator.WHERE, Filters.between("age", 18, 65));
 
-        assertEquals(Arrays.asList(18, 65), cell.getParameters());
+        assertEquals(Arrays.asList(18, 65), cell.parameters());
     }
 
     @Test

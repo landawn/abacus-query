@@ -110,16 +110,16 @@ public class Not extends ComposableCell {
      * // SQL: NOT (((status = 'PENDING') OR (status = 'PROCESSING')))
      * }</pre>
      *
-     * @param cond the condition to be negated; must not be {@code null}. May be any composable condition,
+     * @param condition the condition to be negated; must not be {@code null}. May be any composable condition,
      *             including simple comparisons, logical junctions ({@link And}, {@link Or}),
      *             or subquery conditions. It should not be a clause condition (such as
      *             {@link Where} or {@link Having}), since those are not meant to be composed.
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if {@code cond} is non-composable —
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is non-composable —
      *             a {@link Criteria}, a {@link Clause} condition (for example {@link Where}, {@link Having}, or
      *             {@link OrderBy}), an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
      *             quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
-    public Not(final Condition cond) {
-        super(Operator.NOT, validateComposableOperand(cond, "not"));
+    public Not(final Condition condition) {
+        super(Operator.NOT, validateComposableOperand(condition, "not"));
     }
 }

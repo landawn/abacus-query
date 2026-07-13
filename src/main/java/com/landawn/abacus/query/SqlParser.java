@@ -1816,26 +1816,26 @@ public final class SqlParser {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<String> words = SqlParser.parse("SELECT COUNT(*) FROM users");
-     * boolean isFunc = SqlParser.isFunctionName(words, 2);   // true for "COUNT"
-     * boolean notFunc = SqlParser.isFunctionName(words, 0);  // false for "SELECT"
+     * List<String> tokens = SqlParser.parse("SELECT COUNT(*) FROM users");
+     * boolean isFunc = SqlParser.isFunctionName(tokens, 2);   // true for "COUNT"
+     * boolean notFunc = SqlParser.isFunctionName(tokens, 0);  // false for "SELECT"
      * }</pre>
      *
-     * @param words the list of parsed SQL words/tokens (typically the result of {@link #parse(String)})
+     * @param tokens the parsed SQL tokens (typically the result of {@link #parse(String)})
      * @param index the index of the word to check; invalid indices return {@code false}
      * @return {@code true} if the word at {@code index} is followed (after zero or more space tokens)
      *         by the {@code "("} token; {@code false} otherwise
      * @throws NullPointerException if {@code words} is {@code null}
      */
-    public static boolean isFunctionName(final List<String> words, final int index) {
-        return isFunctionName(words, words.size(), index);
+    public static boolean isFunctionName(final List<String> tokens, final int index) {
+        return isFunctionName(tokens, tokens.size(), index);
     }
 
     /**
      * Determines if a word at a specific position in a parsed word list represents a function name,
      * examining only the tokens below the given exclusive upper bound.
      *
-     * @param words the list of parsed SQL words/tokens (typically the result of {@link #parse(String)})
+     * @param tokens the parsed SQL tokens (typically the result of {@link #parse(String)})
      * @param len the exclusive upper bound to search within {@code words} (usually {@code words.size()};
      *            indices {@code >= len} are not examined; values above {@code words.size()} are capped
      *            at {@code words.size()})
@@ -1846,19 +1846,19 @@ public final class SqlParser {
      * @deprecated use {@link #isFunctionName(List, int)}
      */
     @Deprecated
-    public static boolean isFunctionName(final List<String> words, final int len, final int index) {
-        final int upperBound = Math.min(len, words.size());
+    public static boolean isFunctionName(final List<String> tokens, final int len, final int index) {
+        final int upperBound = Math.min(len, tokens.size());
 
         if (index < 0 || index >= upperBound) {
             return false;
         }
 
-        if (SK.SPACE.equals(words.get(index))) {
+        if (SK.SPACE.equals(tokens.get(index))) {
             return false;
         }
 
         for (int i = index + 1; i < upperBound; i++) {
-            String word = words.get(i);
+            String word = tokens.get(i);
             if (SK.PARENTHESIS_L.equals(word)) {
                 return true;
             } else if (!SK.SPACE.equals(word)) {

@@ -61,9 +61,9 @@ public class IsNotNaNTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         IsNotNaN condition = new IsNotNaN("temperature");
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertTrue(params.isEmpty());
     }
@@ -142,7 +142,7 @@ public class IsNotNaNTest extends TestBase {
         IsNotNaN cond1 = new IsNotNaN("temp1");
         IsNotNaN cond2 = new IsNotNaN("temp2");
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -150,7 +150,7 @@ public class IsNotNaNTest extends TestBase {
         IsNotNaN cond1 = new IsNotNaN("value1");
         IsNotNaN cond2 = new IsNotNaN("value2");
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test

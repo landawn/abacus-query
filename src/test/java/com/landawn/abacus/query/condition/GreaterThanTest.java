@@ -71,17 +71,17 @@ public class GreaterThanTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         GreaterThan condition = new GreaterThan("status", "active");
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
     }
 
     @Test
-    public void testGetParameters_MultipleValues() {
+    public void testParameters_MultipleValues() {
         GreaterThan condition = new GreaterThan("count", 42);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(1, params.size());
         assertEquals(42, (int) params.get(0));
     }
@@ -159,7 +159,7 @@ public class GreaterThanTest extends TestBase {
         GreaterThan cond1 = new GreaterThan("a", 1);
         GreaterThan cond2 = new GreaterThan("b", 2);
         And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -167,7 +167,7 @@ public class GreaterThanTest extends TestBase {
         GreaterThan cond1 = new GreaterThan("a", 1);
         GreaterThan cond2 = new GreaterThan("b", 2);
         Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.getConditions().size());
+        assertEquals(Integer.valueOf(2), result.conditions().size());
     }
 
     @Test
@@ -293,6 +293,6 @@ public class GreaterThanTest extends TestBase {
         And qualified = salary.and(experience).and(age);
 
         Assertions.assertNotNull(qualified);
-        Assertions.assertEquals(3, qualified.getConditions().size());
+        Assertions.assertEquals(3, qualified.conditions().size());
     }
 }

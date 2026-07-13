@@ -372,4 +372,11 @@ public class SqlOperationTest extends TestBase {
         String txText = txOp.sqlToken();
         assertEquals("BEGIN TRANSACTION", txText);
     }
+
+    @Test
+    public void testFromIsTotal() {
+        assertEquals(SqlOperation.SELECT, SqlOperation.from("select"));
+        assertEquals(SqlOperation.UNKNOWN, SqlOperation.from("TRUNCATE"));
+        assertEquals(SqlOperation.UNKNOWN, SqlOperation.from(null));
+    }
 }

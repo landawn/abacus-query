@@ -51,20 +51,20 @@ public class ExistsTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters_EmptyForRawSQL() {
+    public void testParameters_EmptyForRawSQL() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders");
         Exists condition = new Exists(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertTrue(params.isEmpty());
     }
 
     @Test
-    public void testGetParameters_WithConditionParameters() {
+    public void testParameters_WithConditionParameters() {
         Condition whereCondition = new Equal("status", "active");
         SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), whereCondition);
         Exists condition = new Exists(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertNotNull(params);
         assertEquals(1, params.size());
         assertEquals("active", params.get(0));
@@ -177,7 +177,7 @@ public class ExistsTest extends TestBase {
         And andCondition = new And(Arrays.asList(new Equal("status", "active"), new GreaterThan("total", 100)));
         SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), andCondition);
         Exists condition = new Exists(subQuery);
-        List<Object> params = condition.getParameters();
+        List<Object> params = condition.parameters();
         assertEquals(2, params.size());
     }
 
@@ -210,11 +210,11 @@ public class ExistsTest extends TestBase {
     }
 
     @Test
-    public void testGetParameters() {
+    public void testParameters() {
         SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), Filters.and(Filters.eq("customer_id", 123), Filters.eq("status", "pending")));
         Exists exists = Filters.exists(subQuery);
 
-        var params = exists.getParameters();
+        var params = exists.parameters();
         Assertions.assertEquals(2, params.size());
         Assertions.assertTrue(params.contains(123));
         Assertions.assertTrue(params.contains("pending"));
@@ -254,7 +254,7 @@ public class ExistsTest extends TestBase {
         Exists customersWithRecentOrders = Filters.exists(hasOrders);
 
         Assertions.assertNotNull(customersWithRecentOrders);
-        var params = customersWithRecentOrders.getParameters();
+        var params = customersWithRecentOrders.parameters();
         Assertions.assertTrue(params.contains("2023-01-01"));
 
         // Test products with stock
@@ -263,7 +263,7 @@ public class ExistsTest extends TestBase {
         Exists productsInStock = Filters.exists(hasStock);
 
         Assertions.assertNotNull(productsInStock);
-        params = productsInStock.getParameters();
+        params = productsInStock.parameters();
         Assertions.assertTrue(params.contains(0));
     }
 
