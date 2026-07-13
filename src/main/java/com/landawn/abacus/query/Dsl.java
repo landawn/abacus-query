@@ -34,7 +34,8 @@ import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.u.Optional;
 
 /**
- * Entry point for building SQL statements with a fixed {@link SqlDialect} (naming policy + parameter style).
+ * Entry point for building SQL statements with a fixed {@link SqlDialect}, including its naming,
+ * parameter, identifier-quoting, database-product, named-parameter-rendering, and tokenizer settings.
  *
  * <p>
  * DSL = a specialized language/API for expressing one kind of task clearly
@@ -43,7 +44,8 @@ import com.landawn.abacus.util.u.Optional;
  * <p>Each predefined constant on this class (e.g. {@link #PSC}, {@link #NSC}, {@link #SCSB}) is a
  * {@code Dsl} bound to a specific dialect. Call one of the statement methods &mdash; {@code insert},
  * {@code select}, {@code update}, {@code deleteFrom}, {@code count}, etc. &mdash; to obtain a fresh
- * {@link SqlBuilder} configured for that operation. Dsl instances are immutable and thread-safe; the
+ * {@link SqlBuilder} configured for that operation. Dsl instances are immutable and thread-safe when
+ * any custom {@link SqlDialect#namedParameterHandler()} is safe for concurrent invocation; the
  * {@link SqlBuilder} instances they produce are not.</p>
  */
 public final class Dsl {
@@ -177,7 +179,8 @@ public final class Dsl {
      * <p>The common dialect combinations are already exposed as predefined constants on
      * {@link Dsl} (for example {@link Dsl#PSC} or {@link Dsl#NSC}); use this
      * factory to obtain a DSL for a combination that is not predefined. The returned {@code Dsl} is
-     * immutable and thread-safe, so it is typically stored in a {@code static final} field and reused.</p>
+     * immutable and thread-safe when any custom named-parameter handler is safe for concurrent invocation,
+     * so it is typically stored in a {@code static final} field and reused.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -190,7 +193,7 @@ public final class Dsl {
      * // Output: INSERT INTO account (first_name, last_name) VALUES (?, ?)
      * }</pre>
      *
-     * @param sqlDialect the dialect (naming policy, parameter style, identifier quote and optional product info) the DSL is bound to
+     * @param sqlDialect the complete immutable rendering and tokenizer configuration the DSL is bound to
      * @return a {@code Dsl} that produces {@link SqlBuilder} instances using the given dialect; a shared
      *         cached instance is returned for the predefined dialect combinations, otherwise a new instance
      * @throws IllegalArgumentException if {@code sqlDialect} is {@code null}
@@ -210,7 +213,7 @@ public final class Dsl {
     /**
      * Returns the {@link SqlDialect} this DSL is bound to; every {@link SqlBuilder} it produces renders SQL with this dialect.
      *
-     * @return the dialect (naming policy, parameter style, identifier quote and optional product info) bound to this DSL
+     * @return the complete rendering and tokenizer configuration bound to this DSL
      */
     public SqlDialect sqlDialect() {
         return sqlDialect;

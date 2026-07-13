@@ -7,12 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -377,24 +375,24 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
-    public void testRegisterSeparatorChar() {
-        SqlParser.registerSeparator('$');
-        List<String> tokens = SqlParser.parse("SELECT$FROM$users");
+    public void testTokenizerConfigCharSeparator() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator('$').build());
+        List<String> tokens = tokenizer.parse("SELECT$FROM$users");
         assertEquals(Arrays.asList("SELECT", "$", "FROM", "$", "users"), tokens);
+        assertEquals(Arrays.asList("SELECT$FROM$users"), SqlParser.parse("SELECT$FROM$users"));
     }
 
     @Test
-    public void testRegisterSeparatorString() {
-        SqlParser.registerSeparator(":::");
-        List<String> tokens = SqlParser.parse("SELECT:::FROM:::users");
+    public void testTokenizerConfigStringSeparator() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator(":::").build());
+        List<String> tokens = tokenizer.parse("SELECT:::FROM:::users");
         assertEquals(Arrays.asList("SELECT", ":::", "FROM", ":::", "users"), tokens);
     }
 
     @Test
-    public void testRegisterSeparatorNull() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            SqlParser.registerSeparator((String) null);
-        });
+    public void testTokenizerConfigRejectsNullSeparator() {
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.tokenizerConfigBuilder().withSeparator((String) null));
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.tokenizer(null));
     }
 
     @Test
@@ -746,18 +744,16 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
-    public void testRegisterSeparatorStringWithNewLeadingChar() {
-        SqlParser.registerSeparator("$$");
-
-        List<String> tokens = SqlParser.parse("SELECT$$FROM$$users");
+    public void testTokenizerConfigStringWithNewLeadingChar() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("$$").build());
+        List<String> tokens = tokenizer.parse("SELECT$$FROM$$users");
         assertEquals(Arrays.asList("SELECT", "$$", "FROM", "$$", "users"), tokens);
     }
 
     @Test
-    public void testRegisterLongSeparatorString() {
-        SqlParser.registerSeparator("~~~~");
-
-        List<String> tokens = SqlParser.parse("SELECT~~~~FROM~~~~users");
+    public void testTokenizerConfigLongSeparatorString() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("~~~~").build());
+        List<String> tokens = tokenizer.parse("SELECT~~~~FROM~~~~users");
         assertEquals(Arrays.asList("SELECT", "~~~~", "FROM", "~~~~", "users"), tokens);
     }
 
@@ -1016,25 +1012,24 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
-    public void testSqlParser_registerSeparatorChar() {
-        SqlParser.registerSeparator('$');
-        List<String> tokens = SqlParser.parse("SELECT$FROM$users");
+    public void testSqlParser_tokenizerConfigChar() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator('$').build());
+        List<String> tokens = tokenizer.parse("SELECT$FROM$users");
         assertNotNull(tokens);
         assertTrue(tokens.contains("$"));
     }
 
     @Test
-    public void testSqlParser_registerSeparatorString() {
-        SqlParser.registerSeparator("<=>");
-        SqlParser.registerSeparator("::");
-        List<String> tokens = SqlParser.parse("SELECT <=> value :: text");
+    public void testSqlParser_tokenizerConfigString() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("<=>").withSeparator("::").build());
+        List<String> tokens = tokenizer.parse("SELECT <=> value :: text");
         assertTrue(tokens.contains("<=>"));
         assertTrue(tokens.contains("::"));
     }
 
     @Test
-    public void testRegisterSeparatorRejectsEmptyString() {
-        assertThrows(IllegalArgumentException.class, () -> SqlParser.registerSeparator(""));
+    public void testTokenizerConfigRejectsEmptyString() {
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.tokenizerConfigBuilder().withSeparator(""));
     }
 
     @Test
@@ -1104,12 +1099,6 @@ public class SqlParserTest extends TestBase {
         String sql = "WHERE x = 'a\\'' AND y = 1";
         int idx = SqlParser.indexOfToken(sql, "AND", 0, false);
         assertTrue(idx > 0, "AND after a terminated escaped-quote literal must be found, got index: " + idx);
-    }
-
-    /** Restore the global separator set after each test so separator-mutating tests stay isolated. */
-    @AfterEach
-    public void restoreSeparators() {
-        SqlParser.resetSeparators();
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -1268,120 +1257,110 @@ public class SqlParserTest extends TestBase {
     }
 
     // ----------------------------------------------------------------------------------------------
-    // unregisterSeparator(String)
+    // instance-scoped tokenizer configuration
     // ----------------------------------------------------------------------------------------------
 
     @Test
-    public void testUnregisterSeparator_multiChar() {
-        SqlParser.registerSeparator("::");
-        assertEquals(Arrays.asList("a", "::", "b"), SqlParser.parse("a::b"));
+    public void testTokenizerConfigCanAddAndRemoveSeparators() {
+        final SqlParser.Tokenizer withCustom = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("::").withSeparator('$').build());
+        final SqlParser.Tokenizer withoutDefaults = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withoutSeparator("##").build());
 
-        SqlParser.unregisterSeparator("::");
-        // No longer a separator: "a::b" is a single token now.
-        assertEquals(Arrays.asList("a::b"), SqlParser.parse("a::b"));
+        assertEquals(Arrays.asList("a", "::", "b"), withCustom.parse("a::b"));
+        assertEquals(Arrays.asList("a", "$", "b"), withCustom.parse("a$b"));
+        assertEquals(1, withCustom.indexOfToken("a::b", "::"));
+        assertEquals("::", withCustom.nextToken("a::b", 1));
+        assertEquals(3, withCustom.nextTokenEndIndex("a::b", 1));
+        assertFalse(withoutDefaults.parse("1##2").contains("##"));
+        assertTrue(SqlParser.parse("1##2").contains("##"));
     }
 
     @Test
-    public void testUnregisterSeparator_singleCharRemovesCharForm() {
-        SqlParser.registerSeparator("$");
-        assertEquals(Arrays.asList("a", "$", "b"), SqlParser.parse("a$b"));
+    public void testTokenizerConfigurationsAreIsolated() {
+        final SqlParser.Tokenizer colonTokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("::").build());
+        final SqlParser.Tokenizer dollarTokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("$$").build());
 
-        SqlParser.unregisterSeparator("$");
-        assertEquals(Arrays.asList("a$b"), SqlParser.parse("a$b"));
+        assertTrue(colonTokenizer.parse("a::b").contains("::"));
+        assertFalse(dollarTokenizer.parse("a::b").contains("::"));
+        assertTrue(dollarTokenizer.parse("a$$b").contains("$$"));
+        assertFalse(colonTokenizer.parse("a$$b").contains("$$"));
     }
 
     @Test
-    public void testUnregisterSeparator_removesBuiltInDefault() {
-        // "##" is a built-in default separator.
-        assertTrue(SqlParser.parse("1 ## 2").contains("##"));
+    public void testTokenizerConfigIsImmutable() {
+        final SqlParser.TokenizerConfig.Builder builder = SqlParser.tokenizerConfigBuilder().withSeparator("::");
+        final SqlParser.TokenizerConfig config = builder.build();
 
-        SqlParser.unregisterSeparator("##");
-        assertFalse(SqlParser.parse("1##2").contains("##"));
+        assertThrows(UnsupportedOperationException.class, () -> config.separators().add("$$"));
+        assertTrue(config.separators().contains("::"));
 
-        // resetSeparators() (via @AfterEach) restores it.
+        builder.withSeparator("$$");
+        assertFalse(config.separators().contains("$$"), "A built configuration must not share mutable state with its builder");
     }
 
     @Test
-    public void testUnregisterSeparator_unknownIsNoOp() {
-        // Unregistering something never registered must not throw and must not corrupt parsing.
-        SqlParser.unregisterSeparator("%%%%%%%");
+    public void testTokenizerConfigWithoutSpaceTreatsCompositeTextAsOneToken() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withoutSeparator(' ').build());
 
-        assertEquals(Arrays.asList("SELECT", " ", "*", " ", "FROM", " ", "t"), SqlParser.parse("SELECT * FROM t"));
+        assertEquals(Arrays.asList("ORDER BY"), tokenizer.parse("ORDER BY"));
+        assertEquals(0, tokenizer.indexOfToken("ORDER BY", "ORDER BY"));
+        assertEquals("ORDER BY", tokenizer.nextToken("ORDER BY", 0));
+        assertEquals(8, tokenizer.nextTokenEndIndex("ORDER BY", 0));
     }
 
     @Test
-    public void testUnregisterSeparator_nullOrEmptyThrows() {
-        assertThrows(IllegalArgumentException.class, () -> SqlParser.unregisterSeparator(null));
-        assertThrows(IllegalArgumentException.class, () -> SqlParser.unregisterSeparator(""));
+    public void testIndexOfTokenMatchesQuotedTokensContainingSpaces() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer();
+        final String sql = "SELECT 'a b', \"First Name\", `Last Name`, [Display ]] Name] FROM users";
+
+        assertEquals(sql.indexOf("'a b'"), tokenizer.indexOfToken(sql, "'a b'"));
+        assertEquals(sql.indexOf("\"First Name\""), tokenizer.indexOfToken(sql, "\"First Name\""));
+        assertEquals(sql.indexOf("`Last Name`"), tokenizer.indexOfToken(sql, "`Last Name`"));
+        assertEquals(sql.indexOf("[Display ]] Name]"), tokenizer.indexOfToken(sql, "[Display ]] Name]"));
+
+        // The static default facade has the same corrected token contract.
+        assertEquals(sql.indexOf("[Display ]] Name]"), SqlParser.indexOfToken(sql, "[Display ]] Name]"));
     }
 
     @Test
-    public void testUnregisterSeparator_longMultiCharRemoval() {
-        // '$' is not a built-in separator, so only the registered 6-char string can split here.
-        SqlParser.registerSeparator("$$$$$$"); // length 6, longer than any default
-        assertEquals(Arrays.asList("a", "$$$$$$", "b"), SqlParser.parse("a$$$$$$b"));
+    public void testCustomHashSeparatorIsUsedByBackwardHashContextScan() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("#!").build());
+        final String sql = "SELECT #! 1 FROM #tmp WHERE id = 1";
+        final int tempTableStart = sql.indexOf("#tmp");
 
-        SqlParser.unregisterSeparator("$$$$$$");
-        // After removal the 6-char run is no longer a separator and stays a single token.
-        assertEquals(Arrays.asList("a$$$$$$b"), SqlParser.parse("a$$$$$$b"));
+        final List<String> tokens = tokenizer.parse(sql);
+        assertTrue(tokens.contains("#!"));
+        assertTrue(tokens.contains("#tmp"));
+        assertTrue(tokens.contains("WHERE"));
+        assertEquals(tempTableStart, tokenizer.indexOfToken(sql, "#tmp"));
+        assertEquals("#tmp", tokenizer.nextToken(sql, tempTableStart));
+        assertEquals(tempTableStart + 4, tokenizer.nextTokenEndIndex(sql, tempTableStart));
     }
 
     @Test
-    public void testSeparatorRegistryMutationsAreSerialized() throws NoSuchMethodException {
-        assertTrue(Modifier.isSynchronized(SqlParser.class.getMethod("registerSeparator", char.class).getModifiers()));
-        assertTrue(Modifier.isSynchronized(SqlParser.class.getMethod("registerSeparator", String.class).getModifiers()));
-        assertTrue(Modifier.isSynchronized(SqlParser.class.getMethod("unregisterSeparator", char.class).getModifiers()));
-        assertTrue(Modifier.isSynchronized(SqlParser.class.getMethod("unregisterSeparator", String.class).getModifiers()));
-        assertTrue(Modifier.isSynchronized(SqlParser.class.getMethod("resetSeparators").getModifiers()));
-    }
+    public void testTokenizerConfigLongestCustomSeparatorAndSupplementaryUnicode() {
+        final SqlParser.Tokenizer longest = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("::").withSeparator(":::").build());
+        final SqlParser.Tokenizer withoutLongest = SqlParser
+                .tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("::").withSeparator(":::").withoutSeparator(":::").build());
+        final SqlParser.Tokenizer unicode = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("😀").build());
 
-    // ----------------------------------------------------------------------------------------------
-    // unregisterSeparator(char)
-    // ----------------------------------------------------------------------------------------------
-
-    @Test
-    public void testUnregisterSeparatorChar_removesCharRegisteredSeparator() {
-        SqlParser.registerSeparator('$');
-        assertEquals(Arrays.asList("a", "$", "b"), SqlParser.parse("a$b"));
-
-        SqlParser.unregisterSeparator('$');
-        assertEquals(Arrays.asList("a$b"), SqlParser.parse("a$b"));
+        assertEquals(Arrays.asList("a", ":::", "b"), longest.parse("a:::b"));
+        assertEquals(Arrays.asList("a", "::", ":b"), withoutLongest.parse("a:::b"));
+        assertEquals(Arrays.asList("a", "😀", "b"), unicode.parse("a😀b"));
     }
 
     @Test
-    public void testUnregisterSeparatorChar_removesStringRegisteredSingleChar() {
-        // registerSeparator(String) dual-registers single-char separators; the char overload must undo both forms.
-        SqlParser.registerSeparator("$");
-        assertEquals(Arrays.asList("a", "$", "b"), SqlParser.parse("a$b"));
-
-        SqlParser.unregisterSeparator('$');
-        assertEquals(Arrays.asList("a$b"), SqlParser.parse("a$b"));
+    public void testGlobalSeparatorMutationApisAreRemoved() {
+        assertThrows(NoSuchMethodException.class, () -> SqlParser.class.getMethod("registerSeparator", char.class));
+        assertThrows(NoSuchMethodException.class, () -> SqlParser.class.getMethod("registerSeparator", String.class));
+        assertThrows(NoSuchMethodException.class, () -> SqlParser.class.getMethod("unregisterSeparator", char.class));
+        assertThrows(NoSuchMethodException.class, () -> SqlParser.class.getMethod("unregisterSeparator", String.class));
+        assertThrows(NoSuchMethodException.class, () -> SqlParser.class.getMethod("resetSeparators"));
     }
 
     @Test
-    public void testUnregisterSeparatorChar_unknownIsNoOp() {
-        SqlParser.unregisterSeparator('¤');
-
-        assertEquals(Arrays.asList("SELECT", " ", "*", " ", "FROM", " ", "t"), SqlParser.parse("SELECT * FROM t"));
-    }
-
-    // ----------------------------------------------------------------------------------------------
-    // resetSeparators()
-    // ----------------------------------------------------------------------------------------------
-
-    @Test
-    public void testResetSeparators_dropsCustomAndRestoresDefaults() {
-        SqlParser.registerSeparator("::");
-        SqlParser.registerSeparator('§');
-        SqlParser.unregisterSeparator("##"); // remove a default too
-
-        SqlParser.resetSeparators();
-
-        // Custom separators are gone.
-        assertEquals(Arrays.asList("a::b"), SqlParser.parse("a::b"));
-        assertEquals(Arrays.asList("a§b"), SqlParser.parse("a§b"));
-        // The previously-removed default is back.
-        assertTrue(SqlParser.parse("1 ## 2").contains("##"));
+    public void testTokenizerConfigRemovalRejectsNullOrEmptyString() {
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.tokenizerConfigBuilder().withoutSeparator(null));
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.tokenizerConfigBuilder().withoutSeparator(""));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -1759,22 +1738,21 @@ public class SqlParserTest extends TestBase {
     }
 
     // ----------------------------------------------------------------------------------------------
-    // registerSeparator -- non-ASCII char path (char >= 128 skips the ASCII fast-table)
+    // TokenizerConfig -- non-ASCII separator paths
     // ----------------------------------------------------------------------------------------------
 
     @Test
-    public void testRegisterSeparator_nonAsciiChar() {
-        SqlParser.registerSeparator('§'); // 0xA7, >= 128 -> falls back to the Set, not the ASCII table
+    public void testTokenizerConfig_nonAsciiChar() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator('§').build());
 
-        assertEquals(Arrays.asList("a", "§", "b"), SqlParser.parse("a§b"));
-        assertTrue(SqlParser.isSeparator("a§b", 3, 1, '§'));
+        assertEquals(Arrays.asList("a", "§", "b"), tokenizer.parse("a§b"));
     }
 
     @Test
-    public void testRegisterSeparator_nonAsciiMultiCharString() {
-        SqlParser.registerSeparator("→→"); // multi-char, non-ASCII
+    public void testTokenizerConfig_nonAsciiMultiCharString() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("→→").build());
 
-        assertEquals(Arrays.asList("a", "→→", "b"), SqlParser.parse("a→→b"));
+        assertEquals(Arrays.asList("a", "→→", "b"), tokenizer.parse("a→→b"));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -2457,13 +2435,9 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
-    public void testRegisterSeparator_multiCharFirstCharFastRejectIsRebuilt() {
-        // ':' is not the first char of any default multi-char separator; registering "::" must be
-        // picked up (exercising the first-char fast-reject rebuild) and resetting must drop it.
-        SqlParser.registerSeparator("::");
-        assertTrue(SqlParser.parse("a::b").contains("::"));
-
-        SqlParser.resetSeparators();
+    public void testTokenizerConfig_multiCharFirstCharFastRejectIsScoped() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("::").build());
+        assertTrue(tokenizer.parse("a::b").contains("::"));
         assertFalse(SqlParser.parse("a::b").contains("::"));
     }
 

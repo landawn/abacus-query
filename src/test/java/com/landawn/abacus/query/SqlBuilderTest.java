@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -1041,12 +1040,6 @@ public class SqlBuilderTest extends TestBase {
         }
     }
 
-    @BeforeEach
-    public void setUp() {
-        // Reset any static state if needed
-        AbstractQueryBuilder.resetHandlerForNamedParameter();
-    }
-
     // Static method tests
 
     @Test
@@ -1146,33 +1139,47 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
-    public void testSetAndResetHandlerForNamedParameter() {
-        // Test custom handler
-        BiConsumer<StringBuilder, String> customHandler = (sb, propName) -> sb.append("${").append(propName).append("}");
+    public void testNamedParameterHandlerIsScopedToDialect() {
+        final BiConsumer<StringBuilder, String> customHandler = (sb, propName) -> sb.append("${").append(propName).append("}");
+        final Dsl customDsl = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler(customHandler).build());
 
-        AbstractQueryBuilder.setHandlerForNamedParameter(customHandler);
-
-        String sql = Dsl.NSC.select("name").from("users").where(Filters.eq("id", 1)).build().query();
+        String sql = customDsl.select("name").from("users").where(Filters.eq("id", 1)).build().query();
         assertEquals("SELECT name FROM users WHERE id = ${id}", sql);
 
-        // Create a named SQL to test the handler
-        sql = Dsl.NSC.update("account").set("firstName").where(Filters.eq("id", 1)).build().query();
+        sql = customDsl.update("account").set("firstName").where(Filters.eq("id", 1)).build().query();
 
         assertTrue(sql.contains("${firstName}"));
         assertTrue(sql.contains("${id}"));
 
-        // Reset to default
-        AbstractQueryBuilder.resetHandlerForNamedParameter();
-
+        // The predefined DSL remains unchanged.
         sql = Dsl.NSC.update("account").set("firstName").where(Filters.eq("id", 1)).build().query();
-
         assertTrue(sql.contains(":firstName"));
         assertTrue(sql.contains(":id"));
     }
 
     @Test
-    public void testSetHandlerForNamedParameterWithNull() {
-        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.setHandlerForNamedParameter(null));
+    public void testNullNamedParameterHandlerUsesDefault() {
+        final Dsl dsl = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler(null).build());
+        assertEquals("SELECT name FROM users WHERE id = :id", dsl.select("name").from("users").where(Filters.eq("id", 1)).build().query());
+    }
+
+    @Test
+    public void testNamedParameterHandlerMustEmitToken() {
+        final Dsl dsl = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+            // Deliberately emits nothing.
+        }).build());
+
+        assertThrows(IllegalStateException.class, () -> dsl.select("name").from("users").where(Filters.eq("id", 1)).build());
+    }
+
+    @Test
+    public void testNamedParameterHandlerPropagatesIntoStructuredSubQuery() {
+        final Dsl dsl = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append("${").append(name).append('}')).build());
+        final SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("userId"), Filters.eq("status", "OPEN"));
+        final SP sp = dsl.select("id").from("users").where(Filters.in("id", subQuery)).build();
+
+        assertEquals("SELECT id FROM users WHERE id IN (SELECT user_id AS \"userId\" FROM orders WHERE status = ${status})", sp.query());
+        assertEquals(Arrays.asList("OPEN"), sp.parameters());
     }
 
     // Instance method tests using PSC (Parameterized SQL with snake_case)
@@ -1522,20 +1529,38 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testSetOperationRenamesCustomNamedParameterTokensWithoutCorruptingWrapperText() {
-        AbstractQueryBuilder.setHandlerForNamedParameter((sb, name) -> sb.append("CAST(:").append(name).append(" AS uuid)"));
+        final Dsl customDsl = Dsl
+                .forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append("CAST(:").append(name).append(" AS uuid)")).build());
+        final SP sp = customDsl.select("id")
+                .from("users")
+                .where(Filters.equal("id", 1))
+                .union(customDsl.select("id").from("archived_users").where(Filters.equal("id", 2)))
+                .build();
 
-        try {
-            final SP sp = Dsl.NSC.select("id")
-                    .from("users")
-                    .where(Filters.equal("id", 1))
-                    .union(Dsl.NSC.select("id").from("archived_users").where(Filters.equal("id", 2)))
-                    .build();
+        assertEquals("SELECT id FROM users WHERE id = CAST(:id AS uuid) UNION SELECT id FROM archived_users WHERE id = CAST(:id_2 AS uuid)", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+    }
 
-            assertEquals("SELECT id FROM users WHERE id = CAST(:id AS uuid) UNION SELECT id FROM archived_users WHERE id = CAST(:id_2 AS uuid)", sp.query());
-            assertEquals(Arrays.asList(1, 2), sp.parameters());
-        } finally {
-            AbstractQueryBuilder.resetHandlerForNamedParameter();
-        }
+    @Test
+    public void testSetOperationNormalizesChildNamedParametersToParentHandler() {
+        final Dsl parentDsl = Dsl
+                .forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append("${").append(name).append('}')).build());
+        final SP sp = parentDsl.select("id")
+                .from("users")
+                .where(Filters.equal("id", 1))
+                .union(Dsl.NSC.select("id").from("archived_users").where(Filters.equal("id", 2)))
+                .build();
+
+        assertEquals("SELECT id FROM users WHERE id = ${id} UNION SELECT id FROM archived_users WHERE id = ${id_2}", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+    }
+
+    @Test
+    public void testSetOperationRejectsDifferentGeneratedNamedParameterPolicies() {
+        final SqlBuilder parent = Dsl.NSC.select("id").from("users").where(Filters.equal("id", 1));
+        final SqlBuilder child = Dsl.MSC.select("id").from("archived_users").where(Filters.equal("id", 2));
+
+        assertThrows(IllegalArgumentException.class, () -> parent.union(child));
     }
 
     @Test
@@ -2885,27 +2910,19 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
-    public void testSetHandlerForNamedParameter() {
-        // Test custom handler
-        BiConsumer<StringBuilder, String> customHandler = (sb, propName) -> sb.append("#{").append(propName).append("}");
+    public void testNamedParameterHandlerIsCarriedBySqlDialect() {
+        final BiConsumer<StringBuilder, String> customHandler = (sb, propName) -> sb.append("#{").append(propName).append("}");
+        final SqlDialect dialect = Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler(customHandler).build();
 
-        AbstractQueryBuilder.setHandlerForNamedParameter(customHandler);
-        // The handler is stored in ThreadLocal, so we can't directly verify it
-        // But we can verify it doesn't throw exception
-        Assertions.assertDoesNotThrow(() -> AbstractQueryBuilder.setHandlerForNamedParameter(customHandler));
-
-        // Test null handler throws exception
-        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.setHandlerForNamedParameter(null));
+        assertEquals(customHandler, dialect.namedParameterHandler());
+        assertEquals("SELECT name FROM users WHERE id = #{id}",
+                Dsl.forDialect(dialect).select("name").from("users").where(Filters.eq("id", 1)).build().query());
     }
 
     @Test
-    public void testResetHandlerForNamedParameter() {
-        // Set custom handler first
-        BiConsumer<StringBuilder, String> customHandler = (sb, propName) -> sb.append("#{").append(propName).append("}");
-        AbstractQueryBuilder.setHandlerForNamedParameter(customHandler);
-
-        // Reset to default
-        Assertions.assertDoesNotThrow(() -> AbstractQueryBuilder.resetHandlerForNamedParameter());
+    public void testGlobalNamedParameterHandlerMethodsAreRemoved() {
+        assertThrows(NoSuchMethodException.class, () -> AbstractQueryBuilder.class.getMethod("setHandlerForNamedParameter", BiConsumer.class));
+        assertThrows(NoSuchMethodException.class, () -> AbstractQueryBuilder.class.getMethod("resetHandlerForNamedParameter"));
     }
 
     public static class TestEntity {

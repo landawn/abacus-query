@@ -34,51 +34,6 @@
           "constructors": [],
           "methods": [
             {
-              "name": "setHandlerForNamedParameter",
-              "kind": "static",
-              "modifiers": [
-                "public",
-                "static"
-              ],
-              "signature": "public static void setHandlerForNamedParameter(final BiConsumer<StringBuilder, String> handlerForNamedParameter)",
-              "return_type": "void",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "handlerForNamedParameter",
-                  "type": "BiConsumer<StringBuilder, String>",
-                  "javadoc": "the handler to format named parameters; must not be null",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Sets a custom handler for formatting named parameters in SQL strings.",
-              "contract": [
-                "Each builder snapshots the handler in its constructor, so calling this method only affects builders created afterwards on the calling thread; builders that already exist keep the handler that was in effect when they were created.",
-                "The handler should be deterministic, side-effect free, and make its output depend only on the supplied parameter name: compound-query assembly may invoke it again with a suffixed name when a sibling query's parameter name must be made unique.",
-                "<p> <b> Usage Examples: </b> </p> <pre> {@code // Use MyBatis-style named parameters: #{paramName} AbstractQueryBuilder.setHandlerForNamedParameter( (sb, propName) -> sb.append(\"#{\").append(propName).append(\"}\")); // Reset to default when done AbstractQueryBuilder.resetHandlerForNamedParameter(); } </pre>"
-              ],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "resetHandlerForNamedParameter",
-              "kind": "static",
-              "modifiers": [
-                "public",
-                "static"
-              ],
-              "signature": "public static void resetHandlerForNamedParameter()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Resets the named parameter handler to the default format.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
               "name": "sqlDialect",
               "kind": "instance",
               "modifiers": [
@@ -3040,7 +2995,7 @@
             "public",
             "final"
           ],
-          "javadoc_summary": "Entry point for building SQL statements with a fixed {@link SqlDialect} (naming policy + parameter style).",
+          "javadoc_summary": "Entry point for building SQL statements with a fixed {@link SqlDialect} , including its naming, parameter, identifier-quoting, database-product, named-parameter-rendering, and tokenizer settings.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -3060,13 +3015,15 @@
                 {
                   "name": "sqlDialect",
                   "type": "SqlDialect",
-                  "javadoc": "the dialect (naming policy, parameter style, identifier quote and optional product info) the DSL is bound to",
+                  "javadoc": "the complete immutable rendering and tokenizer configuration the DSL is bound to",
                   "nullability": "unspecified"
                 }
               ],
               "throws": [],
               "javadoc_summary": "Creates a {@code Dsl} bound to the given {@link SqlDialect} , fixing the naming policy and parameter style of every {@link SqlBuilder} it produces.",
-              "contract": [],
+              "contract": [
+                "The returned {@code Dsl} is immutable and thread-safe when any custom named-parameter handler is safe for concurrent invocation, so it is typically stored in a {@code static final} field and reused."
+              ],
               "examples": [],
               "see_also": []
             },
@@ -12900,7 +12857,23 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Creates a new empty Selection instance.",
+              "javadoc_summary": "Creates a new empty selection that can be configured through the fluent setters.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "includesSubEntityProperties",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean includesSubEntityProperties()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns whether properties from sub-entities are included.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -12947,17 +12920,42 @@
               "see_also": []
             },
             {
-              "name": "includesSubEntityProperties",
+              "name": "excludedPropNames",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public boolean includesSubEntityProperties()",
-              "return_type": "boolean",
+              "signature": "public Set<String> excludedPropNames()",
+              "return_type": "Set<String>",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Returns whether properties from sub-entities are included.",
+              "javadoc_summary": "Returns the property names to exclude from this selection.",
+              "contract": [
+                "Returns {@code null} when no exclusions have been set."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "excludedPropNames",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public Selection excludedPropNames(final Set<String> excludedPropNames)",
+              "return_type": "Selection",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "excludedPropNames",
+                  "type": "Set<String>",
+                  "javadoc": "the property names to exclude; can be {@code null}",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Sets the property names to exclude from this selection.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -13000,47 +12998,6 @@
               "throws": [],
               "javadoc_summary": "Creates an unconstrained selection builder for compatibility.",
               "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "excludedPropNames",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "public Selection excludedPropNames(final Set<String> excludedPropNames)",
-              "return_type": "Selection",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "excludedPropNames",
-                  "type": "Set<String>",
-                  "javadoc": "the property names to exclude; can be {@code null}",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Sets the property names to exclude from this selection.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "excludedPropNames",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "public Set<String> excludedPropNames()",
-              "return_type": "Set<String>",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Returns the property names to exclude from this selection.",
-              "contract": [
-                "Returns {@code null} when no exclusions have been set."
-              ],
               "examples": [],
               "see_also": []
             }
@@ -13368,11 +13325,137 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "class SqlDialect { /** * Optional descriptor of the target database product. When set, query builders branch on * {@link ProductInfo#name()} to emit product-specific SQL: Oracle, DB2 and SQL Server dialects * render pagination with {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY} instead of * {@code LIMIT}/{@code OFFSET}, and a {@code null} {@code identifierQuote} defaults to * {@link IdentifierQuote#BACKTICK} for MySQL/MariaDB. When {@code null}, builders use the default * SQL syntax. */ private ProductInfo productInfo; /** * Naming policy used to translate Java property names into generated SQL identifiers. For example, * {@link NamingPolicy#SNAKE_CASE} renders {@code firstName} as {@code first_name}. When {@code null}, * builders use {@link NamingPolicy#SNAKE_CASE}. */ private NamingPolicy namingPolicy; /** * Parameter rendering policy for values supplied to builder operations. When {@code null}, builders * use {@link SqlPolicy#RAW_SQL}. */ private SqlPolicy sqlPolicy; /** * Quote style used for generated aliases and identifiers that need quoting. When {@code null}, * builders use {@link IdentifierQuote#DOUBLE_QUOTE}, except for MySQL/MariaDB product metadata, * which defaults to {@link IdentifierQuote#BACKTICK}. */ private IdentifierQuote identifierQuote; /** * Identifier quoting style used by SQL builders. * * <p>The enum currently distinguishes the two quote characters supported by this builder: * ANSI double quotes and MySQL-style backticks.</p> */ public static enum IdentifierQuote { /** * ANSI/standard SQL double quote ({@code \"}). This is the effective default when * {@code identifierQuote} is {@code null}, except when {@code productInfo} names MySQL or * MariaDB, in which case {@link #BACKTICK} is the default. */ DOUBLE_QUOTE, /** * MySQL/MariaDB-style backtick ({@code `}). */ BACKTICK; } /** * Defines how values supplied to query builders are represented in generated SQL. * * <p>This setting controls value placeholders only. It does not change table/column naming, * identifier quoting, or database-specific SQL syntax.</p> */ public static enum SqlPolicy { /** * Inline values directly into the SQL string as literals. * * <p><b>&#9888;&#65039;</b> Use only for trusted values; parameterized or named policies are preferred for user input.</p> */ RAW_SQL, /** * Render each value as a positional {@code ?} placeholder and collect parameter values in order. */ PARAMETERIZED_SQL, /** * Render values as named placeholders, such as {@code :id} or {@code :firstName}. */ NAMED_SQL, /** * Render values as iBATIS/MyBatis-style named placeholders, such as {@code #{id}}. */ IBATIS_SQL } /** * Immutable descriptor of a database product, holding the product name and version separately. * * <p>When attached to a dialect via {@code SqlDialect.productInfo}, the {@link #name()} drives * product-specific SQL generation in query builders (for example, Oracle-style * {@code FETCH FIRST ... ROWS ONLY} pagination). The name is matched case-insensitively as a * substring, so raw JDBC values from {@code DatabaseMetaData.getDatabaseProductName()} such as * {@code \"Microsoft SQL Server\"} or {@code \"Oracle Database 19c\"} are recognized. The * {@link #version()} can be compared numerically via {@link #isVersionAtLeast(String)} and * {@link #isVersionAtMost(String)}.</p> * * @param name the nonblank database product name, such as {@code \"MySQL\"} or {@code \"PostgreSQL\"} * @param version the database product version, such as {@code \"9.7\"} or {@code \"18\"}; a {@code null} * version is normalized to an empty string, so {@link #version()} never returns {@code null}. * Comparable via {@link #isVersionAtLeast(String)} / {@link #isVersionAtMost(String)} */ public record ProductInfo(String name, String version) { /** * Canonical constructor that requires a nonblank product name and normalizes a {@code null} {@code version} to an empty string, so * {@link #version()} never returns {@code null} and an absent version has a single canonical * representation. This keeps {@code equals}/{@code hashCode} consistent whether the version was * omitted (via {@link #of(String)}) or passed as {@code null}. * * @throws IllegalArgumentException if {@code name} is {@code null}, empty, or blank */ public ProductInfo { if (Strings.isBlank(name)) { throw new IllegalArgumentException(\"Database product name must not be null, empty, or blank\"); } version = version == null ? \"\" : version; } /** * Creates a {@code ProductInfo} with the given product name and no version (an empty {@link #version()}). * * @param name the database product name, such as {@code \"Oracle\"} or {@code \"MySQL\"} * @return a new {@code ProductInfo} with the given name and an empty ({@code \"\"}) version */ public static ProductInfo of(final String name) { return new ProductInfo(name, \"\"); } /** * Creates a {@code ProductInfo} with the given product name and version. * * @param name the database product name, such as {@code \"Oracle\"} or {@code \"MySQL\"} * @param version the database product version, such as {@code \"19c\"} or {@code \"9.7\"} * @return a new {@code ProductInfo} with the given name and version */ public static ProductInfo of(final String name, final String version) { return new ProductInfo(name, version); } /** * Returns whether this descriptor names MySQL. The match is a case-insensitive substring test * against {@link #name()}. This is distinct from {@link #isMariaDB()}, although both share the * same {@code LIMIT}/{@code OFFSET} pagination and backtick-quoting behavior in query builders. * * @return {@code true} if {@link #name()} contains {@code \"mysql\"} (case-insensitively) */ public boolean isMySQL() { return Strings.containsIgnoreCase(name, \"mysql\"); } /** * Returns whether this descriptor names MariaDB. The match is a case-insensitive substring test * against {@link #name()}. * * @return {@code true} if {@link #name()} contains {@code \"mariadb\"} (case-insensitively) */ public boolean isMariaDB() { return Strings.containsIgnoreCase(name, \"mariadb\"); } /** * Returns whether this descriptor names PostgreSQL. The match is a case-insensitive substring * test against {@link #name()} (the substring {@code \"postgres\"} also matches {@code \"PostgreSQL\"}). * * @return {@code true} if {@link #name()} contains {@code \"postgres\"} (case-insensitively) */ public boolean isPostgreSQL() { return Strings.containsIgnoreCase(name, \"postgres\"); } /** * Returns whether this descriptor names Microsoft SQL Server. The match is a case-insensitive * substring test against {@link #name()}, so raw JDBC values such as {@code \"Microsoft SQL Server\"} * are recognized. * * @return {@code true} if {@link #name()} contains {@code \"sql server\"} or {@code \"sqlserver\"} (case-insensitively) */ public boolean isSQLServer() { return Strings.containsIgnoreCase(name, \"sql server\") || Strings.containsIgnoreCase(name, \"sqlserver\"); } /** * Returns whether this descriptor names Oracle Database. The match is a case-insensitive * substring test against {@link #name()}, so raw JDBC values from * {@code DatabaseMetaData.getDatabaseProductName()} such as {@code \"Oracle Database 19c\"} * are recognized. * * @return {@code true} if {@link #name()} contains {@code \"oracle\"} (case-insensitively) */ public boolean isOracle() { return Strings.containsIgnoreCase(name, \"oracle\"); } /** * Returns whether this descriptor names IBM DB2. The match is a case-insensitive substring * test against {@link #name()}. * * @return {@code true} if {@link #name()} contains {@code \"db2\"} (case-insensitively) */ public boolean isDB2() { return Strings.containsIgnoreCase(name, \"db2\"); } /** * Returns whether this descriptor names H2 Database. The match is a case-insensitive substring * test against {@link #name()}. * * @return {@code true} if {@link #name()} contains {@code \"h2\"} (case-insensitively) */ public boolean isH2() { return Strings.containsIgnoreCase(name, \"h2\"); } /** * Returns whether this descriptor names SQLite. The match is a case-insensitive substring test * against {@link #name()}. * * @return {@code true} if {@link #name()} contains {@code \"sqlite\"} (case-insensitively) */ public boolean isSQLite() { return Strings.containsIgnoreCase(name, \"sqlite\"); } /** * Returns whether this product's {@link #version()} is greater than or equal to the given version. * * <p>Versions are compared by their leading dot-separated run of integer components: for example * {@code \"8.0.32\"} parses to {@code [8, 0, 32]} and {@code \"19c\"} to {@code [19]} (parsing stops at * the first character that is neither a digit nor a dot). Missing trailing components are treated as * {@code 0}, so {@code \"8.0\"} equals {@code \"8.0.0\"} and is less than {@code \"8.1\"}.</p> * * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code minVersion} * is {@code null}, blank, or does not begin with an integer component. This makes the method safe for * feature-gating: an unknown or unparseable version simply fails the check.</p> * * @param minVersion the minimum version to compare against, such as {@code \"8.0\"} or {@code \"19\"} * @return {@code true} if this product's version parses and is greater than or equal to {@code minVersion}; * {@code false} otherwise, including when either version is not comparable * @see #isVersionAtMost(String) */ public boolean isVersionAtLeast(final String minVersion) { final long[] mine = parseVersionComponents(version()); final long[] other = parseVersionComponents(minVersion); return mine != null && other != null && compareVersionComponents(mine, other) >= 0; } /** * Returns whether this product's {@link #version()} is less than or equal to the given version. * * <p>Versions are compared by their leading dot-separated run of integer components; see * {@link #isVersionAtLeast(String)} for the parsing and padding rules.</p> * * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code maxVersion} * is {@code null}, blank, or does not begin with an integer component.</p> * * @param maxVersion the maximum version to compare against, such as {@code \"8.0\"} or {@code \"19\"} * @return {@code true} if this product's version parses and is less than or equal to {@code maxVersion}; * {@code false} otherwise, including when either version is not comparable * @see #isVersionAtLeast(String) */ public boolean isVersionAtMost(final String maxVersion) { final long[] mine = parseVersionComponents(version()); final long[] other = parseVersionComponents(maxVersion); return mine != null && other != null && compareVersionComponents(mine, other) <= 0; } /** * Parses the leading dot-separated run of integer components of a version string (for example * {@code \"8.0.32\"} to {@code [8, 0, 32]} and {@code \"19c\"} to {@code [19]}), or {@code null} when the * string is {@code null}, blank, does not begin with a digit, or has an empty/unparseable component. */ private static long[] parseVersionComponents(final String version) { if (Strings.isBlank(version)) { return null; } final String trimmed = version.trim(); if (!Character.isDigit(trimmed.charAt(0))) { return null; } int end = 0; while (end < trimmed.length() && (Character.isDigit(trimmed.charAt(end)) || trimmed.charAt(end) == '.')) { end++; } // Retain trailing empty components so malformed versions such as \"8.\" and \"8..\" // are rejected instead of silently comparing as version 8. final String[] parts = trimmed.substring(0, end).split(\"\\\\.\", -1); final long[] components = new long[parts.length]; try { for (int i = 0; i < parts.length; i++) { components[i] = Long.parseLong(parts[i]); } } catch (final NumberFormatException e) { return null; } return components; } /** * Compares two version-component arrays element by element, treating missing trailing components as * {@code 0}. Returns a negative, zero, or positive value when {@code a} is respectively less than, * equal to, or greater than {@code b}. */ private static int compareVersionComponents(final long[] a, final long[] b) { final int len = Math.max(a.length, b.length); for (int i = 0; i < len; i++) { final long av = i < a.length ? a[i] : 0L; final long bv = i < b.length ? b[i] : 0L; if (av != bv) { return av < bv ? -1 : 1; } } return 0; } } }",
+              "signature": "class SqlDialect { /** * Default renderer for {@link SqlPolicy#NAMED_SQL} placeholders. It appends a colon followed by * the generated parameter name, for example {@code :customerId}. */ public static final BiConsumer<StringBuilder, String> DEFAULT_NAMED_PARAMETER_HANDLER = (sql, name) -> sql.append(':').append(name); /** * Optional descriptor of the target database product. When set, query builders branch on * {@link ProductInfo#name()} to emit product-specific SQL: Oracle, DB2 and SQL Server dialects * render pagination with {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY} instead of * {@code LIMIT}/{@code OFFSET}, and a {@code null} {@code identifierQuote} defaults to * {@link IdentifierQuote#BACKTICK} for MySQL/MariaDB. When {@code null}, builders use the default * SQL syntax. */ private ProductInfo productInfo; /** * Naming policy used to translate Java property names into generated SQL identifiers. For example, * {@link NamingPolicy#SNAKE_CASE} renders {@code firstName} as {@code first_name}. When {@code null}, * builders use {@link NamingPolicy#SNAKE_CASE}. */ private NamingPolicy namingPolicy; /** * Parameter rendering policy for values supplied to builder operations. When {@code null}, builders * use {@link SqlPolicy#RAW_SQL}. */ private SqlPolicy sqlPolicy; /** * Quote style used for generated aliases and identifiers that need quoting. When {@code null}, * builders use {@link IdentifierQuote#DOUBLE_QUOTE}, except for MySQL/MariaDB product metadata, * which defaults to {@link IdentifierQuote#BACKTICK}. */ private IdentifierQuote identifierQuote; /** * Optional renderer for {@link SqlPolicy#NAMED_SQL} placeholders. It is ignored by the other SQL * policies. The handler receives the SQL * buffer and generated parameter name. When {@code null}, builders use * {@link #DEFAULT_NAMED_PARAMETER_HANDLER}. Keeping the handler on the immutable dialect avoids * thread-local or process-wide rendering configuration. The handler must append a nonempty token, * render distinct generated names as distinct tokens, be deterministic and side-effect free, and be * safe for concurrent invocation because all builders created from a shared {@link Dsl} use the same * handler instance. Compound-query assembly may invoke it again with the same or a suffixed name when * it normalizes a sibling query to the parent builder's placeholder syntax. */ private BiConsumer<StringBuilder, String> namedParameterHandler; /** * Optional immutable tokenizer configuration used when a builder inspects raw SQL fragments. * When {@code null}, builders use {@link SqlParser#defaultTokenizerConfig()}. */ private SqlParser.TokenizerConfig tokenizerConfig; /** * Returns the named-parameter renderer configured for this dialect. * * @return the configured renderer, or {@code null} to use {@link #DEFAULT_NAMED_PARAMETER_HANDLER} */ public BiConsumer<StringBuilder, String> namedParameterHandler() { return namedParameterHandler; } /** * Returns the tokenizer configuration used when builders inspect raw SQL fragments. * * @return the configured tokenizer settings, or {@code null} to use * {@link SqlParser#defaultTokenizerConfig()} */ public SqlParser.TokenizerConfig tokenizerConfig() { return tokenizerConfig; } /** * Builder for immutable {@link SqlDialect} instances. In addition to Lombok-generated methods for * the standard dialect properties, these explicit methods document the instance-scoped replacements * for the former global named-parameter and separator settings. */ public static class SqlDialectBuilder { /** * Configures the renderer used for {@link SqlPolicy#NAMED_SQL} placeholders. * * <p>The handler is shared by builders created from the resulting dialect and therefore must * render distinct generated names as distinct tokens, be deterministic, side-effect free, and * safe for concurrent invocation. Passing {@code null} selects * {@link SqlDialect#DEFAULT_NAMED_PARAMETER_HANDLER}.</p> * * @param handler the named-parameter renderer, or {@code null} for the default renderer * @return this builder */ public SqlDialectBuilder namedParameterHandler(final BiConsumer<StringBuilder, String> handler) { this.namedParameterHandler = handler; return this; } /** * Configures how builders tokenize raw SQL fragments during inspection and normalization. * Passing {@code null} selects {@link SqlParser#defaultTokenizerConfig()}. * * @param config the immutable tokenizer configuration, or {@code null} for the default * @return this builder */ public SqlDialectBuilder tokenizerConfig(final SqlParser.TokenizerConfig config) { this.tokenizerConfig = config; return this; } } /** * Identifier quoting style used by SQL builders. * * <p>The enum currently distinguishes the two quote characters supported by this builder: * ANSI double quotes and MySQL-style backticks.</p> */ public static enum IdentifierQuote { /** * ANSI/standard SQL double quote ({@code \"}). This is the effective default when * {@code identifierQuote} is {@code null}, except when {@code productInfo} names MySQL or * MariaDB, in which case {@link #BACKTICK} is the default. */ DOUBLE_QUOTE, /** * MySQL/MariaDB-style backtick ({@code `}). */ BACKTICK; } /** * Defines how values supplied to query builders are represented in generated SQL. * * <p>This setting controls value placeholders only. It does not change table/column naming, * identifier quoting, or database-specific SQL syntax.</p> */ public static enum SqlPolicy { /** * Inline values directly into the SQL string as literals. * * <p><b>&#9888;&#65039;</b> Use only for trusted values; parameterized or named policies are preferred for user input.</p> */ RAW_SQL, /** * Render each value as a positional {@code ?} placeholder and collect parameter values in order. */ PARAMETERIZED_SQL, /** * Render values as named placeholders, such as {@code :id} or {@code :firstName}. */ NAMED_SQL, /** * Render values as iBATIS/MyBatis-style named placeholders, such as {@code #{id}}. */ IBATIS_SQL } /** * Immutable descriptor of a database product, holding the product name and version separately. * * <p>When attached to a dialect via {@code SqlDialect.productInfo}, the {@link #name()} drives * product-specific SQL generation in query builders (for example, Oracle-style * {@code FETCH FIRST ... ROWS ONLY} pagination). The name is matched case-insensitively as a * substring, so raw JDBC values from {@code DatabaseMetaData.getDatabaseProductName()} such as * {@code \"Microsoft SQL Server\"} or {@code \"Oracle Database 19c\"} are recognized. The * {@link #version()} can be compared numerically via {@link #isVersionAtLeast(String)} and * {@link #isVersionAtMost(String)}.</p> * * @param name the nonblank database product name, such as {@code \"MySQL\"} or {@code \"PostgreSQL\"} * @param version the database product version, such as {@code \"9.7\"} or {@code \"18\"}; a {@code null} * version is normalized to an empty string, so {@link #version()} never returns {@code null}. * Comparable via {@link #isVersionAtLeast(String)} / {@link #isVersionAtMost(String)} */ public record ProductInfo(String name, String version) { /** * Canonical constructor that requires a nonblank product name and normalizes a {@code null} {@code version} to an empty string, so * {@link #version()} never returns {@code null} and an absent version has a single canonical * representation. This keeps {@code equals}/{@code hashCode} consistent whether the version was * omitted (via {@link #of(String)}) or passed as {@code null}. * * @throws IllegalArgumentException if {@code name} is {@code null}, empty, or blank */ public ProductInfo { if (Strings.isBlank(name)) { throw new IllegalArgumentException(\"Database product name must not be null, empty, or blank\"); } version = version == null ? \"\" : version; } /** * Creates a {@code ProductInfo} with the given product name and no version (an empty {@link #version()}). * * @param name the database product name, such as {@code \"Oracle\"} or {@code \"MySQL\"} * @return a new {@code ProductInfo} with the given name and an empty ({@code \"\"}) version */ public static ProductInfo of(final String name) { return new ProductInfo(name, \"\"); } /** * Creates a {@code ProductInfo} with the given product name and version. * * @param name the database product name, such as {@code \"Oracle\"} or {@code \"MySQL\"} * @param version the database product version, such as {@code \"19c\"} or {@code \"9.7\"} * @return a new {@code ProductInfo} with the given name and version */ public static ProductInfo of(final String name, final String version) { return new ProductInfo(name, version); } /** * Returns whether this descriptor names MySQL. The match is a case-insensitive substring test * against {@link #name()}. This is distinct from {@link #isMariaDB()}, although both share the * same {@code LIMIT}/{@code OFFSET} pagination and backtick-quoting behavior in query builders. * * @return {@code true} if {@link #name()} contains {@code \"mysql\"} (case-insensitively) */ public boolean isMySQL() { return Strings.containsIgnoreCase(name, \"mysql\"); } /** * Returns whether this descriptor names MariaDB. The match is a case-insensitive substring test * against {@link #name()}. * * @return {@code true} if {@link #name()} contains {@code \"mariadb\"} (case-insensitively) */ public boolean isMariaDB() { return Strings.containsIgnoreCase(name, \"mariadb\"); } /** * Returns whether this descriptor names PostgreSQL. The match is a case-insensitive substring * test against {@link #name()} (the substring {@code \"postgres\"} also matches {@code \"PostgreSQL\"}). * * @return {@code true} if {@link #name()} contains {@code \"postgres\"} (case-insensitively) */ public boolean isPostgreSQL() { return Strings.containsIgnoreCase(name, \"postgres\"); } /** * Returns whether this descriptor names Microsoft SQL Server. The match is a case-insensitive * substring test against {@link #name()}, so raw JDBC values such as {@code \"Microsoft SQL Server\"} * are recognized. * * @return {@code true} if {@link #name()} contains {@code \"sql server\"} or {@code \"sqlserver\"} (case-insensitively) */ public boolean isSQLServer() { return Strings.containsIgnoreCase(name, \"sql server\") || Strings.containsIgnoreCase(name, \"sqlserver\"); } /** * Returns whether this descriptor names Oracle Database. The match is a case-insensitive * substring test against {@link #name()}, so raw JDBC values from * {@code DatabaseMetaData.getDatabaseProductName()} such as {@code \"Oracle Database 19c\"} * are recognized. * * @return {@code true} if {@link #name()} contains {@code \"oracle\"} (case-insensitively) */ public boolean isOracle() { return Strings.containsIgnoreCase(name, \"oracle\"); } /** * Returns whether this descriptor names IBM DB2. The match is a case-insensitive substring * test against {@link #name()}. * * @return {@code true} if {@link #name()} contains {@code \"db2\"} (case-insensitively) */ public boolean isDB2() { return Strings.containsIgnoreCase(name, \"db2\"); } /** * Returns whether this descriptor names H2 Database. The match is a case-insensitive substring * test against {@link #name()}. * * @return {@code true} if {@link #name()} contains {@code \"h2\"} (case-insensitively) */ public boolean isH2() { return Strings.containsIgnoreCase(name, \"h2\"); } /** * Returns whether this descriptor names SQLite. The match is a case-insensitive substring test * against {@link #name()}. * * @return {@code true} if {@link #name()} contains {@code \"sqlite\"} (case-insensitively) */ public boolean isSQLite() { return Strings.containsIgnoreCase(name, \"sqlite\"); } /** * Returns whether this product's {@link #version()} is greater than or equal to the given version. * * <p>Versions are compared by their leading dot-separated run of integer components: for example * {@code \"8.0.32\"} parses to {@code [8, 0, 32]} and {@code \"19c\"} to {@code [19]} (parsing stops at * the first character that is neither a digit nor a dot). Missing trailing components are treated as * {@code 0}, so {@code \"8.0\"} equals {@code \"8.0.0\"} and is less than {@code \"8.1\"}.</p> * * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code minVersion} * is {@code null}, blank, or does not begin with an integer component. This makes the method safe for * feature-gating: an unknown or unparseable version simply fails the check.</p> * * @param minVersion the minimum version to compare against, such as {@code \"8.0\"} or {@code \"19\"} * @return {@code true} if this product's version parses and is greater than or equal to {@code minVersion}; * {@code false} otherwise, including when either version is not comparable * @see #isVersionAtMost(String) */ public boolean isVersionAtLeast(final String minVersion) { final long[] mine = parseVersionComponents(version()); final long[] other = parseVersionComponents(minVersion); return mine != null && other != null && compareVersionComponents(mine, other) >= 0; } /** * Returns whether this product's {@link #version()} is less than or equal to the given version. * * <p>Versions are compared by their leading dot-separated run of integer components; see * {@link #isVersionAtLeast(String)} for the parsing and padding rules.</p> * * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code maxVersion} * is {@code null}, blank, or does not begin with an integer component.</p> * * @param maxVersion the maximum version to compare against, such as {@code \"8.0\"} or {@code \"19\"} * @return {@code true} if this product's version parses and is less than or equal to {@code maxVersion}; * {@code false} otherwise, including when either version is not comparable * @see #isVersionAtLeast(String) */ public boolean isVersionAtMost(final String maxVersion) { final long[] mine = parseVersionComponents(version()); final long[] other = parseVersionComponents(maxVersion); return mine != null && other != null && compareVersionComponents(mine, other) <= 0; } /** * Parses the leading dot-separated run of integer components of a version string (for example * {@code \"8.0.32\"} to {@code [8, 0, 32]} and {@code \"19c\"} to {@code [19]}), or {@code null} when the * string is {@code null}, blank, does not begin with a digit, or has an empty/unparseable component. */ private static long[] parseVersionComponents(final String version) { if (Strings.isBlank(version)) { return null; } final String trimmed = version.trim(); if (!Character.isDigit(trimmed.charAt(0))) { return null; } int end = 0; while (end < trimmed.length() && (Character.isDigit(trimmed.charAt(end)) || trimmed.charAt(end) == '.')) { end++; } // Retain trailing empty components so malformed versions such as \"8.\" and \"8..\" // are rejected instead of silently comparing as version 8. final String[] parts = trimmed.substring(0, end).split(\"\\\\.\", -1); final long[] components = new long[parts.length]; try { for (int i = 0; i < parts.length; i++) { components[i] = Long.parseLong(parts[i]); } } catch (final NumberFormatException e) { return null; } return components; } /** * Compares two version-component arrays element by element, treating missing trailing components as * {@code 0}. Returns a negative, zero, or positive value when {@code a} is respectively less than, * equal to, or greater than {@code b}. */ private static int compareVersionComponents(final long[] a, final long[] b) { final int len = Math.max(a.length, b.length); for (int i = 0; i < len; i++) { final long av = i < a.length ? a[i] : 0L; final long bv = i < b.length ? b[i] : 0L; if (av != bv) { return av < bv ? -1 : 1; } } return 0; } } }",
               "return_type": "void",
               "type_params": [],
               "params": [],
               "throws": [],
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "namedParameterHandler",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public BiConsumer<StringBuilder, String> namedParameterHandler()",
+              "return_type": "BiConsumer<StringBuilder, String>",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns the named-parameter renderer configured for this dialect.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "tokenizerConfig",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public SqlParser.TokenizerConfig tokenizerConfig()",
+              "return_type": "SqlParser.TokenizerConfig",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns the tokenizer configuration used when builders inspect raw SQL fragments.",
+              "contract": [
+                "Returns the tokenizer configuration used when builders inspect raw SQL fragments."
+              ],
+              "examples": [],
+              "see_also": []
+            }
+          ],
+          "fields": [
+            {
+              "name": "DEFAULT_NAMED_PARAMETER_HANDLER",
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "type": "BiConsumer<StringBuilder, String>",
+              "value": "(sql,name)->sql.append(':').append(name)",
+              "javadoc_summary": "Default renderer for {@link SqlPolicy#NAMED_SQL} placeholders."
+            }
+          ]
+        },
+        {
+          "fqn": "com.landawn.abacus.query.SqlDialect.SqlDialectBuilder",
+          "name": "SqlDialectBuilder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static"
+          ],
+          "javadoc_summary": "Builder for immutable {@link SqlDialect} instances.",
+          "thread_safety": "unspecified",
+          "nullability": "unspecified",
+          "type_params": [],
+          "constructors": [],
+          "methods": [
+            {
+              "name": "<init>",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "class SqlDialectBuilder { /** * Configures the renderer used for {@link SqlPolicy#NAMED_SQL} placeholders. * * <p>The handler is shared by builders created from the resulting dialect and therefore must * render distinct generated names as distinct tokens, be deterministic, side-effect free, and * safe for concurrent invocation. Passing {@code null} selects * {@link SqlDialect#DEFAULT_NAMED_PARAMETER_HANDLER}.</p> * * @param handler the named-parameter renderer, or {@code null} for the default renderer * @return this builder */ public SqlDialectBuilder namedParameterHandler(final BiConsumer<StringBuilder, String> handler) { this.namedParameterHandler = handler; return this; } /** * Configures how builders tokenize raw SQL fragments during inspection and normalization. * Passing {@code null} selects {@link SqlParser#defaultTokenizerConfig()}. * * @param config the immutable tokenizer configuration, or {@code null} for the default * @return this builder */ public SqlDialectBuilder tokenizerConfig(final SqlParser.TokenizerConfig config) { this.tokenizerConfig = config; return this; } } /** * Identifier quoting style used by SQL builders. * * <p>The enum currently distinguishes the two quote characters supported by this builder: * ANSI double quotes and MySQL-style backticks.</p> */ public static enum IdentifierQuote { /** * ANSI/standard SQL double quote ({@code \"}). This is the effective default when * {@code identifierQuote} is {@code null}, except when {@code productInfo} names MySQL or * MariaDB, in which case {@link #BACKTICK} is the default. */ DOUBLE_QUOTE, /** * MySQL/MariaDB-style backtick ({@code `}). */ BACKTICK; } /** * Defines how values supplied to query builders are represented in generated SQL. * * <p>This setting controls value placeholders only. It does not change table/column naming, * identifier quoting, or database-specific SQL syntax.</p> */ public static enum SqlPolicy { /** * Inline values directly into the SQL string as literals. * * <p><b>&#9888;&#65039;</b> Use only for trusted values; parameterized or named policies are preferred for user input.</p> */ RAW_SQL, /** * Render each value as a positional {@code ?} placeholder and collect parameter values in order. */ PARAMETERIZED_SQL, /** * Render values as named placeholders, such as {@code :id} or {@code :firstName}. */ NAMED_SQL, /** * Render values as iBATIS/MyBatis-style named placeholders, such as {@code #{id}}. */ IBATIS_SQL } /** * Immutable descriptor of a database product, holding the product name and version separately. * * <p>When attached to a dialect via {@code SqlDialect.productInfo}, the {@link #name()} drives * product-specific SQL generation in query builders (for example, Oracle-style * {@code FETCH FIRST ... ROWS ONLY} pagination). The name is matched case-insensitively as a * substring, so raw JDBC values from {@code DatabaseMetaData.getDatabaseProductName()} such as * {@code \"Microsoft SQL Server\"} or {@code \"Oracle Database 19c\"} are recognized. The * {@link #version()} can be compared numerically via {@link #isVersionAtLeast(String)} and * {@link #isVersionAtMost(String)}.</p> * * @param name the nonblank database product name, such as {@code \"MySQL\"} or {@code \"PostgreSQL\"} * @param version the database product version, such as {@code \"9.7\"} or {@code \"18\"}; a {@code null} * version is normalized to an empty string, so {@link #version()} never returns {@code null}. * Comparable via {@link #isVersionAtLeast(String)} / {@link #isVersionAtMost(String)} */ public record ProductInfo(String name, String version) { /** * Canonical constructor that requires a nonblank product name and normalizes a {@code null} {@code version} to an empty string, so * {@link #version()} never returns {@code null} and an absent version has a single canonical * representation. This keeps {@code equals}/{@code hashCode} consistent whether the version was * omitted (via {@link #of(String)}) or passed as {@code null}. * * @throws IllegalArgumentException if {@code name} is {@code null}, empty, or blank */ public ProductInfo { if (Strings.isBlank(name)) { throw new IllegalArgumentException(\"Database product name must not be null, empty, or blank\"); } version = version == null ? \"\" : version; } /** * Creates a {@code ProductInfo} with the given product name and no version (an empty {@link #version()}). * * @param name the database product name, such as {@code \"Oracle\"} or {@code \"MySQL\"} * @return a new {@code ProductInfo} with the given name and an empty ({@code \"\"}) version */ public static ProductInfo of(final String name) { return new ProductInfo(name, \"\"); } /** * Creates a {@code ProductInfo} with the given product name and version. * * @param name the database product name, such as {@code \"Oracle\"} or {@code \"MySQL\"} * @param version the database product version, such as {@code \"19c\"} or {@code \"9.7\"} * @return a new {@code ProductInfo} with the given name and version */ public static ProductInfo of(final String name, final String version) { return new ProductInfo(name, version); } /** * Returns whether this descriptor names MySQL. The match is a case-insensitive substring test * against {@link #name()}. This is distinct from {@link #isMariaDB()}, although both share the * same {@code LIMIT}/{@code OFFSET} pagination and backtick-quoting behavior in query builders. * * @return {@code true} if {@link #name()} contains {@code \"mysql\"} (case-insensitively) */ public boolean isMySQL() { return Strings.containsIgnoreCase(name, \"mysql\"); } /** * Returns whether this descriptor names MariaDB. The match is a case-insensitive substring test * against {@link #name()}. * * @return {@code true} if {@link #name()} contains {@code \"mariadb\"} (case-insensitively) */ public boolean isMariaDB() { return Strings.containsIgnoreCase(name, \"mariadb\"); } /** * Returns whether this descriptor names PostgreSQL. The match is a case-insensitive substring * test against {@link #name()} (the substring {@code \"postgres\"} also matches {@code \"PostgreSQL\"}). * * @return {@code true} if {@link #name()} contains {@code \"postgres\"} (case-insensitively) */ public boolean isPostgreSQL() { return Strings.containsIgnoreCase(name, \"postgres\"); } /** * Returns whether this descriptor names Microsoft SQL Server. The match is a case-insensitive * substring test against {@link #name()}, so raw JDBC values such as {@code \"Microsoft SQL Server\"} * are recognized. * * @return {@code true} if {@link #name()} contains {@code \"sql server\"} or {@code \"sqlserver\"} (case-insensitively) */ public boolean isSQLServer() { return Strings.containsIgnoreCase(name, \"sql server\") || Strings.containsIgnoreCase(name, \"sqlserver\"); } /** * Returns whether this descriptor names Oracle Database. The match is a case-insensitive * substring test against {@link #name()}, so raw JDBC values from * {@code DatabaseMetaData.getDatabaseProductName()} such as {@code \"Oracle Database 19c\"} * are recognized. * * @return {@code true} if {@link #name()} contains {@code \"oracle\"} (case-insensitively) */ public boolean isOracle() { return Strings.containsIgnoreCase(name, \"oracle\"); } /** * Returns whether this descriptor names IBM DB2. The match is a case-insensitive substring * test against {@link #name()}. * * @return {@code true} if {@link #name()} contains {@code \"db2\"} (case-insensitively) */ public boolean isDB2() { return Strings.containsIgnoreCase(name, \"db2\"); } /** * Returns whether this descriptor names H2 Database. The match is a case-insensitive substring * test against {@link #name()}. * * @return {@code true} if {@link #name()} contains {@code \"h2\"} (case-insensitively) */ public boolean isH2() { return Strings.containsIgnoreCase(name, \"h2\"); } /** * Returns whether this descriptor names SQLite. The match is a case-insensitive substring test * against {@link #name()}. * * @return {@code true} if {@link #name()} contains {@code \"sqlite\"} (case-insensitively) */ public boolean isSQLite() { return Strings.containsIgnoreCase(name, \"sqlite\"); } /** * Returns whether this product's {@link #version()} is greater than or equal to the given version. * * <p>Versions are compared by their leading dot-separated run of integer components: for example * {@code \"8.0.32\"} parses to {@code [8, 0, 32]} and {@code \"19c\"} to {@code [19]} (parsing stops at * the first character that is neither a digit nor a dot). Missing trailing components are treated as * {@code 0}, so {@code \"8.0\"} equals {@code \"8.0.0\"} and is less than {@code \"8.1\"}.</p> * * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code minVersion} * is {@code null}, blank, or does not begin with an integer component. This makes the method safe for * feature-gating: an unknown or unparseable version simply fails the check.</p> * * @param minVersion the minimum version to compare against, such as {@code \"8.0\"} or {@code \"19\"} * @return {@code true} if this product's version parses and is greater than or equal to {@code minVersion}; * {@code false} otherwise, including when either version is not comparable * @see #isVersionAtMost(String) */ public boolean isVersionAtLeast(final String minVersion) { final long[] mine = parseVersionComponents(version()); final long[] other = parseVersionComponents(minVersion); return mine != null && other != null && compareVersionComponents(mine, other) >= 0; } /** * Returns whether this product's {@link #version()} is less than or equal to the given version. * * <p>Versions are compared by their leading dot-separated run of integer components; see * {@link #isVersionAtLeast(String)} for the parsing and padding rules.</p> * * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code maxVersion} * is {@code null}, blank, or does not begin with an integer component.</p> * * @param maxVersion the maximum version to compare against, such as {@code \"8.0\"} or {@code \"19\"} * @return {@code true} if this product's version parses and is less than or equal to {@code maxVersion}; * {@code false} otherwise, including when either version is not comparable * @see #isVersionAtLeast(String) */ public boolean isVersionAtMost(final String maxVersion) { final long[] mine = parseVersionComponents(version()); final long[] other = parseVersionComponents(maxVersion); return mine != null && other != null && compareVersionComponents(mine, other) <= 0; } /** * Parses the leading dot-separated run of integer components of a version string (for example * {@code \"8.0.32\"} to {@code [8, 0, 32]} and {@code \"19c\"} to {@code [19]}), or {@code null} when the * string is {@code null}, blank, does not begin with a digit, or has an empty/unparseable component. */ private static long[] parseVersionComponents(final String version) { if (Strings.isBlank(version)) { return null; } final String trimmed = version.trim(); if (!Character.isDigit(trimmed.charAt(0))) { return null; } int end = 0; while (end < trimmed.length() && (Character.isDigit(trimmed.charAt(end)) || trimmed.charAt(end) == '.')) { end++; } // Retain trailing empty components so malformed versions such as \"8.\" and \"8..\" // are rejected instead of silently comparing as version 8. final String[] parts = trimmed.substring(0, end).split(\"\\\\.\", -1); final long[] components = new long[parts.length]; try { for (int i = 0; i < parts.length; i++) { components[i] = Long.parseLong(parts[i]); } } catch (final NumberFormatException e) { return null; } return components; } /** * Compares two version-component arrays element by element, treating missing trailing components as * {@code 0}. Returns a negative, zero, or positive value when {@code a} is respectively less than, * equal to, or greater than {@code b}. */ private static int compareVersionComponents(final long[] a, final long[] b) { final int len = Math.max(a.length, b.length); for (int i = 0; i < len; i++) { final long av = i < a.length ? a[i] : 0L; final long bv = i < b.length ? b[i] : 0L; if (av != bv) { return av < bv ? -1 : 1; } } return 0; } } }",
+              "return_type": "void",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "namedParameterHandler",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public SqlDialectBuilder namedParameterHandler(final BiConsumer<StringBuilder, String> handler)",
+              "return_type": "SqlDialectBuilder",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "handler",
+                  "type": "BiConsumer<StringBuilder, String>",
+                  "javadoc": "the named-parameter renderer, or {@code null} for the default renderer",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Configures the renderer used for {@link SqlPolicy#NAMED_SQL} placeholders.",
+              "contract": [
+                "<p> The handler is shared by builders created from the resulting dialect and therefore must render distinct generated names as distinct tokens, be deterministic, side-effect free, and safe for concurrent invocation."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "tokenizerConfig",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public SqlDialectBuilder tokenizerConfig(final SqlParser.TokenizerConfig config)",
+              "return_type": "SqlDialectBuilder",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "config",
+                  "type": "SqlParser.TokenizerConfig",
+                  "javadoc": "the immutable tokenizer configuration, or {@code null} for the default",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Configures how builders tokenize raw SQL fragments during inspection and normalization.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -14728,6 +14811,81 @@
           "constructors": [],
           "methods": [
             {
+              "name": "tokenizerConfigBuilder",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static TokenizerConfig.Builder tokenizerConfigBuilder()",
+              "return_type": "TokenizerConfig.Builder",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Starts an immutable tokenizer configuration from the built-in SQL separators.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "defaultTokenizerConfig",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static TokenizerConfig defaultTokenizerConfig()",
+              "return_type": "TokenizerConfig",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns the immutable configuration used by the static parsing methods.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "tokenizer",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static Tokenizer tokenizer()",
+              "return_type": "Tokenizer",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Creates an instance-scoped tokenizer using the built-in separator configuration.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "tokenizer",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static Tokenizer tokenizer(final TokenizerConfig tokenizerConfig)",
+              "return_type": "Tokenizer",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "tokenizerConfig",
+                  "type": "TokenizerConfig",
+                  "javadoc": "the tokenizer configuration; must not be {@code null}",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates an instance-scoped tokenizer.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
               "name": "parse",
               "kind": "static",
               "modifiers": [
@@ -14928,141 +15086,6 @@
               "see_also": [
                 "#nextToken(String, int)"
               ]
-            },
-            {
-              "name": "registerSeparator",
-              "kind": "static",
-              "modifiers": [
-                "public",
-                "static",
-                "synchronized"
-              ],
-              "signature": "public static synchronized void registerSeparator(final char separator)",
-              "return_type": "void",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "separator",
-                  "type": "char",
-                  "javadoc": "the character to register as a separator",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Registers a single character as a SQL separator.",
-              "contract": [],
-              "examples": [],
-              "see_also": [
-                "#registerSeparator(String)",
-                "#unregisterSeparator(char)",
-                "#resetSeparators()"
-              ]
-            },
-            {
-              "name": "registerSeparator",
-              "kind": "static",
-              "modifiers": [
-                "public",
-                "static",
-                "synchronized"
-              ],
-              "signature": "public static synchronized void registerSeparator(final String separator)",
-              "return_type": "void",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "separator",
-                  "type": "String",
-                  "javadoc": "the string to register as a separator (must not be {@code null} or empty)",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Registers a string as a SQL separator.",
-              "contract": [
-                "This can be used to register multi-character operators or separators that should be recognized as single tokens during parsing.",
-                "<p> If the separator is a single character, it will also be registered as a character separator for efficiency."
-              ],
-              "examples": [],
-              "see_also": [
-                "#registerSeparator(char)",
-                "#unregisterSeparator(String)",
-                "#resetSeparators()"
-              ]
-            },
-            {
-              "name": "unregisterSeparator",
-              "kind": "static",
-              "modifiers": [
-                "public",
-                "static",
-                "synchronized"
-              ],
-              "signature": "public static synchronized void unregisterSeparator(final char separator)",
-              "return_type": "void",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "separator",
-                  "type": "char",
-                  "javadoc": "the character to unregister as a separator",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Unregisters a previously registered separator character, removing it from the recognized separator set.",
-              "contract": [],
-              "examples": [],
-              "see_also": [
-                "#unregisterSeparator(String)"
-              ]
-            },
-            {
-              "name": "unregisterSeparator",
-              "kind": "static",
-              "modifiers": [
-                "public",
-                "static",
-                "synchronized"
-              ],
-              "signature": "public static synchronized void unregisterSeparator(final String separator)",
-              "return_type": "void",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "separator",
-                  "type": "String",
-                  "javadoc": "the separator to unregister (must not be {@code null} or empty)",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "javadoc_summary": "Unregisters a previously registered separator, removing it from the recognized separator set.",
-              "contract": [
-                "<p> If {@code separator} is a single character, both its {@code String} and character forms are removed (mirroring the dual registration performed by {@link #registerSeparator(String)} for single-character separators)."
-              ],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "resetSeparators",
-              "kind": "static",
-              "modifiers": [
-                "public",
-                "static",
-                "synchronized"
-              ],
-              "signature": "public static synchronized void resetSeparators()",
-              "return_type": "void",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Restores the separator set to the built-in defaults, discarding every separator added via {@link #registerSeparator(char)} / {@link #registerSeparator(String)} and re-adding any default separator that was removed via {@link #unregisterSeparator(String)} .",
-              "contract": [
-                "<p> This rebuilds the internal separator set and all derived lookup tables ( {@link #maxSeparatorLength} , the ASCII lookup and the multi-character tables) to exactly the state established when the class was first loaded."
-              ],
-              "examples": [],
-              "see_also": []
             },
             {
               "name": "isFunctionName",
@@ -15371,6 +15394,449 @@
                 "#isDeleteQuery(String)",
                 "#isInsertOrReplaceQuery(String)",
                 "#isReadOnlyQuery(String)"
+              ]
+            }
+          ],
+          "fields": []
+        },
+        {
+          "fqn": "com.landawn.abacus.query.SqlParser.TokenizerConfig",
+          "name": "TokenizerConfig",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "javadoc_summary": "Immutable separator configuration for {@link Tokenizer} .",
+          "thread_safety": "unspecified",
+          "nullability": "unspecified",
+          "type_params": [],
+          "constructors": [],
+          "methods": [
+            {
+              "name": "separators",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public Set<String> separators()",
+              "return_type": "Set<String>",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns the configured separators as an immutable set.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "hashCode",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "@Override public int hashCode()",
+              "return_type": "int",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "equals",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "@Override public boolean equals(final Object obj)",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "obj",
+                  "type": "Object",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "toString",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "@Override public String toString()",
+              "return_type": "String",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            }
+          ],
+          "fields": []
+        },
+        {
+          "fqn": "com.landawn.abacus.query.SqlParser.TokenizerConfig.Builder",
+          "name": "Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "javadoc_summary": "Builder for immutable {@link TokenizerConfig} instances.",
+          "thread_safety": "unspecified",
+          "nullability": "unspecified",
+          "type_params": [],
+          "constructors": [],
+          "methods": [
+            {
+              "name": "withSeparator",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public Builder withSeparator(final char separator)",
+              "return_type": "Builder",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "separator",
+                  "type": "char",
+                  "javadoc": "the separator to add",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Adds a single-character separator to this configuration.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "withSeparator",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public Builder withSeparator(final String separator)",
+              "return_type": "Builder",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "separator",
+                  "type": "String",
+                  "javadoc": "the separator to add; must not be {@code null} or empty",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Adds a single- or multi-character separator to this configuration.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "withoutSeparator",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public Builder withoutSeparator(final char separator)",
+              "return_type": "Builder",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "separator",
+                  "type": "char",
+                  "javadoc": "the separator to remove",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Removes a single-character separator from this configuration.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "withoutSeparator",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public Builder withoutSeparator(final String separator)",
+              "return_type": "Builder",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "separator",
+                  "type": "String",
+                  "javadoc": "the separator to remove; must not be {@code null} or empty",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Removes a single- or multi-character separator from this configuration.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "build",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public TokenizerConfig build()",
+              "return_type": "TokenizerConfig",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Builds the immutable configuration.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            }
+          ],
+          "fields": []
+        },
+        {
+          "fqn": "com.landawn.abacus.query.SqlParser.Tokenizer",
+          "name": "Tokenizer",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "javadoc_summary": "Instance-scoped, thread-safe SQL tokenizer.",
+          "thread_safety": "unspecified",
+          "nullability": "unspecified",
+          "type_params": [],
+          "constructors": [],
+          "methods": [
+            {
+              "name": "tokenizerConfig",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public TokenizerConfig tokenizerConfig()",
+              "return_type": "TokenizerConfig",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns the immutable configuration used by this tokenizer.",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "parse",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public List<String> parse(final String sql)",
+              "return_type": "List<String>",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to parse; must not be {@code null}",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Parses a SQL statement with this tokenizer's separator configuration.",
+              "contract": [],
+              "examples": [],
+              "see_also": [
+                "SqlParser#parse(String)"
+              ]
+            },
+            {
+              "name": "indexOfToken",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public int indexOfToken(final String sql, final String token)",
+              "return_type": "int",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to search; must not be {@code null}",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "token",
+                  "type": "String",
+                  "javadoc": "the token to find; must not be {@code null}",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Finds a token from the beginning using case-insensitive matching.",
+              "contract": [],
+              "examples": [],
+              "see_also": [
+                "SqlParser#indexOfToken(String, String)"
+              ]
+            },
+            {
+              "name": "indexOfToken",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public int indexOfToken(final String sql, final String token, final int fromIndex)",
+              "return_type": "int",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to search; must not be {@code null}",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "token",
+                  "type": "String",
+                  "javadoc": "the token to find; must not be {@code null}",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "fromIndex",
+                  "type": "int",
+                  "javadoc": "the earliest character index to return",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Finds a token from the supplied character index using case-insensitive matching.",
+              "contract": [],
+              "examples": [],
+              "see_also": [
+                "SqlParser#indexOfToken(String, String, int)"
+              ]
+            },
+            {
+              "name": "indexOfToken",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive)",
+              "return_type": "int",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to search; must not be {@code null}",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "token",
+                  "type": "String",
+                  "javadoc": "the token to find; must not be {@code null}",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "fromIndex",
+                  "type": "int",
+                  "javadoc": "the earliest character index to return",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "caseSensitive",
+                  "type": "boolean",
+                  "javadoc": "whether matching is case-sensitive",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Finds a token using this tokenizer's configured separators.",
+              "contract": [],
+              "examples": [],
+              "see_also": [
+                "SqlParser#indexOfToken(String, String, int, boolean)"
+              ]
+            },
+            {
+              "name": "nextToken",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public String nextToken(final String sql, final int fromIndex)",
+              "return_type": "String",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to scan; must not be {@code null}",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "fromIndex",
+                  "type": "int",
+                  "javadoc": "the starting character index",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Returns the next token at or after a character index.",
+              "contract": [],
+              "examples": [],
+              "see_also": [
+                "SqlParser#nextToken(String, int)"
+              ]
+            },
+            {
+              "name": "nextTokenEndIndex",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public int nextTokenEndIndex(final String sql, final int fromIndex)",
+              "return_type": "int",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to scan; must not be {@code null}",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "fromIndex",
+                  "type": "int",
+                  "javadoc": "the starting character index",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Returns the index immediately after the next token.",
+              "contract": [],
+              "examples": [],
+              "see_also": [
+                "SqlParser#nextTokenEndIndex(String, int)"
               ]
             }
           ],

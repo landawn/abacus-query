@@ -15,12 +15,13 @@
 package com.landawn.abacus.query;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Objectory;
@@ -48,16 +49,14 @@ import com.landawn.abacus.util.Strings;
  *       comments are always discarded regardless of this marker.
  *       Nested block comments and PostgreSQL dollar-quoting ({@code $$...$$}) are NOT
  *       supported.</li>
- *   <li>Runs of whitespace between emitted tokens are collapsed into a single space token
+ *   <li>With the built-in separator configuration, runs of whitespace between emitted tokens are collapsed into a single space token
  *       ({@code " "}); leading whitespace before the very first emitted token is dropped, while
  *       trailing whitespace after the last non-space token yields a final {@code " "} token.</li>
  *   <li>Multi-character operators (e.g. {@code >=}, {@code <>}, {@code ->>}, PostgreSQL
  *       {@code #-} and {@code @?}) are emitted
- *       as single tokens; additional separators can be registered via
- *       {@link #registerSeparator(String)} / {@link #registerSeparator(char)}. Separator-registry
- *       mutations are serialized so concurrent registrations, removals, and resets cannot publish
- *       a derived lookup table that permanently omits another completed mutation.</li>
- *   <li>iBatis/MyBatis {@code #{...}} markers and registered PostgreSQL hash operators are
+ *       as single tokens. Additional separators can be configured without global mutation by using
+ *       {@link #tokenizerConfigBuilder()} and an instance-scoped {@link Tokenizer}.</li>
+ *   <li>iBatis/MyBatis {@code #{...}} markers and configured PostgreSQL hash operators are
  *       not mistaken for hash comments.</li>
  *   <li>{@code #} that opens a hash-prefixed identifier (e.g. a temp table name appearing
  *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE}, or in the
@@ -73,6 +72,11 @@ import com.landawn.abacus.util.Strings;
  * String sql = "SELECT * FROM users WHERE age > 25 ORDER BY name";
  * List<String> tokens = SqlParser.parse(sql);
  * // Result: ["SELECT", " ", "*", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">", " ", "25", " ", "ORDER", " ", "BY", " ", "name"]
+ *
+ * SqlParser.Tokenizer postgresTokenizer = SqlParser.tokenizer(
+ *         SqlParser.tokenizerConfigBuilder().withSeparator("::").build());
+ * List<String> postgresTokens = postgresTokenizer.parse("payload::jsonb");
+ * // Result: ["payload", "::", "jsonb"]
  * }</pre>
  *
  * <p id="query-classification"><b>Query classification:</b> the {@link #isSelectQuery(String)},
@@ -117,83 +121,33 @@ public final class SqlParser {
 
     private static final char ENTER_2 = '\r';
 
-    private static final AtomicInteger maxSeparatorLength = new AtomicInteger(1);
     private static final Set<String> hashIdentifierContextKeywords = N.asSet(SK.FROM, SK.JOIN, SK.INTO, SK.UPDATE, "TABLE");
     private static final Set<String> hashIdentifierDmlTargetKeywords = N.asSet("INSERT", "DELETE", "MERGE");
 
-    private static final Set<Object> separators = ConcurrentHashMap.newKeySet();
-
-    /**
-     * Primitive lookup for single-character ASCII separators, derived from the single-character
-     * entries of {@link #separators} to avoid Character autoboxing + Set lookup on the per-char
-     * hot path. Rebuilt whenever a single-character separator is registered so it can't drift.
-     * Non-ASCII / multi-char entries still fall back to {@link #separators}.
-     */
-    private static volatile boolean[] ASCII_SEPARATOR = new boolean[128];
-
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
-    /**
-     * Multi-character separators grouped by length: {@code multiCharSeparatorsByLen[L]} holds all
-     * registered separators of length {@code L} (index 0 and 1 are unused/empty). Derived from the
-     * {@code String} entries of {@link #separators} so it cannot drift. Used by
-     * {@link #matchMultiCharSeparator} to compare characters directly against candidates instead of
-     * allocating a {@code substring} per probe. The returned separator instance and chosen length
-     * are identical to a {@code separators}-backed substring lookup (longest match first).
-     */
-    private static volatile String[][] multiCharSeparatorsByLen = new String[1][0];
+    private static Set<String> defaultSeparators() {
+        final Set<String> separators = new LinkedHashSet<>();
 
-    /**
-     * Fast-reject lookup for {@link #matchMultiCharSeparator}: {@code true} at index {@code c}
-     * if some registered multi-character separator starts with the ASCII character {@code c}.
-     * Rebuilt together with {@link #multiCharSeparatorsByLen} (in
-     * {@link #rebuildMultiCharSeparatorTable()}) so it cannot drift. Most characters are not the
-     * first character of any multi-character separator, so this avoids probing every candidate
-     * bucket for every ordinary character on the parse hot path.
-     */
-    private static volatile boolean[] MULTI_CHAR_SEPARATOR_FIRST_CHAR = new boolean[128];
-
-    /**
-     * {@code true} if any registered multi-character separator starts with a non-ASCII character
-     * (which {@link #MULTI_CHAR_SEPARATOR_FIRST_CHAR} cannot represent); such characters then skip
-     * the fast-reject and fall through to the full candidate probe.
-     */
-    private static volatile boolean multiCharSeparatorNonAsciiFirstChar = false;
-
-    static {
-        loadDefaultSeparators();
-    }
-
-    /**
-     * Clears the current separator set and repopulates it with the built-in default
-     * separators, then rebuilds all derived lookup tables ({@link #maxSeparatorLength},
-     * {@link #ASCII_SEPARATOR}, {@link #multiCharSeparatorsByLen},
-     * {@link #MULTI_CHAR_SEPARATOR_FIRST_CHAR}, and {@link #multiCharSeparatorNonAsciiFirstChar}). Shared by the static
-     * initializer and {@link #resetSeparators()}.
-     */
-    private static void loadDefaultSeparators() {
-        separators.clear();
-        maxSeparatorLength.set(1);
-
-        separators.add(TAB);
-        separators.add(ENTER);
-        separators.add(ENTER_2);
-        separators.add(' ');
-        separators.add('?');
-        separators.add(',');
-        separators.add('~');
-        separators.add('!');
-        separators.add('@');
-        separators.add('^');
+        separators.add(String.valueOf(TAB));
+        separators.add(String.valueOf(ENTER));
+        separators.add(String.valueOf(ENTER_2));
+        separators.add(" ");
+        separators.add("?");
+        separators.add(",");
+        separators.add("~");
+        separators.add("!");
+        separators.add("@");
+        separators.add("^");
         // Registered so isSeparator('#') stays true, but a bare '#' is in practice always consumed
         // as a MySQL hash comment (or merged into a hash-prefixed identifier / #{...} marker) by the
         // scanners before the separator branch, so '#' is never emitted as its own token.
-        separators.add('#');
+        separators.add("#");
         separators.add("!!");
-        separators.add(';');
-        separators.add('(');
-        separators.add(')');
-        separators.add('=');
+        separators.add(";");
+        separators.add("(");
+        separators.add(")");
+        separators.add("=");
         separators.add("==");
         separators.add(":=");
         separators.add("^=");
@@ -209,26 +163,26 @@ public final class SqlParser {
         separators.add("<>");
         separators.add("!<");
         separators.add("!>");
-        separators.add('>');
+        separators.add(">");
         separators.add(">>");
         separators.add(">=");
         separators.add("@>");
         separators.add("&>");
         separators.add(">^");
-        separators.add('<');
+        separators.add("<");
         separators.add("<<");
         separators.add("<=");
         separators.add("<@");
         separators.add("&<");
         separators.add("<^");
-        separators.add('+');
-        separators.add('-');
-        separators.add('%');
-        separators.add('/');
-        separators.add('*');
-        separators.add('&');
+        separators.add("+");
+        separators.add("-");
+        separators.add("%");
+        separators.add("/");
+        separators.add("*");
+        separators.add("&");
         separators.add("&&");
-        separators.add('|');
+        separators.add("|");
         separators.add("||");
         separators.add("|/");
         separators.add("||/");
@@ -263,99 +217,10 @@ public final class SqlParser {
         separators.add("^-=");
         separators.add("|*=");
 
-        for (final Object separator : separators) {
-            if (separator instanceof final String separatorStr && separatorStr.length() > maxSeparatorLength.get()) {
-                maxSeparatorLength.set(separatorStr.length());
-            }
-        }
-
-        rebuildAsciiSeparatorTable();
-        rebuildMultiCharSeparatorTable();
+        return separators;
     }
 
-    /**
-     * Recomputes {@link #maxSeparatorLength} from the current contents of {@link #separators}.
-     * Unlike the incremental update in {@link #registerSeparator(String)} (which only ever
-     * grows the value), this scans every registered separator and resets the maximum to the
-     * longest one currently present, so it can shrink after separators are removed.
-     */
-    private static void recomputeMaxSeparatorLength() {
-        int max = 1;
-
-        for (final Object separator : separators) {
-            if (separator instanceof final String separatorStr && separatorStr.length() > max) {
-                max = separatorStr.length();
-            }
-        }
-
-        maxSeparatorLength.set(max);
-    }
-
-    private static void rebuildAsciiSeparatorTable() {
-        final boolean[] table = new boolean[128];
-
-        for (final Object separator : separators) {
-            if (separator instanceof final Character ch) {
-                final char c = ch;
-
-                if (c < 128) {
-                    table[c] = true;
-                }
-            }
-        }
-
-        ASCII_SEPARATOR = table;
-    }
-
-    private static void rebuildMultiCharSeparatorTable() {
-        int maxLen = 1;
-
-        for (final Object separator : separators) {
-            if (separator instanceof final String s && s.length() > maxLen) {
-                maxLen = s.length();
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        final List<String>[] buckets = new List[maxLen + 1];
-
-        for (final Object separator : separators) {
-            if (separator instanceof final String s && s.length() > 1) {
-                final int l = s.length();
-
-                if (buckets[l] == null) {
-                    buckets[l] = new ArrayList<>();
-                }
-
-                buckets[l].add(s);
-            }
-        }
-
-        final String[][] table = new String[maxLen + 1][];
-
-        for (int l = 0; l <= maxLen; l++) {
-            table[l] = buckets[l] == null ? EMPTY_STRING_ARRAY : buckets[l].toArray(new String[0]);
-        }
-
-        final boolean[] firstCharTable = new boolean[128];
-        boolean nonAsciiFirstChar = false;
-
-        for (final Object separator : separators) {
-            if (separator instanceof final String s && s.length() > 1) {
-                final char first = s.charAt(0);
-
-                if (first < 128) {
-                    firstCharTable[first] = true;
-                } else {
-                    nonAsciiFirstChar = true;
-                }
-            }
-        }
-
-        multiCharSeparatorsByLen = table;
-        MULTI_CHAR_SEPARATOR_FIRST_CHAR = firstCharTable;
-        multiCharSeparatorNonAsciiFirstChar = nonAsciiFirstChar;
-    }
+    private static final TokenizerConfig DEFAULT_TOKENIZER_CONFIG = new TokenizerConfig(defaultSeparators());
 
     private static final Map<String, String[]> compositeTokens = new ConcurrentHashMap<>(64);
 
@@ -414,6 +279,325 @@ public final class SqlParser {
     }
 
     /**
+     * Starts an immutable tokenizer configuration from the built-in SQL separators.
+     * Customizations made through the returned builder affect only tokenizers created with the
+     * resulting configuration.
+     *
+     * @return a builder initialized with the default separators
+     */
+    public static TokenizerConfig.Builder tokenizerConfigBuilder() {
+        return new TokenizerConfig.Builder(DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    /**
+     * Returns the immutable configuration used by the static parsing methods.
+     *
+     * @return the default tokenizer configuration
+     */
+    public static TokenizerConfig defaultTokenizerConfig() {
+        return DEFAULT_TOKENIZER_CONFIG;
+    }
+
+    /**
+     * Creates an instance-scoped tokenizer using the built-in separator configuration.
+     *
+     * @return a tokenizer using {@link #defaultTokenizerConfig()}
+     */
+    public static Tokenizer tokenizer() {
+        return new Tokenizer(DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    /**
+     * Creates an instance-scoped tokenizer. The supplied immutable configuration is retained and
+     * never changes process-wide parsing behavior.
+     *
+     * @param tokenizerConfig the tokenizer configuration; must not be {@code null}
+     * @return a tokenizer bound to the supplied configuration
+     * @throws IllegalArgumentException if {@code tokenizerConfig} is {@code null}
+     */
+    public static Tokenizer tokenizer(final TokenizerConfig tokenizerConfig) {
+        N.checkArgNotNull(tokenizerConfig, "tokenizerConfig");
+        return new Tokenizer(tokenizerConfig);
+    }
+
+    /**
+     * Immutable separator configuration for {@link Tokenizer}. Instances are created from
+     * {@link SqlParser#tokenizerConfigBuilder()} and can safely be shared between threads.
+     *
+     * <p>SQL lexical structure takes precedence over configured separators: quoted regions remain
+     * whole tokens, comments are skipped, {@code #{...}} remains a MyBatis parameter marker, and a
+     * contextually recognized hash-prefixed identifier remains an identifier. Separators are
+     * recognized outside those constructs, with the longest configured match winning.</p>
+     */
+    public static final class TokenizerConfig {
+        private final Set<String> separators;
+        private final int maxSeparatorLength;
+        private final boolean[] asciiSeparators;
+        private final Set<Character> nonAsciiSingleCharSeparators;
+        private final String[][] multiCharSeparatorsByLength;
+        private final boolean[] multiCharSeparatorFirstChars;
+        private final boolean hasNonAsciiMultiCharFirstChar;
+
+        private TokenizerConfig(final Set<String> configuredSeparators) {
+            separators = Collections.unmodifiableSet(new LinkedHashSet<>(configuredSeparators));
+
+            int maxLength = 1;
+            final boolean[] ascii = new boolean[128];
+            final Set<Character> nonAscii = new LinkedHashSet<>();
+
+            for (final String separator : separators) {
+                maxLength = Math.max(maxLength, separator.length());
+
+                if (separator.length() == 1) {
+                    final char ch = separator.charAt(0);
+
+                    if (ch < 128) {
+                        ascii[ch] = true;
+                    } else {
+                        nonAscii.add(ch);
+                    }
+                }
+            }
+
+            maxSeparatorLength = maxLength;
+            asciiSeparators = ascii;
+            nonAsciiSingleCharSeparators = Collections.unmodifiableSet(nonAscii);
+
+            @SuppressWarnings("unchecked")
+            final List<String>[] buckets = new List[maxLength + 1];
+            final boolean[] firstChars = new boolean[128];
+            boolean nonAsciiFirstChar = false;
+
+            for (final String separator : separators) {
+                if (separator.length() > 1) {
+                    final int length = separator.length();
+
+                    if (buckets[length] == null) {
+                        buckets[length] = new ArrayList<>();
+                    }
+
+                    buckets[length].add(separator);
+
+                    final char first = separator.charAt(0);
+
+                    if (first < 128) {
+                        firstChars[first] = true;
+                    } else {
+                        nonAsciiFirstChar = true;
+                    }
+                }
+            }
+
+            multiCharSeparatorsByLength = new String[maxLength + 1][];
+
+            for (int length = 0; length <= maxLength; length++) {
+                multiCharSeparatorsByLength[length] = buckets[length] == null ? EMPTY_STRING_ARRAY : buckets[length].toArray(new String[0]);
+            }
+
+            multiCharSeparatorFirstChars = firstChars;
+            hasNonAsciiMultiCharFirstChar = nonAsciiFirstChar;
+        }
+
+        /**
+         * Returns the configured separators as an immutable set.
+         *
+         * @return the configured separators
+         */
+        public Set<String> separators() {
+            return separators;
+        }
+
+        private boolean isSingleCharSeparator(final char ch) {
+            return ch < 128 ? asciiSeparators[ch] : nonAsciiSingleCharSeparators.contains(ch);
+        }
+
+        @Override
+        public int hashCode() {
+            return separators.hashCode();
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            return obj == this || obj instanceof final TokenizerConfig other && separators.equals(other.separators);
+        }
+
+        @Override
+        public String toString() {
+            return "TokenizerConfig{" + "separators=" + separators + '}';
+        }
+
+        /**
+         * Builder for immutable {@link TokenizerConfig} instances. Obtain a builder initialized
+         * with the built-in separators from {@link SqlParser#tokenizerConfigBuilder()}.
+         */
+        public static final class Builder {
+            private final Set<String> separators;
+
+            private Builder(final TokenizerConfig base) {
+                separators = new LinkedHashSet<>(base.separators);
+            }
+
+            /**
+             * Adds a single-character separator to this configuration.
+             *
+             * @param separator the separator to add
+             * @return this builder
+             */
+            public Builder withSeparator(final char separator) {
+                separators.add(String.valueOf(separator));
+                return this;
+            }
+
+            /**
+             * Adds a single- or multi-character separator to this configuration.
+             *
+             * @param separator the separator to add; must not be {@code null} or empty
+             * @return this builder
+             * @throws IllegalArgumentException if {@code separator} is {@code null} or empty
+             */
+            public Builder withSeparator(final String separator) {
+                N.checkArgNotEmpty(separator, "separator");
+                separators.add(separator);
+                return this;
+            }
+
+            /**
+             * Removes a single-character separator from this configuration.
+             *
+             * @param separator the separator to remove
+             * @return this builder
+             */
+            public Builder withoutSeparator(final char separator) {
+                separators.remove(String.valueOf(separator));
+                return this;
+            }
+
+            /**
+             * Removes a single- or multi-character separator from this configuration.
+             *
+             * @param separator the separator to remove; must not be {@code null} or empty
+             * @return this builder
+             * @throws IllegalArgumentException if {@code separator} is {@code null} or empty
+             */
+            public Builder withoutSeparator(final String separator) {
+                N.checkArgNotEmpty(separator, "separator");
+                separators.remove(separator);
+                return this;
+            }
+
+            /**
+             * Builds the immutable configuration.
+             *
+             * @return a new tokenizer configuration
+             */
+            public TokenizerConfig build() {
+                return new TokenizerConfig(separators);
+            }
+        }
+    }
+
+    /**
+     * Instance-scoped, thread-safe SQL tokenizer. Its immutable {@link TokenizerConfig} replaces the
+     * former process-wide separator registry.
+     */
+    public static final class Tokenizer {
+        private final TokenizerConfig tokenizerConfig;
+
+        private Tokenizer(final TokenizerConfig tokenizerConfig) {
+            this.tokenizerConfig = tokenizerConfig;
+        }
+
+        /**
+         * Returns the immutable configuration used by this tokenizer.
+         *
+         * @return this tokenizer's configuration
+         */
+        public TokenizerConfig tokenizerConfig() {
+            return tokenizerConfig;
+        }
+
+        /**
+         * Parses a SQL statement with this tokenizer's separator configuration.
+         *
+         * @param sql the SQL statement to parse; must not be {@code null}
+         * @return the lexical SQL tokens
+         * @throws NullPointerException if {@code sql} is {@code null}
+         * @see SqlParser#parse(String)
+         */
+        public List<String> parse(final String sql) {
+            return SqlParser.parse(sql, tokenizerConfig);
+        }
+
+        /**
+         * Finds a token from the beginning using case-insensitive matching.
+         *
+         * @param sql the SQL statement to search; must not be {@code null}
+         * @param token the token to find; must not be {@code null}
+         * @return the token's character index, or {@code -1}
+         * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
+         * @see SqlParser#indexOfToken(String, String)
+         */
+        public int indexOfToken(final String sql, final String token) {
+            return SqlParser.indexOfToken(sql, token, 0, false, tokenizerConfig);
+        }
+
+        /**
+         * Finds a token from the supplied character index using case-insensitive matching.
+         *
+         * @param sql the SQL statement to search; must not be {@code null}
+         * @param token the token to find; must not be {@code null}
+         * @param fromIndex the earliest character index to return
+         * @return the token's character index, or {@code -1}
+         * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
+         * @see SqlParser#indexOfToken(String, String, int)
+         */
+        public int indexOfToken(final String sql, final String token, final int fromIndex) {
+            return SqlParser.indexOfToken(sql, token, fromIndex, false, tokenizerConfig);
+        }
+
+        /**
+         * Finds a token using this tokenizer's configured separators.
+         *
+         * @param sql the SQL statement to search; must not be {@code null}
+         * @param token the token to find; must not be {@code null}
+         * @param fromIndex the earliest character index to return
+         * @param caseSensitive whether matching is case-sensitive
+         * @return the token's character index, or {@code -1}
+         * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
+         * @see SqlParser#indexOfToken(String, String, int, boolean)
+         */
+        public int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive) {
+            return SqlParser.indexOfToken(sql, token, fromIndex, caseSensitive, tokenizerConfig);
+        }
+
+        /**
+         * Returns the next token at or after a character index.
+         *
+         * @param sql the SQL statement to scan; must not be {@code null}
+         * @param fromIndex the starting character index
+         * @return the next token, or an empty string if none remains
+         * @throws NullPointerException if {@code sql} is {@code null}
+         * @see SqlParser#nextToken(String, int)
+         */
+        public String nextToken(final String sql, final int fromIndex) {
+            return SqlParser.nextToken(sql, fromIndex, tokenizerConfig);
+        }
+
+        /**
+         * Returns the index immediately after the next token.
+         *
+         * @param sql the SQL statement to scan; must not be {@code null}
+         * @param fromIndex the starting character index
+         * @return the next token's exclusive end index, or {@code sql.length()} if none remains
+         * @throws NullPointerException if {@code sql} is {@code null}
+         * @see SqlParser#nextTokenEndIndex(String, int)
+         */
+        public int nextTokenEndIndex(final String sql, final int fromIndex) {
+            return SqlParser.nextTokenEndIndex(sql, fromIndex, tokenizerConfig);
+        }
+    }
+
+    /**
      * Parses a SQL statement into a list of lexical SQL tokens.
      * This method tokenizes the SQL string while preserving the semantic meaning
      * of SQL constructs such as keywords, operators, identifiers, and literals.
@@ -436,6 +620,10 @@ public final class SqlParser {
      * @throws NullPointerException if {@code sql} is {@code null}
      */
     public static List<String> parse(final String sql) {
+        return parse(sql, DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    private static List<String> parse(final String sql, final TokenizerConfig tokenizerConfig) {
         final int sqlLength = sql.length();
         final StringBuilder sb = Objectory.createStringBuilder();
 
@@ -508,12 +696,12 @@ public final class SqlParser {
                     if (index < sqlLength - 1 && sql.charAt(index + 1) == '{') {
                         // iBatis/MyBatis #{...} parameter marker: '#' is part of the token.
                         sb.append(ch);
-                    } else if (isLikelyHashPrefixedIdentifier(sql, sqlLength, index)) {
+                    } else if (isLikelyHashPrefixedIdentifier(sql, sqlLength, index, tokenizerConfig)) {
                         // Hash-prefixed identifier (e.g. a temp table after a table-context keyword or
                         // in an INSERT/DELETE/MERGE target position):
                         // '#' is part of the token.
                         sb.append(ch);
-                    } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index)) != null) {
+                    } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig)) != null) {
                         // '#'-leading operator such as #>, #>> or ##.
                         if (!sb.isEmpty()) {
                             tokens.add(sb.toString());
@@ -580,9 +768,9 @@ public final class SqlParser {
                             }
                         }
 
-                        appendSpaceAfterSkippedBlockCommentIfNeeded(sql, sqlLength, index, tokens);
+                        appendSpaceAfterSkippedBlockCommentIfNeeded(sql, sqlLength, index, tokens, tokenizerConfig);
                     }
-                } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index)) != null) {
+                } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig)) != null) {
                     // Multi-character operator (e.g. >=, <>, ->>, :=). Matched before the single-character
                     // separator lookup (same effective precedence as before, when isSeparator matched it
                     // and this branch re-matched it) so the match is computed only once.
@@ -593,7 +781,7 @@ public final class SqlParser {
 
                     tokens.add(temp);
                     index += temp.length() - 1;
-                } else if (ch < 128 ? ASCII_SEPARATOR[ch] : separators.contains(ch)) {
+                } else if (tokenizerConfig.isSingleCharSeparator(ch)) {
                     if (!sb.isEmpty()) {
                         tokens.add(sb.toString());
                         sb.setLength(0);
@@ -721,10 +909,26 @@ public final class SqlParser {
      * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
      */
     public static int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive) {
-        String[] componentTokens = compositeTokens.get(token);
+        return indexOfToken(sql, token, fromIndex, caseSensitive, DEFAULT_TOKENIZER_CONFIG);
+    }
 
-        if (componentTokens == null) {
-            componentTokens = TOKEN_SPLITTER.splitToArray(token);
+    private static int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive,
+            final TokenizerConfig tokenizerConfig) {
+        final String trimmedToken = token.trim();
+        String[] componentTokens = null;
+
+        // A search argument that is one token under the active configuration must be matched as a
+        // unit. This covers quoted tokens containing spaces and configurations that deliberately
+        // remove space from the separator set. Only composite targets are space-split below.
+        if (!trimmedToken.isEmpty() && trimmedToken.equals(nextToken(trimmedToken, 0, tokenizerConfig))
+                && nextTokenEndIndex(trimmedToken, 0, tokenizerConfig) == trimmedToken.length()) {
+            componentTokens = new String[] { trimmedToken };
+        } else {
+            componentTokens = compositeTokens.get(token);
+
+            if (componentTokens == null) {
+                componentTokens = TOKEN_SPLITTER.splitToArray(token);
+            }
         }
 
         //noinspection IfStatementWithIdenticalBranches
@@ -798,7 +1002,7 @@ public final class SqlParser {
                                 break;
                             }
                         }
-                    } else if (isHashCommentStart(sql, sqlLength, index)) {
+                    } else if (isHashCommentStart(sql, sqlLength, index, tokenizerConfig)) {
                         // Skip MySQL single-line comment (# ...)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
@@ -838,7 +1042,7 @@ public final class SqlParser {
                                 break;
                             }
                         }
-                    } else if (isSeparator(sql, sqlLength, index, ch)) {
+                    } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig)) {
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
                             final int matchStart = index - token.length();
@@ -855,7 +1059,7 @@ public final class SqlParser {
                             continue;
                         }
 
-                        temp = matchMultiCharSeparator(sql, sqlLength, index);
+                        temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig);
 
                         if (temp != null) {
                             if (index >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
@@ -895,19 +1099,19 @@ public final class SqlParser {
                 Objectory.recycle(sb);
             }
         } else {
-            int result = indexOfToken(sql, componentTokens[0], fromIndex, caseSensitive);
+            int result = indexOfToken(sql, componentTokens[0], fromIndex, caseSensitive, tokenizerConfig);
 
             while (result >= 0) {
                 int tmpIndex = result + componentTokens[0].length();
                 boolean matched = true;
 
                 for (int i = 1; i < componentTokens.length; i++) {
-                    final String nextToken = nextToken(sql, tmpIndex);
+                    final String nextToken = nextToken(sql, tmpIndex, tokenizerConfig);
 
                     if (Strings.isNotEmpty(nextToken)
                             && (nextToken.equals(componentTokens[i]) || (!caseSensitive && nextToken.equalsIgnoreCase(componentTokens[i])))) {
                         // Use indexOfToken to skip whitespace and block/line comments between component tokens.
-                        final int componentTokenPos = indexOfToken(sql, componentTokens[i], tmpIndex, caseSensitive);
+                        final int componentTokenPos = indexOfToken(sql, componentTokens[i], tmpIndex, caseSensitive, tokenizerConfig);
 
                         if (componentTokenPos < 0) {
                             matched = false;
@@ -927,7 +1131,7 @@ public final class SqlParser {
                 }
 
                 // The first component matched but a later one did not; continue after the current match.
-                result = indexOfToken(sql, componentTokens[0], result + componentTokens[0].length(), caseSensitive);
+                result = indexOfToken(sql, componentTokens[0], result + componentTokens[0].length(), caseSensitive, tokenizerConfig);
             }
 
             return result;
@@ -964,6 +1168,10 @@ public final class SqlParser {
      * @throws NullPointerException if {@code sql} is {@code null}
      */
     public static String nextToken(final String sql, final int fromIndex) {
+        return nextToken(sql, fromIndex, DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    private static String nextToken(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig) {
         final int sqlLength = sql.length();
         final StringBuilder sb = Objectory.createStringBuilder();
 
@@ -1012,7 +1220,7 @@ public final class SqlParser {
                             break;
                         }
                     }
-                } else if (isHashCommentStart(sql, sqlLength, index)) {
+                } else if (isHashCommentStart(sql, sqlLength, index, tokenizerConfig)) {
                     // Skip MySQL single-line comment (# ...)
                     if (!sb.isEmpty()) {
                         break;
@@ -1038,7 +1246,7 @@ public final class SqlParser {
                             break;
                         }
                     }
-                } else if (isSeparator(sql, sqlLength, index, ch)) {
+                } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig)) {
                     if (!sb.isEmpty()) {
                         break;
                     } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
@@ -1046,7 +1254,7 @@ public final class SqlParser {
                         continue;
                     }
 
-                    temp = matchMultiCharSeparator(sql, sqlLength, index);
+                    temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig);
 
                     if (temp != null) {
                         sb.append(temp);
@@ -1105,6 +1313,10 @@ public final class SqlParser {
      * @see #nextToken(String, int)
      */
     public static int nextTokenEndIndex(final String sql, final int fromIndex) {
+        return nextTokenEndIndex(sql, fromIndex, DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    private static int nextTokenEndIndex(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig) {
         final int sqlLength = sql.length();
 
         // Mirrors nextToken's scan. `started` tracks whether any token character has been
@@ -1147,7 +1359,7 @@ public final class SqlParser {
                         break;
                     }
                 }
-            } else if (isHashCommentStart(sql, sqlLength, index)) {
+            } else if (isHashCommentStart(sql, sqlLength, index, tokenizerConfig)) {
                 // Skip MySQL single-line comment (# ...)
                 if (started) {
                     return index;
@@ -1173,7 +1385,7 @@ public final class SqlParser {
                         break;
                     }
                 }
-            } else if (isSeparator(sql, sqlLength, index, ch)) {
+            } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig)) {
                 if (started) {
                     return index;
                 } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
@@ -1181,7 +1393,7 @@ public final class SqlParser {
                     continue;
                 }
 
-                final String temp = matchMultiCharSeparator(sql, sqlLength, index);
+                final String temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig);
 
                 return temp != null ? index + temp.length() : index + 1;
             } else {
@@ -1198,159 +1410,6 @@ public final class SqlParser {
     }
 
     /**
-     * Registers a single character as a SQL separator.
-     * Once registered, this character will be recognized as a token separator
-     * during SQL parsing operations.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SqlParser.registerSeparator('$');   // Register $ as a separator
-     * List<String> tokens = SqlParser.parse("SELECT$FROM$users");
-     * // Result: ["SELECT", "$", "FROM", "$", "users"]
-     * }</pre>
-     *
-     * @param separator the character to register as a separator
-     * @see #registerSeparator(String)
-     * @see #unregisterSeparator(char)
-     * @see #resetSeparators()
-     */
-    public static synchronized void registerSeparator(final char separator) {
-        separators.add(separator);
-
-        if (separator < 128) {
-            rebuildAsciiSeparatorTable();
-        }
-    }
-
-    /**
-     * Registers a string as a SQL separator.
-     * This can be used to register multi-character operators or separators
-     * that should be recognized as single tokens during parsing.
-     *
-     * <p>If the separator is a single character, it will also be registered
-     * as a character separator for efficiency.</p>
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SqlParser.registerSeparator("<=>");   // Register the NULL-safe equal operator
-     * SqlParser.registerSeparator("::");    // Register PostgreSQL cast operator
-     * }</pre>
-     *
-     * @param separator the string to register as a separator (must not be {@code null} or empty)
-     * @throws IllegalArgumentException if {@code separator} is {@code null} or empty
-     * @see #registerSeparator(char)
-     * @see #unregisterSeparator(String)
-     * @see #resetSeparators()
-     */
-    public static synchronized void registerSeparator(final String separator) {
-        N.checkArgNotEmpty(separator, "separator");
-
-        separators.add(separator);
-
-        if (separator.length() == 1) {
-            separators.add(separator.charAt(0));
-
-            if (separator.charAt(0) < 128) {
-                rebuildAsciiSeparatorTable();
-            }
-        } else {
-            rebuildMultiCharSeparatorTable();
-        }
-
-        if (separator.length() > maxSeparatorLength.get()) {
-            int currentMax = maxSeparatorLength.get();
-
-            while (separator.length() > currentMax && !maxSeparatorLength.compareAndSet(currentMax, separator.length())) {
-                currentMax = maxSeparatorLength.get();
-            }
-        }
-    }
-
-    /**
-     * Unregisters a previously registered separator character, removing it from the
-     * recognized separator set. This is the inverse of {@link #registerSeparator(char)};
-     * both the character form and the equivalent single-character {@code String} form are
-     * removed, and all derived lookup tables are rebuilt.
-     *
-     * <p>Unregistering a separator that is not currently registered has no effect.</p>
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SqlParser.registerSeparator('$');     // Register custom separator
-     * SqlParser.unregisterSeparator('$');   // ...then remove it again
-     * }</pre>
-     *
-     * @param separator the character to unregister as a separator
-     * @see #unregisterSeparator(String)
-     */
-    public static synchronized void unregisterSeparator(final char separator) {
-        unregisterSeparator(String.valueOf(separator));
-    }
-
-    /**
-     * Unregisters a previously registered separator, removing it from the recognized
-     * separator set. This is the inverse of {@link #registerSeparator(String)} and
-     * {@link #registerSeparator(char)} and can be used to undo a registration so the
-     * given token is no longer treated as a separator during parsing.
-     *
-     * <p>If {@code separator} is a single character, both its {@code String} and character
-     * forms are removed (mirroring the dual registration performed by
-     * {@link #registerSeparator(String)} for single-character separators). After removal,
-     * all derived lookup tables ({@link #maxSeparatorLength}, the ASCII lookup and the
-     * multi-character tables) are rebuilt so they cannot drift.</p>
-     *
-     * <p><b>Note:</b> This method does not distinguish between built-in default separators
-     * and user-registered ones; unregistering a default separator removes it just the same.
-     * To restore the original built-in set, use {@link #resetSeparators()}.</p>
-     *
-     * <p>Unregistering a separator that is not currently registered has no effect.</p>
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SqlParser.registerSeparator("::");     // Register PostgreSQL cast operator
-     * SqlParser.unregisterSeparator("::");   // ...then remove it again
-     * }</pre>
-     *
-     * @param separator the separator to unregister (must not be {@code null} or empty)
-     * @throws IllegalArgumentException if {@code separator} is {@code null} or empty
-     */
-    public static synchronized void unregisterSeparator(final String separator) {
-        N.checkArgNotEmpty(separator, "separator");
-
-        separators.remove(separator);
-
-        if (separator.length() == 1) {
-            separators.remove(separator.charAt(0));
-        }
-
-        recomputeMaxSeparatorLength();
-        rebuildAsciiSeparatorTable();
-        rebuildMultiCharSeparatorTable();
-    }
-
-    /**
-     * Restores the separator set to the built-in defaults, discarding every separator added
-     * via {@link #registerSeparator(char)} / {@link #registerSeparator(String)} and re-adding
-     * any default separator that was removed via {@link #unregisterSeparator(String)}.
-     *
-     * <p>This rebuilds the internal separator set and all derived lookup tables
-     * ({@link #maxSeparatorLength}, the ASCII lookup and the multi-character tables) to exactly
-     * the state established when the class was first loaded. It is primarily useful for
-     * undoing process-global separator customizations (for example, to isolate tests that
-     * register custom separators).</p>
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * SqlParser.registerSeparator("::");   // customize parsing globally
-     * // ... do work ...
-     * SqlParser.resetSeparators();         // restore the original built-in separators
-     * }</pre>
-     */
-    public static synchronized void resetSeparators() {
-        loadDefaultSeparators();
-    }
-
-    /**
      * Checks if a character at a specific position in a SQL string is a separator.
      * This method performs context-aware checking, handling special cases like
      * MyBatis/iBatis parameter markers (#{...}).
@@ -1363,7 +1422,7 @@ public final class SqlParser {
      *       an {@code INSERT}, {@code DELETE} or {@code MERGE} target after an optional {@code TOP} clause,
      *       with optional whitespace/comments in between, including as a later element of a
      *       comma-separated list such as {@code "FROM #t1, #t2"}) is not considered a separator</li>
-     *   <li>All registered single-character and multi-character separators are checked</li>
+     *   <li>All configured single-character and multi-character separators are checked</li>
      * </ul>
      *
      * <p>Behavior (internal helper): for the SQL {@code "SELECT * FROM users"}, the {@code '*'} at index 7
@@ -1371,7 +1430,7 @@ public final class SqlParser {
      *
      * <p>The method may inspect characters surrounding {@code index} (notably the next char to
      * disambiguate {@code #{...}}, and previous characters to detect a hash-prefixed identifier
-     * context), in addition to checking {@code ch} against the registered separator set.</p>
+     * context), in addition to checking {@code ch} against the configured separator set.</p>
      *
      * @param str the SQL string being parsed
      * @param len the exclusive upper bound for scanning (normally the length of {@code str})
@@ -1380,24 +1439,28 @@ public final class SqlParser {
      * @return {@code true} if the character is a separator in this context, {@code false} otherwise
      */
     static boolean isSeparator(final String str, final int len, final int index, final char ch) {
+        return isSeparator(str, len, index, ch, DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    private static boolean isSeparator(final String str, final int len, final int index, final char ch, final TokenizerConfig tokenizerConfig) {
         // for Ibatis/Mybatis
         if (ch == '#' && index < len - 1 && str.charAt(index + 1) == '{') {
             return false;
         }
 
-        if (ch == '#' && isLikelyHashPrefixedIdentifier(str, len, index)) {
+        if (ch == '#' && isLikelyHashPrefixedIdentifier(str, len, index, tokenizerConfig)) {
             return false;
         }
 
-        if (ch < 128 ? ASCII_SEPARATOR[ch] : separators.contains(ch)) {
+        if (tokenizerConfig.isSingleCharSeparator(ch)) {
             return true;
         }
 
-        return matchMultiCharSeparator(str, len, index) != null;
+        return matchMultiCharSeparator(str, len, index, tokenizerConfig) != null;
     }
 
-    private static void appendSpaceAfterSkippedBlockCommentIfNeeded(final String sql, final int sqlLength, final int commentEndIndex,
-            final List<String> tokens) {
+    private static void appendSpaceAfterSkippedBlockCommentIfNeeded(final String sql, final int sqlLength, final int commentEndIndex, final List<String> tokens,
+            final TokenizerConfig tokenizerConfig) {
         final int nextIndex = commentEndIndex + 1;
 
         if (nextIndex >= sqlLength || tokens.isEmpty() || SK.SPACE.equals(tokens.get(tokens.size() - 1))) {
@@ -1406,12 +1469,16 @@ public final class SqlParser {
 
         final char nextChar = sql.charAt(nextIndex);
 
-        if (!Character.isWhitespace(nextChar) && !isSeparator(sql, sqlLength, nextIndex, nextChar)) {
+        if (!Character.isWhitespace(nextChar) && !isSeparator(sql, sqlLength, nextIndex, nextChar, tokenizerConfig)) {
             tokens.add(SK.SPACE);
         }
     }
 
     private static boolean isHashCommentStart(final String str, final int len, final int index) {
+        return isHashCommentStart(str, len, index, DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    private static boolean isHashCommentStart(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig) {
         if (str.charAt(index) != '#') {
             return false;
         }
@@ -1421,12 +1488,12 @@ public final class SqlParser {
             return false;
         }
 
-        final String multiCharSeparator = matchMultiCharSeparator(str, len, index);
+        final String multiCharSeparator = matchMultiCharSeparator(str, len, index, tokenizerConfig);
         if (multiCharSeparator != null && multiCharSeparator.length() > 1) {
             return false;
         }
 
-        return !isLikelyHashPrefixedIdentifier(str, len, index);
+        return !isLikelyHashPrefixedIdentifier(str, len, index, tokenizerConfig);
     }
 
     /**
@@ -1447,7 +1514,7 @@ public final class SqlParser {
      * remains a MySQL comment. Ambiguous shapes deliberately fall back to the comment
      * classification.</p>
      */
-    private static boolean isLikelyHashPrefixedIdentifier(final String str, final int len, final int index) {
+    private static boolean isLikelyHashPrefixedIdentifier(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig) {
         if (index >= len - 1) {
             return false;
         }
@@ -1458,9 +1525,9 @@ public final class SqlParser {
             return false;
         }
 
-        int left = skipBackwardWhitespaceAndComments(str, index - 1);
+        int left = skipBackwardWhitespaceAndComments(str, index - 1, tokenizerConfig);
 
-        if (isHashIdentifierDmlTargetContext(str, left, true)) {
+        if (isHashIdentifierDmlTargetContext(str, left, true, tokenizerConfig)) {
             return true;
         }
 
@@ -1509,8 +1576,8 @@ public final class SqlParser {
      * general identifier anchors: they are accepted only directly before the target, optionally
      * with a SQL Server {@code TOP [ ( expression ) ] [ PERCENT ]} clause between them.
      */
-    private static boolean isHashIdentifierDmlTargetContext(final String str, int left, final boolean skipLineComments) {
-        left = skipBackwardHashContextTrivia(str, left, skipLineComments);
+    private static boolean isHashIdentifierDmlTargetContext(final String str, int left, final boolean skipLineComments, final TokenizerConfig tokenizerConfig) {
+        left = skipBackwardHashContextTrivia(str, left, skipLineComments, tokenizerConfig);
 
         if (left < 0) {
             return false;
@@ -1525,7 +1592,7 @@ public final class SqlParser {
         // TOP may end with PERCENT. Strip it before locating the parenthesized (or legacy bare)
         // expression that follows TOP.
         if (tokenStart >= 0 && "PERCENT".equalsIgnoreCase(str.substring(tokenStart, left + 1))) {
-            left = skipBackwardHashContextTrivia(str, tokenStart - 1, skipLineComments);
+            left = skipBackwardHashContextTrivia(str, tokenStart - 1, skipLineComments, tokenizerConfig);
         }
 
         if (left < 0) {
@@ -1539,7 +1606,7 @@ public final class SqlParser {
                 return false;
             }
 
-            left = skipBackwardHashContextTrivia(str, openingParenthesis - 1, skipLineComments);
+            left = skipBackwardHashContextTrivia(str, openingParenthesis - 1, skipLineComments, tokenizerConfig);
         } else {
             // SQL Server documents parentheses for data-modification TOP expressions, but accepts
             // the long-standing bare numeric form too (for example, "MERGE TOP 5 #stage").
@@ -1549,7 +1616,7 @@ public final class SqlParser {
                 return false;
             }
 
-            left = skipBackwardHashContextTrivia(str, tokenStart - 1, skipLineComments);
+            left = skipBackwardHashContextTrivia(str, tokenStart - 1, skipLineComments, tokenizerConfig);
         }
 
         tokenStart = identifierWordStart(str, left);
@@ -1558,14 +1625,14 @@ public final class SqlParser {
             return false;
         }
 
-        left = skipBackwardHashContextTrivia(str, tokenStart - 1, skipLineComments);
+        left = skipBackwardHashContextTrivia(str, tokenStart - 1, skipLineComments, tokenizerConfig);
         tokenStart = identifierWordStart(str, left);
 
         return tokenStart >= 0 && hashIdentifierDmlTargetKeywords.contains(str.substring(tokenStart, left + 1).toUpperCase(Locale.ROOT));
     }
 
-    private static int skipBackwardHashContextTrivia(final String str, final int left, final boolean skipLineComments) {
-        return skipLineComments ? skipBackwardWhitespaceAndComments(str, left) : skipBackwardWhitespaceAndBlockComments(str, left);
+    private static int skipBackwardHashContextTrivia(final String str, final int left, final boolean skipLineComments, final TokenizerConfig tokenizerConfig) {
+        return skipLineComments ? skipBackwardWhitespaceAndComments(str, left, tokenizerConfig) : skipBackwardWhitespaceAndBlockComments(str, left);
     }
 
     private static int identifierWordStart(final String str, final int end) {
@@ -1768,6 +1835,10 @@ public final class SqlParser {
     }
 
     private static int skipBackwardWhitespaceAndComments(final String str, int left) {
+        return skipBackwardWhitespaceAndComments(str, left, DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    private static int skipBackwardWhitespaceAndComments(final String str, int left, final TokenizerConfig tokenizerConfig) {
         boolean skipped;
         int lastLineScanPosition = Integer.MIN_VALUE;
 
@@ -1789,7 +1860,7 @@ public final class SqlParser {
                 lastLineScanPosition = left;
 
                 final int lineStart = lastLineStart(str, left);
-                final int commentIndex = lastLineCommentStart(str, lineStart, left);
+                final int commentIndex = lastLineCommentStart(str, lineStart, left, tokenizerConfig);
 
                 if (commentIndex >= 0) {
                     left = commentIndex - 1;
@@ -1843,7 +1914,7 @@ public final class SqlParser {
         return 0;
     }
 
-    private static int lastLineCommentStart(final String str, final int fromIndex, final int toIndex) {
+    private static int lastLineCommentStart(final String str, final int fromIndex, final int toIndex, final TokenizerConfig tokenizerConfig) {
         char quoteChar = 0;
         boolean bsEscaped = false;
         boolean inBracketQuotedIdentifier = false;
@@ -1899,7 +1970,7 @@ public final class SqlParser {
                 // the for-loop's i++ advances past it.
             } else if (ch == '-' && i < toIndex && str.charAt(i + 1) == '-') {
                 return i;
-            } else if (ch == '#' && isHashLineCommentStartForBackwardScan(str, i)) {
+            } else if (ch == '#' && isHashLineCommentStartForBackwardScan(str, i, tokenizerConfig)) {
                 return i;
             }
         }
@@ -1907,20 +1978,21 @@ public final class SqlParser {
         return -1;
     }
 
-    private static boolean isHashLineCommentStartForBackwardScan(final String str, final int index) {
+    private static boolean isHashLineCommentStartForBackwardScan(final String str, final int index, final TokenizerConfig tokenizerConfig) {
         if (index < str.length() - 1 && str.charAt(index + 1) == '{') {
             return false;
         }
 
-        final String multiCharSeparator = matchMultiCharSeparator(str, str.length(), index);
+        final String multiCharSeparator = matchMultiCharSeparator(str, str.length(), index, tokenizerConfig);
         if (multiCharSeparator != null && multiCharSeparator.length() > 1) {
             return false;
         }
 
-        return !isLikelyHashPrefixedIdentifierAfterWhitespaceAndBlockComments(str, str.length(), index);
+        return !isLikelyHashPrefixedIdentifierAfterWhitespaceAndBlockComments(str, str.length(), index, tokenizerConfig);
     }
 
-    private static boolean isLikelyHashPrefixedIdentifierAfterWhitespaceAndBlockComments(final String str, final int len, final int index) {
+    private static boolean isLikelyHashPrefixedIdentifierAfterWhitespaceAndBlockComments(final String str, final int len, final int index,
+            final TokenizerConfig tokenizerConfig) {
         if (index >= len - 1) {
             return false;
         }
@@ -1937,7 +2009,7 @@ public final class SqlParser {
             return false;
         }
 
-        if (isHashIdentifierDmlTargetContext(str, left, false)) {
+        if (isHashIdentifierDmlTargetContext(str, left, false, tokenizerConfig)) {
             return true;
         }
 
@@ -1959,19 +2031,18 @@ public final class SqlParser {
         return ch == '_' || ch == '$' || Character.isLetterOrDigit(ch);
     }
 
-    private static String matchMultiCharSeparator(final String str, final int len, final int index) {
+    private static String matchMultiCharSeparator(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig) {
         if (index < len) {
             final char first = str.charAt(index);
 
-            // Fast reject: no registered multi-character separator starts with this character.
-            if (first < 128 ? !MULTI_CHAR_SEPARATOR_FIRST_CHAR[first] : !multiCharSeparatorNonAsciiFirstChar) {
+            // Fast reject: no configured multi-character separator starts with this character.
+            if (first < 128 ? !tokenizerConfig.multiCharSeparatorFirstChars[first] : !tokenizerConfig.hasNonAsciiMultiCharFirstChar) {
                 return null;
             }
         }
 
-        final String[][] byLen = multiCharSeparatorsByLen;
-        // Same cap as before: longest registered separator vs. remaining input length.
-        int maxLen = Math.min(maxSeparatorLength.get(), len - index);
+        final String[][] byLen = tokenizerConfig.multiCharSeparatorsByLength;
+        int maxLen = Math.min(tokenizerConfig.maxSeparatorLength, len - index);
 
         if (maxLen > byLen.length - 1) {
             maxLen = byLen.length - 1;

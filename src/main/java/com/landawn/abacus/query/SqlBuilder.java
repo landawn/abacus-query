@@ -126,7 +126,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
     /**
      * Constructs a new SqlBuilder with the specified SqlDialect.
      *
-     * @param sqlDialect the dialect (naming policy + parameter style) for this builder
+     * @param sqlDialect the complete rendering and tokenizer configuration for this builder
      */
     protected SqlBuilder(final SqlDialect sqlDialect) {
         super(sqlDialect);

@@ -494,6 +494,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected final BiConsumer<StringBuilder, String> _handlerForNamedParameter; //NOSONAR
 
+    protected final SqlParser.Tokenizer _tokenizer; //NOSONAR
+
     protected final Set<String> calledOpSet = new HashSet<>(); //NOSONAR
 
     /**
@@ -504,7 +506,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                   and a {@code null} SQL policy defaults to {@code RAW_SQL}.
      *                   A {@code null} identifier quote defaults to backtick when the dialect's product info names
      *                   MySQL/MariaDB and to double quote otherwise, and the product info selects the dialect-specific
-     *                   pagination syntax used by {@link #limit(int)}, {@link #limit(int, int)} and {@link #offset(int)}
+     *                   pagination syntax used by {@link #limit(int)}, {@link #limit(int, int)} and {@link #offset(int)}.
+     *                   The dialect also scopes named-parameter rendering and tokenizer configuration to this builder.
      */
     protected AbstractQueryBuilder(final SqlDialect sqlDialect) {
         final int activeBuilderCount = activeStringBuilderCounter.incrementAndGet();
@@ -526,7 +529,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 ? (_dialectFamily == DialectFamily.MYSQL ? SK._BACKTICK : SK._DOUBLE_QUOTE)
                 : (this.sqlDialect.identifierQuote() == IdentifierQuote.BACKTICK ? SK._BACKTICK : SK._DOUBLE_QUOTE);
 
-        _handlerForNamedParameter = handlerForNamedParameter_TL.get();
+        _handlerForNamedParameter = this.sqlDialect.namedParameterHandler() == null ? SqlDialect.DEFAULT_NAMED_PARAMETER_HANDLER
+                : this.sqlDialect.namedParameterHandler();
+        _tokenizer = this.sqlDialect.tokenizerConfig() == null ? SqlParser.tokenizer() : SqlParser.tokenizer(this.sqlDialect.tokenizerConfig());
 
         if (logger.isDebugEnabled()) {
             logger.debug("SqlBuilder created. Active builders: {}", activeBuilderCount);
@@ -1001,58 +1006,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return m;
     }
 
-    protected static final BiConsumer<StringBuilder, String> defaultHandlerForNamedParameter = (sb, propName) -> sb.append(":").append(propName);
-
-    protected static final ThreadLocal<BiConsumer<StringBuilder, String>> handlerForNamedParameter_TL = ThreadLocal //NOSONAR
-            .withInitial(() -> defaultHandlerForNamedParameter);
-
-    /**
-     * Sets a custom handler for formatting named parameters in SQL strings.
-     * The default handler formats parameters as {@code :paramName}.
-     * This is a thread-local setting, so each thread can have its own handler.
-     * Each builder snapshots the handler in its constructor, so calling this method only affects
-     * builders created afterwards on the calling thread; builders that already exist keep the
-     * handler that was in effect when they were created. The handler should be deterministic,
-     * side-effect free, and make its output depend only on the supplied parameter name: compound-query
-     * assembly may invoke it again with a suffixed name when a sibling query's parameter name must be
-     * made unique.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Use MyBatis-style named parameters: #{paramName}
-     * AbstractQueryBuilder.setHandlerForNamedParameter(
-     *     (sb, propName) -> sb.append("#{").append(propName).append("}"));
-     *
-     * // Reset to default when done
-     * AbstractQueryBuilder.resetHandlerForNamedParameter();
-     * }</pre>
-     *
-     * @param handlerForNamedParameter the handler to format named parameters; must not be null
-     * @throws IllegalArgumentException if handlerForNamedParameter is null
-     */
-    public static void setHandlerForNamedParameter(final BiConsumer<StringBuilder, String> handlerForNamedParameter) {
-        N.checkArgNotNull(handlerForNamedParameter, "handlerForNamedParameter");
-        handlerForNamedParameter_TL.set(handlerForNamedParameter);
-    }
-
-    /**
-     * Resets the named parameter handler to the default format.
-     * The default handler formats parameters as {@code :paramName}.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // After using a custom handler, reset to default
-     * AbstractQueryBuilder.resetHandlerForNamedParameter();
-     *
-     * // Named SQL will now use :paramName format again
-     * String sql = NSC.select("name").from("users").where(Filters.equal("id", 1)).build().query();
-     * // Output: SELECT name FROM users WHERE id = :id
-     * }</pre>
-     */
-    public static void resetHandlerForNamedParameter() {
-        handlerForNamedParameter_TL.set(defaultHandlerForNamedParameter);
-    }
-
     private static void checkSqlFragmentNotBlank(final String value, final String argName) {
         if (Strings.isBlank(value)) {
             throw new IllegalArgumentException(argName + " must not be null, empty, or blank");
@@ -1095,10 +1048,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param operationName the set-operation method name (e.g. {@code "union"}) used in the error message
      * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
      */
-    private static void checkSetOperationSubQuery(final String query, final String operationName) {
+    private void checkSetOperationSubQuery(final String query, final String operationName) {
         checkSqlFragmentNotBlank(query, "query");
 
-        if (!isSubQuery(query) || !SqlParser.isReadOnlyQuery(query)) {
+        if (!isSubQuery(_tokenizer, query) || !SqlParser.isReadOnlyQuery(query)) {
             throw new IllegalArgumentException("The query argument to " + operationName
                     + " must be a complete SELECT sub-query (starting with 'SELECT', or containing 'SELECT ... FROM'), but was: \"" + query
                     + "\". To start a new SELECT from a column list, use " + operationName + "(Collection) followed by from(...).");
@@ -1108,7 +1061,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Returns the {@link SqlDialect} this builder renders SQL with.
      *
-     * @return the dialect (naming policy, parameter style, identifier quote and optional product info) bound to this builder
+     * @return the complete rendering and tokenizer configuration bound to this builder
      */
     public SqlDialect sqlDialect() {
         return sqlDialect;
@@ -3694,7 +3647,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             // upper-cases the OFFSET keyword only outside placeholders, so ":offset" / "#{ offset }" do not
             // misfire, and the whole-token match (unlike a raw substring test) keeps a placeholder name such
             // as ":rowOFFSETCount" from spuriously consuming the slot.
-            if (SqlParser.indexOfToken(limit.literal(), SK.OFFSET, 0, true) >= 0) {
+            if (_tokenizer.indexOfToken(limit.literal(), SK.OFFSET, 0, true) >= 0) {
                 checkIfAlreadyCalled(SK.OFFSET);
             }
 
@@ -4215,6 +4168,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a UNION clause with another SQL query.
      * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p>For {@link SqlPolicy#NAMED_SQL}, child placeholders are rendered with this parent builder's
+     * named-parameter handler so the compound statement uses one placeholder syntax.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4226,7 +4181,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param sqlBuilder the SQL builder containing the query to union (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
+     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
+     *         or generated named parameters with a different SQL policy
      */
     public This union(final This sqlBuilder) {
         return appendSetOperation(_SPACE_UNION_SPACE, sqlBuilder, "UNION");
@@ -4281,6 +4237,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a UNION ALL clause with another SQL query.
      * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p>For {@link SqlPolicy#NAMED_SQL}, child placeholders are rendered with this parent builder's
+     * named-parameter handler so the compound statement uses one placeholder syntax.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4292,7 +4250,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param sqlBuilder the SQL builder containing the query to union all (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
+     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
+     *         or generated named parameters with a different SQL policy
      */
     public This unionAll(final This sqlBuilder) {
         return appendSetOperation(_SPACE_UNION_ALL_SPACE, sqlBuilder, "UNION ALL");
@@ -4347,6 +4306,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds an INTERSECT clause with another SQL query.
      * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p>For {@link SqlPolicy#NAMED_SQL}, child placeholders are rendered with this parent builder's
+     * named-parameter handler so the compound statement uses one placeholder syntax.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4358,7 +4319,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param sqlBuilder the SQL builder containing the query to intersect (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
+     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
+     *         or generated named parameters with a different SQL policy
      */
     public This intersect(final This sqlBuilder) {
         return appendSetOperation(_SPACE_INTERSECT_SPACE, sqlBuilder, "INTERSECT");
@@ -4413,6 +4375,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds an EXCEPT clause with another SQL query.
      * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p>For {@link SqlPolicy#NAMED_SQL}, child placeholders are rendered with this parent builder's
+     * named-parameter handler so the compound statement uses one placeholder syntax.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4424,7 +4388,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param sqlBuilder the SQL builder containing the query to except (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
+     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
+     *         or generated named parameters with a different SQL policy
      */
     public This except(final This sqlBuilder) {
         return appendSetOperation(_SPACE_EXCEPT_SPACE, sqlBuilder, "EXCEPT");
@@ -4480,6 +4445,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Adds a MINUS clause with another SQL query (Oracle syntax).
      * MINUS is Oracle's equivalent to EXCEPT - returns rows from the first query that don't appear in the second.
      * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p>For {@link SqlPolicy#NAMED_SQL}, child placeholders are rendered with this parent builder's
+     * named-parameter handler so the compound statement uses one placeholder syntax.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4491,7 +4458,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param sqlBuilder the SQL builder containing the query to minus (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null} or is this same builder instance
+     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
+     *         or generated named parameters with a different SQL policy
      */
     public This minus(final This sqlBuilder) {
         return appendSetOperation(_SPACE_EXCEPT_MINUS_SPACE, sqlBuilder, "MINUS");
@@ -4626,7 +4594,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final Set<String> childParameterNames = new HashSet<>(sqlBuilder._generatedNamedParameterNames);
         final Map<String, String> childParameterTokens = new HashMap<>(sqlBuilder._renderedNamedParameterTokens);
         final String sql = uniquifySetOperationNamedParameters(sp.query(), sqlBuilder._namedParameterNameOccurrences, parentOccurrences, childParameterNames,
-                childParameterTokens, sqlBuilder._handlerForNamedParameter);
+                childParameterTokens, sqlBuilder._sqlPolicy);
         mergeNamedParameterOccurrences(sqlBuilder._namedParameterNameOccurrences);
         _generatedNamedParameterNames.addAll(childParameterNames);
         _renderedNamedParameterTokens.putAll(childParameterTokens);
@@ -4672,8 +4640,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     private String uniquifySetOperationNamedParameters(final String sql, final Map<String, Integer> childOccurrences,
             final Map<String, Integer> parentOccurrences, final Set<String> childParameterNames, final Map<String, String> childParameterTokens,
-            final BiConsumer<StringBuilder, String> childParameterHandler) {
-        if ((_sqlPolicy != SqlPolicy.NAMED_SQL && _sqlPolicy != SqlPolicy.IBATIS_SQL) || N.isEmpty(childOccurrences) || N.isEmpty(parentOccurrences)) {
+            final SqlPolicy childSqlPolicy) {
+        if (N.isEmpty(childOccurrences)) {
+            return sql;
+        }
+
+        if (_sqlPolicy != childSqlPolicy) {
+            throw new IllegalArgumentException(
+                    "Set-operation builders with generated named parameters must use the same SQL policy: parent=" + _sqlPolicy + ", child=" + childSqlPolicy);
+        }
+
+        if (_sqlPolicy != SqlPolicy.NAMED_SQL && _sqlPolicy != SqlPolicy.IBATIS_SQL) {
             return sql;
         }
 
@@ -4694,36 +4671,39 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 // past the parent's), or when this exact name collides with a parent name generated from a
                 // DIFFERENT base (e.g. parent property "id_2" vs the child's "id" + "_2" suffix, or the
                 // reverse) -- otherwise the same placeholder would be bound to two different values.
-                if (parentCount <= 0 && !_generatedNamedParameterNames.contains(oldName)) {
-                    continue;
-                }
+                final boolean rename = parentCount > 0 || _generatedNamedParameterNames.contains(oldName);
+                String newName = oldName;
 
-                int suffix = parentCount + i;
-                String newName = indexedNamedParameterName(name, suffix);
+                if (rename) {
+                    int suffix = parentCount + i;
+                    newName = indexedNamedParameterName(name, suffix);
 
-                // Bump past names already taken on either side, e.g. a property literally named "<base>_<n>".
-                while (_generatedNamedParameterNames.contains(newName) || childParameterNames.contains(newName)) {
-                    newName = indexedNamedParameterName(name, ++suffix);
+                    // Bump past names already taken on either side, e.g. a property literally named "<base>_<n>".
+                    while (_generatedNamedParameterNames.contains(newName) || childParameterNames.contains(newName)) {
+                        newName = indexedNamedParameterName(name, ++suffix);
+                    }
                 }
 
                 if (_sqlPolicy == SqlPolicy.NAMED_SQL) {
-                    final String oldToken = childParameterTokens.get(oldName);
+                    final String oldToken = childParameterTokens.getOrDefault(oldName, ":" + oldName);
+                    final String newToken = renderNamedParameterToken(_handlerForNamedParameter, newName);
 
-                    if (oldToken == null || oldToken.equals(":" + oldName)) {
-                        result = replaceNamedParameterName(result, oldName, newName);
-                    } else {
-                        final String newToken = renderNamedParameterToken(childParameterHandler, newName);
-
+                    if (oldToken.equals(":" + oldName)) {
+                        result = replaceDefaultNamedParameterToken(result, oldName, newToken);
+                    } else if (!oldToken.equals(newToken)) {
                         result = replaceRenderedNamedParameterToken(result, oldToken, newToken);
-                        childParameterTokens.remove(oldName);
-                        childParameterTokens.put(newName, newToken);
                     }
-                } else {
+
+                    childParameterTokens.remove(oldName);
+                    childParameterTokens.put(newName, newToken);
+                } else if (rename) {
                     result = replaceIbatisParameterName(result, oldName, newName);
                 }
 
-                childParameterNames.remove(oldName);
-                childParameterNames.add(newName);
+                if (rename) {
+                    childParameterNames.remove(oldName);
+                    childParameterNames.add(newName);
+                }
             }
         }
 
@@ -4755,7 +4735,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return occurrence == 1 ? name : name + "_" + occurrence;
     }
 
-    private static String replaceNamedParameterName(final String sql, final String oldName, final String newName) {
+    /** Replaces a default {@code :name} placeholder with an arbitrary rendered token. */
+    private static String replaceDefaultNamedParameterToken(final String sql, final String oldName, final String newToken) {
         StringBuilder sb = null;
         int last = 0;
 
@@ -4779,10 +4760,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (sql.substring(i + 1, end).equals(oldName)) {
                 if (sb == null) {
-                    sb = new StringBuilder(sql.length() + Math.max(0, newName.length() - oldName.length()));
+                    sb = new StringBuilder(sql.length() + Math.max(0, newToken.length() - oldName.length() - 1));
                 }
 
-                sb.append(sql, last, i + 1).append(newName);
+                sb.append(sql, last, i).append(newToken);
                 last = end;
             }
 
@@ -6070,7 +6051,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
         }
 
-        final List<String> words = SqlParser.parse(expr);
+        final List<String> words = _tokenizer.parse(expr);
 
         String word = null;
         for (int i = 0, len = words.size(); i < len; i++) {
@@ -6392,16 +6373,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return {@code true} if the array contains a single inline query, {@code false} otherwise
      */
     protected static boolean isSubQuery(final String... propOrColumnNames) {
+        return isSubQuery(SqlParser.tokenizer(), propOrColumnNames);
+    }
+
+    /**
+     * Tokenizer-aware implementation used by builders whose dialect supplies a custom tokenizer
+     * configuration. Keeping the public-to-subclasses {@link #isSubQuery(String...)} helper static
+     * preserves its existing source and binary contract.
+     */
+    private static boolean isSubQuery(final SqlParser.Tokenizer tokenizer, final String... propOrColumnNames) {
         if (propOrColumnNames.length == 1) {
             final String query = propOrColumnNames[0].trim();
-            int index = SqlParser.indexOfToken(query, SK.SELECT, 0, false);
+            int index = tokenizer.indexOfToken(query, SK.SELECT, 0, false);
 
             if (index == 0) {
                 return true;
             }
 
             if (index > 0) {
-                index = SqlParser.indexOfToken(query, SK.FROM, index, false);
+                index = tokenizer.indexOfToken(query, SK.FROM, index, false);
 
                 return index >= 1;
             }

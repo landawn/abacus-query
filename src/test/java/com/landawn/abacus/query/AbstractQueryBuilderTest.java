@@ -3,6 +3,7 @@ package com.landawn.abacus.query;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,6 +15,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -559,26 +562,80 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
-    public void testSetHandlerForNamedParameter() {
-        AbstractQueryBuilder.setHandlerForNamedParameter((sb, propName) -> sb.append("#{").append(propName).append("}"));
+    public void testNamedParameterHandlerOnDialect() {
+        final Dsl dsl = Dsl
+                .forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, propName) -> sb.append("#{").append(propName).append("}")).build());
+        final String sql = dsl.select("name").from("users").where(Filters.eq("id", 1)).build().query();
 
-        try {
-            final String sql = Dsl.NSC.select("name").from("users").where(Filters.eq("id", 1)).build().query();
-
-            assertTrue(sql.contains("#{id}"));
-        } finally {
-            AbstractQueryBuilder.resetHandlerForNamedParameter();
-        }
+        assertTrue(sql.contains("#{id}"));
+        assertTrue(Dsl.NSC.select("name").from("users").where(Filters.eq("id", 1)).build().query().contains(":id"));
     }
 
     @Test
-    public void testResetHandlerForNamedParameter() {
-        AbstractQueryBuilder.setHandlerForNamedParameter((sb, propName) -> sb.append("#{").append(propName).append("}"));
-        AbstractQueryBuilder.resetHandlerForNamedParameter();
+    public void testNamedParameterHandlerIsScopedAcrossInterleavedBuilders() {
+        final Dsl myBatisStyle = Dsl
+                .forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, propName) -> sb.append("#{").append(propName).append("}")).build());
 
-        final String sql = Dsl.NSC.select("name").from("users").where(Filters.eq("id", 1)).build().query();
+        final SqlBuilder customBuilder = myBatisStyle.select("name").from("users");
+        final SqlBuilder defaultBuilder = Dsl.NSC.select("name").from("users");
 
-        assertTrue(sql.contains(":id"));
+        assertTrue(customBuilder.where(Filters.eq("id", 1)).build().query().contains("#{id}"));
+        assertTrue(defaultBuilder.where(Filters.eq("id", 1)).build().query().contains(":id"));
+    }
+
+    @Test
+    public void testTokenizerConfigIsCarriedBySqlDialect() {
+        final SqlParser.TokenizerConfig tokenizerConfig = SqlParser.tokenizerConfigBuilder().withSeparator("::").build();
+        final Dsl dsl = Dsl.forDialect(Dsl.SCSB.sqlDialect().toBuilder().tokenizerConfig(tokenizerConfig).build());
+        final SqlBuilder builder = dsl.select("payload::jsonb").from("events");
+
+        assertEquals(tokenizerConfig, dsl.sqlDialect().tokenizerConfig());
+        assertEquals(tokenizerConfig, builder._tokenizer.tokenizerConfig());
+        assertTrue(builder.build().query().contains("payload::jsonb"));
+    }
+
+    @Test
+    public void testDialectTokenizerConfigAffectsRawSubQueryInspection() {
+        final SqlParser.TokenizerConfig tokenizerConfig = SqlParser.tokenizerConfigBuilder().withSeparator("::").build();
+        final Dsl dsl = Dsl.forDialect(Dsl.SCSB.sqlDialect().toBuilder().tokenizerConfig(tokenizerConfig).build());
+
+        assertEquals("SELECT id FROM users UNION SELECT::1", dsl.select("id").from("users").union("SELECT::1").build().query());
+        assertThrows(IllegalArgumentException.class, () -> Dsl.SCSB.select("id").from("users").union("SELECT::1"));
+    }
+
+    @Test
+    public void testDialectScopedConfigurationSurvivesToBuilder() {
+        final BiConsumer<StringBuilder, String> handler = (sb, name) -> sb.append("${").append(name).append('}');
+        final SqlParser.TokenizerConfig tokenizerConfig = SqlParser.tokenizerConfigBuilder().withSeparator("::").build();
+        final SqlDialect dialect = Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler(handler).tokenizerConfig(tokenizerConfig).build();
+        final SqlDialect copy = dialect.toBuilder().build();
+
+        assertSame(handler, copy.namedParameterHandler());
+        assertSame(tokenizerConfig, copy.tokenizerConfig());
+        assertEquals(dialect, copy);
+        assertEquals(dialect.hashCode(), copy.hashCode());
+    }
+
+    @Test
+    public void testNullTokenizerConfigUsesImmutableDefault() {
+        final SqlBuilder builder = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().tokenizerConfig(null).build()).select("id").from("users");
+
+        assertSame(SqlParser.defaultTokenizerConfig(), builder._tokenizer.tokenizerConfig());
+    }
+
+    @Test
+    public void testNamedParameterHandlersRemainIsolatedDuringParallelUse() {
+        final Dsl customDsl = Dsl
+                .forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append("${").append(name).append('}')).build());
+        final List<String> statements = IntStream.range(0, 128)
+                .parallel()
+                .mapToObj(i -> (i & 1) == 0 ? customDsl.select("id").from("users").where(Filters.eq("id", i)).build().query()
+                        : Dsl.NSC.select("id").from("users").where(Filters.eq("id", i)).build().query())
+                .toList();
+
+        for (int i = 0; i < statements.size(); i++) {
+            assertTrue(statements.get(i).endsWith((i & 1) == 0 ? "${id}" : ":id"));
+        }
     }
 
     @Test
