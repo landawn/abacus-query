@@ -135,7 +135,6 @@ import com.landawn.abacus.util.stream.Stream;
  * @see com.landawn.abacus.annotation.Table
  * @see com.landawn.abacus.annotation.Column
  */
-@SuppressWarnings("deprecation")
 public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<This>> { // NOSONAR
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractQueryBuilder.class);
@@ -636,7 +635,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class
      * @return the table alias, or empty string if not defined
      */
-    protected static String getTableAlias(final Class<?> entityClass) {
+    protected static String tableAlias(final Class<?> entityClass) {
         if (entityClass == null) {
             return "";
         }
@@ -665,12 +664,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class
      * @return the table alias
      */
-    protected static String getTableAlias(final String alias, final Class<?> entityClass) {
+    protected static String tableAlias(final String alias, final Class<?> entityClass) {
         if (Strings.isNotEmpty(alias)) {
             return alias;
         }
 
-        return getTableAlias(entityClass);
+        return tableAlias(entityClass);
     }
 
     /**
@@ -680,8 +679,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param namingPolicy the naming policy to apply
      * @return the table alias if defined, otherwise the table name
      */
-    protected static String getTableAliasOrName(final Class<?> entityClass, final NamingPolicy namingPolicy) {
-        return getTableAliasOrName(null, entityClass, namingPolicy);
+    protected static String tableAliasOrName(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+        return tableAliasOrName(null, entityClass, namingPolicy);
     }
 
     /**
@@ -693,11 +692,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param namingPolicy the naming policy to apply
      * @return the table alias if specified or defined, otherwise the table name
      */
-    protected static String getTableAliasOrName(final String alias, final Class<?> entityClass, final NamingPolicy namingPolicy) {
+    protected static String tableAliasOrName(final String alias, final Class<?> entityClass, final NamingPolicy namingPolicy) {
         String tableAliasOrName = alias;
 
         if (Strings.isEmpty(tableAliasOrName)) {
-            tableAliasOrName = getTableAlias(entityClass);
+            tableAliasOrName = tableAlias(entityClass);
         }
 
         if (Strings.isEmpty(tableAliasOrName)) {
@@ -839,7 +838,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 val[3].removeAll(nonUpdatableNonWritablePropNames);
                 val[4].removeAll(nonUpdatablePropNames);
 
-                for (final String idPropName : QueryUtil.getIdPropNames(entityClass)) {
+                for (final String idPropName : QueryUtil.idPropertyNames(entityClass)) {
                     val[3].remove(idPropName);
 
                     final java.lang.reflect.Method getter = Beans.getPropGetter(entityClass, idPropName);
@@ -908,7 +907,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         final List<String> res = new ArrayList<>(subEntityPropNames.size() + 1);
 
-        String tableAlias = getTableAlias(alias, entityClass);
+        String tableAlias = tableAlias(alias, entityClass);
 
         if (Strings.isEmpty(tableAlias)) {
             res.add(getTableName(entityClass, namingPolicy));
@@ -932,7 +931,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             subEntityClass = (propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type).javaType();
-            tableAlias = getTableAlias(subEntityClass);
+            tableAlias = tableAlias(subEntityClass);
 
             if (Strings.isEmpty(tableAlias)) {
                 res.add(getTableName(subEntityClass, namingPolicy));
@@ -1177,7 +1176,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             for (final Selection selection : _multiSelects) {
                 final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
-                        : QueryUtil.getSelectPropNames(selection.entityClass(), selection.includeSubEntityProperties(), selection.excludedPropNames());
+                        : QueryUtil.selectPropertyNames(selection.entityClass(), selection.includeSubEntityProperties(), selection.excludedPropNames());
                 allPropNames.addAll(selectPropNames);
             }
 
@@ -1549,7 +1548,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final Class<?> entityClass) {
-        return from(entityClass, QueryUtil.getTableAlias(entityClass));
+        return from(entityClass, QueryUtil.tableAlias(entityClass));
     }
 
     /**
@@ -1606,7 +1605,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final boolean isForSelect = _op == OperationType.QUERY;
 
         if (N.notEmpty(_propOrColumnNames)) {
-            if (_entityClass != null && !withAlias && _propOrColumnNames == QueryUtil.getSelectPropNames(_entityClass, false, null)) { // NOSONAR
+            if (_entityClass != null && !withAlias && _propOrColumnNames == QueryUtil.selectPropertyNames(_entityClass, false, null)) { // NOSONAR
                 final Map<Class<?>, String> fullSelectPartsCache = (_identifierQuote == SK._BACKTICK ? fullSelectPartsPoolForBacktick : fullSelectPartsPool)
                         .get(_namingPolicy);
                 String fullSelectParts = fullSelectPartsCache.get(_entityClass);
@@ -1680,7 +1679,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 selectionWithClassAlias = Strings.isNotEmpty(selectionClassAlias);
 
                 final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
-                        : QueryUtil.getSelectPropNames(selectionEntityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
+                        : QueryUtil.selectPropertyNames(selectionEntityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
 
                 for (final String propName : selectPropNames) {
                     if (i++ > 0) {
@@ -1852,7 +1851,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This join(final Class<?> entityClass) {
-        return join(entityClass, QueryUtil.getTableAlias(entityClass));
+        return join(entityClass, QueryUtil.tableAlias(entityClass));
     }
 
     /**
@@ -1941,7 +1940,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This innerJoin(final Class<?> entityClass) {
-        return innerJoin(entityClass, QueryUtil.getTableAlias(entityClass));
+        return innerJoin(entityClass, QueryUtil.tableAlias(entityClass));
     }
 
     /**
@@ -2000,7 +1999,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This leftJoin(final Class<?> entityClass) {
-        return leftJoin(entityClass, QueryUtil.getTableAlias(entityClass));
+        return leftJoin(entityClass, QueryUtil.tableAlias(entityClass));
     }
 
     /**
@@ -2059,7 +2058,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This rightJoin(final Class<?> entityClass) {
-        return rightJoin(entityClass, QueryUtil.getTableAlias(entityClass));
+        return rightJoin(entityClass, QueryUtil.tableAlias(entityClass));
     }
 
     /**
@@ -2118,7 +2117,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This fullJoin(final Class<?> entityClass) {
-        return fullJoin(entityClass, QueryUtil.getTableAlias(entityClass));
+        return fullJoin(entityClass, QueryUtil.tableAlias(entityClass));
     }
 
     /**
@@ -2177,7 +2176,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This crossJoin(final Class<?> entityClass) {
-        return crossJoin(entityClass, QueryUtil.getTableAlias(entityClass));
+        return crossJoin(entityClass, QueryUtil.tableAlias(entityClass));
     }
 
     /**
@@ -2236,7 +2235,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      */
     public This naturalJoin(final Class<?> entityClass) {
-        return naturalJoin(entityClass, QueryUtil.getTableAlias(entityClass));
+        return naturalJoin(entityClass, QueryUtil.tableAlias(entityClass));
     }
 
     /**
@@ -3477,7 +3476,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // the sentinel count == MAX_VALUE / offset == 0; render it from its literal. Everything else —
         // the numeric constructors and string expressions parsed into concrete count/offset — is emitted
         // in the dialect's pagination syntax via limit(int) / limit(int, int).
-        if (Strings.isNotEmpty(limit.literal()) && !limit.isResolved()) {
+        if (Strings.isNotEmpty(limit.literal()) && !limit.resolved()) {
             if (usesFetchPagination() && appendLimitExpressionInFetchSyntax(limit.literal())) {
                 return;
             }
@@ -3495,10 +3494,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             _sb.append(_SPACE).append(limit.literal());
-        } else if (limit.getOffset() > 0) {
-            limit(limit.getCount(), limit.getOffset());
+        } else if (limit.offset() > 0) {
+            limit(limit.count(), limit.offset());
         } else {
-            limit(limit.getCount());
+            limit(limit.count());
         }
     }
 
@@ -3692,7 +3691,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>&#9888;&#65039;</b> A {@link Criteria}'s select modifier ({@code DISTINCT} etc.) is <i>not</i> applied by this
      * method: it belongs to the SELECT list, which has already been rendered by the time a condition is
-     * appended. It is exposed via {@link Criteria#getSelectModifier()} for callers (such as abacus-jdbc)
+     * appended. It is exposed via {@link Criteria#selectModifier()} for callers (such as abacus-jdbc)
      * that render the SELECT themselves.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -3717,23 +3716,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         init(true);
 
         if (condition instanceof final Criteria criteria) {
-            final Collection<Join> joins = criteria.getJoins();
+            final Collection<Join> joins = criteria.joins();
 
-            // The criteria's select modifier (criteria.getSelectModifier(), e.g. DISTINCT) is intentionally
+            // The criteria's select modifier (criteria.selectModifier(), e.g. DISTINCT) is intentionally
             // not rendered here -- the SELECT list is already emitted; callers such as abacus-jdbc read it
-            // via Criteria.getSelectModifier() and apply it themselves.
+            // via Criteria.selectModifier() and apply it themselves.
 
             if (N.notEmpty(joins)) {
                 for (final Join join : joins) {
                     _sb.append(_SPACE).append(join.operator()).append(_SPACE);
 
-                    if (join.getJoinEntities().size() == 1) {
-                        _sb.append(join.getJoinEntities().get(0));
+                    if (join.joinEntities().size() == 1) {
+                        _sb.append(join.joinEntities().get(0));
                     } else {
                         _sb.append(SK._PARENTHESIS_L);
                         int idx = 0;
 
-                        for (final String joinTableName : join.getJoinEntities()) {
+                        for (final String joinTableName : join.joinEntities()) {
                             if (idx++ > 0) {
                                 _sb.append(_COMMA_SPACE);
                             }
@@ -3744,7 +3743,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         _sb.append(SK._PARENTHESIS_R);
                     }
 
-                    final Condition joinCond = join.getCondition();
+                    final Condition joinCond = join.condition();
 
                     if (joinCond != null) {
                         // Mirror Join.toString(): a raw join condition (e.g. an Expression or Binary) needs an
@@ -3758,48 +3757,48 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 }
             }
 
-            final Clause where = criteria.getWhere();
+            final Clause where = criteria.where();
 
             if ((where != null)) {
                 checkIfAlreadyCalled(SK.WHERE);
                 _sb.append(_SPACE_WHERE_SPACE);
-                appendCondition(where.getCondition());
+                appendCondition(where.condition());
             }
 
-            final Clause groupBy = criteria.getGroupBy();
+            final Clause groupBy = criteria.groupBy();
 
             if (groupBy != null) {
                 checkIfAlreadyCalled(SK.GROUP_BY);
                 _sb.append(_SPACE_GROUP_BY_SPACE);
-                appendCondition(groupBy.getCondition());
+                appendCondition(groupBy.condition());
             }
 
-            final Clause having = criteria.getHaving();
+            final Clause having = criteria.having();
 
             if (having != null) {
                 checkIfAlreadyCalled(SK.HAVING);
                 _sb.append(_SPACE_HAVING_SPACE);
-                appendCondition(having.getCondition());
+                appendCondition(having.condition());
             }
 
-            final List<Clause> aggregations = criteria.getSetOperations();
+            final List<Clause> aggregations = criteria.setOperations();
 
             if (N.notEmpty(aggregations)) {
                 for (final Clause aggregation : aggregations) {
                     _sb.append(_SPACE).append(aggregation.operator()).append(_SPACE);
-                    appendCondition(aggregation.getCondition());
+                    appendCondition(aggregation.condition());
                 }
             }
 
-            final Clause orderBy = criteria.getOrderBy();
+            final Clause orderBy = criteria.orderBy();
 
             if (orderBy != null) {
                 checkIfAlreadyCalled(SK.ORDER_BY);
                 _sb.append(_SPACE_ORDER_BY_SPACE);
-                appendCondition(orderBy.getCondition());
+                appendCondition(orderBy.condition());
             }
 
-            final Limit limit = criteria.getLimit();
+            final Limit limit = criteria.limit();
 
             if (limit != null) {
                 appendLimit(limit);
@@ -3819,7 +3818,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 }
 
                 _sb.append(_SPACE).append(condition.operator()).append(_SPACE);
-                appendCondition(((Clause) condition).getCondition());
+                appendCondition(((Clause) condition).condition());
             }
         } else {
             if (!_isForConditionOnly) {
@@ -5139,7 +5138,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         final Class<?> entityClass = entity.getClass();
         setEntityClass(entityClass);
-        final Collection<String> propNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+        final Collection<String> propNames = QueryUtil.updatePropertyNames(entityClass, excludedPropNames);
         final Map<String, Object> localProps = N.newLinkedHashMap(propNames.size());
 
         for (final String propName : propNames) {
@@ -5221,7 +5220,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This setEntity(final Class<?> entityClass, final Set<String> excludedPropNames) {
         setEntityClass(entityClass);
 
-        return set(QueryUtil.getUpdatePropNames(entityClass, excludedPropNames));
+        return set(QueryUtil.updatePropertyNames(entityClass, excludedPropNames));
     }
 
     /**
@@ -6054,11 +6053,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (propInfo != null && propInfo.isSubEntity) {
                 final Class<?> propEntityClass = propInfo.type.isCollection() ? propInfo.type.elementType().javaType() : propInfo.clazz;
 
-                final String propEntityTableAliasOrName = getTableAliasOrName(propEntityClass, _namingPolicy);
+                final String propEntityTableAliasOrName = tableAliasOrName(propEntityClass, _namingPolicy);
 
                 final ImmutableMap<String, Tuple2<String, Boolean>> subPropColumnNameMap = prop2ColumnNameMap(propEntityClass, _namingPolicy);
 
-                final Collection<String> subSelectPropNames = QueryUtil.getSelectPropNames(propEntityClass, false, null);
+                final Collection<String> subSelectPropNames = QueryUtil.selectPropertyNames(propEntityClass, false, null);
                 int i = 0;
 
                 for (final String subPropName : subSelectPropNames) {
@@ -6315,7 +6314,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 Maps.removeKeys(instance._props, excludedPropNames);
             }
         } else {
-            final Collection<String> propNames = QueryUtil.getInsertPropNames(entity, excludedPropNames);
+            final Collection<String> propNames = QueryUtil.insertPropertyNames(entity, excludedPropNames);
             final Map<String, Object> map = N.newLinkedHashMap(propNames.size());
             final BeanInfo beanInfo = ParserUtil.getBeanInfo(entity.getClass());
             final ImmutableList<String> idPropNameList = beanInfo.idPropNameList;
@@ -6411,7 +6410,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgument(first.isPresent(), "All elements in propsList are null");
 
         final Class<?> entityClass = first.get().getClass();
-        final Collection<String> propNames = QueryUtil.getInsertPropNames(entityClass, null);
+        final Collection<String> propNames = QueryUtil.insertPropertyNames(entityClass, null);
         final BeanInfo firstEntityBeanInfo = ParserUtil.getBeanInfo(entityClass);
         final List<Map<String, Object>> newPropsList = new ArrayList<>(propsList.size());
 
@@ -6421,7 +6420,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             final Class<?> currentEntityClass = entity.getClass();
-            final Collection<String> currentPropNames = QueryUtil.getInsertPropNames(currentEntityClass, null);
+            final Collection<String> currentPropNames = QueryUtil.insertPropertyNames(currentEntityClass, null);
             N.checkArgument(propNames.equals(currentPropNames),
                     "All non-null entities in propsList must have the same insertable property set. First entity class: " + entityClass.getName()
                             + ", current entity class: " + currentEntityClass.getName());
@@ -6520,7 +6519,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 if (N.notEmpty(selection.includedPropNames()) || selection.includeSubEntityProperties()) {
                     final Class<?> entityClass = selection.entityClass();
                     final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
-                            : QueryUtil.getSelectPropNames(entityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
+                            : QueryUtil.selectPropertyNames(entityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
                     final Set<String> excludedPropNames = selection.excludedPropNames();
                     final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 
@@ -6551,7 +6550,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                         sb.append(_COMMA_SPACE).append(getTableName(subEntityClass, namingPolicy));
 
-                        final String subEntityTableAlias = getTableAlias(subEntityClass);
+                        final String subEntityTableAlias = tableAlias(subEntityClass);
                         if (Strings.isNotEmpty(subEntityTableAlias)) {
                             sb.append(' ').append(subEntityTableAlias);
                         }

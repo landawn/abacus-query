@@ -174,24 +174,24 @@ public class Minus extends Clause {
     }
 
     /**
-     * Gets the subquery used by this MINUS clause.
+     * Returns the subquery used by this MINUS clause.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Retrieve the wrapped subquery
      * SubQuery subQuery = Filters.subQuery("SELECT product_id FROM sales");
      * Minus minus = new Minus(subQuery);
-     * SubQuery retrieved = minus.getSubQuery();
+     * SubQuery retrieved = minus.subQuery();
      * // returns the subquery passed to the constructor
      *
-     * // The wrapped subquery is also what getCondition() returns
-     * boolean sameAsCondition = minus.getSubQuery() == minus.getCondition();
+     * // The wrapped subquery is also what condition() returns
+     * boolean sameAsCondition = minus.subQuery() == minus.condition();
      * // returns true
      * }</pre>
      *
      * @return the {@link SubQuery} supplied at construction time
      */
-    public SubQuery getSubQuery() {
-        return (SubQuery) getCondition();
+    public SubQuery subQuery() {
+        return (SubQuery) condition();
     }
 }

@@ -21,8 +21,8 @@ public class LikeTest extends TestBase {
     @Test
     public void testConstructor() {
         Like condition = new Like("age", 25);
-        assertEquals("age", condition.getPropName());
-        assertEquals(25, (int) condition.getPropValue());
+        assertEquals("age", condition.propName());
+        assertEquals(25, (int) condition.propValue());
         assertEquals(Operator.LIKE, condition.operator());
     }
 
@@ -39,27 +39,27 @@ public class LikeTest extends TestBase {
     @Test
     public void testGetPropName() {
         Like condition = new Like("userName", "John");
-        assertEquals("userName", condition.getPropName());
+        assertEquals("userName", condition.propName());
     }
 
     @Test
     public void testGetPropValue() {
         Like condition = new Like("age", 30);
-        Integer value = condition.getPropValue();
+        Integer value = condition.propValue(Integer.class);
         assertEquals(Integer.valueOf(30), value);
     }
 
     @Test
     public void testGetPropValue_String() {
         Like condition = new Like("name", "Alice");
-        String value = condition.getPropValue();
+        String value = condition.propValue(String.class);
         assertEquals("Alice", value);
     }
 
     @Test
     public void testGetPropValue_Null() {
         Like condition = new Like("field", null);
-        assertNull(condition.getPropValue());
+        assertNull(condition.propValue());
     }
 
     @Test
@@ -218,9 +218,9 @@ public class LikeTest extends TestBase {
         Like condition = new Like("name", "John%");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("name", condition.getPropName());
+        Assertions.assertEquals("name", condition.propName());
         Assertions.assertEquals(Operator.LIKE, condition.operator());
-        Assertions.assertEquals("John%", condition.getPropValue());
+        Assertions.assertEquals("John%", condition.propValue());
     }
 
     @Test
@@ -228,8 +228,8 @@ public class LikeTest extends TestBase {
         Like condition = new Like("email", "%@example.com");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("email", condition.getPropName());
-        Assertions.assertEquals("%@example.com", condition.getPropValue());
+        Assertions.assertEquals("email", condition.propName());
+        Assertions.assertEquals("%@example.com", condition.propValue());
     }
 
     @Test
@@ -237,8 +237,8 @@ public class LikeTest extends TestBase {
         Like condition = new Like("product_name", "%phone%");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("product_name", condition.getPropName());
-        Assertions.assertEquals("%phone%", condition.getPropValue());
+        Assertions.assertEquals("product_name", condition.propName());
+        Assertions.assertEquals("%phone%", condition.propValue());
     }
 
     @Test
@@ -246,8 +246,8 @@ public class LikeTest extends TestBase {
         Like condition = new Like("word", "A___E");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("word", condition.getPropName());
-        Assertions.assertEquals("A___E", condition.getPropValue());
+        Assertions.assertEquals("word", condition.propName());
+        Assertions.assertEquals("A___E", condition.propValue());
     }
 
     @Test
@@ -255,8 +255,8 @@ public class LikeTest extends TestBase {
         Like condition = new Like("path", "%\\_%");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("path", condition.getPropName());
-        Assertions.assertEquals("%\\_%", condition.getPropValue());
+        Assertions.assertEquals("path", condition.propName());
+        Assertions.assertEquals("%\\_%", condition.propValue());
     }
 
     @Test
@@ -303,18 +303,18 @@ public class LikeTest extends TestBase {
         Like exactLength = new Like("code", "___");
         Like complexPattern = new Like("product_code", "P_%_2023");
 
-        Assertions.assertEquals("The%", startsWith.getPropValue());
-        Assertions.assertEquals("%.pdf", endsWith.getPropValue());
-        Assertions.assertEquals("%important%", contains.getPropValue());
-        Assertions.assertEquals("___", exactLength.getPropValue());
-        Assertions.assertEquals("P_%_2023", complexPattern.getPropValue());
+        Assertions.assertEquals("The%", startsWith.propValue());
+        Assertions.assertEquals("%.pdf", endsWith.propValue());
+        Assertions.assertEquals("%important%", contains.propValue());
+        Assertions.assertEquals("___", exactLength.propValue());
+        Assertions.assertEquals("P_%_2023", complexPattern.propValue());
     }
 
     @Test
     public void testEmptyPattern() {
         Like condition = new Like("field", "");
 
-        Assertions.assertEquals("", condition.getPropValue());
+        Assertions.assertEquals("", condition.propValue());
         String result = condition.toString();
         Assertions.assertTrue(result.contains("LIKE"));
         Assertions.assertTrue(result.contains("''"));
@@ -324,7 +324,7 @@ public class LikeTest extends TestBase {
     public void testNullPattern() {
         Like condition = new Like("field", null);
 
-        Assertions.assertNull(condition.getPropValue());
+        Assertions.assertNull(condition.propValue());
         String result = condition.toString();
         Assertions.assertTrue(result.contains("LIKE"));
         Assertions.assertTrue(result.contains("null"));
@@ -334,7 +334,7 @@ public class LikeTest extends TestBase {
     public void testMultipleWildcards() {
         Like condition = new Like("address", "%Street%Apt%");
 
-        Assertions.assertEquals("%Street%Apt%", condition.getPropValue());
+        Assertions.assertEquals("%Street%Apt%", condition.propValue());
         String result = condition.toString();
         Assertions.assertTrue(result.contains("address LIKE '%Street%Apt%'"));
     }
@@ -347,8 +347,8 @@ public class LikeTest extends TestBase {
         Like lowerCase = new Like("name", "john%");
         Like mixedCase = new Like("name", "JoHn%");
 
-        Assertions.assertEquals("JOHN%", upperCase.getPropValue());
-        Assertions.assertEquals("john%", lowerCase.getPropValue());
-        Assertions.assertEquals("JoHn%", mixedCase.getPropValue());
+        Assertions.assertEquals("JOHN%", upperCase.propValue());
+        Assertions.assertEquals("john%", lowerCase.propValue());
+        Assertions.assertEquals("JoHn%", mixedCase.propValue());
     }
 }

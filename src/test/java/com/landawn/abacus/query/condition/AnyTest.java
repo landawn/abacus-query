@@ -45,7 +45,7 @@ public class AnyTest extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
         Any condition = new Any(subQuery);
-        SubQuery retrieved = (SubQuery) condition.getCondition();
+        SubQuery retrieved = (SubQuery) condition.condition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -219,7 +219,7 @@ public class AnyTest extends TestBase {
 
         Assertions.assertNotNull(any);
         Assertions.assertEquals(Operator.ANY, any.operator());
-        Assertions.assertEquals(subQuery, any.getCondition());
+        Assertions.assertEquals(subQuery, any.condition());
     }
 
     @Test

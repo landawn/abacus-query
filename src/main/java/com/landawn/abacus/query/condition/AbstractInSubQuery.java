@@ -63,7 +63,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * Creates a condition for a single property.
      *
      * <p><b>&#9888;&#65039;</b> If the subquery is a structured subquery (i.e. it exposes selected property names via
-     * {@link SubQuery#getSelectPropNames()}), it must select exactly one column. Raw SQL subqueries
+     * {@link SubQuery#selectPropNames()}), it must select exactly one column. Raw SQL subqueries
      * are not validated for column arity.</p>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
@@ -89,7 +89,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * Creates a condition for multiple properties.
      *
      * <p><b>&#9888;&#65039;</b> If the subquery is a structured subquery (i.e. it exposes selected property names via
-     * {@link SubQuery#getSelectPropNames()}), the number of selected columns must match
+     * {@link SubQuery#selectPropNames()}), the number of selected columns must match
      * {@code propNames.size()}. Raw SQL subqueries are not validated for column arity.</p>
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements)
@@ -123,35 +123,35 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     }
 
     /**
-     * Gets the property name being checked in this IN or NOT IN condition. For a multi-column
-     * condition this returns the first property name; prefer {@link #getPropNames()} in that case.
+     * Returns the property name being checked in this IN or NOT IN condition. For a multi-column
+     * condition this returns the first property name; prefer {@link #propNames()} in that case.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = new SubQuery("SELECT id FROM departments WHERE active = true");
      * InSubQuery inSub = new InSubQuery("dept_id", subQuery);
-     * String prop = inSub.getPropName();   // "dept_id"
+     * String prop = inSub.propName();   // "dept_id"
      * }</pre>
      *
      * @return the (first) property name, or {@code null} for an uninitialized instance
      */
-    public String getPropName() {
+    public String propName() {
         return N.firstOrNullIfEmpty(propNames);
     }
 
     /**
-     * Gets the property names for this IN or NOT IN subquery condition.
+     * Returns the property names for this IN or NOT IN subquery condition.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = new SubQuery("SELECT id FROM departments WHERE active = true");
      * InSubQuery inSub = new InSubQuery("dept_id", subQuery);
-     * Collection<String> props = inSub.getPropNames();   // ["dept_id"]
+     * Collection<String> props = inSub.propNames();   // ["dept_id"]
      * }</pre>
      *
      * @return non-null immutable collection of property names
      */
-    public ImmutableList<String> getPropNames() {
+    public ImmutableList<String> propNames() {
         return propNames;
     }
 
@@ -170,23 +170,23 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     }
 
     /**
-     * Gets the subquery used in this IN or NOT IN subquery condition.
+     * Returns the subquery used in this IN or NOT IN subquery condition.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = new SubQuery("SELECT id FROM departments WHERE active = true");
      * InSubQuery inSub = new InSubQuery("dept_id", subQuery);
-     * SubQuery sq = inSub.getSubQuery();   // the subquery instance
+     * SubQuery sq = inSub.subQuery();   // the subquery instance
      * }</pre>
      *
      * @return the subquery, or {@code null} for an uninitialized instance
      */
-    public SubQuery getSubQuery() {
+    public SubQuery subQuery() {
         return subQuery;
     }
 
     private static void validateSubQuerySelectArity(final Collection<String> propNames, final SubQuery subQuery) {
-        final Collection<String> subQuerySelectPropNames = subQuery.getSelectPropNames();
+        final Collection<String> subQuerySelectPropNames = subQuery.selectPropNames();
 
         if (subQuerySelectPropNames != null && subQuerySelectPropNames.size() != propNames.size()) {
             throw new IllegalArgumentException("The number of selected properties in subQuery (" + subQuerySelectPropNames.size()
@@ -195,7 +195,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     }
 
     /**
-     * Gets the list of parameters from the subquery.
+     * Returns the list of parameters from the subquery.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

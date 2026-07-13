@@ -331,20 +331,20 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Gets the list of tables or entities involved in this join.
+     * Returns the list of tables or entities involved in this join.
      * Returns an immutable list of the tables that are being joined, including any aliases.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Single table join
      * Join join = new Join("orders o", new On("customers.id", "o.customer_id"));
-     * List<String> entities = join.getJoinEntities();
+     * List<String> entities = join.joinEntities();
      * // entities = ["orders o"]
      *
      * // Multi-table join
      * Join multiJoin = new Join(Arrays.asList("orders o", "order_items oi"),
      *     new On("o.id", "oi.order_id"));
-     * List<String> multiEntities = multiJoin.getJoinEntities();
+     * List<String> multiEntities = multiJoin.joinEntities();
      * // multiEntities = ["orders o", "order_items oi"]
      *
      * // Edge: the returned list is immutable
@@ -353,7 +353,7 @@ public class Join extends AbstractCondition {
      *
      * @return an immutable list of join entities
      */
-    public ImmutableList<String> getJoinEntities() {
+    public ImmutableList<String> joinEntities() {
         if (joinEntities == null) {
             return ImmutableList.empty();
         }
@@ -369,7 +369,7 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Gets the join condition.
+     * Returns the join condition.
      * Returns the condition that specifies how the tables are related, or {@code null} if no
      * condition was supplied at construction time. Callers that need a more specific subtype
      * must cast explicitly.
@@ -379,26 +379,26 @@ public class Join extends AbstractCondition {
      * // Join with ON condition
      * On onCondition = new On("customers.id", "o.customer_id");
      * Join join = new Join("orders o", onCondition);
-     * On condition = (On) join.getCondition();
+     * On condition = (On) join.condition();
      * // condition == onCondition (the same On instance is returned)
      *
      * // Join without condition
      * Join simpleJoin = new Join("products");
-     * Condition noCondition = simpleJoin.getCondition();
+     * Condition noCondition = simpleJoin.condition();
      * // noCondition == null
      *
      * // Edge: the condition is returned as-is; an incompatible cast fails
-     * Using bad = (Using) join.getCondition();   // throws ClassCastException
+     * Using bad = (Using) join.condition();   // throws ClassCastException
      * }</pre>
      *
      * @return the join condition, or {@code null} if no condition was specified
      */
-    public Condition getCondition() {
+    public Condition condition() {
         return condition;
     }
 
     /**
-     * Gets all parameters from the join condition.
+     * Returns all parameters from the join condition.
      * Returns any bound parameters used in the join condition. Returns an empty
      * list if there's no condition or the condition has no parameters.
      *

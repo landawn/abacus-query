@@ -158,7 +158,7 @@ public class HavingTest extends TestBase {
         Equal condition = Filters.eq("COUNT(*)", 5);
         Having having = new Having(condition);
 
-        Condition retrievedCondition = having.getCondition();
+        Condition retrievedCondition = having.condition();
         assertEquals(condition, retrievedCondition);
     }
 
@@ -237,7 +237,7 @@ public class HavingTest extends TestBase {
 
         Assertions.assertNotNull(having);
         Assertions.assertEquals(Operator.HAVING, having.operator());
-        Assertions.assertEquals(innerCondition, having.getCondition());
+        Assertions.assertEquals(innerCondition, having.condition());
     }
 
     @Test

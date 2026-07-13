@@ -23,8 +23,8 @@ public class LessThanOrEqualTest extends TestBase {
     @Test
     public void testConstructor() {
         LessThanOrEqual condition = new LessThanOrEqual("age", 25);
-        assertEquals("age", condition.getPropName());
-        assertEquals(25, (int) condition.getPropValue());
+        assertEquals("age", condition.propName());
+        assertEquals(25, (int) condition.propValue());
         assertEquals(Operator.LESS_THAN_OR_EQUAL, condition.operator());
     }
 
@@ -41,27 +41,27 @@ public class LessThanOrEqualTest extends TestBase {
     @Test
     public void testGetPropName() {
         LessThanOrEqual condition = new LessThanOrEqual("userName", "John");
-        assertEquals("userName", condition.getPropName());
+        assertEquals("userName", condition.propName());
     }
 
     @Test
     public void testGetPropValue() {
         LessThanOrEqual condition = new LessThanOrEqual("age", 30);
-        Integer value = condition.getPropValue();
+        Integer value = condition.propValue(Integer.class);
         assertEquals(Integer.valueOf(30), value);
     }
 
     @Test
     public void testGetPropValue_String() {
         LessThanOrEqual condition = new LessThanOrEqual("name", "Alice");
-        String value = condition.getPropValue();
+        String value = condition.propValue(String.class);
         assertEquals("Alice", value);
     }
 
     @Test
     public void testGetPropValue_Null() {
         LessThanOrEqual condition = new LessThanOrEqual("field", null);
-        assertNull(condition.getPropValue());
+        assertNull(condition.propValue());
     }
 
     @Test
@@ -199,9 +199,9 @@ public class LessThanOrEqualTest extends TestBase {
         LessThanOrEqual condition = new LessThanOrEqual("age", 18);
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("age", condition.getPropName());
+        Assertions.assertEquals("age", condition.propName());
         Assertions.assertEquals(Operator.LESS_THAN_OR_EQUAL, condition.operator());
-        Assertions.assertEquals(18, (Integer) condition.getPropValue());
+        Assertions.assertEquals(18, (Integer) condition.propValue());
     }
 
     @Test
@@ -209,8 +209,8 @@ public class LessThanOrEqualTest extends TestBase {
         LessThanOrEqual condition = new LessThanOrEqual("price", 99.99);
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("price", condition.getPropName());
-        Assertions.assertEquals(99.99, condition.getPropValue());
+        Assertions.assertEquals("price", condition.propName());
+        Assertions.assertEquals(99.99, condition.propValue());
     }
 
     @Test
@@ -218,8 +218,8 @@ public class LessThanOrEqualTest extends TestBase {
         LessThanOrEqual condition = new LessThanOrEqual("name", "Z");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("name", condition.getPropName());
-        Assertions.assertEquals("Z", condition.getPropValue());
+        Assertions.assertEquals("name", condition.propName());
+        Assertions.assertEquals("Z", condition.propValue());
     }
 
     @Test
@@ -228,8 +228,8 @@ public class LessThanOrEqualTest extends TestBase {
         LessThanOrEqual condition = new LessThanOrEqual("submit_date", date);
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("submit_date", condition.getPropName());
-        Assertions.assertEquals(date, condition.getPropValue());
+        Assertions.assertEquals("submit_date", condition.propName());
+        Assertions.assertEquals(date, condition.propValue());
     }
 
     @Test
@@ -238,8 +238,8 @@ public class LessThanOrEqualTest extends TestBase {
         LessThanOrEqual condition = new LessThanOrEqual("order_date", date);
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("order_date", condition.getPropName());
-        Assertions.assertEquals(date, condition.getPropValue());
+        Assertions.assertEquals("order_date", condition.propName());
+        Assertions.assertEquals(date, condition.propValue());
     }
 
     @Test
@@ -282,7 +282,7 @@ public class LessThanOrEqualTest extends TestBase {
         LessThanOrEqual condition = new LessThanOrEqual("field", null);
 
         Assertions.assertNotNull(condition);
-        Assertions.assertNull(condition.getPropValue());
+        Assertions.assertNull(condition.propValue());
         String result = condition.toString();
         Assertions.assertTrue(result.contains("field"));
         Assertions.assertTrue(result.contains("<="));
@@ -296,9 +296,9 @@ public class LessThanOrEqualTest extends TestBase {
         LessThanOrEqual maxPrice = new LessThanOrEqual("price", 999.99);
         LessThanOrEqual deadline = new LessThanOrEqual("submit_date", "2023-12-31");
 
-        Assertions.assertEquals(100, (Integer) maxStock.getPropValue());
-        Assertions.assertEquals(999.99, maxPrice.getPropValue());
-        Assertions.assertEquals("2023-12-31", deadline.getPropValue());
+        Assertions.assertEquals(100, (Integer) maxStock.propValue());
+        Assertions.assertEquals(999.99, maxPrice.propValue());
+        Assertions.assertEquals("2023-12-31", deadline.propValue());
     }
 
     @Test
@@ -306,8 +306,8 @@ public class LessThanOrEqualTest extends TestBase {
         // Common scenario: using LessThanOrEqual as part of a range query
         LessThanOrEqual upperBound = new LessThanOrEqual("salary", 100000);
 
-        Assertions.assertEquals("salary", upperBound.getPropName());
-        Assertions.assertEquals(100000, (Integer) upperBound.getPropValue());
+        Assertions.assertEquals("salary", upperBound.propName());
+        Assertions.assertEquals(100000, (Integer) upperBound.propValue());
         Assertions.assertEquals(Operator.LESS_THAN_OR_EQUAL, upperBound.operator());
 
         String result = upperBound.toString();

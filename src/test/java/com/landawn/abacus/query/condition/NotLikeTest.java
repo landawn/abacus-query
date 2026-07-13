@@ -22,8 +22,8 @@ public class NotLikeTest extends TestBase {
     @Test
     public void testConstructor() {
         NotLike condition = new NotLike("age", 25);
-        assertEquals("age", condition.getPropName());
-        assertEquals(25, (int) condition.getPropValue());
+        assertEquals("age", condition.propName());
+        assertEquals(25, (int) condition.propValue());
         assertEquals(Operator.NOT_LIKE, condition.operator());
     }
 
@@ -40,27 +40,27 @@ public class NotLikeTest extends TestBase {
     @Test
     public void testGetPropName() {
         NotLike condition = new NotLike("userName", "John");
-        assertEquals("userName", condition.getPropName());
+        assertEquals("userName", condition.propName());
     }
 
     @Test
     public void testGetPropValue() {
         NotLike condition = new NotLike("age", 30);
-        Integer value = condition.getPropValue();
+        Integer value = condition.propValue(Integer.class);
         assertEquals(Integer.valueOf(30), value);
     }
 
     @Test
     public void testGetPropValue_String() {
         NotLike condition = new NotLike("name", "Alice");
-        String value = condition.getPropValue();
+        String value = condition.propValue(String.class);
         assertEquals("Alice", value);
     }
 
     @Test
     public void testGetPropValue_Null() {
         NotLike condition = new NotLike("field", null);
-        assertNull(condition.getPropValue());
+        assertNull(condition.propValue());
     }
 
     @Test
@@ -218,24 +218,24 @@ public class NotLikeTest extends TestBase {
     public void testConstructorWithWildcardPercent() {
         NotLike notLike = Filters.notLike("email", "%@gmail.com");
 
-        Assertions.assertEquals("email", notLike.getPropName());
-        Assertions.assertEquals("%@gmail.com", notLike.getPropValue());
+        Assertions.assertEquals("email", notLike.propName());
+        Assertions.assertEquals("%@gmail.com", notLike.propValue());
     }
 
     @Test
     public void testConstructorWithWildcardUnderscore() {
         NotLike notLike = Filters.notLike("code", "___");
 
-        Assertions.assertEquals("code", notLike.getPropName());
-        Assertions.assertEquals("___", notLike.getPropValue());
+        Assertions.assertEquals("code", notLike.propName());
+        Assertions.assertEquals("___", notLike.propValue());
     }
 
     @Test
     public void testConstructorWithMultipleWildcards() {
         NotLike notLike = Filters.notLike("productName", "%temp%");
 
-        Assertions.assertEquals("productName", notLike.getPropName());
-        Assertions.assertEquals("%temp%", notLike.getPropValue());
+        Assertions.assertEquals("productName", notLike.propName());
+        Assertions.assertEquals("%temp%", notLike.propValue());
     }
 
     @Test
@@ -277,7 +277,7 @@ public class NotLikeTest extends TestBase {
     public void testWithNullValue() {
         NotLike notLike = Filters.notLike("name", null);
 
-        Assertions.assertNull(notLike.getPropValue());
+        Assertions.assertNull(notLike.propValue());
         Assertions.assertTrue(notLike.parameters().size() == 1);
     }
 
@@ -288,8 +288,8 @@ public class NotLikeTest extends TestBase {
         NotLike pattern2 = Filters.notLike("email", "%@%.%");
         NotLike pattern3 = Filters.notLike("code", "A_B_C%");
 
-        Assertions.assertEquals("/temp/%/%.tmp", pattern1.getPropValue());
-        Assertions.assertEquals("%@%.%", pattern2.getPropValue());
-        Assertions.assertEquals("A_B_C%", pattern3.getPropValue());
+        Assertions.assertEquals("/temp/%/%.tmp", pattern1.propValue());
+        Assertions.assertEquals("%@%.%", pattern2.propValue());
+        Assertions.assertEquals("A_B_C%", pattern3.propValue());
     }
 }

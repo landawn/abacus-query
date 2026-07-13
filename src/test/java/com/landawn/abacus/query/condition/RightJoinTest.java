@@ -30,7 +30,7 @@ public class RightJoinTest extends TestBase {
     public void testConstructor_WithCondition() {
         RightJoin join = new RightJoin("departments", new Equal("employees.dept_id", "departments.id"));
         assertNotNull(join);
-        assertNotNull(join.getCondition());
+        assertNotNull(join.condition());
         assertEquals(Operator.RIGHT_JOIN, join.operator());
     }
 
@@ -39,7 +39,7 @@ public class RightJoinTest extends TestBase {
         List<String> entities = Arrays.asList("orders", "order_items");
         RightJoin join = new RightJoin(entities, new Equal("orders.id", "order_items.order_id"));
         assertNotNull(join);
-        assertEquals(2, join.getJoinEntities().size());
+        assertEquals(2, join.joinEntities().size());
         assertEquals(Operator.RIGHT_JOIN, join.operator());
     }
 
@@ -47,7 +47,7 @@ public class RightJoinTest extends TestBase {
     public void testGetJoinEntities() {
         List<String> entities = Arrays.asList("table1", "table2");
         RightJoin join = new RightJoin(entities, null);
-        List<String> result = join.getJoinEntities();
+        List<String> result = join.joinEntities();
         assertEquals(2, result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
@@ -57,14 +57,14 @@ public class RightJoinTest extends TestBase {
     public void testGetCondition() {
         Equal condition = new Equal("a.id", "b.a_id");
         RightJoin join = new RightJoin("table_b b", condition);
-        Condition retrieved = join.getCondition();
+        Condition retrieved = join.condition();
         assertEquals(condition, retrieved);
     }
 
     @Test
     public void testGetCondition_Null() {
         RightJoin join = new RightJoin("customers");
-        assertNull(join.getCondition());
+        assertNull(join.condition());
     }
 
     @Test
@@ -149,13 +149,13 @@ public class RightJoinTest extends TestBase {
         List<String> tables = Arrays.asList("categories", "subcategories");
         And condition = new And(Arrays.asList(new Equal("products.category_id", "categories.id"), new Equal("products.subcategory_id", "subcategories.id")));
         RightJoin join = new RightJoin(tables, condition);
-        assertEquals(2, join.getJoinEntities().size());
+        assertEquals(2, join.joinEntities().size());
     }
 
     @Test
     public void testFindMissingRelationships() {
         RightJoin join = new RightJoin("products p", new Equal("order_items.product_id", "p.id"));
-        assertNotNull(join.getCondition());
+        assertNotNull(join.condition());
         assertEquals(Operator.RIGHT_JOIN, join.operator());
     }
 
@@ -165,9 +165,9 @@ public class RightJoinTest extends TestBase {
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.RIGHT_JOIN, join.operator());
-        Assertions.assertEquals(1, join.getJoinEntities().size());
-        Assertions.assertTrue(join.getJoinEntities().contains("customers"));
-        Assertions.assertNull(join.getCondition());
+        Assertions.assertEquals(1, join.joinEntities().size());
+        Assertions.assertTrue(join.joinEntities().contains("customers"));
+        Assertions.assertNull(join.condition());
     }
 
     @Test
@@ -176,9 +176,9 @@ public class RightJoinTest extends TestBase {
         RightJoin join = Filters.rightJoin("products", onClause);
 
         Assertions.assertEquals(Operator.RIGHT_JOIN, join.operator());
-        Assertions.assertEquals(1, join.getJoinEntities().size());
-        Assertions.assertTrue(join.getJoinEntities().contains("products"));
-        Assertions.assertEquals(onClause, join.getCondition());
+        Assertions.assertEquals(1, join.joinEntities().size());
+        Assertions.assertTrue(join.joinEntities().contains("products"));
+        Assertions.assertEquals(onClause, join.condition());
     }
 
     @Test
@@ -194,7 +194,7 @@ public class RightJoinTest extends TestBase {
         On complexCondition = Filters.on(Filters.expr("orders.product_id = products.id").and(Filters.eq("products.active", true)));
         RightJoin join = Filters.rightJoin("products", complexCondition);
 
-        Assertions.assertEquals(complexCondition, join.getCondition());
+        Assertions.assertEquals(complexCondition, join.condition());
         Assertions.assertEquals(1, join.parameters().size());
     }
 
@@ -205,9 +205,9 @@ public class RightJoinTest extends TestBase {
         RightJoin join = Filters.rightJoin(tables, joinCondition);
 
         Assertions.assertEquals(Operator.RIGHT_JOIN, join.operator());
-        Assertions.assertEquals(2, join.getJoinEntities().size());
-        Assertions.assertTrue(join.getJoinEntities().containsAll(tables));
-        Assertions.assertEquals(joinCondition, join.getCondition());
+        Assertions.assertEquals(2, join.joinEntities().size());
+        Assertions.assertTrue(join.joinEntities().containsAll(tables));
+        Assertions.assertEquals(joinCondition, join.condition());
     }
 
     @Test
@@ -274,7 +274,7 @@ public class RightJoinTest extends TestBase {
 
         // Would result in: RIGHT JOIN customers ON orders.customer_id = customers.id
         Assertions.assertEquals(Operator.RIGHT_JOIN, join.operator());
-        Assertions.assertEquals("customers", join.getJoinEntities().get(0));
+        Assertions.assertEquals("customers", join.joinEntities().get(0));
     }
 
     @Test
@@ -308,7 +308,7 @@ public class RightJoinTest extends TestBase {
         RightJoin join = Filters.rightJoin(tables, joinCondition);
 
         // Gets all departments and locations, even without employees
-        Assertions.assertEquals(2, join.getJoinEntities().size());
-        Assertions.assertEquals(joinCondition, join.getCondition());
+        Assertions.assertEquals(2, join.joinEntities().size());
+        Assertions.assertEquals(joinCondition, join.condition());
     }
 }

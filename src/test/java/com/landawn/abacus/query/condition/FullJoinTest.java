@@ -30,7 +30,7 @@ public class FullJoinTest extends TestBase {
     public void testConstructor_WithCondition() {
         FullJoin join = new FullJoin("employees", new Equal("departments.id", "employees.dept_id"));
         assertNotNull(join);
-        assertNotNull(join.getCondition());
+        assertNotNull(join.condition());
         assertEquals(Operator.FULL_JOIN, join.operator());
     }
 
@@ -39,7 +39,7 @@ public class FullJoinTest extends TestBase {
         List<String> entities = Arrays.asList("employees", "contractors");
         FullJoin join = new FullJoin(entities, new Equal("departments.id", "person.dept_id"));
         assertNotNull(join);
-        assertEquals(2, join.getJoinEntities().size());
+        assertEquals(2, join.joinEntities().size());
         assertEquals(Operator.FULL_JOIN, join.operator());
     }
 
@@ -47,7 +47,7 @@ public class FullJoinTest extends TestBase {
     public void testGetJoinEntities() {
         List<String> entities = Arrays.asList("table1", "table2");
         FullJoin join = new FullJoin(entities, null);
-        List<String> result = join.getJoinEntities();
+        List<String> result = join.joinEntities();
         assertEquals(2, result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
@@ -57,14 +57,14 @@ public class FullJoinTest extends TestBase {
     public void testGetCondition() {
         Equal condition = new Equal("users.id", "orders.user_id");
         FullJoin join = new FullJoin("orders", condition);
-        Condition retrieved = join.getCondition();
+        Condition retrieved = join.condition();
         assertEquals(condition, retrieved);
     }
 
     @Test
     public void testGetCondition_Null() {
         FullJoin join = new FullJoin("departments");
-        assertNull(join.getCondition());
+        assertNull(join.condition());
     }
 
     @Test
@@ -140,7 +140,7 @@ public class FullJoinTest extends TestBase {
     @Test
     public void testReconcileTwoDataSources() {
         FullJoin join = new FullJoin("external_users", new Equal("internal_users.email", "external_users.email"));
-        assertNotNull(join.getCondition());
+        assertNotNull(join.condition());
         assertEquals(Operator.FULL_JOIN, join.operator());
     }
 
@@ -148,13 +148,13 @@ public class FullJoinTest extends TestBase {
     public void testMultiTableFullJoin() {
         List<String> tables = Arrays.asList("system_a_data", "system_b_data");
         FullJoin join = new FullJoin(tables, new Equal("master_data.record_id", "source.record_id"));
-        assertEquals(2, join.getJoinEntities().size());
+        assertEquals(2, join.joinEntities().size());
     }
 
     @Test
     public void testFindDataMismatches() {
         FullJoin join = new FullJoin("warehouse_inventory", new Equal("online_inventory.product_id", "warehouse_inventory.product_id"));
-        assertNotNull(join.getCondition());
+        assertNotNull(join.condition());
         assertEquals(Operator.FULL_JOIN, join.operator());
     }
 
@@ -164,9 +164,9 @@ public class FullJoinTest extends TestBase {
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.FULL_JOIN, join.operator());
-        Assertions.assertEquals(1, join.getJoinEntities().size());
-        Assertions.assertTrue(join.getJoinEntities().contains("departments"));
-        Assertions.assertNull(join.getCondition());
+        Assertions.assertEquals(1, join.joinEntities().size());
+        Assertions.assertTrue(join.joinEntities().contains("departments"));
+        Assertions.assertNull(join.condition());
     }
 
     @Test
@@ -176,9 +176,9 @@ public class FullJoinTest extends TestBase {
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.FULL_JOIN, join.operator());
-        Assertions.assertEquals(1, join.getJoinEntities().size());
-        Assertions.assertTrue(join.getJoinEntities().contains("employees"));
-        Assertions.assertEquals(eq, join.getCondition());
+        Assertions.assertEquals(1, join.joinEntities().size());
+        Assertions.assertTrue(join.joinEntities().contains("employees"));
+        Assertions.assertEquals(eq, join.condition());
     }
 
     @Test
@@ -189,9 +189,9 @@ public class FullJoinTest extends TestBase {
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.FULL_JOIN, join.operator());
-        Assertions.assertEquals(2, join.getJoinEntities().size());
-        Assertions.assertTrue(join.getJoinEntities().containsAll(entities));
-        Assertions.assertEquals(eq, join.getCondition());
+        Assertions.assertEquals(2, join.joinEntities().size());
+        Assertions.assertTrue(join.joinEntities().containsAll(entities));
+        Assertions.assertEquals(eq, join.condition());
     }
 
     @Test

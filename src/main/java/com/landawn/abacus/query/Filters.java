@@ -492,7 +492,7 @@ public final class Filters {
     public static Or anyEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
 
-        return anyEqual(entity, QueryUtil.getSelectPropNames(entity.getClass(), false, null));
+        return anyEqual(entity, QueryUtil.selectPropertyNames(entity.getClass(), false, null));
     }
 
     /**
@@ -659,7 +659,7 @@ public final class Filters {
     public static And allEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
 
-        return allEqual(entity, QueryUtil.getSelectPropNames(entity.getClass(), false, null));
+        return allEqual(entity, QueryUtil.selectPropertyNames(entity.getClass(), false, null));
     }
 
     /**
@@ -757,9 +757,14 @@ public final class Filters {
     }
 
     /**
-     * Creates an {@code OR} condition from a collection of property maps or entities, where each non-null element forms an {@code AND} condition.
-     * If the first non-null element is a {@link Map}, all non-null elements must be maps with {@link String} keys. Otherwise, all properties of
-     * each entity will be used.
+     * Creates an {@code OR} of per-row {@code AND}-of-equals conditions &mdash; i.e. a "match any row" filter, where a row
+     * matches when <em>all</em> of its columns equal the given values. Each non-null element (a property map or entity)
+     * contributes one {@code AND} of {@code column = value} equalities via {@link #allEqual(Object)}, and those per-element
+     * {@code AND} groups are combined with {@code OR}. This is the compositional counterpart of {@link #anyEqual(Map)} /
+     * {@link #allEqual(Map)}: it is literally "any-of-{@code allEqual}".
+     *
+     * <p>If the first non-null element is a {@link Map}, all non-null elements must be maps with {@link String} keys.
+     * Otherwise, all properties of each entity are used.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -781,6 +786,9 @@ public final class Filters {
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entitiesOrPropMaps} is {@code null} or empty, if all elements are {@code null}, if the first non-null
      *                                  element is a map and any other non-null element is not a map, or if a map key is not a {@link String}
+     * @see #anyOfAllEqual(Collection, Collection)
+     * @see #anyEqual(Map)
+     * @see #allEqual(Map)
      */
     @Beta
     public static Or anyOfAllEqual(final Collection<?> entitiesOrPropMaps) {
@@ -801,12 +809,14 @@ public final class Filters {
             return or(condList);
         }
 
-        return anyOfAllEqual(entitiesOrPropMaps, QueryUtil.getSelectPropNames(firstNonNull.getClass(), false, null));
+        return anyOfAllEqual(entitiesOrPropMaps, QueryUtil.selectPropertyNames(firstNonNull.getClass(), false, null));
     }
 
     /**
-     * Creates an {@code OR} condition from a collection of entities using only specified properties.
-     * Each entity forms an {@code AND} condition with the selected properties.
+     * Creates an {@code OR} of per-row {@code AND}-of-equals conditions &mdash; a "match any row" filter &mdash; using only the
+     * specified properties of each entity. Each non-null entity contributes one {@code AND} of {@code column = value} equalities
+     * over {@code includedPropNames}, and those per-entity {@code AND} groups are combined with {@code OR}. This is the
+     * property-restricted form of {@link #anyOfAllEqual(Collection)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -820,6 +830,8 @@ public final class Filters {
      * @param includedPropNames the property names to include (must not be empty)
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entities} or {@code includedPropNames} is {@code null} or empty, or all entities are null
+     * @see #anyOfAllEqual(Collection)
+     * @see #allEqual(Object, Collection)
      */
     @Beta
     public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> includedPropNames) {
@@ -3982,7 +3994,7 @@ public final class Filters {
      * Creates a SubQuery from an entity class with selected properties and condition.
      * If {@code condition} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria}
      * or a clause (such as {@link Where}), it is automatically wrapped in a {@code WHERE} clause at
-     * construction time; {@code getCondition()} on the returned subquery returns the wrapping {@link Where}.
+     * construction time; {@code condition()} on the returned subquery returns the wrapping {@link Where}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4054,7 +4066,7 @@ public final class Filters {
      * Creates a SubQuery from an entity name with selected properties and condition.
      * If {@code condition} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria}
      * or a clause (such as {@link Where}), it is automatically wrapped in a {@code WHERE} clause at
-     * construction time; {@code getCondition()} on the returned subquery returns the wrapping {@link Where}.
+     * construction time; {@code condition()} on the returned subquery returns the wrapping {@link Where}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

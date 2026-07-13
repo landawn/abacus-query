@@ -45,7 +45,7 @@ public class ExistsTest extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
         Exists condition = new Exists(subQuery);
-        SubQuery retrieved = (SubQuery) condition.getCondition();
+        SubQuery retrieved = (SubQuery) condition.condition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -188,7 +188,7 @@ public class ExistsTest extends TestBase {
 
         Assertions.assertNotNull(exists);
         Assertions.assertEquals(Operator.EXISTS, exists.operator());
-        Assertions.assertEquals(subQuery, exists.getCondition());
+        Assertions.assertEquals(subQuery, exists.condition());
     }
 
     @Test

@@ -401,7 +401,7 @@ public enum Operator {
     }
 
     /**
-     * Gets an Operator by its string representation.
+     * Returns an Operator by its string representation.
      *
      * <p>This method performs a case-insensitive lookup against a precomputed map built once
      * during class initialization, so resolution is a constant-time operation. It accepts both
@@ -449,7 +449,7 @@ public enum Operator {
     }
 
     /**
-     * Gets the SQL string representation of this operator.
+     * Returns the SQL string representation of this operator.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

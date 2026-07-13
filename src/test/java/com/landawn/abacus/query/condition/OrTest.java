@@ -201,7 +201,7 @@ public class OrTest extends TestBase {
 
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
-        Or innerCondition = (Or) result.getCondition();
+        Or innerCondition = (Or) result.condition();
         assertEquals(2, innerCondition.conditions().size());
     }
 

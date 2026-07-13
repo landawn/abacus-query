@@ -18,7 +18,7 @@ public class IsNullTest extends TestBase {
     @Test
     public void testConstructor() {
         IsNull condition = new IsNull("email");
-        assertEquals("email", condition.getPropName());
+        assertEquals("email", condition.propName());
         assertEquals(Operator.IS, condition.operator());
     }
 
@@ -35,7 +35,7 @@ public class IsNullTest extends TestBase {
     @Test
     public void testGetPropName() {
         IsNull condition = new IsNull("phone_number");
-        assertEquals("phone_number", condition.getPropName());
+        assertEquals("phone_number", condition.propName());
     }
 
     @Test
@@ -84,7 +84,7 @@ public class IsNullTest extends TestBase {
     @Test
     public void testUseCaseScenario_UnassignedTasks() {
         IsNull assigneeCheck = new IsNull("assigned_to");
-        assertEquals("assigned_to", assigneeCheck.getPropName());
+        assertEquals("assigned_to", assigneeCheck.propName());
     }
 
     @Test
@@ -102,7 +102,7 @@ public class IsNullTest extends TestBase {
     @Test
     public void testGetPropValue() {
         IsNull condition = new IsNull("field");
-        Expression value = condition.getPropValue();
+        Expression value = condition.propValue(Expression.class);
         assertNotNull(value);
         assertEquals(IsNull.NULL, value);
     }
@@ -175,9 +175,9 @@ public class IsNullTest extends TestBase {
         IsNull condition = new IsNull("email");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("email", condition.getPropName());
+        Assertions.assertEquals("email", condition.propName());
         Assertions.assertEquals(Operator.IS, condition.operator());
-        Assertions.assertEquals(IsNull.NULL, condition.getPropValue());
+        Assertions.assertEquals(IsNull.NULL, condition.propValue());
     }
 
     @Test
@@ -187,9 +187,9 @@ public class IsNullTest extends TestBase {
         for (String propName : propNames) {
             IsNull condition = new IsNull(propName);
 
-            Assertions.assertEquals(propName, condition.getPropName());
+            Assertions.assertEquals(propName, condition.propName());
             Assertions.assertEquals(Operator.IS, condition.operator());
-            Assertions.assertEquals(IsNull.NULL, condition.getPropValue());
+            Assertions.assertEquals(IsNull.NULL, condition.propValue());
         }
     }
 
@@ -225,9 +225,9 @@ public class IsNullTest extends TestBase {
         IsNull condition = new IsNull("value");
 
         // Test methods inherited from Is
-        Assertions.assertEquals("value", condition.getPropName());
+        Assertions.assertEquals("value", condition.propName());
         Assertions.assertEquals(Operator.IS, condition.operator());
-        Assertions.assertNotNull(condition.getPropValue());
+        Assertions.assertNotNull(condition.propValue());
     }
 
     @Test
@@ -236,9 +236,9 @@ public class IsNullTest extends TestBase {
         IsNull condition2 = new IsNull("field2");
 
         // Both should share the same NULL constant
-        Assertions.assertSame(condition1.getPropValue(), condition2.getPropValue());
-        Assertions.assertEquals(IsNull.NULL, condition1.getPropValue());
-        Assertions.assertEquals(IsNull.NULL, condition2.getPropValue());
+        Assertions.assertSame(condition1.propValue(), condition2.propValue());
+        Assertions.assertEquals(IsNull.NULL, condition1.propValue());
+        Assertions.assertEquals(IsNull.NULL, condition2.propValue());
     }
 
     @Test
@@ -268,8 +268,8 @@ public class IsNullTest extends TestBase {
         for (String field : optionalFields) {
             IsNull condition = new IsNull(field);
 
-            Assertions.assertEquals(field, condition.getPropName());
-            Assertions.assertEquals(IsNull.NULL, condition.getPropValue());
+            Assertions.assertEquals(field, condition.propName());
+            Assertions.assertEquals(IsNull.NULL, condition.propValue());
 
             String result = condition.toString();
             Assertions.assertTrue(result.contains(field + " IS NULL"));
@@ -281,7 +281,7 @@ public class IsNullTest extends TestBase {
         // Common scenario after LEFT JOIN
         IsNull noMatchingRecord = new IsNull("right_table.id");
 
-        Assertions.assertEquals("right_table.id", noMatchingRecord.getPropName());
+        Assertions.assertEquals("right_table.id", noMatchingRecord.propName());
         String result = noMatchingRecord.toString();
         Assertions.assertTrue(result.contains("right_table.id IS NULL"));
     }

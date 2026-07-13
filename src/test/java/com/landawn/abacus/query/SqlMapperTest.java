@@ -68,7 +68,7 @@ public class SqlMapperTest extends TestBase {
         ParsedSql sql = mapper.get("insertUser");
         assertNotNull(sql);
 
-        ImmutableMap<String, String> retrievedAttrs = mapper.getAttributes("insertUser");
+        ImmutableMap<String, String> retrievedAttrs = mapper.attributes("insertUser");
         assertNotNull(retrievedAttrs);
         assertEquals("100", retrievedAttrs.get("batchSize"));
     }
@@ -164,7 +164,7 @@ public class SqlMapperTest extends TestBase {
 
         mapper.add("query1", "SELECT * FROM users", attrs);
 
-        ImmutableMap<String, String> retrieved = mapper.getAttributes("query1");
+        ImmutableMap<String, String> retrieved = mapper.attributes("query1");
         assertNotNull(retrieved);
         assertEquals("50", retrieved.get("fetchSize"));
         assertEquals("30", retrieved.get("timeout"));
@@ -173,14 +173,14 @@ public class SqlMapperTest extends TestBase {
     @Test
     public void testGetAttrsNonExistent() {
         SqlMapper mapper = new SqlMapper();
-        ImmutableMap<String, String> attrs = mapper.getAttributes("nonExistent");
+        ImmutableMap<String, String> attrs = mapper.attributes("nonExistent");
         assertNull(attrs);
     }
 
     @Test
     public void testGetAttrsEmptyId() {
         SqlMapper mapper = new SqlMapper();
-        ImmutableMap<String, String> attrs = mapper.getAttributes("");
+        ImmutableMap<String, String> attrs = mapper.attributes("");
         assertNull(attrs);
     }
 
@@ -259,8 +259,8 @@ public class SqlMapperTest extends TestBase {
 
         assertNotNull(copy.get("query1"));
         assertNotNull(copy.get("query2"));
-        assertNotNull(copy.getAttributes("query2"));
-        assertEquals("100", copy.getAttributes("query2").get("batchSize"));
+        assertNotNull(copy.attributes("query2"));
+        assertEquals("100", copy.attributes("query2").get("batchSize"));
     }
 
     @Test
@@ -324,7 +324,7 @@ public class SqlMapperTest extends TestBase {
 
         mapper.add("complexQuery", "SELECT * FROM large_table", attrs);
 
-        ImmutableMap<String, String> retrieved = mapper.getAttributes("complexQuery");
+        ImmutableMap<String, String> retrieved = mapper.attributes("complexQuery");
         assertEquals("200", retrieved.get(SqlMapper.BATCH_SIZE));
         assertEquals("100", retrieved.get(SqlMapper.FETCH_SIZE));
         assertEquals("60", retrieved.get(SqlMapper.TIMEOUT));
@@ -355,7 +355,7 @@ public class SqlMapperTest extends TestBase {
 
         mapper.add("query1", "SELECT * FROM users", attrs);
 
-        ImmutableMap<String, String> retrieved = mapper.getAttributes("query1");
+        ImmutableMap<String, String> retrieved = mapper.attributes("query1");
         assertNotNull(retrieved);
         assertTrue(retrieved.isEmpty());
     }
@@ -397,7 +397,7 @@ public class SqlMapperTest extends TestBase {
     @Test
     public void testGetAttrsWithNullId() {
         SqlMapper mapper = new SqlMapper();
-        ImmutableMap<String, String> attrs = mapper.getAttributes(null);
+        ImmutableMap<String, String> attrs = mapper.attributes(null);
         assertNull(attrs);
     }
 
@@ -481,7 +481,7 @@ public class SqlMapperTest extends TestBase {
     public void testGetAttrsTooLongId() {
         SqlMapper mapper = new SqlMapper();
         String longId = "a".repeat(SqlMapper.MAX_ID_LENGTH + 1);
-        ImmutableMap<String, String> attrs = mapper.getAttributes(longId);
+        ImmutableMap<String, String> attrs = mapper.attributes(longId);
         assertNull(attrs);
     }
 
@@ -506,7 +506,7 @@ public class SqlMapperTest extends TestBase {
 
         SqlMapper copy = original.copy();
 
-        ImmutableMap<String, String> copiedAttrs = copy.getAttributes("query1");
+        ImmutableMap<String, String> copiedAttrs = copy.attributes("query1");
         assertNotNull(copiedAttrs);
         assertEquals("100", copiedAttrs.get("batchSize"));
         assertEquals("30", copiedAttrs.get("timeout"));
@@ -575,7 +575,7 @@ public class SqlMapperTest extends TestBase {
         assertEquals("SELECT * FROM users WHERE id = ?", findById.originalSql());
 
         // Check attributes
-        ImmutableMap<String, String> attrs = mapper.getAttributes("updateName");
+        ImmutableMap<String, String> attrs = mapper.attributes("updateName");
         assertNotNull(attrs);
         assertEquals("100", attrs.get("batchSize"));
         assertEquals("50", attrs.get("fetchSize"));
@@ -643,7 +643,7 @@ public class SqlMapperTest extends TestBase {
         assertNotNull(sql);
         assertEquals("SELECT * FROM users", sql.originalSql());
 
-        ImmutableMap<String, String> retrievedAttrs = mapper.getAttributes("query1");
+        ImmutableMap<String, String> retrievedAttrs = mapper.attributes("query1");
         assertEquals("50", retrievedAttrs.get("batchSize"));
 
         // Test duplicate id
@@ -671,7 +671,7 @@ public class SqlMapperTest extends TestBase {
         assertEquals(mapper.get("findUser").originalSql(), loaded.get("findUser").originalSql());
         assertEquals(mapper.get("updateUser").originalSql(), loaded.get("updateUser").originalSql());
 
-        ImmutableMap<String, String> loadedAttrs = loaded.getAttributes("findUser");
+        ImmutableMap<String, String> loadedAttrs = loaded.attributes("findUser");
         assertEquals("100", loadedAttrs.get("batchSize"));
         assertEquals("50", loadedAttrs.get("fetchSize"));
     }
@@ -727,7 +727,7 @@ public class SqlMapperTest extends TestBase {
         ParsedSql sql = mapper.get("insertUser");
         assertNotNull(sql);
 
-        ImmutableMap<String, String> retrievedAttrs = mapper.getAttributes("insertUser");
+        ImmutableMap<String, String> retrievedAttrs = mapper.attributes("insertUser");
         assertNotNull(retrievedAttrs);
         assertEquals("100", retrievedAttrs.get("batchSize"));
         assertEquals("30", retrievedAttrs.get("timeout"));
@@ -855,7 +855,7 @@ public class SqlMapperTest extends TestBase {
         SqlMapper reloaded = SqlMapper.loadFrom(output.getAbsolutePath());
         assertNotNull(reloaded.get("realId"));
         assertNull(reloaded.get("evil"));
-        assertEquals("50", reloaded.getAttributes("realId").get("batchSize"));
+        assertEquals("50", reloaded.attributes("realId").get("batchSize"));
     }
 
     @Test
@@ -951,7 +951,7 @@ public class SqlMapperTest extends TestBase {
         mapper.add("insertUser", ParsedSql.parse("INSERT INTO users VALUES (?)"), attrs);
 
         assertNotNull(mapper.get("insertUser"));
-        assertEquals("100", mapper.getAttributes("insertUser").get("batchSize"));
+        assertEquals("100", mapper.attributes("insertUser").get("batchSize"));
     }
 
     @Test
@@ -959,7 +959,7 @@ public class SqlMapperTest extends TestBase {
         SqlMapper mapper = new SqlMapper();
         mapper.add("query1", ParsedSql.parse("SELECT 1"), null);
 
-        ImmutableMap<String, String> attrs = mapper.getAttributes("query1");
+        ImmutableMap<String, String> attrs = mapper.attributes("query1");
         assertNotNull(attrs);
         assertTrue(attrs.isEmpty());
     }
@@ -985,7 +985,7 @@ public class SqlMapperTest extends TestBase {
         assertNotNull(sql);
         assertEquals("SELECT * FROM users", sql.originalSql());
 
-        ImmutableMap<String, String> attrs = mapper.getAttributes("findAll");
+        ImmutableMap<String, String> attrs = mapper.attributes("findAll");
         assertNotNull(attrs);
         assertTrue(attrs.isEmpty());
     }
@@ -1044,7 +1044,7 @@ public class SqlMapperTest extends TestBase {
 
         SqlMapper mapper = SqlMapper.loadFrom(f1);
         assertEquals(1, mapper.size());
-        assertEquals("10", mapper.getAttributes("findUser").get("fetchSize"));
+        assertEquals("10", mapper.attributes("findUser").get("fetchSize"));
     }
 
     @Test
@@ -1084,7 +1084,7 @@ public class SqlMapperTest extends TestBase {
         SqlMapper mapper = SqlMapper.loadFrom(is);
         assertEquals(1, mapper.size());
         assertEquals("SELECT * FROM users", mapper.get("findUser").originalSql());
-        assertEquals("5", mapper.getAttributes("findUser").get("timeout"));
+        assertEquals("5", mapper.attributes("findUser").get("timeout"));
     }
 
     @Test
@@ -1149,7 +1149,7 @@ public class SqlMapperTest extends TestBase {
         SqlMapper loaded = SqlMapper.loadFrom(new ByteArrayInputStream(baos.toByteArray()));
         assertEquals(mapper.ids(), loaded.ids());
         assertEquals("SELECT * FROM users WHERE id = ?", loaded.get("findUser").originalSql());
-        assertEquals("100", loaded.getAttributes("findUser").get("batchSize"));
+        assertEquals("100", loaded.attributes("findUser").get("batchSize"));
     }
 
     @Test

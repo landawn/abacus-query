@@ -50,10 +50,10 @@ import com.landawn.abacus.util.Tuple.Tuple2;
  * Utility class for handling database query operations, entity-column mappings, and SQL generation helpers.
  * This class provides methods to map between entity properties and database columns, handle insert/update/select
  * operations, and manage ID field names for entities.
- * 
+ *
  * <p>The class maintains internal caches for performance optimization when dealing with entity-to-column mappings
  * and supports various naming policies for column name conversion.</p>
- * 
+ *
  * @see SqlBuilder
  * @see NamingPolicy
  */
@@ -62,7 +62,7 @@ public final class QueryUtil {
     /**
      * Regular expression pattern for validating simple column names.
      * To match, a column name must be non-empty and consist solely of letters, digits, underscores, or hyphens.
-     * 
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * boolean isValid = SIMPLE_COLUMN_NAME_PATTERN.matcher("column_name").matches();
@@ -92,7 +92,7 @@ public final class QueryUtil {
 
     /**
      * Caches, per entity class, the {@link PropInfo} objects resolved for that class's ID
-     * property names (in {@link #getIdPropNames(Class)} order). This avoids repeating the
+     * property names (in {@link #idPropertyNames(Class)} order). This avoids repeating the
      * reflective {@code BeanInfo.getPropInfo(name)} lookups on every insert-prop-name call.
      * A cached entry may contain {@code null} elements, mirroring the original per-call
      * behavior when an id name does not resolve to a {@link PropInfo}.
@@ -164,7 +164,7 @@ public final class QueryUtil {
      * }</pre>
      *
      * <p><b>Note:</b> despite the similar name, this is a different method from
-     * {@link #getProp2ColumnNameMap(Class, NamingPolicy)}, which returns a plain
+     * {@link #propertyToColumnMap(Class, NamingPolicy)}, which returns a plain
      * property-name-to-column-name map ({@code ImmutableMap<String, String>}) and is the one
      * intended for general use.</p>
      *
@@ -177,11 +177,10 @@ public final class QueryUtil {
      *         name itself is also inserted as a key mapping to {@code (columnName, hasNoDot)} (where {@code hasNoDot}
      *         reflects whether the column name contains no {@code '.'}).
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @see #getProp2ColumnNameMap(Class, NamingPolicy)
-     * @deprecated for internal use only. No public replacement is provided.
+     * @see #propertyToColumnMap(Class, NamingPolicy)
      */
-    @Deprecated
     @Beta
+    @Internal
     public static ImmutableMap<String, Tuple2<String, Boolean>> prop2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
@@ -190,7 +189,7 @@ public final class QueryUtil {
         ImmutableMap<String, Tuple2<String, Boolean>> result = null;
 
         if (namingPropColumnNameMap == null || (result = namingPropColumnNameMap.get(effectiveNamingPolicy)) == null) {
-            final ImmutableMap<String, String> prop2ColumnNameMap = getProp2ColumnNameMap(entityClass, effectiveNamingPolicy);
+            final ImmutableMap<String, String> prop2ColumnNameMap = propertyToColumnMap(entityClass, effectiveNamingPolicy);
             final Map<String, Tuple2<String, Boolean>> newProp2ColumnNameMap = N.newHashMap(prop2ColumnNameMap.size() * 2);
 
             for (final Map.Entry<String, String> entry : prop2ColumnNameMap.entrySet()) {
@@ -217,7 +216,7 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets a mapping of column names to property names for the specified entity class.
+     * Returns a mapping of column names to property names for the specified entity class.
      * The map includes variations of column names in lowercase and uppercase for case-insensitive lookups.
      * Only properties whose column name is resolvable from a {@code @Column} annotation (i.e.
      * {@link PropInfo#columnName} is present) are included; properties without a column annotation
@@ -230,7 +229,7 @@ public final class QueryUtil {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Given an entity class with @Column annotations
-     * ImmutableMap<String, String> columnToProp = QueryUtil.getColumn2PropNameMap(User.class);
+     * ImmutableMap<String, String> columnToProp = QueryUtil.columnToPropertyMap(User.class);
      *
      * // If User has @Column("User_Name") on property "userName":
      * String propName  = columnToProp.get("User_Name");   // "userName" (looked up by original column name)
@@ -243,7 +242,7 @@ public final class QueryUtil {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     @Internal
-    public static ImmutableMap<String, String> getColumn2PropNameMap(final Class<?> entityClass) {
+    public static ImmutableMap<String, String> columnToPropertyMap(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
         // Backing map is a ConcurrentHashMap, so computeIfAbsent runs the (expensive)
@@ -266,7 +265,7 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets a mapping of property names to column names for the specified entity class using the given naming policy.
+     * Returns a mapping of property names to column names for the specified entity class using the given naming policy.
      * This method handles nested properties and respects {@code @Table} annotations for column field configurations.
      *
      * <p>The naming policy determines how property names are converted to column names when no explicit
@@ -277,15 +276,15 @@ public final class QueryUtil {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Get property-to-column mapping with SNAKE_CASE naming policy
-     * ImmutableMap<String, String> propToColumn = QueryUtil.getProp2ColumnNameMap(User.class, NamingPolicy.SNAKE_CASE);
+     * // Build property-to-column mapping with SNAKE_CASE naming policy
+     * ImmutableMap<String, String> propToColumn = QueryUtil.propertyToColumnMap(User.class, NamingPolicy.SNAKE_CASE);
      *
      * // If User has property "firstName" without @Column annotation:
      * String columnName = propToColumn.get("firstName");   // "first_name"
      *
      * // With SCREAMING_SNAKE_CASE naming policy
      * ImmutableMap<String, String> propToColumnUpper =
-     *     QueryUtil.getProp2ColumnNameMap(User.class, NamingPolicy.SCREAMING_SNAKE_CASE);
+     *     QueryUtil.propertyToColumnMap(User.class, NamingPolicy.SCREAMING_SNAKE_CASE);
      * String upperColumn = propToColumnUpper.get("firstName");   // "FIRST_NAME"
      * }</pre>
      *
@@ -294,7 +293,7 @@ public final class QueryUtil {
      * @return an immutable map of property names to column names, or an empty immutable map if {@code entityClass} is {@code null} or is a {@link Map} type
      */
     @Internal
-    public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+    public static ImmutableMap<String, String> propertyToColumnMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
         if (entityClass == null || Map.class.isAssignableFrom(entityClass)) {
             return ImmutableMap.empty();
@@ -371,7 +370,7 @@ public final class QueryUtil {
                             remainingNestedPropDepth - 1);
 
                     if (N.notEmpty(subPropColumnNameMap)) {
-                        final String subTableAliasOrName = SqlBuilder.getTableAliasOrName(propType.javaType(), namingPolicy);
+                        final String subTableAliasOrName = SqlBuilder.tableAliasOrName(propType.javaType(), namingPolicy);
 
                         for (final Map.Entry<String, String> entry : subPropColumnNameMap.entrySet()) {
                             propColumnNameMap.put(propInfo.name + SK.PERIOD + entry.getKey(), subTableAliasOrName + SK.PERIOD + entry.getValue());
@@ -407,7 +406,7 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets the property names to be used for INSERT operations on the given entity instance.
+     * Returns the property names to be used for INSERT operations on the given entity instance.
      * This method considers ID fields and excludes properties marked as non-insertable.
      *
      * <p>The method intelligently handles ID fields:</p>
@@ -427,12 +426,12 @@ public final class QueryUtil {
      * // user.id is at its default value (e.g. null for Long, 0 for long primitive)
      * // so the "id" property will be excluded.
      *
-     * Collection<String> insertProps = QueryUtil.getInsertPropNames(user, null);
+     * Collection<String> insertProps = QueryUtil.insertPropertyNames(user, null);
      * // Returns: ["name", "email", ...] (excludes "id" since it has default value)
      *
      * // With excluded properties
      * Set<String> excluded = N.asSet("email");
-     * Collection<String> filteredProps = QueryUtil.getInsertPropNames(user, excluded);
+     * Collection<String> filteredProps = QueryUtil.insertPropertyNames(user, excluded);
      * // Returns: ["name", ...] (excludes both "id" and "email")
      * }</pre>
      *
@@ -442,17 +441,17 @@ public final class QueryUtil {
      * @throws IllegalArgumentException if {@code entity} is {@code null}
      */
     @Internal
-    public static ImmutableList<String> getInsertPropNames(final Object entity, final Set<String> excludedPropNames) {
+    public static ImmutableList<String> insertPropertyNames(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, "entity");
 
         final Class<?> entityClass = entity.getClass();
 
         // Resolve the ID PropInfo array once per class (cached); on subsequent calls this
         // is just a value read instead of repeated reflective BeanInfo.getPropInfo lookups.
-        // The array mirrors getIdPropNames(entityClass) order and may contain null
+        // The array mirrors idPropertyNames(entityClass) order and may contain null
         // elements where an id name does not resolve, exactly as the original per-call code.
         final PropInfo[] idPropInfos = idPropInfosPool.computeIfAbsent(entityClass, cls -> {
-            final Collection<String> idPropNames = getIdPropNames(cls);
+            final Collection<String> idPropNames = idPropertyNames(cls);
             final BeanInfo entityInfo = ParserUtil.getBeanInfo(cls);
             final PropInfo[] resolved = new PropInfo[idPropNames.size()];
             int i = 0;
@@ -499,7 +498,7 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets the property names to be used for INSERT operations on the given entity class.
+     * Returns the property names to be used for INSERT operations on the given entity class.
      * This method returns all insertable properties (including ID fields) excluding those specified in {@code excludedPropNames}.
      *
      * <p>Unlike the instance-based version, this method does not check for default ID values since no
@@ -508,12 +507,12 @@ public final class QueryUtil {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Get all insertable property names for a class
-     * Collection<String> insertProps = QueryUtil.getInsertPropNames(User.class, null);
+     * Collection<String> insertProps = QueryUtil.insertPropertyNames(User.class, null);
      * // Returns: ["id", "name", "email", "createdDate", ...]
      *
      * // Exclude specific properties
      * Set<String> excluded = N.asSet("createdDate", "updatedDate");
-     * Collection<String> filteredProps = QueryUtil.getInsertPropNames(User.class, excluded);
+     * Collection<String> filteredProps = QueryUtil.insertPropertyNames(User.class, excluded);
      * // Returns: ["id", "name", "email", ...]
      * }</pre>
      *
@@ -523,7 +522,7 @@ public final class QueryUtil {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     @Internal
-    public static ImmutableList<String> getInsertPropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
+    public static ImmutableList<String> insertPropertyNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
         if (N.isEmpty(excludedPropNames)) {
@@ -540,7 +539,7 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets the property names to be used for SELECT operations on the given entity class.
+     * Returns the property names to be used for SELECT operations on the given entity class.
      * This method can optionally include sub-entity properties for nested object retrieval.
      *
      * <p>When {@code includeSubEntityProperties} is {@code true}, the method returns nested properties using
@@ -550,16 +549,16 @@ public final class QueryUtil {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Get top-level properties only
-     * Collection<String> selectProps = QueryUtil.getSelectPropNames(User.class, false, null);
+     * Collection<String> selectProps = QueryUtil.selectPropertyNames(User.class, false, null);
      * // Returns: ["id", "name", "email", ...]
      *
      * // Include sub-entity properties (e.g., nested Address)
-     * Collection<String> allProps = QueryUtil.getSelectPropNames(User.class, true, null);
+     * Collection<String> allProps = QueryUtil.selectPropertyNames(User.class, true, null);
      * // Returns: ["id", "name", "email", "address.street", "address.city", ...]
      *
      * // Exclude specific properties
      * Set<String> excluded = N.asSet("email");
-     * Collection<String> filteredProps = QueryUtil.getSelectPropNames(User.class, false, excluded);
+     * Collection<String> filteredProps = QueryUtil.selectPropertyNames(User.class, false, excluded);
      * // Returns: ["id", "name", ...]
      * }</pre>
      *
@@ -572,7 +571,7 @@ public final class QueryUtil {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     @Internal
-    public static ImmutableList<String> getSelectPropNames(final Class<?> entityClass, final boolean includeSubEntityProperties,
+    public static ImmutableList<String> selectPropertyNames(final Class<?> entityClass, final boolean includeSubEntityProperties,
             final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
@@ -608,14 +607,14 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets the property names to be used for SELECT operations on the given entity instance.
+     * Returns the property names to be used for SELECT operations on the given entity instance.
      * This is an instance-based convenience overload that derives the entity class via
-     * {@code entity.getClass()} and delegates to {@link #getSelectPropNames(Class, boolean, Set)}.
+     * {@code entity.getClass()} and delegates to {@link #selectPropertyNames(Class, boolean, Set)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User();
-     * Collection<String> selectProps = QueryUtil.getSelectPropNames(user, false, null);
+     * Collection<String> selectProps = QueryUtil.selectPropertyNames(user, false, null);
      * // Returns: ["id", "name", "email", ...]
      * }</pre>
      *
@@ -624,17 +623,18 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return an immutable list of property names suitable for SELECT operations
      * @throws IllegalArgumentException if {@code entity} is {@code null}
-     * @see #getSelectPropNames(Class, boolean, Set)
+     * @see #selectPropertyNames(Class, boolean, Set)
      */
     @Internal
-    public static ImmutableList<String> getSelectPropNames(final Object entity, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
+    public static ImmutableList<String> selectPropertyNames(final Object entity, final boolean includeSubEntityProperties,
+            final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, "entity");
 
-        return getSelectPropNames(entity.getClass(), includeSubEntityProperties, excludedPropNames);
+        return selectPropertyNames(entity.getClass(), includeSubEntityProperties, excludedPropNames);
     }
 
     /**
-     * Gets the property names to be used for UPDATE operations on the given entity class.
+     * Returns the property names to be used for UPDATE operations on the given entity class.
      * This method excludes properties marked as non-updatable. Note that a plain read-write
      * {@code @Id} property is <i>not</i> excluded; only {@code @ReadOnly}/{@code @ReadOnlyId}
      * (read-only) id properties are.
@@ -651,11 +651,11 @@ public final class QueryUtil {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Account declares a plain read-write @Id "id", so it remains updatable.
-     * Collection<String> updateProps = QueryUtil.getUpdatePropNames(Account.class, null);
+     * Collection<String> updateProps = QueryUtil.updatePropertyNames(Account.class, null);
      * // returns ["id", "gui", "emailAddress", "firstName", ...] (a plain @Id is NOT excluded)
      *
      * // Exclude additional properties explicitly.
-     * Collection<String> filteredProps = QueryUtil.getUpdatePropNames(Account.class, N.asSet("createTime"));
+     * Collection<String> filteredProps = QueryUtil.updatePropertyNames(Account.class, N.asSet("createTime"));
      * // returns the same list without "createTime"
      * }</pre>
      *
@@ -665,7 +665,7 @@ public final class QueryUtil {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     @Internal
-    public static ImmutableList<String> getUpdatePropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
+    public static ImmutableList<String> updatePropertyNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
         if (N.isEmpty(excludedPropNames)) {
@@ -682,32 +682,32 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets the property names to be used for UPDATE operations on the given entity instance.
+     * Returns the property names to be used for UPDATE operations on the given entity instance.
      * This is an instance-based convenience overload that derives the entity class via
-     * {@code entity.getClass()} and delegates to {@link #getUpdatePropNames(Class, Set)}.
+     * {@code entity.getClass()} and delegates to {@link #updatePropertyNames(Class, Set)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Account account = new Account();
-     * Collection<String> updateProps = QueryUtil.getUpdatePropNames(account, null);
-     * // Returns the same names as getUpdatePropNames(Account.class, null)
+     * Collection<String> updateProps = QueryUtil.updatePropertyNames(account, null);
+     * // Returns the same names as updatePropertyNames(Account.class, null)
      * }</pre>
      *
      * @param entity the entity instance to analyze (must not be {@code null})
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return an immutable list of property names suitable for UPDATE operations
      * @throws IllegalArgumentException if {@code entity} is {@code null}
-     * @see #getUpdatePropNames(Class, Set)
+     * @see #updatePropertyNames(Class, Set)
      */
     @Internal
-    public static ImmutableList<String> getUpdatePropNames(final Object entity, final Set<String> excludedPropNames) {
+    public static ImmutableList<String> updatePropertyNames(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, "entity");
 
-        return getUpdatePropNames(entity.getClass(), excludedPropNames);
+        return updatePropertyNames(entity.getClass(), excludedPropNames);
     }
 
     /**
-     * Gets the ID field names for the specified entity class.
+     * Returns the ID property names for the specified entity class.
      * ID fields are identified by {@code @Id} annotations on the entity properties.
      *
      * <p>This method returns all properties annotated with {@code @Id}. For entities without
@@ -715,26 +715,26 @@ public final class QueryUtil {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Get ID field names for an entity with @Id annotation
-     * List<String> idFields = QueryUtil.getIdPropNames(User.class);
+     * // Get ID property names for an entity with @Id annotation
+     * List<String> idFields = QueryUtil.idPropertyNames(User.class);
      * // Returns: ["id"] for a class with @Id on the "id" property
      *
      * // Composite key example
-     * List<String> compositeIds = QueryUtil.getIdPropNames(OrderItem.class);
+     * List<String> compositeIds = QueryUtil.idPropertyNames(OrderItem.class);
      * // Returns: ["orderId", "itemId"] for a composite key entity
      *
      * // Entity without @Id returns empty list
-     * List<String> noIds = QueryUtil.getIdPropNames(LogEntry.class);
+     * List<String> noIds = QueryUtil.idPropertyNames(LogEntry.class);
      * // Returns: []
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
-     * @return an immutable list of ID field names, or an empty list if no ID fields are defined
+     * @return an immutable list of ID property names, or an empty list if no ID properties are defined
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     @Internal
     @Immutable
-    public static ImmutableList<String> getIdPropNames(final Class<?> entityClass) {
+    public static ImmutableList<String> idPropertyNames(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
         return ParserUtil.getBeanInfo(entityClass).idPropNameList;
@@ -853,7 +853,7 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets the table alias from the {@code @Table} annotation on the entity class.
+     * Returns the table alias from the {@code @Table} annotation on the entity class.
      * The alias can be used in SQL queries to reference the table with a shorter name.
      *
      * <p>If no {@code @Table} annotation exists, this method returns {@code null}. If {@code @Table} is present
@@ -862,15 +862,15 @@ public final class QueryUtil {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Given: @Table(name = "users", alias = "u") on User class
-     * String alias = QueryUtil.getTableAlias(User.class);
+     * String alias = QueryUtil.tableAlias(User.class);
      * // Returns: "u"
      *
      * // Given: @Table(name = "orders") on Order class (no alias)
-     * String alias2 = QueryUtil.getTableAlias(Order.class);
+     * String alias2 = QueryUtil.tableAlias(Order.class);
      * // Returns: "" (empty string when alias is not specified)
      *
      * // Given: no @Table annotation on LogEntry class
-     * String alias3 = QueryUtil.getTableAlias(LogEntry.class);
+     * String alias3 = QueryUtil.tableAlias(LogEntry.class);
      * // Returns: null
      * }</pre>
      *
@@ -879,7 +879,7 @@ public final class QueryUtil {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     @Internal
-    public static String getTableAlias(final Class<?> entityClass) {
+    public static String tableAlias(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
 
         final Table anno = entityClass.getAnnotation(Table.class);
@@ -887,7 +887,7 @@ public final class QueryUtil {
     }
 
     /**
-     * Gets the table name and optional alias for the entity class using the default naming policy.
+     * Returns the table name and optional alias for the entity class using the default naming policy.
      * If {@code @Table} annotation is present, uses its values; otherwise derives the table name from the class name
      * using {@code NamingPolicy.SNAKE_CASE}.
      *
@@ -897,15 +897,15 @@ public final class QueryUtil {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Given: @Table(name = "users", alias = "u") on User class
-     * String tableAndAlias = QueryUtil.getTableNameAndAlias(User.class);
+     * String tableAndAlias = QueryUtil.tableNameAndAlias(User.class);
      * // Returns: "users u"
      *
      * // Given: @Table(name = "orders") on Order class (no alias)
-     * String tableOnly = QueryUtil.getTableNameAndAlias(Order.class);
+     * String tableOnly = QueryUtil.tableNameAndAlias(Order.class);
      * // Returns: "orders"
      *
      * // Given: no @Table annotation on MyEntity class
-     * String derived = QueryUtil.getTableNameAndAlias(MyEntity.class);
+     * String derived = QueryUtil.tableNameAndAlias(MyEntity.class);
      * // Returns: "my_entity" (derived from class name using SNAKE_CASE)
      * }</pre>
      *
@@ -914,12 +914,12 @@ public final class QueryUtil {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     @Internal
-    public static String getTableNameAndAlias(final Class<?> entityClass) {
-        return getTableNameAndAlias(entityClass, NamingPolicy.SNAKE_CASE);
+    public static String tableNameAndAlias(final Class<?> entityClass) {
+        return tableNameAndAlias(entityClass, NamingPolicy.SNAKE_CASE);
     }
 
     /**
-     * Gets the table name and optional alias for the entity class using the specified naming policy.
+     * Returns the table name and optional alias for the entity class using the specified naming policy.
      * The table name is resolved the same way the query builders resolve it: from the {@code @Table}
      * annotation ({@link Table#name() name} or its deprecated {@code value()} alias) or a JPA
      * {@code javax.persistence}/{@code jakarta.persistence} {@code @Table} annotation; only when no
@@ -932,14 +932,14 @@ public final class QueryUtil {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Given: @Table(name = "users", alias = "u") - annotation takes priority
-     * String tableAndAlias = QueryUtil.getTableNameAndAlias(User.class, NamingPolicy.SCREAMING_SNAKE_CASE);
+     * String tableAndAlias = QueryUtil.tableNameAndAlias(User.class, NamingPolicy.SCREAMING_SNAKE_CASE);
      * // Returns: "users u" (annotation values used as-is, naming policy ignored)
      *
      * // Given: no @Table annotation on MyEntity class
-     * String snakeCase = QueryUtil.getTableNameAndAlias(MyEntity.class, NamingPolicy.SNAKE_CASE);
+     * String snakeCase = QueryUtil.tableNameAndAlias(MyEntity.class, NamingPolicy.SNAKE_CASE);
      * // Returns: "my_entity"
      *
-     * String upperCase = QueryUtil.getTableNameAndAlias(MyEntity.class, NamingPolicy.SCREAMING_SNAKE_CASE);
+     * String upperCase = QueryUtil.tableNameAndAlias(MyEntity.class, NamingPolicy.SCREAMING_SNAKE_CASE);
      * // Returns: "MY_ENTITY"
      * }</pre>
      *
@@ -950,7 +950,7 @@ public final class QueryUtil {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     @Internal
-    public static String getTableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+    public static String tableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
 

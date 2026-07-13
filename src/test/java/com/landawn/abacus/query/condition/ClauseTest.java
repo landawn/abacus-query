@@ -26,7 +26,7 @@ public class ClauseTest extends TestBase {
         TestClause clause = new TestClause(Operator.WHERE, condition);
         assertNotNull(clause);
         assertNotNull(clause.operator());
-        assertNotNull(clause.getCondition());
+        assertNotNull(clause.condition());
     }
 
     @Test
@@ -34,7 +34,7 @@ public class ClauseTest extends TestBase {
         Condition condition = Filters.eq("status", "active");
         TestClause clause = new TestClause(Operator.WHERE, condition);
 
-        Condition retrieved = clause.getCondition();
+        Condition retrieved = clause.condition();
 
         assertEquals(condition, retrieved);
     }
@@ -145,8 +145,8 @@ public class ClauseTest extends TestBase {
         GreaterThan gt = Filters.gt("price", 100);
         TestClause clause = new TestClause(Operator.WHERE, gt);
 
-        // Test getCondition
-        Condition retrieved = clause.getCondition();
+        // Test condition
+        Condition retrieved = clause.condition();
         Assertions.assertEquals(gt, retrieved);
 
         // Test parameters

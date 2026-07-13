@@ -22,8 +22,8 @@ public class GreaterThanOrEqualTest extends TestBase {
     @Test
     public void testConstructor() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("age", 25);
-        assertEquals("age", condition.getPropName());
-        assertEquals(25, (int) condition.getPropValue());
+        assertEquals("age", condition.propName());
+        assertEquals(25, (int) condition.propValue());
         assertEquals(Operator.GREATER_THAN_OR_EQUAL, condition.operator());
     }
 
@@ -40,27 +40,27 @@ public class GreaterThanOrEqualTest extends TestBase {
     @Test
     public void testGetPropName() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("userName", "John");
-        assertEquals("userName", condition.getPropName());
+        assertEquals("userName", condition.propName());
     }
 
     @Test
     public void testGetPropValue() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("age", 30);
-        Integer value = condition.getPropValue();
+        Integer value = condition.propValue(Integer.class);
         assertEquals(Integer.valueOf(30), value);
     }
 
     @Test
     public void testGetPropValue_String() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("name", "Alice");
-        String value = condition.getPropValue();
+        String value = condition.propValue(String.class);
         assertEquals("Alice", value);
     }
 
     @Test
     public void testGetPropValue_Null() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("field", null);
-        assertNull(condition.getPropValue());
+        assertNull(condition.propValue());
     }
 
     @Test
@@ -197,8 +197,8 @@ public class GreaterThanOrEqualTest extends TestBase {
     public void testConstructorWithNullValue() {
         GreaterThanOrEqual ge = Filters.ge("name", null);
         Assertions.assertNotNull(ge);
-        Assertions.assertEquals("name", ge.getPropName());
-        Assertions.assertNull(ge.getPropValue());
+        Assertions.assertEquals("name", ge.propName());
+        Assertions.assertNull(ge.propValue());
     }
 
     @Test

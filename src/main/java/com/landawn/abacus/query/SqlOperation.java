@@ -209,10 +209,16 @@ public enum SqlOperation {
     /**
      * Resolves an operation token, returning {@link #UNKNOWN} for {@code null} or unsupported input.
      *
+     * <pre>{@code
+     * SqlOperation.fromOrUnknown("select");   // SELECT
+     * SqlOperation.fromOrUnknown("TRUNCATE"); // UNKNOWN
+     * SqlOperation.fromOrUnknown(null);        // UNKNOWN
+     * }</pre>
+     *
      * @param token the SQL operation token or enum constant name; may be {@code null}
      * @return the resolved operation, or {@link #UNKNOWN} when no operation matches
      */
-    public static SqlOperation from(final String token) {
+    public static SqlOperation fromOrUnknown(final String token) {
         final SqlOperation operation = of(token);
         return operation == null ? UNKNOWN : operation;
     }

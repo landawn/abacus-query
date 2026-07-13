@@ -31,8 +31,8 @@ public class NotInTest extends TestBase {
         List<String> values = Arrays.asList("deleted", "archived", "suspended");
         NotIn condition = new NotIn("status", values);
 
-        assertEquals("status", condition.getPropName());
-        assertEquals(3, condition.getValues().size());
+        assertEquals("status", condition.propName());
+        assertEquals(3, condition.values().size());
         assertEquals(Operator.NOT_IN, condition.operator());
     }
 
@@ -56,8 +56,8 @@ public class NotInTest extends TestBase {
         Set<Integer> excludedDepts = new HashSet<>(Arrays.asList(10, 20, 30));
         NotIn condition = new NotIn("department_id", excludedDepts);
 
-        assertEquals("department_id", condition.getPropName());
-        assertEquals(3, condition.getValues().size());
+        assertEquals("department_id", condition.propName());
+        assertEquals(3, condition.values().size());
     }
 
     @Test
@@ -65,13 +65,13 @@ public class NotInTest extends TestBase {
         List<String> values = Arrays.asList("A", "B", "C");
         NotIn condition = new NotIn("status", values);
 
-        assertNotSame(values, condition.getValues());
+        assertNotSame(values, condition.values());
     }
 
     @Test
     public void testGetPropName() {
         NotIn condition = new NotIn("status", Arrays.asList("inactive"));
-        assertEquals("status", condition.getPropName());
+        assertEquals("status", condition.propName());
     }
 
     @Test
@@ -79,7 +79,7 @@ public class NotInTest extends TestBase {
         List<Integer> values = Arrays.asList(1, 2, 3);
         NotIn condition = new NotIn("id", values);
 
-        List<?> result = condition.getValues();
+        List<?> result = condition.values();
         assertNotNull(result);
         assertEquals(3, result.size());
     }
@@ -217,8 +217,8 @@ public class NotInTest extends TestBase {
     public void testConstructor_SingleValue() {
         NotIn condition = new NotIn("type", Arrays.asList("test"));
 
-        assertEquals("type", condition.getPropName());
-        assertEquals(1, condition.getValues().size());
+        assertEquals("type", condition.propName());
+        assertEquals(1, condition.values().size());
     }
 
     @Test
@@ -253,8 +253,8 @@ public class NotInTest extends TestBase {
         NotIn notIn = Filters.notIn("status", values);
 
         Assertions.assertNotNull(notIn);
-        Assertions.assertEquals("status", notIn.getPropName());
-        Assertions.assertEquals(values, notIn.getValues());
+        Assertions.assertEquals("status", notIn.propName());
+        Assertions.assertEquals(values, notIn.values());
         Assertions.assertEquals(Operator.NOT_IN, notIn.operator());
     }
 
@@ -263,9 +263,9 @@ public class NotInTest extends TestBase {
         Set<Integer> values = new HashSet<>(Arrays.asList(1, 2, 3, 4, 5));
         NotIn notIn = Filters.notIn("userId", values);
 
-        Assertions.assertEquals("userId", notIn.getPropName());
-        Assertions.assertEquals(5, notIn.getValues().size());
-        Assertions.assertTrue(notIn.getValues().containsAll(values));
+        Assertions.assertEquals("userId", notIn.propName());
+        Assertions.assertEquals(5, notIn.values().size());
+        Assertions.assertTrue(notIn.values().containsAll(values));
     }
 
     @Test
@@ -346,11 +346,11 @@ public class NotInTest extends TestBase {
         List<Object> values = Arrays.asList(1, "two", 3.0, true);
         NotIn notIn = Filters.notIn("mixedField", values);
 
-        Assertions.assertEquals(4, notIn.getValues().size());
-        Assertions.assertTrue(notIn.getValues().contains(1));
-        Assertions.assertTrue(notIn.getValues().contains("two"));
-        Assertions.assertTrue(notIn.getValues().contains(3.0));
-        Assertions.assertTrue(notIn.getValues().contains(true));
+        Assertions.assertEquals(4, notIn.values().size());
+        Assertions.assertTrue(notIn.values().contains(1));
+        Assertions.assertTrue(notIn.values().contains("two"));
+        Assertions.assertTrue(notIn.values().contains(3.0));
+        Assertions.assertTrue(notIn.values().contains(true));
     }
 
     @Test
@@ -362,7 +362,7 @@ public class NotInTest extends TestBase {
 
         NotIn notIn = Filters.notIn("id", values);
 
-        Assertions.assertEquals(1000, notIn.getValues().size());
+        Assertions.assertEquals(1000, notIn.values().size());
         Assertions.assertEquals(1000, notIn.parameters().size());
     }
 
@@ -374,7 +374,7 @@ public class NotInTest extends TestBase {
 
         assertEquals("(first_name, last_name) NOT IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.NO_CHANGE));
         assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), condition.parameters());
-        assertEquals(Arrays.asList("first_name", "last_name"), new ArrayList<>(condition.getPropNames()));
+        assertEquals(Arrays.asList("first_name", "last_name"), new ArrayList<>(condition.propNames()));
         assertEquals(Operator.NOT_IN, condition.operator());
     }
 
@@ -382,9 +382,9 @@ public class NotInTest extends TestBase {
     public void testRowValueConstructor_AllowsSinglePropName() {
         NotIn condition = new NotIn(Arrays.asList("a"), Arrays.asList(Arrays.asList(1), Arrays.asList(2)));
 
-        assertEquals(Arrays.asList("a"), new ArrayList<>(condition.getPropNames()));
-        assertEquals("a", condition.getPropName());
-        assertEquals(Arrays.asList(Arrays.asList(1), Arrays.asList(2)), condition.getValues());
+        assertEquals(Arrays.asList("a"), new ArrayList<>(condition.propNames()));
+        assertEquals("a", condition.propName());
+        assertEquals(Arrays.asList(Arrays.asList(1), Arrays.asList(2)), condition.values());
         assertEquals(Arrays.asList(1, 2), condition.parameters());
         assertEquals("(a) NOT IN ((1), (2))", condition.toString(NamingPolicy.NO_CHANGE));
 

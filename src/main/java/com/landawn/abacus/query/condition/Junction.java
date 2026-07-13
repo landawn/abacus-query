@@ -219,7 +219,7 @@ public class Junction extends ComposableCondition {
     }
 
     /**
-     * Gets the list of conditions contained in this junction.
+     * Returns the list of conditions contained in this junction.
      * The returned list is an immutable view; attempts to modify it
      * will throw {@link UnsupportedOperationException}.
      *
@@ -295,7 +295,7 @@ public class Junction extends ComposableCondition {
     }
 
     /**
-     * Gets all parameters from all conditions in this junction.
+     * Returns all parameters from all conditions in this junction.
      * This method recursively collects parameters from all nested conditions,
      * including those in nested junctions. The order of parameters matches
      * the order they would appear in the generated SQL.

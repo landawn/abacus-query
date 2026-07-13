@@ -33,62 +33,62 @@ public class CriteriaTest extends TestBase {
     @Test
     public void testPreselect() {
         Criteria criteria = Criteria.builder().build();
-        String selectModifier = criteria.getSelectModifier();
+        String selectModifier = criteria.selectModifier();
         assertNull(selectModifier);
     }
 
     @Test
     public void testPreselectSetter() {
         Criteria criteria = Criteria.builder().selectModifier("DISTINCT").build();
-        assertEquals("DISTINCT", criteria.getSelectModifier());
+        assertEquals("DISTINCT", criteria.selectModifier());
     }
 
     @Test
     public void testGetJoins() {
         Criteria criteria = Criteria.builder().build();
-        List<Join> joins = criteria.getJoins();
+        List<Join> joins = criteria.joins();
         assertNotNull(joins);
     }
 
     @Test
     public void testGetWhere() {
         Criteria criteria = Criteria.builder().build();
-        Clause where = criteria.getWhere();
+        Clause where = criteria.where();
         assertNull(where);
     }
 
     @Test
     public void testGetGroupBy() {
         Criteria criteria = Criteria.builder().build();
-        Clause groupBy = criteria.getGroupBy();
+        Clause groupBy = criteria.groupBy();
         assertNull(groupBy);
     }
 
     @Test
     public void testGetHaving() {
         Criteria criteria = Criteria.builder().build();
-        Clause having = criteria.getHaving();
+        Clause having = criteria.having();
         assertNull(having);
     }
 
     @Test
     public void testGetAggregation() {
         Criteria criteria = Criteria.builder().build();
-        List<Clause> aggregation = criteria.getSetOperations();
+        List<Clause> aggregation = criteria.setOperations();
         assertNotNull(aggregation);
     }
 
     @Test
     public void testGetOrderBy() {
         Criteria criteria = Criteria.builder().build();
-        Clause orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.orderBy();
         assertNull(orderBy);
     }
 
     @Test
     public void testGetLimit() {
         Criteria criteria = Criteria.builder().build();
-        Limit limit = criteria.getLimit();
+        Limit limit = criteria.limit();
         assertNull(limit);
     }
 
@@ -119,7 +119,7 @@ public class CriteriaTest extends TestBase {
     public void testDistinct() {
         Criteria criteria = Criteria.builder().distinct().build();
         assertNotNull(criteria);
-        assertNotNull(criteria.getSelectModifier());
+        assertNotNull(criteria.selectModifier());
     }
 
     @Test
@@ -145,7 +145,7 @@ public class CriteriaTest extends TestBase {
         Join join = new LeftJoin("orders", Filters.expr("users.id = orders.user_id"));
         Criteria criteria = Criteria.builder().join(join).build();
         assertNotNull(criteria);
-        assertEquals(1, criteria.getJoins().size());
+        assertEquals(1, criteria.joins().size());
     }
 
     @Test
@@ -154,7 +154,7 @@ public class CriteriaTest extends TestBase {
         Join join2 = new InnerJoin("products", Filters.expr("orders.product_id = products.id"));
         Criteria criteria = Criteria.builder().join(Arrays.asList(join1, join2)).build();
         assertNotNull(criteria);
-        assertEquals(2, criteria.getJoins().size());
+        assertEquals(2, criteria.joins().size());
     }
 
     @Test
@@ -187,7 +187,7 @@ public class CriteriaTest extends TestBase {
         Condition condition = Filters.equal("name", "John");
         Criteria criteria = Criteria.builder().where(condition).build();
         assertNotNull(criteria);
-        assertNotNull(criteria.getWhere());
+        assertNotNull(criteria.where());
     }
 
     @Test
@@ -342,14 +342,14 @@ public class CriteriaTest extends TestBase {
         Limit limit = new Limit(10);
         Criteria criteria = Criteria.builder().limit(limit).build();
         assertNotNull(criteria);
-        assertEquals(limit, criteria.getLimit());
+        assertEquals(limit, criteria.limit());
     }
 
     @Test
     public void testLimitInt() {
         Criteria criteria = Criteria.builder().limit(20).build();
         assertNotNull(criteria);
-        assertNotNull(criteria.getLimit());
+        assertNotNull(criteria.limit());
     }
 
     @Test
@@ -368,23 +368,23 @@ public class CriteriaTest extends TestBase {
                 .limit(10)
                 .build();
         assertNotNull(criteria);
-        assertNotNull(criteria.getWhere());
-        assertNotNull(criteria.getGroupBy());
-        assertNotNull(criteria.getHaving());
-        assertNotNull(criteria.getOrderBy());
-        assertNotNull(criteria.getLimit());
+        assertNotNull(criteria.where());
+        assertNotNull(criteria.groupBy());
+        assertNotNull(criteria.having());
+        assertNotNull(criteria.orderBy());
+        assertNotNull(criteria.limit());
     }
 
     @Test
     public void testMultipleWhereConditions() {
         Criteria criteria = Criteria.builder().where(Filters.equal("status", "active")).where(Filters.greaterThan("age", 18)).build();
-        assertNotNull(criteria.getWhere());
+        assertNotNull(criteria.where());
     }
 
     @Test
     public void testMultipleJoins() {
         Criteria criteria = Criteria.builder().join("orders").join("products").join("categories").build();
-        assertEquals(3, criteria.getJoins().size());
+        assertEquals(3, criteria.joins().size());
     }
 
     @Test
@@ -402,7 +402,7 @@ public class CriteriaTest extends TestBase {
     public void testPreselectChaining() {
         Criteria criteria = Criteria.builder().selectModifier("DISTINCT").where(Filters.equal("status", "active")).build();
         assertNotNull(criteria);
-        assertEquals("DISTINCT", criteria.getSelectModifier());
+        assertEquals("DISTINCT", criteria.selectModifier());
     }
 
     @Test
@@ -421,7 +421,7 @@ public class CriteriaTest extends TestBase {
     public void testEmptyCriteria() {
         Criteria criteria = Criteria.builder().build();
         assertTrue(criteria.conditions().isEmpty());
-        assertTrue(criteria.getJoins().isEmpty());
+        assertTrue(criteria.joins().isEmpty());
     }
 
     @Test
@@ -429,14 +429,14 @@ public class CriteriaTest extends TestBase {
         Condition condition = Filters.expr("id = user_id");
         Criteria criteria = Criteria.builder().join(Arrays.asList("orders", "payments"), condition).build();
         assertNotNull(criteria);
-        assertEquals(1, criteria.getJoins().size());
+        assertEquals(1, criteria.joins().size());
     }
 
     @Test
     public void testLimitString() {
         Criteria criteria = Criteria.builder().limit("10 OFFSET 20").build();
         assertNotNull(criteria);
-        assertNotNull(criteria.getLimit());
+        assertNotNull(criteria.limit());
     }
 
     @Test
@@ -444,7 +444,7 @@ public class CriteriaTest extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
         Criteria criteria = Criteria.builder().union(subQuery).build();
         assertNotNull(criteria);
-        assertTrue(criteria.getSetOperations().size() > 0);
+        assertTrue(criteria.setOperations().size() > 0);
     }
 
     @Test
@@ -452,7 +452,7 @@ public class CriteriaTest extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
         Criteria criteria = Criteria.builder().unionAll(subQuery).build();
         assertNotNull(criteria);
-        assertTrue(criteria.getSetOperations().size() > 0);
+        assertTrue(criteria.setOperations().size() > 0);
     }
 
     @Test
@@ -460,7 +460,7 @@ public class CriteriaTest extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM premium_users");
         Criteria criteria = Criteria.builder().intersect(subQuery).build();
         assertNotNull(criteria);
-        assertTrue(criteria.getSetOperations().size() > 0);
+        assertTrue(criteria.setOperations().size() > 0);
     }
 
     @Test
@@ -468,7 +468,7 @@ public class CriteriaTest extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM blocked_users");
         Criteria criteria = Criteria.builder().except(subQuery).build();
         assertNotNull(criteria);
-        assertTrue(criteria.getSetOperations().size() > 0);
+        assertTrue(criteria.setOperations().size() > 0);
     }
 
     @Test
@@ -476,7 +476,7 @@ public class CriteriaTest extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM inactive_users");
         Criteria criteria = Criteria.builder().minus(subQuery).build();
         assertNotNull(criteria);
-        assertTrue(criteria.getSetOperations().size() > 0);
+        assertTrue(criteria.setOperations().size() > 0);
     }
 
     @Test
@@ -523,25 +523,25 @@ public class CriteriaTest extends TestBase {
     @Test
     public void testDistinctByEmpty() {
         Criteria criteria = Criteria.builder().distinctBy("").build();
-        assertEquals("DISTINCT", criteria.getSelectModifier());
+        assertEquals("DISTINCT", criteria.selectModifier());
     }
 
     @Test
     public void testDistinctByNull() {
         Criteria criteria = Criteria.builder().distinctBy(null).build();
-        assertEquals("DISTINCT", criteria.getSelectModifier());
+        assertEquals("DISTINCT", criteria.selectModifier());
     }
 
     @Test
     public void testDistinctRowByEmpty() {
         Criteria criteria = Criteria.builder().distinctRowBy("").build();
-        assertEquals("DISTINCTROW", criteria.getSelectModifier());
+        assertEquals("DISTINCTROW", criteria.selectModifier());
     }
 
     @Test
     public void testDistinctRowByNull() {
         Criteria criteria = Criteria.builder().distinctRowBy(null).build();
-        assertEquals("DISTINCTROW", criteria.getSelectModifier());
+        assertEquals("DISTINCTROW", criteria.selectModifier());
     }
 
     @Test
@@ -551,14 +551,14 @@ public class CriteriaTest extends TestBase {
 
         Criteria criteria = Criteria.builder().union(subQuery1).unionAll(subQuery2).build();
 
-        List<Clause> aggregations = criteria.getSetOperations();
+        List<Clause> aggregations = criteria.setOperations();
         assertEquals(2, aggregations.size());
     }
 
     @Test
     public void testGetEmptyAggregation() {
         Criteria criteria = Criteria.builder().build();
-        List<Clause> aggregations = criteria.getSetOperations();
+        List<Clause> aggregations = criteria.setOperations();
         assertNotNull(aggregations);
         assertTrue(aggregations.isEmpty());
     }
@@ -583,28 +583,28 @@ public class CriteriaTest extends TestBase {
     public void testWhereWithWhereOperator() {
         Where where = new Where(Filters.equal("status", "active"));
         Criteria criteria = Criteria.builder().where(where).build();
-        assertNotNull(criteria.getWhere());
+        assertNotNull(criteria.where());
     }
 
     @Test
     public void testGroupByWithGroupByOperator() {
         GroupBy groupBy = new GroupBy(Filters.expr("department"));
         Criteria criteria = Criteria.builder().groupBy(groupBy).build();
-        assertNotNull(criteria.getGroupBy());
+        assertNotNull(criteria.groupBy());
     }
 
     @Test
     public void testHavingWithHavingOperator() {
         com.landawn.abacus.query.condition.Having having = new com.landawn.abacus.query.condition.Having(Filters.expr("COUNT(*) > 5"));
         Criteria criteria = Criteria.builder().having(having).build();
-        assertNotNull(criteria.getHaving());
+        assertNotNull(criteria.having());
     }
 
     @Test
     public void testOrderByWithOrderByOperator() {
         com.landawn.abacus.query.condition.OrderBy orderBy = new com.landawn.abacus.query.condition.OrderBy(Filters.expr("name ASC"));
         Criteria criteria = Criteria.builder().orderBy(orderBy).build();
-        assertNotNull(criteria.getOrderBy());
+        assertNotNull(criteria.orderBy());
     }
 
     @Test
@@ -664,7 +664,7 @@ public class CriteriaTest extends TestBase {
                 .join(new RightJoin("products", Filters.expr("id = product_id")))
                 .build();
 
-        List<Join> joins = criteria.getJoins();
+        List<Join> joins = criteria.joins();
         assertEquals(3, joins.size());
     }
 
@@ -689,13 +689,13 @@ public class CriteriaTest extends TestBase {
                 .limit(10)
                 .build();
 
-        assertNotNull(criteria.getSelectModifier());
-        assertEquals(1, criteria.getJoins().size());
-        assertNotNull(criteria.getWhere());
-        assertNotNull(criteria.getGroupBy());
-        assertNotNull(criteria.getHaving());
-        assertNotNull(criteria.getOrderBy());
-        assertNotNull(criteria.getLimit());
+        assertNotNull(criteria.selectModifier());
+        assertEquals(1, criteria.joins().size());
+        assertNotNull(criteria.where());
+        assertNotNull(criteria.groupBy());
+        assertNotNull(criteria.having());
+        assertNotNull(criteria.orderBy());
+        assertNotNull(criteria.limit());
     }
 
     @Test
@@ -737,12 +737,12 @@ public class CriteriaTest extends TestBase {
         Criteria criteria = Criteria.builder().build();
 
         // All clauses should be null initially
-        assertNull(criteria.getWhere());
-        assertNull(criteria.getGroupBy());
-        assertNull(criteria.getHaving());
-        assertNull(criteria.getOrderBy());
-        assertNull(criteria.getLimit());
-        assertNull(criteria.getSelectModifier());
+        assertNull(criteria.where());
+        assertNull(criteria.groupBy());
+        assertNull(criteria.having());
+        assertNull(criteria.orderBy());
+        assertNull(criteria.limit());
+        assertNull(criteria.selectModifier());
     }
 
     @Test
@@ -771,14 +771,14 @@ public class CriteriaTest extends TestBase {
     @Test
     public void testPreselectCustom() {
         Criteria criteria = Criteria.builder().selectModifier("CUSTOM").build();
-        Assertions.assertEquals("CUSTOM", criteria.getSelectModifier());
+        Assertions.assertEquals("CUSTOM", criteria.selectModifier());
     }
 
     @Test
     public void testJoinSingle() {
         Criteria criteria = Criteria.builder().join("orders").build();
 
-        List<Join> joins = criteria.getJoins();
+        List<Join> joins = criteria.joins();
         Assertions.assertEquals(1, joins.size());
         Assertions.assertEquals(Operator.JOIN, joins.get(0).operator());
     }
@@ -788,9 +788,9 @@ public class CriteriaTest extends TestBase {
         Equal eq = Filters.eq("users.id", "orders.user_id");
         Criteria criteria = Criteria.builder().join("orders", eq).build();
 
-        List<Join> joins = criteria.getJoins();
+        List<Join> joins = criteria.joins();
         Assertions.assertEquals(1, joins.size());
-        Assertions.assertEquals(eq, joins.get(0).getCondition());
+        Assertions.assertEquals(eq, joins.get(0).condition());
     }
 
     @Test
@@ -799,9 +799,9 @@ public class CriteriaTest extends TestBase {
         Equal eq = Filters.eq("orders.id", "order_items.order_id");
         Criteria criteria = Criteria.builder().join(tables, eq).build();
 
-        List<Join> joins = criteria.getJoins();
+        List<Join> joins = criteria.joins();
         Assertions.assertEquals(1, joins.size());
-        Assertions.assertEquals(2, joins.get(0).getJoinEntities().size());
+        Assertions.assertEquals(2, joins.get(0).joinEntities().size());
     }
 
     @Test
@@ -810,7 +810,7 @@ public class CriteriaTest extends TestBase {
         Join join2 = Filters.leftJoin("products");
         Criteria criteria = Criteria.builder().join(join1, join2).build();
 
-        List<Join> joins = criteria.getJoins();
+        List<Join> joins = criteria.joins();
         Assertions.assertEquals(2, joins.size());
     }
 
@@ -820,121 +820,121 @@ public class CriteriaTest extends TestBase {
     public void testInnerJoin() {
         // entity-only overload
         Criteria criteria1 = Criteria.builder().innerJoin("orders").build();
-        List<Join> joins1 = criteria1.getJoins();
+        List<Join> joins1 = criteria1.joins();
         Assertions.assertEquals(1, joins1.size());
         Assertions.assertEquals(Operator.INNER_JOIN, joins1.get(0).operator());
 
         // entity + condition overload
         Equal eq = Filters.eq("users.id", "orders.user_id");
         Criteria criteria2 = Criteria.builder().innerJoin("orders", eq).build();
-        List<Join> joins2 = criteria2.getJoins();
+        List<Join> joins2 = criteria2.joins();
         Assertions.assertEquals(1, joins2.size());
         Assertions.assertEquals(Operator.INNER_JOIN, joins2.get(0).operator());
-        Assertions.assertEquals(eq, joins2.get(0).getCondition());
+        Assertions.assertEquals(eq, joins2.get(0).condition());
 
         // multi-entity overload
         List<String> tables = Arrays.asList("orders", "order_items");
         Criteria criteria3 = Criteria.builder().innerJoin(tables, eq).build();
-        List<Join> joins3 = criteria3.getJoins();
+        List<Join> joins3 = criteria3.joins();
         Assertions.assertEquals(1, joins3.size());
         Assertions.assertEquals(Operator.INNER_JOIN, joins3.get(0).operator());
-        Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+        Assertions.assertEquals(2, joins3.get(0).joinEntities().size());
     }
 
     @Test
     public void testLeftJoin() {
         Criteria criteria1 = Criteria.builder().leftJoin("orders").build();
-        List<Join> joins1 = criteria1.getJoins();
+        List<Join> joins1 = criteria1.joins();
         Assertions.assertEquals(1, joins1.size());
         Assertions.assertEquals(Operator.LEFT_JOIN, joins1.get(0).operator());
 
         Equal eq = Filters.eq("users.id", "orders.user_id");
         Criteria criteria2 = Criteria.builder().leftJoin("orders", eq).build();
-        List<Join> joins2 = criteria2.getJoins();
+        List<Join> joins2 = criteria2.joins();
         Assertions.assertEquals(1, joins2.size());
         Assertions.assertEquals(Operator.LEFT_JOIN, joins2.get(0).operator());
-        Assertions.assertEquals(eq, joins2.get(0).getCondition());
+        Assertions.assertEquals(eq, joins2.get(0).condition());
 
         List<String> tables = Arrays.asList("orders", "order_items");
         Criteria criteria3 = Criteria.builder().leftJoin(tables, eq).build();
-        List<Join> joins3 = criteria3.getJoins();
+        List<Join> joins3 = criteria3.joins();
         Assertions.assertEquals(1, joins3.size());
         Assertions.assertEquals(Operator.LEFT_JOIN, joins3.get(0).operator());
-        Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+        Assertions.assertEquals(2, joins3.get(0).joinEntities().size());
     }
 
     @Test
     public void testRightJoin() {
         Criteria criteria1 = Criteria.builder().rightJoin("orders").build();
-        List<Join> joins1 = criteria1.getJoins();
+        List<Join> joins1 = criteria1.joins();
         Assertions.assertEquals(1, joins1.size());
         Assertions.assertEquals(Operator.RIGHT_JOIN, joins1.get(0).operator());
 
         Equal eq = Filters.eq("users.id", "orders.user_id");
         Criteria criteria2 = Criteria.builder().rightJoin("orders", eq).build();
-        List<Join> joins2 = criteria2.getJoins();
+        List<Join> joins2 = criteria2.joins();
         Assertions.assertEquals(1, joins2.size());
         Assertions.assertEquals(Operator.RIGHT_JOIN, joins2.get(0).operator());
-        Assertions.assertEquals(eq, joins2.get(0).getCondition());
+        Assertions.assertEquals(eq, joins2.get(0).condition());
 
         List<String> tables = Arrays.asList("orders", "order_items");
         Criteria criteria3 = Criteria.builder().rightJoin(tables, eq).build();
-        List<Join> joins3 = criteria3.getJoins();
+        List<Join> joins3 = criteria3.joins();
         Assertions.assertEquals(1, joins3.size());
         Assertions.assertEquals(Operator.RIGHT_JOIN, joins3.get(0).operator());
-        Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+        Assertions.assertEquals(2, joins3.get(0).joinEntities().size());
     }
 
     @Test
     public void testFullJoin() {
         Criteria criteria1 = Criteria.builder().fullJoin("orders").build();
-        List<Join> joins1 = criteria1.getJoins();
+        List<Join> joins1 = criteria1.joins();
         Assertions.assertEquals(1, joins1.size());
         Assertions.assertEquals(Operator.FULL_JOIN, joins1.get(0).operator());
 
         Equal eq = Filters.eq("users.id", "orders.user_id");
         Criteria criteria2 = Criteria.builder().fullJoin("orders", eq).build();
-        List<Join> joins2 = criteria2.getJoins();
+        List<Join> joins2 = criteria2.joins();
         Assertions.assertEquals(1, joins2.size());
         Assertions.assertEquals(Operator.FULL_JOIN, joins2.get(0).operator());
-        Assertions.assertEquals(eq, joins2.get(0).getCondition());
+        Assertions.assertEquals(eq, joins2.get(0).condition());
 
         List<String> tables = Arrays.asList("orders", "order_items");
         Criteria criteria3 = Criteria.builder().fullJoin(tables, eq).build();
-        List<Join> joins3 = criteria3.getJoins();
+        List<Join> joins3 = criteria3.joins();
         Assertions.assertEquals(1, joins3.size());
         Assertions.assertEquals(Operator.FULL_JOIN, joins3.get(0).operator());
-        Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+        Assertions.assertEquals(2, joins3.get(0).joinEntities().size());
     }
 
     @Test
     public void testCrossJoin() {
         Criteria criteria1 = Criteria.builder().crossJoin("colors").build();
-        List<Join> joins1 = criteria1.getJoins();
+        List<Join> joins1 = criteria1.joins();
         Assertions.assertEquals(1, joins1.size());
         Assertions.assertEquals(Operator.CROSS_JOIN, joins1.get(0).operator());
 
         List<String> tables = Arrays.asList("sizes", "colors");
         Criteria criteria3 = Criteria.builder().crossJoin(tables).build();
-        List<Join> joins3 = criteria3.getJoins();
+        List<Join> joins3 = criteria3.joins();
         Assertions.assertEquals(1, joins3.size());
         Assertions.assertEquals(Operator.CROSS_JOIN, joins3.get(0).operator());
-        Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+        Assertions.assertEquals(2, joins3.get(0).joinEntities().size());
     }
 
     @Test
     public void testNaturalJoin() {
         Criteria criteria1 = Criteria.builder().naturalJoin("employees").build();
-        List<Join> joins1 = criteria1.getJoins();
+        List<Join> joins1 = criteria1.joins();
         Assertions.assertEquals(1, joins1.size());
         Assertions.assertEquals(Operator.NATURAL_JOIN, joins1.get(0).operator());
 
         List<String> tables = Arrays.asList("employees", "departments");
         Criteria criteria3 = Criteria.builder().naturalJoin(tables).build();
-        List<Join> joins3 = criteria3.getJoins();
+        List<Join> joins3 = criteria3.joins();
         Assertions.assertEquals(1, joins3.size());
         Assertions.assertEquals(Operator.NATURAL_JOIN, joins3.get(0).operator());
-        Assertions.assertEquals(2, joins3.get(0).getJoinEntities().size());
+        Assertions.assertEquals(2, joins3.get(0).joinEntities().size());
     }
 
     @Test
@@ -942,10 +942,10 @@ public class CriteriaTest extends TestBase {
         Equal eq = Filters.eq("status", "active");
         Criteria criteria = Criteria.builder().where(eq).build();
 
-        Clause where = criteria.getWhere();
+        Clause where = criteria.where();
         Assertions.assertNotNull(where);
         Assertions.assertEquals(Operator.WHERE, where.operator());
-        Assertions.assertEquals(eq, where.getCondition());
+        Assertions.assertEquals(eq, where.condition());
     }
 
     @Test
@@ -958,7 +958,7 @@ public class CriteriaTest extends TestBase {
         Where whereCondition = Filters.where(Filters.eq("id", 1));
         Criteria criteria = Criteria.builder().where(whereCondition).build();
 
-        Clause where = criteria.getWhere();
+        Clause where = criteria.where();
         Assertions.assertNotNull(where);
         Assertions.assertEquals(whereCondition, where);
     }
@@ -972,7 +972,7 @@ public class CriteriaTest extends TestBase {
     public void testGroupBy() {
         Criteria criteria = Criteria.builder().groupBy("department", "location").build();
 
-        Clause groupBy = criteria.getGroupBy();
+        Clause groupBy = criteria.groupBy();
         Assertions.assertNotNull(groupBy);
         Assertions.assertEquals(Operator.GROUP_BY, groupBy.operator());
     }
@@ -987,10 +987,10 @@ public class CriteriaTest extends TestBase {
         GreaterThan gt = Filters.gt("COUNT(*)", 5);
         Criteria criteria = Criteria.builder().having(gt).build();
 
-        Clause having = criteria.getHaving();
+        Clause having = criteria.having();
         Assertions.assertNotNull(having);
         Assertions.assertEquals(Operator.HAVING, having.operator());
-        Assertions.assertEquals(gt, having.getCondition());
+        Assertions.assertEquals(gt, having.condition());
     }
 
     @Test
@@ -1007,7 +1007,7 @@ public class CriteriaTest extends TestBase {
     public void testOrderByAsc() {
         Criteria criteria = Criteria.builder().orderByAsc("lastName", "firstName").build();
 
-        Clause orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.orderBy();
         Assertions.assertNotNull(orderBy);
         Assertions.assertEquals(Operator.ORDER_BY, orderBy.operator());
     }
@@ -1016,7 +1016,7 @@ public class CriteriaTest extends TestBase {
     public void testOrderByDesc() {
         Criteria criteria = Criteria.builder().orderByDesc("createdDate", "id").build();
 
-        Clause orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.orderBy();
         Assertions.assertNotNull(orderBy);
     }
 
@@ -1024,31 +1024,31 @@ public class CriteriaTest extends TestBase {
     public void testGroupByAsc() {
         Criteria criteria = Criteria.builder().groupByAsc("department", "location").build();
 
-        Clause groupBy = criteria.getGroupBy();
+        Clause groupBy = criteria.groupBy();
         Assertions.assertNotNull(groupBy);
         Assertions.assertEquals(Operator.GROUP_BY, groupBy.operator());
 
         criteria = Criteria.builder().groupByAsc(Arrays.asList("department", "location")).build();
-        Assertions.assertNotNull(criteria.getGroupBy());
+        Assertions.assertNotNull(criteria.groupBy());
     }
 
     @Test
     public void testGroupByDesc() {
         Criteria criteria = Criteria.builder().groupByDesc("salary", "id").build();
 
-        Clause groupBy = criteria.getGroupBy();
+        Clause groupBy = criteria.groupBy();
         Assertions.assertNotNull(groupBy);
         Assertions.assertEquals(Operator.GROUP_BY, groupBy.operator());
 
         criteria = Criteria.builder().groupByDesc(Arrays.asList("salary", "id")).build();
-        Assertions.assertNotNull(criteria.getGroupBy());
+        Assertions.assertNotNull(criteria.groupBy());
     }
 
     @Test
     public void testOrderBy() {
         Criteria criteria = Criteria.builder().orderBy("name", SortDirection.ASC).build();
 
-        Clause orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.orderBy();
         Assertions.assertNotNull(orderBy);
     }
 
@@ -1056,7 +1056,7 @@ public class CriteriaTest extends TestBase {
     public void testOrderByMultiple() {
         Criteria criteria = Criteria.builder().orderBy("dept", SortDirection.ASC, "salary", SortDirection.DESC).build();
 
-        Clause orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.orderBy();
         Assertions.assertNotNull(orderBy);
     }
 
@@ -1069,9 +1069,9 @@ public class CriteriaTest extends TestBase {
     public void testLimit() {
         Criteria criteria = Criteria.builder().limit(10).build();
 
-        Limit limit = criteria.getLimit();
+        Limit limit = criteria.limit();
         Assertions.assertNotNull(limit);
-        Assertions.assertEquals(10, limit.getCount());
+        Assertions.assertEquals(10, limit.count());
     }
 
     @Test
@@ -1089,16 +1089,16 @@ public class CriteriaTest extends TestBase {
     public void testReplaceClause() {
         Criteria criteria = Criteria.builder().where(Filters.eq("id", 1)).where(Filters.eq("id", 2)).build(); // Should replace the first where
 
-        Clause where = criteria.getWhere();
-        Equal eq = (Equal) where.getCondition();
-        Assertions.assertEquals(2, (Integer) eq.getPropValue());
+        Clause where = criteria.where();
+        Equal eq = (Equal) where.condition();
+        Assertions.assertEquals(2, (Integer) eq.propValue());
     }
 
     @Test
     public void testMultipleGroupBy() {
         Criteria criteria = Criteria.builder().groupBy("dept", SortDirection.ASC, "team", SortDirection.DESC, "member", SortDirection.ASC).build();
 
-        Clause groupBy = criteria.getGroupBy();
+        Clause groupBy = criteria.groupBy();
         Assertions.assertNotNull(groupBy);
     }
 
@@ -1106,7 +1106,7 @@ public class CriteriaTest extends TestBase {
     public void testMultipleOrderBy() {
         Criteria criteria = Criteria.builder().orderBy("priority", SortDirection.DESC, "date", SortDirection.ASC, "id", SortDirection.ASC).build();
 
-        Clause orderBy = criteria.getOrderBy();
+        Clause orderBy = criteria.orderBy();
         Assertions.assertNotNull(orderBy);
     }
 
@@ -1118,11 +1118,11 @@ public class CriteriaTest extends TestBase {
                 .where(Filters.eq("users.status", "active"))
                 .build();
 
-        List<Join> joins = criteria.getJoins();
+        List<Join> joins = criteria.joins();
         Assertions.assertEquals(2, joins.size());
         Assertions.assertEquals(Operator.INNER_JOIN, joins.get(0).operator());
         Assertions.assertEquals(Operator.LEFT_JOIN, joins.get(1).operator());
-        Assertions.assertNotNull(criteria.getWhere());
+        Assertions.assertNotNull(criteria.where());
     }
 
     @Test
@@ -1131,7 +1131,7 @@ public class CriteriaTest extends TestBase {
 
         final Criteria rebuilt = original.toBuilder().where(Filters.eq("status", "ACTIVE")).build();
 
-        assertEquals("DISTINCT", rebuilt.getSelectModifier());
+        assertEquals("DISTINCT", rebuilt.selectModifier());
         assertEquals(0, original.parameters().size());
         assertEquals(1, rebuilt.parameters().size());
         assertTrue(original.toString(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
@@ -1163,7 +1163,7 @@ public class CriteriaTest extends TestBase {
         final Criteria rebuilt = original.toBuilder().build();
 
         // Same selectModifier, same toString, same parameter list and order.
-        assertEquals(original.getSelectModifier(), rebuilt.getSelectModifier());
+        assertEquals(original.selectModifier(), rebuilt.selectModifier());
         assertEquals(original.toString(NamingPolicy.NO_CHANGE), rebuilt.toString(NamingPolicy.NO_CHANGE));
         assertEquals(original.parameters(), rebuilt.parameters());
         assertEquals(original, rebuilt);
@@ -1213,16 +1213,16 @@ public class CriteriaTest extends TestBase {
         assertTrue(str.contains("b ="), "should contain second where: " + str);
         assertFalse(str.contains("a ="), "should not contain replaced where: " + str);
         // Both joins should be present
-        assertEquals(2, c.getJoins().size());
+        assertEquals(2, c.joins().size());
         // Both unions should be present
-        assertEquals(2, c.getSetOperations().size());
+        assertEquals(2, c.setOperations().size());
         // Only one ORDER BY (the last)
         assertTrue(str.contains("ORDER BY y"));
         assertFalse(str.contains("ORDER BY x"));
     }
 
     /**
-     * Second-pass locking test: getSetOperations() returns set-op clauses in insertion order.
+     * Second-pass locking test: setOperations() returns set-op clauses in insertion order.
      */
     @Test
     public void testGetSetOperationsOrderedAndTyped() {
@@ -1231,7 +1231,7 @@ public class CriteriaTest extends TestBase {
         final SubQuery c = new SubQuery("c", Arrays.asList("id"), null);
         final Criteria crit = Criteria.builder().intersect(a).union(b).except(c).build();
 
-        final List<Clause> ops = crit.getSetOperations();
+        final List<Clause> ops = crit.setOperations();
         assertEquals(3, ops.size());
         assertEquals(Operator.INTERSECT, ops.get(0).operator());
         assertEquals(Operator.UNION, ops.get(1).operator());
@@ -1318,8 +1318,8 @@ public class CriteriaTest extends TestBase {
         Criteria right = Criteria.builder().build();
         Criteria distinct = Criteria.builder().selectModifier("DISTINCT").build();
 
-        Assertions.assertTrue(left.getJoins().isEmpty());
-        Assertions.assertTrue(left.getSetOperations().isEmpty());
+        Assertions.assertTrue(left.joins().isEmpty());
+        Assertions.assertTrue(left.setOperations().isEmpty());
         Assertions.assertTrue(left.findConditions(Operator.WHERE).isEmpty());
         Assertions.assertTrue(left.parameters().isEmpty());
         Assertions.assertEquals(left, right);
@@ -1483,12 +1483,12 @@ public class CriteriaTest extends TestBase {
                 .build();
 
         assertNotNull(c);
-        assertNotNull(c.getWhere());
-        assertNotNull(c.getGroupBy());
-        assertNotNull(c.getHaving());
-        assertNotNull(c.getOrderBy());
-        assertNotNull(c.getLimit());
-        assertEquals(1, c.getJoins().size());
+        assertNotNull(c.where());
+        assertNotNull(c.groupBy());
+        assertNotNull(c.having());
+        assertNotNull(c.orderBy());
+        assertNotNull(c.limit());
+        assertEquals(1, c.joins().size());
     }
 
     // --- Routing by operator. ---
@@ -1497,7 +1497,7 @@ public class CriteriaTest extends TestBase {
     public void testAddPlainPredicateRoutesToWhere() {
         Criteria c = Criteria.builder().add(Filters.equal("status", "active")).build();
 
-        assertNotNull(c.getWhere());
+        assertNotNull(c.where());
         assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("WHERE status = 'active'"), c.toString());
     }
 
@@ -1505,7 +1505,7 @@ public class CriteriaTest extends TestBase {
     public void testAddWhereClauseRoutesToWhere() {
         Criteria c = Criteria.builder().add(new Where(Filters.eq("id", 1))).build();
 
-        assertNotNull(c.getWhere());
+        assertNotNull(c.where());
         assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("WHERE id = 1"), c.toString());
     }
 
@@ -1513,8 +1513,8 @@ public class CriteriaTest extends TestBase {
     public void testAddOrderByRoutesToOrderBy() {
         Criteria c = Criteria.builder().add(new OrderBy("createdDate")).build();
 
-        assertNotNull(c.getOrderBy());
-        assertNull(c.getWhere());
+        assertNotNull(c.orderBy());
+        assertNull(c.where());
         assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("ORDER BY createdDate"), c.toString());
     }
 
@@ -1522,7 +1522,7 @@ public class CriteriaTest extends TestBase {
     public void testAddGroupByRoutesToGroupBy() {
         Criteria c = Criteria.builder().add(new GroupBy("department")).build();
 
-        assertNotNull(c.getGroupBy());
+        assertNotNull(c.groupBy());
         assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("GROUP BY department"), c.toString());
     }
 
@@ -1531,8 +1531,8 @@ public class CriteriaTest extends TestBase {
         // Previously threw/recursed because the switch had no HAVING case (fell through to where()).
         Criteria c = Criteria.builder().add(new Having(Filters.gt("COUNT(*)", 5))).build();
 
-        assertNotNull(c.getHaving());
-        assertNull(c.getWhere());
+        assertNotNull(c.having());
+        assertNull(c.where());
         assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("HAVING COUNT(*) > 5"), c.toString());
     }
 
@@ -1540,8 +1540,8 @@ public class CriteriaTest extends TestBase {
     public void testAddLimitRoutesToLimit() {
         Criteria c = Criteria.builder().add(new Limit(10)).build();
 
-        assertNotNull(c.getLimit());
-        assertEquals(10, c.getLimit().getCount());
+        assertNotNull(c.limit());
+        assertEquals(10, c.limit().count());
     }
 
     @Test
@@ -1558,7 +1558,7 @@ public class CriteriaTest extends TestBase {
         Criteria c = Criteria.builder().add(new Join("orders")).add(new Join("payments")).build();
 
         // Joins accumulate; they are not replaced.
-        assertEquals(2, c.getJoins().size());
+        assertEquals(2, c.joins().size());
     }
 
     // --- Replacement semantics for singleton clauses. ---
@@ -1566,7 +1566,7 @@ public class CriteriaTest extends TestBase {
     @Test
     public void testAddReplacesExistingSingletonClause() {
         Criteria c = Criteria.builder().add(new Limit(10)).add(new Limit(20)).build();
-        assertEquals(20, c.getLimit().getCount());
+        assertEquals(20, c.limit().count());
 
         Criteria c2 = Criteria.builder().add(new OrderBy("colA")).add(new OrderBy("colB")).build();
         String sql = c2.toString(NamingPolicy.NO_CHANGE);

@@ -23,9 +23,9 @@ public class NotBetweenTest extends TestBase {
     public void testConstructor_ValidRange() {
         NotBetween condition = new NotBetween("age", 18, 65);
 
-        assertEquals("age", condition.getPropName());
-        assertEquals(Integer.valueOf(18), condition.getMinValue());
-        assertEquals(Integer.valueOf(65), condition.getMaxValue());
+        assertEquals("age", condition.propName());
+        assertEquals(Integer.valueOf(18), condition.minValue());
+        assertEquals(Integer.valueOf(65), condition.maxValue());
         assertEquals(Operator.NOT_BETWEEN, condition.operator());
     }
 
@@ -48,54 +48,54 @@ public class NotBetweenTest extends TestBase {
     public void testConstructor_NumericRange() {
         NotBetween condition = new NotBetween("price", 10.0, 100.0);
 
-        assertEquals("price", condition.getPropName());
-        assertEquals(10.0, (Double) condition.getMinValue());
-        assertEquals(100.0, (Double) condition.getMaxValue());
+        assertEquals("price", condition.propName());
+        assertEquals(10.0, (Double) condition.minValue());
+        assertEquals(100.0, (Double) condition.maxValue());
     }
 
     @Test
     public void testConstructor_StringRange() {
         NotBetween condition = new NotBetween("grade", "A", "C");
 
-        assertEquals("grade", condition.getPropName());
-        assertEquals("A", condition.getMinValue());
-        assertEquals("C", condition.getMaxValue());
+        assertEquals("grade", condition.propName());
+        assertEquals("A", condition.minValue());
+        assertEquals("C", condition.maxValue());
     }
 
     @Test
     public void testConstructor_DateRange() {
         NotBetween condition = new NotBetween("order_date", "2024-01-01", "2024-12-31");
 
-        assertEquals("order_date", condition.getPropName());
-        assertEquals("2024-01-01", condition.getMinValue());
-        assertEquals("2024-12-31", condition.getMaxValue());
+        assertEquals("order_date", condition.propName());
+        assertEquals("2024-01-01", condition.minValue());
+        assertEquals("2024-12-31", condition.maxValue());
     }
 
     @Test
     public void testConstructor_NullValues() {
         NotBetween condition = new NotBetween("score", null, null);
 
-        assertEquals("score", condition.getPropName());
-        assertNull(condition.getMinValue());
-        assertNull(condition.getMaxValue());
+        assertEquals("score", condition.propName());
+        assertNull(condition.minValue());
+        assertNull(condition.maxValue());
     }
 
     @Test
     public void testGetPropName() {
         NotBetween condition = new NotBetween("temperature", 36.0, 37.5);
-        assertEquals("temperature", condition.getPropName());
+        assertEquals("temperature", condition.propName());
     }
 
     @Test
     public void testGetMinValue() {
         NotBetween condition = new NotBetween("age", 18, 65);
-        assertEquals(Integer.valueOf(18), condition.getMinValue());
+        assertEquals(Integer.valueOf(18), condition.minValue());
     }
 
     @Test
     public void testGetMaxValue() {
         NotBetween condition = new NotBetween("age", 18, 65);
-        assertEquals(Integer.valueOf(65), condition.getMaxValue());
+        assertEquals(Integer.valueOf(65), condition.maxValue());
     }
 
     @Test
@@ -287,9 +287,9 @@ public class NotBetweenTest extends TestBase {
         NotBetween notBetween = Filters.notBetween("age", 18, 65);
 
         Assertions.assertNotNull(notBetween);
-        Assertions.assertEquals("age", notBetween.getPropName());
-        Assertions.assertEquals(18, (Integer) notBetween.getMinValue());
-        Assertions.assertEquals(65, (Integer) notBetween.getMaxValue());
+        Assertions.assertEquals("age", notBetween.propName());
+        Assertions.assertEquals(18, (Integer) notBetween.minValue());
+        Assertions.assertEquals(65, (Integer) notBetween.maxValue());
         Assertions.assertEquals(Operator.NOT_BETWEEN, notBetween.operator());
     }
 
@@ -297,9 +297,9 @@ public class NotBetweenTest extends TestBase {
     public void testConstructorWithDates() {
         NotBetween notBetween = Filters.notBetween("orderDate", "2023-01-01", "2023-12-31");
 
-        Assertions.assertEquals("orderDate", notBetween.getPropName());
-        Assertions.assertEquals("2023-01-01", notBetween.getMinValue());
-        Assertions.assertEquals("2023-12-31", notBetween.getMaxValue());
+        Assertions.assertEquals("orderDate", notBetween.propName());
+        Assertions.assertEquals("2023-01-01", notBetween.minValue());
+        Assertions.assertEquals("2023-12-31", notBetween.maxValue());
     }
 
     @Test
@@ -388,21 +388,21 @@ public class NotBetweenTest extends TestBase {
     public void testPracticalExamples() {
         // Exclude normal working hours
         NotBetween notWorkHours = Filters.notBetween("hour", 9, 17);
-        Assertions.assertEquals(9, (Integer) notWorkHours.getMinValue());
-        Assertions.assertEquals(17, (Integer) notWorkHours.getMaxValue());
+        Assertions.assertEquals(9, (Integer) notWorkHours.minValue());
+        Assertions.assertEquals(17, (Integer) notWorkHours.maxValue());
 
         // Exclude mid-range prices
         NotBetween extremePrices = Filters.notBetween("price", 100.0, 1000.0);
-        Assertions.assertEquals(100.0, extremePrices.getMinValue());
-        Assertions.assertEquals(1000.0, extremePrices.getMaxValue());
+        Assertions.assertEquals(100.0, extremePrices.minValue());
+        Assertions.assertEquals(1000.0, extremePrices.maxValue());
     }
 
     @Test
     public void testWithNullValues() {
         NotBetween notBetween = Filters.notBetween("value", null, null);
 
-        Assertions.assertNull(notBetween.getMinValue());
-        Assertions.assertNull(notBetween.getMaxValue());
+        Assertions.assertNull(notBetween.minValue());
+        Assertions.assertNull(notBetween.maxValue());
 
         List<Object> params = notBetween.parameters();
         Assertions.assertEquals(2, params.size());

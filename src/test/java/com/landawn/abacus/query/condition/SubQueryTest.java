@@ -34,9 +34,9 @@ public class SubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery(sql);
 
         assertNotNull(subQuery);
-        assertEquals(sql, subQuery.sql());
-        assertNull(subQuery.getCondition());
-        assertNull(subQuery.getSelectPropNames());
+        assertEquals(sql, subQuery.rawSql());
+        assertNull(subQuery.condition());
+        assertNull(subQuery.selectPropNames());
     }
 
     @Test
@@ -46,8 +46,8 @@ public class SubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery(entityName, sql);
 
         assertNotNull(subQuery);
-        assertEquals(entityName, subQuery.getEntityName());
-        assertEquals(sql, subQuery.sql());
+        assertEquals(entityName, subQuery.entityName());
+        assertEquals(sql, subQuery.rawSql());
     }
 
     @Test
@@ -73,10 +73,10 @@ public class SubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery(entityName, props, condition);
 
         assertNotNull(subQuery);
-        assertEquals(entityName, subQuery.getEntityName());
-        assertEquals(props, subQuery.getSelectPropNames());
-        assertNotNull(subQuery.getCondition());
-        assertNull(subQuery.sql());
+        assertEquals(entityName, subQuery.entityName());
+        assertEquals(props, subQuery.selectPropNames());
+        assertNotNull(subQuery.condition());
+        assertNull(subQuery.rawSql());
     }
 
     @Test
@@ -92,10 +92,10 @@ public class SubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery(TestEntity.class, props, condition);
 
         assertNotNull(subQuery);
-        assertEquals("TestEntity", subQuery.getEntityName());
-        assertEquals(TestEntity.class, subQuery.getEntityClass());
-        assertEquals(props, subQuery.getSelectPropNames());
-        assertNotNull(subQuery.getCondition());
+        assertEquals("TestEntity", subQuery.entityName());
+        assertEquals(TestEntity.class, subQuery.entityClass());
+        assertEquals(props, subQuery.selectPropNames());
+        assertNotNull(subQuery.condition());
     }
 
     @Test
@@ -112,8 +112,8 @@ public class SubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery(entityName, props, condition);
 
         // Condition should be wrapped in WHERE
-        assertNotNull(subQuery.getCondition());
-        assertEquals(Operator.WHERE, subQuery.getCondition().operator());
+        assertNotNull(subQuery.condition());
+        assertEquals(Operator.WHERE, subQuery.condition().operator());
     }
 
     @Test
@@ -134,8 +134,8 @@ public class SubQueryTest extends TestBase {
 
         SubQuery subQuery = Filters.subQuery(entityName, props, condition);
 
-        assertNotNull(subQuery.getCondition());
-        assertEquals(Operator.WHERE, subQuery.getCondition().operator());
+        assertNotNull(subQuery.condition());
+        assertEquals(Operator.WHERE, subQuery.condition().operator());
     }
 
     @Test
@@ -153,13 +153,13 @@ public class SubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery(entityName, props, (Condition) null);
 
         assertNotNull(subQuery);
-        assertNull(subQuery.getCondition());
+        assertNull(subQuery.condition());
     }
 
     @Test
     public void testConstructorWithBlankStringConditionTreatsAsNoCondition() {
         SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), "   ");
-        assertNull(subQuery.getCondition());
+        assertNull(subQuery.condition());
     }
 
     @Test
@@ -167,7 +167,7 @@ public class SubQueryTest extends TestBase {
         String sql = "SELECT * FROM users";
         SubQuery subQuery = Filters.subQuery(sql);
 
-        assertEquals(sql, subQuery.sql());
+        assertEquals(sql, subQuery.rawSql());
     }
 
     @Test
@@ -175,14 +175,14 @@ public class SubQueryTest extends TestBase {
         String entityName = "orders";
         SubQuery subQuery = Filters.subQuery(entityName, Arrays.asList("id"), (Condition) null);
 
-        assertEquals(entityName, subQuery.getEntityName());
+        assertEquals(entityName, subQuery.entityName());
     }
 
     @Test
     public void testGetEntityClass() {
         SubQuery subQuery = Filters.subQuery(TestEntity.class, Arrays.asList("id"), (Condition) null);
 
-        assertEquals(TestEntity.class, subQuery.getEntityClass());
+        assertEquals(TestEntity.class, subQuery.entityClass());
     }
 
     @Test
@@ -190,7 +190,7 @@ public class SubQueryTest extends TestBase {
         Collection<String> props = Arrays.asList("id", "name", "email");
         SubQuery subQuery = Filters.subQuery("users", props, (Condition) null);
 
-        assertEquals(props, subQuery.getSelectPropNames());
+        assertEquals(props, subQuery.selectPropNames());
     }
 
     @Test
@@ -198,7 +198,7 @@ public class SubQueryTest extends TestBase {
         Condition condition = Filters.eq("status", "active");
         SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), condition);
 
-        assertNotNull(subQuery.getCondition());
+        assertNotNull(subQuery.condition());
     }
 
     @Test
@@ -389,7 +389,7 @@ public class SubQueryTest extends TestBase {
 
         SubQuery subQuery = Filters.subQuery("table", props, condition);
 
-        assertNotNull(subQuery.getCondition());
+        assertNotNull(subQuery.condition());
     }
 
     @Test
@@ -417,8 +417,8 @@ public class SubQueryTest extends TestBase {
 
         SubQuery subQuery = Filters.subQuery(TestEntity.class, props, (Condition) null);
 
-        assertEquals(TestEntity.class, subQuery.getEntityClass());
-        assertEquals("TestEntity", subQuery.getEntityName());
+        assertEquals(TestEntity.class, subQuery.entityClass());
+        assertEquals("TestEntity", subQuery.entityName());
     }
 
     // Helper test class
@@ -433,11 +433,11 @@ public class SubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery(sql);
 
         Assertions.assertNotNull(subQuery);
-        Assertions.assertEquals(sql, subQuery.sql());
-        Assertions.assertEquals("", subQuery.getEntityName());
-        Assertions.assertNull(subQuery.getEntityClass());
-        Assertions.assertNull(subQuery.getSelectPropNames());
-        Assertions.assertNull(subQuery.getCondition());
+        Assertions.assertEquals(sql, subQuery.rawSql());
+        Assertions.assertEquals("", subQuery.entityName());
+        Assertions.assertNull(subQuery.entityClass());
+        Assertions.assertNull(subQuery.selectPropNames());
+        Assertions.assertNull(subQuery.condition());
         Assertions.assertEquals(Operator.EMPTY, subQuery.operator());
     }
 
@@ -447,8 +447,8 @@ public class SubQueryTest extends TestBase {
         String sql = "SELECT order_id FROM orders WHERE total > 1000";
         SubQuery subQuery = Filters.subQuery(entityName, sql);
 
-        Assertions.assertEquals(entityName, subQuery.getEntityName());
-        Assertions.assertEquals(sql, subQuery.sql());
+        Assertions.assertEquals(entityName, subQuery.entityName());
+        Assertions.assertEquals(sql, subQuery.rawSql());
     }
 
     @Test
@@ -471,10 +471,10 @@ public class SubQueryTest extends TestBase {
         Equal condition = Filters.eq("active", true);
         SubQuery subQuery = Filters.subQuery("users", props, condition);
 
-        Assertions.assertEquals("users", subQuery.getEntityName());
-        Assertions.assertEquals(props, subQuery.getSelectPropNames());
-        Assertions.assertNotNull(subQuery.getCondition());
-        Assertions.assertNull(subQuery.sql());
+        Assertions.assertEquals("users", subQuery.entityName());
+        Assertions.assertEquals(props, subQuery.selectPropNames());
+        Assertions.assertNotNull(subQuery.condition());
+        Assertions.assertNull(subQuery.rawSql());
     }
 
     @Test
@@ -483,10 +483,10 @@ public class SubQueryTest extends TestBase {
         GreaterThan condition = Filters.gt("price", 100);
         SubQuery subQuery = Filters.subQuery(TestEntity.class, props, condition);
 
-        Assertions.assertEquals("TestEntity", subQuery.getEntityName());
-        Assertions.assertEquals(TestEntity.class, subQuery.getEntityClass());
-        Assertions.assertEquals(props, subQuery.getSelectPropNames());
-        Assertions.assertNotNull(subQuery.getCondition());
+        Assertions.assertEquals("TestEntity", subQuery.entityName());
+        Assertions.assertEquals(TestEntity.class, subQuery.entityClass());
+        Assertions.assertEquals(props, subQuery.selectPropNames());
+        Assertions.assertNotNull(subQuery.condition());
     }
 
     @Test
@@ -504,10 +504,10 @@ public class SubQueryTest extends TestBase {
 
         props.set(0, "mutated");
 
-        Collection<String> selectProps = subQuery.getSelectPropNames();
+        Collection<String> selectProps = subQuery.selectPropNames();
         Assertions.assertEquals(Arrays.asList("id", "name"), selectProps);
         Assertions.assertThrows(UnsupportedOperationException.class, () -> selectProps.add("email"));
-        Assertions.assertEquals(Arrays.asList("id", "name"), subQuery.getSelectPropNames());
+        Assertions.assertEquals(Arrays.asList("id", "name"), subQuery.selectPropNames());
     }
 
     @Test
@@ -517,7 +517,7 @@ public class SubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("users", props, eq);
 
         // The condition should be wrapped in WHERE
-        Assertions.assertNotNull(subQuery.getCondition());
+        Assertions.assertNotNull(subQuery.condition());
         String result = subQuery.toString();
         Assertions.assertTrue(result.contains("WHERE"));
     }
@@ -529,7 +529,7 @@ public class SubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("users", props, and);
 
         // AND is already a clause, should not be wrapped
-        Assertions.assertNotEquals(and, subQuery.getCondition());
+        Assertions.assertNotEquals(and, subQuery.condition());
     }
 
     @Test
@@ -554,7 +554,7 @@ public class SubQueryTest extends TestBase {
     @Test
     public void testConstructorWithNullEntityNameAndRawSqlUsesEmptyEntityName() {
         SubQuery subQuery = new SubQuery((String) null, "SELECT id FROM users");
-        Assertions.assertEquals("", subQuery.getEntityName());
+        Assertions.assertEquals("", subQuery.entityName());
     }
 
     @Test
@@ -692,9 +692,9 @@ public class SubQueryTest extends TestBase {
     public void testDefaultConstructor_EmptyState() {
         SubQuery subQuery = new SubQuery();
 
-        Assertions.assertNull(subQuery.getEntityName());
-        Assertions.assertNull(subQuery.getEntityClass());
-        Assertions.assertNull(subQuery.sql());
+        Assertions.assertNull(subQuery.entityName());
+        Assertions.assertNull(subQuery.entityClass());
+        Assertions.assertNull(subQuery.rawSql());
         Assertions.assertTrue(subQuery.parameters().isEmpty());
     }
 
@@ -721,14 +721,14 @@ public class SubQueryTest extends TestBase {
     }
 
     /**
-     * Second-pass locking test: getSelectPropNames returns an unmodifiable view of the
+     * Second-pass locking test: selectPropNames returns an unmodifiable view of the
      * underlying list (callers cannot mutate the SubQuery's internal state).
      */
     @Test
     public void testGetSelectPropNamesIsUnmodifiable() {
         SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "name"), null);
 
-        java.util.Collection<String> props = subQuery.getSelectPropNames();
+        java.util.Collection<String> props = subQuery.selectPropNames();
 
         Assertions.assertEquals(2, props.size());
         Assertions.assertThrows(UnsupportedOperationException.class, () -> props.add("extra"));
@@ -737,15 +737,15 @@ public class SubQueryTest extends TestBase {
     @Test
     public void testSinglePropertyStructuredConstructorsAndRawSqlAccessor() throws Exception {
         SubQuery byName = new SubQuery("users", "id", Filters.eq("active", true));
-        Assertions.assertEquals(Arrays.asList("id"), byName.getSelectPropNames());
-        Assertions.assertNull(byName.getRawSql());
+        Assertions.assertEquals(Arrays.asList("id"), byName.selectPropNames());
+        Assertions.assertNull(byName.rawSql());
 
         SubQuery byClass = new SubQuery(SinglePropEntity.class, "id", Filters.eq("active", true));
-        Assertions.assertEquals(Arrays.asList("id"), byClass.getSelectPropNames());
+        Assertions.assertEquals(Arrays.asList("id"), byClass.selectPropNames());
 
         SubQuery raw = new SubQuery("SELECT id FROM users");
-        Assertions.assertEquals("SELECT id FROM users", raw.getRawSql());
-        Assertions.assertEquals(raw.getRawSql(), raw.sql());
+        Assertions.assertEquals("SELECT id FROM users", raw.rawSql());
+        Assertions.assertEquals(raw.rawSql(), raw.rawSql());
         Assertions.assertTrue(SubQuery.class.getConstructor(String.class, String.class).isAnnotationPresent(Deprecated.class));
     }
 

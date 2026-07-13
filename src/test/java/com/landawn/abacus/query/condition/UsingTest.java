@@ -75,7 +75,7 @@ public class UsingTest extends TestBase {
     @Test
     public void testGetCondition() {
         Using using = new Using("employee_id");
-        Condition condition = using.getCondition();
+        Condition condition = using.condition();
         assertNotNull(condition);
     }
 
@@ -202,7 +202,7 @@ public class UsingTest extends TestBase {
 
         Assertions.assertNotNull(using);
         Assertions.assertEquals(Operator.USING, using.operator());
-        Assertions.assertNotNull(using.getCondition());
+        Assertions.assertNotNull(using.condition());
     }
 
     @Test
@@ -248,7 +248,7 @@ public class UsingTest extends TestBase {
         Using using = Filters.using(columns);
 
         Assertions.assertEquals(Operator.USING, using.operator());
-        Assertions.assertNotNull(using.getCondition());
+        Assertions.assertNotNull(using.condition());
     }
 
     @Test
@@ -401,7 +401,7 @@ public class UsingTest extends TestBase {
 
     @Test
     public void testConstructorRejectsMultiColumnOrParenthesizedNames() {
-        // A name like "a, b" would render as USING (a, b) while getColumnNames() reported the
+        // A name like "a, b" would render as USING (a, b) while columnNames() reported the
         // single element ["a, b"], desyncing the structured accessor from the generated SQL.
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Using("a, b"));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Using("a,b"));
@@ -412,7 +412,7 @@ public class UsingTest extends TestBase {
 
         // Plain unqualified names are still accepted, and the structured accessor matches the SQL.
         Using using = new Using("company_id", "branch_id");
-        Assertions.assertEquals(Arrays.asList("company_id", "branch_id"), using.getColumnNames());
+        Assertions.assertEquals(Arrays.asList("company_id", "branch_id"), using.columnNames());
         Assertions.assertEquals("USING (company_id, branch_id)", using.toString());
     }
 }

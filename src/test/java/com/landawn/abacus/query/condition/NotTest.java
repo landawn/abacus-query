@@ -25,7 +25,7 @@ public class NotTest extends TestBase {
         Not condition = new Not(innerCondition);
 
         assertEquals(Operator.NOT, condition.operator());
-        assertSame(innerCondition, condition.getCondition());
+        assertSame(innerCondition, condition.condition());
     }
 
     @Test
@@ -38,7 +38,7 @@ public class NotTest extends TestBase {
         Equal innerCondition = new Equal("age", 25);
         Not condition = new Not(innerCondition);
 
-        Equal retrieved = (Equal) condition.getCondition();
+        Equal retrieved = (Equal) condition.condition();
         assertSame(innerCondition, retrieved);
     }
 
@@ -47,7 +47,7 @@ public class NotTest extends TestBase {
         And innerAnd = new And(new Equal("a", 1), new Equal("b", 2));
         Not condition = new Not(innerAnd);
 
-        And retrieved = (And) condition.getCondition();
+        And retrieved = (And) condition.condition();
         assertSame(innerAnd, retrieved);
     }
 
@@ -171,7 +171,7 @@ public class NotTest extends TestBase {
 
         Assertions.assertNotNull(notCondition);
         Assertions.assertEquals(Operator.NOT, notCondition.operator());
-        Assertions.assertEquals(likeCondition, notCondition.getCondition());
+        Assertions.assertEquals(likeCondition, notCondition.condition());
     }
 
     @Test
@@ -180,7 +180,7 @@ public class NotTest extends TestBase {
         Not notIn = Filters.not(inCondition);
 
         Assertions.assertEquals(Operator.NOT, notIn.operator());
-        Assertions.assertEquals(inCondition, notIn.getCondition());
+        Assertions.assertEquals(inCondition, notIn.condition());
     }
 
     @Test
@@ -189,7 +189,7 @@ public class NotTest extends TestBase {
         Not notBetween = Filters.not(between);
 
         Assertions.assertEquals(Operator.NOT, notBetween.operator());
-        Assertions.assertEquals(between, notBetween.getCondition());
+        Assertions.assertEquals(between, notBetween.condition());
     }
 
     @Test
@@ -236,7 +236,7 @@ public class NotTest extends TestBase {
         Not notCondition = Filters.not(likeCondition);
         Not doubleNot = Filters.not(notCondition);
 
-        Assertions.assertEquals(notCondition, doubleNot.getCondition());
+        Assertions.assertEquals(notCondition, doubleNot.condition());
         Assertions.assertEquals(Operator.NOT, doubleNot.operator());
     }
 

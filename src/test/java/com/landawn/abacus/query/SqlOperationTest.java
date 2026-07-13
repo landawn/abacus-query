@@ -374,9 +374,9 @@ public class SqlOperationTest extends TestBase {
     }
 
     @Test
-    public void testFromIsTotal() {
-        assertEquals(SqlOperation.SELECT, SqlOperation.from("select"));
-        assertEquals(SqlOperation.UNKNOWN, SqlOperation.from("TRUNCATE"));
-        assertEquals(SqlOperation.UNKNOWN, SqlOperation.from(null));
+    public void testFromOrUnknownIsTotal() {
+        assertEquals(SqlOperation.SELECT, SqlOperation.fromOrUnknown("select"));
+        assertEquals(SqlOperation.UNKNOWN, SqlOperation.fromOrUnknown("TRUNCATE"));
+        assertEquals(SqlOperation.UNKNOWN, SqlOperation.fromOrUnknown(null));
     }
 }

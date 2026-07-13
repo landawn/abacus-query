@@ -86,8 +86,8 @@ public class NamedPropertyTest extends TestBase {
         Equal equal = np.equal("active");
 
         assertNotNull(equal);
-        assertEquals("status", equal.getPropName());
-        assertEquals("active", equal.getPropValue());
+        assertEquals("status", equal.propName());
+        assertEquals("active", equal.propValue());
     }
 
     @Test
@@ -96,8 +96,8 @@ public class NamedPropertyTest extends TestBase {
         Equal equal = np.eq("active");
 
         assertNotNull(equal);
-        assertEquals("status", equal.getPropName());
-        assertEquals("active", equal.getPropValue());
+        assertEquals("status", equal.propName());
+        assertEquals("active", equal.propValue());
     }
 
     @Test
@@ -105,8 +105,8 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty np = NamedProperty.of("count");
         Equal equal = np.eq(5);
 
-        assertEquals("count", equal.getPropName());
-        assertEquals(5, (Integer) equal.getPropValue());
+        assertEquals("count", equal.propName());
+        assertEquals(5, (Integer) equal.propValue());
     }
 
     @Test
@@ -135,8 +135,8 @@ public class NamedPropertyTest extends TestBase {
         NotEqual notEqual = np.ne("deleted");
 
         assertNotNull(notEqual);
-        assertEquals("status", notEqual.getPropName());
-        assertEquals("deleted", notEqual.getPropValue());
+        assertEquals("status", notEqual.propName());
+        assertEquals("deleted", notEqual.propValue());
     }
 
     @Test
@@ -145,8 +145,8 @@ public class NamedPropertyTest extends TestBase {
         GreaterThan gt = np.gt(18);
 
         assertNotNull(gt);
-        assertEquals("age", gt.getPropName());
-        assertEquals(18, (Integer) gt.getPropValue());
+        assertEquals("age", gt.propName());
+        assertEquals(18, (Integer) gt.propValue());
     }
 
     @Test
@@ -155,8 +155,8 @@ public class NamedPropertyTest extends TestBase {
         GreaterThanOrEqual ge = np.ge(60);
 
         assertNotNull(ge);
-        assertEquals("score", ge.getPropName());
-        assertEquals(60, (Integer) ge.getPropValue());
+        assertEquals("score", ge.propName());
+        assertEquals(60, (Integer) ge.propValue());
     }
 
     @Test
@@ -165,8 +165,8 @@ public class NamedPropertyTest extends TestBase {
         LessThan lt = np.lt(100);
 
         assertNotNull(lt);
-        assertEquals("price", lt.getPropName());
-        assertEquals(100, (Integer) lt.getPropValue());
+        assertEquals("price", lt.propName());
+        assertEquals(100, (Integer) lt.propValue());
     }
 
     @Test
@@ -175,8 +175,8 @@ public class NamedPropertyTest extends TestBase {
         LessThanOrEqual le = np.le(10);
 
         assertNotNull(le);
-        assertEquals("quantity", le.getPropName());
-        assertEquals(10, (Integer) le.getPropValue());
+        assertEquals("quantity", le.propName());
+        assertEquals(10, (Integer) le.propValue());
     }
 
     @Test
@@ -185,7 +185,7 @@ public class NamedPropertyTest extends TestBase {
         IsNull isNull = np.isNull();
 
         assertNotNull(isNull);
-        assertEquals("deletedDate", isNull.getPropName());
+        assertEquals("deletedDate", isNull.propName());
     }
 
     @Test
@@ -194,7 +194,7 @@ public class NamedPropertyTest extends TestBase {
         IsNotNull isNotNull = np.isNotNull();
 
         assertNotNull(isNotNull);
-        assertEquals("email", isNotNull.getPropName());
+        assertEquals("email", isNotNull.propName());
     }
 
     @Test
@@ -203,9 +203,9 @@ public class NamedPropertyTest extends TestBase {
         Between between = np.between(18, 65);
 
         assertNotNull(between);
-        assertEquals("age", between.getPropName());
-        assertEquals(18, (Integer) between.getMinValue());
-        assertEquals(65, (Integer) between.getMaxValue());
+        assertEquals("age", between.propName());
+        assertEquals(18, (Integer) between.minValue());
+        assertEquals(65, (Integer) between.maxValue());
     }
 
     @Test
@@ -214,9 +214,9 @@ public class NamedPropertyTest extends TestBase {
         Like like = np.like("John%");
 
         assertNotNull(like);
-        assertEquals("name", like.getPropName());
+        assertEquals("name", like.propName());
         // Like extends Binary which has getValue()
-        assertEquals("John%", like.getPropValue());
+        assertEquals("John%", like.propValue());
     }
 
     @Test
@@ -225,9 +225,9 @@ public class NamedPropertyTest extends TestBase {
         NotLike notLike = np.notLike("%@temp.com");
 
         assertNotNull(notLike);
-        assertEquals("email", notLike.getPropName());
+        assertEquals("email", notLike.propName());
         // NotLike extends Binary which has getValue()
-        assertEquals("%@temp.com", notLike.getPropValue());
+        assertEquals("%@temp.com", notLike.propValue());
     }
 
     @Test
@@ -236,8 +236,8 @@ public class NamedPropertyTest extends TestBase {
         Like startsWith = np.startsWith("PRD");
 
         assertNotNull(startsWith);
-        assertEquals("code", startsWith.getPropName());
-        assertTrue(startsWith.getPropValue().toString().endsWith("%"));
+        assertEquals("code", startsWith.propName());
+        assertTrue(startsWith.propValue().toString().endsWith("%"));
     }
 
     @Test
@@ -246,8 +246,8 @@ public class NamedPropertyTest extends TestBase {
         Like endsWith = np.endsWith(".pdf");
 
         assertNotNull(endsWith);
-        assertEquals("filename", endsWith.getPropName());
-        assertTrue(endsWith.getPropValue().toString().startsWith("%"));
+        assertEquals("filename", endsWith.propName());
+        assertTrue(endsWith.propValue().toString().startsWith("%"));
     }
 
     @Test
@@ -256,8 +256,8 @@ public class NamedPropertyTest extends TestBase {
         Like contains = np.contains("important");
 
         assertNotNull(contains);
-        assertEquals("description", contains.getPropName());
-        String value = contains.getPropValue().toString();
+        assertEquals("description", contains.propName());
+        String value = contains.propValue().toString();
         assertTrue(value.startsWith("%"));
         assertTrue(value.endsWith("%"));
     }
@@ -268,8 +268,8 @@ public class NamedPropertyTest extends TestBase {
         In in = np.in("active", "pending", "approved");
 
         assertNotNull(in);
-        assertEquals("status", in.getPropName());
-        assertEquals(3, in.getValues().size());
+        assertEquals("status", in.propName());
+        assertEquals(3, in.values().size());
     }
 
     @Test
@@ -280,8 +280,8 @@ public class NamedPropertyTest extends TestBase {
         In in = np.in(ids);
 
         assertNotNull(in);
-        assertEquals("id", in.getPropName());
-        assertEquals(5, in.getValues().size());
+        assertEquals("id", in.propName());
+        assertEquals(5, in.values().size());
     }
 
     @Test
@@ -462,8 +462,8 @@ public class NamedPropertyTest extends TestBase {
         In in = id.in(1);
 
         assertNotNull(in);
-        assertEquals("id", in.getPropName());
-        assertEquals(1, in.getValues().size());
+        assertEquals("id", in.propName());
+        assertEquals(1, in.values().size());
     }
 
     @Test
@@ -473,9 +473,9 @@ public class NamedPropertyTest extends TestBase {
         Between between = code.between("A", "Z");
 
         assertNotNull(between);
-        assertEquals("code", between.getPropName());
-        assertEquals("A", between.getMinValue());
-        assertEquals("Z", between.getMaxValue());
+        assertEquals("code", between.propName());
+        assertEquals("A", between.minValue());
+        assertEquals("Z", between.maxValue());
     }
 
     @Test
@@ -504,8 +504,8 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("status");
         final NotEqual condition = property.notEqual("deleted");
 
-        assertEquals("status", condition.getPropName());
-        assertEquals("deleted", condition.getPropValue());
+        assertEquals("status", condition.propName());
+        assertEquals("deleted", condition.propValue());
     }
 
     @Test
@@ -513,8 +513,8 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("age");
         final GreaterThan condition = property.greaterThan(18);
 
-        assertEquals("age", condition.getPropName());
-        assertEquals(Integer.valueOf(18), condition.getPropValue());
+        assertEquals("age", condition.propName());
+        assertEquals(Integer.valueOf(18), condition.propValue());
     }
 
     @Test
@@ -522,8 +522,8 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("score");
         final GreaterThanOrEqual condition = property.greaterThanOrEqual(60);
 
-        assertEquals("score", condition.getPropName());
-        assertEquals(Integer.valueOf(60), condition.getPropValue());
+        assertEquals("score", condition.propName());
+        assertEquals(Integer.valueOf(60), condition.propValue());
     }
 
     @Test
@@ -531,8 +531,8 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("price");
         final LessThan condition = property.lessThan(100);
 
-        assertEquals("price", condition.getPropName());
-        assertEquals(Integer.valueOf(100), condition.getPropValue());
+        assertEquals("price", condition.propName());
+        assertEquals(Integer.valueOf(100), condition.propValue());
     }
 
     @Test
@@ -540,8 +540,8 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("quantity");
         final LessThanOrEqual condition = property.lessThanOrEqual(10);
 
-        assertEquals("quantity", condition.getPropName());
-        assertEquals(Integer.valueOf(10), condition.getPropValue());
+        assertEquals("quantity", condition.propName());
+        assertEquals(Integer.valueOf(10), condition.propValue());
     }
 
     @Test
@@ -549,9 +549,9 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("age");
         final NotBetween condition = property.notBetween(18, 65);
 
-        assertEquals("age", condition.getPropName());
-        assertEquals(Integer.valueOf(18), condition.getMinValue());
-        assertEquals(Integer.valueOf(65), condition.getMaxValue());
+        assertEquals("age", condition.propName());
+        assertEquals(Integer.valueOf(18), condition.minValue());
+        assertEquals(Integer.valueOf(65), condition.maxValue());
     }
 
     @Test
@@ -559,8 +559,8 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("code");
         final NotLike condition = property.notStartsWith("TMP");
 
-        assertEquals("code", condition.getPropName());
-        assertEquals("TMP%", condition.getPropValue());
+        assertEquals("code", condition.propName());
+        assertEquals("TMP%", condition.propValue());
     }
 
     @Test
@@ -568,8 +568,8 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("email");
         final NotLike condition = property.notEndsWith("@temp.com");
 
-        assertEquals("email", condition.getPropName());
-        assertEquals("%@temp.com", condition.getPropValue());
+        assertEquals("email", condition.propName());
+        assertEquals("%@temp.com", condition.propValue());
     }
 
     @Test
@@ -577,8 +577,8 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("description");
         final NotLike condition = property.notContains("draft");
 
-        assertEquals("description", condition.getPropName());
-        assertEquals("%draft%", condition.getPropValue());
+        assertEquals("description", condition.propName());
+        assertEquals("%draft%", condition.propValue());
     }
 
     @Test
@@ -588,9 +588,9 @@ public class NamedPropertyTest extends TestBase {
 
         assertNotNull(condition);
         assertEquals(3, condition.conditions().size());
-        assertEquals(Long.valueOf(1001L), ((Equal) condition.conditions().get(0)).getPropValue());
-        assertEquals(Long.valueOf(1002L), ((Equal) condition.conditions().get(1)).getPropValue());
-        assertEquals(Long.valueOf(1003L), ((Equal) condition.conditions().get(2)).getPropValue());
+        assertEquals(Long.valueOf(1001L), ((Equal) condition.conditions().get(0)).propValue());
+        assertEquals(Long.valueOf(1002L), ((Equal) condition.conditions().get(1)).propValue());
+        assertEquals(Long.valueOf(1003L), ((Equal) condition.conditions().get(2)).propValue());
     }
 
     @Test
@@ -615,9 +615,9 @@ public class NamedPropertyTest extends TestBase {
 
         assertNotNull(condition);
         assertEquals(3, condition.conditions().size());
-        assertEquals(Double.valueOf(1.5), ((Equal) condition.conditions().get(0)).getPropValue());
-        assertEquals(Double.valueOf(2.0), ((Equal) condition.conditions().get(1)).getPropValue());
-        assertEquals(Double.valueOf(2.5), ((Equal) condition.conditions().get(2)).getPropValue());
+        assertEquals(Double.valueOf(1.5), ((Equal) condition.conditions().get(0)).propValue());
+        assertEquals(Double.valueOf(2.0), ((Equal) condition.conditions().get(1)).propValue());
+        assertEquals(Double.valueOf(2.5), ((Equal) condition.conditions().get(2)).propValue());
     }
 
     @Test
@@ -641,8 +641,8 @@ public class NamedPropertyTest extends TestBase {
         final In condition = property.in(new long[] { 1001L, 1002L, 1003L });
 
         assertNotNull(condition);
-        assertEquals("user_id", condition.getPropName());
-        assertEquals(3, condition.getValues().size());
+        assertEquals("user_id", condition.propName());
+        assertEquals(3, condition.values().size());
     }
 
     @Test
@@ -650,7 +650,7 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("id");
         final In condition = property.in(new long[] { 42L });
 
-        assertEquals(1, condition.getValues().size());
+        assertEquals(1, condition.values().size());
     }
 
     @Test
@@ -659,8 +659,8 @@ public class NamedPropertyTest extends TestBase {
         final In condition = property.in(new double[] { 1.5, 2.0, 2.5 });
 
         assertNotNull(condition);
-        assertEquals("rate", condition.getPropName());
-        assertEquals(3, condition.getValues().size());
+        assertEquals("rate", condition.propName());
+        assertEquals(3, condition.values().size());
     }
 
     @Test
@@ -668,7 +668,7 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("score");
         final In condition = property.in(new double[] { 99.9 });
 
-        assertEquals(1, condition.getValues().size());
+        assertEquals(1, condition.values().size());
     }
 
     @Test
@@ -677,8 +677,8 @@ public class NamedPropertyTest extends TestBase {
         final NotIn condition = property.notIn("deleted", "archived");
 
         assertNotNull(condition);
-        assertEquals("status", condition.getPropName());
-        assertEquals(2, condition.getValues().size());
+        assertEquals("status", condition.propName());
+        assertEquals(2, condition.values().size());
     }
 
     @Test
@@ -686,7 +686,7 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("type");
         final NotIn condition = property.notIn("invalid");
 
-        assertEquals(1, condition.getValues().size());
+        assertEquals(1, condition.values().size());
     }
 
     @Test
@@ -695,8 +695,8 @@ public class NamedPropertyTest extends TestBase {
         final NotIn condition = property.notIn(new long[] { 999L, 1000L });
 
         assertNotNull(condition);
-        assertEquals("user_id", condition.getPropName());
-        assertEquals(2, condition.getValues().size());
+        assertEquals("user_id", condition.propName());
+        assertEquals(2, condition.values().size());
     }
 
     @Test
@@ -704,7 +704,7 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("id");
         final NotIn condition = property.notIn(new long[] { 42L });
 
-        assertEquals(1, condition.getValues().size());
+        assertEquals(1, condition.values().size());
     }
 
     @Test
@@ -713,8 +713,8 @@ public class NamedPropertyTest extends TestBase {
         final NotIn condition = property.notIn(new double[] { 0.0, -1.0 });
 
         assertNotNull(condition);
-        assertEquals("rate", condition.getPropName());
-        assertEquals(2, condition.getValues().size());
+        assertEquals("rate", condition.propName());
+        assertEquals(2, condition.values().size());
     }
 
     @Test
@@ -722,7 +722,7 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("score");
         final NotIn condition = property.notIn(new double[] { 0.0 });
 
-        assertEquals(1, condition.getValues().size());
+        assertEquals(1, condition.values().size());
     }
 
     @Test
@@ -731,8 +731,8 @@ public class NamedPropertyTest extends TestBase {
         final NotIn condition = property.notIn(java.util.Arrays.asList("Temp", "Archived"));
 
         assertNotNull(condition);
-        assertEquals("department", condition.getPropName());
-        assertEquals(2, condition.getValues().size());
+        assertEquals("department", condition.propName());
+        assertEquals(2, condition.values().size());
     }
 
     @Test
@@ -740,7 +740,7 @@ public class NamedPropertyTest extends TestBase {
         final NamedProperty property = NamedProperty.of("type");
         final NotIn condition = property.notIn(java.util.Collections.singletonList("invalid"));
 
-        assertEquals(1, condition.getValues().size());
+        assertEquals(1, condition.values().size());
     }
 
     @Test
@@ -799,7 +799,7 @@ public class NamedPropertyTest extends TestBase {
         Or condition = prop.equalsAny(new int[] { 1, 2, 3 });
 
         Assertions.assertEquals(3, condition.conditions().size());
-        Assertions.assertEquals(Integer.valueOf(1), ((Equal) condition.conditions().get(0)).getPropValue());
+        Assertions.assertEquals(Integer.valueOf(1), ((Equal) condition.conditions().get(0)).propValue());
     }
 
     @Test
@@ -816,8 +816,8 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty prop = NamedProperty.of("status");
         In condition = prop.in("active", "pending", "approved");
 
-        Assertions.assertEquals("status", condition.getPropName());
-        Assertions.assertEquals(3, condition.getValues().size());
+        Assertions.assertEquals("status", condition.propName());
+        Assertions.assertEquals(3, condition.values().size());
     }
 
     @Test
@@ -859,12 +859,12 @@ public class NamedPropertyTest extends TestBase {
     @Test
     public void test2ndPass_likeWildcardsAreCorrectlyPlaced() {
         NamedProperty p = NamedProperty.of("col");
-        assertEquals("foo%", p.startsWith("foo").getPropValue());
-        assertEquals("%foo", p.endsWith("foo").getPropValue());
-        assertEquals("%foo%", p.contains("foo").getPropValue());
-        assertEquals("foo%", p.notStartsWith("foo").getPropValue());
-        assertEquals("%foo", p.notEndsWith("foo").getPropValue());
-        assertEquals("%foo%", p.notContains("foo").getPropValue());
+        assertEquals("foo%", p.startsWith("foo").propValue());
+        assertEquals("%foo", p.endsWith("foo").propValue());
+        assertEquals("%foo%", p.contains("foo").propValue());
+        assertEquals("foo%", p.notStartsWith("foo").propValue());
+        assertEquals("%foo", p.notEndsWith("foo").propValue());
+        assertEquals("%foo%", p.notContains("foo").propValue());
     }
 
     @Test
@@ -910,8 +910,8 @@ public class NamedPropertyTest extends TestBase {
         // NamedProperty.between(min, max) must forward min and max in that order.
         NamedProperty p = NamedProperty.of("age");
         Between b = p.between(18, 65);
-        assertEquals(Integer.valueOf(18), b.getMinValue());
-        assertEquals(Integer.valueOf(65), b.getMaxValue());
+        assertEquals(Integer.valueOf(18), b.minValue());
+        assertEquals(Integer.valueOf(65), b.maxValue());
     }
 
     @Test

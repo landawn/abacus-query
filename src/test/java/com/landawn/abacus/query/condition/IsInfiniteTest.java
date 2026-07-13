@@ -20,7 +20,7 @@ public class IsInfiniteTest extends TestBase {
     @Test
     public void testConstructor() {
         IsInfinite condition = new IsInfinite("growthRate");
-        assertEquals("growthRate", condition.getPropName());
+        assertEquals("growthRate", condition.propName());
         assertEquals(Operator.IS, condition.operator());
     }
 
@@ -37,13 +37,13 @@ public class IsInfiniteTest extends TestBase {
     @Test
     public void testGetPropName() {
         IsInfinite condition = new IsInfinite("calculatedRatio");
-        assertEquals("calculatedRatio", condition.getPropName());
+        assertEquals("calculatedRatio", condition.propName());
     }
 
     @Test
     public void testGetPropValue() {
         IsInfinite condition = new IsInfinite("value");
-        Expression value = condition.getPropValue();
+        Expression value = condition.propValue(Expression.class);
         assertNotNull(value);
         assertTrue(value.toString().contains("INFINITE"));
     }
@@ -170,13 +170,13 @@ public class IsInfiniteTest extends TestBase {
         IsInfinite cond2 = new IsInfinite("field2");
 
         // Both should use the same INFINITE expression
-        assertEquals(cond1.getPropValue().toString(), cond2.getPropValue().toString());
+        assertEquals(cond1.propValue().toString(), cond2.propValue().toString());
     }
 
     @Test
     public void testComplexPropertyName() {
         IsInfinite condition = new IsInfinite("calculation.result.value");
-        assertEquals("calculation.result.value", condition.getPropName());
+        assertEquals("calculation.result.value", condition.propName());
         String str = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("calculation.result.value"));
     }
@@ -193,8 +193,8 @@ public class IsInfiniteTest extends TestBase {
     @Test
     public void testOverflowCheckScenario() {
         IsInfinite condition = new IsInfinite("exponentialGrowth");
-        assertNotNull(condition.getPropName());
-        assertNotNull(condition.getPropValue());
+        assertNotNull(condition.propName());
+        assertNotNull(condition.propValue());
     }
 
     @Test
@@ -202,9 +202,9 @@ public class IsInfiniteTest extends TestBase {
         IsInfinite condition = new IsInfinite("growth_rate");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("growth_rate", condition.getPropName());
+        Assertions.assertEquals("growth_rate", condition.propName());
         Assertions.assertEquals(Operator.IS, condition.operator());
-        Assertions.assertEquals(IsInfinite.INFINITE, condition.getPropValue());
+        Assertions.assertEquals(IsInfinite.INFINITE, condition.propValue());
     }
 
     @Test
@@ -214,9 +214,9 @@ public class IsInfiniteTest extends TestBase {
         for (String propName : propNames) {
             IsInfinite condition = new IsInfinite(propName);
 
-            Assertions.assertEquals(propName, condition.getPropName());
+            Assertions.assertEquals(propName, condition.propName());
             Assertions.assertEquals(Operator.IS, condition.operator());
-            Assertions.assertEquals(IsInfinite.INFINITE, condition.getPropValue());
+            Assertions.assertEquals(IsInfinite.INFINITE, condition.propValue());
         }
     }
 
@@ -265,9 +265,9 @@ public class IsInfiniteTest extends TestBase {
         IsInfinite condition = new IsInfinite("value");
 
         // Test methods inherited from Is
-        Assertions.assertEquals("value", condition.getPropName());
+        Assertions.assertEquals("value", condition.propName());
         Assertions.assertEquals(Operator.IS, condition.operator());
-        Assertions.assertNotNull(condition.getPropValue());
+        Assertions.assertNotNull(condition.propValue());
     }
 
     @Test
@@ -276,9 +276,9 @@ public class IsInfiniteTest extends TestBase {
         IsInfinite condition2 = new IsInfinite("calc2");
 
         // Both should share the same INFINITE constant
-        Assertions.assertSame(condition1.getPropValue(), condition2.getPropValue());
-        Assertions.assertEquals(IsInfinite.INFINITE, condition1.getPropValue());
-        Assertions.assertEquals(IsInfinite.INFINITE, condition2.getPropValue());
+        Assertions.assertSame(condition1.propValue(), condition2.propValue());
+        Assertions.assertEquals(IsInfinite.INFINITE, condition1.propValue());
+        Assertions.assertEquals(IsInfinite.INFINITE, condition2.propValue());
     }
 
     @Test
@@ -305,8 +305,8 @@ public class IsInfiniteTest extends TestBase {
         for (String field : numericFields) {
             IsInfinite condition = new IsInfinite(field);
 
-            Assertions.assertEquals(field, condition.getPropName());
-            Assertions.assertEquals(IsInfinite.INFINITE, condition.getPropValue());
+            Assertions.assertEquals(field, condition.propName());
+            Assertions.assertEquals(IsInfinite.INFINITE, condition.propValue());
 
             String result = condition.toString();
             Assertions.assertTrue(result.contains(field + " IS INFINITE"));

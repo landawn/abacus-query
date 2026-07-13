@@ -38,7 +38,7 @@ public class WhereTest extends TestBase {
     public void testGetCondition() {
         Equal condition = new Equal("name", "John");
         Where where = new Where(condition);
-        Condition retrieved = where.getCondition();
+        Condition retrieved = where.condition();
         assertNotNull(retrieved);
         assertEquals(condition, retrieved);
     }
@@ -187,28 +187,28 @@ public class WhereTest extends TestBase {
         Where where1 = Filters.where(equalCondition);
         Assertions.assertNotNull(where1);
         Assertions.assertEquals(Operator.WHERE, where1.operator());
-        Assertions.assertEquals(equalCondition, where1.getCondition());
+        Assertions.assertEquals(equalCondition, where1.condition());
 
         // Test with Like condition
         Condition likeCondition = Filters.like("name", "%John%");
         Where where2 = Filters.where(likeCondition);
         Assertions.assertNotNull(where2);
         Assertions.assertEquals(Operator.WHERE, where2.operator());
-        Assertions.assertEquals(likeCondition, where2.getCondition());
+        Assertions.assertEquals(likeCondition, where2.condition());
 
         // Test with complex AND condition
         And andCondition = Filters.eq("age", 25).and(Filters.gt("salary", 50000));
         Where where3 = Filters.where(andCondition);
         Assertions.assertNotNull(where3);
         Assertions.assertEquals(Operator.WHERE, where3.operator());
-        Assertions.assertEquals(andCondition, where3.getCondition());
+        Assertions.assertEquals(andCondition, where3.condition());
 
         // Test with OR condition
         Or orCondition = Filters.eq("department", "IT").or(Filters.eq("department", "HR"));
         Where where4 = Filters.where(orCondition);
         Assertions.assertNotNull(where4);
         Assertions.assertEquals(Operator.WHERE, where4.operator());
-        Assertions.assertEquals(orCondition, where4.getCondition());
+        Assertions.assertEquals(orCondition, where4.condition());
     }
 
     @Test
@@ -218,7 +218,7 @@ public class WhereTest extends TestBase {
         Where where = Filters.where(condition);
         Assertions.assertNotNull(where);
         Assertions.assertEquals(Operator.WHERE, where.operator());
-        Assertions.assertNotNull(where.getCondition());
+        Assertions.assertNotNull(where.condition());
     }
 
     @Test
@@ -267,7 +267,7 @@ public class WhereTest extends TestBase {
 
         Assertions.assertNotNull(where);
         Assertions.assertEquals(Operator.WHERE, where.operator());
-        Assertions.assertEquals(complex, where.getCondition());
+        Assertions.assertEquals(complex, where.condition());
     }
 
     @Test
@@ -277,7 +277,7 @@ public class WhereTest extends TestBase {
 
         Assertions.assertNotNull(where);
         Assertions.assertEquals(Operator.WHERE, where.operator());
-        Assertions.assertEquals(betweenCondition, where.getCondition());
+        Assertions.assertEquals(betweenCondition, where.condition());
     }
 
     @Test
@@ -287,7 +287,7 @@ public class WhereTest extends TestBase {
 
         Assertions.assertNotNull(where);
         Assertions.assertEquals(Operator.WHERE, where.operator());
-        Assertions.assertEquals(inCondition, where.getCondition());
+        Assertions.assertEquals(inCondition, where.condition());
     }
 
     @Test
@@ -297,6 +297,6 @@ public class WhereTest extends TestBase {
 
         Assertions.assertNotNull(where);
         Assertions.assertEquals(Operator.WHERE, where.operator());
-        Assertions.assertEquals(isNullCondition, where.getCondition());
+        Assertions.assertEquals(isNullCondition, where.condition());
     }
 }

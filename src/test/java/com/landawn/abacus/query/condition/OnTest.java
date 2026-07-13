@@ -32,7 +32,7 @@ public class OnTest extends TestBase {
         Equal condition = new Equal("a.id", "b.a_id");
         On on = new On(condition);
         assertNotNull(on);
-        assertNotNull(on.getCondition());
+        assertNotNull(on.condition());
         assertEquals(Operator.ON, on.operator());
     }
 
@@ -57,7 +57,7 @@ public class OnTest extends TestBase {
     public void testGetCondition() {
         Equal condition = new Equal("users.id", "posts.user_id");
         On on = new On(condition);
-        Condition retrieved = on.getCondition();
+        Condition retrieved = on.condition();
         assertNotNull(retrieved);
     }
 
@@ -160,7 +160,7 @@ public class OnTest extends TestBase {
     public void testComplexCondition() {
         And complexCondition = new And(new Equal("orders.customer_id", "customers.id"), new GreaterThan("orders.order_date", "customers.registration_date"));
         On on = new On(complexCondition);
-        assertNotNull(on.getCondition());
+        assertNotNull(on.condition());
     }
 
     @Test
@@ -169,7 +169,7 @@ public class OnTest extends TestBase {
         compositeKey.put("order_items.order_id", "orders.id");
         compositeKey.put("order_items.customer_id", "orders.customer_id");
         On on = new On(compositeKey);
-        assertNotNull(on.getCondition());
+        assertNotNull(on.condition());
     }
 
     @Test
@@ -186,7 +186,7 @@ public class OnTest extends TestBase {
 
         Assertions.assertNotNull(on);
         Assertions.assertEquals(Operator.ON, on.operator());
-        Assertions.assertEquals(joinCondition, on.getCondition());
+        Assertions.assertEquals(joinCondition, on.condition());
     }
 
     @Test
@@ -194,7 +194,7 @@ public class OnTest extends TestBase {
         And complexCondition = Filters.and(Filters.eq("a.id", Filters.expr("b.a_id")), Filters.gt("b.created", "2024-01-01"));
         On on = Filters.on(complexCondition);
 
-        Assertions.assertEquals(complexCondition, on.getCondition());
+        Assertions.assertEquals(complexCondition, on.condition());
     }
 
     @Test
@@ -202,18 +202,18 @@ public class OnTest extends TestBase {
         On on = Filters.on("users.id", "posts.user_id");
 
         Assertions.assertEquals(Operator.ON, on.operator());
-        Assertions.assertNotNull(on.getCondition());
-        Assertions.assertTrue(on.getCondition() instanceof Equal);
+        Assertions.assertNotNull(on.condition());
+        Assertions.assertTrue(on.condition() instanceof Equal);
     }
 
     @Test
     public void testConstructorWithTableAliases() {
         On on = Filters.on("u.department_id", "d.id");
 
-        Equal condition = (Equal) on.getCondition();
-        Assertions.assertEquals("u.department_id", condition.getPropName());
+        Equal condition = (Equal) on.condition();
+        Assertions.assertEquals("u.department_id", condition.propName());
         // The second property becomes an expression
-        Assertions.assertTrue(condition.getPropValue() instanceof Expression);
+        Assertions.assertTrue(condition.propValue() instanceof Expression);
     }
 
     @Test
@@ -225,7 +225,7 @@ public class OnTest extends TestBase {
         On on = Filters.on(joinConditions);
 
         Assertions.assertEquals(Operator.ON, on.operator());
-        Assertions.assertNotNull(on.getCondition());
+        Assertions.assertNotNull(on.condition());
     }
 
     @Test
@@ -236,7 +236,7 @@ public class OnTest extends TestBase {
         On on = Filters.on(joinCondition);
 
         // Should create a single Equal condition
-        Assertions.assertTrue(on.getCondition() instanceof Equal);
+        Assertions.assertTrue(on.condition() instanceof Equal);
     }
 
     @Test
@@ -253,8 +253,8 @@ public class OnTest extends TestBase {
 
         Assertions.assertTrue(condition instanceof Equal);
         Equal equal = (Equal) condition;
-        Assertions.assertEquals("table1.col1", equal.getPropName());
-        Assertions.assertTrue(equal.getPropValue() instanceof Expression);
+        Assertions.assertEquals("table1.col1", equal.propName());
+        Assertions.assertTrue(equal.propValue() instanceof Expression);
     }
 
     @Test
@@ -325,7 +325,7 @@ public class OnTest extends TestBase {
         On on = Filters.on(joinMap);
 
         // Would create: ON orders.customer_id = customers.id AND orders.region = customers.region
-        Assertions.assertTrue(on.getCondition() instanceof And);
+        Assertions.assertTrue(on.condition() instanceof And);
     }
 
     @Test
@@ -336,8 +336,8 @@ public class OnTest extends TestBase {
 
         On on = Filters.on(complexJoin);
 
-        Assertions.assertEquals(complexJoin, on.getCondition());
-        Assertions.assertEquals(2, on.getCondition().parameters().size());
+        Assertions.assertEquals(complexJoin, on.condition());
+        Assertions.assertEquals(2, on.condition().parameters().size());
     }
 
     @Test

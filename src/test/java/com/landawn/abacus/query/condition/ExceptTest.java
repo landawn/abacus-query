@@ -30,7 +30,7 @@ public class ExceptTest extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
         Except except = new Except(subQuery);
-        SubQuery retrieved = (SubQuery) except.getCondition();
+        SubQuery retrieved = (SubQuery) except.condition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -191,7 +191,7 @@ public class ExceptTest extends TestBase {
 
         Criteria criteria = Criteria.builder().where(Filters.eq("status", "active")).except(excludedUsers).build();
 
-        List<Clause> aggregations = criteria.getSetOperations();
+        List<Clause> aggregations = criteria.setOperations();
         Assertions.assertEquals(1, aggregations.size());
         Assertions.assertEquals(Operator.EXCEPT, aggregations.get(0).operator());
     }
@@ -209,7 +209,7 @@ public class ExceptTest extends TestBase {
         Assertions.assertEquals(Operator.MINUS, minus.operator());
 
         // Same subquery
-        Assertions.assertEquals(except.getCondition(), minus.getCondition());
+        Assertions.assertEquals(except.condition(), minus.condition());
     }
 
     @Test

@@ -23,8 +23,8 @@ public class GreaterThanTest extends TestBase {
     @Test
     public void testConstructor() {
         GreaterThan condition = new GreaterThan("age", 25);
-        assertEquals("age", condition.getPropName());
-        assertEquals(25, (int) condition.getPropValue());
+        assertEquals("age", condition.propName());
+        assertEquals(25, (int) condition.propValue());
         assertEquals(Operator.GREATER_THAN, condition.operator());
     }
 
@@ -41,27 +41,27 @@ public class GreaterThanTest extends TestBase {
     @Test
     public void testGetPropName() {
         GreaterThan condition = new GreaterThan("userName", "John");
-        assertEquals("userName", condition.getPropName());
+        assertEquals("userName", condition.propName());
     }
 
     @Test
     public void testGetPropValue() {
         GreaterThan condition = new GreaterThan("age", 30);
-        Integer value = condition.getPropValue();
+        Integer value = condition.propValue(Integer.class);
         assertEquals(Integer.valueOf(30), value);
     }
 
     @Test
     public void testGetPropValue_String() {
         GreaterThan condition = new GreaterThan("name", "Alice");
-        String value = condition.getPropValue();
+        String value = condition.propValue(String.class);
         assertEquals("Alice", value);
     }
 
     @Test
     public void testGetPropValue_Null() {
         GreaterThan condition = new GreaterThan("field", null);
-        assertNull(condition.getPropValue());
+        assertNull(condition.propValue());
     }
 
     @Test
@@ -198,27 +198,27 @@ public class GreaterThanTest extends TestBase {
     public void testConstructorWithDifferentTypes() {
         // Test with Double
         GreaterThan gtDouble = Filters.gt("price", 99.99);
-        Assertions.assertEquals(99.99, gtDouble.getPropValue());
+        Assertions.assertEquals(99.99, gtDouble.propValue());
 
         // Test with Long
         GreaterThan gtLong = Filters.gt("count", 1000000L);
-        Assertions.assertEquals(1000000L, (Long) gtLong.getPropValue());
+        Assertions.assertEquals(1000000L, (Long) gtLong.propValue());
 
         // Test with Date
         Date now = new Date();
         GreaterThan gtDate = Filters.gt("createdDate", now);
-        Assertions.assertEquals(now, gtDate.getPropValue());
+        Assertions.assertEquals(now, gtDate.propValue());
 
         // Test with String (for alphabetical comparison)
         GreaterThan gtString = Filters.gt("name", "M");
-        Assertions.assertEquals("M", gtString.getPropValue());
+        Assertions.assertEquals("M", gtString.propValue());
     }
 
     @Test
     public void testConstructorWithNull() {
         GreaterThan gt = Filters.gt("value", null);
         Assertions.assertNotNull(gt);
-        Assertions.assertNull(gt.getPropValue());
+        Assertions.assertNull(gt.propValue());
     }
 
     @Test
@@ -276,7 +276,7 @@ public class GreaterThanTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT AVG(salary) FROM employees");
         GreaterThan gt = new GreaterThan("salary", subQuery);
 
-        Assertions.assertEquals(subQuery, gt.getPropValue());
+        Assertions.assertEquals(subQuery, gt.propValue());
 
         String result = gt.toString();
         Assertions.assertTrue(result.contains("salary >"));

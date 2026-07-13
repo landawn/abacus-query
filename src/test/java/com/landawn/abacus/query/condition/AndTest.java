@@ -202,7 +202,7 @@ public class AndTest extends TestBase {
 
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
-        And innerCondition = (And) result.getCondition();
+        And innerCondition = (And) result.condition();
         assertEquals(2, innerCondition.conditions().size());
     }
 
@@ -346,7 +346,7 @@ public class AndTest extends TestBase {
 
         Assertions.assertNotNull(not);
         Assertions.assertEquals(Operator.NOT, not.operator());
-        Assertions.assertEquals(and, not.getCondition());
+        Assertions.assertEquals(and, not.condition());
     }
 
     @Test

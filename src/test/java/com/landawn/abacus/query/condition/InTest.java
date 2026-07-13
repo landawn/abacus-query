@@ -34,8 +34,8 @@ public class InTest extends TestBase {
         List<String> values = Arrays.asList("active", "pending", "approved");
         In condition = new In("status", values);
 
-        assertEquals("status", condition.getPropName());
-        assertEquals(3, condition.getValues().size());
+        assertEquals("status", condition.propName());
+        assertEquals(3, condition.values().size());
         assertEquals(Operator.IN, condition.operator());
     }
 
@@ -59,16 +59,16 @@ public class InTest extends TestBase {
         Set<Integer> values = new HashSet<>(Arrays.asList(1, 2, 3, 5, 8));
         In condition = new In("user_id", values);
 
-        assertEquals("user_id", condition.getPropName());
-        assertEquals(5, condition.getValues().size());
+        assertEquals("user_id", condition.propName());
+        assertEquals(5, condition.values().size());
     }
 
     @Test
     public void testConstructor_SingleValue() {
         In condition = new In("category", Arrays.asList("electronics"));
 
-        assertEquals("category", condition.getPropName());
-        assertEquals(1, condition.getValues().size());
+        assertEquals("category", condition.propName());
+        assertEquals(1, condition.values().size());
     }
 
     @Test
@@ -76,14 +76,14 @@ public class InTest extends TestBase {
         List<String> values = Arrays.asList("A", "B", "C");
         In condition = new In("grade", values);
 
-        assertEquals(3, condition.getValues().size());
-        assertNotSame(values, condition.getValues());
+        assertEquals(3, condition.values().size());
+        assertNotSame(values, condition.values());
     }
 
     @Test
     public void testGetPropName() {
         In condition = new In("status", Arrays.asList("active"));
-        assertEquals("status", condition.getPropName());
+        assertEquals("status", condition.propName());
     }
 
     @Test
@@ -91,7 +91,7 @@ public class InTest extends TestBase {
         List<Integer> values = Arrays.asList(1, 2, 3);
         In condition = new In("id", values);
 
-        List<?> result = condition.getValues();
+        List<?> result = condition.values();
         assertNotNull(result);
         assertEquals(3, result.size());
     }
@@ -297,10 +297,10 @@ public class InTest extends TestBase {
         In condition = new In("status", values);
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("status", condition.getPropName());
+        Assertions.assertEquals("status", condition.propName());
         Assertions.assertEquals(Operator.IN, condition.operator());
-        Assertions.assertEquals(3, condition.getValues().size());
-        Assertions.assertTrue(condition.getValues().containsAll(values));
+        Assertions.assertEquals(3, condition.values().size());
+        Assertions.assertTrue(condition.values().containsAll(values));
     }
 
     @Test
@@ -309,9 +309,9 @@ public class InTest extends TestBase {
         In condition = new In("user_id", values);
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("user_id", condition.getPropName());
-        Assertions.assertEquals(5, condition.getValues().size());
-        Assertions.assertTrue(condition.getValues().containsAll(values));
+        Assertions.assertEquals("user_id", condition.propName());
+        Assertions.assertEquals(5, condition.values().size());
+        Assertions.assertTrue(condition.values().containsAll(values));
     }
 
     @Test
@@ -320,7 +320,7 @@ public class InTest extends TestBase {
         In condition = new In("mixed_field", values);
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals(4, condition.getValues().size());
+        Assertions.assertEquals(4, condition.values().size());
     }
 
     @Test
@@ -390,7 +390,7 @@ public class InTest extends TestBase {
 
         In condition = new In("id", values);
 
-        Assertions.assertEquals(1000, condition.getValues().size());
+        Assertions.assertEquals(1000, condition.values().size());
         Assertions.assertEquals(1000, condition.parameters().size());
     }
 
@@ -398,8 +398,8 @@ public class InTest extends TestBase {
     public void testSingleValue() {
         In condition = new In("type", Collections.singletonList("SINGLE"));
 
-        Assertions.assertEquals(1, condition.getValues().size());
-        Assertions.assertEquals("SINGLE", condition.getValues().get(0));
+        Assertions.assertEquals(1, condition.values().size());
+        Assertions.assertEquals("SINGLE", condition.values().get(0));
 
         String result = condition.toString();
         Assertions.assertTrue(result.contains("type IN ('SINGLE')"));
@@ -410,8 +410,8 @@ public class InTest extends TestBase {
         List<String> values = Arrays.asList("A", null, "B");
         In condition = new In("field", values);
 
-        Assertions.assertEquals(3, condition.getValues().size());
-        Assertions.assertTrue(condition.getValues().contains(null));
+        Assertions.assertEquals(3, condition.values().size());
+        Assertions.assertTrue(condition.values().contains(null));
     }
 
     // --- Row value constructor IN ---
@@ -420,9 +420,9 @@ public class InTest extends TestBase {
     public void testMultiColumn_PropNamesAndValues() {
         In condition = new In(Arrays.asList("first_name", "last_name"), Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
 
-        assertEquals(Arrays.asList("first_name", "last_name"), new ArrayList<>(condition.getPropNames()));
-        assertEquals("first_name", condition.getPropName());
-        assertEquals(2, condition.getValues().size());
+        assertEquals(Arrays.asList("first_name", "last_name"), new ArrayList<>(condition.propNames()));
+        assertEquals("first_name", condition.propName());
+        assertEquals(2, condition.values().size());
         assertEquals(Operator.IN, condition.operator());
     }
 
@@ -456,7 +456,7 @@ public class InTest extends TestBase {
         tuples.get(0).set(0, 99);
         tuples.clear();
 
-        assertEquals(Arrays.asList(1, 2), condition.getValues().get(0));
+        assertEquals(Arrays.asList(1, 2), condition.values().get(0));
     }
 
     @Test
@@ -484,9 +484,9 @@ public class InTest extends TestBase {
     public void testRowValueConstructor_AllowsSinglePropName() {
         In condition = new In(Arrays.asList("a"), Arrays.asList(Arrays.asList(1), Arrays.asList(2)));
 
-        assertEquals(Arrays.asList("a"), new ArrayList<>(condition.getPropNames()));
-        assertEquals("a", condition.getPropName());
-        assertEquals(Arrays.asList(Arrays.asList(1), Arrays.asList(2)), condition.getValues());
+        assertEquals(Arrays.asList("a"), new ArrayList<>(condition.propNames()));
+        assertEquals("a", condition.propName());
+        assertEquals(Arrays.asList(Arrays.asList(1), Arrays.asList(2)), condition.values());
         assertEquals(Arrays.asList(1, 2), condition.parameters());
         assertEquals("(a) IN ((1), (2))", condition.toString(NamingPolicy.NO_CHANGE));
 
@@ -514,8 +514,8 @@ public class InTest extends TestBase {
         Set<String> row1 = new LinkedHashSet<>(Arrays.asList("John", "Doe"));
         In condition = new In(Arrays.asList("first_name", "last_name"), Arrays.asList(row1));
 
-        assertEquals(1, condition.getValues().size());
-        assertEquals(Arrays.asList("John", "Doe"), condition.getValues().get(0));
+        assertEquals(1, condition.values().size());
+        assertEquals(Arrays.asList("John", "Doe"), condition.values().get(0));
         assertEquals("(first_name, last_name) IN (('John', 'Doe'))", condition.toString(NamingPolicy.NO_CHANGE));
     }
 
@@ -523,9 +523,9 @@ public class InTest extends TestBase {
     public void testMultiColumn_FromArrayRows() {
         In condition = new In(Arrays.asList("first_name", "last_name"), Arrays.asList(new Object[] { "John", "Doe" }, new Object[] { "Jane", "Roe" }));
 
-        assertEquals(2, condition.getValues().size());
-        assertEquals(Arrays.asList("John", "Doe"), condition.getValues().get(0));
-        assertEquals(Arrays.asList("Jane", "Roe"), condition.getValues().get(1));
+        assertEquals(2, condition.values().size());
+        assertEquals(Arrays.asList("John", "Doe"), condition.values().get(0));
+        assertEquals(Arrays.asList("Jane", "Roe"), condition.values().get(1));
         assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), condition.parameters());
         assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.NO_CHANGE));
     }
@@ -541,9 +541,9 @@ public class InTest extends TestBase {
 
         In condition = new In(Arrays.asList("firstName", "lastName"), Arrays.asList(row1, row2));
 
-        assertEquals(2, condition.getValues().size());
-        assertEquals(Arrays.asList("John", "Doe"), condition.getValues().get(0));
-        assertEquals(Arrays.asList("Jane", "Roe"), condition.getValues().get(1));
+        assertEquals(2, condition.values().size());
+        assertEquals(Arrays.asList("John", "Doe"), condition.values().get(0));
+        assertEquals(Arrays.asList("Jane", "Roe"), condition.values().get(1));
         // Values are extracted in propNames order regardless of map iteration order.
         assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.SNAKE_CASE));
     }
@@ -556,7 +556,7 @@ public class InTest extends TestBase {
 
         In condition = new In(Arrays.asList("firstName", "lastName"), Arrays.asList(row));
 
-        assertEquals(Arrays.asList("John", null), condition.getValues().get(0));
+        assertEquals(Arrays.asList("John", null), condition.values().get(0));
     }
 
     @Test
@@ -566,9 +566,9 @@ public class InTest extends TestBase {
 
         In condition = new In(Arrays.asList("firstName", "lastName"), Arrays.asList(a1, a2));
 
-        assertEquals(2, condition.getValues().size());
-        assertEquals(Arrays.asList("John", "Doe"), condition.getValues().get(0));
-        assertEquals(Arrays.asList("Jane", "Roe"), condition.getValues().get(1));
+        assertEquals(2, condition.values().size());
+        assertEquals(Arrays.asList("John", "Doe"), condition.values().get(0));
+        assertEquals(Arrays.asList("Jane", "Roe"), condition.values().get(1));
         assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.SNAKE_CASE));
     }
 
@@ -580,7 +580,7 @@ public class InTest extends TestBase {
         In condition = new In(Arrays.asList("firstName", "lastName"),
                 Arrays.asList(Arrays.asList("John", "Doe"), new Object[] { "Max", "Coe" }, mapRow, beanRow));
 
-        assertEquals(4, condition.getValues().size());
+        assertEquals(4, condition.values().size());
         assertEquals(Arrays.asList("John", "Doe", "Max", "Coe", "Jane", "Roe", "Sam", "Poe"), condition.parameters());
     }
 

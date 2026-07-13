@@ -158,7 +158,7 @@ public abstract class AbstractIn extends ComposableCondition {
         for (final Object row : valueRows) {
             N.checkArgNotNull(row, "value row");
 
-            // Each tuple is wrapped unmodifiable so getValues() is immutable in depth, not just at the
+            // Each tuple is wrapped unmodifiable so values() is immutable in depth, not just at the
             // outer ImmutableList level (a mutated tuple would silently desync the memoized parameters).
             copy.add(Collections.unmodifiableList(toRowTuple(row, this.propNames, arity)));
         }
@@ -247,54 +247,54 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     /**
-     * Gets the property name being checked in this IN or NOT IN condition. For a row-value
-     * condition this returns the first property name; prefer {@link #getPropNames()} in that case.
+     * Returns the property name being checked in this IN or NOT IN condition. For a row-value
+     * condition this returns the first property name; prefer {@link #propNames()} in that case.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In inCond = new In("status", Arrays.asList("active", "pending"));
-     * String prop = inCond.getPropName();   // "status"
+     * String prop = inCond.propName();   // "status"
      * }</pre>
      *
      * @return the (first) property name, or {@code null} for an uninitialized instance
      */
-    public String getPropName() {
+    public String propName() {
         return N.firstOrNullIfEmpty(propNames);
     }
 
     /**
-     * Gets the property names checked in this IN or NOT IN condition. For a single-column condition
+     * Returns the property names checked in this IN or NOT IN condition. For a single-column condition
      * the returned collection holds exactly one name.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In single = new In("status", Arrays.asList("active", "pending"));
-     * Collection<String> p1 = single.getPropNames();   // ["status"]
+     * Collection<String> p1 = single.propNames();   // ["status"]
      *
      * In multi = new In(Arrays.asList("first_name", "last_name"),
      *                   Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
-     * Collection<String> p2 = multi.getPropNames();   // ["first_name", "last_name"]
+     * Collection<String> p2 = multi.propNames();   // ["first_name", "last_name"]
      * }</pre>
      *
      * @return non-null immutable collection of property names
      */
-    public ImmutableList<String> getPropNames() {
+    public ImmutableList<String> propNames() {
         return propNames;
     }
 
     /**
-     * Gets the values used by this IN or NOT IN condition. For a row-value condition each element
+     * Returns the values used by this IN or NOT IN condition. For a row-value condition each element
      * is itself a tuple (a list of values, one per property name).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In inCond = new In("status", Arrays.asList("active", "pending"));
-     * List<?> values = inCond.getValues();   // ["active", "pending"]
+     * List<?> values = inCond.values();   // ["active", "pending"]
      * }</pre>
      *
      * @return an immutable list of the values (or value tuples), or an empty immutable list for an uninitialized instance
      */
-    public ImmutableList<?> getValues() { //NOSONAR
+    public ImmutableList<?> values() { //NOSONAR
         if (values == null) {
             return ImmutableList.empty();
         }
@@ -317,28 +317,28 @@ public abstract class AbstractIn extends ComposableCondition {
      *
      * <p>Note that the mode is independent of the number of property names: a single-property row value
      * condition renders as {@code (p1) IN ((v1), (v2))} and carries one-element tuples in
-     * {@link #getValues()}, while a scalar condition renders as {@code p1 IN (v1, v2)} and carries
+     * {@link #values()}, while a scalar condition renders as {@code p1 IN (v1, v2)} and carries
      * plain values.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In scalar = new In("status", Arrays.asList("active", "pending"));
-     * boolean b1 = scalar.isRowValueConstructor();   // false
+     * boolean b1 = scalar.rowValueConstructor();   // false
      *
      * In rowValue = new In(Arrays.asList("firstName", "lastName"),
      *                      Arrays.asList(Arrays.asList("John", "Doe")));
-     * boolean b2 = rowValue.isRowValueConstructor(); // true
+     * boolean b2 = rowValue.rowValueConstructor(); // true
      * }</pre>
      *
      * @return {@code true} if this condition renders in row value constructor form, {@code false} for the scalar form
      */
-    public boolean isRowValueConstructor() {
+    public boolean rowValueConstructor() {
         return rowValueConstructor;
     }
 
     /**
-     * Gets the parameter values for this condition, flattened in declaration order. For a single-column
-     * scalar condition the parameters are the values from {@link #getValues()}; for a row-value
+     * Returns the parameter values for this condition, flattened in declaration order. For a single-column
+     * scalar condition the parameters are the values from {@link #values()}; for a row-value
      * condition they are the row tuples flattened row by row, column within row. Any individual value
      * that is itself a {@link Condition} (a nested sub-condition) has its parameters spliced into the
      * result in place of that value; non-{@code Condition} values are included as-is.
@@ -376,7 +376,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
         final List<Object> parameters = new ArrayList<>(values.size());
 
-        if (isRowValueConstructor()) {
+        if (rowValueConstructor()) {
             for (final Object tuple : values) {
                 for (final Object value : (Collection<?>) tuple) {
                     addParameter(parameters, value);
@@ -435,7 +435,7 @@ public abstract class AbstractIn extends ComposableCondition {
         final int size = values == null ? 0 : values.size();
         final StringBuilder sb = new StringBuilder(16 + (size << 3));
 
-        if (isRowValueConstructor()) {
+        if (rowValueConstructor()) {
             sb.append(SK._PARENTHESIS_L);
             int p = 0;
             for (final String propName : propNames) {
@@ -467,7 +467,7 @@ public abstract class AbstractIn extends ComposableCondition {
             return sb.toString();
         }
 
-        sb.append(effectiveNamingPolicy.convert(getPropName())).append(SK._SPACE).append(opStr).append(SK.SPACE_PARENTHESIS_L);
+        sb.append(effectiveNamingPolicy.convert(propName())).append(SK._SPACE).append(opStr).append(SK.SPACE_PARENTHESIS_L);
 
         if (values != null) {
             for (int i = 0; i < size; i++) {

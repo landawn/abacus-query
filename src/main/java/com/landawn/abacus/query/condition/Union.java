@@ -158,24 +158,24 @@ public class Union extends Clause {
     }
 
     /**
-     * Gets the subquery used by this UNION clause.
+     * Returns the subquery used by this UNION clause.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Retrieve the wrapped subquery
      * SubQuery subQuery = Filters.subQuery("SELECT id, name FROM customers WHERE region = 'East'");
      * Union union = new Union(subQuery);
-     * SubQuery retrieved = union.getSubQuery();
+     * SubQuery retrieved = union.subQuery();
      * // returns the subquery passed to the constructor
      *
-     * // The wrapped subquery is also what getCondition() returns
-     * boolean sameAsCondition = union.getSubQuery() == union.getCondition();
+     * // The wrapped subquery is also what condition() returns
+     * boolean sameAsCondition = union.subQuery() == union.condition();
      * // returns true
      * }</pre>
      *
      * @return the {@link SubQuery} supplied at construction time
      */
-    public SubQuery getSubQuery() {
-        return (SubQuery) getCondition();
+    public SubQuery subQuery() {
+        return (SubQuery) condition();
     }
 }

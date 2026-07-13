@@ -24,8 +24,8 @@ public class BinaryTest extends TestBase {
     @Test
     public void testConstructor() {
         Binary condition = new Binary("age", Operator.EQUAL, 25);
-        assertEquals("age", condition.getPropName());
-        assertEquals(25, (int) condition.getPropValue());
+        assertEquals("age", condition.propName());
+        assertEquals(25, (int) condition.propValue());
         assertEquals(Operator.EQUAL, condition.operator());
     }
 
@@ -42,37 +42,37 @@ public class BinaryTest extends TestBase {
     @Test
     public void testGetPropName() {
         Binary condition = new Binary("userName", Operator.LIKE, "%test%");
-        assertEquals("userName", condition.getPropName());
+        assertEquals("userName", condition.propName());
     }
 
     @Test
     public void testGetPropValue() {
         Binary condition = new Binary("age", Operator.GREATER_THAN, 30);
-        Integer value = condition.getPropValue();
+        Integer value = condition.propValue(Integer.class);
         assertEquals(Integer.valueOf(30), value);
     }
 
     @Test
     public void testGetPropValue_String() {
         Binary condition = new Binary("name", Operator.EQUAL, "Alice");
-        String value = condition.getPropValue();
+        String value = condition.propValue(String.class);
         assertEquals("Alice", value);
     }
 
     @Test
     public void testGetPropValue_Null() {
         Binary condition = new Binary("field", Operator.IS, null);
-        assertNull(condition.getPropValue());
+        assertNull(condition.propValue());
     }
 
     @Test
     public void testSafeValueAccessors() {
         Binary condition = new Binary("age", Operator.EQUAL, 30);
         assertEquals(30, condition.propValue());
-        assertEquals(Integer.valueOf(30), condition.getPropValue(Integer.class));
-        assertThrows(ClassCastException.class, () -> condition.getPropValue(String.class));
-        assertThrows(NullPointerException.class, () -> condition.getPropValue(null));
-        assertNull(new Binary("age", Operator.EQUAL, null).getPropValue(Integer.class));
+        assertEquals(Integer.valueOf(30), condition.propValue(Integer.class));
+        assertThrows(ClassCastException.class, () -> condition.propValue(String.class));
+        assertThrows(NullPointerException.class, () -> condition.propValue(null));
+        assertNull(new Binary("age", Operator.EQUAL, null).propValue(Integer.class));
     }
 
     @Test
@@ -276,7 +276,7 @@ public class BinaryTest extends TestBase {
         Binary binary = Filters.binary("optional", Operator.EQUAL, null);
 
         Assertions.assertNotNull(binary);
-        Assertions.assertNull(binary.getPropValue());
+        Assertions.assertNull(binary.propValue());
     }
 
     @Test
@@ -459,8 +459,8 @@ public class BinaryTest extends TestBase {
         Binary binary = new Binary();
         Binary same = new Binary();
 
-        Assertions.assertNull(binary.getPropName());
-        Assertions.assertNull(binary.getPropValue());
+        Assertions.assertNull(binary.propName());
+        Assertions.assertNull(binary.propValue());
         Assertions.assertEquals(binary, same);
         Assertions.assertEquals(binary.hashCode(), same.hashCode());
     }

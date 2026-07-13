@@ -115,24 +115,24 @@ public class All extends ComposableCell {
     }
 
     /**
-     * Gets the subquery used by this ALL condition.
+     * Returns the subquery used by this ALL condition.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Retrieve the wrapped subquery
      * SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE in_stock = true");
      * All all = new All(subQuery);
-     * SubQuery retrieved = all.getSubQuery();
+     * SubQuery retrieved = all.subQuery();
      * // returns the subquery passed to the constructor
      *
-     * // The wrapped subquery is also what getCondition() returns
-     * boolean sameAsCondition = all.getSubQuery() == all.getCondition();
+     * // The wrapped subquery is also what condition() returns
+     * boolean sameAsCondition = all.subQuery() == all.condition();
      * // returns true
      * }</pre>
      *
      * @return the {@link SubQuery} supplied at construction time
      */
-    public SubQuery getSubQuery() {
+    public SubQuery subQuery() {
         return (SubQuery) condition;
     }
 }

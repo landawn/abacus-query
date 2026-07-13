@@ -51,7 +51,7 @@ import com.landawn.abacus.util.Strings;
  * <p>All numeric APIs consistently use {@code (count, offset)} parameter order:
  * {@link com.landawn.abacus.query.AbstractQueryBuilder#limit(int, int)},
  * {@link Criteria.Builder#limit(int, int)}, and
- * {@link com.landawn.abacus.query.DynamicQuery.DynamicSqlBuilder#limit(int, int)}.</p>
+ * {@link com.landawn.abacus.query.DynamicQuery.Builder#limit(int, int)}.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -171,10 +171,10 @@ public class Limit extends Clause {
      *   <li>SQL:2008 {@code FETCH FIRST/NEXT count ROW[S] ONLY} (offset {@code 0})</li>
      * </ul>
      *
-     * <p><b>Parsing.</b> When every number slot is an integer literal, {@link #getCount()} and
-     * {@link #getOffset()} return their concrete values. When a slot is a placeholder (or an integer literal
-     * that overflows {@code int}), the value stays unresolved and opaque: {@link #getCount()} returns
-     * {@link Integer#MAX_VALUE} and {@link #getOffset()} returns {@code 0}. Anything that does not match the
+     * <p><b>Parsing.</b> When every number slot is an integer literal, {@link #count()} and
+     * {@link #offset()} return their concrete values. When a slot is a placeholder (or an integer literal
+     * that overflows {@code int}), the value stays unresolved and opaque: {@link #count()} returns
+     * {@link Integer#MAX_VALUE} and {@link #offset()} returns {@code 0}. Anything that does not match the
      * grammar — including a float or negative number, a keyword typo, or unrelated syntax — is rejected with
      * an {@link IllegalArgumentException}.</p>
      *
@@ -191,7 +191,7 @@ public class Limit extends Clause {
      * <pre>{@code
      * // Standard LIMIT with OFFSET (numeric prefix triggers automatic "LIMIT " prepend)
      * Limit standard = new Limit("10 OFFSET 20");
-     * // toString() -> "LIMIT 10 OFFSET 20"; getCount() -> 10; getOffset() -> 20
+     * // toString() -> "LIMIT 10 OFFSET 20"; count() -> 10; offset() -> 20
      *
      * // Case-insensitive input with collapsed whitespace
      * Limit lower = new Limit("limit 10   offset 20");
@@ -199,15 +199,15 @@ public class Limit extends Clause {
      *
      * // MySQL-style limit (offset, count)
      * Limit mysql = new Limit("20, 10");
-     * // toString() -> "LIMIT 20, 10"; getCount() -> 10; getOffset() -> 20
+     * // toString() -> "LIMIT 20, 10"; count() -> 10; offset() -> 20
      *
      * // SQL:2008 FETCH form (offset and count parsed; normalized literal retained)
      * Limit fetch = new Limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY");
-     * // toString() -> "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY"; getCount() -> 20; getOffset() -> 5
+     * // toString() -> "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY"; count() -> 20; offset() -> 5
      *
      * // Placeholder expression stays opaque
      * Limit ph = new Limit("? OFFSET ?");
-     * // toString() -> "LIMIT ? OFFSET ?"; getCount() -> Integer.MAX_VALUE; getOffset() -> 0
+     * // toString() -> "LIMIT ? OFFSET ?"; count() -> Integer.MAX_VALUE; offset() -> 0
      *
      * // Edge: a null, empty, or blank expression is rejected
      * Limit bad1 = new Limit((String) null);   // throws IllegalArgumentException
@@ -315,7 +315,7 @@ public class Limit extends Clause {
     /**
      * Checks whether this Limit was created from a string expression (see {@link #Limit(String)}).
      * When this returns {@code true}, {@link #literal()} is non-null and is what gets rendered;
-     * {@link #getCount()}/{@link #getOffset()} may hold sentinel values ({@link Integer#MAX_VALUE}/0)
+     * {@link #count()}/{@link #offset()} may hold sentinel values ({@link Integer#MAX_VALUE}/0)
      * if the expression stayed opaque. When it returns {@code false}, the Limit was created with
      * numeric count/offset parameters and {@link #literal()} returns {@code null}.
      *
@@ -333,7 +333,7 @@ public class Limit extends Clause {
     }
 
     /**
-     * Gets the maximum number of rows to return.
+     * Returns the maximum number of rows to return.
      * For a string expression that was parsed (see {@link #Limit(String)}), this returns the parsed count.
      * For a string expression that stayed opaque (a placeholder slot, or an integer literal that overflows
      * {@code int}), this returns {@link Integer#MAX_VALUE}.
@@ -342,33 +342,33 @@ public class Limit extends Clause {
      * <pre>{@code
      * // Simple count limit
      * Limit limit = new Limit(25);
-     * int count = limit.getCount();
+     * int count = limit.count();
      * // Returns: 25
      *
      * // Limit with offset (count=50, offset=100)
      * Limit paged = new Limit(50, 100);
-     * int pageCount = paged.getCount();
+     * int pageCount = paged.count();
      * // Returns: 50
      *
      * // Parsed string expression
      * Limit custom = new Limit("10 OFFSET 20");
-     * int customCount = custom.getCount();
+     * int customCount = custom.count();
      * // Returns: 10
      *
      * // Opaque (placeholder) expression
      * Limit opaque = new Limit("? OFFSET ?");
-     * int opaqueCount = opaque.getCount();
+     * int opaqueCount = opaque.count();
      * // Returns: Integer.MAX_VALUE
      * }</pre>
      *
      * @return the row count limit, or {@link Integer#MAX_VALUE} for an opaque (unparsed) string expression
      */
-    public int getCount() {
+    public int count() {
         return count;
     }
 
     /**
-     * Gets the number of rows to skip before returning results.
+     * Returns the number of rows to skip before returning results.
      * For Limit instances created with only a count, this returns 0.
      * For a string expression that was parsed (see {@link #Limit(String)}), this returns the parsed offset.
      * For a string expression that stayed opaque (a placeholder slot, or an integer literal that overflows
@@ -378,28 +378,28 @@ public class Limit extends Clause {
      * <pre>{@code
      * // Limit with offset for pagination (count=10, offset=20)
      * Limit page3 = new Limit(10, 20);
-     * int offset = page3.getOffset();
+     * int offset = page3.offset();
      * // Returns: 20
      *
      * // Simple count-only limit
      * Limit simple = new Limit(10);
-     * int noOffset = simple.getOffset();
+     * int noOffset = simple.offset();
      * // Returns: 0
      *
      * // Parsed string expression
      * Limit custom = new Limit("10 OFFSET 20");
-     * int customOffset = custom.getOffset();
+     * int customOffset = custom.offset();
      * // Returns: 20
      *
      * // Opaque (placeholder) expression
      * Limit opaque = new Limit("? OFFSET ?");
-     * int opaqueOffset = opaque.getOffset();
+     * int opaqueOffset = opaque.offset();
      * // Returns: 0
      * }</pre>
      *
      * @return the offset value, or 0 if constructed with only count or with an opaque (unparsed) string expression
      */
-    public int getOffset() {
+    public int offset() {
         return offset;
     }
 
@@ -408,7 +408,7 @@ public class Limit extends Clause {
      *
      * @return {@code true} for numeric limits and parsed numeric expressions; {@code false} for opaque expressions
      */
-    public boolean isResolved() {
+    public boolean resolved() {
         return resolved;
     }
 
@@ -417,8 +417,8 @@ public class Limit extends Clause {
      *
      * @return the resolved count, or an empty optional for an opaque expression
      */
-    public OptionalInt getResolvedCount() {
-        return isResolved() ? OptionalInt.of(count) : OptionalInt.empty();
+    public OptionalInt resolvedCount() {
+        return resolved() ? OptionalInt.of(count) : OptionalInt.empty();
     }
 
     /**
@@ -426,12 +426,12 @@ public class Limit extends Clause {
      *
      * @return the resolved offset, or an empty optional for an opaque expression
      */
-    public OptionalInt getResolvedOffset() {
-        return isResolved() ? OptionalInt.of(offset) : OptionalInt.empty();
+    public OptionalInt resolvedOffset() {
+        return resolved() ? OptionalInt.of(offset) : OptionalInt.empty();
     }
 
     /**
-     * Gets the parameters for this LIMIT clause.
+     * Returns the parameters for this LIMIT clause.
      * LIMIT clauses do not have bindable parameters as the count and offset
      * are typically part of the SQL structure itself, not parameterized values.
      * This method always returns an empty list.

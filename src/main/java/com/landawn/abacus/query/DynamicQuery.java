@@ -24,20 +24,20 @@ import com.landawn.abacus.util.Strings;
 
 /**
  * Entry point for fluently creating dynamic SQL queries programmatically.
- * This utility class exposes {@link #builder()}, which returns a {@link DynamicSqlBuilder} that provides
+ * This utility class exposes {@link #builder()}, which returns a {@link Builder} that provides
  * a fluent and lightweight way to construct SQL SELECT statements with support for joins,
  * conditions, grouping, ordering, and set operations.
  *
- * <p>The {@link DynamicSqlBuilder} follows a fluent interface pattern where each method returns the builder
+ * <p>The {@link Builder} follows a fluent interface pattern where each method returns the builder
  * instance, allowing method chaining. The SQL components are built in a natural order:
  * SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT/OFFSET.</p>
  *
- * <p><b>Important:</b> Always call {@link DynamicSqlBuilder#build()} to generate the final SQL string and
+ * <p><b>Important:</b> Always call {@link Builder#build()} to generate the final SQL string and
  * release resources. The builder uses object pooling internally for performance optimization.</p>
  *
  * <h2>Example usage:</h2>
  * <pre>{@code
- * DynamicSqlBuilder builder = DynamicQuery.builder();
+ * Builder builder = DynamicQuery.builder();
  * builder.select().append("id", "user_id").append("name");
  * builder.from().append("users", "u");
  * builder.where().append("u.active = ?").and("u.age > ?");
@@ -57,14 +57,14 @@ public final class DynamicQuery {
     }
 
     /**
-     * Creates a new {@link DynamicSqlBuilder} instance for constructing a dynamic SQL query.
+     * Creates a new {@link Builder} instance for constructing a dynamic SQL query.
      *
-     * <p>Each call returns a fresh, independent {@link DynamicSqlBuilder}. Always finish with
-     * {@link DynamicSqlBuilder#build()} to obtain the SQL and release pooled resources.</p>
+     * <p>Each call returns a fresh, independent {@link Builder}. Always finish with
+     * {@link Builder#build()} to obtain the SQL and release pooled resources.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * DynamicSqlBuilder builder = DynamicQuery.builder();
+     * Builder builder = DynamicQuery.builder();
      * builder.select().append("*");
      * builder.from().append("users");
      * builder.where().append("active = true");
@@ -72,13 +72,13 @@ public final class DynamicQuery {
      * // Returns: "SELECT * FROM users WHERE active = true"
      *
      * // Each call returns a new, independent builder
-     * DynamicSqlBuilder another = DynamicQuery.builder();   // not the same instance as 'builder'
+     * Builder another = DynamicQuery.builder();   // not the same instance as 'builder'
      * }</pre>
      *
-     * @return a new {@link DynamicSqlBuilder} instance
+     * @return a new {@link Builder} instance
      */
-    public static DynamicSqlBuilder builder() {
-        return new DynamicSqlBuilder();
+    public static Builder builder() {
+        return new Builder();
     }
 
     private static void checkSqlFragmentNotBlank(final String value, final String argName) {
@@ -130,7 +130,7 @@ public final class DynamicQuery {
      * Builder for constructing dynamic SQL queries clause by clause.
      * Instances and retained clause handles are mutable and are not thread-safe.
      */
-    public static class DynamicSqlBuilder {
+    public static class Builder {
 
         /** The {@link SelectClause} for this builder. */
         private SelectClause selectClause = new SelectClause(Objectory.createStringBuilder());
@@ -153,7 +153,7 @@ public final class DynamicQuery {
         /** The {@link StringBuilder} for additional SQL parts. */
         private StringBuilder moreParts = null;
 
-        private DynamicSqlBuilder() {
+        private Builder() {
 
         }
 
@@ -163,7 +163,7 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * DynamicSqlBuilder builder = DynamicQuery.builder();
+         * Builder builder = DynamicQuery.builder();
          * builder.select().append("id").append("name", "user_name");
          * // Generates: SELECT id, name AS user_name
          * }</pre>
@@ -183,7 +183,7 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * DynamicSqlBuilder builder = DynamicQuery.builder();
+         * Builder builder = DynamicQuery.builder();
          * builder.from().append("users", "u").leftJoin("orders o", "u.id = o.user_id");
          * // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
          * }</pre>
@@ -203,7 +203,7 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * DynamicSqlBuilder builder = DynamicQuery.builder();
+         * Builder builder = DynamicQuery.builder();
          * builder.where().append("status = ?").and("created_date > ?");
          * // Generates: WHERE status = ? AND created_date > ?
          * }</pre>
@@ -227,7 +227,7 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * DynamicSqlBuilder builder = DynamicQuery.builder();
+         * Builder builder = DynamicQuery.builder();
          * builder.groupBy().append("department").append("year");
          * // Generates: GROUP BY department, year
          * }</pre>
@@ -251,7 +251,7 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * DynamicSqlBuilder builder = DynamicQuery.builder();
+         * Builder builder = DynamicQuery.builder();
          * builder.having().append("COUNT(*) > ?").and("SUM(amount) < ?");
          * // Generates: HAVING COUNT(*) > ? AND SUM(amount) < ?
          * }</pre>
@@ -275,7 +275,7 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * DynamicSqlBuilder builder = DynamicQuery.builder();
+         * Builder builder = DynamicQuery.builder();
          * builder.orderBy().append("created_date DESC").append("name ASC");
          * // Generates: ORDER BY created_date DESC, name ASC
          * }</pre>
@@ -299,7 +299,7 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * DynamicSqlBuilder builder = DynamicQuery.builder();
+         * Builder builder = DynamicQuery.builder();
          * builder.select().append("*");
          * builder.from().append("users");
          * builder.limit(10);
@@ -311,7 +311,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code count} is negative
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
-        public DynamicSqlBuilder limit(final int count) {
+        public Builder limit(final int count) {
             checkNotBuilt();
             N.checkArgNotNegative(count, "count");
 
@@ -327,7 +327,7 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * DynamicSqlBuilder builder = DynamicQuery.builder();
+         * Builder builder = DynamicQuery.builder();
          * builder.select().append("*");
          * builder.from().append("users");
          * builder.limit(10, 20);  // count=10, offset=20
@@ -343,7 +343,7 @@ public final class DynamicQuery {
          * @see #fetchNextRows(int)
          * @see #fetchFirstRows(int)
          */
-        public DynamicSqlBuilder limit(final int count, final int offset) {
+        public Builder limit(final int count, final int offset) {
             checkNotBuilt();
             N.checkArgNotNegative(count, "count");
             N.checkArgNotNegative(offset, "offset");
@@ -377,7 +377,7 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          * @see #offsetRows(int)
          */
-        public DynamicSqlBuilder offset(final int offset) {
+        public Builder offset(final int offset) {
             checkNotBuilt();
             N.checkArgNotNegative(offset, "offset");
 
@@ -404,7 +404,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code offset} is negative
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
-        public DynamicSqlBuilder offsetRows(final int offset) {
+        public Builder offsetRows(final int offset) {
             checkNotBuilt();
             N.checkArgNotNegative(offset, "offset");
 
@@ -430,7 +430,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code count} is negative
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
-        public DynamicSqlBuilder fetchNextRows(final int count) {
+        public Builder fetchNextRows(final int count) {
             checkNotBuilt();
             N.checkArgNotNegative(count, "count");
 
@@ -456,7 +456,7 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          * @see #offsetRows(int)
          */
-        public DynamicSqlBuilder fetchFirstRows(final int count) {
+        public Builder fetchFirstRows(final int count) {
             checkNotBuilt();
             N.checkArgNotNegative(count, "count");
 
@@ -491,7 +491,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
-        public DynamicSqlBuilder union(final String query) {
+        public Builder union(final String query) {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
@@ -526,7 +526,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
-        public DynamicSqlBuilder unionAll(final String query) {
+        public Builder unionAll(final String query) {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
@@ -561,7 +561,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
-        public DynamicSqlBuilder intersect(final String query) {
+        public Builder intersect(final String query) {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
@@ -596,7 +596,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
-        public DynamicSqlBuilder except(final String query) {
+        public Builder except(final String query) {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
@@ -631,7 +631,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
-        public DynamicSqlBuilder minus(final String query) {
+        public Builder minus(final String query) {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
@@ -676,7 +676,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppend} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
-        public DynamicSqlBuilder append(final String textToAppend) {
+        public Builder append(final String textToAppend) {
             checkNotBuilt();
             checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
@@ -706,7 +706,7 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          * @see #append(String)
          */
-        public DynamicSqlBuilder appendIf(final boolean b, final String textToAppend) {
+        public Builder appendIf(final boolean b, final String textToAppend) {
             checkNotBuilt();
 
             if (b) {
@@ -737,7 +737,7 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          * @see #append(String)
          */
-        public DynamicSqlBuilder appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
+        public Builder appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             checkNotBuilt();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
@@ -785,7 +785,7 @@ public final class DynamicQuery {
          */
         private void checkNotBuilt() {
             if (selectClause == null) {
-                throw new IllegalStateException("This DynamicSqlBuilder has already been closed after build() was called");
+                throw new IllegalStateException("This Builder has already been closed after build() was called");
             }
         }
 
@@ -801,7 +801,7 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * DynamicSqlBuilder builder = DynamicQuery.builder();
+         * Builder builder = DynamicQuery.builder();
          * builder.select().append("*");
          * builder.from().append("users");
          * builder.where().append("active = true");
@@ -940,7 +940,7 @@ public final class DynamicQuery {
      * Builder class for constructing the {@code SELECT} clause of a SQL query.
      * Provides methods to add columns with optional aliases and conditional inclusion.
      *
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#select()}
+     * <p>This class is not meant to be instantiated directly. Use {@link Builder#select()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -952,7 +952,7 @@ public final class DynamicQuery {
      *     .appendIf(includeAge, "age");
      * }</pre>
      *
-     * <p>Once the owning {@link DynamicSqlBuilder#build()} completes, this clause is closed: its internal buffer is
+     * <p>Once the owning {@link Builder#build()} completes, this clause is closed: its internal buffer is
      * released and any subsequent operation on it throws {@link IllegalStateException}.</p>
      */
     public static class SelectClause extends ClauseBuilder {
@@ -1151,7 +1151,7 @@ public final class DynamicQuery {
      * Builder class for constructing the {@code FROM} clause of a SQL query.
      * Supports adding tables, aliases, and various types of joins.
      *
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#from()}
+     * <p>This class is not meant to be instantiated directly. Use {@link Builder#from()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1162,7 +1162,7 @@ public final class DynamicQuery {
      *     .innerJoin("products p", "o.product_id = p.id");
      * }</pre>
      *
-     * <p>Once the owning {@link DynamicSqlBuilder#build()} completes, this clause is closed: its internal buffer is
+     * <p>Once the owning {@link Builder#build()} completes, this clause is closed: its internal buffer is
      * released and any subsequent operation on it throws {@link IllegalStateException}.</p>
      */
     public static class FromClause extends ClauseBuilder {
@@ -1655,7 +1655,7 @@ public final class DynamicQuery {
      * Builder class for constructing the {@code WHERE} clause of a SQL query.
      * Supports adding conditions with {@code AND}/{@code OR} operators and parameter placeholders.
      *
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#where()}
+     * <p>This class is not meant to be instantiated directly. Use {@link Builder#where()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1668,7 +1668,7 @@ public final class DynamicQuery {
      * // Generates: WHERE status = ? AND age >= ? OR vip = true AND city IN (?, ?, ?)
      * }</pre>
      *
-     * <p>Once the owning {@link DynamicSqlBuilder#build()} completes, this clause is closed: its internal buffer is
+     * <p>Once the owning {@link Builder#build()} completes, this clause is closed: its internal buffer is
      * released and any subsequent operation on it throws {@link IllegalStateException}.</p>
      */
     public static class WhereClause extends ClauseBuilder {
@@ -1928,7 +1928,7 @@ public final class DynamicQuery {
      * Builder class for constructing the {@code GROUP BY} clause of a SQL query.
      * Supports adding single or multiple grouping columns.
      *
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#groupBy()}
+     * <p>This class is not meant to be instantiated directly. Use {@link Builder#groupBy()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -1940,7 +1940,7 @@ public final class DynamicQuery {
      * // Generates: GROUP BY department, year, month, region
      * }</pre>
      *
-     * <p>Once the owning {@link DynamicSqlBuilder#build()} completes, this clause is closed: its internal buffer is
+     * <p>Once the owning {@link Builder#build()} completes, this clause is closed: its internal buffer is
      * released and any subsequent operation on it throws {@link IllegalStateException}.</p>
      */
     public static class GroupByClause extends ClauseBuilder {
@@ -2075,7 +2075,7 @@ public final class DynamicQuery {
      * Builder class for constructing the {@code HAVING} clause of a SQL query.
      * Used to filter grouped results based on aggregate conditions.
      *
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#having()}
+     * <p>This class is not meant to be instantiated directly. Use {@link Builder#having()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -2086,7 +2086,7 @@ public final class DynamicQuery {
      * // Generates: GROUP BY department HAVING COUNT(*) > ? AND AVG(salary) > ?
      * }</pre>
      *
-     * <p>Once the owning {@link DynamicSqlBuilder#build()} completes, this clause is closed: its internal buffer is
+     * <p>Once the owning {@link Builder#build()} completes, this clause is closed: its internal buffer is
      * released and any subsequent operation on it throws {@link IllegalStateException}.</p>
      */
     public static class HavingClause extends ClauseBuilder {
@@ -2346,7 +2346,7 @@ public final class DynamicQuery {
      * Builder class for constructing the {@code ORDER BY} clause of a SQL query.
      * Supports adding single or multiple columns with sort directions.
      *
-     * <p>This class is not meant to be instantiated directly. Use {@link DynamicSqlBuilder#orderBy()}
+     * <p>This class is not meant to be instantiated directly. Use {@link Builder#orderBy()}
      * to get an instance.</p>
      *
      * <h2>Example usage:</h2>
@@ -2358,7 +2358,7 @@ public final class DynamicQuery {
      * // Generates: ORDER BY created_date DESC, priority ASC, category, name
      * }</pre>
      *
-     * <p>Once the owning {@link DynamicSqlBuilder#build()} completes, this clause is closed: its internal buffer is
+     * <p>Once the owning {@link Builder#build()} completes, this clause is closed: its internal buffer is
      * released and any subsequent operation on it throws {@link IllegalStateException}.</p>
      */
     public static class OrderByClause extends ClauseBuilder {

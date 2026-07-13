@@ -90,14 +90,14 @@ public class Using extends Cell {
 
     /**
      * The validated, unqualified column names this USING clause joins on. Stored separately from the
-     * wrapped {@link Expression} so the original column list is recoverable via {@link #getColumnNames()}.
+     * wrapped {@link Expression} so the original column list is recoverable via {@link #columnNames()}.
      * May be {@code null} for uninitialized instances produced by the package-private default constructor
      * (e.g., during Kryo deserialization). Not part of {@link #equals(Object)}/{@link #hashCode()}, which
      * already account for these columns through the wrapped condition.
      */
     private List<String> columnNames;
 
-    /** Lazily memoized immutable view returned by {@link #getColumnNames()} (performance only). */
+    /** Lazily memoized immutable view returned by {@link #columnNames()} (performance only). */
     private transient ImmutableList<String> cachedColumnNamesView;
 
     /**
@@ -194,15 +194,15 @@ public class Using extends Cell {
     }
 
     /**
-     * Gets the validated column names this USING clause joins on, in the order they were supplied.
+     * Returns the validated column names this USING clause joins on, in the order they were supplied.
      * The returned list contains the unqualified column names (no table prefixes) that were passed to
      * the constructor, after validation. This is a convenient structured alternative to inspecting the
-     * rendered {@code USING (...)} expression returned by {@link #getCondition()}.
+     * rendered {@code USING (...)} expression returned by {@link #condition()}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Using using = new Using("company_id", "branch_id");
-     * List<String> cols = using.getColumnNames();
+     * List<String> cols = using.columnNames();
      * // cols = ["company_id", "branch_id"]
      *
      * // Edge: the returned list is immutable
@@ -215,12 +215,12 @@ public class Using extends Cell {
      * @return an immutable list of the unqualified column names in supplied order, or an empty immutable
      *         list for an uninitialized instance produced by the package-private default constructor
      */
-    public ImmutableList<String> getColumnNames() {
+    public ImmutableList<String> columnNames() {
         if (columnNames == null) {
             return ImmutableList.empty();
         }
 
-        // Memoized like Join.getJoinEntities(); the underlying list never changes after construction.
+        // Memoized like Join.joinEntities(); the underlying list never changes after construction.
         ImmutableList<String> view = cachedColumnNamesView;
 
         if (view == null) {
@@ -321,7 +321,7 @@ public class Using extends Cell {
         }
 
         // Reject list/grouping punctuation: a name like "a, b" would render as USING (a, b) while
-        // getColumnNames() reports the single element ["a, b"] — pass the columns individually instead.
+        // columnNames() reports the single element ["a, b"] — pass the columns individually instead.
         if (columnName.indexOf(',') >= 0 || columnName.indexOf('(') >= 0 || columnName.indexOf(')') >= 0) {
             throw new IllegalArgumentException("USING column names must be single column names without ',', '(' or ')'");
         }

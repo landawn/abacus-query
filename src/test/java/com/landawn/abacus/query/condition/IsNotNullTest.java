@@ -18,7 +18,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testConstructor() {
         IsNotNull condition = new IsNotNull("email");
-        assertEquals("email", condition.getPropName());
+        assertEquals("email", condition.propName());
         assertEquals(Operator.IS_NOT, condition.operator());
     }
 
@@ -35,7 +35,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testGetPropName() {
         IsNotNull condition = new IsNotNull("customer_name");
-        assertEquals("customer_name", condition.getPropName());
+        assertEquals("customer_name", condition.propName());
     }
 
     @Test
@@ -84,7 +84,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testUseCaseScenario_ValidatedFields() {
         IsNotNull nameCheck = new IsNotNull("customer_name");
-        assertEquals("customer_name", nameCheck.getPropName());
+        assertEquals("customer_name", nameCheck.propName());
     }
 
     @Test
@@ -96,7 +96,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testGetPropValue() {
         IsNotNull condition = new IsNotNull("field");
-        Expression value = condition.getPropValue();
+        Expression value = condition.propValue(Expression.class);
         assertNotNull(value);
         assertEquals(IsNull.NULL, value);
     }
@@ -176,9 +176,9 @@ public class IsNotNullTest extends TestBase {
         IsNotNull condition = new IsNotNull("email");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("email", condition.getPropName());
+        Assertions.assertEquals("email", condition.propName());
         Assertions.assertEquals(Operator.IS_NOT, condition.operator());
-        Assertions.assertEquals(IsNull.NULL, condition.getPropValue());
+        Assertions.assertEquals(IsNull.NULL, condition.propValue());
     }
 
     @Test
@@ -188,9 +188,9 @@ public class IsNotNullTest extends TestBase {
         for (String propName : propNames) {
             IsNotNull condition = new IsNotNull(propName);
 
-            Assertions.assertEquals(propName, condition.getPropName());
+            Assertions.assertEquals(propName, condition.propName());
             Assertions.assertEquals(Operator.IS_NOT, condition.operator());
-            Assertions.assertEquals(IsNull.NULL, condition.getPropValue());
+            Assertions.assertEquals(IsNull.NULL, condition.propValue());
         }
     }
 
@@ -229,9 +229,9 @@ public class IsNotNullTest extends TestBase {
         IsNotNull condition = new IsNotNull("value");
 
         // Test methods inherited from IsNot
-        Assertions.assertEquals("value", condition.getPropName());
+        Assertions.assertEquals("value", condition.propName());
         Assertions.assertEquals(Operator.IS_NOT, condition.operator());
-        Assertions.assertNotNull(condition.getPropValue());
+        Assertions.assertNotNull(condition.propValue());
     }
 
     @Test
@@ -240,9 +240,9 @@ public class IsNotNullTest extends TestBase {
         IsNotNull condition2 = new IsNotNull("field2");
 
         // Both should use the same NULL constant from IsNull
-        Assertions.assertSame(condition1.getPropValue(), condition2.getPropValue());
-        Assertions.assertEquals(IsNull.NULL, condition1.getPropValue());
-        Assertions.assertEquals(IsNull.NULL, condition2.getPropValue());
+        Assertions.assertSame(condition1.propValue(), condition2.propValue());
+        Assertions.assertEquals(IsNull.NULL, condition1.propValue());
+        Assertions.assertEquals(IsNull.NULL, condition2.propValue());
     }
 
     @Test

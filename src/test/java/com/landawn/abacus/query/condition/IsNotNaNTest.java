@@ -20,7 +20,7 @@ public class IsNotNaNTest extends TestBase {
     @Test
     public void testConstructor() {
         IsNotNaN condition = new IsNotNaN("temperature");
-        assertEquals("temperature", condition.getPropName());
+        assertEquals("temperature", condition.propName());
         assertEquals(Operator.IS_NOT, condition.operator());
     }
 
@@ -37,20 +37,20 @@ public class IsNotNaNTest extends TestBase {
     @Test
     public void testGetPropName() {
         IsNotNaN condition = new IsNotNaN("sensorValue");
-        assertEquals("sensorValue", condition.getPropName());
+        assertEquals("sensorValue", condition.propName());
     }
 
     @Test
     public void testGetPropName_DifferentNames() {
         IsNotNaN cond1 = new IsNotNaN("value1");
         IsNotNaN cond2 = new IsNotNaN("value2");
-        assertNotEquals(cond1.getPropName(), cond2.getPropName());
+        assertNotEquals(cond1.propName(), cond2.propName());
     }
 
     @Test
     public void testGetPropValue() {
         IsNotNaN condition = new IsNotNaN("calculatedValue");
-        Expression value = condition.getPropValue();
+        Expression value = condition.propValue(Expression.class);
         assertNotNull(value);
     }
 
@@ -173,13 +173,13 @@ public class IsNotNaNTest extends TestBase {
     @Test
     public void testDoublePropertyName() {
         IsNotNaN condition = new IsNotNaN("calculationResult");
-        assertEquals("calculationResult", condition.getPropName());
+        assertEquals("calculationResult", condition.propName());
     }
 
     @Test
     public void testComplexPropertyName() {
         IsNotNaN condition = new IsNotNaN("user.profile.score");
-        assertEquals("user.profile.score", condition.getPropName());
+        assertEquals("user.profile.score", condition.propName());
         String str = condition.toString(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("user.profile.score"));
     }
@@ -200,9 +200,9 @@ public class IsNotNaNTest extends TestBase {
         IsNotNaN condition = new IsNotNaN("calculation_result");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("calculation_result", condition.getPropName());
+        Assertions.assertEquals("calculation_result", condition.propName());
         Assertions.assertEquals(Operator.IS_NOT, condition.operator());
-        Assertions.assertEquals(IsNaN.NAN, condition.getPropValue());
+        Assertions.assertEquals(IsNaN.NAN, condition.propValue());
     }
 
     @Test
@@ -210,8 +210,8 @@ public class IsNotNaNTest extends TestBase {
         IsNotNaN condition = new IsNotNaN("temperature");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("temperature", condition.getPropName());
-        Assertions.assertEquals(IsNaN.NAN, condition.getPropValue());
+        Assertions.assertEquals("temperature", condition.propName());
+        Assertions.assertEquals(IsNaN.NAN, condition.propValue());
     }
 
     @Test
@@ -252,9 +252,9 @@ public class IsNotNaNTest extends TestBase {
         IsNotNaN condition = new IsNotNaN("value");
 
         // Test methods inherited from IsNot
-        Assertions.assertEquals("value", condition.getPropName());
+        Assertions.assertEquals("value", condition.propName());
         Assertions.assertEquals(Operator.IS_NOT, condition.operator());
-        Assertions.assertNotNull(condition.getPropValue());
+        Assertions.assertNotNull(condition.propValue());
     }
 
     @Test
@@ -263,9 +263,9 @@ public class IsNotNaNTest extends TestBase {
         IsNotNaN condition2 = new IsNotNaN("calc2");
 
         // Both should use the same NAN constant from IsNaN
-        Assertions.assertSame(condition1.getPropValue(), condition2.getPropValue());
-        Assertions.assertEquals(IsNaN.NAN, condition1.getPropValue());
-        Assertions.assertEquals(IsNaN.NAN, condition2.getPropValue());
+        Assertions.assertSame(condition1.propValue(), condition2.propValue());
+        Assertions.assertEquals(IsNaN.NAN, condition1.propValue());
+        Assertions.assertEquals(IsNaN.NAN, condition2.propValue());
     }
 
     @Test
@@ -275,9 +275,9 @@ public class IsNotNaNTest extends TestBase {
         for (String propName : propNames) {
             IsNotNaN condition = new IsNotNaN(propName);
 
-            Assertions.assertEquals(propName, condition.getPropName());
+            Assertions.assertEquals(propName, condition.propName());
             Assertions.assertEquals(Operator.IS_NOT, condition.operator());
-            Assertions.assertEquals(IsNaN.NAN, condition.getPropValue());
+            Assertions.assertEquals(IsNaN.NAN, condition.propValue());
 
             String result = condition.toString();
             Assertions.assertTrue(result.contains(propName));

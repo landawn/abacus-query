@@ -46,7 +46,7 @@ public class NotExistsTest extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = false");
         NotExists condition = new NotExists(subQuery);
-        SubQuery retrieved = (SubQuery) condition.getCondition();
+        SubQuery retrieved = (SubQuery) condition.condition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }

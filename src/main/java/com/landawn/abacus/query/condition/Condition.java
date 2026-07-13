@@ -15,6 +15,7 @@
 package com.landawn.abacus.query.condition;
 
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.Immutable;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 
@@ -22,18 +23,18 @@ import com.landawn.abacus.util.NamingPolicy;
  * The base interface for all query conditions.
  * Conditions are immutable objects that represent various types of query criteria,
  * such as equality checks, comparisons, composable operations, and SQL clauses.
- * 
+ *
  * <p>This interface defines the contract that all conditions must follow, providing
  * methods for operator access, parameter management, and string representation.
  * Composable operations (AND, OR, NOT) are available on the abstract subclass
  * {@link ComposableCondition}. Conditions are designed to be composable, allowing
  * complex queries to be built from simple building blocks.</p>
- * 
+ *
  * <p>Conditions are immutable after construction.</p>
- * 
+ *
  * <p>Common implementations include:</p>
  * <ul>
- *   <li><b>Comparison conditions:</b> {@code Equal}, {@code NotEqual}, {@code GreaterThan}, 
+ *   <li><b>Comparison conditions:</b> {@code Equal}, {@code NotEqual}, {@code GreaterThan},
  *       {@code LessThan}, {@code GreaterThanOrEqual}, {@code LessThanOrEqual}</li>
  *   <li><b>Range conditions:</b> {@code Between}, {@code NotBetween}</li>
  *   <li><b>Pattern matching:</b> {@code Like}, {@code NotLike}</li>
@@ -43,7 +44,7 @@ import com.landawn.abacus.util.NamingPolicy;
  *   <li><b>SQL clauses:</b> {@code Where}, {@code Having}, {@code GroupBy}, {@code OrderBy}, {@code Join}</li>
  *   <li><b>Subquery operations:</b> {@code Exists}, {@code NotExists}, {@code All}, {@code Any}</li>
  * </ul>
- * 
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Create conditions via Filters factory
@@ -61,16 +62,17 @@ import com.landawn.abacus.util.NamingPolicy;
  * // Get parameters for prepared statements
  * ImmutableList<Object> params = combined.parameters();   // [18, "active"]
  * }</pre>
- * 
+ *
  * @see Filters
  * @see AbstractCondition
  * @see ComposableCondition
  */
-public interface Condition {
+@com.landawn.abacus.annotation.Immutable
+public interface Condition extends Immutable {
     /**
-     * Gets the operator associated with this condition.
+     * Returns the operator associated with this condition.
      * The operator determines the type of comparison or operation performed.
-     * 
+     *
      * <p>Each condition has exactly one operator that defines its behavior.
      * For example, an Equal condition has the EQUAL operator, while an
      * And condition has the AND operator.</p>
@@ -92,7 +94,7 @@ public interface Condition {
     Operator operator();
 
     /**
-     * Gets the list of parameter values associated with this condition.
+     * Returns the list of parameter values associated with this condition.
      * Parameters are the actual values used in comparisons (e.g., the "John" in name = "John").
      *
      * <p><b>Usage Examples:</b></p>

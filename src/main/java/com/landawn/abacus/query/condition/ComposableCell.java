@@ -42,7 +42,7 @@ public abstract class ComposableCell extends ComposableCondition {
 
     /**
      * The wrapped condition. This field is immutable once set in the constructor.
-     * Accessed by subclasses for covariant getter casts (e.g. {@link All#getSubQuery()} returns
+     * Accessed by subclasses for covariant getter casts (e.g. {@link All#subQuery()} returns
      * {@code (SubQuery) condition}).
      */
     protected final Condition condition;
@@ -93,35 +93,35 @@ public abstract class ComposableCell extends ComposableCondition {
     }
 
     /**
-     * Gets the wrapped condition.
+     * Returns the wrapped condition.
      * Callers that need a more specific subtype must cast explicitly.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Condition eq = Filters.equal("status", "active");
      * Not notCond = new Not(eq);
-     * Equal inner = (Equal) notCond.getCondition();
+     * Equal inner = (Equal) notCond.condition();
      * // inner.toString() returns "status = 'active'"
      *
      * SubQuery sub = Filters.subQuery("SELECT id FROM orders");
      * Exists exists = new Exists(sub);
-     * Condition c = exists.getCondition();
+     * Condition c = exists.condition();
      * // c == sub (the same wrapped SubQuery is returned)
      *
      * // Edge: the wrapped condition is returned as-is; an incompatible cast fails
-     * Like bad = (Like) notCond.getCondition();   // throws ClassCastException
+     * Like bad = (Like) notCond.condition();   // throws ClassCastException
      * }</pre>
      *
      * @return the wrapped condition; never {@code null} for instances created via the protected
      *         constructor, but may be {@code null} for uninitialized instances produced by the
      *         package-private default constructor (e.g., during Kryo deserialization)
      */
-    public Condition getCondition() {
+    public Condition condition() {
         return condition;
     }
 
     /**
-     * Gets the parameters from the wrapped condition.
+     * Returns the parameters from the wrapped condition.
      * This method delegates to the wrapped condition's parameters method.
      *
      * <p><b>Usage Examples:</b></p>
@@ -183,7 +183,7 @@ public abstract class ComposableCell extends ComposableCondition {
     @Override
     public String toString(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-        final Condition cond = getCondition();
+        final Condition cond = condition();
         final String conditionString = cond == null ? "" : cond.toString(effectiveNamingPolicy);
         final Operator op = operator();
         final String opStr = op == null ? Strings.NULL : op.toString();

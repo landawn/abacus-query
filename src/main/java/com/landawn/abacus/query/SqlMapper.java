@@ -90,7 +90,7 @@ import com.landawn.abacus.util.XmlUtil;
  * ParsedSql sql = mapper.get("findAccountById");
  * 
  * // Get SQL attributes
- * ImmutableMap<String, String> attrs = mapper.getAttributes("batchInsertAccounts");
+ * ImmutableMap<String, String> attrs = mapper.attributes("batchInsertAccounts");
  * String batchSize = attrs.get("batchSize");
  * }</pre>
  */
@@ -449,21 +449,21 @@ public final class SqlMapper {
      * // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql>
      * SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml");
      *
-     * ImmutableMap<String, String> attrs = mapper.getAttributes("batchInsert");
+     * ImmutableMap<String, String> attrs = mapper.attributes("batchInsert");
      * if (attrs != null) {
      *     String batchSize = attrs.get("batchSize");   // "100"
      *     String timeout = attrs.get("timeout");       // "30"
      * }
      *
      * // Returns null for unknown ids
-     * ImmutableMap<String, String> unknown = mapper.getAttributes("nonExistentId");
+     * ImmutableMap<String, String> unknown = mapper.attributes("nonExistentId");
      * // unknown is null
      * }</pre>
      *
      * @param id the SQL identifier to look up
      * @return an immutable map of attribute names to values, or {@code null} if the id is {@code null}, empty, exceeds {@link #MAX_ID_LENGTH} characters, or is not found
      */
-    public ImmutableMap<String, String> getAttributes(final String id) {
+    public ImmutableMap<String, String> attributes(final String id) {
         if (!isValidLookupId(id)) {
             return null; // NOSONAR
         }

@@ -153,8 +153,8 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
     @Override
     protected void appendCondition(final Condition cond) {
         if (cond instanceof final Binary binary) {
-            final String propName = binary.getPropName();
-            final Object propValue = binary.getPropValue();
+            final String propName = binary.propName();
+            final Object propValue = binary.propValue();
 
             // A Binary built via Filters.binary(prop, IN/NOT_IN, collection) stores its membership values as a
             // normalized List. Render it as a real IN clause -- "col IN (?, ?, ...)" -- to match In/NotIn and
@@ -182,22 +182,22 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             _sb.append(_SPACE);
             setParameter(propName, propValue);
         } else if (cond instanceof final Between bt) {
-            appendBetweenClause(bt.getPropName(), bt.operator(), bt.getMinValue(), bt.getMaxValue());
+            appendBetweenClause(bt.propName(), bt.operator(), bt.minValue(), bt.maxValue());
         } else if (cond instanceof final NotBetween nbt) {
-            appendBetweenClause(nbt.getPropName(), nbt.operator(), nbt.getMinValue(), nbt.getMaxValue());
+            appendBetweenClause(nbt.propName(), nbt.operator(), nbt.minValue(), nbt.maxValue());
         } else if (cond instanceof final AbstractIn anyIn) {
             // Handles both In and NotIn; the IN / NOT IN operator is carried by anyIn.operator().
             // Row-value mode must be dispatched explicitly (not on the property-name count): a
             // single-prop row-value condition ("(id) IN ((1), (2))") still carries tuple rows,
             // which the scalar path would bind whole as single parameters.
-            if (anyIn.isRowValueConstructor()) {
-                appendMultiColumnInClause(anyIn.getPropNames(), anyIn.operator(), anyIn.getValues());
+            if (anyIn.rowValueConstructor()) {
+                appendMultiColumnInClause(anyIn.propNames(), anyIn.operator(), anyIn.values());
             } else {
-                appendInClause(anyIn.getPropNames(), anyIn.operator(), anyIn.getValues());
+                appendInClause(anyIn.propNames(), anyIn.operator(), anyIn.values());
             }
         } else if (cond instanceof final AbstractInSubQuery anyInSubQuery) {
             // Handles both InSubQuery and NotInSubQuery; the IN / NOT IN operator is carried by anyInSubQuery.operator().
-            appendInSubQueryClause(anyInSubQuery.getPropNames(), anyInSubQuery.operator(), anyInSubQuery.getSubQuery());
+            appendInSubQueryClause(anyInSubQuery.propNames(), anyInSubQuery.operator(), anyInSubQuery.subQuery());
         } else if (cond instanceof Where || cond instanceof Having) {
             final Clause clause = (Clause) cond;
 
@@ -205,7 +205,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             _sb.append(clause.operator().toString());
             _sb.append(_SPACE);
 
-            appendCondition(clause.getCondition());
+            appendCondition(clause.condition());
         } else if (cond instanceof final Using using) {
             // The inner expression of a Using condition already carries the required parentheses,
             // e.g. "(employee_id)"; wrapping it again would produce invalid SQL like "USING ((employee_id))".
@@ -213,11 +213,11 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             _sb.append(using.operator().toString());
             _sb.append(_SPACE);
 
-            appendCondition(using.getCondition());
+            appendCondition(using.condition());
         } else if (cond instanceof final Cell cell) {
-            appendParenthesizedCondition(cell.operator(), cell.getCondition());
+            appendParenthesizedCondition(cell.operator(), cell.condition());
         } else if (cond instanceof final ComposableCell cell) {
-            appendParenthesizedCondition(cell.operator(), cell.getCondition());
+            appendParenthesizedCondition(cell.operator(), cell.condition());
         } else if (cond instanceof final Junction junction) {
             final List<Condition> conditionList = junction.conditions();
 
@@ -245,10 +245,10 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                 }
             }
         } else if (cond instanceof final SubQuery subQuery) {
-            final Condition subCond = subQuery.getCondition();
+            final Condition subCond = subQuery.condition();
 
-            if (Strings.isNotEmpty(subQuery.sql())) {
-                _sb.append(subQuery.sql());
+            if (Strings.isNotEmpty(subQuery.rawSql())) {
+                _sb.append(subQuery.rawSql());
             } else {
                 final SqlBuilder subBuilder = newSubQueryBuilder(subQuery);
                 seedNamedParameterOccurrences(subBuilder);
@@ -432,18 +432,18 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * @throws IllegalArgumentException if {@code subQuery} has no selected property/column names
      */
     private SqlBuilder newSubQueryBuilder(final SubQuery subQuery) {
-        final Collection<String> selectPropNames = subQuery.getSelectPropNames();
+        final Collection<String> selectPropNames = subQuery.selectPropNames();
         N.checkArgNotEmpty(selectPropNames, SELECTION_PART_MSG);
 
         final SqlBuilder subBuilder = new SqlBuilder(sqlDialect);
         subBuilder._op = OperationType.QUERY;
         subBuilder._propOrColumnNames = selectPropNames;
 
-        if (subQuery.getEntityClass() != null) {
-            return subBuilder.from(subQuery.getEntityClass());
+        if (subQuery.entityClass() != null) {
+            return subBuilder.from(subQuery.entityClass());
         }
 
-        return subBuilder.from(subQuery.getEntityName());
+        return subBuilder.from(subQuery.entityName());
     }
 
 }

@@ -317,32 +317,23 @@ public class SubQuery extends AbstractCondition {
      * <pre>{@code
      * // Raw SQL subquery
      * SubQuery rawQuery = new SubQuery("SELECT id FROM users WHERE status = 'active'");
-     * String sql = rawQuery.sql();
+     * String sql = rawQuery.rawSql();
      * // Returns: "SELECT id FROM users WHERE status = 'active'"
      *
      * // Structured subquery returns null for sql()
      * SubQuery structured = new SubQuery("users", Arrays.asList("id"), Filters.equal("status", "active"));
-     * String structuredSql = structured.sql();
+     * String structuredSql = structured.rawSql();
      * // Returns: null
      * }</pre>
      *
      * @return the SQL script, or {@code null} if this is a structured subquery
      */
-    public String getRawSql() {
+    public String rawSql() {
         return sql;
     }
 
     /**
-     * Compatibility alias for {@link #getRawSql()}.
-     *
-     * @return the raw SQL text, or {@code null} for a structured subquery
-     */
-    public String sql() {
-        return getRawSql();
-    }
-
-    /**
-     * Gets the entity/table name for this subquery.
+     * Returns the entity/table name for this subquery.
      * This is available for both structured subqueries and raw SQL subqueries that were
      * created with an entity name parameter. For raw SQL subqueries created without
      * an entity name, this may be empty.
@@ -351,51 +342,51 @@ public class SubQuery extends AbstractCondition {
      * <pre>{@code
      * // Structured subquery with entity name
      * SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), Filters.equal("active", true));
-     * String entityName = subQuery.getEntityName();
+     * String entityName = subQuery.entityName();
      * // Returns: "users"
      *
      * // Raw SQL subquery with entity name
      * SubQuery rawQuery = new SubQuery("orders", "SELECT order_id FROM orders WHERE total > 1000");
-     * String name = rawQuery.getEntityName();
+     * String name = rawQuery.entityName();
      * // Returns: "orders"
      *
      * // Raw SQL subquery without entity name
      * SubQuery simpleRaw = new SubQuery("SELECT id FROM users");
-     * String emptyName = simpleRaw.getEntityName();
+     * String emptyName = simpleRaw.entityName();
      * // Returns: "" (empty string)
      * }</pre>
      *
      * @return the entity/table name, or an empty string if not set
      */
-    public String getEntityName() {
+    public String entityName() {
         return entityName;
     }
 
     /**
-     * Gets the entity class if this subquery was created with a class reference.
+     * Returns the entity class if this subquery was created with a class reference.
      * This provides type information for subqueries constructed using the class-based constructor.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Subquery created with entity class
      * SubQuery subQuery = new SubQuery(Product.class, Arrays.asList("id", "name"), Filters.equal("active", true));
-     * Class<?> entityClass = subQuery.getEntityClass();
+     * Class<?> entityClass = subQuery.entityClass();
      * // Returns: Product.class
      *
      * // Subquery created with entity name string returns null
      * SubQuery namedQuery = new SubQuery("products", Arrays.asList("id"), Filters.equal("active", true));
-     * Class<?> clazz = namedQuery.getEntityClass();
+     * Class<?> clazz = namedQuery.entityClass();
      * // Returns: null
      * }</pre>
      *
      * @return the entity class, or {@code null} if created with an entity name string or raw SQL
      */
-    public Class<?> getEntityClass() {
+    public Class<?> entityClass() {
         return entityClass;
     }
 
     /**
-     * Gets the collection of property names to select in this subquery.
+     * Returns the collection of property names to select in this subquery.
      * These are the columns that will appear in the SELECT clause of the generated SQL.
      * For raw SQL subqueries, this returns {@code null}.
      *
@@ -403,18 +394,18 @@ public class SubQuery extends AbstractCondition {
      * <pre>{@code
      * // Structured subquery with selected properties
      * SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "email", "name"), Filters.equal("active", true));
-     * Collection<String> propNames = subQuery.getSelectPropNames();
+     * Collection<String> propNames = subQuery.selectPropNames();
      * // Returns: ["id", "email", "name"]
      *
      * // Raw SQL subquery returns null
      * SubQuery rawQuery = new SubQuery("SELECT id FROM users WHERE active = true");
-     * Collection<String> rawProps = rawQuery.getSelectPropNames();
+     * Collection<String> rawProps = rawQuery.selectPropNames();
      * // Returns: null
      * }</pre>
      *
      * @return immutable list of property names to select, or {@code null} for raw SQL subqueries
      */
-    public ImmutableList<String> getSelectPropNames() {
+    public ImmutableList<String> selectPropNames() {
         if (propNames == null) {
             return null;
         }
@@ -457,7 +448,7 @@ public class SubQuery extends AbstractCondition {
         }
 
         if (cond instanceof Criteria) {
-            if (!Strings.isBlank(((Criteria) cond).getSelectModifier())) {
+            if (!Strings.isBlank(((Criteria) cond).selectModifier())) {
                 throw new IllegalArgumentException("Subquery criteria cannot include a SELECT modifier");
             }
 
@@ -476,7 +467,7 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Gets the WHERE condition for this subquery.
+     * Returns the WHERE condition for this subquery.
      * This condition is applied when generating the SQL for structured subqueries.
      * For raw SQL subqueries or subqueries without conditions, this returns {@code null}.
      *
@@ -485,23 +476,23 @@ public class SubQuery extends AbstractCondition {
      * // Structured subquery with condition
      * Condition activeCondition = Filters.equal("active", true);
      * SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), activeCondition);
-     * Condition condition = subQuery.getCondition();
+     * Condition condition = subQuery.condition();
      * // Returns the wrapped WHERE condition: WHERE active = true
      *
-     * // Raw SQL subquery returns null for getCondition()
+     * // Raw SQL subquery returns null for condition()
      * SubQuery rawQuery = new SubQuery("SELECT id FROM users WHERE active = true");
-     * Condition rawCondition = rawQuery.getCondition();
+     * Condition rawCondition = rawQuery.condition();
      * // Returns: null
      * }</pre>
      *
      * @return the WHERE condition, or {@code null} if no condition or raw SQL subquery
      */
-    public Condition getCondition() {
+    public Condition condition() {
         return condition;
     }
 
     /**
-     * Gets the list of parameter values from the condition.
+     * Returns the list of parameter values from the condition.
      * These are the parameter values that will be bound to the prepared statement placeholders
      * when the query is executed.
      *
@@ -581,7 +572,7 @@ public class SubQuery extends AbstractCondition {
     public String toString(final NamingPolicy namingPolicy) {
         if (sql == null) {
             final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-            final Map<String, String> prop2ColumnNameMap = entityClass == null ? null : QueryUtil.getProp2ColumnNameMap(entityClass, effectiveNamingPolicy);
+            final Map<String, String> prop2ColumnNameMap = entityClass == null ? null : QueryUtil.propertyToColumnMap(entityClass, effectiveNamingPolicy);
             final StringBuilder sb = Objectory.createStringBuilder();
 
             try {
@@ -612,7 +603,7 @@ public class SubQuery extends AbstractCondition {
                     sb.append(_SPACE);
                     sb.append(SK.FROM);
                     sb.append(_SPACE);
-                    sb.append(QueryUtil.getTableNameAndAlias(entityClass, effectiveNamingPolicy));
+                    sb.append(QueryUtil.tableNameAndAlias(entityClass, effectiveNamingPolicy));
                 } else if (!Strings.isEmpty(entityName)) {
                     sb.append(_SPACE);
                     sb.append(SK.FROM);

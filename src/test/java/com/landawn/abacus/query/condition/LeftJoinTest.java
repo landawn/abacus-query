@@ -30,7 +30,7 @@ public class LeftJoinTest extends TestBase {
     public void testConstructor_WithCondition() {
         LeftJoin join = new LeftJoin("orders o", new Equal("customers.id", "o.customer_id"));
         assertNotNull(join);
-        assertNotNull(join.getCondition());
+        assertNotNull(join.condition());
         assertEquals(Operator.LEFT_JOIN, join.operator());
     }
 
@@ -39,7 +39,7 @@ public class LeftJoinTest extends TestBase {
         List<String> entities = Arrays.asList("orders o", "order_items oi");
         LeftJoin join = new LeftJoin(entities, new And(Arrays.asList(new Equal("c.id", "o.customer_id"), new Equal("o.id", "oi.order_id"))));
         assertNotNull(join);
-        assertEquals(2, join.getJoinEntities().size());
+        assertEquals(2, join.joinEntities().size());
         assertEquals(Operator.LEFT_JOIN, join.operator());
     }
 
@@ -47,7 +47,7 @@ public class LeftJoinTest extends TestBase {
     public void testGetJoinEntities() {
         List<String> entities = Arrays.asList("table1", "table2");
         LeftJoin join = new LeftJoin(entities, null);
-        List<String> result = join.getJoinEntities();
+        List<String> result = join.joinEntities();
         assertEquals(2, result.size());
         assertTrue(result.contains("table1"));
         assertTrue(result.contains("table2"));
@@ -57,14 +57,14 @@ public class LeftJoinTest extends TestBase {
     public void testGetCondition() {
         Equal condition = new Equal("a.id", "b.a_id");
         LeftJoin join = new LeftJoin("table_b b", condition);
-        Condition retrieved = join.getCondition();
+        Condition retrieved = join.condition();
         assertEquals(condition, retrieved);
     }
 
     @Test
     public void testGetCondition_Null() {
         LeftJoin join = new LeftJoin("departments");
-        assertNull(join.getCondition());
+        assertNull(join.condition());
     }
 
     @Test
@@ -162,7 +162,7 @@ public class LeftJoinTest extends TestBase {
     @Test
     public void testPreserveLeftTableRows() {
         LeftJoin join = new LeftJoin("departments d", new Equal("employees.dept_id", "d.id"));
-        assertNotNull(join.getCondition());
+        assertNotNull(join.condition());
         assertEquals(Operator.LEFT_JOIN, join.operator());
     }
 
@@ -172,9 +172,9 @@ public class LeftJoinTest extends TestBase {
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.LEFT_JOIN, join.operator());
-        Assertions.assertEquals(1, join.getJoinEntities().size());
-        Assertions.assertEquals("orders", join.getJoinEntities().get(0));
-        Assertions.assertNull(join.getCondition());
+        Assertions.assertEquals(1, join.joinEntities().size());
+        Assertions.assertEquals("orders", join.joinEntities().get(0));
+        Assertions.assertNull(join.condition());
     }
 
     @Test
@@ -182,7 +182,7 @@ public class LeftJoinTest extends TestBase {
         LeftJoin join = new LeftJoin("orders o");
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals("orders o", join.getJoinEntities().get(0));
+        Assertions.assertEquals("orders o", join.joinEntities().get(0));
     }
 
     @Test
@@ -192,8 +192,8 @@ public class LeftJoinTest extends TestBase {
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.LEFT_JOIN, join.operator());
-        Assertions.assertEquals("orders", join.getJoinEntities().get(0));
-        Assertions.assertEquals(condition, join.getCondition());
+        Assertions.assertEquals("orders", join.joinEntities().get(0));
+        Assertions.assertEquals(condition, join.condition());
     }
 
     @Test
@@ -202,8 +202,8 @@ public class LeftJoinTest extends TestBase {
         LeftJoin join = new LeftJoin("orders o", condition);
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals("orders o", join.getJoinEntities().get(0));
-        Assertions.assertEquals(condition, join.getCondition());
+        Assertions.assertEquals("orders o", join.joinEntities().get(0));
+        Assertions.assertEquals(condition, join.condition());
     }
 
     @Test
@@ -213,9 +213,9 @@ public class LeftJoinTest extends TestBase {
         LeftJoin join = new LeftJoin(entities, condition);
 
         Assertions.assertNotNull(join);
-        Assertions.assertEquals(2, join.getJoinEntities().size());
-        Assertions.assertTrue(join.getJoinEntities().containsAll(entities));
-        Assertions.assertEquals(condition, join.getCondition());
+        Assertions.assertEquals(2, join.joinEntities().size());
+        Assertions.assertTrue(join.joinEntities().containsAll(entities));
+        Assertions.assertEquals(condition, join.condition());
     }
 
     @Test

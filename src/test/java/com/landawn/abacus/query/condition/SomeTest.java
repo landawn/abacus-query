@@ -53,7 +53,7 @@ public class SomeTest extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT budget FROM departments");
         Some condition = new Some(subQuery);
-        SubQuery retrieved = (SubQuery) condition.getCondition();
+        SubQuery retrieved = (SubQuery) condition.condition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -231,7 +231,7 @@ public class SomeTest extends TestBase {
 
         Assertions.assertNotNull(some);
         Assertions.assertEquals(Operator.SOME, some.operator());
-        Assertions.assertEquals(subQuery, some.getCondition());
+        Assertions.assertEquals(subQuery, some.condition());
     }
 
     @Test
@@ -239,7 +239,7 @@ public class SomeTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("departments", Arrays.asList("budget"), Filters.and(Filters.eq("active", true), Filters.gt("year", 2023)));
         Some some = Filters.some(subQuery);
 
-        Assertions.assertEquals(subQuery, some.getCondition());
+        Assertions.assertEquals(subQuery, some.condition());
         Assertions.assertEquals(2, some.parameters().size());
     }
 
@@ -295,7 +295,7 @@ public class SomeTest extends TestBase {
 
         // Would be used like: salary > SOME (SELECT salary FROM employees WHERE role = 'manager')
         Assertions.assertEquals(Operator.SOME, some.operator());
-        Assertions.assertEquals(managerSalaries, some.getCondition());
+        Assertions.assertEquals(managerSalaries, some.condition());
     }
 
     @Test

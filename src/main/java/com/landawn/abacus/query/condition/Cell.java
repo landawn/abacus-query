@@ -92,34 +92,34 @@ public abstract class Cell extends AbstractCondition {
     }
 
     /**
-     * Gets the wrapped condition.
+     * Returns the wrapped condition.
      * Callers that need a more specific subtype must cast explicitly.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * On onCond = new On("a.id", "b.id");
-     * Equal inner = (Equal) onCond.getCondition();
+     * Equal inner = (Equal) onCond.condition();
      * // inner.toString() returns "a.id = b.id"
      *
      * Where where = new Where(Filters.eq("active", true));
-     * Condition c = where.getCondition();
+     * Condition c = where.condition();
      * // c.toString() returns "active = true"
      *
      * // Edge: the wrapped condition is returned as-is; cast to the concrete type to access subtype API
-     * Equal eq = (Equal) where.getCondition();   // ok
-     * Like bad = (Like) where.getCondition();    // throws ClassCastException
+     * Equal eq = (Equal) where.condition();   // ok
+     * Like bad = (Like) where.condition();    // throws ClassCastException
      * }</pre>
      *
      * @return the wrapped condition; never {@code null} for instances created via the protected
      *         constructor, but may be {@code null} for uninitialized instances produced by the
      *         package-private default constructor (e.g., during Kryo deserialization)
      */
-    public Condition getCondition() {
+    public Condition condition() {
         return condition;
     }
 
     /**
-     * Gets the parameters from the wrapped condition.
+     * Returns the parameters from the wrapped condition.
      * This method delegates to the wrapped condition's parameters method.
      *
      * <p><b>Usage Examples:</b></p>

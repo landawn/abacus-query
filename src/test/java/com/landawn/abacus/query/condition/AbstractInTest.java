@@ -51,21 +51,21 @@ public class AbstractInTest extends TestBase {
     public void testGetPropName() {
         final TestAbstractIn condition = new TestAbstractIn("status", Arrays.asList("ACTIVE", "PENDING"));
 
-        assertEquals("status", condition.getPropName());
+        assertEquals("status", condition.propName());
     }
 
     @Test
     public void testGetValues() {
         final TestAbstractIn condition = new TestAbstractIn("status", Arrays.asList("ACTIVE", "PENDING"));
 
-        assertEquals(Arrays.asList("ACTIVE", "PENDING"), condition.getValues());
+        assertEquals(Arrays.asList("ACTIVE", "PENDING"), condition.values());
     }
 
     @Test
     public void testGetValues_Unmodifiable() {
         final TestAbstractIn condition = new TestAbstractIn("status", Arrays.asList("ACTIVE", "PENDING"));
 
-        assertThrows(UnsupportedOperationException.class, () -> ((List<Object>) condition.getValues()).add("CLOSED"));
+        assertThrows(UnsupportedOperationException.class, () -> ((List<Object>) condition.values()).add("CLOSED"));
     }
 
     // Verifies direct values and nested condition values are flattened into parameters.
@@ -142,8 +142,8 @@ public class AbstractInTest extends TestBase {
         final EmptyAbstractIn left = new EmptyAbstractIn();
         final EmptyAbstractIn right = new EmptyAbstractIn();
 
-        assertNull(left.getPropName());
-        assertTrue(left.getValues().isEmpty());
+        assertNull(left.propName());
+        assertTrue(left.values().isEmpty());
         assertTrue(left.parameters().isEmpty());
         assertEquals(left, right);
         assertEquals(left.hashCode(), right.hashCode());

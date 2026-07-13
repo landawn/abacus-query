@@ -18,16 +18,16 @@ public class IsNaNTest extends TestBase {
     public void testConstructor() {
         IsNaN condition = new IsNaN("value");
         assertNotNull(condition);
-        assertEquals("value", condition.getPropName());
+        assertEquals("value", condition.propName());
     }
 
     @Test
     public void testConstructor_WithDifferentPropertyNames() {
         IsNaN cond1 = new IsNaN("temperature");
-        assertEquals("temperature", cond1.getPropName());
+        assertEquals("temperature", cond1.propName());
 
         IsNaN cond2 = new IsNaN("calculation_result");
-        assertEquals("calculation_result", cond2.getPropName());
+        assertEquals("calculation_result", cond2.propName());
     }
 
     @Test
@@ -39,7 +39,7 @@ public class IsNaNTest extends TestBase {
     @Test
     public void testGetPropertyName() {
         IsNaN condition = new IsNaN("score");
-        assertEquals("score", condition.getPropName());
+        assertEquals("score", condition.propName());
     }
 
     @Test
@@ -145,7 +145,7 @@ public class IsNaNTest extends TestBase {
     @Test
     public void testUsageExample_CheckTemperature() {
         IsNaN tempCheck = new IsNaN("temperature");
-        assertEquals("temperature", tempCheck.getPropName());
+        assertEquals("temperature", tempCheck.propName());
         String sql = tempCheck.toString(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("temperature"));
     }
@@ -154,7 +154,7 @@ public class IsNaNTest extends TestBase {
     public void testUsageExample_FindCalculationErrors() {
         IsNaN calcError = new IsNaN("computed_value");
         assertNotNull(calcError);
-        assertEquals("computed_value", calcError.getPropName());
+        assertEquals("computed_value", calcError.propName());
     }
 
     @Test
@@ -178,9 +178,9 @@ public class IsNaNTest extends TestBase {
         IsNaN condition = new IsNaN("calculation_result");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("calculation_result", condition.getPropName());
+        Assertions.assertEquals("calculation_result", condition.propName());
         Assertions.assertEquals(Operator.IS, condition.operator());
-        Assertions.assertEquals(IsNaN.NAN, condition.getPropValue());
+        Assertions.assertEquals(IsNaN.NAN, condition.propValue());
     }
 
     @Test
@@ -188,8 +188,8 @@ public class IsNaNTest extends TestBase {
         IsNaN condition = new IsNaN("temperature");
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("temperature", condition.getPropName());
-        Assertions.assertEquals(IsNaN.NAN, condition.getPropValue());
+        Assertions.assertEquals("temperature", condition.propName());
+        Assertions.assertEquals(IsNaN.NAN, condition.propValue());
     }
 
     @Test
@@ -237,9 +237,9 @@ public class IsNaNTest extends TestBase {
         IsNaN condition = new IsNaN("value");
 
         // Test methods inherited from Is
-        Assertions.assertEquals("value", condition.getPropName());
+        Assertions.assertEquals("value", condition.propName());
         Assertions.assertEquals(Operator.IS, condition.operator());
-        Assertions.assertNotNull(condition.getPropValue());
+        Assertions.assertNotNull(condition.propValue());
     }
 
     @Test
@@ -248,8 +248,8 @@ public class IsNaNTest extends TestBase {
         IsNaN condition2 = new IsNaN("calc2");
 
         // Both should share the same NAN constant
-        Assertions.assertSame(condition1.getPropValue(), condition2.getPropValue());
-        Assertions.assertEquals(IsNaN.NAN, condition1.getPropValue());
-        Assertions.assertEquals(IsNaN.NAN, condition2.getPropValue());
+        Assertions.assertSame(condition1.propValue(), condition2.propValue());
+        Assertions.assertEquals(IsNaN.NAN, condition1.propValue());
+        Assertions.assertEquals(IsNaN.NAN, condition2.propValue());
     }
 }

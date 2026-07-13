@@ -4795,12 +4795,12 @@
                 "public",
                 "static"
               ],
-              "signature": "public static DynamicSqlBuilder builder()",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public static Builder builder()",
+              "return_type": "Builder",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Creates a new {@link DynamicSqlBuilder} instance for constructing a dynamic SQL query.",
+              "javadoc_summary": "Creates a new {@link Builder} instance for constructing a dynamic SQL query.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -4809,8 +4809,8 @@
           "fields": []
         },
         {
-          "fqn": "com.landawn.abacus.query.DynamicQuery.DynamicSqlBuilder",
-          "name": "DynamicSqlBuilder",
+          "fqn": "com.landawn.abacus.query.DynamicQuery.Builder",
+          "name": "Builder",
           "kind": "class",
           "modifiers": [
             "public",
@@ -4924,8 +4924,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder limit(final int count)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder limit(final int count)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -4947,8 +4947,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder limit(final int count, final int offset)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder limit(final int count, final int offset)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -4982,8 +4982,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder offset(final int offset)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder offset(final int offset)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -5010,8 +5010,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder offsetRows(final int offset)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder offsetRows(final int offset)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -5035,8 +5035,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder fetchNextRows(final int count)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder fetchNextRows(final int count)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -5058,8 +5058,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder fetchFirstRows(final int count)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder fetchFirstRows(final int count)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -5083,8 +5083,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder union(final String query)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder union(final String query)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -5106,8 +5106,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder unionAll(final String query)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder unionAll(final String query)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -5129,8 +5129,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder intersect(final String query)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder intersect(final String query)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -5152,8 +5152,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder except(final String query)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder except(final String query)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -5175,8 +5175,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder minus(final String query)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder minus(final String query)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -5198,8 +5198,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder append(final String textToAppend)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder append(final String textToAppend)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -5224,8 +5224,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder appendIf(final boolean b, final String textToAppend)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder appendIf(final boolean b, final String textToAppend)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -5257,8 +5257,8 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public DynamicSqlBuilder appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse)",
-              "return_type": "DynamicSqlBuilder",
+              "signature": "public Builder appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse)",
+              "return_type": "Builder",
               "type_params": [],
               "params": [
                 {
@@ -7355,12 +7355,17 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates an {@code OR} condition from a collection of property maps or entities, where each non-null element forms an {@code AND} condition.",
+              "javadoc_summary": "Creates an {@code OR} of per-row {@code AND} -of-equals conditions &mdash; i.e.",
               "contract": [
-                "If the first non-null element is a {@link Map} , all non-null elements must be maps with {@link String} keys."
+                "a \"match any row\" filter, where a row matches when <em> all </em> of its columns equal the given values.",
+                "<p> If the first non-null element is a {@link Map} , all non-null elements must be maps with {@link String} keys."
               ],
               "examples": [],
-              "see_also": []
+              "see_also": [
+                "#anyOfAllEqual(Collection, Collection)",
+                "#anyEqual(Map)",
+                "#allEqual(Map)"
+              ]
             },
             {
               "name": "anyOfAllEqual",
@@ -7387,10 +7392,13 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates an {@code OR} condition from a collection of entities using only specified properties.",
+              "javadoc_summary": "Creates an {@code OR} of per-row {@code AND} -of-equals conditions &mdash; a \"match any row\" filter &mdash; using only the specified properties of each entity.",
               "contract": [],
               "examples": [],
-              "see_also": []
+              "see_also": [
+                "#anyOfAllEqual(Collection)",
+                "#allEqual(Object, Collection)"
+              ]
             },
             {
               "name": "gtAndLt",
@@ -11925,7 +11933,7 @@
               "throws": [],
               "javadoc_summary": "Creates a SubQuery from an entity class with selected properties and condition.",
               "contract": [
-                "If {@code condition} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria} or a clause (such as {@link Where} ), it is automatically wrapped in a {@code WHERE} clause at construction time; {@code getCondition()} on the returned subquery returns the wrapping {@link Where} ."
+                "If {@code condition} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria} or a clause (such as {@link Where} ), it is automatically wrapped in a {@code WHERE} clause at construction time; {@code condition()} on the returned subquery returns the wrapping {@link Where} ."
               ],
               "examples": [],
               "see_also": []
@@ -12037,7 +12045,7 @@
               "throws": [],
               "javadoc_summary": "Creates a SubQuery from an entity name with selected properties and condition.",
               "contract": [
-                "If {@code condition} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria} or a clause (such as {@link Where} ), it is automatically wrapped in a {@code WHERE} clause at construction time; {@code getCondition()} on the returned subquery returns the wrapping {@link Where} ."
+                "If {@code condition} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria} or a clause (such as {@link Where} ), it is automatically wrapped in a {@code WHERE} clause at construction time; {@code condition()} on the returned subquery returns the wrapping {@link Where} ."
               ],
               "examples": [],
               "see_also": []
@@ -12493,17 +12501,17 @@
               ],
               "examples": [],
               "see_also": [
-                "#getProp2ColumnNameMap(Class, NamingPolicy)"
+                "#propertyToColumnMap(Class, NamingPolicy)"
               ]
             },
             {
-              "name": "getColumn2PropNameMap",
+              "name": "columnToPropertyMap",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "@Internal public static ImmutableMap<String, String> getColumn2PropNameMap(final Class<?> entityClass)",
+              "signature": "@Internal public static ImmutableMap<String, String> columnToPropertyMap(final Class<?> entityClass)",
               "return_type": "ImmutableMap<String, String>",
               "type_params": [],
               "params": [
@@ -12515,22 +12523,22 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets a mapping of column names to property names for the specified entity class.",
+              "javadoc_summary": "Returns a mapping of column names to property names for the specified entity class.",
               "contract": [
                 "<p> This method is useful when you need to map database result set columns back to entity properties, especially when dealing with case-insensitive database systems or when column names don't match the exact case in your code.",
-                "</p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Given an entity class with @Column annotations ImmutableMap<String, String> columnToProp = QueryUtil.getColumn2PropNameMap(User.class); // If User has @Column(\"User_Name\") on property \"userName\": String propName = columnToProp.get(\"User_Name\"); // \"userName\" (looked up by original column name) String propName2 = columnToProp.get(\"USER_NAME\"); // \"userName\" (looked up by uppercase variant) String propName3 = columnToProp.get(\"user_name\"); // \"userName\" (looked up by lowercase variant) } </pre>"
+                "</p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Given an entity class with @Column annotations ImmutableMap<String, String> columnToProp = QueryUtil.columnToPropertyMap(User.class); // If User has @Column(\"User_Name\") on property \"userName\": String propName = columnToProp.get(\"User_Name\"); // \"userName\" (looked up by original column name) String propName2 = columnToProp.get(\"USER_NAME\"); // \"userName\" (looked up by uppercase variant) String propName3 = columnToProp.get(\"user_name\"); // \"userName\" (looked up by lowercase variant) } </pre>"
               ],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getProp2ColumnNameMap",
+              "name": "propertyToColumnMap",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "@Internal public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy)",
+              "signature": "@Internal public static ImmutableMap<String, String> propertyToColumnMap(final Class<?> entityClass, final NamingPolicy namingPolicy)",
               "return_type": "ImmutableMap<String, String>",
               "type_params": [],
               "params": [
@@ -12548,23 +12556,23 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets a mapping of property names to column names for the specified entity class using the given naming policy.",
+              "javadoc_summary": "Returns a mapping of property names to column names for the specified entity class using the given naming policy.",
               "contract": [
                 "<p> The naming policy determines how property names are converted to column names when no explicit {@code @Column} annotation is present.",
                 "{@code \"addr.street\"} when the {@code Address} entity declares an alias {@code \"addr\"} ).",
-                "<p> <b> Usage Examples: </b> </p> <pre> {@code // Get property-to-column mapping with SNAKE_CASE naming policy ImmutableMap<String, String> propToColumn = QueryUtil.getProp2ColumnNameMap(User.class, NamingPolicy.SNAKE_CASE); // If User has property \"firstName\" without @Column annotation: String columnName = propToColumn.get(\"firstName\"); // \"first_name\" // With SCREAMING_SNAKE_CASE naming policy ImmutableMap<String, String> propToColumnUpper = QueryUtil.getProp2ColumnNameMap(User.class, NamingPolicy.SCREAMING_SNAKE_CASE); String upperColumn = propToColumnUpper.get(\"firstName\"); // \"FIRST_NAME\" } </pre>"
+                "<p> <b> Usage Examples: </b> </p> <pre> {@code // Build property-to-column mapping with SNAKE_CASE naming policy ImmutableMap<String, String> propToColumn = QueryUtil.propertyToColumnMap(User.class, NamingPolicy.SNAKE_CASE); // If User has property \"firstName\" without @Column annotation: String columnName = propToColumn.get(\"firstName\"); // \"first_name\" // With SCREAMING_SNAKE_CASE naming policy ImmutableMap<String, String> propToColumnUpper = QueryUtil.propertyToColumnMap(User.class, NamingPolicy.SCREAMING_SNAKE_CASE); String upperColumn = propToColumnUpper.get(\"firstName\"); // \"FIRST_NAME\" } </pre>"
               ],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getInsertPropNames",
+              "name": "insertPropertyNames",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "@Internal public static ImmutableList<String> getInsertPropNames(final Object entity, final Set<String> excludedPropNames)",
+              "signature": "@Internal public static ImmutableList<String> insertPropertyNames(final Object entity, final Set<String> excludedPropNames)",
               "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [
@@ -12582,7 +12590,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets the property names to be used for INSERT operations on the given entity instance.",
+              "javadoc_summary": "Returns the property names to be used for INSERT operations on the given entity instance.",
               "contract": [
                 "<p> The method intelligently handles ID fields: </p> <ul> <li> If all ID fields have default values (e.g.",
                 "</li> <li> If any ID field has a non-default value, all insertable properties including IDs are returned."
@@ -12591,13 +12599,13 @@
               "see_also": []
             },
             {
-              "name": "getInsertPropNames",
+              "name": "insertPropertyNames",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "@Internal public static ImmutableList<String> getInsertPropNames(final Class<?> entityClass, final Set<String> excludedPropNames)",
+              "signature": "@Internal public static ImmutableList<String> insertPropertyNames(final Class<?> entityClass, final Set<String> excludedPropNames)",
               "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [
@@ -12615,19 +12623,19 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets the property names to be used for INSERT operations on the given entity class.",
+              "javadoc_summary": "Returns the property names to be used for INSERT operations on the given entity class.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getSelectPropNames",
+              "name": "selectPropertyNames",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "@Internal public static ImmutableList<String> getSelectPropNames(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)",
+              "signature": "@Internal public static ImmutableList<String> selectPropertyNames(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)",
               "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [
@@ -12651,7 +12659,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets the property names to be used for SELECT operations on the given entity class.",
+              "javadoc_summary": "Returns the property names to be used for SELECT operations on the given entity class.",
               "contract": [
                 "<p> When {@code includeSubEntityProperties} is {@code true} , the method returns nested properties using dot notation (e.g., {@code \"address.street\"} )."
               ],
@@ -12659,13 +12667,13 @@
               "see_also": []
             },
             {
-              "name": "getSelectPropNames",
+              "name": "selectPropertyNames",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "@Internal public static ImmutableList<String> getSelectPropNames(final Object entity, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)",
+              "signature": "@Internal public static ImmutableList<String> selectPropertyNames(final Object entity, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)",
               "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [
@@ -12689,21 +12697,21 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets the property names to be used for SELECT operations on the given entity instance.",
+              "javadoc_summary": "Returns the property names to be used for SELECT operations on the given entity instance.",
               "contract": [],
               "examples": [],
               "see_also": [
-                "#getSelectPropNames(Class, boolean, Set)"
+                "#selectPropertyNames(Class, boolean, Set)"
               ]
             },
             {
-              "name": "getUpdatePropNames",
+              "name": "updatePropertyNames",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "@Internal public static ImmutableList<String> getUpdatePropNames(final Class<?> entityClass, final Set<String> excludedPropNames)",
+              "signature": "@Internal public static ImmutableList<String> updatePropertyNames(final Class<?> entityClass, final Set<String> excludedPropNames)",
               "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [
@@ -12721,7 +12729,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets the property names to be used for UPDATE operations on the given entity class.",
+              "javadoc_summary": "Returns the property names to be used for UPDATE operations on the given entity class.",
               "contract": [
                 "<p> Properties are considered non-updatable if they are: </p> <ul> <li> Annotated with {@code @ReadOnly} , {@code @ReadOnlyId} , or otherwise marked as a read-only id property </li> <li> Annotated with {@code @NonUpdatable} </li> <li> Excluded from column mapping (e.g."
               ],
@@ -12729,13 +12737,13 @@
               "see_also": []
             },
             {
-              "name": "getUpdatePropNames",
+              "name": "updatePropertyNames",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "@Internal public static ImmutableList<String> getUpdatePropNames(final Object entity, final Set<String> excludedPropNames)",
+              "signature": "@Internal public static ImmutableList<String> updatePropertyNames(final Object entity, final Set<String> excludedPropNames)",
               "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [
@@ -12753,21 +12761,21 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets the property names to be used for UPDATE operations on the given entity instance.",
+              "javadoc_summary": "Returns the property names to be used for UPDATE operations on the given entity instance.",
               "contract": [],
               "examples": [],
               "see_also": [
-                "#getUpdatePropNames(Class, Set)"
+                "#updatePropertyNames(Class, Set)"
               ]
             },
             {
-              "name": "getIdPropNames",
+              "name": "idPropertyNames",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "@Internal @Immutable public static ImmutableList<String> getIdPropNames(final Class<?> entityClass)",
+              "signature": "@Internal @Immutable public static ImmutableList<String> idPropertyNames(final Class<?> entityClass)",
               "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [
@@ -12779,7 +12787,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets the ID field names for the specified entity class.",
+              "javadoc_summary": "Returns the ID property names for the specified entity class.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -12849,13 +12857,13 @@
               "see_also": []
             },
             {
-              "name": "getTableAlias",
+              "name": "tableAlias",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "@Internal public static String getTableAlias(final Class<?> entityClass)",
+              "signature": "@Internal public static String tableAlias(final Class<?> entityClass)",
               "return_type": "String",
               "type_params": [],
               "params": [
@@ -12867,23 +12875,23 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets the table alias from the {@code @Table} annotation on the entity class.",
+              "javadoc_summary": "Returns the table alias from the {@code @Table} annotation on the entity class.",
               "contract": [
                 "<p> If no {@code @Table} annotation exists, this method returns {@code null} .",
                 "If {@code @Table} is present but the alias attribute is not specified, this method returns an empty string.",
-                "</p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Given: @Table(name = \"users\", alias = \"u\") on User class String alias = QueryUtil.getTableAlias(User.class); // Returns: \"u\" // Given: @Table(name = \"orders\") on Order class (no alias) String alias2 = QueryUtil.getTableAlias(Order.class); // Returns: \"\" (empty string when alias is not specified) // Given: no @Table annotation on LogEntry class String alias3 = QueryUtil.getTableAlias(LogEntry.class); // Returns: null } </pre>"
+                "</p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Given: @Table(name = \"users\", alias = \"u\") on User class String alias = QueryUtil.tableAlias(User.class); // Returns: \"u\" // Given: @Table(name = \"orders\") on Order class (no alias) String alias2 = QueryUtil.tableAlias(Order.class); // Returns: \"\" (empty string when alias is not specified) // Given: no @Table annotation on LogEntry class String alias3 = QueryUtil.tableAlias(LogEntry.class); // Returns: null } </pre>"
               ],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getTableNameAndAlias",
+              "name": "tableNameAndAlias",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "@Internal public static String getTableNameAndAlias(final Class<?> entityClass)",
+              "signature": "@Internal public static String tableNameAndAlias(final Class<?> entityClass)",
               "return_type": "String",
               "type_params": [],
               "params": [
@@ -12895,7 +12903,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets the table name and optional alias for the entity class using the default naming policy.",
+              "javadoc_summary": "Returns the table name and optional alias for the entity class using the default naming policy.",
               "contract": [
                 "If {@code @Table} annotation is present, uses its values; otherwise derives the table name from the class name using {@code NamingPolicy.SNAKE_CASE} ."
               ],
@@ -12903,13 +12911,13 @@
               "see_also": []
             },
             {
-              "name": "getTableNameAndAlias",
+              "name": "tableNameAndAlias",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "@Internal public static String getTableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy)",
+              "signature": "@Internal public static String tableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy)",
               "return_type": "String",
               "type_params": [],
               "params": [
@@ -12927,7 +12935,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets the table name and optional alias for the entity class using the specified naming policy.",
+              "javadoc_summary": "Returns the table name and optional alias for the entity class using the specified naming policy.",
               "contract": [
                 "The table name is resolved the same way the query builders resolve it: from the {@code @Table} annotation ( {@link Table#name() name} or its deprecated {@code value()} alias) or a JPA {@code javax.persistence} / {@code jakarta.persistence} {@code @Table} annotation; only when no annotated name exists is the table name derived from the class name using the provided naming policy.",
                 "The alias comes from {@link Table#alias()} and is appended after a space when present."
@@ -14023,12 +14031,12 @@
               ]
             },
             {
-              "name": "getAttributes",
+              "name": "attributes",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public ImmutableMap<String, String> getAttributes(final String id)",
+              "signature": "public ImmutableMap<String, String> attributes(final String id)",
               "return_type": "ImmutableMap<String, String>",
               "type_params": [],
               "params": [
@@ -14042,7 +14050,7 @@
               "throws": [],
               "javadoc_summary": "Retrieves the attributes associated with the specified SQL identifier.",
               "contract": [
-                "<p> <b> Usage Examples: </b> </p> <pre> {@code // Given XML: <sql id=\"batchInsert\" batchSize=\"100\" timeout=\"30\">...</sql> SqlMapper mapper = SqlMapper.loadFrom(\"sql/queries.xml\"); ImmutableMap<String, String> attrs = mapper.getAttributes(\"batchInsert\"); if (attrs != null) { String batchSize = attrs.get(\"batchSize\"); // \"100\" String timeout = attrs.get(\"timeout\"); // \"30\" } // Returns null for unknown ids ImmutableMap<String, String> unknown = mapper.getAttributes(\"nonExistentId\"); // unknown is null } </pre>"
+                "<p> <b> Usage Examples: </b> </p> <pre> {@code // Given XML: <sql id=\"batchInsert\" batchSize=\"100\" timeout=\"30\">...</sql> SqlMapper mapper = SqlMapper.loadFrom(\"sql/queries.xml\"); ImmutableMap<String, String> attrs = mapper.attributes(\"batchInsert\"); if (attrs != null) { String batchSize = attrs.get(\"batchSize\"); // \"100\" String timeout = attrs.get(\"timeout\"); // \"30\" } // Returns null for unknown ids ImmutableMap<String, String> unknown = mapper.attributes(\"nonExistentId\"); // unknown is null } </pre>"
               ],
               "examples": [],
               "see_also": []
@@ -14526,13 +14534,13 @@
               "see_also": []
             },
             {
-              "name": "from",
+              "name": "fromOrUnknown",
               "kind": "static",
               "modifiers": [
                 "public",
                 "static"
               ],
-              "signature": "public static SqlOperation from(final String token)",
+              "signature": "public static SqlOperation fromOrUnknown(final String token)",
               "return_type": "SqlOperation",
               "type_params": [],
               "params": [
@@ -15450,28 +15458,28 @@
           "constructors": [],
           "methods": [
             {
-              "name": "getPropName",
+              "name": "propName",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public String getPropName()",
+              "signature": "public String propName()",
               "return_type": "String",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the property name being checked in this BETWEEN or NOT BETWEEN condition.",
+              "javadoc_summary": "Returns the property name being checked in this BETWEEN or NOT BETWEEN condition.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getMinValue",
+              "name": "minValue",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "@SuppressWarnings(\"unchecked\") public <T> T getMinValue()",
+              "signature": "@SuppressWarnings(\"unchecked\") public <T> T minValue()",
               "return_type": "T",
               "type_params": [
                 {
@@ -15483,18 +15491,18 @@
               ],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the lower bound of the range.",
+              "javadoc_summary": "Returns the lower bound of the range.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getMaxValue",
+              "name": "maxValue",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "@SuppressWarnings(\"unchecked\") public <T> T getMaxValue()",
+              "signature": "@SuppressWarnings(\"unchecked\") public <T> T maxValue()",
               "return_type": "T",
               "type_params": [
                 {
@@ -15506,7 +15514,7 @@
               ],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the upper bound of the range.",
+              "javadoc_summary": "Returns the upper bound of the range.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -15522,7 +15530,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the parameters for this condition.",
+              "javadoc_summary": "Returns the parameters for this condition.",
               "contract": [
                 "If either bound is a {@link Condition} (typically a {@link SubQuery} ), its parameters are spliced in place of the bound itself."
               ],
@@ -15624,7 +15632,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the operator for this condition.",
+              "javadoc_summary": "Returns the operator for this condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -15663,60 +15671,60 @@
           "constructors": [],
           "methods": [
             {
-              "name": "getPropName",
+              "name": "propName",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public String getPropName()",
+              "signature": "public String propName()",
               "return_type": "String",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the property name being checked in this IN or NOT IN condition.",
+              "javadoc_summary": "Returns the property name being checked in this IN or NOT IN condition.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getPropNames",
+              "name": "propNames",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public ImmutableList<String> getPropNames()",
+              "signature": "public ImmutableList<String> propNames()",
               "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the property names checked in this IN or NOT IN condition.",
+              "javadoc_summary": "Returns the property names checked in this IN or NOT IN condition.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getValues",
+              "name": "values",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public ImmutableList<?> getValues()",
+              "signature": "public ImmutableList<?> values()",
               "return_type": "ImmutableList<?>",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the values used by this IN or NOT IN condition.",
+              "javadoc_summary": "Returns the values used by this IN or NOT IN condition.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "isRowValueConstructor",
+              "name": "rowValueConstructor",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public boolean isRowValueConstructor()",
+              "signature": "public boolean rowValueConstructor()",
               "return_type": "boolean",
               "type_params": [],
               "params": [],
@@ -15737,7 +15745,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the parameter values for this condition, flattened in declaration order.",
+              "javadoc_summary": "Returns the parameter values for this condition, flattened in declaration order.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -15827,49 +15835,49 @@
           "constructors": [],
           "methods": [
             {
-              "name": "getPropName",
+              "name": "propName",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public String getPropName()",
+              "signature": "public String propName()",
               "return_type": "String",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the property name being checked in this IN or NOT IN condition.",
+              "javadoc_summary": "Returns the property name being checked in this IN or NOT IN condition.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getPropNames",
+              "name": "propNames",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public ImmutableList<String> getPropNames()",
+              "signature": "public ImmutableList<String> propNames()",
               "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the property names for this IN or NOT IN subquery condition.",
+              "javadoc_summary": "Returns the property names for this IN or NOT IN subquery condition.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getSubQuery",
+              "name": "subQuery",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public SubQuery getSubQuery()",
+              "signature": "public SubQuery subQuery()",
               "return_type": "SubQuery",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery used in this IN or NOT IN subquery condition.",
+              "javadoc_summary": "Returns the subquery used in this IN or NOT IN subquery condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -15885,7 +15893,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the list of parameters from the subquery.",
+              "javadoc_summary": "Returns the list of parameters from the subquery.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -15997,17 +16005,17 @@
               "see_also": []
             },
             {
-              "name": "getSubQuery",
+              "name": "subQuery",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public SubQuery getSubQuery()",
+              "signature": "public SubQuery subQuery()",
               "return_type": "SubQuery",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery used by this ALL condition.",
+              "javadoc_summary": "Returns the subquery used by this ALL condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -16144,17 +16152,17 @@
               "see_also": []
             },
             {
-              "name": "getSubQuery",
+              "name": "subQuery",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public SubQuery getSubQuery()",
+              "signature": "public SubQuery subQuery()",
               "return_type": "SubQuery",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery used by this ANY condition.",
+              "javadoc_summary": "Returns the subquery used by this ANY condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -16266,40 +16274,17 @@
               "see_also": []
             },
             {
-              "name": "getPropName",
+              "name": "propName",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public String getPropName()",
+              "signature": "public String propName()",
               "return_type": "String",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the property name being compared.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "getPropValue",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@SuppressWarnings(\"unchecked\") public <T> T getPropValue()",
-              "return_type": "T",
-              "type_params": [
-                {
-                  "name": "T",
-                  "bounds": [
-                    "java.lang.Object"
-                  ]
-                }
-              ],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Gets the value being compared against.",
+              "javadoc_summary": "Returns the property name being compared.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -16321,12 +16306,12 @@
               "see_also": []
             },
             {
-              "name": "getPropValue",
+              "name": "propValue",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public <T> T getPropValue(final Class<T> valueType)",
+              "signature": "public <T> T propValue(final Class<T> valueType)",
               "return_type": "T",
               "type_params": [
                 {
@@ -16361,7 +16346,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the parameters for this condition.",
+              "javadoc_summary": "Returns the parameters for this condition.",
               "contract": [
                 "<ul> <li> If the value is {@code null} and the operator is {@code =} , {@code !=} , {@code <>} , {@code IS} , or {@code IS NOT} , an empty list is returned because the SQL is rendered as {@code IS NULL} / {@code IS NOT NULL} with no bind parameter.",
                 "</li> <li> If the value is {@code null} with any other operator (e.g.",
@@ -16458,17 +16443,17 @@
           "constructors": [],
           "methods": [
             {
-              "name": "getCondition",
+              "name": "condition",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public Condition getCondition()",
+              "signature": "public Condition condition()",
               "return_type": "Condition",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the wrapped condition.",
+              "javadoc_summary": "Returns the wrapped condition.",
               "contract": [
                 "Callers that need a more specific subtype must cast explicitly."
               ],
@@ -16486,7 +16471,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the parameters from the wrapped condition.",
+              "javadoc_summary": "Returns the parameters from the wrapped condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -16594,17 +16579,17 @@
           "constructors": [],
           "methods": [
             {
-              "name": "getCondition",
+              "name": "condition",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public Condition getCondition()",
+              "signature": "public Condition condition()",
               "return_type": "Condition",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the wrapped condition.",
+              "javadoc_summary": "Returns the wrapped condition.",
               "contract": [
                 "Callers that need a more specific subtype must cast explicitly."
               ],
@@ -16622,7 +16607,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the parameters from the wrapped condition.",
+              "javadoc_summary": "Returns the parameters from the wrapped condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -16832,7 +16817,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the operator associated with this condition.",
+              "javadoc_summary": "Returns the operator associated with this condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -16848,7 +16833,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the list of parameter values associated with this condition.",
+              "javadoc_summary": "Returns the list of parameter values associated with this condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -16893,12 +16878,12 @@
           "constructors": [],
           "methods": [
             {
-              "name": "getSelectModifier",
+              "name": "selectModifier",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public String getSelectModifier()",
+              "signature": "public String selectModifier()",
               "return_type": "String",
               "type_params": [],
               "params": [],
@@ -16917,12 +16902,12 @@
               ]
             },
             {
-              "name": "getJoins",
+              "name": "joins",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public ImmutableList<Join> getJoins()",
+              "signature": "public ImmutableList<Join> joins()",
               "return_type": "ImmutableList<Join>",
               "type_params": [],
               "params": [],
@@ -16933,12 +16918,12 @@
               "see_also": []
             },
             {
-              "name": "getWhere",
+              "name": "where",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public Where getWhere()",
+              "signature": "public Where where()",
               "return_type": "Where",
               "type_params": [],
               "params": [],
@@ -16951,12 +16936,12 @@
               "see_also": []
             },
             {
-              "name": "getGroupBy",
+              "name": "groupBy",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public GroupBy getGroupBy()",
+              "signature": "public GroupBy groupBy()",
               "return_type": "GroupBy",
               "type_params": [],
               "params": [],
@@ -16969,12 +16954,12 @@
               "see_also": []
             },
             {
-              "name": "getHaving",
+              "name": "having",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public Having getHaving()",
+              "signature": "public Having having()",
               "return_type": "Having",
               "type_params": [],
               "params": [],
@@ -16987,12 +16972,12 @@
               "see_also": []
             },
             {
-              "name": "getSetOperations",
+              "name": "setOperations",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public ImmutableList<Clause> getSetOperations()",
+              "signature": "public ImmutableList<Clause> setOperations()",
               "return_type": "ImmutableList<Clause>",
               "type_params": [],
               "params": [],
@@ -17003,12 +16988,12 @@
               "see_also": []
             },
             {
-              "name": "getOrderBy",
+              "name": "orderBy",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public OrderBy getOrderBy()",
+              "signature": "public OrderBy orderBy()",
               "return_type": "OrderBy",
               "type_params": [],
               "params": [],
@@ -17021,12 +17006,12 @@
               "see_also": []
             },
             {
-              "name": "getLimit",
+              "name": "limit",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public Limit getLimit()",
+              "signature": "public Limit limit()",
               "return_type": "Limit",
               "type_params": [],
               "params": [],
@@ -17266,7 +17251,7 @@
               "throws": [],
               "javadoc_summary": "Sets the DISTINCTROW modifier for the query.",
               "contract": [
-                "Like {@link #distinct()} , the modifier is only exposed via {@link Criteria#getSelectModifier()} for external consumers; this library's {@code SqlBuilder} does not apply it when appending a {@code Criteria} ; use {@code SqlBuilder.selectModifier(\"DISTINCTROW\")} to get it in SQL rendered here."
+                "Like {@link #distinct()} , the modifier is only exposed via {@link Criteria#selectModifier()} for external consumers; this library's {@code SqlBuilder} does not apply it when appending a {@code Criteria} ; use {@code SqlBuilder.selectModifier(\"DISTINCTROW\")} to get it in SQL rendered here."
               ],
               "examples": [],
               "see_also": []
@@ -19204,17 +19189,17 @@
               ]
             },
             {
-              "name": "getSubQuery",
+              "name": "subQuery",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public SubQuery getSubQuery()",
+              "signature": "public SubQuery subQuery()",
               "return_type": "SubQuery",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery used by this EXCEPT clause.",
+              "javadoc_summary": "Returns the subquery used by this EXCEPT clause.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -19262,17 +19247,17 @@
               "see_also": []
             },
             {
-              "name": "getSubQuery",
+              "name": "subQuery",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public SubQuery getSubQuery()",
+              "signature": "public SubQuery subQuery()",
               "return_type": "SubQuery",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery used by this EXISTS condition.",
+              "javadoc_summary": "Returns the subquery used by this EXISTS condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -19329,7 +19314,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the SQL literal string of this expression.",
+              "javadoc_summary": "Returns the SQL literal string of this expression.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -21961,17 +21946,17 @@
               ]
             },
             {
-              "name": "getSubQuery",
+              "name": "subQuery",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public SubQuery getSubQuery()",
+              "signature": "public SubQuery subQuery()",
               "return_type": "SubQuery",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery used by this INTERSECT clause.",
+              "javadoc_summary": "Returns the subquery used by this INTERSECT clause.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -22418,33 +22403,33 @@
               "see_also": []
             },
             {
-              "name": "getJoinEntities",
+              "name": "joinEntities",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public ImmutableList<String> getJoinEntities()",
+              "signature": "public ImmutableList<String> joinEntities()",
               "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the list of tables or entities involved in this join.",
+              "javadoc_summary": "Returns the list of tables or entities involved in this join.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getCondition",
+              "name": "condition",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public Condition getCondition()",
+              "signature": "public Condition condition()",
               "return_type": "Condition",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the join condition.",
+              "javadoc_summary": "Returns the join condition.",
               "contract": [
                 "Returns the condition that specifies how the tables are related, or {@code null} if no condition was supplied at construction time.",
                 "Callers that need a more specific subtype must cast explicitly."
@@ -22463,7 +22448,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets all parameters from the join condition.",
+              "javadoc_summary": "Returns all parameters from the join condition.",
               "contract": [
                 "Returns an empty list if there's no condition or the condition has no parameters."
               ],
@@ -22623,7 +22608,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the list of conditions contained in this junction.",
+              "javadoc_summary": "Returns the list of conditions contained in this junction.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -22639,7 +22624,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets all parameters from all conditions in this junction.",
+              "javadoc_summary": "Returns all parameters from all conditions in this junction.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -23042,8 +23027,8 @@
               "javadoc_summary": "Creates a LIMIT clause from a string expression, formatting and validating it against a fixed grammar.",
               "contract": [
                 "If the expression starts with a digit, {@code '?'} , {@code ':'} , or <code> \"#{\" </code> , a {@code \"LIMIT \"} prefix is added automatically; otherwise it is used as-is.",
-                "</b> When every number slot is an integer literal, {@link #getCount()} and {@link #getOffset()} return their concrete values.",
-                "When a slot is a placeholder (or an integer literal that overflows {@code int} ), the value stays unresolved and opaque: {@link #getCount()} returns {@link Integer#MAX_VALUE} and {@link #getOffset()} returns {@code 0} .",
+                "</b> When every number slot is an integer literal, {@link #count()} and {@link #offset()} return their concrete values.",
+                "When a slot is a placeholder (or an integer literal that overflows {@code int} ), the value stays unresolved and opaque: {@link #count()} returns {@link Integer#MAX_VALUE} and {@link #offset()} returns {@code 0} .",
                 "</p> <p> <b> &#9888; &#65039; </b> When this condition is rendered by a SQL builder, a parsed expression is emitted in the target dialect's pagination syntax from its {@code count} / {@code offset} (so, e.g., MySQL's comma form and the {@code FETCH} forms are re-rendered per dialect).",
                 "An opaque (placeholder) expression is re-rendered in the dialect's {@code FETCH} syntax only when the dialect paginates with {@code OFFSET} / {@code FETCH} (Oracle, DB2 or SQL Server, per {@link com.landawn.abacus.query.SqlDialect.ProductInfo} ) and it is a generic {@code LIMIT count [OFFSET offset]} form; otherwise it is emitted verbatim."
               ],
@@ -23083,7 +23068,7 @@
               "throws": [],
               "javadoc_summary": "Checks whether this Limit was created from a string expression (see {@link #Limit(String)} ).",
               "contract": [
-                "When this returns {@code true} , {@link #literal()} is non-null and is what gets rendered; {@link #getCount()} / {@link #getOffset()} may hold sentinel values ( {@link Integer#MAX_VALUE} /0) if the expression stayed opaque.",
+                "When this returns {@code true} , {@link #literal()} is non-null and is what gets rendered; {@link #count()} / {@link #offset()} may hold sentinel values ( {@link Integer#MAX_VALUE} /0) if the expression stayed opaque.",
                 "When it returns {@code false} , the Limit was created with numeric count/offset parameters and {@link #literal()} returns {@code null} ."
               ],
               "examples": [],
@@ -23092,44 +23077,44 @@
               ]
             },
             {
-              "name": "getCount",
+              "name": "count",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public int getCount()",
+              "signature": "public int count()",
               "return_type": "int",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the maximum number of rows to return.",
+              "javadoc_summary": "Returns the maximum number of rows to return.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getOffset",
+              "name": "offset",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public int getOffset()",
+              "signature": "public int offset()",
               "return_type": "int",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the number of rows to skip before returning results.",
+              "javadoc_summary": "Returns the number of rows to skip before returning results.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "isResolved",
+              "name": "resolved",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public boolean isResolved()",
+              "signature": "public boolean resolved()",
               "return_type": "boolean",
               "type_params": [],
               "params": [],
@@ -23140,12 +23125,12 @@
               "see_also": []
             },
             {
-              "name": "getResolvedCount",
+              "name": "resolvedCount",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public OptionalInt getResolvedCount()",
+              "signature": "public OptionalInt resolvedCount()",
               "return_type": "OptionalInt",
               "type_params": [],
               "params": [],
@@ -23158,12 +23143,12 @@
               "see_also": []
             },
             {
-              "name": "getResolvedOffset",
+              "name": "resolvedOffset",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public OptionalInt getResolvedOffset()",
+              "signature": "public OptionalInt resolvedOffset()",
               "return_type": "OptionalInt",
               "type_params": [],
               "params": [],
@@ -23186,7 +23171,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the parameters for this LIMIT clause.",
+              "javadoc_summary": "Returns the parameters for this LIMIT clause.",
               "contract": [
                 "<p> If the expression form ( {@link #Limit(String)} ) contains placeholders ( {@code ?} or named parameters), this class does not track them; the caller is responsible for binding those values separately when preparing the statement."
               ],
@@ -23311,17 +23296,17 @@
               ]
             },
             {
-              "name": "getSubQuery",
+              "name": "subQuery",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public SubQuery getSubQuery()",
+              "signature": "public SubQuery subQuery()",
               "return_type": "SubQuery",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery used by this MINUS clause.",
+              "javadoc_summary": "Returns the subquery used by this MINUS clause.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -23384,7 +23369,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets or creates a NamedProperty instance for the specified property name using a bounded cache.",
+              "javadoc_summary": "Returns or creates a NamedProperty instance for the specified property name using a bounded cache.",
               "contract": [
                 "Callers must not rely on reference identity: entries may be evicted, and concurrent first access may create more than one instance."
               ],
@@ -24917,17 +24902,17 @@
               "see_also": []
             },
             {
-              "name": "getSubQuery",
+              "name": "subQuery",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public SubQuery getSubQuery()",
+              "signature": "public SubQuery subQuery()",
               "return_type": "SubQuery",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery used by this NOT EXISTS condition.",
+              "javadoc_summary": "Returns the subquery used by this NOT EXISTS condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -25259,7 +25244,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Gets an Operator by its string representation.",
+              "javadoc_summary": "Returns an Operator by its string representation.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -25275,7 +25260,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the SQL string representation of this operator.",
+              "javadoc_summary": "Returns the SQL string representation of this operator.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -26241,17 +26226,17 @@
               "see_also": []
             },
             {
-              "name": "getSubQuery",
+              "name": "subQuery",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public SubQuery getSubQuery()",
+              "signature": "public SubQuery subQuery()",
               "return_type": "SubQuery",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery used by this SOME condition.",
+              "javadoc_summary": "Returns the subquery used by this SOME condition.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -26475,12 +26460,12 @@
               "see_also": []
             },
             {
-              "name": "getRawSql",
+              "name": "rawSql",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public String getRawSql()",
+              "signature": "public String rawSql()",
               "return_type": "String",
               "type_params": [],
               "params": [],
@@ -26493,83 +26478,67 @@
               "see_also": []
             },
             {
-              "name": "sql",
+              "name": "entityName",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public String sql()",
+              "signature": "public String entityName()",
               "return_type": "String",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Compatibility alias for {@link #getRawSql()} .",
+              "javadoc_summary": "Returns the entity/table name for this subquery.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getEntityName",
+              "name": "entityClass",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public String getEntityName()",
-              "return_type": "String",
-              "type_params": [],
-              "params": [],
-              "throws": [],
-              "javadoc_summary": "Gets the entity/table name for this subquery.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "getEntityClass",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "public Class<?> getEntityClass()",
+              "signature": "public Class<?> entityClass()",
               "return_type": "Class<?>",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the entity class if this subquery was created with a class reference.",
+              "javadoc_summary": "Returns the entity class if this subquery was created with a class reference.",
               "contract": [
-                "Gets the entity class if this subquery was created with a class reference."
+                "Returns the entity class if this subquery was created with a class reference."
               ],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getSelectPropNames",
+              "name": "selectPropNames",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public ImmutableList<String> getSelectPropNames()",
+              "signature": "public ImmutableList<String> selectPropNames()",
               "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the collection of property names to select in this subquery.",
+              "javadoc_summary": "Returns the collection of property names to select in this subquery.",
               "contract": [],
               "examples": [],
               "see_also": []
             },
             {
-              "name": "getCondition",
+              "name": "condition",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public Condition getCondition()",
+              "signature": "public Condition condition()",
               "return_type": "Condition",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the WHERE condition for this subquery.",
+              "javadoc_summary": "Returns the WHERE condition for this subquery.",
               "contract": [
                 "This condition is applied when generating the SQL for structured subqueries."
               ],
@@ -26587,7 +26556,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the list of parameter values from the condition.",
+              "javadoc_summary": "Returns the list of parameter values from the condition.",
               "contract": [
                 "These are the parameter values that will be bound to the prepared statement placeholders when the query is executed.",
                 "<p> <b> &#9888; &#65039; </b> For raw SQL subqueries this returns an empty list even when the raw text contains placeholders; raw bindings are managed by the caller."
@@ -26710,17 +26679,17 @@
               ]
             },
             {
-              "name": "getSubQuery",
+              "name": "subQuery",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public SubQuery getSubQuery()",
+              "signature": "public SubQuery subQuery()",
               "return_type": "SubQuery",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery used by this UNION clause.",
+              "javadoc_summary": "Returns the subquery used by this UNION clause.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -26774,17 +26743,17 @@
               ]
             },
             {
-              "name": "getSubQuery",
+              "name": "subQuery",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public SubQuery getSubQuery()",
+              "signature": "public SubQuery subQuery()",
               "return_type": "SubQuery",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the subquery used by this UNION ALL clause.",
+              "javadoc_summary": "Returns the subquery used by this UNION ALL clause.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -26866,17 +26835,17 @@
               "see_also": []
             },
             {
-              "name": "getColumnNames",
+              "name": "columnNames",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public ImmutableList<String> getColumnNames()",
+              "signature": "public ImmutableList<String> columnNames()",
               "return_type": "ImmutableList<String>",
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the validated column names this USING clause joins on, in the order they were supplied.",
+              "javadoc_summary": "Returns the validated column names this USING clause joins on, in the order they were supplied.",
               "contract": [],
               "examples": [],
               "see_also": []

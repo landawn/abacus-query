@@ -24,8 +24,8 @@ public class CrossJoinTest extends TestBase {
     public void testSingleEntity() {
         CrossJoin join = new CrossJoin("colors");
         assertEquals(Operator.CROSS_JOIN, join.operator());
-        assertEquals(Arrays.asList("colors"), join.getJoinEntities());
-        assertNull(join.getCondition());
+        assertEquals(Arrays.asList("colors"), join.joinEntities());
+        assertNull(join.condition());
         assertTrue(join.parameters().isEmpty());
         assertEquals("CROSS JOIN colors", join.toString(NamingPolicy.NO_CHANGE));
     }
@@ -33,7 +33,7 @@ public class CrossJoinTest extends TestBase {
     @Test
     public void testMultipleEntities() {
         CrossJoin join = new CrossJoin(Arrays.asList("sizes", "colors"));
-        assertEquals(Arrays.asList("sizes", "colors"), join.getJoinEntities());
+        assertEquals(Arrays.asList("sizes", "colors"), join.joinEntities());
         assertEquals("CROSS JOIN (sizes, colors)", join.toString(NamingPolicy.NO_CHANGE));
     }
 

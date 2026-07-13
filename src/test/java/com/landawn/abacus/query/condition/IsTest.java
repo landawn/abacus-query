@@ -22,8 +22,8 @@ public class IsTest extends TestBase {
     @Test
     public void testConstructor() {
         Is condition = new Is("age", 25);
-        assertEquals("age", condition.getPropName());
-        assertEquals(25, (int) condition.getPropValue());
+        assertEquals("age", condition.propName());
+        assertEquals(25, (int) condition.propValue());
         assertEquals(Operator.IS, condition.operator());
     }
 
@@ -40,27 +40,27 @@ public class IsTest extends TestBase {
     @Test
     public void testGetPropName() {
         Is condition = new Is("userName", "John");
-        assertEquals("userName", condition.getPropName());
+        assertEquals("userName", condition.propName());
     }
 
     @Test
     public void testGetPropValue() {
         Is condition = new Is("age", 30);
-        Integer value = condition.getPropValue();
+        Integer value = condition.propValue(Integer.class);
         assertEquals(Integer.valueOf(30), value);
     }
 
     @Test
     public void testGetPropValue_String() {
         Is condition = new Is("name", "Alice");
-        String value = condition.getPropValue();
+        String value = condition.propValue(String.class);
         assertEquals("Alice", value);
     }
 
     @Test
     public void testGetPropValue_Null() {
         Is condition = new Is("field", null);
-        assertNull(condition.getPropValue());
+        assertNull(condition.propValue());
     }
 
     @Test
@@ -181,18 +181,18 @@ public class IsTest extends TestBase {
     public void testConstructorWithPropNameAndValue() {
         Is condition = new Is("age", null);
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("age", condition.getPropName());
+        Assertions.assertEquals("age", condition.propName());
         Assertions.assertEquals(Operator.IS, condition.operator());
-        Assertions.assertNull(condition.getPropValue());
+        Assertions.assertNull(condition.propValue());
     }
 
     @Test
     public void testConstructorWithExpression() {
         Is condition = new Is("status", Filters.expr("ACTIVE"));
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("status", condition.getPropName());
+        Assertions.assertEquals("status", condition.propName());
         Assertions.assertEquals(Operator.IS, condition.operator());
-        Assertions.assertNotNull(condition.getPropValue());
+        Assertions.assertNotNull(condition.propValue());
     }
 
     @Test

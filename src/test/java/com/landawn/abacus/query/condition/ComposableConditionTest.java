@@ -41,7 +41,7 @@ public class ComposableConditionTest extends TestBase {
         final Not result = condition.not();
 
         assertEquals(Operator.NOT, result.operator());
-        assertEquals(condition, result.getCondition());
+        assertEquals(condition, result.condition());
     }
 
     @Test

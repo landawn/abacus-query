@@ -53,7 +53,7 @@ public class AllTest extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE in_stock = true");
         All condition = new All(subQuery);
-        SubQuery retrieved = (SubQuery) condition.getCondition();
+        SubQuery retrieved = (SubQuery) condition.condition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -217,7 +217,7 @@ public class AllTest extends TestBase {
 
         Assertions.assertNotNull(all);
         Assertions.assertEquals(Operator.ALL, all.operator());
-        Assertions.assertEquals(subQuery, all.getCondition());
+        Assertions.assertEquals(subQuery, all.condition());
     }
 
     @Test

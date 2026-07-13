@@ -30,7 +30,7 @@ public class UnionTest extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM orders");
         Union union = new Union(subQuery);
-        SubQuery retrieved = (SubQuery) union.getCondition();
+        SubQuery retrieved = (SubQuery) union.condition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -131,7 +131,7 @@ public class UnionTest extends TestBase {
 
         Assertions.assertNotNull(union);
         Assertions.assertEquals(Operator.UNION, union.operator());
-        Assertions.assertEquals(subQuery, union.getCondition());
+        Assertions.assertEquals(subQuery, union.condition());
     }
 
     @Test
@@ -150,7 +150,7 @@ public class UnionTest extends TestBase {
                 Filters.and(Filters.gt("total", 1000), Filters.eq("status", "completed")));
         Union union = Filters.union(subQuery);
 
-        Assertions.assertEquals(subQuery, union.getCondition());
+        Assertions.assertEquals(subQuery, union.condition());
         Assertions.assertEquals(2, union.parameters().size());
     }
 

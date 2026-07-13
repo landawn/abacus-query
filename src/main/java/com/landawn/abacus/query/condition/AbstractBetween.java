@@ -98,28 +98,28 @@ public abstract class AbstractBetween extends ComposableCondition {
     }
 
     /**
-     * Gets the property name being checked in this BETWEEN or NOT BETWEEN condition.
+     * Returns the property name being checked in this BETWEEN or NOT BETWEEN condition.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between between = new Between("age", 18, 65);
-     * String prop = between.getPropName();   // "age"
+     * String prop = between.propName();   // "age"
      * }</pre>
      *
      * @return the property name
      */
-    public String getPropName() {
+    public String propName() {
         return propName;
     }
 
     /**
-     * Gets the lower bound of the range. For {@link Between} this is the inclusive lower bound;
+     * Returns the lower bound of the range. For {@link Between} this is the inclusive lower bound;
      * for {@link NotBetween} this is the lower bound of the excluded range.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between between = new Between("age", 18, 65);
-     * Integer min = between.getMinValue();   // 18
+     * Integer min = between.minValue();   // 18
      * }</pre>
      *
      * @param <T> the expected type of the minimum value (caller-supplied; an unchecked cast is
@@ -128,18 +128,18 @@ public abstract class AbstractBetween extends ComposableCondition {
      *         {@link Condition}, or {@code null}
      */
     @SuppressWarnings("unchecked")
-    public <T> T getMinValue() {
+    public <T> T minValue() {
         return (T) minValue;
     }
 
     /**
-     * Gets the upper bound of the range. For {@link Between} this is the inclusive upper bound;
+     * Returns the upper bound of the range. For {@link Between} this is the inclusive upper bound;
      * for {@link NotBetween} this is the upper bound of the excluded range.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Between between = new Between("age", 18, 65);
-     * Integer max = between.getMaxValue();   // 65
+     * Integer max = between.maxValue();   // 65
      * }</pre>
      *
      * @param <T> the expected type of the maximum value (caller-supplied; an unchecked cast is
@@ -148,12 +148,12 @@ public abstract class AbstractBetween extends ComposableCondition {
      *         {@link Condition}, or {@code null}
      */
     @SuppressWarnings("unchecked")
-    public <T> T getMaxValue() {
+    public <T> T maxValue() {
         return (T) maxValue;
     }
 
     /**
-     * Gets the parameters for this condition.
+     * Returns the parameters for this condition.
      * Returns a list containing the minimum and maximum values in that order.
      * If either bound is a {@link Condition} (typically a {@link SubQuery}), its parameters are
      * spliced in place of the bound itself.

@@ -117,24 +117,24 @@ public class Any extends ComposableCell {
     }
 
     /**
-     * Gets the subquery used by this ANY condition.
+     * Returns the subquery used by this ANY condition.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Retrieve the wrapped subquery
      * SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
      * Any any = new Any(subQuery);
-     * SubQuery retrieved = any.getSubQuery();
+     * SubQuery retrieved = any.subQuery();
      * // returns the subquery passed to the constructor
      *
-     * // The wrapped subquery is also what getCondition() returns
-     * boolean sameAsCondition = any.getSubQuery() == any.getCondition();
+     * // The wrapped subquery is also what condition() returns
+     * boolean sameAsCondition = any.subQuery() == any.condition();
      * // returns true
      * }</pre>
      *
      * @return the {@link SubQuery} supplied at construction time
      */
-    public SubQuery getSubQuery() {
+    public SubQuery subQuery() {
         return (SubQuery) condition;
     }
 }

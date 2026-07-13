@@ -110,7 +110,7 @@ public class FiltersTest extends TestBase {
     public void testBinary() {
         Binary binary = Filters.binary("age", Operator.GREATER_THAN, 18);
         assertNotNull(binary);
-        assertEquals("age", binary.getPropName());
+        assertEquals("age", binary.propName());
         assertEquals(Operator.GREATER_THAN, binary.operator());
     }
 
@@ -118,9 +118,9 @@ public class FiltersTest extends TestBase {
     public void testBinaryParameterized() {
         Binary binary = Filters.binary("price", Operator.GREATER_THAN);
         assertNotNull(binary);
-        assertEquals("price", binary.getPropName());
+        assertEquals("price", binary.propName());
         assertEquals(Operator.GREATER_THAN, binary.operator());
-        assertSame(Filters.QME, binary.getPropValue());
+        assertSame(Filters.QME, binary.propValue());
         // Renders identically to the dedicated parameterized factory for the same operator.
         assertEquals(Filters.greaterThan("price").toString(), binary.toString());
     }
@@ -135,23 +135,23 @@ public class FiltersTest extends TestBase {
     public void testEqual() {
         Equal equal = Filters.equal("name", "John");
         assertNotNull(equal);
-        assertEquals("name", equal.getPropName());
-        assertEquals("John", equal.getPropValue());
+        assertEquals("name", equal.propName());
+        assertEquals("John", equal.propValue());
     }
 
     @Test
     public void testEqualWithoutValue() {
         Equal equal = Filters.equal("name");
         assertNotNull(equal);
-        assertEquals("name", equal.getPropName());
+        assertEquals("name", equal.propName());
     }
 
     @Test
     public void testEq() {
         Equal equal = Filters.eq("age", 30);
         assertNotNull(equal);
-        assertEquals("age", equal.getPropName());
-        assertEquals(30, (Integer) equal.getPropValue());
+        assertEquals("age", equal.propName());
+        assertEquals(30, (Integer) equal.propValue());
     }
 
     @Test
@@ -165,7 +165,7 @@ public class FiltersTest extends TestBase {
         List<Integer> ages = Arrays.asList(20, 30, 40);
         In in = Filters.in("age", ages);
         assertNotNull(in);
-        assertFalse(in.getValues().isEmpty());
+        assertFalse(in.values().isEmpty());
     }
 
     @Test
@@ -194,10 +194,10 @@ public class FiltersTest extends TestBase {
         Or or = Filters.anyEqual(account, Arrays.asList("id", "firstName"));
 
         assertEquals(2, or.conditions().size());
-        assertEquals("id", ((Equal) or.conditions().get(0)).getPropName());
-        assertEquals(Long.valueOf(7L), ((Equal) or.conditions().get(0)).getPropValue());
-        assertEquals("firstName", ((Equal) or.conditions().get(1)).getPropName());
-        assertEquals("Jane", ((Equal) or.conditions().get(1)).getPropValue());
+        assertEquals("id", ((Equal) or.conditions().get(0)).propName());
+        assertEquals(Long.valueOf(7L), ((Equal) or.conditions().get(0)).propValue());
+        assertEquals("firstName", ((Equal) or.conditions().get(1)).propName());
+        assertEquals("Jane", ((Equal) or.conditions().get(1)).propValue());
     }
 
     @Test
@@ -252,10 +252,10 @@ public class FiltersTest extends TestBase {
         And and = Filters.allEqual(account, Arrays.asList("id", "lastName"));
 
         assertEquals(2, and.conditions().size());
-        assertEquals("id", ((Equal) and.conditions().get(0)).getPropName());
-        assertEquals(Long.valueOf(9L), ((Equal) and.conditions().get(0)).getPropValue());
-        assertEquals("lastName", ((Equal) and.conditions().get(1)).getPropName());
-        assertEquals("Doe", ((Equal) and.conditions().get(1)).getPropValue());
+        assertEquals("id", ((Equal) and.conditions().get(0)).propName());
+        assertEquals(Long.valueOf(9L), ((Equal) and.conditions().get(0)).propValue());
+        assertEquals("lastName", ((Equal) and.conditions().get(1)).propName());
+        assertEquals("Doe", ((Equal) and.conditions().get(1)).propValue());
     }
 
     @Test
@@ -316,37 +316,37 @@ public class FiltersTest extends TestBase {
     public void testNotEqual() {
         NotEqual notEqual = Filters.notEqual("status", "deleted");
         assertNotNull(notEqual);
-        assertEquals("status", notEqual.getPropName());
-        assertEquals("deleted", notEqual.getPropValue());
+        assertEquals("status", notEqual.propName());
+        assertEquals("deleted", notEqual.propValue());
     }
 
     @Test
     public void testNe() {
         NotEqual ne = Filters.ne("status", "inactive");
         assertNotNull(ne);
-        assertEquals("status", ne.getPropName());
+        assertEquals("status", ne.propName());
     }
 
     @Test
     public void testGreaterThan() {
         GreaterThan gt = Filters.greaterThan("age", 18);
         assertNotNull(gt);
-        assertEquals("age", gt.getPropName());
-        assertEquals(Integer.valueOf(18), gt.getPropValue());
+        assertEquals("age", gt.propName());
+        assertEquals(Integer.valueOf(18), gt.propValue());
     }
 
     @Test
     public void testGt() {
         GreaterThan gt = Filters.gt("score", 90);
         assertNotNull(gt);
-        assertEquals("score", gt.getPropName());
+        assertEquals("score", gt.propName());
     }
 
     @Test
     public void testGreaterThanOrEqual() {
         GreaterThanOrEqual ge = Filters.greaterThanOrEqual("age", 21);
         assertNotNull(ge);
-        assertEquals("age", ge.getPropName());
+        assertEquals("age", ge.propName());
     }
 
     @Test
@@ -359,7 +359,7 @@ public class FiltersTest extends TestBase {
     public void testLessThan() {
         LessThan lt = Filters.lessThan("age", 65);
         assertNotNull(lt);
-        assertEquals("age", lt.getPropName());
+        assertEquals("age", lt.propName());
     }
 
     @Test
@@ -372,7 +372,7 @@ public class FiltersTest extends TestBase {
     public void testLessThanOrEqual() {
         LessThanOrEqual le = Filters.lessThanOrEqual("age", 60);
         assertNotNull(le);
-        assertEquals("age", le.getPropName());
+        assertEquals("age", le.propName());
     }
 
     @Test
@@ -385,9 +385,9 @@ public class FiltersTest extends TestBase {
     public void testBetween() {
         Between between = Filters.between("age", 18, 65);
         assertNotNull(between);
-        assertEquals("age", between.getPropName());
-        assertEquals(Integer.valueOf(18), between.getMinValue());
-        assertEquals(Integer.valueOf(65), between.getMaxValue());
+        assertEquals("age", between.propName());
+        assertEquals(Integer.valueOf(18), between.minValue());
+        assertEquals(Integer.valueOf(65), between.maxValue());
     }
 
     // Removed: testBt() - bt() methods have been removed. Use between() instead.
@@ -396,14 +396,14 @@ public class FiltersTest extends TestBase {
     public void testNotBetween() {
         NotBetween notBetween = Filters.notBetween("age", 0, 17);
         assertNotNull(notBetween);
-        assertEquals("age", notBetween.getPropName());
+        assertEquals("age", notBetween.propName());
     }
 
     @Test
     public void testLike() {
         Like like = Filters.like("name", "%John%");
         assertNotNull(like);
-        assertEquals("name", like.getPropName());
+        assertEquals("name", like.propName());
     }
 
     @Test
@@ -452,7 +452,7 @@ public class FiltersTest extends TestBase {
     public void testIsNull() {
         IsNull isNull = Filters.isNull("deletedAt");
         assertNotNull(isNull);
-        assertEquals("deletedAt", isNull.getPropName());
+        assertEquals("deletedAt", isNull.propName());
     }
 
     @Test
@@ -471,7 +471,7 @@ public class FiltersTest extends TestBase {
     public void testIsNotNull() {
         IsNotNull isNotNull = Filters.isNotNull("email");
         assertNotNull(isNotNull);
-        assertEquals("email", isNotNull.getPropName());
+        assertEquals("email", isNotNull.propName());
     }
 
     @Test
@@ -990,7 +990,7 @@ public class FiltersTest extends TestBase {
     @Test
     public void testCrossJoinEntities() {
         com.landawn.abacus.query.condition.CrossJoin crossJoin = Filters.crossJoin(Arrays.asList("orders", "payments"));
-        assertEquals(2, crossJoin.getJoinEntities().size());
+        assertEquals(2, crossJoin.joinEntities().size());
     }
 
     @Test
@@ -1042,7 +1042,7 @@ public class FiltersTest extends TestBase {
     @Test
     public void testNaturalJoinEntities() {
         com.landawn.abacus.query.condition.NaturalJoin naturalJoin = Filters.naturalJoin(Arrays.asList("orders", "payments"));
-        assertEquals(2, naturalJoin.getJoinEntities().size());
+        assertEquals(2, naturalJoin.joinEntities().size());
     }
 
     @Test
@@ -1300,9 +1300,9 @@ public class FiltersTest extends TestBase {
     public void testSubQueryWithEntityClassAndStringCondition() {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery(Account.class, Arrays.asList("id", "name"), "active = true");
         assertNotNull(subQuery);
-        assertEquals(Account.class, subQuery.getEntityClass());
+        assertEquals(Account.class, subQuery.entityClass());
         // Mirrors the entityName-based overload: the raw string becomes an Expression condition.
-        assertEquals(Filters.subQuery("Account", Arrays.asList("id", "name"), "active = true").getCondition().toString(), subQuery.getCondition().toString());
+        assertEquals(Filters.subQuery("Account", Arrays.asList("id", "name"), "active = true").condition().toString(), subQuery.condition().toString());
     }
 
     @Test
@@ -1391,8 +1391,8 @@ public class FiltersTest extends TestBase {
 
         // The SQL:2008 FETCH form is parsed into concrete count/offset while its literal is retained.
         assertEquals(literal, limit.literal());
-        assertEquals(20, limit.getCount());
-        assertEquals(5, limit.getOffset());
+        assertEquals(20, limit.count());
+        assertEquals(5, limit.offset());
     }
 
     @Test
@@ -1492,7 +1492,7 @@ public class FiltersTest extends TestBase {
         final Or condition = Filters.anyEqual(props);
 
         assertEquals(1, condition.conditions().size());
-        assertEquals("status", ((Equal) condition.conditions().get(0)).getPropName());
+        assertEquals("status", ((Equal) condition.conditions().get(0)).propName());
     }
 
     @Test
@@ -1505,8 +1505,8 @@ public class FiltersTest extends TestBase {
         final Or condition = Filters.anyEqual(props);
 
         assertEquals(3, condition.conditions().size());
-        assertEquals("status", ((Equal) condition.conditions().get(0)).getPropName());
-        assertEquals("verified", ((Equal) condition.conditions().get(2)).getPropName());
+        assertEquals("status", ((Equal) condition.conditions().get(0)).propName());
+        assertEquals("verified", ((Equal) condition.conditions().get(2)).propName());
     }
 
     @Test
@@ -1517,7 +1517,7 @@ public class FiltersTest extends TestBase {
         final And condition = Filters.allEqual(props);
 
         assertEquals(1, condition.conditions().size());
-        assertEquals("status", ((Equal) condition.conditions().get(0)).getPropName());
+        assertEquals("status", ((Equal) condition.conditions().get(0)).propName());
     }
 
     @Test
@@ -1530,8 +1530,8 @@ public class FiltersTest extends TestBase {
         final And condition = Filters.allEqual(props);
 
         assertEquals(3, condition.conditions().size());
-        assertEquals("status", ((Equal) condition.conditions().get(0)).getPropName());
-        assertEquals("verified", ((Equal) condition.conditions().get(2)).getPropName());
+        assertEquals("status", ((Equal) condition.conditions().get(0)).propName());
+        assertEquals("verified", ((Equal) condition.conditions().get(2)).propName());
     }
 
     @Test
@@ -1541,7 +1541,7 @@ public class FiltersTest extends TestBase {
         final Or condition = Filters.anyEqual(account, Arrays.asList("id"));
 
         assertEquals(1, condition.conditions().size());
-        assertEquals(Long.valueOf(17L), ((Equal) condition.conditions().get(0)).getPropValue());
+        assertEquals(Long.valueOf(17L), ((Equal) condition.conditions().get(0)).propValue());
     }
 
     @Test
@@ -1551,8 +1551,8 @@ public class FiltersTest extends TestBase {
         final And condition = Filters.allEqual(account, Arrays.asList("id", "firstName", "lastName"));
 
         assertEquals(3, condition.conditions().size());
-        assertEquals("id", ((Equal) condition.conditions().get(0)).getPropName());
-        assertEquals("lastName", ((Equal) condition.conditions().get(2)).getPropName());
+        assertEquals("id", ((Equal) condition.conditions().get(0)).propName());
+        assertEquals("lastName", ((Equal) condition.conditions().get(2)).propName());
     }
 
     @Test
@@ -1696,12 +1696,12 @@ public class FiltersTest extends TestBase {
         Condition condition = Filters.eq("status", "active");
         Where where1 = Filters.where(condition);
         Assertions.assertNotNull(where1);
-        Assertions.assertEquals(condition, where1.getCondition());
+        Assertions.assertEquals(condition, where1.condition());
 
         // Test with string
         Where where2 = Filters.where("age > 18");
         Assertions.assertNotNull(where2);
-        Assertions.assertNotNull(where2.getCondition());
+        Assertions.assertNotNull(where2.condition());
     }
 
     @Test
@@ -1753,12 +1753,12 @@ public class FiltersTest extends TestBase {
         Condition condition = Filters.gt("COUNT(*)", 5);
         Having having1 = Filters.having(condition);
         Assertions.assertNotNull(having1);
-        Assertions.assertEquals(condition, having1.getCondition());
+        Assertions.assertEquals(condition, having1.condition());
 
         // Test with string
         Having having2 = Filters.having("COUNT(*) > 10");
         Assertions.assertNotNull(having2);
-        Assertions.assertNotNull(having2.getCondition());
+        Assertions.assertNotNull(having2.condition());
     }
 
     @Test
@@ -1826,12 +1826,12 @@ public class FiltersTest extends TestBase {
         Condition condition = Filters.eq("a.id", "b.a_id");
         On on1 = Filters.on(condition);
         Assertions.assertNotNull(on1);
-        Assertions.assertEquals(condition, on1.getCondition());
+        Assertions.assertEquals(condition, on1.condition());
 
         // Test with string
         On on2 = Filters.on("a.id = b.a_id");
         Assertions.assertNotNull(on2);
-        Assertions.assertNotNull(on2.getCondition());
+        Assertions.assertNotNull(on2.condition());
 
         // Test with two property names
         On on3 = Filters.on("userId", "user.id");
@@ -1971,7 +1971,7 @@ public class FiltersTest extends TestBase {
         // Test with int array
         In in1 = Filters.in("age", new int[] { 18, 21, 25 });
         Assertions.assertNotNull(in1);
-        Assertions.assertEquals("age", in1.getPropName());
+        Assertions.assertEquals("age", in1.propName());
 
         // Test with long array
         In in2 = Filters.in("id", new long[] { 1L, 2L, 3L });
@@ -2021,7 +2021,7 @@ public class FiltersTest extends TestBase {
     //        Cell cell = Filters.cell(Operator.AND, condition);
     //        Assertions.assertNotNull(cell);
     //        Assertions.assertEquals(Operator.AND, cell.operator());
-    //        Assertions.assertEquals(condition, cell.getCondition());
+    //        Assertions.assertEquals(condition, cell.condition());
     //    }
 
     @Test
@@ -2054,13 +2054,13 @@ public class FiltersTest extends TestBase {
         // Test with count only
         Limit limit1 = Filters.limit(10);
         Assertions.assertNotNull(limit1);
-        Assertions.assertEquals(10, limit1.getCount());
+        Assertions.assertEquals(10, limit1.count());
 
         // Test with offset and count
         Limit limit2 = Filters.limit(50, 20);
         Assertions.assertNotNull(limit2);
-        Assertions.assertEquals(20, limit2.getOffset());
-        Assertions.assertEquals(50, limit2.getCount());
+        Assertions.assertEquals(20, limit2.offset());
+        Assertions.assertEquals(50, limit2.count());
 
         // Test with expression
         Limit limit3 = Filters.limit("10 OFFSET 5");
@@ -2599,12 +2599,12 @@ public class FiltersTest extends TestBase {
     @Test
     public void testWildcardMethods_NonNullValues_StillWork() {
         // Regression guard: ensure happy paths still produce the expected wildcard patterns.
-        assertEquals("%java%", Filters.contains("col", "java").getPropValue());
-        assertEquals("%java%", Filters.notContains("col", "java").getPropValue());
-        assertEquals("Jo%", Filters.startsWith("col", "Jo").getPropValue());
-        assertEquals("TEST%", Filters.notStartsWith("col", "TEST").getPropValue());
-        assertEquals("%.com", Filters.endsWith("col", ".com").getPropValue());
-        assertEquals("%.tmp", Filters.notEndsWith("col", ".tmp").getPropValue());
+        assertEquals("%java%", Filters.contains("col", "java").propValue());
+        assertEquals("%java%", Filters.notContains("col", "java").propValue());
+        assertEquals("Jo%", Filters.startsWith("col", "Jo").propValue());
+        assertEquals("TEST%", Filters.notStartsWith("col", "TEST").propValue());
+        assertEquals("%.com", Filters.endsWith("col", ".com").propValue());
+        assertEquals("%.tmp", Filters.notEndsWith("col", ".tmp").propValue());
     }
 
     // --- Bug fix: having(String) must reject null/empty (matching where(String) contract) ---
@@ -2680,17 +2680,17 @@ public class FiltersTest extends TestBase {
     @Test
     public void test2ndPass_likeWildcards_placement() {
         // contains: %v% on both sides
-        assertEquals("%foo%", Filters.contains("c", "foo").getPropValue());
+        assertEquals("%foo%", Filters.contains("c", "foo").propValue());
         // notContains: %v% on both sides
-        assertEquals("%foo%", Filters.notContains("c", "foo").getPropValue());
+        assertEquals("%foo%", Filters.notContains("c", "foo").propValue());
         // startsWith: v%
-        assertEquals("foo%", Filters.startsWith("c", "foo").getPropValue());
+        assertEquals("foo%", Filters.startsWith("c", "foo").propValue());
         // notStartsWith: v%
-        assertEquals("foo%", Filters.notStartsWith("c", "foo").getPropValue());
+        assertEquals("foo%", Filters.notStartsWith("c", "foo").propValue());
         // endsWith: %v
-        assertEquals("%foo", Filters.endsWith("c", "foo").getPropValue());
+        assertEquals("%foo", Filters.endsWith("c", "foo").propValue());
         // notEndsWith: %v
-        assertEquals("%foo", Filters.notEndsWith("c", "foo").getPropValue());
+        assertEquals("%foo", Filters.notEndsWith("c", "foo").propValue());
     }
 
     @Test
@@ -2713,30 +2713,30 @@ public class FiltersTest extends TestBase {
     public void test2ndPass_inPrimitiveArrays_correctBoxing() {
         // int[]
         In intIn = Filters.in("col", new int[] { 1, 2, 3 });
-        assertEquals(3, intIn.getValues().size());
-        assertEquals(Integer.valueOf(1), intIn.getValues().iterator().next());
+        assertEquals(3, intIn.values().size());
+        assertEquals(Integer.valueOf(1), intIn.values().iterator().next());
 
         // long[]
         In longIn = Filters.in("col", new long[] { 10L, 20L });
-        assertEquals(2, longIn.getValues().size());
-        assertEquals(Long.valueOf(10L), longIn.getValues().iterator().next());
+        assertEquals(2, longIn.values().size());
+        assertEquals(Long.valueOf(10L), longIn.values().iterator().next());
 
         // double[]
         In dblIn = Filters.in("col", new double[] { 1.5, 2.5 });
-        assertEquals(2, dblIn.getValues().size());
-        assertEquals(Double.valueOf(1.5), dblIn.getValues().iterator().next());
+        assertEquals(2, dblIn.values().size());
+        assertEquals(Double.valueOf(1.5), dblIn.values().iterator().next());
     }
 
     @Test
     public void test2ndPass_notInPrimitiveArrays_correctBoxing() {
         NotIn intNi = Filters.notIn("col", new int[] { 1, 2 });
-        assertEquals(2, intNi.getValues().size());
+        assertEquals(2, intNi.values().size());
 
         NotIn longNi = Filters.notIn("col", new long[] { 1L, 2L });
-        assertEquals(2, longNi.getValues().size());
+        assertEquals(2, longNi.values().size());
 
         NotIn dblNi = Filters.notIn("col", new double[] { 1.0, 2.0 });
-        assertEquals(2, dblNi.getValues().size());
+        assertEquals(2, dblNi.values().size());
     }
 
     @Test

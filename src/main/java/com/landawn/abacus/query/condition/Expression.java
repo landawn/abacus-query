@@ -209,7 +209,7 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Gets the SQL literal string of this expression.
+     * Returns the SQL literal string of this expression.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

@@ -105,24 +105,24 @@ public class Some extends ComposableCell {
     }
 
     /**
-     * Gets the subquery used by this SOME condition.
+     * Returns the subquery used by this SOME condition.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Retrieve the wrapped subquery
      * SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE role = 'manager'");
      * Some some = new Some(subQuery);
-     * SubQuery retrieved = some.getSubQuery();
+     * SubQuery retrieved = some.subQuery();
      * // returns the subquery passed to the constructor
      *
-     * // The wrapped subquery is also what getCondition() returns
-     * boolean sameAsCondition = some.getSubQuery() == some.getCondition();
+     * // The wrapped subquery is also what condition() returns
+     * boolean sameAsCondition = some.subQuery() == some.condition();
      * // returns true
      * }</pre>
      *
      * @return the {@link SubQuery} supplied at construction time
      */
-    public SubQuery getSubQuery() {
+    public SubQuery subQuery() {
         return (SubQuery) condition;
     }
 }

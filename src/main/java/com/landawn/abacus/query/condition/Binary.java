@@ -63,7 +63,7 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Note on {@code IN}/{@code NOT IN}:</b> although {@code Binary} accepts the membership
  * operators, prefer the dedicated {@link In}/{@link NotIn} condition classes (or the
  * {@code Filters.in}/{@code Filters.notIn} factories) for IN conditions — they expose the values
- * through {@code getValues()}, support multi-column row-value form, and are what
+ * through {@code values()}, support multi-column row-value form, and are what
  * {@code instanceof}-based consumers expect. A {@code Binary} with {@code Operator.IN} renders
  * the same SQL but is a different type with different accessors.</p>
  *
@@ -157,51 +157,22 @@ public class Binary extends ComposableCondition {
     }
 
     /**
-     * Gets the property name being compared.
+     * Returns the property name being compared.
      * This is the left-hand side of the binary operation.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary eq = new Equal("age", 25);
-     * String name = eq.getPropName();   // "age"
+     * String name = eq.propName();   // "age"
      *
      * Binary like = new Like("email", "%@example.com");
-     * String likeName = like.getPropName();   // "email"
+     * String likeName = like.propName();   // "email"
      * }</pre>
      *
      * @return the property name
      */
-    public String getPropName() {
+    public String propName() {
         return propName;
-    }
-
-    /**
-     * Gets the value being compared against.
-     * The value can be a literal (String, Number, Date, etc.) or a {@link Condition} (typically a
-     * {@link SubQuery}). The return type is inferred from the call site via an unchecked cast,
-     * so the caller is responsible for ensuring the requested type is compatible with the stored
-     * value.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Binary eq = new Equal("age", 25);
-     * Integer value = eq.getPropValue();   // 25
-     *
-     * Binary like = new Like("name", "%John%");
-     * String pattern = like.getPropValue();   // "%John%"
-     *
-     * // With a subquery as value
-     * SubQuery subQuery = Filters.subQuery("SELECT MAX(salary) FROM employees");
-     * Binary gt = new GreaterThan("salary", subQuery);
-     * SubQuery sub = gt.getPropValue();   // the SubQuery instance
-     * }</pre>
-     *
-     * @param <T> the expected type of the value
-     * @return the property value, cast to the requested type
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T getPropValue() {
-        return (T) propValue;
     }
 
     /**
@@ -222,12 +193,12 @@ public class Binary extends ComposableCondition {
      * @throws NullPointerException if {@code valueType} is {@code null}
      * @throws ClassCastException if the stored value is not assignable to {@code valueType}
      */
-    public <T> T getPropValue(final Class<T> valueType) {
+    public <T> T propValue(final Class<T> valueType) {
         return java.util.Objects.requireNonNull(valueType, "valueType").cast(propValue);
     }
 
     /**
-     * Gets the parameters for this condition.
+     * Returns the parameters for this condition.
      *
      * <ul>
      *   <li>If the value is {@code null} and the operator is {@code =}, {@code !=}, {@code <>}, {@code IS}, or
@@ -378,7 +349,7 @@ public class Binary extends ComposableCondition {
             return propValue;
         }
 
-        // The copies are wrapped unmodifiable so getPropValue() cannot leak a mutable view of the
+        // The copies are wrapped unmodifiable so propValue() cannot leak a mutable view of the
         // internal membership list (mutation would silently desync the memoized parameters/hashCode).
         if (propValue instanceof final Collection<?> values) {
             N.checkArgNotEmpty(values, "propValue");

@@ -111,7 +111,7 @@ public class NamedProperty {
     }
 
     /**
-     * Gets or creates a NamedProperty instance for the specified property name using a bounded cache.
+     * Returns or creates a NamedProperty instance for the specified property name using a bounded cache.
      * Callers must not rely on reference identity: entries may be evicted, and concurrent first access
      * may create more than one instance.
      *

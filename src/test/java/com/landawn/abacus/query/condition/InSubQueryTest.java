@@ -26,9 +26,9 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM customers WHERE status = 'premium'");
         InSubQuery condition = new InSubQuery("customer_id", subQuery);
 
-        assertEquals("customer_id", condition.getPropNames().iterator().next());
-        assertEquals(1, condition.getPropNames().size());
-        assertNotNull(condition.getSubQuery());
+        assertEquals("customer_id", condition.propNames().iterator().next());
+        assertEquals(1, condition.propNames().size());
+        assertNotNull(condition.subQuery());
         assertEquals(Operator.IN, condition.operator());
     }
 
@@ -43,9 +43,9 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT dept_id, location_id FROM dept_locations WHERE active = 'Y'");
         InSubQuery condition = new InSubQuery(columns, subQuery);
 
-        assertNotNull(condition.getPropNames());
-        assertEquals(2, condition.getPropNames().size());
-        assertNotNull(condition.getSubQuery());
+        assertNotNull(condition.propNames());
+        assertEquals(2, condition.propNames().size());
+        assertNotNull(condition.subQuery());
     }
 
     @Test
@@ -83,8 +83,8 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
 
-        assertEquals(1, condition.getPropNames().size());
-        assertEquals("user_id", condition.getPropNames().iterator().next());
+        assertEquals(1, condition.propNames().size());
+        assertEquals("user_id", condition.propNames().iterator().next());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT department_id, location_id FROM assignments");
         InSubQuery condition = new InSubQuery(columns, subQuery);
 
-        Collection<String> propNames = condition.getPropNames();
+        Collection<String> propNames = condition.propNames();
         assertNotNull(propNames);
         assertEquals(2, propNames.size());
     }
@@ -104,7 +104,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT department_id, location_id FROM assignments");
         InSubQuery condition = new InSubQuery(columns, subQuery);
 
-        assertThrows(UnsupportedOperationException.class, () -> condition.getPropNames().add("region_id"));
+        assertThrows(UnsupportedOperationException.class, () -> condition.propNames().add("region_id"));
     }
 
     @Test
@@ -112,7 +112,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE status = 'active'");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
 
-        SubQuery result = condition.getSubQuery();
+        SubQuery result = condition.subQuery();
         assertNotNull(result);
         assertEquals(subQuery, result);
     }
@@ -237,7 +237,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery premiumCustomers = Filters.subQuery("SELECT customer_id FROM customers WHERE status = 'premium'");
         InSubQuery condition = new InSubQuery("customer_id", premiumCustomers);
 
-        assertNotNull(condition.getSubQuery());
+        assertNotNull(condition.subQuery());
         assertTrue(condition.toString(NamingPolicy.NO_CHANGE).contains("customer_id"));
     }
 
@@ -248,7 +248,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery validAssignments = Filters.subQuery("SELECT dept_id, location_id FROM allowed_assignments");
         InSubQuery multiColumn = new InSubQuery(columns, validAssignments);
 
-        assertEquals(2, multiColumn.getPropNames().size());
+        assertEquals(2, multiColumn.propNames().size());
     }
 
     @Test
@@ -309,10 +309,10 @@ public class InSubQueryTest extends TestBase {
         InSubQuery condition = new InSubQuery("manager_id", subQuery);
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals("manager_id", condition.getPropNames().iterator().next());
-        Assertions.assertEquals(1, condition.getPropNames().size());
+        Assertions.assertEquals("manager_id", condition.propNames().iterator().next());
+        Assertions.assertEquals(1, condition.propNames().size());
         Assertions.assertEquals(Operator.IN, condition.operator());
-        Assertions.assertEquals(subQuery, condition.getSubQuery());
+        Assertions.assertEquals(subQuery, condition.subQuery());
     }
 
     @Test
@@ -322,9 +322,9 @@ public class InSubQueryTest extends TestBase {
         InSubQuery condition = new InSubQuery(propNames, subQuery);
 
         Assertions.assertNotNull(condition);
-        Assertions.assertEquals(propNames, condition.getPropNames());
+        Assertions.assertEquals(propNames, condition.propNames());
         Assertions.assertEquals(Operator.IN, condition.operator());
-        Assertions.assertEquals(subQuery, condition.getSubQuery());
+        Assertions.assertEquals(subQuery, condition.subQuery());
     }
 
     @Test
@@ -345,8 +345,8 @@ public class InSubQueryTest extends TestBase {
 
         propNames.add("country");
 
-        Assertions.assertEquals(Arrays.asList("city", "state"), condition.getPropNames().stream().toList());
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> condition.getPropNames().add("zip"));
+        Assertions.assertEquals(Arrays.asList("city", "state"), condition.propNames().stream().toList());
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> condition.propNames().add("zip"));
     }
 
     @Test
@@ -354,8 +354,8 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
 
-        Assertions.assertEquals(1, condition.getPropNames().size());
-        Assertions.assertEquals("user_id", condition.getPropNames().iterator().next());
+        Assertions.assertEquals(1, condition.propNames().size());
+        Assertions.assertEquals("user_id", condition.propNames().iterator().next());
     }
 
     @Test
@@ -364,7 +364,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT city, state FROM locations");
         InSubQuery condition = new InSubQuery(propNames, subQuery);
 
-        Assertions.assertEquals(propNames, condition.getPropNames());
+        Assertions.assertEquals(propNames, condition.propNames());
     }
 
     @Test

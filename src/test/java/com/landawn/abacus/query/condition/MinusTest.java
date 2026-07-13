@@ -30,7 +30,7 @@ public class MinusTest extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
         Minus minus = new Minus(subQuery);
-        SubQuery retrieved = (SubQuery) minus.getCondition();
+        SubQuery retrieved = (SubQuery) minus.condition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -145,7 +145,7 @@ public class MinusTest extends TestBase {
 
         Assertions.assertNotNull(minus);
         Assertions.assertEquals(Operator.MINUS, minus.operator());
-        Assertions.assertEquals(subQuery, minus.getCondition());
+        Assertions.assertEquals(subQuery, minus.condition());
     }
 
     @Test
@@ -154,7 +154,7 @@ public class MinusTest extends TestBase {
                 Filters.and(Filters.eq("status", "cancelled"), Filters.gt("date", "2023-01-01")));
         Minus minus = Filters.minus(subQuery);
 
-        Assertions.assertEquals(subQuery, minus.getCondition());
+        Assertions.assertEquals(subQuery, minus.condition());
         Assertions.assertEquals(2, minus.parameters().size());
     }
 
@@ -191,7 +191,7 @@ public class MinusTest extends TestBase {
 
         // This would be used with: SELECT product_id FROM inventory MINUS ...
         Assertions.assertEquals(Operator.MINUS, minus.operator());
-        Assertions.assertEquals(soldProducts, minus.getCondition());
+        Assertions.assertEquals(soldProducts, minus.condition());
     }
 
     @Test

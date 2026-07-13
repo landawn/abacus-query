@@ -66,57 +66,57 @@ public class QueryUtilTest extends TestBase {
         // Regression (2026-07-03): only @Table.name() was read, so the deprecated @Table("...") value
         // form returned "" and an alias-only @Table returned " ao" (leading-space garbage) -- both
         // diverging from the FROM clause the query builders render for the same class.
-        assertEquals("value_form_accounts", QueryUtil.getTableNameAndAlias(ValueFormEntity.class, NamingPolicy.SNAKE_CASE));
-        assertEquals("alias_only_entity ao", QueryUtil.getTableNameAndAlias(AliasOnlyEntity.class, NamingPolicy.SNAKE_CASE));
+        assertEquals("value_form_accounts", QueryUtil.tableNameAndAlias(ValueFormEntity.class, NamingPolicy.SNAKE_CASE));
+        assertEquals("alias_only_entity ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, NamingPolicy.SNAKE_CASE));
     }
 
     @Test
     public void testGetColumn2PropNameMap() {
-        ImmutableMap<String, String> map = QueryUtil.getColumn2PropNameMap(Account.class);
+        ImmutableMap<String, String> map = QueryUtil.columnToPropertyMap(Account.class);
         assertNotNull(map);
     }
 
     @Test
     public void testGetColumn2PropNameMap_NullClass() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.getColumn2PropNameMap(null);
+            QueryUtil.columnToPropertyMap(null);
         });
     }
 
     @Test
     public void testGetProp2ColumnNameMap() {
-        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE);
+        ImmutableMap<String, String> map = QueryUtil.propertyToColumnMap(Account.class, NamingPolicy.SNAKE_CASE);
         assertNotNull(map);
     }
 
     @Test
     public void testGetProp2ColumnNameMap_NoChange() {
-        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.NO_CHANGE);
+        ImmutableMap<String, String> map = QueryUtil.propertyToColumnMap(Account.class, NamingPolicy.NO_CHANGE);
         assertNotNull(map);
     }
 
     @Test
     public void testGetProp2ColumnNameMap_UpperCase() {
-        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
+        ImmutableMap<String, String> map = QueryUtil.propertyToColumnMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
         assertNotNull(map);
     }
 
     @Test
     public void testGetProp2ColumnNameMap_NullClass() {
-        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(null, NamingPolicy.SNAKE_CASE);
+        ImmutableMap<String, String> map = QueryUtil.propertyToColumnMap(null, NamingPolicy.SNAKE_CASE);
         assertTrue(map.isEmpty());
     }
 
     @Test
     public void testGetProp2ColumnNameMap_MapClass() {
-        ImmutableMap<String, String> map = QueryUtil.getProp2ColumnNameMap(HashMap.class, NamingPolicy.SNAKE_CASE);
+        ImmutableMap<String, String> map = QueryUtil.propertyToColumnMap(HashMap.class, NamingPolicy.SNAKE_CASE);
         assertTrue(map.isEmpty());
     }
 
     @Test
     public void testGetInsertPropNames_WithEntity() {
         Account account = new Account();
-        Collection<String> props = QueryUtil.getInsertPropNames(account, Collections.emptySet());
+        Collection<String> props = QueryUtil.insertPropertyNames(account, Collections.emptySet());
         assertNotNull(props);
     }
 
@@ -125,46 +125,46 @@ public class QueryUtilTest extends TestBase {
         Account account = new Account();
         Set<String> excluded = new HashSet<>();
         excluded.add("id");
-        Collection<String> props = QueryUtil.getInsertPropNames(account, excluded);
+        Collection<String> props = QueryUtil.insertPropertyNames(account, excluded);
         assertNotNull(props);
         assertFalse(props.contains("id"));
     }
 
     @Test
     public void testGetInsertPropNames_WithClass() {
-        Collection<String> props = QueryUtil.getInsertPropNames(Account.class, Collections.emptySet());
+        Collection<String> props = QueryUtil.insertPropertyNames(Account.class, Collections.emptySet());
         assertNotNull(props);
     }
 
     @Test
     public void testGetInsertPropNames_WithClassNullCheck() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.getInsertPropNames(null, Collections.emptySet());
+            QueryUtil.insertPropertyNames(null, Collections.emptySet());
         });
     }
 
     @Test
     public void testGetInsertPropNames_WithEntityNullCheck() {
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.getInsertPropNames((Object) null, Collections.emptySet()));
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.insertPropertyNames((Object) null, Collections.emptySet()));
     }
 
     @Test
     public void testGetInsertPropNames_WithClassAndExcluded() {
         Set<String> excluded = new HashSet<>();
         excluded.add("createdTime");
-        Collection<String> props = QueryUtil.getInsertPropNames(Account.class, excluded);
+        Collection<String> props = QueryUtil.insertPropertyNames(Account.class, excluded);
         assertNotNull(props);
     }
 
     @Test
     public void testGetSelectPropNames() {
-        Collection<String> props = QueryUtil.getSelectPropNames(Account.class, false, Collections.emptySet());
+        Collection<String> props = QueryUtil.selectPropertyNames(Account.class, false, Collections.emptySet());
         assertNotNull(props);
     }
 
     @Test
     public void testGetSelectPropNames_IncludeSubEntity() {
-        Collection<String> props = QueryUtil.getSelectPropNames(Account.class, true, Collections.emptySet());
+        Collection<String> props = QueryUtil.selectPropertyNames(Account.class, true, Collections.emptySet());
         assertNotNull(props);
     }
 
@@ -172,20 +172,20 @@ public class QueryUtilTest extends TestBase {
     public void testGetSelectPropNames_WithExcluded() {
         Set<String> excluded = new HashSet<>();
         excluded.add("id");
-        Collection<String> props = QueryUtil.getSelectPropNames(Account.class, false, excluded);
+        Collection<String> props = QueryUtil.selectPropertyNames(Account.class, false, excluded);
         assertNotNull(props);
     }
 
     @Test
     public void testGetSelectPropNames_NullCheck() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.getSelectPropNames(null, false, Collections.emptySet());
+            QueryUtil.selectPropertyNames(null, false, Collections.emptySet());
         });
     }
 
     @Test
     public void testGetUpdatePropNames() {
-        Collection<String> props = QueryUtil.getUpdatePropNames(Account.class, Collections.emptySet());
+        Collection<String> props = QueryUtil.updatePropertyNames(Account.class, Collections.emptySet());
         assertNotNull(props);
     }
 
@@ -193,27 +193,27 @@ public class QueryUtilTest extends TestBase {
     public void testGetUpdatePropNames_WithExcluded() {
         Set<String> excluded = new HashSet<>();
         excluded.add("createdTime");
-        Collection<String> props = QueryUtil.getUpdatePropNames(Account.class, excluded);
+        Collection<String> props = QueryUtil.updatePropertyNames(Account.class, excluded);
         assertNotNull(props);
     }
 
     @Test
     public void testGetUpdatePropNames_NullCheck() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.getUpdatePropNames(null, Collections.emptySet());
+            QueryUtil.updatePropertyNames(null, Collections.emptySet());
         });
     }
 
     @Test
     public void testGetIdFieldNames() {
-        List<String> ids = QueryUtil.getIdPropNames(Account.class);
+        List<String> ids = QueryUtil.idPropertyNames(Account.class);
         assertNotNull(ids);
     }
 
     @Test
     public void testGetIdFieldNames_NullCheck() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.getIdPropNames(null);
+            QueryUtil.idPropertyNames(null);
         });
     }
 
@@ -267,60 +267,60 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testGetTableAlias() {
-        String alias = QueryUtil.getTableAlias(Account.class);
+        String alias = QueryUtil.tableAlias(Account.class);
         assertEquals("acc", alias);
     }
 
     @Test
     public void testGetTableAlias_NullCheck() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.getTableAlias(null);
+            QueryUtil.tableAlias(null);
         });
     }
 
     @Test
     public void testGetTableNameAndAlias() {
-        String tableName = QueryUtil.getTableNameAndAlias(Account.class);
+        String tableName = QueryUtil.tableNameAndAlias(Account.class);
         assertNotNull(tableName);
     }
 
     @Test
     public void testGetTableNameAndAlias_WithNamingPolicy() {
-        String tableName = QueryUtil.getTableNameAndAlias(Account.class, NamingPolicy.SNAKE_CASE);
+        String tableName = QueryUtil.tableNameAndAlias(Account.class, NamingPolicy.SNAKE_CASE);
         assertNotNull(tableName);
     }
 
     @Test
     public void testGetTableNameAndAlias_UpperCase() {
-        String tableName = QueryUtil.getTableNameAndAlias(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
+        String tableName = QueryUtil.tableNameAndAlias(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
         assertNotNull(tableName);
     }
 
     @Test
     public void testGetTableNameAndAlias_NoChange() {
-        String tableName = QueryUtil.getTableNameAndAlias(Account.class, NamingPolicy.NO_CHANGE);
+        String tableName = QueryUtil.tableNameAndAlias(Account.class, NamingPolicy.NO_CHANGE);
         assertNotNull(tableName);
     }
 
     @Test
     public void testGetTableNameAndAlias_NullCheck() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.getTableNameAndAlias(null);
+            QueryUtil.tableNameAndAlias(null);
         });
     }
 
     @Test
     public void testGetTableNameAndAlias_NullCheckWithPolicy() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.getTableNameAndAlias(null, NamingPolicy.SNAKE_CASE);
+            QueryUtil.tableNameAndAlias(null, NamingPolicy.SNAKE_CASE);
         });
     }
 
     @Test
     public void testGetProp2ColumnNameMap_DifferentPolicies() {
-        ImmutableMap<String, String> lower = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE);
-        ImmutableMap<String, String> upper = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
-        ImmutableMap<String, String> noChange = QueryUtil.getProp2ColumnNameMap(Account.class, NamingPolicy.NO_CHANGE);
+        ImmutableMap<String, String> lower = QueryUtil.propertyToColumnMap(Account.class, NamingPolicy.SNAKE_CASE);
+        ImmutableMap<String, String> upper = QueryUtil.propertyToColumnMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
+        ImmutableMap<String, String> noChange = QueryUtil.propertyToColumnMap(Account.class, NamingPolicy.NO_CHANGE);
 
         assertNotNull(lower);
         assertNotNull(upper);
@@ -329,19 +329,19 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testGetInsertPropNames_EmptyExcluded() {
-        Collection<String> props = QueryUtil.getInsertPropNames(Account.class, new HashSet<>());
+        Collection<String> props = QueryUtil.insertPropertyNames(Account.class, new HashSet<>());
         assertNotNull(props);
     }
 
     @Test
     public void testGetSelectPropNames_EmptyExcluded() {
-        Collection<String> props = QueryUtil.getSelectPropNames(Account.class, false, new HashSet<>());
+        Collection<String> props = QueryUtil.selectPropertyNames(Account.class, false, new HashSet<>());
         assertNotNull(props);
     }
 
     @Test
     public void testGetUpdatePropNames_EmptyExcluded() {
-        Collection<String> props = QueryUtil.getUpdatePropNames(Account.class, new HashSet<>());
+        Collection<String> props = QueryUtil.updatePropertyNames(Account.class, new HashSet<>());
         assertNotNull(props);
     }
 
@@ -701,7 +701,7 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testGetProp2ColumnNameMapWithRepeatedNestedType() {
-        final ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(NestedRoot.class, NamingPolicy.SNAKE_CASE);
+        final ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(NestedRoot.class, NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.containsKey("branch.firstLeaf.value"));
         assertTrue(result.containsKey("branch.secondLeaf.value"));
@@ -709,7 +709,7 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testGetProp2ColumnNameMapCapsDeepNestedExpansion() {
-        final ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(DeepNestedRoot.class, NamingPolicy.SNAKE_CASE);
+        final ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(DeepNestedRoot.class, NamingPolicy.SNAKE_CASE);
 
         assertFalse(result.containsKey("middle.leaf.tail.value"));
         assertFalse(result.containsKey("middle.leaf.tail"));
@@ -722,7 +722,7 @@ public class QueryUtilTest extends TestBase {
         // Test with default ID value (should exclude ID)
         user.setId(null);
         Set<String> excludedProps = new HashSet<>();
-        Collection<String> props = QueryUtil.getInsertPropNames(user, excludedProps);
+        Collection<String> props = QueryUtil.insertPropertyNames(user, excludedProps);
         assertNotNull(props);
         assertFalse(props.contains("id"));
         assertTrue(props.contains("name"));
@@ -730,14 +730,14 @@ public class QueryUtilTest extends TestBase {
 
         // Test with non-default ID value (should include ID)
         user.setId(123L);
-        props = QueryUtil.getInsertPropNames(user, excludedProps);
+        props = QueryUtil.insertPropertyNames(user, excludedProps);
         assertTrue(props.contains("id"));
         assertTrue(props.contains("name"));
         assertFalse(props.contains("email"));
 
         // Test with excluded properties
         excludedProps.add("email");
-        props = QueryUtil.getInsertPropNames(user, excludedProps);
+        props = QueryUtil.insertPropertyNames(user, excludedProps);
         assertTrue(props.contains("name"));
         assertFalse(props.contains("email"));
     }
@@ -747,7 +747,7 @@ public class QueryUtilTest extends TestBase {
         Set<String> excludedProps = new HashSet<>();
 
         // Test without exclusions
-        Collection<String> props = QueryUtil.getInsertPropNames(TestUser.class, excludedProps);
+        Collection<String> props = QueryUtil.insertPropertyNames(TestUser.class, excludedProps);
         assertNotNull(props);
         assertTrue(props.contains("id"));
         assertTrue(props.contains("name"));
@@ -755,7 +755,7 @@ public class QueryUtilTest extends TestBase {
 
         // Test with exclusions
         excludedProps.add("email");
-        props = QueryUtil.getInsertPropNames(TestUser.class, excludedProps);
+        props = QueryUtil.insertPropertyNames(TestUser.class, excludedProps);
         assertTrue(props.contains("id"));
         assertTrue(props.contains("name"));
         assertFalse(props.contains("email"));
@@ -774,7 +774,7 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testGetProp2ColumnNameMap_WithSelfReferentialEntityDoesNotThrow() {
-        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(SelfReferentialEntity.class, NamingPolicy.SNAKE_CASE);
+        ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(SelfReferentialEntity.class, NamingPolicy.SNAKE_CASE);
 
         assertEquals("id", result.get("id"));
         assertFalse(result.containsKey("parent.parent"));
@@ -793,33 +793,33 @@ public class QueryUtilTest extends TestBase {
     @Test
     public void testGetInsertPropNames_ReturnsImmutableListBothPaths() {
         // no-exclusion path
-        ImmutableList<String> noExcl = QueryUtil.getInsertPropNames(TestUser.class, null);
+        ImmutableList<String> noExcl = QueryUtil.insertPropertyNames(TestUser.class, null);
         assertThrows(UnsupportedOperationException.class, () -> noExcl.add("x"));
 
         // exclusion path
-        ImmutableList<String> withExcl = QueryUtil.getInsertPropNames(TestUser.class, new HashSet<>(Arrays.asList("email")));
+        ImmutableList<String> withExcl = QueryUtil.insertPropertyNames(TestUser.class, new HashSet<>(Arrays.asList("email")));
         assertThrows(UnsupportedOperationException.class, () -> withExcl.add("x"));
 
         // entity-based no-exclusion path
-        ImmutableList<String> entityNoExcl = QueryUtil.getInsertPropNames(new TestUser(), null);
+        ImmutableList<String> entityNoExcl = QueryUtil.insertPropertyNames(new TestUser(), null);
         assertThrows(UnsupportedOperationException.class, () -> entityNoExcl.add("x"));
     }
 
     @Test
     public void testGetSelectPropNames_ReturnsImmutableListBothPaths() {
-        ImmutableList<String> noExcl = QueryUtil.getSelectPropNames(TestUser.class, false, null);
+        ImmutableList<String> noExcl = QueryUtil.selectPropertyNames(TestUser.class, false, null);
         assertThrows(UnsupportedOperationException.class, () -> noExcl.add("x"));
 
-        ImmutableList<String> withExcl = QueryUtil.getSelectPropNames(TestUser.class, false, new HashSet<>(Arrays.asList("email")));
+        ImmutableList<String> withExcl = QueryUtil.selectPropertyNames(TestUser.class, false, new HashSet<>(Arrays.asList("email")));
         assertThrows(UnsupportedOperationException.class, () -> withExcl.add("x"));
     }
 
     @Test
     public void testGetUpdatePropNames_ReturnsImmutableListBothPaths() {
-        ImmutableList<String> noExcl = QueryUtil.getUpdatePropNames(TestUser.class, null);
+        ImmutableList<String> noExcl = QueryUtil.updatePropertyNames(TestUser.class, null);
         assertThrows(UnsupportedOperationException.class, () -> noExcl.add("x"));
 
-        ImmutableList<String> withExcl = QueryUtil.getUpdatePropNames(TestUser.class, new HashSet<>(Arrays.asList("email")));
+        ImmutableList<String> withExcl = QueryUtil.updatePropertyNames(TestUser.class, new HashSet<>(Arrays.asList("email")));
         assertThrows(UnsupportedOperationException.class, () -> withExcl.add("x"));
     }
 
@@ -827,26 +827,26 @@ public class QueryUtilTest extends TestBase {
     public void testGetSelectPropNames_NoExclusionReturnsStableInstance() {
         // The no-exclusion path is memoized, so repeated calls return the same instance
         // (this identity is relied upon by the builders' == fast paths).
-        ImmutableList<String> first = QueryUtil.getSelectPropNames(TestUser.class, false, null);
-        ImmutableList<String> second = QueryUtil.getSelectPropNames(TestUser.class, false, null);
+        ImmutableList<String> first = QueryUtil.selectPropertyNames(TestUser.class, false, null);
+        ImmutableList<String> second = QueryUtil.selectPropertyNames(TestUser.class, false, null);
         assertSame(first, second);
 
         // Sub-entity variant uses a different slot, so it is a different (but also stable) instance.
-        ImmutableList<String> withSub = QueryUtil.getSelectPropNames(TestUser.class, true, null);
-        assertSame(withSub, QueryUtil.getSelectPropNames(TestUser.class, true, null));
+        ImmutableList<String> withSub = QueryUtil.selectPropertyNames(TestUser.class, true, null);
+        assertSame(withSub, QueryUtil.selectPropertyNames(TestUser.class, true, null));
     }
 
     @Test
     public void testGetInsertUpdatePropNames_NoExclusionReturnStableInstance() {
-        assertSame(QueryUtil.getInsertPropNames(TestUser.class, null), QueryUtil.getInsertPropNames(TestUser.class, null));
-        assertSame(QueryUtil.getUpdatePropNames(TestUser.class, null), QueryUtil.getUpdatePropNames(TestUser.class, null));
+        assertSame(QueryUtil.insertPropertyNames(TestUser.class, null), QueryUtil.insertPropertyNames(TestUser.class, null));
+        assertSame(QueryUtil.updatePropertyNames(TestUser.class, null), QueryUtil.updatePropertyNames(TestUser.class, null));
     }
 
     @Test
     public void testGetSelectPropNames_InstanceOverloadDelegatesToClass() {
         TestUser user = new TestUser();
-        ImmutableList<String> viaInstance = QueryUtil.getSelectPropNames(user, false, null);
-        ImmutableList<String> viaClass = QueryUtil.getSelectPropNames(TestUser.class, false, null);
+        ImmutableList<String> viaInstance = QueryUtil.selectPropertyNames(user, false, null);
+        ImmutableList<String> viaClass = QueryUtil.selectPropertyNames(TestUser.class, false, null);
         assertEquals(viaClass, viaInstance);
         assertTrue(viaInstance.contains("name"));
         assertFalse(viaInstance.contains("email"));
@@ -854,14 +854,14 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testGetSelectPropNames_InstanceOverloadNullCheck() {
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.getSelectPropNames((Object) null, false, null));
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.selectPropertyNames((Object) null, false, null));
     }
 
     @Test
     public void testGetUpdatePropNames_InstanceOverloadDelegatesToClass() {
         TestUser user = new TestUser();
-        ImmutableList<String> viaInstance = QueryUtil.getUpdatePropNames(user, null);
-        ImmutableList<String> viaClass = QueryUtil.getUpdatePropNames(TestUser.class, null);
+        ImmutableList<String> viaInstance = QueryUtil.updatePropertyNames(user, null);
+        ImmutableList<String> viaClass = QueryUtil.updatePropertyNames(TestUser.class, null);
         assertEquals(viaClass, viaInstance);
         assertTrue(viaInstance.contains("name"));
         assertFalse(viaInstance.contains("email"));
@@ -869,7 +869,7 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testGetUpdatePropNames_InstanceOverloadNullCheck() {
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.getUpdatePropNames((Object) null, null));
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.updatePropertyNames((Object) null, null));
     }
 
     @Test
@@ -919,21 +919,21 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testGetProp2ColumnNameMap_NullNamingPolicyUsesSnakeCase() {
-        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(QueryUtilTest.AliaslessEntity.class, null);
+        ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(QueryUtilTest.AliaslessEntity.class, null);
 
         assertEquals("simple_value", result.get("simpleValue"));
     }
 
     @Test
     public void testGetProp2ColumnNameMap_AllNonColumnProperties() {
-        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(QueryUtilTest.NonColumnOnlyEntity.class, NamingPolicy.SNAKE_CASE);
+        ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(QueryUtilTest.NonColumnOnlyEntity.class, NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.isEmpty());
     }
 
     @Test
     public void testGetTableNameAndAlias_AliaslessAnnotation() {
-        String tableName = QueryUtil.getTableNameAndAlias(QueryUtilTest.AliaslessEntity.class, null);
+        String tableName = QueryUtil.tableNameAndAlias(QueryUtilTest.AliaslessEntity.class, null);
 
         assertEquals("aliasless_table", tableName);
     }
@@ -941,7 +941,7 @@ public class QueryUtilTest extends TestBase {
     @Test
     public void testGetProp2ColumnNameMap_NullEntityClassReturnsEmpty() {
         // Documented contract: null entityClass returns an empty map (does not throw).
-        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(null, NamingPolicy.SNAKE_CASE);
+        ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(null, NamingPolicy.SNAKE_CASE);
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
@@ -949,7 +949,7 @@ public class QueryUtilTest extends TestBase {
     @Test
     public void testGetProp2ColumnNameMap_NullEntityClassAndNullPolicyReturnsEmpty() {
         // Both null: still returns empty map.
-        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(null, null);
+        ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(null, null);
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
@@ -957,14 +957,14 @@ public class QueryUtilTest extends TestBase {
     @Test
     public void testGetProp2ColumnNameMap_MapEntityClassReturnsEmpty() {
         // Map-assignable classes get an empty map (documented behavior).
-        ImmutableMap<String, String> result = QueryUtil.getProp2ColumnNameMap(HashMap.class, NamingPolicy.SNAKE_CASE);
+        ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(HashMap.class, NamingPolicy.SNAKE_CASE);
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
 
     @Test
     public void testIncludedSubEntityPropertiesExcludeNonColumns() {
-        ImmutableList<String> names = QueryUtil.getSelectPropNames(ParentWithFilteredChild.class, true, null);
+        ImmutableList<String> names = QueryUtil.selectPropertyNames(ParentWithFilteredChild.class, true, null);
 
         assertTrue(names.contains("child.visible"), names.toString());
         assertFalse(names.contains("child.hiddenByAnnotation"), names.toString());
@@ -974,7 +974,7 @@ public class QueryUtilTest extends TestBase {
     @Test
     public void testExcludingSubEntityRootAlsoExcludesExpandedProperties() {
         Set<String> excluded = Collections.singleton("child");
-        ImmutableList<String> names = QueryUtil.getSelectPropNames(ParentWithFilteredChild.class, true, excluded);
+        ImmutableList<String> names = QueryUtil.selectPropertyNames(ParentWithFilteredChild.class, true, excluded);
 
         assertEquals(Collections.singletonList("id"), names);
 

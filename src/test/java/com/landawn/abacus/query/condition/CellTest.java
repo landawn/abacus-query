@@ -26,7 +26,7 @@ public class CellTest extends TestBase {
         final Equal wrapped = Filters.eq("status", "ACTIVE");
         final TestCell cell = new TestCell(Operator.WHERE, wrapped);
 
-        assertEquals(wrapped, cell.getCondition());
+        assertEquals(wrapped, cell.condition());
     }
 
     @Test

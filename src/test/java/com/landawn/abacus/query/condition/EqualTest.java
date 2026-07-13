@@ -24,8 +24,8 @@ public class EqualTest extends TestBase {
     @Test
     public void testConstructor() {
         Equal condition = new Equal("age", 25);
-        assertEquals("age", condition.getPropName());
-        assertEquals(25, (int) condition.getPropValue());
+        assertEquals("age", condition.propName());
+        assertEquals(25, (int) condition.propValue());
         assertEquals(Operator.EQUAL, condition.operator());
     }
 
@@ -42,27 +42,27 @@ public class EqualTest extends TestBase {
     @Test
     public void testGetPropName() {
         Equal condition = new Equal("userName", "John");
-        assertEquals("userName", condition.getPropName());
+        assertEquals("userName", condition.propName());
     }
 
     @Test
     public void testGetPropValue() {
         Equal condition = new Equal("age", 30);
-        Integer value = condition.getPropValue();
+        Integer value = condition.propValue(Integer.class);
         assertEquals(Integer.valueOf(30), value);
     }
 
     @Test
     public void testGetPropValue_String() {
         Equal condition = new Equal("name", "Alice");
-        String value = condition.getPropValue();
+        String value = condition.propValue(String.class);
         assertEquals("Alice", value);
     }
 
     @Test
     public void testGetPropValue_Null() {
         Equal condition = new Equal("field", null);
-        assertNull(condition.getPropValue());
+        assertNull(condition.propValue());
     }
 
     @Test
@@ -198,7 +198,7 @@ public class EqualTest extends TestBase {
     @Test
     public void testBooleanValue() {
         Equal condition = new Equal("active", true);
-        assertEquals(true, condition.getPropValue());
+        assertEquals(true, condition.propValue());
     }
 
     @Test
@@ -221,24 +221,24 @@ public class EqualTest extends TestBase {
     public void testConstructorWithDifferentTypes() {
         // Test with Integer
         Equal eqInt = Filters.eq("count", 100);
-        Assertions.assertEquals(100, (Integer) eqInt.getPropValue());
+        Assertions.assertEquals(100, (Integer) eqInt.propValue());
 
         // Test with Boolean
         Equal eqBool = Filters.eq("active", true);
-        Assertions.assertEquals(true, eqBool.getPropValue());
+        Assertions.assertEquals(true, eqBool.propValue());
 
         // Test with Double
         Equal eqDouble = Filters.eq("price", 99.99);
-        Assertions.assertEquals(99.99, eqDouble.getPropValue());
+        Assertions.assertEquals(99.99, eqDouble.propValue());
 
         // Test with Date
         Date now = new Date();
         Equal eqDate = Filters.eq("createdDate", now);
-        Assertions.assertEquals(now, eqDate.getPropValue());
+        Assertions.assertEquals(now, eqDate.propValue());
 
         // Test with null
         Equal eqNull = Filters.eq("deletedDate", null);
-        Assertions.assertNull(eqNull.getPropValue());
+        Assertions.assertNull(eqNull.propValue());
     }
 
     @Test
@@ -310,7 +310,7 @@ public class EqualTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT MAX(salary) FROM employees");
         Equal eq = new Equal("salary", subQuery);
 
-        Assertions.assertEquals(subQuery, eq.getPropValue());
+        Assertions.assertEquals(subQuery, eq.propValue());
 
         String result = eq.toString();
         Assertions.assertTrue(result.contains("salary ="));
@@ -322,7 +322,7 @@ public class EqualTest extends TestBase {
         Expression expr = Expression.of("CURRENT_TIMESTAMP");
         Equal eq = new Equal("lastModified", expr);
 
-        Assertions.assertEquals(expr, eq.getPropValue());
+        Assertions.assertEquals(expr, eq.propValue());
 
         String result = eq.toString();
         Assertions.assertEquals("lastModified = CURRENT_TIMESTAMP", result);
@@ -332,7 +332,7 @@ public class EqualTest extends TestBase {
     public void testEqualWithQuestionMark() {
         Equal eq = Filters.equal("name");
 
-        Assertions.assertEquals(Filters.QME, eq.getPropValue());
+        Assertions.assertEquals(Filters.QME, eq.propValue());
         String result = eq.toString();
         Assertions.assertEquals("name = ?", result);
     }
@@ -341,7 +341,7 @@ public class EqualTest extends TestBase {
     public void testEqWithQuestionMark() {
         Equal eq = Filters.eq("id");
 
-        Assertions.assertEquals(Filters.QME, eq.getPropValue());
+        Assertions.assertEquals(Filters.QME, eq.propValue());
         String result = eq.toString();
         Assertions.assertEquals("id = ?", result);
     }

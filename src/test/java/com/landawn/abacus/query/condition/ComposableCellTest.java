@@ -32,7 +32,7 @@ public class ComposableCellTest extends TestBase {
         final Equal wrapped = Filters.eq("status", "ACTIVE");
         final TestComposableCell cell = new TestComposableCell(Operator.NOT, wrapped);
 
-        assertEquals(wrapped, cell.getCondition());
+        assertEquals(wrapped, cell.condition());
     }
 
     @Test
@@ -89,7 +89,7 @@ public class ComposableCellTest extends TestBase {
         final EmptyComposableCell left = new EmptyComposableCell();
         final EmptyComposableCell right = new EmptyComposableCell();
 
-        assertTrue(left.getCondition() == null);
+        assertTrue(left.condition() == null);
         assertTrue(left.parameters().isEmpty());
         assertEquals(left, right);
         assertEquals(left.hashCode(), right.hashCode());

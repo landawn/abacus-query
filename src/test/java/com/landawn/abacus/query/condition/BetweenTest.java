@@ -24,9 +24,9 @@ public class BetweenTest extends TestBase {
     @Test
     public void testConstructor() {
         Between condition = new Between("age", 18, 65);
-        assertEquals("age", condition.getPropName());
-        assertEquals(Integer.valueOf(18), condition.getMinValue());
-        assertEquals(Integer.valueOf(65), condition.getMaxValue());
+        assertEquals("age", condition.propName());
+        assertEquals(Integer.valueOf(18), condition.minValue());
+        assertEquals(Integer.valueOf(65), condition.maxValue());
         assertEquals(Operator.BETWEEN, condition.operator());
     }
 
@@ -48,20 +48,20 @@ public class BetweenTest extends TestBase {
     @Test
     public void testGetPropName() {
         Between condition = new Between("salary", 50000, 100000);
-        assertEquals("salary", condition.getPropName());
+        assertEquals("salary", condition.propName());
     }
 
     @Test
     public void testGetMinValue() {
         Between condition = new Between("price", 10.0, 50.0);
-        Double min = condition.getMinValue();
+        Double min = condition.minValue();
         assertEquals(10.0, min);
     }
 
     @Test
     public void testGetMaxValue() {
         Between condition = new Between("price", 10.0, 50.0);
-        Double max = condition.getMaxValue();
+        Double max = condition.maxValue();
         assertEquals(50.0, max);
     }
 
@@ -193,15 +193,15 @@ public class BetweenTest extends TestBase {
     @Test
     public void testStringValues() {
         Between condition = new Between("name", "A", "M");
-        assertEquals("A", condition.getMinValue());
-        assertEquals("M", condition.getMaxValue());
+        assertEquals("A", condition.minValue());
+        assertEquals("M", condition.maxValue());
     }
 
     @Test
     public void testNumericValues() {
         Between condition = new Between("score", 0, 100);
-        assertEquals(Integer.valueOf(0), condition.getMinValue());
-        assertEquals(Integer.valueOf(100), condition.getMaxValue());
+        assertEquals(Integer.valueOf(0), condition.minValue());
+        assertEquals(Integer.valueOf(100), condition.maxValue());
     }
 
     @Test
@@ -215,35 +215,35 @@ public class BetweenTest extends TestBase {
     @Test
     public void testDoubleValues() {
         Between condition = new Between("price", 9.99, 99.99);
-        assertEquals(9.99, (Double) condition.getMinValue());
-        assertEquals(99.99, (Double) condition.getMaxValue());
+        assertEquals(9.99, (Double) condition.minValue());
+        assertEquals(99.99, (Double) condition.maxValue());
     }
 
     @Test
     public void testConstructorWithDifferentTypes() {
         // Test with Double
         Between betweenDouble = Filters.between("price", 10.0, 50.0);
-        Assertions.assertEquals(10.0, betweenDouble.getMinValue());
-        Assertions.assertEquals(50.0, betweenDouble.getMaxValue());
+        Assertions.assertEquals(10.0, betweenDouble.minValue());
+        Assertions.assertEquals(50.0, betweenDouble.maxValue());
 
         // Test with Date
         Date startDate = new Date();
         Date endDate = new Date(System.currentTimeMillis() + 86400000); // +1 day
         Between betweenDate = Filters.between("createdDate", startDate, endDate);
-        Assertions.assertEquals(startDate, betweenDate.getMinValue());
-        Assertions.assertEquals(endDate, betweenDate.getMaxValue());
+        Assertions.assertEquals(startDate, betweenDate.minValue());
+        Assertions.assertEquals(endDate, betweenDate.maxValue());
 
         // Test with String (alphabetical range)
         Between betweenString = Filters.between("lastName", "A", "M");
-        Assertions.assertEquals("A", betweenString.getMinValue());
-        Assertions.assertEquals("M", betweenString.getMaxValue());
+        Assertions.assertEquals("A", betweenString.minValue());
+        Assertions.assertEquals("M", betweenString.maxValue());
     }
 
     @Test
     public void testConstructorWithNullValues() {
         Between between = Filters.between("value", null, null);
-        Assertions.assertNull(between.getMinValue());
-        Assertions.assertNull(between.getMaxValue());
+        Assertions.assertNull(between.minValue());
+        Assertions.assertNull(between.maxValue());
     }
 
     @Test

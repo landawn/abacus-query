@@ -1104,17 +1104,17 @@ Entry point for fluently creating dynamic SQL queries programmatically.
 - (none)
 
 #### Public Static Methods
-##### builder(...) -> DynamicSqlBuilder
-- **Signature:** `public static DynamicSqlBuilder builder()`
-- **Summary:** Creates a new {@link DynamicSqlBuilder} instance for constructing a dynamic SQL query.
+##### builder(...) -> Builder
+- **Signature:** `public static Builder builder()`
+- **Summary:** Creates a new {@link Builder} instance for constructing a dynamic SQL query.
 - **Parameters:**
   - (none)
-- **Returns:** a new {@link DynamicSqlBuilder} instance
+- **Returns:** a new {@link Builder} instance
 
 #### Public Instance Methods
 - (none)
 
-### Class DynamicSqlBuilder (com.landawn.abacus.query.DynamicQuery.DynamicSqlBuilder)
+### Class Builder (com.landawn.abacus.query.DynamicQuery.Builder)
 Builder for constructing dynamic SQL queries clause by clause.
 
 **Thread-safety:** unspecified
@@ -1163,13 +1163,13 @@ Builder for constructing dynamic SQL queries clause by clause.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link OrderByClause} builder for method chaining
-##### limit(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder limit(final int count)`
+##### limit(...) -> Builder
+- **Signature:** `public Builder limit(final int count)`
 - **Summary:** Adds a {@code LIMIT} clause to restrict the number of rows returned.
 - **Parameters:**
   - `count` (`int`) — the maximum number of rows to return (must not be negative)
 - **Returns:** this builder instance for method chaining
-- **Signature:** `public DynamicSqlBuilder limit(final int count, final int offset)`
+- **Signature:** `public Builder limit(final int count, final int offset)`
 - **Summary:** Adds a {@code LIMIT} clause with count and offset for pagination.
 - **Contract:**
   - Generates: {@code LIMIT count OFFSET offset} ; the {@code OFFSET} portion is omitted when {@code offset} is {@code 0} , emitting just {@code LIMIT count} .
@@ -1178,8 +1178,8 @@ Builder for constructing dynamic SQL queries clause by clause.
   - `offset` (`int`) — the number of rows to skip (must not be negative)
 - **Returns:** this builder instance for method chaining
 - **See also:** #offsetRows(int), #fetchNextRows(int), #fetchFirstRows(int)
-##### offset(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder offset(final int offset)`
+##### offset(...) -> Builder
+- **Signature:** `public Builder offset(final int offset)`
 - **Summary:** Adds a plain {@code OFFSET} clause to skip the given number of leading rows.
 - **Contract:**
   - When {@code offset} is {@code 0} , nothing is appended.
@@ -1188,59 +1188,59 @@ Builder for constructing dynamic SQL queries clause by clause.
   - `offset` (`int`) — the number of rows to skip (must not be negative)
 - **Returns:** this builder instance for method chaining
 - **See also:** #offsetRows(int)
-##### offsetRows(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder offsetRows(final int offset)`
+##### offsetRows(...) -> Builder
+- **Signature:** `public Builder offsetRows(final int offset)`
 - **Summary:** Adds an {@code OFFSET} clause for SQL:2008 standard pagination.
 - **Contract:**
   - When {@code offset} is {@code 0} , nothing is appended.
 - **Parameters:**
   - `offset` (`int`) — the number of rows to skip (must not be negative)
 - **Returns:** this builder instance for method chaining
-##### fetchNextRows(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder fetchNextRows(final int count)`
+##### fetchNextRows(...) -> Builder
+- **Signature:** `public Builder fetchNextRows(final int count)`
 - **Summary:** Adds a {@code FETCH NEXT} clause for SQL:2008 standard result limiting.
 - **Parameters:**
   - `count` (`int`) — the number of rows to fetch (must not be negative)
 - **Returns:** this builder instance for method chaining
-##### fetchFirstRows(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder fetchFirstRows(final int count)`
+##### fetchFirstRows(...) -> Builder
+- **Signature:** `public Builder fetchFirstRows(final int count)`
 - **Summary:** Adds a {@code FETCH FIRST} clause for SQL:2008 standard result limiting.
 - **Parameters:**
   - `count` (`int`) — the number of rows to fetch (must not be negative)
 - **Returns:** this builder instance for method chaining
 - **See also:** #offsetRows(int)
-##### union(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder union(final String query)`
+##### union(...) -> Builder
+- **Signature:** `public Builder union(final String query)`
 - **Summary:** Adds a {@code UNION} operator to combine results with another query.
 - **Parameters:**
   - `query` (`String`) — the complete SQL query to union with (must not be {@code null} , empty, or blank)
 - **Returns:** this builder instance for method chaining
-##### unionAll(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder unionAll(final String query)`
+##### unionAll(...) -> Builder
+- **Signature:** `public Builder unionAll(final String query)`
 - **Summary:** Adds a {@code UNION ALL} operator to combine results with another query.
 - **Parameters:**
   - `query` (`String`) — the complete SQL query to union with (must not be {@code null} , empty, or blank)
 - **Returns:** this builder instance for method chaining
-##### intersect(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder intersect(final String query)`
+##### intersect(...) -> Builder
+- **Signature:** `public Builder intersect(final String query)`
 - **Summary:** Adds an {@code INTERSECT} operator to find common rows between queries.
 - **Parameters:**
   - `query` (`String`) — the complete SQL query to intersect with (must not be {@code null} , empty, or blank)
 - **Returns:** this builder instance for method chaining
-##### except(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder except(final String query)`
+##### except(...) -> Builder
+- **Signature:** `public Builder except(final String query)`
 - **Summary:** Adds an {@code EXCEPT} operator to find rows in the first query but not in the second.
 - **Parameters:**
   - `query` (`String`) — the complete SQL query whose result rows are subtracted from the current result set (must not be {@code null} , empty, or blank)
 - **Returns:** this builder instance for method chaining
-##### minus(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder minus(final String query)`
+##### minus(...) -> Builder
+- **Signature:** `public Builder minus(final String query)`
 - **Summary:** Adds a {@code MINUS} operator to find rows in the first query but not in the second.
 - **Parameters:**
   - `query` (`String`) — the complete SQL query whose result rows are subtracted from the current result set (must not be {@code null} , empty, or blank)
 - **Returns:** this builder instance for method chaining
-##### append(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder append(final String textToAppend)`
+##### append(...) -> Builder
+- **Signature:** `public Builder append(final String textToAppend)`
 - **Summary:** Appends a raw, database-specific SQL clause or fragment verbatim to the end of the query.
 - **Contract:**
   - </p> <p> A single separating space is inserted before {@code textToAppend} when, and only when, it is needed: that is, when the text built so far does not already end with a space and {@code textToAppend} does not already begin with one.
@@ -1248,8 +1248,8 @@ Builder for constructing dynamic SQL queries clause by clause.
 - **Parameters:**
   - `textToAppend` (`String`) — the complete raw SQL clause to append verbatim (e.g., {@code "LIMIT 10 OFFSET 20"} ) (must not be {@code null} , empty, or blank)
 - **Returns:** this builder instance for method chaining
-##### appendIf(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder appendIf(final boolean b, final String textToAppend)`
+##### appendIf(...) -> Builder
+- **Signature:** `public Builder appendIf(final boolean b, final String textToAppend)`
 - **Summary:** Conditionally appends a raw SQL clause or fragment verbatim to the end of the query.
 - **Contract:**
   - When {@code b} is {@code true} this behaves exactly like {@link #append(String)} (a single separating space is inserted only when needed, then the text is emitted unchanged with no validation, escaping, or interpretation); when {@code b} is {@code false} the builder is left unchanged and {@code textToAppend} is not inspected.
@@ -1258,8 +1258,8 @@ Builder for constructing dynamic SQL queries clause by clause.
   - `textToAppend` (`String`) — the raw SQL clause to append verbatim if {@code b} is {@code true} (must not be {@code null} , empty, or blank when {@code b} is {@code true} )
 - **Returns:** this builder instance for method chaining
 - **See also:** #append(String)
-##### appendIfOrElse(...) -> DynamicSqlBuilder
-- **Signature:** `public DynamicSqlBuilder appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
+##### appendIfOrElse(...) -> Builder
+- **Signature:** `public Builder appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse)`
 - **Summary:** Appends one of two raw SQL clauses verbatim to the end of the query based on a boolean condition.
 - **Contract:**
   - Always appends something, choosing between the two options; the chosen text is emitted exactly as {@link #append(String)} would emit it (a single separating space is inserted only when needed, with no validation, escaping, or interpretation).
@@ -1853,18 +1853,21 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Returns:** an {@link And} condition
 ##### anyOfAllEqual(...) -> Or
 - **Signature:** `@Beta public static Or anyOfAllEqual(final Collection<?> entitiesOrPropMaps)`
-- **Summary:** Creates an {@code OR} condition from a collection of property maps or entities, where each non-null element forms an {@code AND} condition.
+- **Summary:** Creates an {@code OR} of per-row {@code AND} -of-equals conditions &mdash; i.e.
 - **Contract:**
-  - If the first non-null element is a {@link Map} , all non-null elements must be maps with {@link String} keys.
+  - a "match any row" filter, where a row matches when <em> all </em> of its columns equal the given values.
+  - <p> If the first non-null element is a {@link Map} , all non-null elements must be maps with {@link String} keys.
 - **Parameters:**
   - `entitiesOrPropMaps` (`Collection<?>`) — collection of property maps or entity objects (must not be empty)
 - **Returns:** an {@link Or} condition
+- **See also:** #anyOfAllEqual(Collection, Collection), #anyEqual(Map), #allEqual(Map)
 - **Signature:** `@Beta public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> includedPropNames)`
-- **Summary:** Creates an {@code OR} condition from a collection of entities using only specified properties.
+- **Summary:** Creates an {@code OR} of per-row {@code AND} -of-equals conditions &mdash; a "match any row" filter &mdash; using only the specified properties of each entity.
 - **Parameters:**
   - `entities` (`Collection<?>`) — collection of entity objects (must not be empty)
   - `includedPropNames` (`Collection<String>`) — the property names to include (must not be empty)
 - **Returns:** an {@link Or} condition
+- **See also:** #anyOfAllEqual(Collection), #allEqual(Object, Collection)
 ##### gtAndLt(...) -> And
 - **Signature:** `public static And gtAndLt(final String propName, final Object minValue, final Object maxValue)`
 - **Summary:** Creates a {@code BETWEEN} -like condition using greater-than ( {@code gt} ) and less-than ( {@code lt} ) comparisons.
@@ -2919,7 +2922,7 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Signature:** `public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition)`
 - **Summary:** Creates a SubQuery from an entity class with selected properties and condition.
 - **Contract:**
-  - If {@code condition} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria} or a clause (such as {@link Where} ), it is automatically wrapped in a {@code WHERE} clause at construction time; {@code getCondition()} on the returned subquery returns the wrapping {@link Where} .
+  - If {@code condition} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria} or a clause (such as {@link Where} ), it is automatically wrapped in a {@code WHERE} clause at construction time; {@code condition()} on the returned subquery returns the wrapping {@link Where} .
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class representing the table (must not be {@code null} )
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be {@code null} or empty, and must not contain {@code null} , empty, or blank elements)
@@ -2943,7 +2946,7 @@ Factory class for creating SQL {@link Condition} objects used in query construct
 - **Signature:** `public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final Condition condition)`
 - **Summary:** Creates a SubQuery from an entity name with selected properties and condition.
 - **Contract:**
-  - If {@code condition} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria} or a clause (such as {@link Where} ), it is automatically wrapped in a {@code WHERE} clause at construction time; {@code getCondition()} on the returned subquery returns the wrapping {@link Where} .
+  - If {@code condition} is not already a {@link com.landawn.abacus.query.condition.Criteria Criteria} or a clause (such as {@link Where} ), it is automatically wrapped in a {@code WHERE} clause at construction time; {@code condition()} on the returned subquery returns the wrapping {@link Where} .
 - **Parameters:**
   - `entityName` (`String`) — the entity/table name (must not be {@code null} , empty, or blank)
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be {@code null} or empty, and must not contain {@code null} , empty, or blank elements)
@@ -3091,30 +3094,30 @@ Utility class for handling database query operations, entity-column mappings, an
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be {@code null} )
   - `namingPolicy` (`NamingPolicy`) — the naming policy to use for column name conversion. If {@code null} , defaults to {@code NamingPolicy.SNAKE_CASE} .
 - **Returns:** an immutable map whose entries come in two kinds: (1) property-name keys \\u2014 each property name maps to a {@code (columnName, hasNoDot)} tuple, where {@code hasNoDot} is {@code true} when the property name contains no {@code '.'} character; and (2) column-name keys \\u2014 for each entry whose column value is not already a property-name key, the column name itself is also inserted as a key mapping to {@code (columnName, hasNoDot)} (where {@code hasNoDot} reflects whether the column name contains no {@code '.'} ).
-- **See also:** #getProp2ColumnNameMap(Class, NamingPolicy)
-##### getColumn2PropNameMap(...) -> ImmutableMap<String, String>
-- **Signature:** `@Internal public static ImmutableMap<String, String> getColumn2PropNameMap(final Class<?> entityClass)`
-- **Summary:** Gets a mapping of column names to property names for the specified entity class.
+- **See also:** #propertyToColumnMap(Class, NamingPolicy)
+##### columnToPropertyMap(...) -> ImmutableMap<String, String>
+- **Signature:** `@Internal public static ImmutableMap<String, String> columnToPropertyMap(final Class<?> entityClass)`
+- **Summary:** Returns a mapping of column names to property names for the specified entity class.
 - **Contract:**
   - <p> This method is useful when you need to map database result set columns back to entity properties, especially when dealing with case-insensitive database systems or when column names don't match the exact case in your code.
-  - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Given an entity class with @Column annotations ImmutableMap<String, String> columnToProp = QueryUtil.getColumn2PropNameMap(User.class); // If User has @Column("User_Name") on property "userName": String propName = columnToProp.get("User_Name"); // "userName" (looked up by original column name) String propName2 = columnToProp.get("USER_NAME"); // "userName" (looked up by uppercase variant) String propName3 = columnToProp.get("user_name"); // "userName" (looked up by lowercase variant) } </pre>
+  - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Given an entity class with @Column annotations ImmutableMap<String, String> columnToProp = QueryUtil.columnToPropertyMap(User.class); // If User has @Column("User_Name") on property "userName": String propName = columnToProp.get("User_Name"); // "userName" (looked up by original column name) String propName2 = columnToProp.get("USER_NAME"); // "userName" (looked up by uppercase variant) String propName3 = columnToProp.get("user_name"); // "userName" (looked up by lowercase variant) } </pre>
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be {@code null} )
 - **Returns:** an immutable map of column names (including upper- and lower-case variations) to property names
-##### getProp2ColumnNameMap(...) -> ImmutableMap<String, String>
-- **Signature:** `@Internal public static ImmutableMap<String, String> getProp2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy)`
-- **Summary:** Gets a mapping of property names to column names for the specified entity class using the given naming policy.
+##### propertyToColumnMap(...) -> ImmutableMap<String, String>
+- **Signature:** `@Internal public static ImmutableMap<String, String> propertyToColumnMap(final Class<?> entityClass, final NamingPolicy namingPolicy)`
+- **Summary:** Returns a mapping of property names to column names for the specified entity class using the given naming policy.
 - **Contract:**
   - <p> The naming policy determines how property names are converted to column names when no explicit {@code @Column} annotation is present.
   - {@code "addr.street"} when the {@code Address} entity declares an alias {@code "addr"} ).
-  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Get property-to-column mapping with SNAKE_CASE naming policy ImmutableMap<String, String> propToColumn = QueryUtil.getProp2ColumnNameMap(User.class, NamingPolicy.SNAKE_CASE); // If User has property "firstName" without @Column annotation: String columnName = propToColumn.get("firstName"); // "first_name" // With SCREAMING_SNAKE_CASE naming policy ImmutableMap<String, String> propToColumnUpper = QueryUtil.getProp2ColumnNameMap(User.class, NamingPolicy.SCREAMING_SNAKE_CASE); String upperColumn = propToColumnUpper.get("firstName"); // "FIRST_NAME" } </pre>
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Build property-to-column mapping with SNAKE_CASE naming policy ImmutableMap<String, String> propToColumn = QueryUtil.propertyToColumnMap(User.class, NamingPolicy.SNAKE_CASE); // If User has property "firstName" without @Column annotation: String columnName = propToColumn.get("firstName"); // "first_name" // With SCREAMING_SNAKE_CASE naming policy ImmutableMap<String, String> propToColumnUpper = QueryUtil.propertyToColumnMap(User.class, NamingPolicy.SCREAMING_SNAKE_CASE); String upperColumn = propToColumnUpper.get("firstName"); // "FIRST_NAME" } </pre>
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (may be {@code null} )
   - `namingPolicy` (`NamingPolicy`) — the naming policy to use for column name conversion. If {@code null} , defaults to {@code NamingPolicy.SNAKE_CASE} .
 - **Returns:** an immutable map of property names to column names, or an empty immutable map if {@code entityClass} is {@code null} or is a {@link Map} type
-##### getInsertPropNames(...) -> ImmutableList<String>
-- **Signature:** `@Internal public static ImmutableList<String> getInsertPropNames(final Object entity, final Set<String> excludedPropNames)`
-- **Summary:** Gets the property names to be used for INSERT operations on the given entity instance.
+##### insertPropertyNames(...) -> ImmutableList<String>
+- **Signature:** `@Internal public static ImmutableList<String> insertPropertyNames(final Object entity, final Set<String> excludedPropNames)`
+- **Summary:** Returns the property names to be used for INSERT operations on the given entity instance.
 - **Contract:**
   - <p> The method intelligently handles ID fields: </p> <ul> <li> If all ID fields have default values (e.g.
   - </li> <li> If any ID field has a non-default value, all insertable properties including IDs are returned.
@@ -3122,15 +3125,15 @@ Utility class for handling database query operations, entity-column mappings, an
   - `entity` (`Object`) — the entity instance to analyze (must not be {@code null} )
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
 - **Returns:** an immutable list of property names suitable for INSERT operations
-- **Signature:** `@Internal public static ImmutableList<String> getInsertPropNames(final Class<?> entityClass, final Set<String> excludedPropNames)`
-- **Summary:** Gets the property names to be used for INSERT operations on the given entity class.
+- **Signature:** `@Internal public static ImmutableList<String> insertPropertyNames(final Class<?> entityClass, final Set<String> excludedPropNames)`
+- **Summary:** Returns the property names to be used for INSERT operations on the given entity class.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be {@code null} )
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
 - **Returns:** an immutable list of property names suitable for INSERT operations
-##### getSelectPropNames(...) -> ImmutableList<String>
-- **Signature:** `@Internal public static ImmutableList<String> getSelectPropNames(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
-- **Summary:** Gets the property names to be used for SELECT operations on the given entity class.
+##### selectPropertyNames(...) -> ImmutableList<String>
+- **Signature:** `@Internal public static ImmutableList<String> selectPropertyNames(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
+- **Summary:** Returns the property names to be used for SELECT operations on the given entity class.
 - **Contract:**
   - <p> When {@code includeSubEntityProperties} is {@code true} , the method returns nested properties using dot notation (e.g., {@code "address.street"} ).
 - **Parameters:**
@@ -3138,33 +3141,33 @@ Utility class for handling database query operations, entity-column mappings, an
   - `includeSubEntityProperties` (`boolean`) — {@code true} to include nested entity properties, {@code false} for top-level only
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude (nullable). When sub-entity properties are included, excluding a root such as {@code "address"} also excludes descendants such as {@code "address.street"} .
 - **Returns:** an immutable list of property names suitable for SELECT operations
-- **Signature:** `@Internal public static ImmutableList<String> getSelectPropNames(final Object entity, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
-- **Summary:** Gets the property names to be used for SELECT operations on the given entity instance.
+- **Signature:** `@Internal public static ImmutableList<String> selectPropertyNames(final Object entity, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
+- **Summary:** Returns the property names to be used for SELECT operations on the given entity instance.
 - **Parameters:**
   - `entity` (`Object`) — the entity instance to analyze (must not be {@code null} )
   - `includeSubEntityProperties` (`boolean`) — {@code true} to include nested entity properties, {@code false} for top-level only
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
 - **Returns:** an immutable list of property names suitable for SELECT operations
-- **See also:** #getSelectPropNames(Class, boolean, Set)
-##### getUpdatePropNames(...) -> ImmutableList<String>
-- **Signature:** `@Internal public static ImmutableList<String> getUpdatePropNames(final Class<?> entityClass, final Set<String> excludedPropNames)`
-- **Summary:** Gets the property names to be used for UPDATE operations on the given entity class.
+- **See also:** #selectPropertyNames(Class, boolean, Set)
+##### updatePropertyNames(...) -> ImmutableList<String>
+- **Signature:** `@Internal public static ImmutableList<String> updatePropertyNames(final Class<?> entityClass, final Set<String> excludedPropNames)`
+- **Summary:** Returns the property names to be used for UPDATE operations on the given entity class.
 - **Contract:**
   - <p> Properties are considered non-updatable if they are: </p> <ul> <li> Annotated with {@code @ReadOnly} , {@code @ReadOnlyId} , or otherwise marked as a read-only id property </li> <li> Annotated with {@code @NonUpdatable} </li> <li> Excluded from column mapping (e.g.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be {@code null} )
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
 - **Returns:** an immutable list of property names suitable for UPDATE operations
-- **Signature:** `@Internal public static ImmutableList<String> getUpdatePropNames(final Object entity, final Set<String> excludedPropNames)`
-- **Summary:** Gets the property names to be used for UPDATE operations on the given entity instance.
+- **Signature:** `@Internal public static ImmutableList<String> updatePropertyNames(final Object entity, final Set<String> excludedPropNames)`
+- **Summary:** Returns the property names to be used for UPDATE operations on the given entity instance.
 - **Parameters:**
   - `entity` (`Object`) — the entity instance to analyze (must not be {@code null} )
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
 - **Returns:** an immutable list of property names suitable for UPDATE operations
-- **See also:** #getUpdatePropNames(Class, Set)
-##### getIdPropNames(...) -> ImmutableList<String>
-- **Signature:** `@Internal @Immutable public static ImmutableList<String> getIdPropNames(final Class<?> entityClass)`
-- **Summary:** Gets the ID field names for the specified entity class.
+- **See also:** #updatePropertyNames(Class, Set)
+##### idPropertyNames(...) -> ImmutableList<String>
+- **Signature:** `@Internal @Immutable public static ImmutableList<String> idPropertyNames(final Class<?> entityClass)`
+- **Summary:** Returns the ID property names for the specified entity class.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be {@code null} )
 - **Returns:** an immutable list of ID field names, or an empty list if no ID fields are defined
@@ -3186,26 +3189,26 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Parameters:**
   - `placeholderCount` (`int`) — the number of question marks to generate (must not be negative)
 - **Returns:** a string containing {@code placeholderCount} question marks separated by {@code ", "} , or empty string if {@code placeholderCount} is 0
-##### getTableAlias(...) -> String
-- **Signature:** `@Internal public static String getTableAlias(final Class<?> entityClass)`
-- **Summary:** Gets the table alias from the {@code @Table} annotation on the entity class.
+##### tableAlias(...) -> String
+- **Signature:** `@Internal public static String tableAlias(final Class<?> entityClass)`
+- **Summary:** Returns the table alias from the {@code @Table} annotation on the entity class.
 - **Contract:**
   - <p> If no {@code @Table} annotation exists, this method returns {@code null} .
   - If {@code @Table} is present but the alias attribute is not specified, this method returns an empty string.
-  - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Given: @Table(name = "users", alias = "u") on User class String alias = QueryUtil.getTableAlias(User.class); // Returns: "u" // Given: @Table(name = "orders") on Order class (no alias) String alias2 = QueryUtil.getTableAlias(Order.class); // Returns: "" (empty string when alias is not specified) // Given: no @Table annotation on LogEntry class String alias3 = QueryUtil.getTableAlias(LogEntry.class); // Returns: null } </pre>
+  - </p> <p> <b> Usage Examples: </b> </p> <pre> {@code // Given: @Table(name = "users", alias = "u") on User class String alias = QueryUtil.tableAlias(User.class); // Returns: "u" // Given: @Table(name = "orders") on Order class (no alias) String alias2 = QueryUtil.tableAlias(Order.class); // Returns: "" (empty string when alias is not specified) // Given: no @Table annotation on LogEntry class String alias3 = QueryUtil.tableAlias(LogEntry.class); // Returns: null } </pre>
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to check (must not be {@code null} )
 - **Returns:** the table alias if defined in {@code @Table} annotation, empty string if {@code @Table} is present but alias is not set, or {@code null} if no {@code @Table} annotation exists
-##### getTableNameAndAlias(...) -> String
-- **Signature:** `@Internal public static String getTableNameAndAlias(final Class<?> entityClass)`
-- **Summary:** Gets the table name and optional alias for the entity class using the default naming policy.
+##### tableNameAndAlias(...) -> String
+- **Signature:** `@Internal public static String tableNameAndAlias(final Class<?> entityClass)`
+- **Summary:** Returns the table name and optional alias for the entity class using the default naming policy.
 - **Contract:**
   - If {@code @Table} annotation is present, uses its values; otherwise derives the table name from the class name using {@code NamingPolicy.SNAKE_CASE} .
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be {@code null} )
 - **Returns:** the table name, optionally followed by space and alias
-- **Signature:** `@Internal public static String getTableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy)`
-- **Summary:** Gets the table name and optional alias for the entity class using the specified naming policy.
+- **Signature:** `@Internal public static String tableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy)`
+- **Summary:** Returns the table name and optional alias for the entity class using the specified naming policy.
 - **Contract:**
   - The table name is resolved the same way the query builders resolve it: from the {@code @Table} annotation ( {@link Table#name() name} or its deprecated {@code value()} alias) or a JPA {@code javax.persistence} / {@code jakarta.persistence} {@code @Table} annotation; only when no annotated name exists is the table name derived from the class name using the provided naming policy.
   - The alias comes from {@link Table#alias()} and is appended after a space when present.
@@ -3595,11 +3598,11 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
   - `id` (`String`) — the SQL identifier to test
 - **Returns:** {@code true} if a matching SQL is registered; {@code false} if the id is {@code null} , empty, exceeds {@link #MAX_ID_LENGTH} characters, or is not found
 - **See also:** #get(String)
-##### getAttributes(...) -> ImmutableMap<String, String>
-- **Signature:** `public ImmutableMap<String, String> getAttributes(final String id)`
+##### attributes(...) -> ImmutableMap<String, String>
+- **Signature:** `public ImmutableMap<String, String> attributes(final String id)`
 - **Summary:** Retrieves the attributes associated with the specified SQL identifier.
 - **Contract:**
-  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql> SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml"); ImmutableMap<String, String> attrs = mapper.getAttributes("batchInsert"); if (attrs != null) { String batchSize = attrs.get("batchSize"); // "100" String timeout = attrs.get("timeout"); // "30" } // Returns null for unknown ids ImmutableMap<String, String> unknown = mapper.getAttributes("nonExistentId"); // unknown is null } </pre>
+  - <p> <b> Usage Examples: </b> </p> <pre> {@code // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql> SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml"); ImmutableMap<String, String> attrs = mapper.attributes("batchInsert"); if (attrs != null) { String batchSize = attrs.get("batchSize"); // "100" String timeout = attrs.get("timeout"); // "30" } // Returns null for unknown ids ImmutableMap<String, String> unknown = mapper.attributes("nonExistentId"); // unknown is null } </pre>
 - **Parameters:**
   - `id` (`String`) — the SQL identifier to look up
 - **Returns:** an immutable map of attribute names to values, or {@code null} if the id is {@code null} , empty, exceeds {@link #MAX_ID_LENGTH} characters, or is not found
@@ -3712,8 +3715,8 @@ Enumeration representing SQL operation types.
 - **Parameters:**
   - `name` (`String`) — the SQL operation name to look up (case-insensitive); may be {@code null}
 - **Returns:** the corresponding {@code SqlOperation} enum value, or {@code null} if {@code name} is {@code null} or no matching operation is found
-##### from(...) -> SqlOperation
-- **Signature:** `public static SqlOperation from(final String token)`
+##### fromOrUnknown(...) -> SqlOperation
+- **Signature:** `public static SqlOperation fromOrUnknown(final String token)`
 - **Summary:** Resolves an operation token, returning {@link #UNKNOWN} for {@code null} or unsupported input.
 - **Parameters:**
   - `token` (`String`) — the SQL operation token or enum constant name; may be {@code null}
@@ -3927,27 +3930,27 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
 - (none)
 
 #### Public Instance Methods
-##### getPropName(...) -> String
-- **Signature:** `public String getPropName()`
-- **Summary:** Gets the property name being checked in this BETWEEN or NOT BETWEEN condition.
+##### propName(...) -> String
+- **Signature:** `public String propName()`
+- **Summary:** Returns the property name being checked in this BETWEEN or NOT BETWEEN condition.
 - **Parameters:**
   - (none)
 - **Returns:** the property name
-##### getMinValue(...) -> T
-- **Signature:** `@SuppressWarnings("unchecked") public <T> T getMinValue()`
-- **Summary:** Gets the lower bound of the range.
+##### minValue(...) -> T
+- **Signature:** `@SuppressWarnings("unchecked") public <T> T minValue()`
+- **Summary:** Returns the lower bound of the range.
 - **Parameters:**
   - (none)
 - **Returns:** the configured minimum value, which may be a literal, a {@link SubQuery} , any other {@link Condition} , or {@code null}
-##### getMaxValue(...) -> T
-- **Signature:** `@SuppressWarnings("unchecked") public <T> T getMaxValue()`
-- **Summary:** Gets the upper bound of the range.
+##### maxValue(...) -> T
+- **Signature:** `@SuppressWarnings("unchecked") public <T> T maxValue()`
+- **Summary:** Returns the upper bound of the range.
 - **Parameters:**
   - (none)
 - **Returns:** the configured maximum value, which may be a literal, a {@link SubQuery} , any other {@link Condition} , or {@code null}
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
-- **Summary:** Gets the parameters for this condition.
+- **Summary:** Returns the parameters for this condition.
 - **Contract:**
   - If either bound is a {@link Condition} (typically a {@link SubQuery} ), its parameters are spliced in place of the bound itself.
 - **Parameters:**
@@ -3992,7 +3995,7 @@ Abstract base class for all condition implementations.
 #### Public Instance Methods
 ##### operator(...) -> Operator
 - **Signature:** `@Override public Operator operator()`
-- **Summary:** Gets the operator for this condition.
+- **Summary:** Returns the operator for this condition.
 - **Parameters:**
   - (none)
 - **Returns:** the operator for this condition
@@ -4016,33 +4019,33 @@ Abstract base class for IN and NOT IN conditions in SQL queries.
 - (none)
 
 #### Public Instance Methods
-##### getPropName(...) -> String
-- **Signature:** `public String getPropName()`
-- **Summary:** Gets the property name being checked in this IN or NOT IN condition.
+##### propName(...) -> String
+- **Signature:** `public String propName()`
+- **Summary:** Returns the property name being checked in this IN or NOT IN condition.
 - **Parameters:**
   - (none)
 - **Returns:** the (first) property name, or {@code null} for an uninitialized instance
-##### getPropNames(...) -> ImmutableList<String>
-- **Signature:** `public ImmutableList<String> getPropNames()`
-- **Summary:** Gets the property names checked in this IN or NOT IN condition.
+##### propNames(...) -> ImmutableList<String>
+- **Signature:** `public ImmutableList<String> propNames()`
+- **Summary:** Returns the property names checked in this IN or NOT IN condition.
 - **Parameters:**
   - (none)
 - **Returns:** non-null immutable collection of property names
-##### getValues(...) -> ImmutableList<?>
-- **Signature:** `public ImmutableList<?> getValues()`
-- **Summary:** Gets the values used by this IN or NOT IN condition.
+##### values(...) -> ImmutableList<?>
+- **Signature:** `public ImmutableList<?> values()`
+- **Summary:** Returns the values used by this IN or NOT IN condition.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of the values (or value tuples), or an empty immutable list for an uninitialized instance
-##### isRowValueConstructor(...) -> boolean
-- **Signature:** `public boolean isRowValueConstructor()`
+##### rowValueConstructor(...) -> boolean
+- **Signature:** `public boolean rowValueConstructor()`
 - **Summary:** Checks whether this condition was created in row value constructor form, i.e.
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if this condition renders in row value constructor form, {@code false} for the scalar form
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
-- **Summary:** Gets the parameter values for this condition, flattened in declaration order.
+- **Summary:** Returns the parameter values for this condition, flattened in declaration order.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameter values, or an empty immutable list for an uninitialized instance (e.g. created via the no-arg constructor for deserialization)
@@ -4083,27 +4086,27 @@ Abstract base class for IN and NOT IN subquery conditions in SQL queries.
 - (none)
 
 #### Public Instance Methods
-##### getPropName(...) -> String
-- **Signature:** `public String getPropName()`
-- **Summary:** Gets the property name being checked in this IN or NOT IN condition.
+##### propName(...) -> String
+- **Signature:** `public String propName()`
+- **Summary:** Returns the property name being checked in this IN or NOT IN condition.
 - **Parameters:**
   - (none)
 - **Returns:** the (first) property name, or {@code null} for an uninitialized instance
-##### getPropNames(...) -> ImmutableList<String>
-- **Signature:** `public ImmutableList<String> getPropNames()`
-- **Summary:** Gets the property names for this IN or NOT IN subquery condition.
+##### propNames(...) -> ImmutableList<String>
+- **Signature:** `public ImmutableList<String> propNames()`
+- **Summary:** Returns the property names for this IN or NOT IN subquery condition.
 - **Parameters:**
   - (none)
 - **Returns:** non-null immutable collection of property names
-##### getSubQuery(...) -> SubQuery
-- **Signature:** `public SubQuery getSubQuery()`
-- **Summary:** Gets the subquery used in this IN or NOT IN subquery condition.
+##### subQuery(...) -> SubQuery
+- **Signature:** `public SubQuery subQuery()`
+- **Summary:** Returns the subquery used in this IN or NOT IN subquery condition.
 - **Parameters:**
   - (none)
 - **Returns:** the subquery, or {@code null} for an uninitialized instance
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
-- **Summary:** Gets the list of parameters from the subquery.
+- **Summary:** Returns the list of parameters from the subquery.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameter values from the subquery; an empty immutable list if the subquery is {@code null} (only possible for an uninitialized instance)
@@ -4149,9 +4152,9 @@ Represents the SQL ALL operator for use with subqueries.
 - **Summary:** Creates a new ALL condition with the specified subquery.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery that returns values to compare against (must not be {@code null} )
-##### getSubQuery(...) -> SubQuery
-- **Signature:** `public SubQuery getSubQuery()`
-- **Summary:** Gets the subquery used by this ALL condition.
+##### subQuery(...) -> SubQuery
+- **Signature:** `public SubQuery subQuery()`
+- **Summary:** Returns the subquery used by this ALL condition.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link SubQuery} supplied at construction time
@@ -4210,9 +4213,9 @@ Represents the SQL ANY operator for use with subqueries.
   - The ANY operator is used in conjunction with comparison operators to test if the comparison is true for any value returned by the subquery.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery that returns values to compare against (must not be {@code null} )
-##### getSubQuery(...) -> SubQuery
-- **Signature:** `public SubQuery getSubQuery()`
-- **Summary:** Gets the subquery used by this ANY condition.
+##### subQuery(...) -> SubQuery
+- **Signature:** `public SubQuery subQuery()`
+- **Summary:** Returns the subquery used by this ANY condition.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link SubQuery} supplied at construction time
@@ -4262,32 +4265,26 @@ Base class for binary conditions that compare a property with a value.
   - `propName` (`String`) — the property name to compare (must not be {@code null} , empty, or blank)
   - `operator` (`Operator`) — the comparison operator (must not be {@code null} ); must be an operator valid for a binary {@code propName OP value} condition, i.e. one of {@link Operator#EQUAL} , {@link Operator#NOT_EQUAL} , {@link Operator#NOT_EQUAL_ANSI} , {@link Operator#GREATER_THAN} , {@link Operator#GREATER_THAN_OR_EQUAL} , {@link Operator#LESS_THAN} , {@link Operator#LESS_THAN_OR_EQUAL} , {@link Operator#LIKE} , {@link Operator#NOT_LIKE} , {@link Operator#IS} , {@link Operator#IS_NOT} , {@link Operator#IN} , or {@link Operator#NOT_IN}
   - `propValue` (`Object`) — the value to compare against; may be a literal value, {@code null} (for equality operators, renders as {@code IS NULL} / {@code IS NOT NULL} ), or a {@link Condition} such as a {@link SubQuery} . For an {@code IN} / {@code NOT_IN} operator, a {@link Collection} or array value is copied defensively and must be non-empty.
-##### getPropName(...) -> String
-- **Signature:** `public String getPropName()`
-- **Summary:** Gets the property name being compared.
+##### propName(...) -> String
+- **Signature:** `public String propName()`
+- **Summary:** Returns the property name being compared.
 - **Parameters:**
   - (none)
 - **Returns:** the property name
-##### getPropValue(...) -> T
-- **Signature:** `@SuppressWarnings("unchecked") public <T> T getPropValue()`
-- **Summary:** Gets the value being compared against.
-- **Parameters:**
-  - (none)
-- **Returns:** the property value, cast to the requested type
-- **Signature:** `public <T> T getPropValue(final Class<T> valueType)`
-- **Summary:** Returns the property value cast by the supplied runtime type.
-- **Parameters:**
-  - `valueType` (`Class<T>`) — the requested value type; must not be {@code null}
-- **Returns:** the property value cast to {@code valueType} , or {@code null} when the stored value is {@code null}
 ##### propValue(...) -> Object
 - **Signature:** `public Object propValue()`
 - **Summary:** Returns the property value without an unchecked generic cast.
 - **Parameters:**
   - (none)
 - **Returns:** the property value, which may be {@code null}
+- **Signature:** `public <T> T propValue(final Class<T> valueType)`
+- **Summary:** Returns the property value cast by the supplied runtime type.
+- **Parameters:**
+  - `valueType` (`Class<T>`) — the requested value type; must not be {@code null}
+- **Returns:** the property value cast to {@code valueType} , or {@code null} when the stored value is {@code null}
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
-- **Summary:** Gets the parameters for this condition.
+- **Summary:** Returns the parameters for this condition.
 - **Contract:**
   - <ul> <li> If the value is {@code null} and the operator is {@code =} , {@code !=} , {@code <>} , {@code IS} , or {@code IS NOT} , an empty list is returned because the SQL is rendered as {@code IS NULL} / {@code IS NOT NULL} with no bind parameter.
   - </li> <li> If the value is {@code null} with any other operator (e.g.
@@ -4335,9 +4332,9 @@ Represents a condition cell that wraps another condition with an operator.
 - (none)
 
 #### Public Instance Methods
-##### getCondition(...) -> Condition
-- **Signature:** `public Condition getCondition()`
-- **Summary:** Gets the wrapped condition.
+##### condition(...) -> Condition
+- **Signature:** `public Condition condition()`
+- **Summary:** Returns the wrapped condition.
 - **Contract:**
   - Callers that need a more specific subtype must cast explicitly.
 - **Parameters:**
@@ -4345,7 +4342,7 @@ Represents a condition cell that wraps another condition with an operator.
 - **Returns:** the wrapped condition; never {@code null} for instances created via the protected constructor, but may be {@code null} for uninitialized instances produced by the package-private default constructor (e.g., during Kryo deserialization)
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
-- **Summary:** Gets the parameters from the wrapped condition.
+- **Summary:** Returns the parameters from the wrapped condition.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameters from the wrapped condition, or an empty immutable list if no condition is set
@@ -4403,9 +4400,9 @@ A composable variant of {@link Cell} that supports logical composition via AND/O
 - (none)
 
 #### Public Instance Methods
-##### getCondition(...) -> Condition
-- **Signature:** `public Condition getCondition()`
-- **Summary:** Gets the wrapped condition.
+##### condition(...) -> Condition
+- **Signature:** `public Condition condition()`
+- **Summary:** Returns the wrapped condition.
 - **Contract:**
   - Callers that need a more specific subtype must cast explicitly.
 - **Parameters:**
@@ -4413,7 +4410,7 @@ A composable variant of {@link Cell} that supports logical composition via AND/O
 - **Returns:** the wrapped condition; never {@code null} for instances created via the protected constructor, but may be {@code null} for uninitialized instances produced by the package-private default constructor (e.g., during Kryo deserialization)
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
-- **Summary:** Gets the parameters from the wrapped condition.
+- **Summary:** Returns the parameters from the wrapped condition.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameters from the wrapped condition, or an empty immutable list if no condition is set
@@ -4503,13 +4500,13 @@ The base interface for all query conditions.
 #### Public Instance Methods
 ##### operator(...) -> Operator
 - **Signature:** `Operator operator()`
-- **Summary:** Gets the operator associated with this condition.
+- **Summary:** Returns the operator associated with this condition.
 - **Parameters:**
   - (none)
 - **Returns:** the operator for this condition
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `ImmutableList<Object> parameters()`
-- **Summary:** Gets the list of parameter values associated with this condition.
+- **Summary:** Returns the list of parameter values associated with this condition.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameter values; never {@code null} (an empty list is returned when there are no parameters)
@@ -4538,8 +4535,8 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Returns:** a new Builder instance
 
 #### Public Instance Methods
-##### getSelectModifier(...) -> String
-- **Signature:** `public String getSelectModifier()`
+##### selectModifier(...) -> String
+- **Signature:** `public String selectModifier()`
 - **Summary:** Returns the SELECT modifier (e.g., {@code DISTINCT} , {@code DISTINCTROW} , {@code DISTINCT(col1, col2)} , or any custom modifier set via {@link Builder#selectModifier(String)} ), or {@code null} if none was set.
 - **Contract:**
   - Returns the SELECT modifier (e.g., {@code DISTINCT} , {@code DISTINCTROW} , {@code DISTINCT(col1, col2)} , or any custom modifier set via {@link Builder#selectModifier(String)} ), or {@code null} if none was set.
@@ -4547,52 +4544,52 @@ A container representing a complete SQL query structure composed of multiple cla
   - (none)
 - **Returns:** the SELECT modifier, or {@code null} if not set
 - **See also:** Builder#distinct(), Builder#distinctBy(String), Builder#distinctRow(), Builder#distinctRowBy(String), Builder#selectModifier(String)
-##### getJoins(...) -> ImmutableList<Join>
-- **Signature:** `public ImmutableList<Join> getJoins()`
+##### joins(...) -> ImmutableList<Join>
+- **Signature:** `public ImmutableList<Join> joins()`
 - **Summary:** Returns all JOIN clauses (JOIN, INNER JOIN, LEFT JOIN, RIGHT JOIN, FULL JOIN, CROSS JOIN, NATURAL JOIN) in the order they were added.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of {@link Join} conditions; empty if none exist
-##### getWhere(...) -> Where
-- **Signature:** `public Where getWhere()`
+##### where(...) -> Where
+- **Signature:** `public Where where()`
 - **Summary:** Returns the WHERE clause, or {@code null} if none was set.
 - **Contract:**
   - Returns the WHERE clause, or {@code null} if none was set.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link Where} clause, or {@code null}
-##### getGroupBy(...) -> GroupBy
-- **Signature:** `public GroupBy getGroupBy()`
+##### groupBy(...) -> GroupBy
+- **Signature:** `public GroupBy groupBy()`
 - **Summary:** Returns the GROUP BY clause, or {@code null} if none was set.
 - **Contract:**
   - Returns the GROUP BY clause, or {@code null} if none was set.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link GroupBy} clause, or {@code null}
-##### getHaving(...) -> Having
-- **Signature:** `public Having getHaving()`
+##### having(...) -> Having
+- **Signature:** `public Having having()`
 - **Summary:** Returns the HAVING clause, or {@code null} if none was set.
 - **Contract:**
   - Returns the HAVING clause, or {@code null} if none was set.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link Having} clause, or {@code null}
-##### getSetOperations(...) -> ImmutableList<Clause>
-- **Signature:** `public ImmutableList<Clause> getSetOperations()`
+##### setOperations(...) -> ImmutableList<Clause>
+- **Signature:** `public ImmutableList<Clause> setOperations()`
 - **Summary:** Returns all set operations (UNION, UNION ALL, INTERSECT, EXCEPT, MINUS) in the order they were added.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of set operation clauses; empty if none exist
-##### getOrderBy(...) -> OrderBy
-- **Signature:** `public OrderBy getOrderBy()`
+##### orderBy(...) -> OrderBy
+- **Signature:** `public OrderBy orderBy()`
 - **Summary:** Returns the ORDER BY clause, or {@code null} if none was set.
 - **Contract:**
   - Returns the ORDER BY clause, or {@code null} if none was set.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link OrderBy} clause, or {@code null}
-##### getLimit(...) -> Limit
-- **Signature:** `public Limit getLimit()`
+##### limit(...) -> Limit
+- **Signature:** `public Limit limit()`
 - **Summary:** Returns the LIMIT clause, or {@code null} if none was set.
 - **Contract:**
   - Returns the LIMIT clause, or {@code null} if none was set.
@@ -4678,7 +4675,7 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 - **Signature:** `public Builder distinctRow()`
 - **Summary:** Sets the DISTINCTROW modifier for the query.
 - **Contract:**
-  - Like {@link #distinct()} , the modifier is only exposed via {@link Criteria#getSelectModifier()} for external consumers; this library's {@code SqlBuilder} does not apply it when appending a {@code Criteria} ; use {@code SqlBuilder.selectModifier("DISTINCTROW")} to get it in SQL rendered here.
+  - Like {@link #distinct()} , the modifier is only exposed via {@link Criteria#selectModifier()} for external consumers; this library's {@code SqlBuilder} does not apply it when appending a {@code Criteria} ; use {@code SqlBuilder.selectModifier("DISTINCTROW")} to get it in SQL rendered here.
 - **Parameters:**
   - (none)
 - **Returns:** this Builder instance for method chaining
@@ -5215,9 +5212,9 @@ Represents an EXCEPT set operation in SQL queries.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery to perform the EXCEPT operation with (must not be {@code null} ). The subquery must have the same number of columns with compatible types as the main query.
 - **See also:** Minus, Union, UnionAll, Intersect
-##### getSubQuery(...) -> SubQuery
-- **Signature:** `public SubQuery getSubQuery()`
-- **Summary:** Gets the subquery used by this EXCEPT clause.
+##### subQuery(...) -> SubQuery
+- **Signature:** `public SubQuery subQuery()`
+- **Summary:** Returns the subquery used by this EXCEPT clause.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link SubQuery} supplied at construction time
@@ -5243,9 +5240,9 @@ Represents the SQL EXISTS operator for use with subqueries.
   - <p> <b> Usage Examples: </b> </p> <pre> {@code // Check if employee has any subordinates (correlated subquery) SubQuery subordinatesQuery = Filters.subQuery( "SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id" ); Exists hasSubordinates = new Exists(subordinatesQuery); hasSubordinates.toString(); // returns "EXISTS (SELECT 1 FROM employees e2 WHERE e2.manager_id = e1.id)" // A null subquery is rejected Exists bad = new Exists((SubQuery) null); // throws IllegalArgumentException } </pre>
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery to check for existence of rows (must not be {@code null} )
-##### getSubQuery(...) -> SubQuery
-- **Signature:** `public SubQuery getSubQuery()`
-- **Summary:** Gets the subquery used by this EXISTS condition.
+##### subQuery(...) -> SubQuery
+- **Signature:** `public SubQuery subQuery()`
+- **Summary:** Returns the subquery used by this EXISTS condition.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link SubQuery} supplied at construction time
@@ -5721,7 +5718,7 @@ Represents a raw SQL expression that can be used in queries.
   - `literal` (`String`) — the SQL expression as a string (must not be {@code null} )
 ##### literal(...) -> String
 - **Signature:** `public String literal()`
-- **Summary:** Gets the SQL literal string of this expression.
+- **Summary:** Returns the SQL literal string of this expression.
 - **Parameters:**
   - (none)
 - **Returns:** the SQL expression string; never {@code null} for instances created via the public constructor or {@link #of(String)} , but may be {@code null} for uninitialized instances produced by the package-private default constructor (e.g., during Kryo deserialization)
@@ -6008,9 +6005,9 @@ Represents an INTERSECT clause in SQL queries.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery to perform the INTERSECT operation with (must not be {@code null} ). The subquery must have the same number of columns with compatible types as the main query.
 - **See also:** Union, UnionAll, Except, Minus
-##### getSubQuery(...) -> SubQuery
-- **Signature:** `public SubQuery getSubQuery()`
-- **Summary:** Gets the subquery used by this INTERSECT clause.
+##### subQuery(...) -> SubQuery
+- **Signature:** `public SubQuery subQuery()`
+- **Summary:** Returns the subquery used by this INTERSECT clause.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link SubQuery} supplied at construction time
@@ -6217,15 +6214,15 @@ Base class for SQL JOIN operations.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with
   - `joinCondition` (`Condition`) — the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null} .
-##### getJoinEntities(...) -> ImmutableList<String>
-- **Signature:** `public ImmutableList<String> getJoinEntities()`
-- **Summary:** Gets the list of tables or entities involved in this join.
+##### joinEntities(...) -> ImmutableList<String>
+- **Signature:** `public ImmutableList<String> joinEntities()`
+- **Summary:** Returns the list of tables or entities involved in this join.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of join entities
-##### getCondition(...) -> Condition
-- **Signature:** `public Condition getCondition()`
-- **Summary:** Gets the join condition.
+##### condition(...) -> Condition
+- **Signature:** `public Condition condition()`
+- **Summary:** Returns the join condition.
 - **Contract:**
   - Returns the condition that specifies how the tables are related, or {@code null} if no condition was supplied at construction time.
   - Callers that need a more specific subtype must cast explicitly.
@@ -6234,7 +6231,7 @@ Base class for SQL JOIN operations.
 - **Returns:** the join condition, or {@code null} if no condition was specified
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
-- **Summary:** Gets all parameters from the join condition.
+- **Summary:** Returns all parameters from the join condition.
 - **Contract:**
   - Returns an empty list if there's no condition or the condition has no parameters.
 - **Parameters:**
@@ -6291,13 +6288,13 @@ Base class for composable junction conditions that combine multiple conditions.
   - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine; may be {@code null} or empty (treated as no conditions)
 ##### conditions(...) -> ImmutableList<Condition>
 - **Signature:** `public ImmutableList<Condition> conditions()`
-- **Summary:** Gets the list of conditions contained in this junction.
+- **Summary:** Returns the list of conditions contained in this junction.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable view of the list of conditions in this junction
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
-- **Summary:** Gets all parameters from all conditions in this junction.
+- **Summary:** Returns all parameters from all conditions in this junction.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list containing all parameters from all conditions
@@ -6451,8 +6448,8 @@ Represents a LIMIT clause in SQL queries to restrict the number of rows returned
 - **Summary:** Creates a LIMIT clause from a string expression, formatting and validating it against a fixed grammar.
 - **Contract:**
   - If the expression starts with a digit, {@code '?'} , {@code ':'} , or <code> "#{" </code> , a {@code "LIMIT "} prefix is added automatically; otherwise it is used as-is.
-  - </b> When every number slot is an integer literal, {@link #getCount()} and {@link #getOffset()} return their concrete values.
-  - When a slot is a placeholder (or an integer literal that overflows {@code int} ), the value stays unresolved and opaque: {@link #getCount()} returns {@link Integer#MAX_VALUE} and {@link #getOffset()} returns {@code 0} .
+  - </b> When every number slot is an integer literal, {@link #count()} and {@link #offset()} return their concrete values.
+  - When a slot is a placeholder (or an integer literal that overflows {@code int} ), the value stays unresolved and opaque: {@link #count()} returns {@link Integer#MAX_VALUE} and {@link #offset()} returns {@code 0} .
   - </p> <p> <b> &#9888; &#65039; </b> When this condition is rendered by a SQL builder, a parsed expression is emitted in the target dialect's pagination syntax from its {@code count} / {@code offset} (so, e.g., MySQL's comma form and the {@code FETCH} forms are re-rendered per dialect).
   - An opaque (placeholder) expression is re-rendered in the dialect's {@code FETCH} syntax only when the dialect paginates with {@code OFFSET} / {@code FETCH} (Oracle, DB2 or SQL Server, per {@link com.landawn.abacus.query.SqlDialect.ProductInfo} ) and it is a generic {@code LIMIT count \[OFFSET offset\]} form; otherwise it is emitted verbatim.
 - **Parameters:**
@@ -6471,40 +6468,40 @@ Represents a LIMIT clause in SQL queries to restrict the number of rows returned
 - **Signature:** `public boolean hasLiteral()`
 - **Summary:** Checks whether this Limit was created from a string expression (see {@link #Limit(String)} ).
 - **Contract:**
-  - When this returns {@code true} , {@link #literal()} is non-null and is what gets rendered; {@link #getCount()} / {@link #getOffset()} may hold sentinel values ( {@link Integer#MAX_VALUE} /0) if the expression stayed opaque.
+  - When this returns {@code true} , {@link #literal()} is non-null and is what gets rendered; {@link #count()} / {@link #offset()} may hold sentinel values ( {@link Integer#MAX_VALUE} /0) if the expression stayed opaque.
   - When it returns {@code false} , the Limit was created with numeric count/offset parameters and {@link #literal()} returns {@code null} .
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} if this Limit was constructed from a string expression, {@code false} otherwise
 - **See also:** #literal()
-##### getCount(...) -> int
-- **Signature:** `public int getCount()`
-- **Summary:** Gets the maximum number of rows to return.
+##### count(...) -> int
+- **Signature:** `public int count()`
+- **Summary:** Returns the maximum number of rows to return.
 - **Parameters:**
   - (none)
 - **Returns:** the row count limit, or {@link Integer#MAX_VALUE} for an opaque (unparsed) string expression
-##### getOffset(...) -> int
-- **Signature:** `public int getOffset()`
-- **Summary:** Gets the number of rows to skip before returning results.
+##### offset(...) -> int
+- **Signature:** `public int offset()`
+- **Summary:** Returns the number of rows to skip before returning results.
 - **Parameters:**
   - (none)
 - **Returns:** the offset value, or 0 if constructed with only count or with an opaque (unparsed) string expression
-##### isResolved(...) -> boolean
-- **Signature:** `public boolean isResolved()`
+##### resolved(...) -> boolean
+- **Signature:** `public boolean resolved()`
 - **Summary:** Returns whether the count and offset are resolved numeric values rather than sentinels for an opaque expression.
 - **Parameters:**
   - (none)
 - **Returns:** {@code true} for numeric limits and parsed numeric expressions; {@code false} for opaque expressions
-##### getResolvedCount(...) -> OptionalInt
-- **Signature:** `public OptionalInt getResolvedCount()`
+##### resolvedCount(...) -> OptionalInt
+- **Signature:** `public OptionalInt resolvedCount()`
 - **Summary:** Returns the resolved row count when available.
 - **Contract:**
   - Returns the resolved row count when available.
 - **Parameters:**
   - (none)
 - **Returns:** the resolved count, or an empty optional for an opaque expression
-##### getResolvedOffset(...) -> OptionalInt
-- **Signature:** `public OptionalInt getResolvedOffset()`
+##### resolvedOffset(...) -> OptionalInt
+- **Signature:** `public OptionalInt resolvedOffset()`
 - **Summary:** Returns the resolved row offset when available.
 - **Contract:**
   - Returns the resolved row offset when available.
@@ -6513,7 +6510,7 @@ Represents a LIMIT clause in SQL queries to restrict the number of rows returned
 - **Returns:** the resolved offset, or an empty optional for an opaque expression
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
-- **Summary:** Gets the parameters for this LIMIT clause.
+- **Summary:** Returns the parameters for this LIMIT clause.
 - **Contract:**
   - <p> If the expression form ( {@link #Limit(String)} ) contains placeholders ( {@code ?} or named parameters), this class does not track them; the caller is responsible for binding those values separately when preparing the statement.
 - **Parameters:**
@@ -6568,9 +6565,9 @@ Represents a MINUS clause in SQL queries (also known as EXCEPT in some databases
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery to perform the MINUS operation with (must not be {@code null} ). The subquery must have the same number of columns with compatible types as the main query.
 - **See also:** Except, Union, UnionAll, Intersect
-##### getSubQuery(...) -> SubQuery
-- **Signature:** `public SubQuery getSubQuery()`
-- **Summary:** Gets the subquery used by this MINUS clause.
+##### subQuery(...) -> SubQuery
+- **Signature:** `public SubQuery subQuery()`
+- **Summary:** Returns the subquery used by this MINUS clause.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link SubQuery} supplied at construction time
@@ -6587,7 +6584,7 @@ A utility class that provides a fluent API for creating SQL conditions based on 
 #### Public Static Methods
 ##### of(...) -> NamedProperty
 - **Signature:** `public static NamedProperty of(final String propName)`
-- **Summary:** Gets or creates a NamedProperty instance for the specified property name using a bounded cache.
+- **Summary:** Returns or creates a NamedProperty instance for the specified property name using a bounded cache.
 - **Contract:**
   - Callers must not rely on reference identity: entries may be evicted, and concurrent first access may create more than one instance.
 - **Parameters:**
@@ -7092,9 +7089,9 @@ Represents the SQL NOT EXISTS operator for use with subqueries.
   - The condition evaluates to true when the subquery returns no rows.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery to check for non-existence of rows (must not be {@code null} )
-##### getSubQuery(...) -> SubQuery
-- **Signature:** `public SubQuery getSubQuery()`
-- **Summary:** Gets the subquery used by this NOT EXISTS condition.
+##### subQuery(...) -> SubQuery
+- **Signature:** `public SubQuery subQuery()`
+- **Summary:** Returns the subquery used by this NOT EXISTS condition.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link SubQuery} supplied at construction time
@@ -7217,7 +7214,7 @@ Enumeration of SQL operators supported by the condition framework.
 #### Public Static Methods
 ##### of(...) -> Operator
 - **Signature:** `public static Operator of(final String name)`
-- **Summary:** Gets an Operator by its string representation.
+- **Summary:** Returns an Operator by its string representation.
 - **Parameters:**
   - `name` (`String`) — the string representation of the operator. May be {@code null} .
 - **Returns:** the corresponding Operator enum value, or {@code null} if {@code name} is {@code null} or not a known token/name
@@ -7225,7 +7222,7 @@ Enumeration of SQL operators supported by the condition framework.
 #### Public Instance Methods
 ##### sqlToken(...) -> String
 - **Signature:** `public String sqlToken()`
-- **Summary:** Gets the SQL string representation of this operator.
+- **Summary:** Returns the SQL string representation of this operator.
 - **Parameters:**
   - (none)
 - **Returns:** the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
@@ -7369,9 +7366,9 @@ Represents the SQL SOME operator for use with subqueries.
   - The SOME operator must be used with a comparison operator in the containing condition.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery that returns values to compare against (must not be {@code null} )
-##### getSubQuery(...) -> SubQuery
-- **Signature:** `public SubQuery getSubQuery()`
-- **Summary:** Gets the subquery used by this SOME condition.
+##### subQuery(...) -> SubQuery
+- **Signature:** `public SubQuery subQuery()`
+- **Summary:** Returns the subquery used by this SOME condition.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link SubQuery} supplied at construction time
@@ -7429,43 +7426,37 @@ Represents raw query-expression text or a structured SELECT used within SQL cond
   - `entityClass` (`Class<?>`) — the entity class (must not be {@code null} )
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be {@code null} or empty and must not contain {@code null} , empty, or blank names)
   - `condition` (`Condition`) — the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE). May be {@code null} to select without a WHERE clause.
-##### getRawSql(...) -> String
-- **Signature:** `public String getRawSql()`
+##### rawSql(...) -> String
+- **Signature:** `public String rawSql()`
 - **Summary:** Returns the raw SQL script if this is a raw SQL subquery.
 - **Contract:**
   - Returns the raw SQL script if this is a raw SQL subquery.
 - **Parameters:**
   - (none)
 - **Returns:** the SQL script, or {@code null} if this is a structured subquery
-##### sql(...) -> String
-- **Signature:** `public String sql()`
-- **Summary:** Compatibility alias for {@link #getRawSql()} .
-- **Parameters:**
-  - (none)
-- **Returns:** the raw SQL text, or {@code null} for a structured subquery
-##### getEntityName(...) -> String
-- **Signature:** `public String getEntityName()`
-- **Summary:** Gets the entity/table name for this subquery.
+##### entityName(...) -> String
+- **Signature:** `public String entityName()`
+- **Summary:** Returns the entity/table name for this subquery.
 - **Parameters:**
   - (none)
 - **Returns:** the entity/table name, or an empty string if not set
-##### getEntityClass(...) -> Class<?>
-- **Signature:** `public Class<?> getEntityClass()`
-- **Summary:** Gets the entity class if this subquery was created with a class reference.
+##### entityClass(...) -> Class<?>
+- **Signature:** `public Class<?> entityClass()`
+- **Summary:** Returns the entity class if this subquery was created with a class reference.
 - **Contract:**
-  - Gets the entity class if this subquery was created with a class reference.
+  - Returns the entity class if this subquery was created with a class reference.
 - **Parameters:**
   - (none)
 - **Returns:** the entity class, or {@code null} if created with an entity name string or raw SQL
-##### getSelectPropNames(...) -> ImmutableList<String>
-- **Signature:** `public ImmutableList<String> getSelectPropNames()`
-- **Summary:** Gets the collection of property names to select in this subquery.
+##### selectPropNames(...) -> ImmutableList<String>
+- **Signature:** `public ImmutableList<String> selectPropNames()`
+- **Summary:** Returns the collection of property names to select in this subquery.
 - **Parameters:**
   - (none)
 - **Returns:** immutable list of property names to select, or {@code null} for raw SQL subqueries
-##### getCondition(...) -> Condition
-- **Signature:** `public Condition getCondition()`
-- **Summary:** Gets the WHERE condition for this subquery.
+##### condition(...) -> Condition
+- **Signature:** `public Condition condition()`
+- **Summary:** Returns the WHERE condition for this subquery.
 - **Contract:**
   - This condition is applied when generating the SQL for structured subqueries.
 - **Parameters:**
@@ -7473,7 +7464,7 @@ Represents raw query-expression text or a structured SELECT used within SQL cond
 - **Returns:** the WHERE condition, or {@code null} if no condition or raw SQL subquery
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
-- **Summary:** Gets the list of parameter values from the condition.
+- **Summary:** Returns the list of parameter values from the condition.
 - **Contract:**
   - These are the parameter values that will be bound to the prepared statement placeholders when the query is executed.
   - <p> <b> &#9888; &#65039; </b> For raw SQL subqueries this returns an empty list even when the raw text contains placeholders; raw bindings are managed by the caller.
@@ -7526,9 +7517,9 @@ Represents a UNION clause in SQL queries.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery to perform the UNION operation with (must not be {@code null} ). The subquery must have the same number of columns with compatible types as the main query.
 - **See also:** UnionAll, Intersect, Except, Minus
-##### getSubQuery(...) -> SubQuery
-- **Signature:** `public SubQuery getSubQuery()`
-- **Summary:** Gets the subquery used by this UNION clause.
+##### subQuery(...) -> SubQuery
+- **Signature:** `public SubQuery subQuery()`
+- **Summary:** Returns the subquery used by this UNION clause.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link SubQuery} supplied at construction time
@@ -7556,9 +7547,9 @@ Represents a UNION ALL clause in SQL queries.
 - **Parameters:**
   - `subQuery` (`SubQuery`) — the subquery to perform the UNION ALL operation with (must not be {@code null} ). The subquery must have the same number of columns with compatible types as the main query.
 - **See also:** Union, Intersect, Except, Minus
-##### getSubQuery(...) -> SubQuery
-- **Signature:** `public SubQuery getSubQuery()`
-- **Summary:** Gets the subquery used by this UNION ALL clause.
+##### subQuery(...) -> SubQuery
+- **Signature:** `public SubQuery subQuery()`
+- **Summary:** Returns the subquery used by this UNION ALL clause.
 - **Parameters:**
   - (none)
 - **Returns:** the {@link SubQuery} supplied at construction time
@@ -7589,9 +7580,9 @@ Represents a USING clause in SQL JOIN operations.
   - This constructor is useful when column names are determined dynamically or retrieved from metadata/configuration.
 - **Parameters:**
   - `columnNames` (`Collection<String>`) — collection of column names to join on. Must not be {@code null} or empty, and individual names must not be {@code null} , empty, or blank. Names must be unqualified (cannot contain a {@code .} ) and must each be a single column name (cannot contain {@code ,} , {@code (} , or {@code )} ). Order matters for some databases; use a {@code LinkedHashSet} or {@code List} to preserve insertion order.
-##### getColumnNames(...) -> ImmutableList<String>
-- **Signature:** `public ImmutableList<String> getColumnNames()`
-- **Summary:** Gets the validated column names this USING clause joins on, in the order they were supplied.
+##### columnNames(...) -> ImmutableList<String>
+- **Signature:** `public ImmutableList<String> columnNames()`
+- **Summary:** Returns the validated column names this USING clause joins on, in the order they were supplied.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of the unqualified column names in supplied order, or an empty immutable list for an uninitialized instance produced by the package-private default constructor

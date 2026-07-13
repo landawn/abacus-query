@@ -449,7 +449,7 @@ public final class Dsl {
 
         instance._op = OperationType.ADD;
         instance.setEntityClass(entityClass);
-        instance._propOrColumnNames = QueryUtil.getInsertPropNames(entityClass, excludedPropNames);
+        instance._propOrColumnNames = QueryUtil.insertPropertyNames(entityClass, excludedPropNames);
 
         return instance;
     }
@@ -664,7 +664,7 @@ public final class Dsl {
         instance._op = OperationType.UPDATE;
         instance.setEntityClass(entityClass);
         instance._tableName = SqlBuilder.getTableName(entityClass, instance._namingPolicy);
-        instance._propOrColumnNames = QueryUtil.getUpdatePropNames(entityClass, excludedPropNames);
+        instance._propOrColumnNames = QueryUtil.updatePropertyNames(entityClass, excludedPropNames);
 
         return instance;
     }
@@ -1004,7 +1004,7 @@ public final class Dsl {
 
         instance._op = OperationType.QUERY;
         instance.setEntityClass(entityClass);
-        instance._propOrColumnNames = QueryUtil.getSelectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+        instance._propOrColumnNames = QueryUtil.selectPropertyNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
         return instance;
     }
@@ -1176,7 +1176,7 @@ public final class Dsl {
      * @throws IllegalArgumentException if entityClass is null
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-        return selectFrom(entityClass, QueryUtil.getTableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
+        return selectFrom(entityClass, QueryUtil.tableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
     }
 
     /**

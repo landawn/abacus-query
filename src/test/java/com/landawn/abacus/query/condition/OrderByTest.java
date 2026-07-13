@@ -302,7 +302,7 @@ public class OrderByTest extends TestBase {
         Expression condition = Filters.expr("name ASC, age DESC");
         OrderBy orderBy = new OrderBy(condition);
 
-        Condition retrieved = orderBy.getCondition();
+        Condition retrieved = orderBy.condition();
         assertEquals(condition, retrieved);
     }
 

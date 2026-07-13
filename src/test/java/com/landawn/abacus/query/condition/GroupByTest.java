@@ -239,7 +239,7 @@ public class GroupByTest extends TestBase {
         Expression condition = Filters.expr("department, location");
         GroupBy groupBy = new GroupBy(condition);
 
-        Condition retrieved = groupBy.getCondition();
+        Condition retrieved = groupBy.condition();
         assertEquals(condition, retrieved);
     }
 

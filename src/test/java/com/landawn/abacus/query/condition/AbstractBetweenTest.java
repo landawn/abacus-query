@@ -44,21 +44,21 @@ public class AbstractBetweenTest extends TestBase {
     public void testGetPropName() {
         final TestAbstractBetween condition = new TestAbstractBetween("age", 18, 65);
 
-        assertEquals("age", condition.getPropName());
+        assertEquals("age", condition.propName());
     }
 
     @Test
     public void testGetMinValue() {
         final TestAbstractBetween condition = new TestAbstractBetween("age", 18, 65);
 
-        assertEquals(Integer.valueOf(18), condition.getMinValue());
+        assertEquals(Integer.valueOf(18), condition.minValue());
     }
 
     @Test
     public void testGetMaxValue() {
         final TestAbstractBetween condition = new TestAbstractBetween("age", 18, 65);
 
-        assertEquals(Integer.valueOf(65), condition.getMaxValue());
+        assertEquals(Integer.valueOf(65), condition.maxValue());
     }
 
     // Verifies literal and nested-condition parameter expansion.
@@ -150,9 +150,9 @@ public class AbstractBetweenTest extends TestBase {
         final EmptyAbstractBetween left = new EmptyAbstractBetween();
         final EmptyAbstractBetween right = new EmptyAbstractBetween();
 
-        assertNull(left.getPropName());
-        assertNull(left.getMinValue());
-        assertNull(left.getMaxValue());
+        assertNull(left.propName());
+        assertNull(left.minValue());
+        assertNull(left.maxValue());
         assertEquals(Arrays.asList(null, null), left.parameters());
         assertEquals(left, right);
         assertEquals(left.hashCode(), right.hashCode());

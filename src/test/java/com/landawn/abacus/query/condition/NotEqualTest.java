@@ -23,8 +23,8 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testConstructor() {
         NotEqual condition = new NotEqual("age", 25);
-        assertEquals("age", condition.getPropName());
-        assertEquals(25, (int) condition.getPropValue());
+        assertEquals("age", condition.propName());
+        assertEquals(25, (int) condition.propValue());
         assertEquals(Operator.NOT_EQUAL, condition.operator());
     }
 
@@ -41,27 +41,27 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testGetPropName() {
         NotEqual condition = new NotEqual("userName", "John");
-        assertEquals("userName", condition.getPropName());
+        assertEquals("userName", condition.propName());
     }
 
     @Test
     public void testGetPropValue() {
         NotEqual condition = new NotEqual("age", 30);
-        Integer value = condition.getPropValue();
+        Integer value = condition.propValue(Integer.class);
         assertEquals(Integer.valueOf(30), value);
     }
 
     @Test
     public void testGetPropValue_String() {
         NotEqual condition = new NotEqual("name", "Alice");
-        String value = condition.getPropValue();
+        String value = condition.propValue(String.class);
         assertEquals("Alice", value);
     }
 
     @Test
     public void testGetPropValue_Null() {
         NotEqual condition = new NotEqual("field", null);
-        assertNull(condition.getPropValue());
+        assertNull(condition.propValue());
     }
 
     @Test
@@ -198,24 +198,24 @@ public class NotEqualTest extends TestBase {
     public void testConstructorWithNumericValue() {
         NotEqual notEqual = Filters.ne("quantity", 0);
 
-        Assertions.assertEquals("quantity", notEqual.getPropName());
-        Assertions.assertEquals(0, (Integer) notEqual.getPropValue());
+        Assertions.assertEquals("quantity", notEqual.propName());
+        Assertions.assertEquals(0, (Integer) notEqual.propValue());
     }
 
     @Test
     public void testConstructorWithNullValue() {
         NotEqual notEqual = Filters.ne("assignee", null);
 
-        Assertions.assertEquals("assignee", notEqual.getPropName());
-        Assertions.assertNull(notEqual.getPropValue());
+        Assertions.assertEquals("assignee", notEqual.propName());
+        Assertions.assertNull(notEqual.propValue());
     }
 
     @Test
     public void testConstructorWithDateString() {
         NotEqual notEqual = Filters.ne("created", "2024-01-01");
 
-        Assertions.assertEquals("created", notEqual.getPropName());
-        Assertions.assertEquals("2024-01-01", notEqual.getPropValue());
+        Assertions.assertEquals("created", notEqual.propName());
+        Assertions.assertEquals("2024-01-01", notEqual.propValue());
     }
 
     @Test
@@ -272,42 +272,42 @@ public class NotEqualTest extends TestBase {
     public void testWithDifferentDataTypes() {
         // String
         NotEqual stringNe = Filters.ne("name", "test");
-        Assertions.assertEquals("test", stringNe.getPropValue());
+        Assertions.assertEquals("test", stringNe.propValue());
 
         // Integer
         NotEqual intNe = Filters.ne("count", 42);
-        Assertions.assertEquals(42, (Integer) intNe.getPropValue());
+        Assertions.assertEquals(42, (Integer) intNe.propValue());
 
         // Double
         NotEqual doubleNe = Filters.ne("price", 99.99);
-        Assertions.assertEquals(99.99, doubleNe.getPropValue());
+        Assertions.assertEquals(99.99, doubleNe.propValue());
 
         // Boolean
         NotEqual boolNe = Filters.ne("active", true);
-        Assertions.assertEquals(true, boolNe.getPropValue());
+        Assertions.assertEquals(true, boolNe.propValue());
 
         // Date
         Date now = new Date();
         NotEqual dateNe = Filters.ne("created", now);
-        Assertions.assertEquals(now, dateNe.getPropValue());
+        Assertions.assertEquals(now, dateNe.propValue());
     }
 
     @Test
     public void testPracticalExamples() {
         // Exclude specific user
         NotEqual notAdmin = Filters.ne("username", "admin");
-        Assertions.assertEquals("username", notAdmin.getPropName());
-        Assertions.assertEquals("admin", notAdmin.getPropValue());
+        Assertions.assertEquals("username", notAdmin.propName());
+        Assertions.assertEquals("admin", notAdmin.propValue());
 
         // Exclude default values
         NotEqual notDefault = Filters.ne("configuration", "default");
-        Assertions.assertEquals("configuration", notDefault.getPropName());
-        Assertions.assertEquals("default", notDefault.getPropValue());
+        Assertions.assertEquals("configuration", notDefault.propName());
+        Assertions.assertEquals("default", notDefault.propValue());
 
         // Filter out zero values
         NotEqual notZero = Filters.ne("balance", 0);
-        Assertions.assertEquals("balance", notZero.getPropName());
-        Assertions.assertEquals(0, (Integer) notZero.getPropValue());
+        Assertions.assertEquals("balance", notZero.propName());
+        Assertions.assertEquals(0, (Integer) notZero.propValue());
     }
 
     @Test
@@ -333,6 +333,6 @@ public class NotEqualTest extends TestBase {
         };
 
         NotEqual notEqual = Filters.ne("data", complexObject);
-        Assertions.assertEquals(complexObject, notEqual.getPropValue());
+        Assertions.assertEquals(complexObject, notEqual.propValue());
     }
 }

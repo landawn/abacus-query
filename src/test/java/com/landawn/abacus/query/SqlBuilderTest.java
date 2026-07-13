@@ -1062,24 +1062,24 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testGetTableAlias() {
-        assertEquals("", AbstractQueryBuilder.getTableAlias(Account.class));
-        assertEquals("o", AbstractQueryBuilder.getTableAlias(Order.class));
+        assertEquals("", AbstractQueryBuilder.tableAlias(Account.class));
+        assertEquals("o", AbstractQueryBuilder.tableAlias(Order.class));
     }
 
     @Test
     public void testGetTableAliasWithSpecifiedAlias() {
-        assertEquals("a", AbstractQueryBuilder.getTableAlias("a", Account.class));
-        assertEquals("", AbstractQueryBuilder.getTableAlias("", Account.class));
-        assertEquals("", AbstractQueryBuilder.getTableAlias(null, Account.class));
+        assertEquals("a", AbstractQueryBuilder.tableAlias("a", Account.class));
+        assertEquals("", AbstractQueryBuilder.tableAlias("", Account.class));
+        assertEquals("", AbstractQueryBuilder.tableAlias(null, Account.class));
     }
 
     @Test
     public void testGetTableAliasOrName() {
-        assertEquals("test_account", AbstractQueryBuilder.getTableAliasOrName(Account.class, NamingPolicy.SNAKE_CASE));
-        assertEquals("o", AbstractQueryBuilder.getTableAliasOrName(Order.class, NamingPolicy.SNAKE_CASE));
+        assertEquals("test_account", AbstractQueryBuilder.tableAliasOrName(Account.class, NamingPolicy.SNAKE_CASE));
+        assertEquals("o", AbstractQueryBuilder.tableAliasOrName(Order.class, NamingPolicy.SNAKE_CASE));
 
-        assertEquals("custom", AbstractQueryBuilder.getTableAliasOrName("custom", Account.class, NamingPolicy.SNAKE_CASE));
-        assertEquals("o", AbstractQueryBuilder.getTableAliasOrName("", Order.class, NamingPolicy.SNAKE_CASE));
+        assertEquals("custom", AbstractQueryBuilder.tableAliasOrName("custom", Account.class, NamingPolicy.SNAKE_CASE));
+        assertEquals("o", AbstractQueryBuilder.tableAliasOrName("", Order.class, NamingPolicy.SNAKE_CASE));
     }
 
     @Test

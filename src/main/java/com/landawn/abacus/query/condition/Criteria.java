@@ -36,7 +36,7 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>Instances are effectively immutable once built: the constituent conditions list is final
  * and never mutated post-construction, and all collection accessors ({@link #conditions()},
- * {@link #getJoins()}, {@link #getSetOperations()}, {@link #findConditions(Operator)}) return
+ * {@link #joins()}, {@link #setOperations()}, {@link #findConditions(Operator)}) return
  * unmodifiable lists.</p>
  *
  * <p>Instances are created via {@link #builder()}. Each clause is independent and should not
@@ -115,9 +115,9 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria.builder().build().getSelectModifier();                    // returns null
-     * Criteria.builder().distinct().build().getSelectModifier();         // returns "DISTINCT"
-     * Criteria.builder().distinctBy("a, b").build().getSelectModifier(); // returns "DISTINCT(a, b)"
+     * Criteria.builder().build().selectModifier();                    // returns null
+     * Criteria.builder().distinct().build().selectModifier();         // returns "DISTINCT"
+     * Criteria.builder().distinctBy("a, b").build().selectModifier(); // returns "DISTINCT(a, b)"
      * }</pre>
      *
      * @return the SELECT modifier, or {@code null} if not set
@@ -127,7 +127,7 @@ public class Criteria extends AbstractCondition {
      * @see Builder#distinctRowBy(String)
      * @see Builder#selectModifier(String)
      */
-    public String getSelectModifier() {
+    public String selectModifier() {
         return selectModifier;
     }
 
@@ -137,16 +137,16 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria.builder().build().getJoins();   // returns [] (empty list)
+     * Criteria.builder().build().joins();   // returns [] (empty list)
      *
      * Criteria c = Criteria.builder().join("orders").innerJoin("items").build();
-     * c.getJoins().size();                     // returns 2
-     * c.getJoins().add(null);                  // throws UnsupportedOperationException (unmodifiable view)
+     * c.joins().size();                     // returns 2
+     * c.joins().add(null);                  // throws UnsupportedOperationException (unmodifiable view)
      * }</pre>
      *
      * @return an immutable list of {@link Join} conditions; empty if none exist
      */
-    public ImmutableList<Join> getJoins() {
+    public ImmutableList<Join> joins() {
         ImmutableList<Join> view = cachedJoinsView;
 
         if (view == null) {
@@ -174,15 +174,15 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria.builder().build().getWhere();   // returns null
+     * Criteria.builder().build().where();   // returns null
      *
      * Criteria c = Criteria.builder().where(Filters.eq("a", 1)).build();
-     * c.getWhere().operator();                 // returns Operator.WHERE
+     * c.where().operator();                 // returns Operator.WHERE
      * }</pre>
      *
      * @return the {@link Where} clause, or {@code null}
      */
-    public Where getWhere() {
+    public Where where() {
         return (Where) find(Operator.WHERE);
     }
 
@@ -191,15 +191,15 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria.builder().build().getGroupBy();   // returns null
+     * Criteria.builder().build().groupBy();   // returns null
      *
      * Criteria c = Criteria.builder().groupBy("dept").build();
-     * c.getGroupBy().operator();                 // returns Operator.GROUP_BY
+     * c.groupBy().operator();                 // returns Operator.GROUP_BY
      * }</pre>
      *
      * @return the {@link GroupBy} clause, or {@code null}
      */
-    public GroupBy getGroupBy() {
+    public GroupBy groupBy() {
         return (GroupBy) find(Operator.GROUP_BY);
     }
 
@@ -208,15 +208,15 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria.builder().build().getHaving();   // returns null
+     * Criteria.builder().build().having();   // returns null
      *
      * Criteria c = Criteria.builder().having(Filters.greaterThan("COUNT(*)", 5)).build();
-     * c.getHaving().operator();                 // returns Operator.HAVING
+     * c.having().operator();                 // returns Operator.HAVING
      * }</pre>
      *
      * @return the {@link Having} clause, or {@code null}
      */
-    public Having getHaving() {
+    public Having having() {
         return (Having) find(Operator.HAVING);
     }
 
@@ -225,15 +225,15 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria.builder().build().getSetOperations();   // returns [] (empty list)
+     * Criteria.builder().build().setOperations();   // returns [] (empty list)
      *
      * Criteria c = Criteria.builder().union(Filters.subQuery("SELECT id FROM t")).build();
-     * c.getSetOperations().size();                     // returns 1
+     * c.setOperations().size();                     // returns 1
      * }</pre>
      *
      * @return an immutable list of set operation clauses; empty if none exist
      */
-    public ImmutableList<Clause> getSetOperations() {
+    public ImmutableList<Clause> setOperations() {
         ImmutableList<Clause> view = cachedSetOperationsView;
 
         if (view == null) {
@@ -261,15 +261,15 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria.builder().build().getOrderBy();   // returns null
+     * Criteria.builder().build().orderBy();   // returns null
      *
      * Criteria c = Criteria.builder().orderBy("name").build();
-     * c.getOrderBy().operator();                 // returns Operator.ORDER_BY
+     * c.orderBy().operator();                 // returns Operator.ORDER_BY
      * }</pre>
      *
      * @return the {@link OrderBy} clause, or {@code null}
      */
-    public OrderBy getOrderBy() {
+    public OrderBy orderBy() {
         return (OrderBy) find(Operator.ORDER_BY);
     }
 
@@ -278,15 +278,15 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria.builder().build().getLimit();   // returns null
+     * Criteria.builder().build().limit();   // returns null
      *
      * Criteria c = Criteria.builder().limit(10).build();
-     * c.getLimit().toString(NamingPolicy.NO_CHANGE);   // returns "LIMIT 10"
+     * c.limit().toString(NamingPolicy.NO_CHANGE);   // returns "LIMIT 10"
      * }</pre>
      *
      * @return the {@link Limit} clause, or {@code null}
      */
-    public Limit getLimit() {
+    public Limit limit() {
         return (Limit) find(Operator.LIMIT);
     }
 
@@ -672,7 +672,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets the DISTINCT modifier for the query.
          * The modifier is stored on the built {@code Criteria} and exposed via
-         * {@link Criteria#getSelectModifier()} for external consumers (such as abacus-jdbc) that
+         * {@link Criteria#selectModifier()} for external consumers (such as abacus-jdbc) that
          * render the {@code SELECT} clause. This library's {@code SqlBuilder} does <i>not</i> apply
          * it when appending a {@code Criteria}; use {@code SqlBuilder}'s own {@code distinct()} or
          * {@code selectModifier(String)} to get {@code SELECT DISTINCT} in SQL rendered here.
@@ -683,7 +683,7 @@ public class Criteria extends AbstractCondition {
          *     .distinct()
          *     .where(Filters.equal("status", "active"))
          *     .build();
-         * c.getSelectModifier();                 // returns "DISTINCT"
+         * c.selectModifier();                 // returns "DISTINCT"
          * c.toString(NamingPolicy.NO_CHANGE);    // returns " DISTINCT WHERE status = 'active'"
          * }</pre>
          *
@@ -704,14 +704,14 @@ public class Criteria extends AbstractCondition {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.builder().distinctBy("department, location").build().getSelectModifier();
+         * Criteria.builder().distinctBy("department, location").build().selectModifier();
          * // returns "DISTINCT(department, location)"
          *
-         * Criteria.builder().distinctBy("city").build().getSelectModifier();   // returns "DISTINCT(city)"
+         * Criteria.builder().distinctBy("city").build().selectModifier();   // returns "DISTINCT(city)"
          *
          * // null or empty falls back to a plain DISTINCT (no parentheses).
-         * Criteria.builder().distinctBy(null).build().getSelectModifier();     // returns "DISTINCT"
-         * Criteria.builder().distinctBy("").build().getSelectModifier();       // returns "DISTINCT"
+         * Criteria.builder().distinctBy(null).build().selectModifier();     // returns "DISTINCT"
+         * Criteria.builder().distinctBy("").build().selectModifier();       // returns "DISTINCT"
          * }</pre>
          *
          * @param columnNames the columns to apply DISTINCT to; if {@code null} or empty, plain {@code DISTINCT} is used
@@ -727,7 +727,7 @@ public class Criteria extends AbstractCondition {
          * Sets the DISTINCTROW modifier for the query.
          * DISTINCTROW is similar to DISTINCT but may have database-specific behavior.
          * Like {@link #distinct()}, the modifier is only exposed via
-         * {@link Criteria#getSelectModifier()} for external consumers; this library's
+         * {@link Criteria#selectModifier()} for external consumers; this library's
          * {@code SqlBuilder} does not apply it when appending a {@code Criteria}; use
          * {@code SqlBuilder.selectModifier("DISTINCTROW")} to get it in SQL rendered here.
          *
@@ -737,7 +737,7 @@ public class Criteria extends AbstractCondition {
          *     .distinctRow()
          *     .where(Filters.equal("active", true))
          *     .build();
-         * c.getSelectModifier();   // returns "DISTINCTROW"
+         * c.selectModifier();   // returns "DISTINCTROW"
          * }</pre>
          *
          * @return this Builder instance for method chaining
@@ -756,11 +756,11 @@ public class Criteria extends AbstractCondition {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.builder().distinctRowBy("category, subcategory").build().getSelectModifier();
+         * Criteria.builder().distinctRowBy("category, subcategory").build().selectModifier();
          * // returns "DISTINCTROW(category, subcategory)"
          *
          * // null or empty falls back to a plain DISTINCTROW (no parentheses).
-         * Criteria.builder().distinctRowBy(null).build().getSelectModifier();   // returns "DISTINCTROW"
+         * Criteria.builder().distinctRowBy(null).build().selectModifier();   // returns "DISTINCTROW"
          * }</pre>
          *
          * @param columnNames the columns to apply DISTINCTROW to; if {@code null} or empty, plain {@code DISTINCTROW} is used
@@ -779,11 +779,11 @@ public class Criteria extends AbstractCondition {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.builder().selectModifier("SQL_CALC_FOUND_ROWS").build().getSelectModifier();
+         * Criteria.builder().selectModifier("SQL_CALC_FOUND_ROWS").build().selectModifier();
          * // returns "SQL_CALC_FOUND_ROWS"
          *
          * // Passing null (or an empty string) clears any previously set modifier.
-         * Criteria.builder().selectModifier(null).build().getSelectModifier();   // returns null
+         * Criteria.builder().selectModifier(null).build().selectModifier();   // returns null
          * }</pre>
          *
          * @param selectModifier the custom SELECT modifier; {@code null} or an empty string means no modifier
@@ -809,11 +809,11 @@ public class Criteria extends AbstractCondition {
          *         new InnerJoin("products", new On("orders.product_id", "products.id"))
          *     )
          *     .build();
-         * c.getJoins().size();   // returns 2
+         * c.joins().size();   // returns 2
          *
          * // Passing no joins is a no-op.
          * Criteria empty = Criteria.builder().join(new Join[0]).build();
-         * empty.getJoins();      // returns [] (empty list)
+         * empty.joins();      // returns [] (empty list)
          * }</pre>
          *
          * @param joins the JOIN clauses to add
@@ -836,11 +836,11 @@ public class Criteria extends AbstractCondition {
          *     new RightJoin("payments", new On("orders.id", "payments.order_id"))
          * );
          * Criteria c = Criteria.builder().join(joins).build();
-         * c.getJoins().size();   // returns 2
+         * c.joins().size();   // returns 2
          *
          * // An empty collection is a no-op.
          * Criteria empty = Criteria.builder().join(new ArrayList<Join>()).build();
-         * empty.getJoins();      // returns [] (empty list)
+         * empty.joins();      // returns [] (empty list)
          * }</pre>
          *
          * @param joins the collection of JOIN clauses to add
@@ -2246,7 +2246,7 @@ public class Criteria extends AbstractCondition {
          * // returns " WHERE status = 'active' UNION SELECT * FROM archived_users WHERE active = true"
          *
          * // Multiple set operations accumulate in order.
-         * c.getSetOperations().size();   // returns 1
+         * c.setOperations().size();   // returns 1
          * }</pre>
          *
          * @param subQuery the subquery to union with (must not be {@code null})
@@ -2418,23 +2418,23 @@ public class Criteria extends AbstractCondition {
                     break;
 
                 case UNION:
-                    union(requireConditionType(condition, Union.class).getSubQuery());
+                    union(requireConditionType(condition, Union.class).subQuery());
                     break;
 
                 case UNION_ALL:
-                    unionAll(requireConditionType(condition, UnionAll.class).getSubQuery());
+                    unionAll(requireConditionType(condition, UnionAll.class).subQuery());
                     break;
 
                 case INTERSECT:
-                    intersect(requireConditionType(condition, Intersect.class).getSubQuery());
+                    intersect(requireConditionType(condition, Intersect.class).subQuery());
                     break;
 
                 case EXCEPT:
-                    except(requireConditionType(condition, Except.class).getSubQuery());
+                    except(requireConditionType(condition, Except.class).subQuery());
                     break;
 
                 case MINUS:
-                    minus(requireConditionType(condition, Minus.class).getSubQuery());
+                    minus(requireConditionType(condition, Minus.class).subQuery());
                     break;
 
                 default:

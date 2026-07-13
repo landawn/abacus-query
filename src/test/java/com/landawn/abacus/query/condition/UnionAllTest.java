@@ -31,7 +31,7 @@ public class UnionAllTest extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT * FROM orders");
         UnionAll unionAll = new UnionAll(subQuery);
-        SubQuery retrieved = (SubQuery) unionAll.getCondition();
+        SubQuery retrieved = (SubQuery) unionAll.condition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -139,7 +139,7 @@ public class UnionAllTest extends TestBase {
 
         Assertions.assertNotNull(unionAll);
         Assertions.assertEquals(Operator.UNION_ALL, unionAll.operator());
-        Assertions.assertEquals(subQuery, unionAll.getCondition());
+        Assertions.assertEquals(subQuery, unionAll.condition());
     }
 
     @Test
@@ -148,7 +148,7 @@ public class UnionAllTest extends TestBase {
                 Filters.and(Filters.eq("region", "WEST"), Filters.gt("date", "2024-01-01")));
         UnionAll unionAll = Filters.unionAll(subQuery);
 
-        Assertions.assertEquals(subQuery, unionAll.getCondition());
+        Assertions.assertEquals(subQuery, unionAll.condition());
         Assertions.assertEquals(2, unionAll.parameters().size());
     }
 
@@ -198,7 +198,7 @@ public class UnionAllTest extends TestBase {
         SubQuery inactiveUsers = Filters.subQuery("SELECT id, name, 'inactive' as status FROM inactive_users");
         UnionAll allUsers = Filters.unionAll(inactiveUsers);
 
-        Assertions.assertEquals(inactiveUsers, allUsers.getCondition());
+        Assertions.assertEquals(inactiveUsers, allUsers.condition());
     }
 
     @Test

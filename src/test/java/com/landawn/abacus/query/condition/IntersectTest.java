@@ -29,7 +29,7 @@ public class IntersectTest extends TestBase {
     public void testGetCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT customer_id FROM orders");
         Intersect intersect = new Intersect(subQuery);
-        SubQuery retrieved = (SubQuery) intersect.getCondition();
+        SubQuery retrieved = (SubQuery) intersect.condition();
         assertNotNull(retrieved);
         assertEquals(subQuery, retrieved);
     }
@@ -138,7 +138,7 @@ public class IntersectTest extends TestBase {
 
         Assertions.assertNotNull(intersect);
         Assertions.assertEquals(Operator.INTERSECT, intersect.operator());
-        Assertions.assertEquals(subQuery, intersect.getCondition());
+        Assertions.assertEquals(subQuery, intersect.condition());
     }
 
     @Test
@@ -148,7 +148,7 @@ public class IntersectTest extends TestBase {
 
         Assertions.assertNotNull(intersect);
         Assertions.assertEquals(Operator.INTERSECT, intersect.operator());
-        Assertions.assertNotNull(intersect.getCondition());
+        Assertions.assertNotNull(intersect.condition());
     }
 
     @Test

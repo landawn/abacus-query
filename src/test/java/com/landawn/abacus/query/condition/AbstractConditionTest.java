@@ -74,7 +74,7 @@ public class AbstractConditionTest extends TestBase {
 
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
-        assertSame(cond, result.getCondition());
+        assertSame(cond, result.condition());
     }
 
     @Test
@@ -103,7 +103,7 @@ public class AbstractConditionTest extends TestBase {
     public void testConcatPropNames_SingleName() {
         // Tested indirectly through other condition classes
         Equal condition = new Equal("name", "value");
-        assertNotNull(condition.getPropName());
+        assertNotNull(condition.propName());
     }
 
     @Test
@@ -415,7 +415,7 @@ public class AbstractConditionTest extends TestBase {
         // Test NOT of complex condition
         Not notComplex = complex.not();
         Assertions.assertNotNull(notComplex);
-        Assertions.assertEquals(complex, notComplex.getCondition());
+        Assertions.assertEquals(complex, notComplex.condition());
     }
 
     @Test

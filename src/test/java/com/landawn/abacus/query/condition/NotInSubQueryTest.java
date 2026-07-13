@@ -26,9 +26,9 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
 
-        assertEquals("userId", condition.getPropNames().iterator().next());
-        assertEquals(1, condition.getPropNames().size());
-        assertNotNull(condition.getSubQuery());
+        assertEquals("userId", condition.propNames().iterator().next());
+        assertEquals(1, condition.propNames().size());
+        assertNotNull(condition.subQuery());
         assertEquals(Operator.NOT_IN, condition.operator());
     }
 
@@ -43,8 +43,8 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
         NotInSubQuery condition = new NotInSubQuery(props, subQuery);
 
-        assertNotNull(condition.getPropNames());
-        assertEquals(2, condition.getPropNames().size());
+        assertNotNull(condition.propNames());
+        assertEquals(2, condition.propNames().size());
     }
 
     @Test
@@ -82,8 +82,8 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM deleted_items");
         NotInSubQuery condition = new NotInSubQuery("itemId", subQuery);
 
-        assertEquals(1, condition.getPropNames().size());
-        assertEquals("itemId", condition.getPropNames().iterator().next());
+        assertEquals(1, condition.propNames().size());
+        assertEquals("itemId", condition.propNames().iterator().next());
     }
 
     @Test
@@ -92,7 +92,7 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT country, city FROM restricted_locations");
         NotInSubQuery condition = new NotInSubQuery(props, subQuery);
 
-        Collection<String> propNames = condition.getPropNames();
+        Collection<String> propNames = condition.propNames();
         assertNotNull(propNames);
         assertEquals(2, propNames.size());
     }
@@ -103,7 +103,7 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT country, city FROM restricted_locations");
         NotInSubQuery condition = new NotInSubQuery(props, subQuery);
 
-        assertThrows(UnsupportedOperationException.class, () -> condition.getPropNames().add("zip"));
+        assertThrows(UnsupportedOperationException.class, () -> condition.propNames().add("zip"));
     }
 
     @Test
@@ -111,7 +111,7 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
 
-        SubQuery result = condition.getSubQuery();
+        SubQuery result = condition.subQuery();
         assertNotNull(result);
         assertEquals(subQuery, result);
     }
@@ -204,7 +204,7 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery restricted = Filters.subQuery("SELECT country, city FROM restricted_locations");
         NotInSubQuery condition = new NotInSubQuery(props, restricted);
 
-        assertEquals(2, condition.getPropNames().size());
+        assertEquals(2, condition.propNames().size());
     }
 
     @Test
@@ -243,9 +243,9 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         NotInSubQuery condition = Filters.notIn("userId", subQuery);
 
-        Assertions.assertEquals("userId", condition.getPropNames().iterator().next());
-        Assertions.assertEquals(1, condition.getPropNames().size());
-        Assertions.assertEquals(subQuery, condition.getSubQuery());
+        Assertions.assertEquals("userId", condition.propNames().iterator().next());
+        Assertions.assertEquals(1, condition.propNames().size());
+        Assertions.assertEquals(subQuery, condition.subQuery());
     }
 
     @Test
@@ -261,8 +261,8 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
         NotInSubQuery condition = Filters.notIn(propNames, subQuery);
 
-        Assertions.assertEquals(propNames, condition.getPropNames());
-        Assertions.assertEquals(subQuery, condition.getSubQuery());
+        Assertions.assertEquals(propNames, condition.propNames());
+        Assertions.assertEquals(subQuery, condition.subQuery());
     }
 
     @Test
@@ -273,7 +273,7 @@ public class NotInSubQueryTest extends TestBase {
 
         propNames.add("middleName");
 
-        Assertions.assertEquals(Arrays.asList("firstName", "lastName"), condition.getPropNames().stream().toList());
+        Assertions.assertEquals(Arrays.asList("firstName", "lastName"), condition.propNames().stream().toList());
     }
 
     @Test
@@ -292,7 +292,7 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
         NotInSubQuery condition = Filters.notIn(propNames, subQuery);
 
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> condition.getPropNames().add("middleName"));
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> condition.propNames().add("middleName"));
     }
 
     @Test

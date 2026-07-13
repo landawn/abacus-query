@@ -309,11 +309,11 @@ public abstract class AbstractCondition implements Condition {
         }
 
         if (cond instanceof Cell) {
-            return containsOnOrUsing(((Cell) cond).getCondition());
+            return containsOnOrUsing(((Cell) cond).condition());
         }
 
         if (cond instanceof ComposableCell) {
-            return containsOnOrUsing(((ComposableCell) cond).getCondition());
+            return containsOnOrUsing(((ComposableCell) cond).condition());
         }
 
         return false;
@@ -810,7 +810,7 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Gets the operator for this condition.
+     * Returns the operator for this condition.
      * The operator defines the type of operation (e.g., EQUAL, GREATER_THAN, AND, OR).
      *
      * <p><b>Usage Examples:</b></p>
