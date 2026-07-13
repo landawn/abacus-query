@@ -74,7 +74,7 @@ public class AnyTest extends TestBase {
     public void testToString_NoChange() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
         Any condition = new Any(subQuery);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("ANY"));
         assertTrue(result.contains("SELECT"));
     }
@@ -84,7 +84,7 @@ public class AnyTest extends TestBase {
         Condition whereCondition = new LessThan("age", 30);
         SubQuery subQuery = Filters.subQuery("employees", Arrays.asList("salary"), whereCondition);
         Any condition = new Any(subQuery);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("ANY"));
         assertTrue(result.contains("SELECT"));
         assertTrue(result.contains("employees"));
@@ -162,7 +162,7 @@ public class AnyTest extends TestBase {
         // salary > ANY (SELECT salary FROM employees WHERE department = 'Sales')
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE department = 'Sales'");
         Any condition = new Any(subQuery);
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("ANY"));
         assertTrue(sql.contains("employees"));
     }
@@ -180,7 +180,7 @@ public class AnyTest extends TestBase {
         // price < ANY (SELECT price FROM competitor_products)
         SubQuery subQuery = Filters.subQuery("SELECT price FROM competitor_products WHERE available = true");
         Any condition = new Any(subQuery);
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("ANY"));
     }
 
@@ -208,7 +208,7 @@ public class AnyTest extends TestBase {
         Condition whereCondition = new Equal("subject", "Math");
         SubQuery subQuery = Filters.subQuery("exams", Arrays.asList("passing_score"), whereCondition);
         Any condition = new Any(subQuery);
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("ANY"));
     }
 
@@ -237,7 +237,7 @@ public class AnyTest extends TestBase {
         Any any = Filters.any(subQuery);
 
         // Naming policy should be applied to the subquery
-        String result = any.toString(NamingPolicy.SNAKE_CASE);
+        String result = any.toSql(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("ANY"));
     }
 

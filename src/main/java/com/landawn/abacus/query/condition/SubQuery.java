@@ -533,7 +533,7 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Converts this subquery to its string representation.
+     * Converts this subquery to its SQL representation.
      *
      * <p>For raw SQL subqueries, returns the SQL as-is (the {@code namingPolicy} is ignored).
      * For structured subqueries, generates a {@code SELECT [props] FROM [entity] [condition]}
@@ -544,32 +544,32 @@ public class SubQuery extends AbstractCondition {
      * <pre>{@code
      * // Raw SQL subquery: SQL returned as-is, naming policy is ignored
      * SubQuery raw = Filters.subQuery("SELECT user_id FROM users");
-     * String rawStr = raw.toString(NamingPolicy.SNAKE_CASE);
+     * String rawStr = raw.toSql(NamingPolicy.SNAKE_CASE);
      * // returns "SELECT user_id FROM users"
      *
      * // Structured subquery with NO_CHANGE: names rendered verbatim
      * SubQuery sq = Filters.subQuery("users", Arrays.asList("id", "name"), Filters.equal("status", "active"));
-     * String s1 = sq.toString(NamingPolicy.NO_CHANGE);
+     * String s1 = sq.toSql(NamingPolicy.NO_CHANGE);
      * // returns "SELECT id, name FROM users WHERE status = 'active'"
      *
      * // Structured subquery with SNAKE_CASE: props, entity, and condition are all converted
      * SubQuery sq2 = Filters.subQuery("userAccount", Arrays.asList("firstName", "lastName"),
      *                                 Filters.equal("isActive", true));
-     * String s2 = sq2.toString(NamingPolicy.SNAKE_CASE);
+     * String s2 = sq2.toSql(NamingPolicy.SNAKE_CASE);
      * // returns "SELECT first_name, last_name FROM user_account WHERE is_active = true"
      *
      * // null naming policy behaves like NO_CHANGE
      * SubQuery sq3 = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
-     * String s3 = sq3.toString((NamingPolicy) null);
+     * String s3 = sq3.toSql((NamingPolicy) null);
      * // returns "SELECT id FROM users"
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply; if {@code null},
      *            {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
-     * @return string representation of the subquery
+     * @return SQL representation of the subquery
      */
     @Override
-    public String toString(final NamingPolicy namingPolicy) {
+    public String toSql(final NamingPolicy namingPolicy) {
         if (sql == null) {
             final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
             final Map<String, String> propertyToColumnMap = entityClass == null ? null : QueryUtil.propertyToColumnMap(entityClass, effectiveNamingPolicy);
@@ -614,7 +614,7 @@ public class SubQuery extends AbstractCondition {
                 if (condition != null) {
                     sb.append(_SPACE);
 
-                    sb.append(condition.toString(effectiveNamingPolicy));
+                    sb.append(condition.toSql(effectiveNamingPolicy));
                 }
 
                 return sb.toString();

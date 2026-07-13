@@ -84,7 +84,7 @@ public class AbstractBetweenTest extends TestBase {
     public void testToString() {
         final TestAbstractBetween condition = new TestAbstractBetween("userAge", 18, 65);
 
-        final String sql = condition.toString(NamingPolicy.SNAKE_CASE);
+        final String sql = condition.toSql(NamingPolicy.SNAKE_CASE);
 
         assertTrue(sql.contains("user_age"));
         assertTrue(sql.contains("BETWEEN"));
@@ -96,7 +96,7 @@ public class AbstractBetweenTest extends TestBase {
     public void testToString_NullNamingPolicy() {
         final TestAbstractBetween condition = new TestAbstractBetween("userAge", "A", "Z");
 
-        final String sql = condition.toString(null);
+        final String sql = condition.toSql(null);
 
         assertTrue(sql.contains("userAge"));
         assertTrue(sql.contains("'A'"));
@@ -163,7 +163,7 @@ public class AbstractBetweenTest extends TestBase {
         final TestAbstractBetween condition = new TestAbstractBetween("score", Filters.subQuery("SELECT MIN(score) FROM results"),
                 Filters.subQuery("SELECT MAX(score) FROM results"));
 
-        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        final String sql = condition.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(sql.contains("score BETWEEN"));
         assertTrue(sql.contains("(SELECT MIN(score) FROM results)"));
@@ -174,7 +174,7 @@ public class AbstractBetweenTest extends TestBase {
     public void testDefaultConstructorToString() {
         final EmptyAbstractBetween condition = new EmptyAbstractBetween();
 
-        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        final String sql = condition.toSql(NamingPolicy.NO_CHANGE);
 
         assertNotNull(sql);
     }
@@ -186,7 +186,7 @@ public class AbstractBetweenTest extends TestBase {
     @Test
     public void testToString_DateBoundsAreQuoted_Pass3() {
         final TestAbstractBetween condition = new TestAbstractBetween("orderDate", new java.util.Date(0L), new java.util.Date(86400000L));
-        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        final String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("'"), "Date bounds must be quoted, got: " + sql);
         assertTrue(!sql.contains("Wed Dec") && !sql.contains("Thu Jan") && !sql.contains("PST"),
                 "Output must not contain Java's Date.toString() form, got: " + sql);
@@ -199,6 +199,6 @@ public class AbstractBetweenTest extends TestBase {
     @Test
     public void testToString_NaNBoundIsRejected_Pass3() {
         final TestAbstractBetween condition = new TestAbstractBetween("v", Double.NaN, 100.0);
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> condition.toString(NamingPolicy.NO_CHANGE));
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> condition.toSql(NamingPolicy.NO_CHANGE));
     }
 }

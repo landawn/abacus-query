@@ -64,7 +64,7 @@ public class WhereTest extends TestBase {
     public void testToString_Simple() {
         Equal condition = new Equal("status", "active");
         Where where = new Where(condition);
-        String result = where.toString(NamingPolicy.NO_CHANGE);
+        String result = where.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("WHERE"));
     }
 
@@ -72,7 +72,7 @@ public class WhereTest extends TestBase {
     public void testToString_Complex() {
         Or complexCondition = new Or(new And(new Equal("status", "active"), new GreaterThan("balance", 1000)), new Equal("vip", true));
         Where where = new Where(complexCondition);
-        String result = where.toString(NamingPolicy.NO_CHANGE);
+        String result = where.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("WHERE"));
     }
 

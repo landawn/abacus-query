@@ -98,7 +98,7 @@ public class NotInTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         NotIn condition = new NotIn("status", Arrays.asList("deleted", "archived"));
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(result.contains("status"));
         assertTrue(result.contains("NOT IN"));
@@ -109,7 +109,7 @@ public class NotInTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         NotIn condition = new NotIn("orderStatus", Arrays.asList("deleted"));
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("order_status"));
         assertTrue(result.contains("NOT IN"));
@@ -174,7 +174,7 @@ public class NotInTest extends TestBase {
         NotIn condition = new NotIn("status", inactiveStatuses);
 
         assertEquals(3, condition.parameters().size());
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("NOT IN"));
     }
 
@@ -203,7 +203,7 @@ public class NotInTest extends TestBase {
         NotIn notIn = new NotIn("category", excludedCategories);
 
         assertEquals(3, notIn.parameters().size());
-        assertTrue(notIn.toString(NamingPolicy.NO_CHANGE).contains("category"));
+        assertTrue(notIn.toSql(NamingPolicy.NO_CHANGE).contains("category"));
     }
 
     @Test
@@ -300,7 +300,7 @@ public class NotInTest extends TestBase {
         List<String> values = Arrays.asList("active", "pending");
         NotIn notIn = Filters.notIn("user_status", values);
 
-        String result = notIn.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = notIn.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
         Assertions.assertTrue(result.contains("USER_STATUS"));
         Assertions.assertTrue(result.contains("NOT IN"));
         Assertions.assertTrue(result.contains("USER_STATUS NOT IN ('active', 'pending')"));
@@ -372,7 +372,7 @@ public class NotInTest extends TestBase {
     public void testMultiColumn_ToStringAndParameters() {
         NotIn condition = new NotIn(Arrays.asList("first_name", "last_name"), Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
 
-        assertEquals("(first_name, last_name) NOT IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.NO_CHANGE));
+        assertEquals("(first_name, last_name) NOT IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toSql(NamingPolicy.NO_CHANGE));
         assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), condition.parameters());
         assertEquals(Arrays.asList("first_name", "last_name"), new ArrayList<>(condition.propNames()));
         assertEquals(Operator.NOT_IN, condition.operator());
@@ -386,7 +386,7 @@ public class NotInTest extends TestBase {
         assertEquals("a", condition.propName());
         assertEquals(Arrays.asList(Arrays.asList(1), Arrays.asList(2)), condition.values());
         assertEquals(Arrays.asList(1, 2), condition.parameters());
-        assertEquals("(a) NOT IN ((1), (2))", condition.toString(NamingPolicy.NO_CHANGE));
+        assertEquals("(a) NOT IN ((1), (2))", condition.toSql(NamingPolicy.NO_CHANGE));
 
         NotIn scalar = new NotIn("a", Arrays.asList(1, 2));
         assertNotEquals(scalar, condition);
@@ -405,7 +405,7 @@ public class NotInTest extends TestBase {
 
         NotIn condition = new NotIn(Arrays.asList("firstName", "lastName"), Arrays.asList(mapRow, beanRow));
 
-        assertEquals("(first_name, last_name) NOT IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.SNAKE_CASE));
+        assertEquals("(first_name, last_name) NOT IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toSql(NamingPolicy.SNAKE_CASE));
         assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), condition.parameters());
     }
 

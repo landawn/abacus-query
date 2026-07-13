@@ -89,7 +89,7 @@ public class GreaterThanTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         GreaterThan condition = new GreaterThan("userName", "Alice");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("userName"));
         assertTrue(result.contains("Alice"));
     }
@@ -97,7 +97,7 @@ public class GreaterThanTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         GreaterThan condition = new GreaterThan("userName", "Bob");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 
@@ -252,7 +252,7 @@ public class GreaterThanTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         GreaterThan gt = Filters.gt("yearOfBirth", 1990);
-        String result = gt.toString(NamingPolicy.SNAKE_CASE);
+        String result = gt.toSql(NamingPolicy.SNAKE_CASE);
         Assertions.assertEquals("year_of_birth > 1990", result);
     }
 

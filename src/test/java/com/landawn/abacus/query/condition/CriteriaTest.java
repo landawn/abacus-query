@@ -490,7 +490,7 @@ public class CriteriaTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Criteria criteria = Criteria.builder().distinct().where(Filters.equal("isActive", true)).orderBy("createdDate", SortDirection.DESC).build();
 
-        String sql = criteria.toString(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
+        String sql = criteria.toSql(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
         assertNotNull(sql);
         assertTrue(sql.contains("DISTINCT"));
     }
@@ -568,7 +568,7 @@ public class CriteriaTest extends TestBase {
         Criteria criteria = Criteria.builder().distinct().selectModifier("  \t ").build();
 
         assertNull(criteria.selectModifier());
-        assertEquals("", criteria.toString(NamingPolicy.NO_CHANGE));
+        assertEquals("", criteria.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -583,7 +583,7 @@ public class CriteriaTest extends TestBase {
         assertEquals(1, criteria.conditions().size());
         assertEquals(Arrays.asList(1), criteria.parameters());
         assertEquals(hashCode, criteria.hashCode());
-        assertEquals(" WHERE id = 1", criteria.toString(NamingPolicy.NO_CHANGE));
+        assertEquals(" WHERE id = 1", criteria.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -770,7 +770,7 @@ public class CriteriaTest extends TestBase {
     @Test
     public void testToStringEmptyCriteria() {
         Criteria criteria = Criteria.builder().build();
-        String sql = criteria.toString(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
+        String sql = criteria.toSql(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
         assertNotNull(sql);
     }
 
@@ -1176,10 +1176,10 @@ public class CriteriaTest extends TestBase {
         assertEquals("DISTINCT", rebuilt.selectModifier());
         assertEquals(0, original.parameters().size());
         assertEquals(1, rebuilt.parameters().size());
-        assertTrue(original.toString(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
-        assertFalse(original.toString(NamingPolicy.NO_CHANGE).contains("status"));
-        assertTrue(rebuilt.toString(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
-        assertTrue(rebuilt.toString(NamingPolicy.NO_CHANGE).contains("status"));
+        assertTrue(original.toSql(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
+        assertFalse(original.toSql(NamingPolicy.NO_CHANGE).contains("status"));
+        assertTrue(rebuilt.toSql(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
+        assertTrue(rebuilt.toSql(NamingPolicy.NO_CHANGE).contains("status"));
     }
 
     /**
@@ -1206,7 +1206,7 @@ public class CriteriaTest extends TestBase {
 
         // Same selectModifier, same toString, same parameter list and order.
         assertEquals(original.selectModifier(), rebuilt.selectModifier());
-        assertEquals(original.toString(NamingPolicy.NO_CHANGE), rebuilt.toString(NamingPolicy.NO_CHANGE));
+        assertEquals(original.toSql(NamingPolicy.NO_CHANGE), rebuilt.toSql(NamingPolicy.NO_CHANGE));
         assertEquals(original.parameters(), rebuilt.parameters());
         assertEquals(original, rebuilt);
         assertEquals(original.hashCode(), rebuilt.hashCode());
@@ -1251,7 +1251,7 @@ public class CriteriaTest extends TestBase {
                 .build();
 
         // Only the last WHERE should survive
-        final String str = c.toString(NamingPolicy.NO_CHANGE);
+        final String str = c.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("b ="), "should contain second where: " + str);
         assertFalse(str.contains("a ="), "should not contain replaced where: " + str);
         // Both joins should be present
@@ -1297,7 +1297,7 @@ public class CriteriaTest extends TestBase {
         }
 
         @Override
-        public String toString(final NamingPolicy namingPolicy) {
+        public String toSql(final NamingPolicy namingPolicy) {
             return operator().toString();
         }
     }
@@ -1498,13 +1498,13 @@ public class CriteriaTest extends TestBase {
         Criteria criteria = Criteria.builder().where(Filters.eq("firstName", "John")).orderBy("lastName").build();
 
         for (int i = 0; i < 100; i++) {
-            String noChange = criteria.toString(NamingPolicy.NO_CHANGE);
+            String noChange = criteria.toSql(NamingPolicy.NO_CHANGE);
             Assertions.assertTrue(noChange.contains("firstName = 'John'") && noChange.contains("lastName"), "NO_CHANGE render wrong: " + noChange);
 
-            String snake = criteria.toString(NamingPolicy.SNAKE_CASE);
+            String snake = criteria.toSql(NamingPolicy.SNAKE_CASE);
             Assertions.assertTrue(snake.contains("first_name = 'John'") && snake.contains("last_name"), "SNAKE_CASE render wrong: " + snake);
 
-            String screaming = criteria.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+            String screaming = criteria.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
             Assertions.assertTrue(screaming.contains("FIRST_NAME = 'John'") && screaming.contains("LAST_NAME"),
                     "SCREAMING_SNAKE_CASE render wrong: " + screaming);
         }
@@ -1540,7 +1540,7 @@ public class CriteriaTest extends TestBase {
         Criteria c = Criteria.builder().add(Filters.equal("status", "active")).build();
 
         assertNotNull(c.where());
-        assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("WHERE status = 'active'"), c.toString());
+        assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("WHERE status = 'active'"), c.toString());
     }
 
     @Test
@@ -1548,7 +1548,7 @@ public class CriteriaTest extends TestBase {
         Criteria c = Criteria.builder().add(new Where(Filters.eq("id", 1))).build();
 
         assertNotNull(c.where());
-        assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("WHERE id = 1"), c.toString());
+        assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("WHERE id = 1"), c.toString());
     }
 
     @Test
@@ -1557,7 +1557,7 @@ public class CriteriaTest extends TestBase {
 
         assertNotNull(c.orderBy());
         assertNull(c.where());
-        assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("ORDER BY createdDate"), c.toString());
+        assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("ORDER BY createdDate"), c.toString());
     }
 
     @Test
@@ -1565,7 +1565,7 @@ public class CriteriaTest extends TestBase {
         Criteria c = Criteria.builder().add(new GroupBy("department")).build();
 
         assertNotNull(c.groupBy());
-        assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("GROUP BY department"), c.toString());
+        assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("GROUP BY department"), c.toString());
     }
 
     @Test
@@ -1575,7 +1575,7 @@ public class CriteriaTest extends TestBase {
 
         assertNotNull(c.having());
         assertNull(c.where());
-        assertTrue(c.toString(NamingPolicy.NO_CHANGE).contains("HAVING COUNT(*) > 5"), c.toString());
+        assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("HAVING COUNT(*) > 5"), c.toString());
     }
 
     @Test
@@ -1611,7 +1611,7 @@ public class CriteriaTest extends TestBase {
         assertEquals(20, c.limit().count());
 
         Criteria c2 = Criteria.builder().add(new OrderBy("colA")).add(new OrderBy("colB")).build();
-        String sql = c2.toString(NamingPolicy.NO_CHANGE);
+        String sql = c2.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("colB"), sql);
         assertFalse(sql.contains("colA"), sql);
     }

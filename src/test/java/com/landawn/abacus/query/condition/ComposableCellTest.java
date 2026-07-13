@@ -46,7 +46,7 @@ public class ComposableCellTest extends TestBase {
     public void testToString() {
         final TestComposableCell cell = new TestComposableCell(Operator.NOT, Filters.eq("userName", "ACTIVE"));
 
-        final String sql = cell.toString(NamingPolicy.SNAKE_CASE);
+        final String sql = cell.toSql(NamingPolicy.SNAKE_CASE);
 
         assertTrue(sql.contains("NOT"));
         assertTrue(sql.contains("user_name"));
@@ -102,13 +102,13 @@ public class ComposableCellTest extends TestBase {
         // Calling toString() must not NPE.
         final EmptyComposableCell cell = new EmptyComposableCell();
 
-        final String result = cell.toString(NamingPolicy.NO_CHANGE);
+        final String result = cell.toSql(NamingPolicy.NO_CHANGE);
         assertNotNull(result);
         // The operator should render as the literal "null" placeholder.
         assertTrue(result.contains("null"));
 
         // Also verify the no-arg toString() variant and a null NamingPolicy both work.
         assertNotNull(cell.toString());
-        assertNotNull(cell.toString(null));
+        assertNotNull(cell.toSql(null));
     }
 }

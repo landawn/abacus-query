@@ -323,16 +323,16 @@ public abstract class AbstractIn extends ComposableCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * In scalar = new In("status", Arrays.asList("active", "pending"));
-     * boolean b1 = scalar.rowValueConstructor();   // false
+     * boolean b1 = scalar.usesRowValueConstructor();   // false
      *
      * In rowValue = new In(Arrays.asList("firstName", "lastName"),
      *                      Arrays.asList(Arrays.asList("John", "Doe")));
-     * boolean b2 = rowValue.rowValueConstructor(); // true
+     * boolean b2 = rowValue.usesRowValueConstructor(); // true
      * }</pre>
      *
      * @return {@code true} if this condition renders in row value constructor form, {@code false} for the scalar form
      */
-    public boolean rowValueConstructor() {
+    public boolean usesRowValueConstructor() {
         return rowValueConstructor;
     }
 
@@ -376,7 +376,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
         final List<Object> parameters = new ArrayList<>(values.size());
 
-        if (rowValueConstructor()) {
+        if (usesRowValueConstructor()) {
             for (final Object tuple : values) {
                 for (final Object value : (Collection<?>) tuple) {
                     addParameter(parameters, value);
@@ -400,7 +400,7 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     /**
-     * Converts this condition to its string representation.
+     * Converts this condition to its SQL representation.
      * The format is {@code propName IN (v1, v2, ...)} for {@link In}, or
      * {@code propName NOT IN (v1, v2, ...)} for {@link NotIn}. If the operator is {@code null}
      * (only possible for an uninitialized instance), the literal {@code "null"} is rendered
@@ -410,24 +410,24 @@ public abstract class AbstractIn extends ComposableCondition {
      * <pre>{@code
      * // String values are single-quoted
      * In in = new In("status", Arrays.asList("active", "pending"));
-     * String s1 = in.toString(NamingPolicy.NO_CHANGE);   // "status IN ('active', 'pending')"
+     * String s1 = in.toSql(NamingPolicy.NO_CHANGE);   // "status IN ('active', 'pending')"
      *
      * // NotIn uses the NOT IN operator
      * NotIn notIn = new NotIn("status", Arrays.asList("active", "pending"));
-     * String s2 = notIn.toString(NamingPolicy.NO_CHANGE);   // "status NOT IN ('active', 'pending')"
+     * String s2 = notIn.toSql(NamingPolicy.NO_CHANGE);   // "status NOT IN ('active', 'pending')"
      *
      * // Numeric values are unquoted; a null naming policy uses NO_CHANGE
      * In nums = new In("id", Arrays.asList(1, 2, 3));
-     * String s3 = nums.toString(null);   // "id IN (1, 2, 3)"
+     * String s3 = nums.toSql(null);   // "id IN (1, 2, 3)"
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply to the property name(s);
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
-     * @return the string representation, e.g., {@code "status IN ('active', 'pending')"} or, for a
+     * @return the SQL representation, e.g., {@code "status IN ('active', 'pending')"} or, for a
      *         multi-column condition, {@code "(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))"}
      */
     @Override
-    public String toString(final NamingPolicy namingPolicy) {
+    public String toSql(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Operator op = operator();
         final String opStr = op == null ? Strings.NULL : op.toString();
@@ -435,7 +435,7 @@ public abstract class AbstractIn extends ComposableCondition {
         final int size = values == null ? 0 : values.size();
         final StringBuilder sb = new StringBuilder(16 + (size << 3));
 
-        if (rowValueConstructor()) {
+        if (usesRowValueConstructor()) {
             sb.append(SK._PARENTHESIS_L);
             int p = 0;
             for (final String propName : propNames) {

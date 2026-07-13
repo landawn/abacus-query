@@ -137,7 +137,7 @@ public class AbstractInSubQueryTest extends TestBase {
         final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("userId",
                 Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
 
-        final String sql = condition.toString(NamingPolicy.SNAKE_CASE);
+        final String sql = condition.toSql(NamingPolicy.SNAKE_CASE);
 
         assertTrue(sql.contains("user_id"));
         assertTrue(sql.contains("IN"));
@@ -149,7 +149,7 @@ public class AbstractInSubQueryTest extends TestBase {
         final TestAbstractInSubQuery condition = new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"),
                 Filters.subQuery("pairs", Arrays.asList("left_id", "right_id"), Filters.eq("status", "ACTIVE")));
 
-        final String sql = condition.toString(NamingPolicy.SNAKE_CASE);
+        final String sql = condition.toSql(NamingPolicy.SNAKE_CASE);
 
         assertTrue(sql.contains("(left_id, right_id)"));
         assertTrue(sql.contains("IN"));
@@ -184,7 +184,7 @@ public class AbstractInSubQueryTest extends TestBase {
     public void testDefaultConstructorToString() {
         final TestAbstractInSubQuery condition = new TestAbstractInSubQuery();
 
-        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        final String sql = condition.toSql(NamingPolicy.NO_CHANGE);
 
         assertNotNull(sql);
     }

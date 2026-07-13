@@ -142,7 +142,7 @@ public class SubQueryTest extends TestBase {
     public void testConstructorDoesNotDoubleWrapWhereExpression() {
         SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.expr("WHERE active = true"));
 
-        assertEquals("SELECT id FROM users WHERE active = true", subQuery.toString(NamingPolicy.NO_CHANGE));
+        assertEquals("SELECT id FROM users WHERE active = true", subQuery.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -240,7 +240,7 @@ public class SubQueryTest extends TestBase {
         String sql = "SELECT id FROM users WHERE status = 'active'";
         SubQuery subQuery = Filters.subQuery(sql);
 
-        String result = subQuery.toString(NamingPolicy.NO_CHANGE);
+        String result = subQuery.toSql(NamingPolicy.NO_CHANGE);
 
         assertEquals(sql, result);
     }
@@ -252,7 +252,7 @@ public class SubQueryTest extends TestBase {
 
         SubQuery subQuery = Filters.subQuery("users", props, condition);
 
-        String result = subQuery.toString(NamingPolicy.NO_CHANGE);
+        String result = subQuery.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(result.contains("SELECT"));
         assertTrue(result.contains("id"));
@@ -268,7 +268,7 @@ public class SubQueryTest extends TestBase {
 
         SubQuery subQuery = Filters.subQuery("products", props, (Condition) null);
 
-        String result = subQuery.toString(NamingPolicy.NO_CHANGE);
+        String result = subQuery.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(result.contains("SELECT"));
         assertTrue(result.contains("id"));
@@ -284,7 +284,7 @@ public class SubQueryTest extends TestBase {
 
         SubQuery subQuery = Filters.subQuery("users", props, condition);
 
-        String result = subQuery.toString(NamingPolicy.SNAKE_CASE);
+        String result = subQuery.toSql(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("first_name") || result.contains("firstName"));
     }
@@ -373,7 +373,7 @@ public class SubQueryTest extends TestBase {
 
         SubQuery subQuery = Filters.subQuery("users", props, condition);
 
-        String sql = subQuery.toString(NamingPolicy.NO_CHANGE);
+        String sql = subQuery.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(sql.contains("SELECT"));
         assertTrue(sql.contains("id"));
@@ -614,7 +614,7 @@ public class SubQueryTest extends TestBase {
         List<String> props = Arrays.asList("firstName", "lastName");
         SubQuery subQuery = Filters.subQuery("userAccount", props, Filters.eq("isActive", true));
 
-        String result = subQuery.toString(NamingPolicy.SNAKE_CASE);
+        String result = subQuery.toSql(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("first_name, last_name"));
         Assertions.assertTrue(result.contains("FROM user_account"));
         Assertions.assertTrue(result.contains("is_active"));
@@ -624,7 +624,7 @@ public class SubQueryTest extends TestBase {
     public void testToStringForEntityClassUsesTableMetadata() {
         SubQuery subQuery = Filters.subQuery(AuditEventEntity.class, Arrays.asList("eventId"), (Condition) null);
 
-        String result = subQuery.toString(NamingPolicy.SNAKE_CASE);
+        String result = subQuery.toSql(NamingPolicy.SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("SELECT event_id"));
         Assertions.assertTrue(result.contains("FROM audit_log_entries ale"));
@@ -705,7 +705,7 @@ public class SubQueryTest extends TestBase {
         // for the table name. The FROM clause should be omitted entirely in that case.
         SubQuery subQuery = new SubQuery();
 
-        String rendered = subQuery.toString(NamingPolicy.NO_CHANGE);
+        String rendered = subQuery.toSql(NamingPolicy.NO_CHANGE);
         Assertions.assertFalse(rendered.contains("FROM null"), "toString() must not include 'FROM null'; got: " + rendered);
         Assertions.assertFalse(rendered.contains("from null"), "toString() must not include 'from null'; got: " + rendered);
         // The rendered string should look like a benign placeholder, e.g. just "SELECT *".
@@ -716,7 +716,7 @@ public class SubQueryTest extends TestBase {
     public void testStructuredSubQueryUnaffectedByFix() {
         // Sanity check: well-formed structured subqueries still render their FROM clause.
         SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "name"), null);
-        String rendered = subQuery.toString(NamingPolicy.NO_CHANGE);
+        String rendered = subQuery.toSql(NamingPolicy.NO_CHANGE);
         Assertions.assertTrue(rendered.contains("FROM users"), "Structured subquery must still emit FROM users; got: " + rendered);
     }
 

@@ -276,11 +276,11 @@ public class ConditionTest extends TestBase {
         assertThrows(UnsupportedOperationException.class, () -> params.clear());
     }
 
-    // Tests for toString(NamingPolicy) method
+    // Tests for toSql(NamingPolicy) method
 
     @Test
-    void testToStringWithNamingPolicy() {
-        String result = simpleCondition.toString(NamingPolicy.SNAKE_CASE);
+    void testToSqlWithNamingPolicy() {
+        String result = simpleCondition.toSql(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -288,12 +288,12 @@ public class ConditionTest extends TestBase {
     }
 
     @Test
-    void testToStringWithDifferentNamingPolicies() {
+    void testToSqlWithDifferentNamingPolicies() {
         Condition camelCaseCondition = Filters.eq("firstName", "John");
 
-        String snakeCase = camelCaseCondition.toString(NamingPolicy.SNAKE_CASE);
-        String upperCase = camelCaseCondition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
-        String noChange = camelCaseCondition.toString(NamingPolicy.NO_CHANGE);
+        String snakeCase = camelCaseCondition.toSql(NamingPolicy.SNAKE_CASE);
+        String upperCase = camelCaseCondition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String noChange = camelCaseCondition.toSql(NamingPolicy.NO_CHANGE);
 
         assertNotNull(snakeCase);
         assertNotNull(upperCase);
@@ -305,8 +305,8 @@ public class ConditionTest extends TestBase {
     }
 
     @Test
-    void testToStringWithComplexCondition() {
-        String result = complexCondition.toString(NamingPolicy.SNAKE_CASE);
+    void testToSqlWithComplexCondition() {
+        String result = complexCondition.toSql(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
@@ -314,6 +314,12 @@ public class ConditionTest extends TestBase {
         assertTrue(result.contains("age"));
         assertTrue(result.contains("status"));
         assertTrue(result.contains("AND"));
+    }
+
+    @Test
+    void testToSqlIsAHardRename() throws NoSuchMethodException {
+        assertEquals(String.class, Condition.class.getMethod("toSql", NamingPolicy.class).getReturnType());
+        assertThrows(NoSuchMethodException.class, () -> Condition.class.getMethod("toString", NamingPolicy.class));
     }
 
     // Integration Tests

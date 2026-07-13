@@ -165,8 +165,8 @@ public class Junction extends ComposableCondition {
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
      *             or if any element in {@code conditions} is {@code null}, or if any
-     *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             is an {@code ON}/{@code USING} connector, is an
+     *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
+     *             an {@code ON}/{@code USING} connector, or an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
      *             (a blank {@link Expression} or empty {@link Junction})
      */
@@ -206,8 +206,8 @@ public class Junction extends ComposableCondition {
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
      *             or if any element in {@code conditions} is {@code null}, or if any
-     *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             is an {@code ON}/{@code USING} connector, is an
+     *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
+     *             an {@code ON}/{@code USING} connector, or an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
      *             (a blank {@link Expression} or empty {@link Junction})
      */
@@ -286,8 +286,7 @@ public class Junction extends ComposableCondition {
     private static Condition validateConstructorOperand(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
 
-        if (condition instanceof Criteria || isClause(condition) || containsOnOrUsing(condition) || isQuantifiedSubQueryOperand(condition)
-                || isEmptyPredicate(condition)) {
+        if (containsNonPredicateComponent(condition)) {
             throw new IllegalArgumentException("Condition with operator '" + condition.operator() + "' cannot be used in a junction constructor");
         }
 
@@ -339,7 +338,7 @@ public class Junction extends ComposableCondition {
     }
 
     /**
-     * Converts this junction to its string representation according to the specified naming policy.
+     * Converts this junction to its SQL representation according to the specified naming policy.
      * Each contained condition is wrapped in parentheses, joined by the junction operator, and the
      * entire result is itself wrapped in an outer pair of parentheses (e.g.
      * {@code "((cond1) AND (cond2) AND (cond3))"}). This ensures proper precedence in nested
@@ -351,28 +350,28 @@ public class Junction extends ComposableCondition {
      * Junction and = new Junction(Operator.AND,
      *     new Equal("status", "active"),
      *     new GreaterThan("age", 18));
-     * and.toString(NamingPolicy.NO_CHANGE);
+     * and.toSql(NamingPolicy.NO_CHANGE);
      * // returns "((status = 'active') AND (age > 18))"
      *
      * // Edge: a single condition is still doubly parenthesized
      * Junction single = new Junction(Operator.OR, new Equal("x", 1));
-     * single.toString(NamingPolicy.NO_CHANGE);   // returns "((x = 1))"
+     * single.toSql(NamingPolicy.NO_CHANGE);   // returns "((x = 1))"
      *
      * // Edge: naming policy rewrites property names
      * Junction snake = new Junction(Operator.AND, new Equal("firstName", "John"));
-     * snake.toString(NamingPolicy.SNAKE_CASE);   // returns "((first_name = 'John'))"
+     * snake.toSql(NamingPolicy.SNAKE_CASE);   // returns "((first_name = 'John'))"
      *
      * // Edge: an empty junction renders as an empty string
-     * new Junction(Operator.AND).toString(NamingPolicy.NO_CHANGE);   // returns ""
+     * new Junction(Operator.AND).toSql(NamingPolicy.NO_CHANGE);   // returns ""
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names within each condition;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
-     * @return the string representation with proper parentheses and spacing, or an empty string if
+     * @return the SQL representation with proper parentheses and spacing, or an empty string if
      *         no non-{@code null} conditions are present
      */
     @Override
-    public String toString(final NamingPolicy namingPolicy) {
+    public String toSql(final NamingPolicy namingPolicy) {
         if (N.isEmpty(conditions)) {
             return Strings.EMPTY;
         }
@@ -397,7 +396,7 @@ public class Junction extends ComposableCondition {
                 }
 
                 sb.append(_PARENTHESIS_L);
-                sb.append(condition.toString(namingPolicy));
+                sb.append(condition.toSql(namingPolicy));
                 sb.append(_PARENTHESIS_R);
 
                 isFirst = false;

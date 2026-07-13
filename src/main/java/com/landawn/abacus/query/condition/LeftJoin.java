@@ -93,9 +93,8 @@ public class LeftJoin extends Join {
 
     /**
      * Creates a LEFT JOIN clause for the specified table or entity without a join condition.
-     * Most databases require an {@code ON} or {@code USING} clause for a LEFT JOIN; supply
-     * the condition separately (for example by combining this with another clause) or use
-     * {@link #LeftJoin(String, Condition)} instead.
+     * Most databases require an {@code ON} or {@code USING} clause for a LEFT JOIN; use
+     * {@link #LeftJoin(String, Condition)} when a condition is required.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -150,9 +149,9 @@ public class LeftJoin extends Join {
      *
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param joinCondition the condition appended after the join target. Use {@link On} (or the deprecated {@link Using}) when the SQL should
-     *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is a
-     *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *            include those keywords. A non-empty predicate is allowed; {@code joinCondition} itself may be {@code null}.
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is or contains a
+     *                                  {@link Criteria}, a null operator, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
      *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
@@ -183,9 +182,10 @@ public class LeftJoin extends Join {
      *
      * @param joinEntities the collection of tables or entities to join with.
      * @param joinCondition the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using}) when the SQL should
-     *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
+     *            include those keywords. A non-empty predicate is allowed; {@code joinCondition} itself may be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
-     *                                  or if {@code joinCondition} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
+     *                                  an {@link Expression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
      *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */

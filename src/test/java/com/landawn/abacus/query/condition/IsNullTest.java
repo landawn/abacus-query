@@ -41,7 +41,7 @@ public class IsNullTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         IsNull condition = new IsNull("email");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("email"));
         assertTrue(result.contains("IS"));
         assertTrue(result.contains("NULL"));
@@ -50,7 +50,7 @@ public class IsNullTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         IsNull condition = new IsNull("assignedTo");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("assigned_to"));
     }
 
@@ -78,7 +78,7 @@ public class IsNullTest extends TestBase {
     @Test
     public void testUseCaseScenario_MissingEmail() {
         IsNull emailCheck = new IsNull("email");
-        assertTrue(emailCheck.toString(NamingPolicy.NO_CHANGE).contains("IS NULL"));
+        assertTrue(emailCheck.toSql(NamingPolicy.NO_CHANGE).contains("IS NULL"));
     }
 
     @Test
@@ -90,7 +90,7 @@ public class IsNullTest extends TestBase {
     @Test
     public void testUseCaseScenario_OptionalFields() {
         IsNull middleNameCheck = new IsNull("middle_name");
-        assertNotNull(middleNameCheck.toString(NamingPolicy.NO_CHANGE));
+        assertNotNull(middleNameCheck.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -206,7 +206,7 @@ public class IsNullTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         IsNull condition = new IsNull("birthDate");
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("BIRTH_DATE"));
         Assertions.assertTrue(result.contains("IS"));

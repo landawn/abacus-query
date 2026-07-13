@@ -82,7 +82,7 @@ public class AllTest extends TestBase {
     public void testToString_NoChange() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
         All condition = new All(subQuery);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("ALL"));
         assertTrue(result.contains("SELECT"));
     }
@@ -92,7 +92,7 @@ public class AllTest extends TestBase {
         Condition whereCondition = new GreaterThan("rating", 4);
         SubQuery subQuery = Filters.subQuery("reviews", Arrays.asList("score"), whereCondition);
         All condition = new All(subQuery);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("ALL"));
         assertTrue(result.contains("SELECT"));
         assertTrue(result.contains("reviews"));
@@ -170,7 +170,7 @@ public class AllTest extends TestBase {
         // price > ALL (SELECT price FROM competitor_products)
         SubQuery subQuery = Filters.subQuery("SELECT price FROM competitor_products WHERE product_type = 'Premium'");
         All condition = new All(subQuery);
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("ALL"));
         assertTrue(sql.contains("competitor_products"));
     }
@@ -188,7 +188,7 @@ public class AllTest extends TestBase {
         // Find employees earning more than ALL managers
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE is_manager = true");
         All condition = new All(subQuery);
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("ALL"));
     }
 
@@ -234,7 +234,7 @@ public class AllTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT minPrice FROM priceRanges");
         All all = Filters.all(subQuery);
 
-        String result = all.toString(NamingPolicy.SNAKE_CASE);
+        String result = all.toSql(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("ALL"));
     }
 

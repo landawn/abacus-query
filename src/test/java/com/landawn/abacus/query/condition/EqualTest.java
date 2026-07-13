@@ -90,7 +90,7 @@ public class EqualTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         Equal condition = new Equal("userName", "Alice");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("userName"));
         assertTrue(result.contains("Alice"));
         assertTrue(result.contains("="));
@@ -99,7 +99,7 @@ public class EqualTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         Equal condition = new Equal("userName", "Bob");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 
@@ -183,14 +183,14 @@ public class EqualTest extends TestBase {
     @Test
     public void testStringValueQuoting() {
         Equal condition = new Equal("name", "John");
-        String str = condition.toString(NamingPolicy.NO_CHANGE);
+        String str = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("'John'"));
     }
 
     @Test
     public void testNumericValueNoQuoting() {
         Equal condition = new Equal("age", 25);
-        String str = condition.toString(NamingPolicy.NO_CHANGE);
+        String str = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("25"));
         assertFalse(str.contains("'25'"));
     }
@@ -286,7 +286,7 @@ public class EqualTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         Equal eq = Filters.eq("firstName", "Jane");
-        String result = eq.toString(NamingPolicy.SNAKE_CASE);
+        String result = eq.toSql(NamingPolicy.SNAKE_CASE);
         Assertions.assertEquals("first_name = 'Jane'", result);
     }
 

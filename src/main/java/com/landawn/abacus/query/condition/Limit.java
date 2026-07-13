@@ -79,7 +79,7 @@ public class Limit extends Clause {
 
     private String literal;
 
-    private boolean resolved;
+    private boolean isResolved;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -148,7 +148,7 @@ public class Limit extends Clause {
 
         this.count = count;
         this.offset = offset;
-        this.resolved = true;
+        this.isResolved = true;
     }
 
     /**
@@ -159,7 +159,7 @@ public class Limit extends Clause {
      * {@code ROW}/{@code ROWS}, {@code ONLY}) are upper-cased (parameter names inside {@code #{...}} or after
      * {@code :} keep their original case). If the expression starts with a digit, {@code '?'}, {@code ':'}, or
      * <code>"#{"</code>, a {@code "LIMIT "} prefix is added automatically; otherwise it is used as-is. This
-     * formatted string is what {@link #literal()} and {@link #toString(NamingPolicy)} return.</p>
+     * formatted string is what {@link #literal()} and {@link #toSql(NamingPolicy)} return.</p>
      *
      * <p><b>Accepted grammar.</b> Each number slot below is either an integer literal or a {@code ?} /
      * {@code :name} / <code>#{name}</code> placeholder:</p>
@@ -185,7 +185,7 @@ public class Limit extends Clause {
      * {@code OFFSET}/{@code FETCH} (Oracle, DB2 or SQL Server, per
      * {@link com.landawn.abacus.query.SqlDialect.ProductInfo}) and it is a generic
      * {@code LIMIT count [OFFSET offset]} form; otherwise it is emitted verbatim.
-     * {@link #toString(NamingPolicy)} itself is dialect-agnostic and always returns the formatted literal.</p>
+     * {@link #toSql(NamingPolicy)} itself is dialect-agnostic and always returns the formatted literal.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -233,7 +233,7 @@ public class Limit extends Clause {
         this.literal = prepared.literal;
         this.count = prepared.count;
         this.offset = prepared.offset;
-        this.resolved = prepared.resolved;
+        this.isResolved = prepared.resolved;
     }
 
     /**
@@ -408,8 +408,8 @@ public class Limit extends Clause {
      *
      * @return {@code true} for numeric limits and parsed numeric expressions; {@code false} for opaque expressions
      */
-    public boolean resolved() {
-        return resolved;
+    public boolean isResolved() {
+        return isResolved;
     }
 
     /**
@@ -418,7 +418,7 @@ public class Limit extends Clause {
      * @return the resolved count, or an empty optional for an opaque expression
      */
     public OptionalInt resolvedCount() {
-        return resolved() ? OptionalInt.of(count) : OptionalInt.empty();
+        return isResolved() ? OptionalInt.of(count) : OptionalInt.empty();
     }
 
     /**
@@ -427,7 +427,7 @@ public class Limit extends Clause {
      * @return the resolved offset, or an empty optional for an opaque expression
      */
     public OptionalInt resolvedOffset() {
-        return resolved() ? OptionalInt.of(offset) : OptionalInt.empty();
+        return isResolved() ? OptionalInt.of(offset) : OptionalInt.empty();
     }
 
     /**
@@ -457,7 +457,7 @@ public class Limit extends Clause {
     }
 
     /**
-     * Converts this LIMIT clause to its string representation according to the specified naming policy.
+     * Converts this LIMIT clause to its SQL representation according to the specified naming policy.
      * The output format depends on how the Limit was constructed:
      * <ul>
      *   <li>String expression (non-empty {@code literal}): returns the formatted literal as-is (whitespace
@@ -465,30 +465,30 @@ public class Limit extends Clause {
      *       {@link #Limit(String)}), even when it was parsed into concrete count/offset</li>
      *   <li>Uninitialized instance (no expression and {@code null} operator, e.g. produced by the
      *       package-private default constructor during Kryo deserialization): returns the literal
-     *       {@code "null"} (consistent with {@link Cell#toString(NamingPolicy)}), not {@code "LIMIT 0"}</li>
+     *       {@code "null"} (consistent with {@link Cell#toSql(NamingPolicy)}), not {@code "LIMIT 0"}</li>
      *   <li>Count only (offset {@code == 0}): returns {@code "LIMIT count"}</li>
      *   <li>Count with offset ({@code offset > 0}): returns {@code "LIMIT count OFFSET offset"}</li>
      * </ul>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * new Limit(10).toString(NamingPolicy.NO_CHANGE);            // returns "LIMIT 10"
-     * new Limit(10, 20).toString(NamingPolicy.NO_CHANGE);        // returns "LIMIT 10 OFFSET 20"
+     * new Limit(10).toSql(NamingPolicy.NO_CHANGE);            // returns "LIMIT 10"
+     * new Limit(10, 20).toSql(NamingPolicy.NO_CHANGE);        // returns "LIMIT 10 OFFSET 20"
      *
      * // Edge: a numeric-prefixed expression keeps its auto-prepended "LIMIT "
-     * new Limit("10 OFFSET 20").toString(NamingPolicy.NO_CHANGE); // returns "LIMIT 10 OFFSET 20"
+     * new Limit("10 OFFSET 20").toSql(NamingPolicy.NO_CHANGE); // returns "LIMIT 10 OFFSET 20"
      *
      * // Edge: a non-numeric expression is rendered verbatim (no "LIMIT " prepend)
-     * new Limit("FETCH FIRST 10 ROWS ONLY").toString(NamingPolicy.NO_CHANGE);
+     * new Limit("FETCH FIRST 10 ROWS ONLY").toSql(NamingPolicy.NO_CHANGE);
      * // returns "FETCH FIRST 10 ROWS ONLY"
      * }</pre>
      *
      * @param namingPolicy the naming policy parameter is currently ignored — LIMIT operates on numeric
      *                      values or a raw expression, not property names
-     * @return the string representation of this LIMIT clause; {@code "null"} for an uninitialized instance
+     * @return the SQL representation of this LIMIT clause; {@code "null"} for an uninitialized instance
      */
     @Override
-    public String toString(final NamingPolicy namingPolicy) {
+    public String toSql(final NamingPolicy namingPolicy) {
         if (Strings.isNotEmpty(literal)) {
             return literal;
         }

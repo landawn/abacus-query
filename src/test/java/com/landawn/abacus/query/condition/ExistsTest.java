@@ -74,7 +74,7 @@ public class ExistsTest extends TestBase {
     public void testToString_NoChange() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE status = 'active'");
         Exists condition = new Exists(subQuery);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertEquals("EXISTS (SELECT 1 FROM orders WHERE status = 'active')", result);
     }
 
@@ -83,7 +83,7 @@ public class ExistsTest extends TestBase {
         Condition whereCondition = new Equal("active", true);
         SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id", "name"), whereCondition);
         Exists condition = new Exists(subQuery);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("EXISTS"));
         assertTrue(result.contains("SELECT"));
         assertTrue(result.contains("users"));
@@ -158,7 +158,7 @@ public class ExistsTest extends TestBase {
     public void testCorrelatedSubQuery() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders o WHERE o.customer_id = customers.id");
         Exists condition = new Exists(subQuery);
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("EXISTS"));
         assertTrue(sql.contains("customer_id"));
     }
@@ -168,7 +168,7 @@ public class ExistsTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE o.status = 'active'");
         Exists condition = new Exists(subQuery);
         assertNotNull(condition);
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("JOIN"));
     }
 
@@ -205,7 +205,7 @@ public class ExistsTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orderItems WHERE orderId = orders.id");
         Exists exists = Filters.exists(subQuery);
 
-        String result = exists.toString(NamingPolicy.SNAKE_CASE);
+        String result = exists.toSql(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("EXISTS"));
     }
 

@@ -48,7 +48,7 @@ public class MinusTest extends TestBase {
     public void testToString() {
         SubQuery subQuery = Filters.subQuery("SELECT product_id FROM inventory");
         Minus minus = new Minus(subQuery);
-        String result = minus.toString(NamingPolicy.NO_CHANGE);
+        String result = minus.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("MINUS"));
     }
 

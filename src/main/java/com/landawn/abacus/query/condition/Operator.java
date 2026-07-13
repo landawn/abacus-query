@@ -27,7 +27,7 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>This enum defines all the operators that can be used in SQL conditions,
  * including comparison operators, composable operators, join types, and SQL clauses.
- * Each operator has a string representation that corresponds to its SQL syntax.
+ * Each operator has a SQL representation that corresponds to its SQL syntax.
  * The {@link #of(String)} method provides constant-time, case-insensitive lookup
  * backed by a precomputed map.</p>
  *
@@ -366,7 +366,7 @@ public enum Operator {
     EMPTY(Strings.EMPTY);
 
     /**
-     * The string representation of this operator.
+     * The SQL representation of this operator.
      */
     private final String sqlToken;
 
@@ -392,16 +392,16 @@ public enum Operator {
     }
 
     /**
-     * Creates an Operator with the specified string representation.
+     * Creates an Operator with the specified SQL representation.
      *
-     * @param sqlToken the SQL string representation of this operator
+     * @param sqlToken the SQL SQL representation of this operator
      */
     Operator(final String sqlToken) {
         this.sqlToken = sqlToken;
     }
 
     /**
-     * Returns an Operator by its string representation.
+     * Returns an Operator by its SQL representation.
      *
      * <p>This method performs a case-insensitive lookup against a precomputed map built once
      * during class initialization, so resolution is a constant-time operation. It accepts both
@@ -431,7 +431,7 @@ public enum Operator {
      * Operator nil = Operator.of(null);             // null
      * }</pre>
      *
-     * @param name the string representation of the operator. May be {@code null}.
+     * @param name the SQL representation of the operator. May be {@code null}.
      * @return the corresponding Operator enum value, or {@code null} if {@code name} is {@code null} or not a known token/name
      */
     public static Operator of(final String name) {
@@ -449,7 +449,7 @@ public enum Operator {
     }
 
     /**
-     * Returns the SQL string representation of this operator.
+     * Returns the SQL SQL representation of this operator.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -461,14 +461,14 @@ public enum Operator {
      * String emptyToken = Operator.EMPTY.sqlToken();        // "" (empty placeholder operator)
      * }</pre>
      *
-     * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
+     * @return the SQL SQL representation of this operator (e.g., "=", "AND", "LIKE")
      */
     public String sqlToken() {
         return sqlToken;
     }
 
     /**
-     * Returns the SQL string representation of this operator.
+     * Returns the SQL SQL representation of this operator.
      * This is equivalent to calling {@link #sqlToken()}.
      *
      * <p><b>Usage Examples:</b></p>
@@ -483,7 +483,7 @@ public enum Operator {
      * boolean same = Operator.IN.toString().equals(Operator.IN.sqlToken()); // true
      * }</pre>
      *
-     * @return the SQL string representation of this operator (e.g., "=", "AND", "LIKE")
+     * @return the SQL SQL representation of this operator (e.g., "=", "AND", "LIKE")
      */
     @Override
     public String toString() {

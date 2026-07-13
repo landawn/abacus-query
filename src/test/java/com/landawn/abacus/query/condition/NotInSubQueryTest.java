@@ -130,7 +130,7 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         NotInSubQuery condition = new NotInSubQuery("userId", subQuery);
 
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("userId"));
         assertTrue(result.contains("NOT IN"));
     }
@@ -141,7 +141,7 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
         NotInSubQuery condition = new NotInSubQuery(props, subQuery);
 
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("firstName"));
         assertTrue(result.contains("lastName"));
         assertTrue(result.contains("NOT IN"));
@@ -195,7 +195,7 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery deletedItems = Filters.subQuery("SELECT id FROM deleted_items");
         NotInSubQuery condition = new NotInSubQuery("itemId", deletedItems);
 
-        assertTrue(condition.toString(NamingPolicy.NO_CHANGE).contains("itemId"));
+        assertTrue(condition.toSql(NamingPolicy.NO_CHANGE).contains("itemId"));
     }
 
     @Test
@@ -391,7 +391,7 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM inactive_users");
         NotInSubQuery condition = Filters.notIn("userId", subQuery);
 
-        String result = condition.toString(NamingPolicy.CAMEL_CASE);
+        String result = condition.toSql(NamingPolicy.CAMEL_CASE);
         Assertions.assertEquals("userId NOT IN (SELECT id FROM inactive_users)", result);
     }
 
@@ -401,7 +401,7 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT fname, lname FROM blacklist");
         NotInSubQuery condition = Filters.notIn(propNames, subQuery);
 
-        String result = condition.toString(NamingPolicy.CAMEL_CASE);
+        String result = condition.toSql(NamingPolicy.CAMEL_CASE);
         Assertions.assertEquals("(firstName, lastName) NOT IN (SELECT fname, lname FROM blacklist)", result);
     }
 
@@ -410,7 +410,7 @@ public class NotInSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         NotInSubQuery condition = Filters.notIn("user_id", subQuery);
 
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
         Assertions.assertEquals("USER_ID NOT IN (SELECT id FROM users)", result);
     }
 }

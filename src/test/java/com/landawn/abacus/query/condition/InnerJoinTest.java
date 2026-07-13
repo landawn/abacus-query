@@ -84,7 +84,7 @@ public class InnerJoinTest extends TestBase {
     @Test
     public void testToString_Simple() {
         InnerJoin join = new InnerJoin("orders");
-        String result = join.toString(NamingPolicy.NO_CHANGE);
+        String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("INNER JOIN"));
         assertTrue(result.contains("orders"));
     }
@@ -92,7 +92,7 @@ public class InnerJoinTest extends TestBase {
     @Test
     public void testToString_WithCondition() {
         InnerJoin join = new InnerJoin("orders o", new Equal("c.id", "o.customer_id"));
-        String result = join.toString(NamingPolicy.NO_CHANGE);
+        String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("INNER JOIN"));
         assertTrue(result.contains("orders o"));
     }
@@ -140,7 +140,7 @@ public class InnerJoinTest extends TestBase {
     @Test
     public void testWithAlias() {
         InnerJoin join = new InnerJoin("order_details od");
-        String result = join.toString(NamingPolicy.NO_CHANGE);
+        String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("order_details od"));
     }
 
@@ -259,7 +259,7 @@ public class InnerJoinTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Condition condition = Filters.eq("productId", Filters.expr("categoryId"));
         InnerJoin join = new InnerJoin("productCategory", condition);
-        String result = join.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = join.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("INNER JOIN"));
         Assertions.assertTrue(result.contains("productCategory"));

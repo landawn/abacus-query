@@ -24,6 +24,12 @@ import com.landawn.abacus.util.NamingPolicy;
  */
 @Tag("2025")
 public class JunctionTest extends TestBase {
+    private static final class TestComposableWrapper extends ComposableCell {
+        TestComposableWrapper(final Condition condition) {
+            super(Operator.NOT, condition);
+        }
+    }
+
     @Test
     public void testConstructorWithOperatorAndConditions() {
         Equal cond1 = Filters.eq("status", "active");
@@ -69,6 +75,17 @@ public class JunctionTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.using("id")));
         assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("ON a.id = b.a_id")));
         assertThrows(IllegalArgumentException.class, () -> Filters.eq("active", true).and(Filters.expr("USING (id)")));
+    }
+
+    @Test
+    public void testConstructorRejectsWrappedNonPredicateComponents() {
+        final SubQuery subQuery = new SubQuery("SELECT id FROM users");
+
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, new TestComposableWrapper(new OrderBy("name"))));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new TestComposableWrapper(new Any(subQuery))));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, new TestComposableWrapper(new Expression(" "))));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new Equal()));
+        Assertions.assertDoesNotThrow(() -> new Junction(Operator.AND, new TestComposableWrapper(new Equal("id", 1))));
     }
 
     @Test
@@ -138,7 +155,7 @@ public class JunctionTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
 
-        String sql = junction.toString(NamingPolicy.SNAKE_CASE);
+        String sql = junction.toSql(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(sql);
         assertTrue(sql.contains("AND"));
@@ -150,7 +167,7 @@ public class JunctionTest extends TestBase {
     public void testToStringEmpty() {
         Junction junction = new Junction(Operator.AND);
 
-        String sql = junction.toString(NamingPolicy.NO_CHANGE);
+        String sql = junction.toSql(NamingPolicy.NO_CHANGE);
 
         assertEquals("", sql);
     }
@@ -159,7 +176,7 @@ public class JunctionTest extends TestBase {
     public void testToStringWithParentheses() {
         Junction junction = new Junction(Operator.OR, Filters.eq("status", "active"), Filters.eq("status", "pending"));
 
-        String sql = junction.toString(NamingPolicy.NO_CHANGE);
+        String sql = junction.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(sql.startsWith("("));
         assertTrue(sql.endsWith(")"));
@@ -172,7 +189,7 @@ public class JunctionTest extends TestBase {
 
         Junction outer = new Junction(Operator.AND, Filters.eq("status", "active"), inner);
 
-        String sql = outer.toString(NamingPolicy.NO_CHANGE);
+        String sql = outer.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(sql.contains("AND"));
         assertTrue(sql.contains("OR"));
@@ -260,7 +277,7 @@ public class JunctionTest extends TestBase {
                 Filters.like("name", "John%"));
 
         assertEquals(4, junction.conditions().size());
-        String sql = junction.toString(NamingPolicy.NO_CHANGE);
+        String sql = junction.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("AND"));
     }
 
@@ -269,7 +286,7 @@ public class JunctionTest extends TestBase {
         Junction junction = new Junction(Operator.OR, Filters.eq("priority", 1), Filters.eq("urgent", true), Filters.lt("deadline", "2025-01-01"));
 
         assertEquals(3, junction.conditions().size());
-        String sql = junction.toString(NamingPolicy.NO_CHANGE);
+        String sql = junction.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("OR"));
     }
 
@@ -278,7 +295,7 @@ public class JunctionTest extends TestBase {
         Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"));
 
         assertEquals(1, junction.conditions().size());
-        assertFalse(junction.toString(NamingPolicy.NO_CHANGE).isEmpty());
+        assertFalse(junction.toSql(NamingPolicy.NO_CHANGE).isEmpty());
     }
 
     @Test
@@ -315,7 +332,7 @@ public class JunctionTest extends TestBase {
         junction.conditions.add(null);
         junction.conditions.add(Filters.eq("b", 2));
 
-        String result = junction.toString(NamingPolicy.NO_CHANGE);
+        String result = junction.toSql(NamingPolicy.NO_CHANGE);
         assertNotNull(result);
         assertTrue(result.contains("a"));
         assertTrue(result.contains("b"));
@@ -349,7 +366,7 @@ public class JunctionTest extends TestBase {
         junction.conditions.add(null);
         junction.conditions.add(null);
 
-        String result = junction.toString(NamingPolicy.NO_CHANGE);
+        String result = junction.toSql(NamingPolicy.NO_CHANGE);
 
         assertNotNull(result);
         assertEquals("", result);
@@ -359,10 +376,10 @@ public class JunctionTest extends TestBase {
     public void testDefaultConstructorToString() {
         Junction junction = new Junction();
 
-        assertNotNull(junction.toString(NamingPolicy.NO_CHANGE));
+        assertNotNull(junction.toSql(NamingPolicy.NO_CHANGE));
         assertNotNull(junction.toString());
-        assertNotNull(junction.toString(null));
-        assertEquals("", junction.toString(NamingPolicy.NO_CHANGE));
+        assertNotNull(junction.toSql(null));
+        assertEquals("", junction.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -373,7 +390,7 @@ public class JunctionTest extends TestBase {
         junction.conditions.add(Filters.eq("a", 1));
         junction.conditions.add(Filters.eq("b", 2));
 
-        String result = junction.toString(NamingPolicy.NO_CHANGE);
+        String result = junction.toSql(NamingPolicy.NO_CHANGE);
         assertNotNull(result);
         // The rendering should include both conditions and a "null" placeholder for the operator
         assertTrue(result.contains("a"));

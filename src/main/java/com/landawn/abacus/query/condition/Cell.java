@@ -152,39 +152,39 @@ public abstract class Cell extends AbstractCondition {
     }
 
     /**
-     * Converts this {@code Cell} condition to its string representation using the specified naming policy.
+     * Converts this {@code Cell} condition to its SQL representation using the specified naming policy.
      * The output format is {@code OPERATOR condition_string} (separated by a single space), or just
-     * {@code OPERATOR} if the wrapped condition is {@code null}. Unlike {@link ComposableCell#toString(NamingPolicy)},
+     * {@code OPERATOR} if the wrapped condition is {@code null}. Unlike {@link ComposableCell#toSql(NamingPolicy)},
      * the inner condition is <em>not</em> enclosed in parentheses. If the operator is {@code null}
      * (only possible for an uninitialized instance), the literal {@code "null"} is rendered in place of the operator.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Where where = new Where(Filters.eq("active", true));
-     * where.toString(NamingPolicy.NO_CHANGE);   // returns "WHERE active = true"
+     * where.toSql(NamingPolicy.NO_CHANGE);   // returns "WHERE active = true"
      *
      * On onCond = new On("a.id", "b.id");
-     * onCond.toString(NamingPolicy.NO_CHANGE);  // returns "ON a.id = b.id" (inner NOT parenthesized)
+     * onCond.toSql(NamingPolicy.NO_CHANGE);  // returns "ON a.id = b.id" (inner NOT parenthesized)
      *
      * // Edge: naming policy rewrites property names in the wrapped condition
      * Where w = new Where(Filters.eq("firstName", "John"));
-     * w.toString(NamingPolicy.SNAKE_CASE);      // returns "WHERE first_name = 'John'"
+     * w.toSql(NamingPolicy.SNAKE_CASE);      // returns "WHERE first_name = 'John'"
      *
      * // Edge: an uninitialized Cell (null operator) renders the literal "null" for the operator
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names within the wrapped condition;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
-     * @return a string representation of this Cell
+     * @return a SQL representation of this Cell
      */
     @Override
-    public String toString(final NamingPolicy namingPolicy) {
+    public String toSql(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Operator op = operator();
 
         // Note: unlike ComposableCell, the wrapped condition is NOT parenthesized; a null naming
         // policy is normalized to NamingPolicy.NO_CHANGE before being applied to the wrapped condition.
-        return (op == null ? Strings.NULL : op.toString()) + ((condition == null) ? Strings.EMPTY : SK._SPACE + condition.toString(effectiveNamingPolicy));
+        return (op == null ? Strings.NULL : op.toString()) + ((condition == null) ? Strings.EMPTY : SK._SPACE + condition.toSql(effectiveNamingPolicy));
     }
 
     /**

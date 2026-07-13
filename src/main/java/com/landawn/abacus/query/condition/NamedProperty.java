@@ -1202,8 +1202,8 @@ public class NamedProperty {
     }
 
     /**
-     * Returns the string representation of this NamedProperty.
-     * The string representation is simply the property name itself.
+     * Returns the SQL representation of this NamedProperty.
+     * The SQL representation is simply the property name itself.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

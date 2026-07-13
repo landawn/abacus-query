@@ -95,7 +95,7 @@ public class AndTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         And junction = new And(new Equal("a", 1), new Equal("b", 2));
-        String result = junction.toString(NamingPolicy.NO_CHANGE);
+        String result = junction.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("AND"));
         assertTrue(result.contains("a"));
         assertTrue(result.contains("b"));
@@ -104,14 +104,14 @@ public class AndTest extends TestBase {
     @Test
     public void testToString_EmptyConditions() {
         And junction = new And();
-        String result = junction.toString(NamingPolicy.NO_CHANGE);
+        String result = junction.toSql(NamingPolicy.NO_CHANGE);
         assertEquals("", result);
     }
 
     @Test
     public void testToString_SingleCondition() {
         And junction = new And(new Equal("status", "active"));
-        String result = junction.toString(NamingPolicy.NO_CHANGE);
+        String result = junction.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("status"));
         assertFalse(result.contains("AND"));
     }
@@ -308,7 +308,7 @@ public class AndTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         And and = Filters.and(Filters.eq("firstName", "Jane"), Filters.le("yearOfBirth", 2000));
 
-        String result = and.toString(NamingPolicy.SNAKE_CASE);
+        String result = and.toSql(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("first_name = 'Jane'"));
         Assertions.assertTrue(result.contains("year_of_birth <= 2000"));
     }

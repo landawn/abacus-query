@@ -89,7 +89,7 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         NotEqual condition = new NotEqual("userName", "Alice");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("userName"));
         assertTrue(result.contains("Alice"));
     }
@@ -97,7 +97,7 @@ public class NotEqualTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         NotEqual condition = new NotEqual("userName", "Bob");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 
@@ -247,7 +247,7 @@ public class NotEqualTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         NotEqual notEqual = Filters.ne("user_status", "banned");
 
-        String result = notEqual.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = notEqual.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
         Assertions.assertTrue(result.contains("USER_STATUS"));
         Assertions.assertTrue(result.contains("!="));
         Assertions.assertTrue(result.contains("banned"));

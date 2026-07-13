@@ -89,7 +89,7 @@ public class LessThanOrEqualTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         LessThanOrEqual condition = new LessThanOrEqual("userName", "Alice");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("userName"));
         assertTrue(result.contains("Alice"));
     }
@@ -97,7 +97,7 @@ public class LessThanOrEqualTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         LessThanOrEqual condition = new LessThanOrEqual("userName", "Bob");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 
@@ -255,7 +255,7 @@ public class LessThanOrEqualTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         LessThanOrEqual condition = new LessThanOrEqual("totalAmount", 5000);
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("TOTAL_AMOUNT"));
         Assertions.assertTrue(result.contains("<="));

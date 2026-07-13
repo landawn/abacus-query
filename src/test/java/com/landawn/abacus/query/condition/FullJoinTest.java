@@ -84,7 +84,7 @@ public class FullJoinTest extends TestBase {
     @Test
     public void testToString_Simple() {
         FullJoin join = new FullJoin("departments");
-        String result = join.toString(NamingPolicy.NO_CHANGE);
+        String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("FULL JOIN"));
         assertTrue(result.contains("departments"));
     }
@@ -92,7 +92,7 @@ public class FullJoinTest extends TestBase {
     @Test
     public void testToString_WithCondition() {
         FullJoin join = new FullJoin("employees", new Equal("departments.id", "employees.dept_id"));
-        String result = join.toString(NamingPolicy.NO_CHANGE);
+        String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("FULL JOIN"));
         assertTrue(result.contains("employees"));
     }
@@ -272,7 +272,7 @@ public class FullJoinTest extends TestBase {
         Equal eq = Filters.eq("departmentId", Filters.expr("employeeDeptId"));
         FullJoin join = Filters.fullJoin("employees", eq);
 
-        String result = join.toString(NamingPolicy.SNAKE_CASE);
+        String result = join.toSql(NamingPolicy.SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("FULL JOIN"));
         Assertions.assertTrue(result.contains("employees"));

@@ -71,7 +71,7 @@ public class IsNotNaNTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         IsNotNaN condition = new IsNotNaN("temperature");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("temperature"));
         assertTrue(result.contains("IS NOT"));
         assertTrue(result.contains("NAN"));
@@ -80,14 +80,14 @@ public class IsNotNaNTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         IsNotNaN condition = new IsNotNaN("sensorValue");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("sensor_value"));
     }
 
     @Test
     public void testToString_ScreamingSnakeCase() {
         IsNotNaN condition = new IsNotNaN("fieldName");
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
         assertTrue(result.contains("FIELD_NAME"));
     }
 
@@ -180,7 +180,7 @@ public class IsNotNaNTest extends TestBase {
     public void testComplexPropertyName() {
         IsNotNaN condition = new IsNotNaN("user.profile.score");
         assertEquals("user.profile.score", condition.propName());
-        String str = condition.toString(NamingPolicy.NO_CHANGE);
+        String str = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("user.profile.score"));
     }
 
@@ -227,7 +227,7 @@ public class IsNotNaNTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         IsNotNaN condition = new IsNotNaN("computedValue");
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("COMPUTED_VALUE"));
         Assertions.assertTrue(result.contains("IS NOT"));

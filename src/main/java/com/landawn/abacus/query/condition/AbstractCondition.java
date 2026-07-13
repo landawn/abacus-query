@@ -34,7 +34,7 @@ import com.landawn.abacus.util.Strings;
 /**
  * Abstract base class for all condition implementations.
  * This class provides common functionality for conditions including operator storage,
- * utility methods for string representation, and property name formatting.
+ * utility methods for SQL representation, and property name formatting.
  *
  * <p>{@code AbstractCondition} serves as the foundation for the condition hierarchy, implementing
  * the {@link Condition} interface. Logical-composition helpers ({@code and()}, {@code or()},
@@ -47,7 +47,7 @@ import com.landawn.abacus.util.Strings;
  * <ul>
  *   <li>Immutable operator storage after construction</li>
  *   <li>Static utility helpers for parameter and property-name formatting (used by subclasses)</li>
- *   <li>Default {@link #toString()} that delegates to {@link #toString(NamingPolicy)} with
+ *   <li>Default {@link #toString()} that delegates to {@link #toSql(NamingPolicy)} with
  *       {@link NamingPolicy#NO_CHANGE}</li>
  * </ul>
  *
@@ -192,18 +192,18 @@ public abstract class AbstractCondition implements Condition {
                 return false;
             }
 
-            final String firstWord = SqlParser.nextWord(literal, 0);
+            final String firstToken = SqlParser.nextToken(literal, 0);
 
-            if (isClause(firstWord)) {
+            if (isClause(firstToken)) {
                 return true;
             }
 
-            // nextWordEnd mirrors nextWord's comment-skipping scan; a raw indexOf(firstWord) could bind to
-            // an earlier occurrence of the word inside a leading SQL comment and misread the second word.
-            final int secondWordStart = SqlParser.nextWordEnd(literal, 0);
-            final String secondWord = SqlParser.nextWord(literal, secondWordStart);
+            // nextTokenEndIndex mirrors nextToken's comment-skipping scan; a raw indexOf(firstToken) could bind to
+            // an earlier occurrence of the token inside a leading SQL comment and misread the second token.
+            final int secondTokenStart = SqlParser.nextTokenEndIndex(literal, 0);
+            final String secondToken = SqlParser.nextToken(literal, secondTokenStart);
 
-            return Strings.isNotEmpty(secondWord) && isClause(firstWord + SPACE + secondWord);
+            return Strings.isNotEmpty(secondToken) && isClause(firstToken + SPACE + secondToken);
         }
 
         return isClause(cond.operator());
@@ -230,7 +230,7 @@ public abstract class AbstractCondition implements Condition {
                 return false;
             }
 
-            return isOnOrUsing(SqlParser.nextWord(literal, 0));
+            return isOnOrUsing(SqlParser.nextToken(literal, 0));
         }
 
         return isOnOrUsing(cond.operator());
@@ -320,8 +320,44 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Converts a parameter value to its string representation for use in condition strings.
-     * Handles special cases like strings (adds quotes) and conditions (recursive toString).
+     * Tests whether a condition tree contains a component that cannot stand as a SQL predicate.
+     * In addition to checking the root, this method descends into junctions and unary wrappers so
+     * custom {@link Cell} and {@link ComposableCell} subclasses cannot hide a clause, join connector,
+     * quantified-subquery operand, empty predicate, {@link Criteria}, or null operator.
+     *
+     * @param cond the condition tree to inspect; {@code null} is invalid
+     * @return {@code true} if {@code cond} or a nested component is not a valid predicate component
+     */
+    protected static boolean containsNonPredicateComponent(final Condition cond) {
+        if (cond == null || cond.operator() == null || cond instanceof Criteria || isClause(cond) || isOnOrUsing(cond) || isQuantifiedSubQueryOperand(cond)
+                || isEmptyPredicate(cond)) {
+            return true;
+        }
+
+        if (cond instanceof Junction) {
+            for (final Condition child : ((Junction) cond).conditions()) {
+                if (containsNonPredicateComponent(child)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (cond instanceof Cell) {
+            return containsNonPredicateComponent(((Cell) cond).condition());
+        }
+
+        if (cond instanceof ComposableCell) {
+            return containsNonPredicateComponent(((ComposableCell) cond).condition());
+        }
+
+        return false;
+    }
+
+    /**
+     * Converts a parameter value to its SQL representation for use in condition strings.
+     * Handles special cases like strings (adds quotes) and conditions (recursive SQL rendering).
      * Returns Java {@code null} when the parameter is {@code null}.
      *
      * <p>This utility method is used internally by condition implementations to format
@@ -347,7 +383,7 @@ public abstract class AbstractCondition implements Condition {
      * formatParameter("John", NamingPolicy.NO_CHANGE);                // Returns: 'John'
      * formatParameter(123, NamingPolicy.NO_CHANGE);                   // Returns: 123
      * formatParameter(null, NamingPolicy.NO_CHANGE);                  // Returns: null (Java null)
-     * formatParameter(subCondition, NamingPolicy.NO_CHANGE);          // Returns: subCondition.toString(policy)
+     * formatParameter(subCondition, NamingPolicy.NO_CHANGE);          // Returns: subCondition.toSql(policy)
      * formatParameter(new java.util.Date(0), NamingPolicy.NO_CHANGE); // Returns the date as a quoted, escaped string literal
      * }</pre>
      *
@@ -355,7 +391,7 @@ public abstract class AbstractCondition implements Condition {
      * @param namingPolicy the naming policy to apply to property names within nested {@link Condition}s.
      *                     May be {@code null}; nested {@code Condition} implementations treat a
      *                     {@code null} policy as {@link NamingPolicy#NO_CHANGE}.
-     * @return the string representation of the parameter, or {@code null} if {@code parameter} is {@code null}
+     * @return the SQL representation of the parameter, or {@code null} if {@code parameter} is {@code null}
      * @throws IllegalArgumentException if {@code parameter} is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     protected static String formatParameter(final Object parameter, final NamingPolicy namingPolicy) {
@@ -371,7 +407,7 @@ public abstract class AbstractCondition implements Condition {
             if (parameter == IsNull.NULL || parameter == IsNaN.NAN || parameter == IsInfinite.INFINITE) { //NOSONAR
                 return parameter.toString();
             } else {
-                final String conditionString = ((Condition) parameter).toString(namingPolicy);
+                final String conditionString = ((Condition) parameter).toSql(namingPolicy);
 
                 if (parameter instanceof SubQuery) {
                     return SK.PARENTHESIS_L + conditionString + SK.PARENTHESIS_R;
@@ -759,9 +795,9 @@ public abstract class AbstractCondition implements Condition {
 
     /**
      * Validates that the given condition is a valid operand for composable operations (AND, OR, NOT, XOR).
-     * Conditions that are a {@link Criteria}, a SQL clause (WHERE, ORDER BY, etc.), an {@code ON}/{@code USING}
-     * connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, an empty predicate
-     * (a blank {@link Expression} or empty {@link Junction}), or that have a {@code null} operator
+     * Conditions that are or recursively contain a {@link Criteria}, a SQL clause (WHERE, ORDER BY, etc.), an
+     * {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
+     * an empty predicate (a blank {@link Expression} or empty {@link Junction}), or a {@code null} operator
      * (including a {@code null} {@code cond}) cannot participate in logical composition.
      *
      * <p><b>Usage Examples:</b></p>
@@ -778,9 +814,9 @@ public abstract class AbstractCondition implements Condition {
      * @param cond the condition to validate; may be {@code null} (will trigger the exception)
      * @param methodName the name of the composable method being called (for error messages)
      * @return {@code cond} unchanged, after validation succeeds
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, has a {@code null} operator, or is a
-     *                                  {@link Criteria}, a SQL clause, an {@code ON}/{@code USING} connector,
-     *                                  an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, or is or recursively contains a condition
+     *                                  with a {@code null} operator, a {@link Criteria}, a SQL clause, an
+     *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
      *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
      */
     protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
@@ -788,8 +824,7 @@ public abstract class AbstractCondition implements Condition {
 
         final Operator operator = cond.operator();
 
-        if (operator == null || cond instanceof Criteria || isClause(cond) || containsOnOrUsing(cond) || isQuantifiedSubQueryOperand(cond)
-                || isEmptyPredicate(cond)) {
+        if (containsNonPredicateComponent(cond)) {
             throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in composable method '" + methodName + "'");
         }
 
@@ -830,8 +865,8 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Returns a string representation of this condition using the default naming policy.
-     * This method delegates to {@link #toString(NamingPolicy)} with {@link NamingPolicy#NO_CHANGE}.
+     * Returns a SQL representation of this condition using the default naming policy.
+     * This method delegates to {@link #toSql(NamingPolicy)} with {@link NamingPolicy#NO_CHANGE}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -843,11 +878,11 @@ public abstract class AbstractCondition implements Condition {
      * String s2 = nullEq.toString();   // "deletedAt IS NULL"
      * }</pre>
      *
-     * @return a string representation of this condition
+     * @return a SQL representation of this condition
      */
     @Override
     public String toString() {
-        return toString(NamingPolicy.NO_CHANGE);
+        return toSql(NamingPolicy.NO_CHANGE);
     }
 
 }

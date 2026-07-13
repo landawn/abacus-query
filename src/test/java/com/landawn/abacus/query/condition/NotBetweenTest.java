@@ -131,7 +131,7 @@ public class NotBetweenTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         NotBetween condition = new NotBetween("age", 18, 65);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(result.contains("age"));
         assertTrue(result.contains("NOT BETWEEN"));
@@ -142,7 +142,7 @@ public class NotBetweenTest extends TestBase {
     @Test
     public void testToString_StringValues() {
         NotBetween condition = new NotBetween("grade", "A", "C");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(result.contains("grade"));
         assertTrue(result.contains("NOT BETWEEN"));
@@ -151,7 +151,7 @@ public class NotBetweenTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         NotBetween condition = new NotBetween("maxAge", 18, 65);
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("max_age"));
         assertTrue(result.contains("NOT BETWEEN"));
@@ -228,7 +228,7 @@ public class NotBetweenTest extends TestBase {
     public void testUseCaseScenario_ExtremeValues() {
         // Find products with extreme prices (very cheap or very expensive)
         NotBetween priceRange = new NotBetween("price", 10.0, 1000.0);
-        String sql = priceRange.toString(NamingPolicy.NO_CHANGE);
+        String sql = priceRange.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(sql.contains("price"));
         assertTrue(sql.contains("NOT BETWEEN"));
@@ -239,7 +239,7 @@ public class NotBetweenTest extends TestBase {
     public void testUseCaseScenario_OutsideBusinessHours() {
         // Find orders outside business hours (before 9 AM or after 5 PM)
         NotBetween outsideHours = new NotBetween("order_hour", 9, 17);
-        String sql = outsideHours.toString(NamingPolicy.NO_CHANGE);
+        String sql = outsideHours.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(sql.contains("order_hour"));
         assertTrue(sql.contains("NOT BETWEEN"));
@@ -350,7 +350,7 @@ public class NotBetweenTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         NotBetween notBetween = Filters.notBetween("user_age", 18, 65);
 
-        String result = notBetween.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = notBetween.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
         Assertions.assertTrue(result.contains("USER_AGE"));
         Assertions.assertTrue(result.contains("NOT BETWEEN"));
     }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -22,222 +23,222 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testParseSimpleSelect() {
         String sql = "SELECT * FROM users";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains("FROM"));
-        assertTrue(words.contains("users"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains("FROM"));
+        assertTrue(tokens.contains("users"));
     }
 
     @Test
     public void testParseSelectWithColumns() {
         String sql = "SELECT id, name, email FROM users";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains("id"));
-        assertTrue(words.contains(","));
-        assertTrue(words.contains("name"));
-        assertTrue(words.contains("email"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains("id"));
+        assertTrue(tokens.contains(","));
+        assertTrue(tokens.contains("name"));
+        assertTrue(tokens.contains("email"));
     }
 
     @Test
     public void testParseWithWhere() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("WHERE"));
-        assertTrue(words.contains("age"));
-        assertTrue(words.contains(">"));
-        assertTrue(words.contains("18"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("WHERE"));
+        assertTrue(tokens.contains("age"));
+        assertTrue(tokens.contains(">"));
+        assertTrue(tokens.contains("18"));
     }
 
     @Test
     public void testParseWithJoin() {
         String sql = "SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("LEFT"));
-        assertTrue(words.contains("JOIN"));
-        assertTrue(words.contains("ON"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("LEFT"));
+        assertTrue(tokens.contains("JOIN"));
+        assertTrue(tokens.contains("ON"));
     }
 
     @Test
     public void testParseWithOperators() {
         String sql = "SELECT * FROM users WHERE age >= 18 AND status = 'active'";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains(">="));
-        assertTrue(words.contains("AND"));
-        assertTrue(words.contains("="));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains(">="));
+        assertTrue(tokens.contains("AND"));
+        assertTrue(tokens.contains("="));
     }
 
     @Test
     public void testParseWithQuotedString() {
         String sql = "SELECT * FROM users WHERE name = 'John Doe'";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.stream().anyMatch(w -> w.contains("John Doe")));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.stream().anyMatch(w -> w.contains("John Doe")));
     }
 
     @Test
     public void testParseWithDoubleQuotes() {
         String sql = "SELECT \"first name\" FROM users";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.stream().anyMatch(w -> w.contains("first name")));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.stream().anyMatch(w -> w.contains("first name")));
     }
 
     @Test
     public void testParseWithParentheses() {
         String sql = "SELECT * FROM users WHERE (age > 18 AND status = 'active')";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("("));
-        assertTrue(words.contains(")"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("("));
+        assertTrue(tokens.contains(")"));
     }
 
     @Test
     public void testParseWithGroupBy() {
         String sql = "SELECT department, COUNT(*) FROM employees GROUP BY department";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("GROUP"));
-        assertTrue(words.contains("BY"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("GROUP"));
+        assertTrue(tokens.contains("BY"));
     }
 
     @Test
     public void testParseWithOrderBy() {
         String sql = "SELECT * FROM users ORDER BY name ASC";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("ORDER"));
-        assertTrue(words.contains("BY"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("ORDER"));
+        assertTrue(tokens.contains("BY"));
     }
 
     @Test
     public void testParseWithMultipleOperators() {
         String sql = "SELECT * FROM users WHERE age >= 18 AND age <= 65";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains(">="));
-        assertTrue(words.contains("<="));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains(">="));
+        assertTrue(tokens.contains("<="));
     }
 
     @Test
     public void testParseWithInClause() {
         String sql = "SELECT * FROM users WHERE id IN (1, 2, 3)";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("IN"));
-        assertTrue(words.contains("("));
-        assertTrue(words.contains(","));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("IN"));
+        assertTrue(tokens.contains("("));
+        assertTrue(tokens.contains(","));
     }
 
     @Test
     public void testParseWithDoubleHashOperator() {
-        List<String> words = SqlParser.parse("SELECT 1 ## 2");
-        assertTrue(words.contains("##"));
+        List<String> tokens = SqlParser.parse("SELECT 1 ## 2");
+        assertTrue(tokens.contains("##"));
     }
 
     @Test
     public void testParseWithPostgresJsonQuestionAndOperator() {
-        List<String> words = SqlParser.parse("SELECT * FROM events WHERE payload ?& array['a']");
-        assertTrue(words.contains("?&"), "PostgreSQL JSONB ?& operator must stay a single token: " + words);
-        assertFalse(words.contains("?"), "PostgreSQL JSONB ?& operator must not be split into a JDBC placeholder: " + words);
+        List<String> tokens = SqlParser.parse("SELECT * FROM events WHERE payload ?& array['a']");
+        assertTrue(tokens.contains("?&"), "PostgreSQL JSONB ?& operator must stay a single token: " + tokens);
+        assertFalse(tokens.contains("?"), "PostgreSQL JSONB ?& operator must not be split into a JDBC placeholder: " + tokens);
     }
 
     @Test
     public void testParseEmptyString() {
         String sql = "";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.isEmpty());
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.isEmpty());
     }
 
     @Test
     public void testParseWithHaving() {
         String sql = "SELECT department, COUNT(*) FROM employees GROUP BY department HAVING COUNT(*) > 5";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("HAVING"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("HAVING"));
     }
 
     @Test
     public void testParseWithSubquery() {
         String sql = "SELECT * FROM users WHERE id IN (SELECT user_id FROM orders)";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains("IN"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains("IN"));
     }
 
     @Test
     public void testParseWithUnion() {
         String sql = "SELECT id FROM users UNION SELECT id FROM accounts";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("UNION"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("UNION"));
     }
 
     @Test
     public void testParseWithUnionAll() {
         String sql = "SELECT id FROM users UNION ALL SELECT id FROM accounts";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("UNION"));
-        assertTrue(words.contains("ALL"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("UNION"));
+        assertTrue(tokens.contains("ALL"));
     }
 
     @Test
     public void testParseWithNotEquals() {
         String sql = "SELECT * FROM users WHERE status != 'deleted'";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("!="));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("!="));
     }
 
     @Test
     public void testParseWithNotEqualsAlternative() {
         String sql = "SELECT * FROM users WHERE status <> 'deleted'";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("<>"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("<>"));
     }
 
     @Test
     public void testParseWithBetween() {
         String sql = "SELECT * FROM users WHERE age BETWEEN 18 AND 65";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("BETWEEN"));
-        assertTrue(words.contains("AND"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("BETWEEN"));
+        assertTrue(tokens.contains("AND"));
     }
 
     @Test
     public void testParseWithLike() {
         String sql = "SELECT * FROM users WHERE name LIKE 'John%'";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("LIKE"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("LIKE"));
     }
 
     @Test
     public void testParseWithNotLike() {
         String sql = "SELECT * FROM users WHERE name NOT LIKE 'John%'";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("NOT"));
-        assertTrue(words.contains("LIKE"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("NOT"));
+        assertTrue(tokens.contains("LIKE"));
     }
 
     @Test
     public void testParseWithForUpdate() {
         String sql = "SELECT * FROM users WHERE id = 1 FOR UPDATE";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("FOR"));
-        assertTrue(words.contains("UPDATE"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("FOR"));
+        assertTrue(tokens.contains("UPDATE"));
     }
 
     @Test
@@ -245,137 +246,148 @@ public class SqlParserTest extends TestBase {
         String sql = "SELECT u.id, u.name, COUNT(o.id) as order_count " + "FROM users u " + "LEFT JOIN orders o ON u.id = o.user_id "
                 + "WHERE u.status = 'active' AND u.created_date > '2020-01-01' " + "GROUP BY u.id, u.name " + "HAVING COUNT(o.id) > 5 "
                 + "ORDER BY order_count DESC " + "LIMIT 10";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.size() > 10);
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.size() > 10);
     }
 
     @Test
     public void testParseWithArithmeticOperators() {
         String sql = "SELECT price * quantity + tax - discount FROM orders";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("*"));
-        assertTrue(words.contains("+"));
-        assertTrue(words.contains("-"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("*"));
+        assertTrue(tokens.contains("+"));
+        assertTrue(tokens.contains("-"));
     }
 
     @Test
     public void testParseWithModuloOperator() {
         String sql = "SELECT id % 10 FROM users";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("%"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("%"));
     }
 
     @Test
     public void testParseWithBitwiseOperators() {
         String sql = "SELECT value & mask FROM data";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertTrue(words.contains("&"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("&"));
     }
 
     @Test
-    public void testIndexWord() {
+    public void testIndexOfToken() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SqlParser.indexOfWord(sql, "WHERE", 0, false);
+        int index = SqlParser.indexOfToken(sql, "WHERE", 0, false);
         assertTrue(index >= 0);
         assertEquals("WHERE", sql.substring(index, index + 5));
     }
 
     @Test
-    public void testIndexWordCaseInsensitive() {
+    public void testIndexOfTokenCaseInsensitive() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SqlParser.indexOfWord(sql, "where", 0, false);
+        int index = SqlParser.indexOfToken(sql, "where", 0, false);
         assertTrue(index >= 0);
     }
 
     @Test
-    public void testIndexWordCaseSensitive() {
+    public void testIndexOfTokenCaseSensitive() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SqlParser.indexOfWord(sql, "where", 0, true);
+        int index = SqlParser.indexOfToken(sql, "where", 0, true);
         assertEquals(-1, index);
     }
 
     @Test
-    public void testIndexWordNotFound() {
+    public void testIndexOfTokenNotFound() {
         String sql = "SELECT * FROM users";
-        int index = SqlParser.indexOfWord(sql, "WHERE", 0, false);
+        int index = SqlParser.indexOfToken(sql, "WHERE", 0, false);
         assertEquals(-1, index);
     }
 
     @Test
-    public void testIndexWordComposite() {
+    public void testIndexOfCompositeToken() {
         String sql = "SELECT * FROM users ORDER BY name";
-        int index = SqlParser.indexOfWord(sql, "ORDER BY", 0, false);
+        int index = SqlParser.indexOfToken(sql, "ORDER BY", 0, false);
         assertTrue(index >= 0);
     }
 
     @Test
-    public void testIndexWordFromPosition() {
+    public void testIndexOfTokenFromPosition() {
         String sql = "SELECT * FROM users WHERE age > 18 AND status = 'active'";
-        int firstAnd = SqlParser.indexOfWord(sql, "AND", 0, false);
+        int firstAnd = SqlParser.indexOfToken(sql, "AND", 0, false);
         assertTrue(firstAnd > 0);
     }
 
     @Test
-    public void testIndexWordWithNegativeFromIndex() {
+    public void testIndexOfTokenWithNegativeFromIndex() {
         String sql = "SELECT * FROM users WHERE age > 18";
-        int index = SqlParser.indexOfWord(sql, "SELECT", -5, false);
+        int index = SqlParser.indexOfToken(sql, "SELECT", -5, false);
         assertEquals(0, index);
     }
 
     @Test
-    public void testNextWord() {
+    public void testNextToken() {
         String sql = "SELECT * FROM users";
-        String word = SqlParser.nextWord(sql, 7);
-        assertNotNull(word);
-        assertEquals("*", word);
+        String token = SqlParser.nextToken(sql, 7);
+        assertNotNull(token);
+        assertEquals("*", token);
     }
 
     @Test
-    public void testNextWordSkipsWhitespace() {
+    public void testNextTokenSkipsWhitespace() {
         String sql = "SELECT    *    FROM users";
-        String word = SqlParser.nextWord(sql, 6);
-        assertNotNull(word);
-        assertEquals("*", word);
+        String token = SqlParser.nextToken(sql, 6);
+        assertNotNull(token);
+        assertEquals("*", token);
     }
 
     @Test
-    public void testNextWordEmptyString() {
+    public void testNextTokenEmptyString() {
         String sql = "SELECT *";
-        String word = SqlParser.nextWord(sql, sql.length());
-        assertEquals("", word);
+        String token = SqlParser.nextToken(sql, sql.length());
+        assertEquals("", token);
     }
 
     @Test
-    public void testNextWordWithOperator() {
+    public void testNextTokenWithOperator() {
         String sql = "WHERE age >= 18";
-        String word = SqlParser.nextWord(sql, 10);
-        assertNotNull(word);
-        assertTrue(word.equals(">=") || word.equals("18"));
+        String token = SqlParser.nextToken(sql, 10);
+        assertNotNull(token);
+        assertTrue(token.equals(">=") || token.equals("18"));
     }
 
     @Test
-    public void testNextWordWithNegativeFromIndex() {
+    public void testNextTokenWithNegativeFromIndex() {
         String sql = "SELECT * FROM users";
-        String word = SqlParser.nextWord(sql, -3);
-        assertEquals("SELECT", word);
+        String token = SqlParser.nextToken(sql, -3);
+        assertEquals("SELECT", token);
+    }
+
+    @Test
+    public void testTokenNavigationMethodsAreHardRenamed() throws NoSuchMethodException {
+        assertEquals(int.class, SqlParser.class.getMethod("indexOfToken", String.class, String.class).getReturnType());
+        assertEquals(String.class, SqlParser.class.getMethod("nextToken", String.class, int.class).getReturnType());
+        assertEquals(int.class, SqlParser.class.getMethod("nextTokenEndIndex", String.class, int.class).getReturnType());
+
+        assertThrows(NoSuchMethodException.class, () -> SqlParser.class.getMethod("indexOfWord", String.class, String.class));
+        assertThrows(NoSuchMethodException.class, () -> SqlParser.class.getMethod("nextWord", String.class, int.class));
+        assertThrows(NoSuchMethodException.class, () -> SqlParser.class.getMethod("nextWordEnd", String.class, int.class));
     }
 
     @Test
     public void testRegisterSeparatorChar() {
         SqlParser.registerSeparator('$');
-        List<String> words = SqlParser.parse("SELECT$FROM$users");
-        assertEquals(Arrays.asList("SELECT", "$", "FROM", "$", "users"), words);
+        List<String> tokens = SqlParser.parse("SELECT$FROM$users");
+        assertEquals(Arrays.asList("SELECT", "$", "FROM", "$", "users"), tokens);
     }
 
     @Test
     public void testRegisterSeparatorString() {
         SqlParser.registerSeparator(":::");
-        List<String> words = SqlParser.parse("SELECT:::FROM:::users");
-        assertEquals(Arrays.asList("SELECT", ":::", "FROM", ":::", "users"), words);
+        List<String> tokens = SqlParser.parse("SELECT:::FROM:::users");
+        assertEquals(Arrays.asList("SELECT", ":::", "FROM", ":::", "users"), tokens);
     }
 
     @Test
@@ -408,246 +420,246 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testIsFunctionName() {
-        List<String> words = SqlParser.parse("SELECT COUNT(*) FROM users");
+        List<String> tokens = SqlParser.parse("SELECT COUNT(*) FROM users");
         int countIndex = -1;
-        for (int i = 0; i < words.size(); i++) {
-            if ("COUNT".equals(words.get(i))) {
+        for (int i = 0; i < tokens.size(); i++) {
+            if ("COUNT".equals(tokens.get(i))) {
                 countIndex = i;
                 break;
             }
         }
         assertTrue(countIndex >= 0);
-        assertTrue(SqlParser.isFunctionName(words, words.size(), countIndex));
+        assertTrue(SqlParser.isFunctionName(tokens, tokens.size(), countIndex));
     }
 
     @Test
     public void testIsFunctionNameNotFunction() {
-        List<String> words = SqlParser.parse("SELECT name FROM users");
+        List<String> tokens = SqlParser.parse("SELECT name FROM users");
         int nameIndex = -1;
-        for (int i = 0; i < words.size(); i++) {
-            if ("name".equals(words.get(i))) {
+        for (int i = 0; i < tokens.size(); i++) {
+            if ("name".equals(tokens.get(i))) {
                 nameIndex = i;
                 break;
             }
         }
         assertTrue(nameIndex >= 0);
-        assertFalse(SqlParser.isFunctionName(words, words.size(), nameIndex));
+        assertFalse(SqlParser.isFunctionName(tokens, tokens.size(), nameIndex));
     }
 
     @Test
     public void testIndexWordMultipleOccurrences() {
         String sql = "SELECT name FROM users WHERE name = 'John' OR name = 'Jane'";
-        int firstIndex = SqlParser.indexOfWord(sql, "name", 0, false);
-        int secondIndex = SqlParser.indexOfWord(sql, "name", firstIndex + 1, false);
+        int firstIndex = SqlParser.indexOfToken(sql, "name", 0, false);
+        int secondIndex = SqlParser.indexOfToken(sql, "name", firstIndex + 1, false);
         assertTrue(firstIndex >= 0);
         assertTrue(secondIndex > firstIndex);
     }
 
     @Test
-    public void testNextWordAtEnd() {
+    public void testNextTokenAtEnd() {
         String sql = "SELECT * FROM users";
-        String word = SqlParser.nextWord(sql, sql.length() - 1);
-        assertNotNull(word);
+        String token = SqlParser.nextToken(sql, sql.length() - 1);
+        assertNotNull(token);
     }
 
     @Test
     public void testParseSimpleSQL() {
         // Test basic SELECT statement
         String sql = "SELECT * FROM users";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertNotNull(words);
-        assertEquals(Arrays.asList("SELECT", " ", "*", " ", "FROM", " ", "users"), words);
+        assertNotNull(tokens);
+        assertEquals(Arrays.asList("SELECT", " ", "*", " ", "FROM", " ", "users"), tokens);
 
         // Test with WHERE clause
         sql = "SELECT name, age FROM users WHERE age > 25";
-        words = SqlParser.parse(sql);
+        tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains("name"));
-        assertTrue(words.contains(","));
-        assertTrue(words.contains("age"));
-        assertTrue(words.contains("FROM"));
-        assertTrue(words.contains("users"));
-        assertTrue(words.contains("WHERE"));
-        assertTrue(words.contains(">"));
-        assertTrue(words.contains("25"));
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains("name"));
+        assertTrue(tokens.contains(","));
+        assertTrue(tokens.contains("age"));
+        assertTrue(tokens.contains("FROM"));
+        assertTrue(tokens.contains("users"));
+        assertTrue(tokens.contains("WHERE"));
+        assertTrue(tokens.contains(">"));
+        assertTrue(tokens.contains("25"));
     }
 
     @Test
     public void testParseQuotedIdentifiers() {
         // Test single quotes
         String sql = "SELECT * FROM users WHERE name = 'John Doe'";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("'John Doe'"));
+        assertTrue(tokens.contains("'John Doe'"));
 
         // Test double quotes
         sql = "SELECT * FROM users WHERE name = \"John Doe\"";
-        words = SqlParser.parse(sql);
+        tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("\"John Doe\""));
+        assertTrue(tokens.contains("\"John Doe\""));
 
         // Test escaped quotes
         sql = "SELECT * FROM users WHERE name = 'John\\'s'";
-        words = SqlParser.parse(sql);
+        tokens = SqlParser.parse(sql);
 
-        assertTrue(words.stream().anyMatch(w -> w.contains("John\\'s")));
+        assertTrue(tokens.stream().anyMatch(w -> w.contains("John\\'s")));
 
         // Test SQL-standard escaped quote by doubling delimiter
         sql = "SELECT * FROM users WHERE name = 'it''s me'";
-        words = SqlParser.parse(sql);
+        tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("'it''s me'"));
+        assertTrue(tokens.contains("'it''s me'"));
     }
 
     @Test
     public void testParseComments() {
         // Test single-line comments
         String sql = "SELECT * FROM users -- This is a comment\nWHERE id = 1";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains("WHERE"));
-        assertFalse(words.stream().anyMatch(w -> w.contains("This is a comment")));
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains("WHERE"));
+        assertFalse(tokens.stream().anyMatch(w -> w.contains("This is a comment")));
 
         // Test multi-line comments
         sql = "SELECT * /* multi-line\ncomment */ FROM users";
-        words = SqlParser.parse(sql);
+        tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains("FROM"));
-        assertFalse(words.stream().anyMatch(w -> w.contains("multi-line")));
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains("FROM"));
+        assertFalse(tokens.stream().anyMatch(w -> w.contains("multi-line")));
     }
 
     @Test
     public void testParseHashComments() {
         String sql = "SELECT * FROM users WHERE id = :userId # ignore :fake ?\nAND status = :status";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains("AND"));
-        assertFalse(words.stream().anyMatch(w -> w.contains("fake")));
-        assertFalse(words.contains("?"));
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains("AND"));
+        assertFalse(tokens.stream().anyMatch(w -> w.contains("fake")));
+        assertFalse(tokens.contains("?"));
     }
 
     @Test
     public void testParseHashCommentsWithoutSpace() {
         String sql = "SELECT * FROM users WHERE id = :userId#ignore :fake ?\nAND status = :status";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains("AND"));
-        assertFalse(words.stream().anyMatch(w -> w.contains("fake")));
-        assertFalse(words.contains("?"));
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains("AND"));
+        assertFalse(tokens.stream().anyMatch(w -> w.contains("fake")));
+        assertFalse(tokens.contains("?"));
     }
 
     @Test
     public void testParseHashCommentAtLineStartWithoutSpace() {
         String sql = "#ignore :fake ?\nSELECT * FROM users WHERE id = :userId";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains(":userId"));
-        assertFalse(words.stream().anyMatch(w -> w.contains("fake")));
-        assertFalse(words.contains("?"));
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains(":userId"));
+        assertFalse(tokens.stream().anyMatch(w -> w.contains("fake")));
+        assertFalse(tokens.contains("?"));
     }
 
     @Test
     public void testParseHashTempTableIsNotComment() {
         String sql = "SELECT * FROM #tmp WHERE id = :id";
-        List<String> words = SqlParser.parse(sql);
-        String joined = String.join("", words);
+        List<String> tokens = SqlParser.parse(sql);
+        String joined = String.join("", tokens);
 
         assertTrue(joined.contains("#tmp"));
-        assertTrue(words.contains("WHERE"));
-        assertTrue(words.contains(":id"));
+        assertTrue(tokens.contains("WHERE"));
+        assertTrue(tokens.contains(":id"));
     }
 
     @Test
     public void testParseHashJsonOperatorsAreNotComments() {
         String sql = "SELECT payload #> '{meta,status}' AS status_json FROM docs WHERE payload #>> '{meta,status}' = 'active'";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("#>"));
-        assertTrue(words.contains("#>>"));
-        assertTrue(words.contains("FROM"));
-        assertTrue(words.contains("WHERE"));
-        assertTrue(words.contains("'active'"));
+        assertTrue(tokens.contains("#>"));
+        assertTrue(tokens.contains("#>>"));
+        assertTrue(tokens.contains("FROM"));
+        assertTrue(tokens.contains("WHERE"));
+        assertTrue(tokens.contains("'active'"));
     }
 
     @Test
     public void testParseOperators() {
         // Test various operators
         String sql = "SELECT * FROM users WHERE age >= 18 AND status != 'inactive' OR role IN ('admin', 'user')";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains(">="));
-        assertTrue(words.contains("!="));
-        assertTrue(words.contains("IN"));
-        assertTrue(words.contains("AND"));
-        assertTrue(words.contains("OR"));
+        assertTrue(tokens.contains(">="));
+        assertTrue(tokens.contains("!="));
+        assertTrue(tokens.contains("IN"));
+        assertTrue(tokens.contains("AND"));
+        assertTrue(tokens.contains("OR"));
 
         // Test more operators
         sql = "SELECT * WHERE a = b AND c <> d AND e <= f AND g < h AND i > j AND k >> l";
-        words = SqlParser.parse(sql);
+        tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("="));
-        // assertTrue(words.contains("<>"));
-        assertTrue(words.contains("<="));
-        assertTrue(words.contains("<"));
-        assertTrue(words.contains(">"));
-        assertTrue(words.contains(">>"));
+        assertTrue(tokens.contains("="));
+        // assertTrue(tokens.contains("<>"));
+        assertTrue(tokens.contains("<="));
+        assertTrue(tokens.contains("<"));
+        assertTrue(tokens.contains(">"));
+        assertTrue(tokens.contains(">>"));
     }
 
     @Test
     public void testParseComplexOperators() {
         // Test multi-character operators
         String sql = "SELECT * WHERE a != b AND c <=> d AND e || f AND g && h";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("!="));
-        assertTrue(words.contains("<=>"));
-        assertTrue(words.contains("||"));
-        assertTrue(words.contains("&&"));
+        assertTrue(tokens.contains("!="));
+        assertTrue(tokens.contains("<=>"));
+        assertTrue(tokens.contains("||"));
+        assertTrue(tokens.contains("&&"));
 
         // Test assignment operators
         sql = "UPDATE table SET a += 1, b -= 2, c *= 3, d /= 4";
-        words = SqlParser.parse(sql);
+        tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("+="));
-        assertTrue(words.contains("-="));
-        assertTrue(words.contains("*="));
-        assertTrue(words.contains("/="));
+        assertTrue(tokens.contains("+="));
+        assertTrue(tokens.contains("-="));
+        assertTrue(tokens.contains("*="));
+        assertTrue(tokens.contains("/="));
     }
 
     @Test
     public void testParseMyBatisParameters() {
         // Test MyBatis/iBatis parameter syntax
         String sql = "SELECT * FROM users WHERE id = #{userId} AND name = #{userName}";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
         // # should not be separated when followed by {
-        assertTrue(words.contains("#{userId}"));
-        assertTrue(words.contains("#{userName}"));
+        assertTrue(tokens.contains("#{userId}"));
+        assertTrue(tokens.contains("#{userName}"));
     }
 
     @Test
     public void testParseWhitespace() {
         // Test multiple spaces, tabs, and newlines
         String sql = "SELECT   *\t\tFROM\nusers\r\nWHERE\t id = 1";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
         // Should normalize whitespace to single spaces
-        assertEquals("SELECT", words.get(0));
-        assertEquals(" ", words.get(1));
-        assertEquals("*", words.get(2));
-        assertEquals(" ", words.get(3));
-        assertEquals("FROM", words.get(4));
-        assertEquals(" ", words.get(5));
-        assertEquals("users", words.get(6));
-        assertEquals(" ", words.get(7));
-        assertEquals("WHERE", words.get(8));
+        assertEquals("SELECT", tokens.get(0));
+        assertEquals(" ", tokens.get(1));
+        assertEquals("*", tokens.get(2));
+        assertEquals(" ", tokens.get(3));
+        assertEquals("FROM", tokens.get(4));
+        assertEquals(" ", tokens.get(5));
+        assertEquals("users", tokens.get(6));
+        assertEquals(" ", tokens.get(7));
+        assertEquals("WHERE", tokens.get(8));
     }
 
     @Test
@@ -655,45 +667,45 @@ public class SqlParserTest extends TestBase {
         String sql = "WITH RECURSIVE cte AS (" + "SELECT id, parent_id, name FROM categories WHERE parent_id IS NULL " + "UNION ALL "
                 + "SELECT c.id, c.parent_id, c.name FROM categories c " + "INNER JOIN cte ON c.parent_id = cte.id" + ") SELECT * FROM cte ORDER BY name";
 
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
         // Verify key SQL keywords are parsed
-        assertTrue(words.contains("WITH"));
-        assertTrue(words.contains("RECURSIVE"));
-        assertFalse(words.contains("UNION ALL"));
-        assertFalse(words.contains("INNER JOIN"));
-        assertFalse(words.contains("ORDER BY"));
-        assertFalse(words.contains("IS NULL"));
+        assertTrue(tokens.contains("WITH"));
+        assertTrue(tokens.contains("RECURSIVE"));
+        assertFalse(tokens.contains("UNION ALL"));
+        assertFalse(tokens.contains("INNER JOIN"));
+        assertFalse(tokens.contains("ORDER BY"));
+        assertFalse(tokens.contains("IS NULL"));
     }
 
     @Test
     public void testParseSpecialOperators() {
         // Test various special operators from the separators set
         String sql = "SELECT * WHERE a ~= b AND c ^= d AND e :: text AND f @> g";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("~="));
-        assertTrue(words.contains("^="));
-        assertTrue(words.contains("::"));
-        assertTrue(words.contains("@>"));
+        assertTrue(tokens.contains("~="));
+        assertTrue(tokens.contains("^="));
+        assertTrue(tokens.contains("::"));
+        assertTrue(tokens.contains("@>"));
     }
 
     @Test
     public void testIndexWordQuoted() {
-        // Test word inside quotes
+        // Test token inside quotes
         String sql = "SELECT * FROM users WHERE name = 'SELECT something'";
 
         // Should find the first SELECT, not the one in quotes
-        assertEquals(0, SqlParser.indexOfWord(sql, "SELECT", 0, false));
+        assertEquals(0, SqlParser.indexOfToken(sql, "SELECT", 0, false));
 
         // Should find the quoted SELECT when searching from appropriate position
-        int firstSelect = SqlParser.indexOfWord(sql, "SELECT", 0, false);
-        int secondSelect = SqlParser.indexOfWord(sql, "SELECT", firstSelect + 1, false);
+        int firstSelect = SqlParser.indexOfToken(sql, "SELECT", 0, false);
+        int secondSelect = SqlParser.indexOfToken(sql, "SELECT", firstSelect + 1, false);
         assertEquals(-1, secondSelect);
 
         // Test escaped quote in SQL-standard form (two single quotes) inside a string literal
         sql = "SELECT * FROM users WHERE note = 'it''s SELECT here'";
-        assertEquals(-1, SqlParser.indexOfWord(sql, "SELECT", 1, false));
+        assertEquals(-1, SqlParser.indexOfToken(sql, "SELECT", 1, false));
     }
 
     @Test
@@ -701,65 +713,65 @@ public class SqlParserTest extends TestBase {
         String sql = "SELECT * WHERE a = b AND c != d OR e >= f";
 
         // Test finding operators
-        assertEquals(17, SqlParser.indexOfWord(sql, "=", 0, false));
-        assertEquals(27, SqlParser.indexOfWord(sql, "!=", 0, false));
-        assertEquals(sql.indexOf(">="), SqlParser.indexOfWord(sql, ">=", 0, false));
+        assertEquals(17, SqlParser.indexOfToken(sql, "=", 0, false));
+        assertEquals(27, SqlParser.indexOfToken(sql, "!=", 0, false));
+        assertEquals(sql.indexOf(">="), SqlParser.indexOfToken(sql, ">=", 0, false));
     }
 
     @Test
-    public void testNextWordQuoted() {
+    public void testNextTokenQuoted() {
         String sql = "SELECT 'quoted string' FROM table";
 
         // Test getting quoted string
-        assertEquals("'quoted string'", SqlParser.nextWord(sql, 6));
+        assertEquals("'quoted string'", SqlParser.nextToken(sql, 6));
 
         // Test with double quotes
         sql = "SELECT \"quoted string\" FROM table";
-        assertEquals("\"quoted string\"", SqlParser.nextWord(sql, 6));
+        assertEquals("\"quoted string\"", SqlParser.nextToken(sql, 6));
 
         // Test SQL-standard escaped quote by doubling delimiter
         sql = "SELECT 'it''s done' FROM table";
-        assertEquals("'it''s done'", SqlParser.nextWord(sql, 6));
+        assertEquals("'it''s done'", SqlParser.nextToken(sql, 6));
     }
 
     @Test
-    public void testNextWordOperators() {
+    public void testNextTokenOperators() {
         String sql = "WHERE a >= b AND c != d";
 
-        assertEquals("a", SqlParser.nextWord(sql, 5));
-        assertEquals(">=", SqlParser.nextWord(sql, 7));
-        assertEquals("b", SqlParser.nextWord(sql, 10));
-        assertEquals("AND", SqlParser.nextWord(sql, 12));
-        assertEquals("!=", SqlParser.nextWord(sql, 19));
+        assertEquals("a", SqlParser.nextToken(sql, 5));
+        assertEquals(">=", SqlParser.nextToken(sql, 7));
+        assertEquals("b", SqlParser.nextToken(sql, 10));
+        assertEquals("AND", SqlParser.nextToken(sql, 12));
+        assertEquals("!=", SqlParser.nextToken(sql, 19));
     }
 
     @Test
     public void testRegisterSeparatorStringWithNewLeadingChar() {
         SqlParser.registerSeparator("$$");
 
-        List<String> words = SqlParser.parse("SELECT$$FROM$$users");
-        assertEquals(Arrays.asList("SELECT", "$$", "FROM", "$$", "users"), words);
+        List<String> tokens = SqlParser.parse("SELECT$$FROM$$users");
+        assertEquals(Arrays.asList("SELECT", "$$", "FROM", "$$", "users"), tokens);
     }
 
     @Test
     public void testRegisterLongSeparatorString() {
         SqlParser.registerSeparator("~~~~");
 
-        List<String> words = SqlParser.parse("SELECT~~~~FROM~~~~users");
-        assertEquals(Arrays.asList("SELECT", "~~~~", "FROM", "~~~~", "users"), words);
+        List<String> tokens = SqlParser.parse("SELECT~~~~FROM~~~~users");
+        assertEquals(Arrays.asList("SELECT", "~~~~", "FROM", "~~~~", "users"), tokens);
     }
 
     @Test
     public void testIsFunctionNameWithSpaces() {
-        List<String> words = SqlParser.parse("SELECT COUNT ( * ), SUM  (  amount  ) FROM sales");
+        List<String> tokens = SqlParser.parse("SELECT COUNT ( * ), SUM  (  amount  ) FROM sales");
 
         // COUNT is still a function even with spaces before (
-        int countIndex = words.indexOf("COUNT");
-        assertTrue(SqlParser.isFunctionName(words, words.size(), countIndex));
+        int countIndex = tokens.indexOf("COUNT");
+        assertTrue(SqlParser.isFunctionName(tokens, tokens.size(), countIndex));
 
         // SUM is still a function even with multiple spaces
-        int sumIndex = words.indexOf("SUM");
-        assertTrue(SqlParser.isFunctionName(words, words.size(), sumIndex));
+        int sumIndex = tokens.indexOf("SUM");
+        assertTrue(SqlParser.isFunctionName(tokens, tokens.size(), sumIndex));
     }
 
     // Cover comment-retention and hash-prefixed temp table parsing branches.
@@ -767,41 +779,41 @@ public class SqlParserTest extends TestBase {
     public void testParse_KeepCommentsDirective() {
         String sql = "-- Keep comments\nSELECT /* keep me */ name FROM users";
 
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains("/* keep me */"));
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains("/* keep me */"));
     }
 
     @Test
     public void testParse_HashPrefixedIdentifier() {
         String sql = "SELECT * FROM #temp_users WHERE id = 1";
 
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("#temp_users"));
-        assertTrue(words.contains("WHERE"));
+        assertTrue(tokens.contains("#temp_users"));
+        assertTrue(tokens.contains("WHERE"));
     }
 
     @Test
-    public void testIndexOfWord_HashPrefixedIdentifier() {
+    public void testIndexOfToken_HashPrefixedIdentifier() {
         String sql = "SELECT * FROM #temp_users WHERE id = 1";
 
-        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", 0, false));
+        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfToken(sql, "WHERE", 0, false));
     }
 
     @Test
-    public void testNextWord_HashPrefixedIdentifier() {
+    public void testNextToken_HashPrefixedIdentifier() {
         String sql = "FROM #temp_users";
 
-        assertEquals("#temp_users", SqlParser.nextWord(sql, 4));
+        assertEquals("#temp_users", SqlParser.nextToken(sql, 4));
     }
 
     @Test
-    public void testNextWord_SkipsBlockComment() {
+    public void testNextToken_SkipsBlockComment() {
         String sql = "SELECT /* hidden */ name FROM users";
 
-        assertEquals("name", SqlParser.nextWord(sql, 6));
+        assertEquals("name", SqlParser.nextToken(sql, 6));
     }
 
     // Exercise uncovered parser branches around inline comments, quoted tokens, and backtracking.
@@ -809,130 +821,130 @@ public class SqlParserTest extends TestBase {
     public void testParse_InlineDashCommentAfterToken() {
         String sql = "SELECT col-- hidden\nFROM users";
 
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("col"));
-        assertTrue(words.contains("FROM"));
-        assertFalse(words.stream().anyMatch(e -> e.contains("hidden")));
+        assertTrue(tokens.contains("col"));
+        assertTrue(tokens.contains("FROM"));
+        assertFalse(tokens.stream().anyMatch(e -> e.contains("hidden")));
     }
 
     @Test
     public void testParse_InlineBlockCommentAfterToken() {
         String sql = "SELECT col/* hidden */FROM users";
 
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("col"));
-        assertTrue(words.contains("FROM"));
-        assertEquals("SELECT col FROM users", String.join("", words));
-        assertFalse(words.stream().anyMatch(e -> e.contains("hidden")));
+        assertTrue(tokens.contains("col"));
+        assertTrue(tokens.contains("FROM"));
+        assertEquals("SELECT col FROM users", String.join("", tokens));
+        assertFalse(tokens.stream().anyMatch(e -> e.contains("hidden")));
     }
 
     @Test
-    public void testIndexOfWord_QuotedTokenWithBackslashEscape() {
+    public void testIndexOfToken_QuotedTokenWithBackslashEscape() {
         String sql = "SELECT 'John\\'s' FROM users";
 
-        assertEquals(sql.indexOf("'John\\'s'"), SqlParser.indexOfWord(sql, "'John\\'s'", 0, true));
+        assertEquals(sql.indexOf("'John\\'s'"), SqlParser.indexOfToken(sql, "'John\\'s'", 0, true));
     }
 
     @Test
-    public void testIndexOfWord_DashCommentAfterMismatchedToken() {
+    public void testIndexOfToken_DashCommentAfterMismatchedToken() {
         String sql = "value-- hidden\nWHERE id = 1";
 
-        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", 0, false));
+        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfToken(sql, "WHERE", 0, false));
     }
 
     @Test
-    public void testIndexOfWord_HashCommentAfterMismatchedToken() {
+    public void testIndexOfToken_HashCommentAfterMismatchedToken() {
         String sql = "value# hidden\nWHERE id = 1";
 
-        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", 0, false));
+        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfToken(sql, "WHERE", 0, false));
     }
 
     @Test
-    public void testIndexOfWord_BlockCommentAfterMismatchedToken() {
+    public void testIndexOfToken_BlockCommentAfterMismatchedToken() {
         String sql = "value/* hidden */WHERE id = 1";
 
-        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", 0, false));
+        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfToken(sql, "WHERE", 0, false));
     }
 
     @Test
-    public void testIndexOfWord_FromIndexInsideQuotedLiteralSkipsToLaterToken() {
+    public void testIndexOfToken_FromIndexInsideQuotedLiteralSkipsToLaterToken() {
         String sql = "SELECT 'hidden WHERE token' FROM users WHERE id = 1";
         int fromIndex = sql.indexOf("WHERE token");
 
-        assertEquals(sql.lastIndexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", fromIndex, false));
+        assertEquals(sql.lastIndexOf("WHERE"), SqlParser.indexOfToken(sql, "WHERE", fromIndex, false));
     }
 
     @Test
-    public void testIndexOfWord_FromIndexInsideBlockCommentSkipsToLaterToken() {
+    public void testIndexOfToken_FromIndexInsideBlockCommentSkipsToLaterToken() {
         String sql = "SELECT /* hidden WHERE token */ id FROM users WHERE id = 1";
         int fromIndex = sql.indexOf("WHERE token");
 
-        assertEquals(sql.lastIndexOf("WHERE"), SqlParser.indexOfWord(sql, "WHERE", fromIndex, false));
+        assertEquals(sql.lastIndexOf("WHERE"), SqlParser.indexOfToken(sql, "WHERE", fromIndex, false));
     }
 
     @Test
-    public void testIndexOfWord_TrailingWordAtEnd() {
+    public void testIndexOfToken_TrailingTokenAtEnd() {
         String sql = "SELECT FROM";
 
-        assertEquals(sql.length() - "FROM".length(), SqlParser.indexOfWord(sql, "FROM", 0, false));
+        assertEquals(sql.length() - "FROM".length(), SqlParser.indexOfToken(sql, "FROM", 0, false));
     }
 
     @Test
-    public void testIndexOfWord_CompositeWordAfterFalseStarts() {
+    public void testIndexOfToken_CompositeTokenAfterFalseStarts() {
         String sql = "SELECT * FROM users ORDER name ORDER age";
 
-        assertEquals(-1, SqlParser.indexOfWord(sql, "ORDER BY", 0, false));
+        assertEquals(-1, SqlParser.indexOfToken(sql, "ORDER BY", 0, false));
     }
 
     @Test
-    public void testNextWord_QuotedTokenWithBackslashEscape() {
+    public void testNextToken_QuotedTokenWithBackslashEscape() {
         String sql = "SELECT 'John\\'s' FROM users";
 
-        assertEquals("'John\\'s'", SqlParser.nextWord(sql, 6));
+        assertEquals("'John\\'s'", SqlParser.nextToken(sql, 6));
     }
 
     @Test
-    public void testNextWord_SkipsDashCommentAtStart() {
+    public void testNextToken_SkipsDashCommentAtStart() {
         String sql = "-- hidden\nvalue";
 
-        assertEquals("value", SqlParser.nextWord(sql, 0));
+        assertEquals("value", SqlParser.nextToken(sql, 0));
     }
 
     @Test
-    public void testNextWord_DashCommentAfterToken() {
+    public void testNextToken_DashCommentAfterToken() {
         String sql = "value-- hidden\nother";
 
-        assertEquals("value", SqlParser.nextWord(sql, 0));
+        assertEquals("value", SqlParser.nextToken(sql, 0));
     }
 
     @Test
-    public void testNextWord_SkipsHashCommentAtStart() {
+    public void testNextToken_SkipsHashCommentAtStart() {
         String sql = "# hidden\nvalue";
 
-        assertEquals("value", SqlParser.nextWord(sql, 0));
+        assertEquals("value", SqlParser.nextToken(sql, 0));
     }
 
     @Test
-    public void testNextWord_HashCommentAfterToken() {
+    public void testNextToken_HashCommentAfterToken() {
         String sql = "value# hidden\nother";
 
-        assertEquals("value", SqlParser.nextWord(sql, 0));
+        assertEquals("value", SqlParser.nextToken(sql, 0));
     }
 
     @Test
-    public void testNextWord_BlockCommentAfterToken() {
+    public void testNextToken_BlockCommentAfterToken() {
         String sql = "value/* hidden */other";
 
-        assertEquals("value", SqlParser.nextWord(sql, 0));
+        assertEquals("value", SqlParser.nextToken(sql, 0));
     }
 
     @Test
-    public void testNextWord_LeadingNewlineWhitespace() {
+    public void testNextToken_LeadingNewlineWhitespace() {
         String sql = " \n\tvalue";
 
-        assertEquals("value", SqlParser.nextWord(sql, 0));
+        assertEquals("value", SqlParser.nextToken(sql, 0));
     }
 
     @Test
@@ -954,70 +966,70 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testSqlParser_classLevelExample() {
         String sql = "SELECT * FROM users WHERE age > 25 ORDER BY name";
-        List<String> words = SqlParser.parse(sql);
-        assertNotNull(words);
-        assertFalse(words.isEmpty());
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains("FROM"));
-        assertTrue(words.contains("users"));
-        assertTrue(words.contains("WHERE"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertNotNull(tokens);
+        assertFalse(tokens.isEmpty());
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains("FROM"));
+        assertTrue(tokens.contains("users"));
+        assertTrue(tokens.contains("WHERE"));
         // Javadoc shows "ORDER" and "BY" as separate tokens in parse() output
-        assertTrue(words.contains("ORDER"));
-        assertTrue(words.contains("BY"));
-        assertTrue(words.contains("name"));
+        assertTrue(tokens.contains("ORDER"));
+        assertTrue(tokens.contains("BY"));
+        assertTrue(tokens.contains("name"));
     }
 
     @Test
     public void testSqlParser_parse() {
-        List<String> words = SqlParser.parse("SELECT name, age FROM users WHERE age >= 18");
-        assertNotNull(words);
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains("name"));
-        assertTrue(words.contains(","));
-        assertTrue(words.contains("age"));
-        assertTrue(words.contains("FROM"));
-        assertTrue(words.contains("users"));
-        assertTrue(words.contains("WHERE"));
-        assertTrue(words.contains(">="));
-        assertTrue(words.contains("18"));
+        List<String> tokens = SqlParser.parse("SELECT name, age FROM users WHERE age >= 18");
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains("name"));
+        assertTrue(tokens.contains(","));
+        assertTrue(tokens.contains("age"));
+        assertTrue(tokens.contains("FROM"));
+        assertTrue(tokens.contains("users"));
+        assertTrue(tokens.contains("WHERE"));
+        assertTrue(tokens.contains(">="));
+        assertTrue(tokens.contains("18"));
     }
 
     @Test
-    public void testSqlParser_indexOfWord() {
+    public void testSqlParser_indexOfToken() {
         String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
-        int index = SqlParser.indexOfWord(sql, "ORDER BY", 0, false);
+        int index = SqlParser.indexOfToken(sql, "ORDER BY", 0, false);
         assertTrue(index >= 0, "ORDER BY should be found in the SQL");
-        int whereIndex = SqlParser.indexOfWord(sql, "WHERE", 0, false);
+        int whereIndex = SqlParser.indexOfToken(sql, "WHERE", 0, false);
         assertTrue(whereIndex >= 0, "WHERE should be found in the SQL");
         assertTrue(whereIndex < index, "WHERE should come before ORDER BY");
     }
 
     @Test
-    public void testSqlParser_nextWord() {
+    public void testSqlParser_nextToken() {
         String sql = "SELECT   name,   age FROM users";
-        String word1 = SqlParser.nextWord(sql, 6);
-        assertEquals("name", word1);
-        String word2 = SqlParser.nextWord(sql, 13);
-        assertEquals(",", word2);
-        String word3 = SqlParser.nextWord(sql, 14);
-        assertEquals("age", word3);
+        String token1 = SqlParser.nextToken(sql, 6);
+        assertEquals("name", token1);
+        String token2 = SqlParser.nextToken(sql, 13);
+        assertEquals(",", token2);
+        String token3 = SqlParser.nextToken(sql, 14);
+        assertEquals("age", token3);
     }
 
     @Test
     public void testSqlParser_registerSeparatorChar() {
         SqlParser.registerSeparator('$');
-        List<String> words = SqlParser.parse("SELECT$FROM$users");
-        assertNotNull(words);
-        assertTrue(words.contains("$"));
+        List<String> tokens = SqlParser.parse("SELECT$FROM$users");
+        assertNotNull(tokens);
+        assertTrue(tokens.contains("$"));
     }
 
     @Test
     public void testSqlParser_registerSeparatorString() {
         SqlParser.registerSeparator("<=>");
         SqlParser.registerSeparator("::");
-        List<String> words = SqlParser.parse("SELECT <=> value :: text");
-        assertTrue(words.contains("<=>"));
-        assertTrue(words.contains("::"));
+        List<String> tokens = SqlParser.parse("SELECT <=> value :: text");
+        assertTrue(tokens.contains("<=>"));
+        assertTrue(tokens.contains("::"));
     }
 
     @Test
@@ -1026,44 +1038,44 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
-    public void testIndexOfWord_compositeKeyword_isNotNullWithBlockCommentBetweenSubwords() {
+    public void testIndexOfToken_compositeKeyword_isNotNullWithBlockCommentBetweenComponentTokens() {
         String sql = "SELECT col FROM t WHERE col IS /* remark */ NOT /* remark2 */ NULL";
-        int idx = SqlParser.indexOfWord(sql, "IS NOT NULL", 0, false);
-        assertTrue(idx >= 0, "indexOfWord should find IS NOT NULL even when block comments appear between subwords");
+        int idx = SqlParser.indexOfToken(sql, "IS NOT NULL", 0, false);
+        assertTrue(idx >= 0, "indexOfToken should find IS NOT NULL even when block comments appear between component tokens");
         assertEquals(sql.indexOf("IS"), idx);
     }
 
     @Test
-    public void testIndexOfWord_compositeKeyword_orderByWithBlockComment() {
+    public void testIndexOfToken_compositeKeyword_orderByWithBlockComment() {
         String sql = "SELECT * FROM t ORDER /* comment */ BY id";
-        int idx = SqlParser.indexOfWord(sql, "ORDER BY", 0, false);
-        assertTrue(idx >= 0, "indexOfWord should find ORDER BY even with a block comment between the keywords");
+        int idx = SqlParser.indexOfToken(sql, "ORDER BY", 0, false);
+        assertTrue(idx >= 0, "indexOfToken should find ORDER BY even with a block comment between the keywords");
     }
 
     @Test
     public void testParseBackslashEscapedQuote() {
         // Backslash-escaped single quote (MySQL style) should keep the string intact.
         String sql = "SELECT * FROM t WHERE x = 'O\\'Brien'";
-        List<String> words = SqlParser.parse(sql);
-        assertTrue(words.stream().anyMatch(w -> w.equals("'O\\'Brien'")),
-                "Expected the backslash-escaped quote to keep the literal as a single token, got: " + words);
+        List<String> tokens = SqlParser.parse(sql);
+        assertTrue(tokens.stream().anyMatch(w -> w.equals("'O\\'Brien'")),
+                "Expected the backslash-escaped quote to keep the literal as a single token, got: " + tokens);
     }
 
     @Test
     public void testParseDoubledQuoteEscape() {
         // SQL-standard doubled-quote escape.
         String sql = "SELECT 'O''Brien' FROM dual";
-        List<String> words = SqlParser.parse(sql);
-        assertTrue(words.contains("'O''Brien'"));
+        List<String> tokens = SqlParser.parse(sql);
+        assertTrue(tokens.contains("'O''Brien'"));
     }
 
     @Test
-    public void testIndexOfWordIsNotMatchingSubstring() {
-        // indexOfWord must respect word boundaries: searching for "JOIN" must NOT match inside RIGHTJOIN.
+    public void testIndexOfTokenIsNotMatchingSubstring() {
+        // indexOfToken must respect token boundaries: searching for "JOIN" must NOT match inside RIGHTJOIN.
         String sql = "SELECT * FROM t1 RIGHTJOIN t2 ON ...";
-        int idx = SqlParser.indexOfWord(sql, "JOIN", 0, false);
-        // The only token in this SQL containing JOIN is "RIGHTJOIN" itself, which is not a separate word.
-        assertEquals(-1, idx, "indexOfWord('JOIN') must not match the substring inside identifier RIGHTJOIN");
+        int idx = SqlParser.indexOfToken(sql, "JOIN", 0, false);
+        // The only token in this SQL containing JOIN is "RIGHTJOIN" itself, which is not a separate token.
+        assertEquals(-1, idx, "indexOfToken('JOIN') must not match the substring inside identifier RIGHTJOIN");
     }
 
     @Test
@@ -1073,24 +1085,24 @@ public class SqlParserTest extends TestBase {
         // over the pending backslash escape, so the literal stayed open and swallowed the rest
         // of the SQL (FROM/t never became separate tokens).
         String sql = "SELECT 'a\\'' FROM t";
-        List<String> words = SqlParser.parse(sql);
-        assertTrue(words.contains("'a\\''"), "Expected the escaped-quote-then-closing-quote literal as a single token, got: " + words);
-        assertTrue(words.contains("FROM"), "FROM must be parsed as a separate token (string terminated), got: " + words);
-        assertTrue(words.contains("t"), "table name must be parsed as a separate token, got: " + words);
+        List<String> tokens = SqlParser.parse(sql);
+        assertTrue(tokens.contains("'a\\''"), "Expected the escaped-quote-then-closing-quote literal as a single token, got: " + tokens);
+        assertTrue(tokens.contains("FROM"), "FROM must be parsed as a separate token (string terminated), got: " + tokens);
+        assertTrue(tokens.contains("t"), "table name must be parsed as a separate token, got: " + tokens);
     }
 
     @Test
-    public void testNextWordBackslashEscapedQuoteThenClosingQuote() {
-        // nextWord must return the whole terminated literal '...\'' and stop at it.
+    public void testNextTokenBackslashEscapedQuoteThenClosingQuote() {
+        // nextToken must return the whole terminated literal '...\'' and stop at it.
         String sql = "'a\\'' rest";
-        assertEquals("'a\\''", SqlParser.nextWord(sql, 0));
+        assertEquals("'a\\''", SqlParser.nextToken(sql, 0));
     }
 
     @Test
-    public void testIndexOfWordAfterBackslashEscapedQuoteThenClosingQuote() {
+    public void testIndexOfTokenAfterBackslashEscapedQuoteThenClosingQuote() {
         // The escaped-then-closing quote terminates the literal, so a keyword after it is found.
         String sql = "WHERE x = 'a\\'' AND y = 1";
-        int idx = SqlParser.indexOfWord(sql, "AND", 0, false);
+        int idx = SqlParser.indexOfToken(sql, "AND", 0, false);
         assertTrue(idx > 0, "AND after a terminated escaped-quote literal must be found, got index: " + idx);
     }
 
@@ -1101,151 +1113,151 @@ public class SqlParserTest extends TestBase {
     }
 
     // ----------------------------------------------------------------------------------------------
-    // indexOfWord(String, String) -- 2-arg convenience overload
+    // indexOfToken(String, String) -- 2-arg convenience overload
     // ----------------------------------------------------------------------------------------------
 
     @Test
-    public void testIndexOfWord2Arg_findsCaseInsensitiveFromStart() {
+    public void testIndexOfToken2Arg_findsCaseInsensitiveFromStart() {
         String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
 
-        assertEquals(0, SqlParser.indexOfWord(sql, "SELECT"));
-        assertEquals(sql.indexOf("FROM"), SqlParser.indexOfWord(sql, "FROM"));
+        assertEquals(0, SqlParser.indexOfToken(sql, "SELECT"));
+        assertEquals(sql.indexOf("FROM"), SqlParser.indexOfToken(sql, "FROM"));
         // Default is case-insensitive.
-        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfWord(sql, "where"));
+        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfToken(sql, "where"));
         // Composite keyword.
-        assertEquals(sql.indexOf("ORDER"), SqlParser.indexOfWord(sql, "ORDER BY"));
+        assertEquals(sql.indexOf("ORDER"), SqlParser.indexOfToken(sql, "ORDER BY"));
     }
 
     @Test
-    public void testIndexOfWord2Arg_notFoundReturnsMinusOne() {
+    public void testIndexOfToken2Arg_notFoundReturnsMinusOne() {
         String sql = "SELECT * FROM users";
 
-        assertEquals(-1, SqlParser.indexOfWord(sql, "WHERE"));
+        assertEquals(-1, SqlParser.indexOfToken(sql, "WHERE"));
     }
 
     // ----------------------------------------------------------------------------------------------
-    // indexOfWord(String, String, int) -- 3-arg convenience overload
+    // indexOfToken(String, String, int) -- 3-arg convenience overload
     // ----------------------------------------------------------------------------------------------
 
     @Test
-    public void testIndexOfWord3Arg_respectsFromIndex() {
+    public void testIndexOfToken3Arg_respectsFromIndex() {
         String sql = "SELECT name FROM users WHERE name = 'x' OR name = 'y'";
 
-        int first = SqlParser.indexOfWord(sql, "name", 0);
+        int first = SqlParser.indexOfToken(sql, "name", 0);
         assertTrue(first >= 0);
 
-        int second = SqlParser.indexOfWord(sql, "name", first + 1);
+        int second = SqlParser.indexOfToken(sql, "name", first + 1);
         assertTrue(second > first);
 
-        int third = SqlParser.indexOfWord(sql, "name", second + 1);
+        int third = SqlParser.indexOfToken(sql, "name", second + 1);
         assertTrue(third > second);
     }
 
     @Test
-    public void testIndexOfWord3Arg_defaultsToCaseInsensitive() {
+    public void testIndexOfToken3Arg_defaultsToCaseInsensitive() {
         String sql = "select * from users";
 
-        assertEquals(0, SqlParser.indexOfWord(sql, "SELECT", 0));
+        assertEquals(0, SqlParser.indexOfToken(sql, "SELECT", 0));
     }
 
     @Test
-    public void testIndexOfWord3Arg_negativeFromIndexTreatedAsZero() {
+    public void testIndexOfToken3Arg_negativeFromIndexTreatedAsZero() {
         String sql = "SELECT * FROM users";
 
-        assertEquals(0, SqlParser.indexOfWord(sql, "SELECT", -10));
+        assertEquals(0, SqlParser.indexOfToken(sql, "SELECT", -10));
     }
 
     // ----------------------------------------------------------------------------------------------
-    // nextWordEnd(String, int)
+    // nextTokenEndIndex(String, int)
     // ----------------------------------------------------------------------------------------------
 
     @Test
-    public void testNextWordEnd_javadocExample() {
+    public void testNextTokenEndIndex_javadocExample() {
         String sql = "SELECT   name,   age FROM users";
 
-        assertEquals(13, SqlParser.nextWordEnd(sql, 6)); // just past "name"
-        assertEquals(14, SqlParser.nextWordEnd(sql, 13)); // just past ","
-        assertEquals(20, SqlParser.nextWordEnd(sql, 14)); // just past "age"
+        assertEquals(13, SqlParser.nextTokenEndIndex(sql, 6)); // just past "name"
+        assertEquals(14, SqlParser.nextTokenEndIndex(sql, 13)); // just past ","
+        assertEquals(20, SqlParser.nextTokenEndIndex(sql, 14)); // just past "age"
     }
 
     @Test
-    public void testNextWordEnd_quotedToken() {
+    public void testNextTokenEndIndex_quotedToken() {
         String sql = "SELECT 'a b' FROM t";
-        int end = SqlParser.nextWordEnd(sql, 6);
+        int end = SqlParser.nextTokenEndIndex(sql, 6);
 
         assertEquals(sql.indexOf("'a b'") + "'a b'".length(), end);
         assertEquals("'a b'", sql.substring(end - "'a b'".length(), end));
     }
 
     @Test
-    public void testNextWordEnd_multiCharOperator() {
+    public void testNextTokenEndIndex_multiCharOperator() {
         String sql = "a >= b";
-        int end = SqlParser.nextWordEnd(sql, 1); // scanning from the space before ">="
+        int end = SqlParser.nextTokenEndIndex(sql, 1); // scanning from the space before ">="
 
         assertEquals(sql.indexOf(">=") + 2, end);
     }
 
     @Test
-    public void testNextWordEnd_skipsLeadingBlockComment() {
+    public void testNextTokenEndIndex_skipsLeadingBlockComment() {
         String sql = "SELECT /* hidden */ name FROM users";
-        int end = SqlParser.nextWordEnd(sql, 6);
+        int end = SqlParser.nextTokenEndIndex(sql, 6);
 
         assertEquals(sql.indexOf("name") + "name".length(), end);
     }
 
     @Test
-    public void testNextWordEnd_noFurtherTokenReturnsLength() {
+    public void testNextTokenEndIndex_noFurtherTokenReturnsLength() {
         String sql = "SELECT   ";
 
-        assertEquals(sql.length(), SqlParser.nextWordEnd(sql, 6));
+        assertEquals(sql.length(), SqlParser.nextTokenEndIndex(sql, 6));
     }
 
     @Test
-    public void testNextWordEnd_onlyCommentRemainsReturnsLength() {
+    public void testNextTokenEndIndex_onlyCommentRemainsReturnsLength() {
         String sql = "x -- trailing comment";
 
         // After "x" only whitespace + a line comment remain.
-        assertEquals(sql.length(), SqlParser.nextWordEnd(sql, 1));
+        assertEquals(sql.length(), SqlParser.nextTokenEndIndex(sql, 1));
     }
 
     @Test
-    public void testNextWordEnd_negativeFromIndexTreatedAsZero() {
+    public void testNextTokenEndIndex_negativeFromIndexTreatedAsZero() {
         String sql = "SELECT * FROM users";
 
-        assertEquals("SELECT".length(), SqlParser.nextWordEnd(sql, -5));
+        assertEquals("SELECT".length(), SqlParser.nextTokenEndIndex(sql, -5));
     }
 
     @Test
-    public void testNextWordEnd_consistentWithNextWord() {
-        assertNextWordConsistency("SELECT   name,   age FROM users");
-        assertNextWordConsistency("WHERE a >= b AND c != d");
-        assertNextWordConsistency("SELECT 'a b', \"q\" FROM t -- tail\n");
-        assertNextWordConsistency("SELECT [a]]b], [--] FROM [t]");
-        assertNextWordConsistency("SELECT /* c */ x FROM #tmp");
-        assertNextWordConsistency("a||b->>c");
-        assertNextWordConsistency("");
-        assertNextWordConsistency("   ");
+    public void testNextTokenEndIndex_consistentWithNextToken() {
+        assertNextTokenConsistency("SELECT   name,   age FROM users");
+        assertNextTokenConsistency("WHERE a >= b AND c != d");
+        assertNextTokenConsistency("SELECT 'a b', \"q\" FROM t -- tail\n");
+        assertNextTokenConsistency("SELECT [a]]b], [--] FROM [t]");
+        assertNextTokenConsistency("SELECT /* c */ x FROM #tmp");
+        assertNextTokenConsistency("a||b->>c");
+        assertNextTokenConsistency("");
+        assertNextTokenConsistency("   ");
     }
 
     /**
-     * Walks {@code sql} with {@link SqlParser#nextWord} and {@link SqlParser#nextWordEnd} in lockstep
+     * Walks {@code sql} with {@link SqlParser#nextToken} and {@link SqlParser#nextTokenEndIndex} in lockstep
      * and asserts that the end index reported for each token bounds exactly the token text returned.
      */
-    private static void assertNextWordConsistency(final String sql) {
+    private static void assertNextTokenConsistency(final String sql) {
         int idx = 0;
 
         while (idx <= sql.length()) {
-            final String word = SqlParser.nextWord(sql, idx);
-            final int end = SqlParser.nextWordEnd(sql, idx);
+            final String token = SqlParser.nextToken(sql, idx);
+            final int end = SqlParser.nextTokenEndIndex(sql, idx);
 
-            if (word.isEmpty()) {
+            if (token.isEmpty()) {
                 assertEquals(sql.length(), end, "empty token => end at length for [" + sql + "] idx=" + idx);
                 break;
             }
 
-            final int start = end - word.length();
+            final int start = end - token.length();
             assertTrue(start >= idx, "token start >= scan position for [" + sql + "] idx=" + idx);
-            assertEquals(word, sql.substring(start, end), "token text bounded by nextWordEnd for [" + sql + "] idx=" + idx);
+            assertEquals(token, sql.substring(start, end), "token text bounded by nextTokenEndIndex for [" + sql + "] idx=" + idx);
 
             if (end <= idx) {
                 break; // safety against an accidental infinite loop in a failing build
@@ -1312,6 +1324,15 @@ public class SqlParserTest extends TestBase {
         SqlParser.unregisterSeparator("$$$$$$");
         // After removal the 6-char run is no longer a separator and stays a single token.
         assertEquals(Arrays.asList("a$$$$$$b"), SqlParser.parse("a$$$$$$b"));
+    }
+
+    @Test
+    public void testSeparatorRegistryMutationsAreSerialized() throws NoSuchMethodException {
+        assertTrue(Modifier.isSynchronized(SqlParser.class.getMethod("registerSeparator", char.class).getModifiers()));
+        assertTrue(Modifier.isSynchronized(SqlParser.class.getMethod("registerSeparator", String.class).getModifiers()));
+        assertTrue(Modifier.isSynchronized(SqlParser.class.getMethod("unregisterSeparator", char.class).getModifiers()));
+        assertTrue(Modifier.isSynchronized(SqlParser.class.getMethod("unregisterSeparator", String.class).getModifiers()));
+        assertTrue(Modifier.isSynchronized(SqlParser.class.getMethod("resetSeparators").getModifiers()));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -1662,79 +1683,79 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testParse_unterminatedSingleQuoteKeepsRemainderAsOneToken() {
         // An unterminated quote swallows the rest of the input as a single token (documented behavior).
-        List<String> words = SqlParser.parse("SELECT 'oops FROM t");
+        List<String> tokens = SqlParser.parse("SELECT 'oops FROM t");
 
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.stream().anyMatch(w -> w.startsWith("'oops")));
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.stream().anyMatch(w -> w.startsWith("'oops")));
     }
 
     @Test
     public void testParse_keepCommentsRetainsMultipleBlockComments() {
         String sql = "-- Keep comments\nSELECT /* a */ 1 /* b */ FROM t";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("/* a */"));
-        assertTrue(words.contains("/* b */"));
+        assertTrue(tokens.contains("/* a */"));
+        assertTrue(tokens.contains("/* b */"));
     }
 
     @Test
     public void testTokenMethods_nullInputsThrow() {
         assertThrows(NullPointerException.class, () -> SqlParser.parse(null));
-        assertThrows(NullPointerException.class, () -> SqlParser.indexOfWord(null, "SELECT"));
-        assertThrows(NullPointerException.class, () -> SqlParser.indexOfWord("SELECT 1", null));
-        assertThrows(NullPointerException.class, () -> SqlParser.nextWord(null, 0));
-        assertThrows(NullPointerException.class, () -> SqlParser.nextWordEnd(null, 0));
+        assertThrows(NullPointerException.class, () -> SqlParser.indexOfToken(null, "SELECT"));
+        assertThrows(NullPointerException.class, () -> SqlParser.indexOfToken("SELECT 1", null));
+        assertThrows(NullPointerException.class, () -> SqlParser.nextToken(null, 0));
+        assertThrows(NullPointerException.class, () -> SqlParser.nextTokenEndIndex(null, 0));
     }
 
     @Test
     public void testIsFunctionName_indexAtOrBeyondEnd() {
-        List<String> words = SqlParser.parse("SELECT COUNT(*)");
+        List<String> tokens = SqlParser.parse("SELECT COUNT(*)");
 
         // index == len-1 with no following '(' token, and index beyond range: both false, no throw.
-        assertFalse(SqlParser.isFunctionName(words, words.size(), words.size() - 1));
-        assertFalse(SqlParser.isFunctionName(words, words.size(), words.size()));
-        assertFalse(SqlParser.isFunctionName(words, words.size(), -1));
-        assertFalse(SqlParser.isFunctionName(words, 1, 2));
-        assertTrue(SqlParser.isFunctionName(words, words.size() + 10, 2));
+        assertFalse(SqlParser.isFunctionName(tokens, tokens.size(), tokens.size() - 1));
+        assertFalse(SqlParser.isFunctionName(tokens, tokens.size(), tokens.size()));
+        assertFalse(SqlParser.isFunctionName(tokens, tokens.size(), -1));
+        assertFalse(SqlParser.isFunctionName(tokens, 1, 2));
+        assertTrue(SqlParser.isFunctionName(tokens, tokens.size() + 10, 2));
         assertThrows(NullPointerException.class, () -> SqlParser.isFunctionName(null, 0, 0));
     }
 
     @Test
     public void testIsFunctionName_spaceBeforeParenthesisIsNotFunctionName() {
-        List<String> words = SqlParser.parse("SELECT (1)");
+        List<String> tokens = SqlParser.parse("SELECT (1)");
 
-        assertFalse(SqlParser.isFunctionName(words, words.size(), words.indexOf(" ")));
+        assertFalse(SqlParser.isFunctionName(tokens, tokens.size(), tokens.indexOf(" ")));
     }
 
     @Test
     public void testIsFunctionName_twoArgOverload() {
-        List<String> words = SqlParser.parse("SELECT COUNT(*) FROM users");
+        List<String> tokens = SqlParser.parse("SELECT COUNT(*) FROM users");
 
-        assertTrue(SqlParser.isFunctionName(words, 2)); // "COUNT"
-        assertFalse(SqlParser.isFunctionName(words, 0)); // "SELECT"
-        assertFalse(SqlParser.isFunctionName(words, -1));
-        assertFalse(SqlParser.isFunctionName(words, words.size()));
+        assertTrue(SqlParser.isFunctionName(tokens, 2)); // "COUNT"
+        assertFalse(SqlParser.isFunctionName(tokens, 0)); // "SELECT"
+        assertFalse(SqlParser.isFunctionName(tokens, -1));
+        assertFalse(SqlParser.isFunctionName(tokens, tokens.size()));
         assertThrows(NullPointerException.class, () -> SqlParser.isFunctionName(null, 0));
     }
 
     @Test
-    public void testIndexOfWord_compositeWordWithDoubledInternalSpace() {
+    public void testIndexOfToken_compositeTokenWithDoubledInternalSpace() {
         String sql = "A ORDER BY B";
-        int singleSpaced = SqlParser.indexOfWord(sql, "ORDER BY", 0, false);
+        int singleSpaced = SqlParser.indexOfToken(sql, "ORDER BY", 0, false);
 
         assertEquals(2, singleSpaced);
-        // A doubled internal space in the word argument must split to the same sub-words
-        // (previously the empty middle sub-word could never match and was even cached).
-        assertEquals(singleSpaced, SqlParser.indexOfWord(sql, "ORDER  BY", 0, false));
+        // A doubled internal space in the token argument must split to the same sub-tokens
+        // (previously the empty middle sub-token could never match and was even cached).
+        assertEquals(singleSpaced, SqlParser.indexOfToken(sql, "ORDER  BY", 0, false));
     }
 
     @Test
     public void testIsFunctionName_oracleOuterJoinMarkerIsNotFunctionCall() {
-        List<String> words = SqlParser.parse("SELECT a.id(+) FROM a");
-        int idIndex = words.indexOf("id");
+        List<String> tokens = SqlParser.parse("SELECT a.id(+) FROM a");
+        int idIndex = tokens.indexOf("id");
 
-        assertTrue(words.contains("(+)"));
-        assertFalse(SqlParser.isFunctionName(words, words.size(), idIndex));
+        assertTrue(tokens.contains("(+)"));
+        assertFalse(SqlParser.isFunctionName(tokens, tokens.size(), idIndex));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -1772,20 +1793,20 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testParse_unterminatedBlockCommentDoesNotThrow() {
-        List<String> words = SqlParser.parse("SELECT 1 /* unterminated");
+        List<String> tokens = SqlParser.parse("SELECT 1 /* unterminated");
 
-        assertTrue(words.contains("SELECT"));
-        assertTrue(words.contains("1"));
+        assertTrue(tokens.contains("SELECT"));
+        assertTrue(tokens.contains("1"));
     }
 
     @Test
     public void testParse_keepCommentsStillStripsLineComments() {
         // The "-- Keep comments" marker keeps block comments but line/hash comments are always stripped.
         String sql = "-- Keep comments\nSELECT 1 -- gone\n/* kept */ FROM t # also gone\n";
-        List<String> words = SqlParser.parse(sql);
+        List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("/* kept */"));
-        assertFalse(words.stream().anyMatch(w -> w.contains("gone")));
+        assertTrue(tokens.contains("/* kept */"));
+        assertFalse(tokens.stream().anyMatch(w -> w.contains("gone")));
     }
 
     @Test
@@ -1822,54 +1843,54 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
-    public void testParseAndNextWord_bracketQuotedIdentifierIsSingleToken() {
+    public void testParseAndNextToken_bracketQuotedIdentifierIsSingleToken() {
         final String sql = "SELECT [a]]b], [--] FROM [table]";
-        final List<String> words = SqlParser.parse(sql);
+        final List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("[a]]b]"));
-        assertTrue(words.contains("[--]"));
-        assertEquals("[a]]b]", SqlParser.nextWord(sql, "SELECT".length()));
-        assertEquals(sql.indexOf("[a]]b]") + "[a]]b]".length(), SqlParser.nextWordEnd(sql, "SELECT".length()));
-        assertEquals(sql.indexOf("FROM"), SqlParser.indexOfWord(sql, "FROM", 0, false));
+        assertTrue(tokens.contains("[a]]b]"));
+        assertTrue(tokens.contains("[--]"));
+        assertEquals("[a]]b]", SqlParser.nextToken(sql, "SELECT".length()));
+        assertEquals(sql.indexOf("[a]]b]") + "[a]]b]".length(), SqlParser.nextTokenEndIndex(sql, "SELECT".length()));
+        assertEquals(sql.indexOf("FROM"), SqlParser.indexOfToken(sql, "FROM", 0, false));
     }
 
     @Test
-    public void testParseAndNextWord_bracketIdentifierEndingInBackslashCloses() {
+    public void testParseAndNextToken_bracketIdentifierEndingInBackslashCloses() {
         // SQL Server [bracket] identifiers do not honor backslash escaping (only ]] doubles a bracket), so a
         // bracket ending in a lone backslash must still close and not swallow the rest of the statement.
-        // Regression across all four tokenizer scanners (parse / nextWord / nextWordEnd / indexOfWord).
+        // Regression across all four tokenizer scanners (parse / nextToken / nextTokenEndIndex / indexOfToken).
         final String sql = "SELECT [a\\] FROM t"; // the identifier is [a\]
-        final List<String> words = SqlParser.parse(sql);
+        final List<String> tokens = SqlParser.parse(sql);
 
-        assertTrue(words.contains("[a\\]"));
-        assertTrue(words.contains("FROM"));
-        assertTrue(words.contains("t"));
-        assertEquals("[a\\]", SqlParser.nextWord(sql, "SELECT".length()));
-        assertEquals(sql.indexOf("[a\\]") + "[a\\]".length(), SqlParser.nextWordEnd(sql, "SELECT".length()));
-        assertEquals(sql.indexOf("FROM"), SqlParser.indexOfWord(sql, "FROM", 0, false));
+        assertTrue(tokens.contains("[a\\]"));
+        assertTrue(tokens.contains("FROM"));
+        assertTrue(tokens.contains("t"));
+        assertEquals("[a\\]", SqlParser.nextToken(sql, "SELECT".length()));
+        assertEquals(sql.indexOf("[a\\]") + "[a\\]".length(), SqlParser.nextTokenEndIndex(sql, "SELECT".length()));
+        assertEquals(sql.indexOf("FROM"), SqlParser.indexOfToken(sql, "FROM", 0, false));
 
         // A Windows-path-like identifier that ends in a backslash likewise closes cleanly.
         final String pathSql = "SELECT [C:\\path\\] FROM t"; // the identifier is [C:\path\]
         assertTrue(SqlParser.parse(pathSql).contains("[C:\\path\\]"));
-        assertEquals(pathSql.indexOf("FROM"), SqlParser.indexOfWord(pathSql, "FROM", 0, false));
+        assertEquals(pathSql.indexOf("FROM"), SqlParser.indexOfToken(pathSql, "FROM", 0, false));
     }
 
     // ----------------------------------------------------------------------------------------------
-    // nextWord / nextWordEnd -- MyBatis #{...} stays one token
+    // nextToken / nextTokenEndIndex -- MyBatis #{...} stays one token
     // ----------------------------------------------------------------------------------------------
 
     @Test
-    public void testNextWord_myBatisMarkerIsOneToken() {
-        assertEquals("#{userId}", SqlParser.nextWord("WHERE id = #{userId}", 10));
-        assertNextWordConsistency("a #{x} b");
-        assertNextWordConsistency("SELECT #{p} FROM #tmp WHERE c #>> d");
+    public void testNextToken_myBatisMarkerIsOneToken() {
+        assertEquals("#{userId}", SqlParser.nextToken("WHERE id = #{userId}", 10));
+        assertNextTokenConsistency("a #{x} b");
+        assertNextTokenConsistency("SELECT #{p} FROM #tmp WHERE c #>> d");
     }
 
     @Test
-    public void testNextWord_hashPrefixedIdentifierAfterComments() {
-        assertEquals("#tmp", SqlParser.nextWord("FROM /* temp */ #tmp", "FROM".length()));
-        assertEquals("#tmp", SqlParser.nextWord("FROM/* temp */#tmp", "FROM".length()));
-        assertEquals("#tmp", SqlParser.nextWord("FROM -- temp\n#tmp", "FROM".length()));
+    public void testNextToken_hashPrefixedIdentifierAfterComments() {
+        assertEquals("#tmp", SqlParser.nextToken("FROM /* temp */ #tmp", "FROM".length()));
+        assertEquals("#tmp", SqlParser.nextToken("FROM/* temp */#tmp", "FROM".length()));
+        assertEquals("#tmp", SqlParser.nextToken("FROM -- temp\n#tmp", "FROM".length()));
     }
 
     @Test
@@ -1886,18 +1907,18 @@ public class SqlParserTest extends TestBase {
     }
 
     // ----------------------------------------------------------------------------------------------
-    // indexOfWord -- case sensitivity on composite keywords
+    // indexOfToken -- case sensitivity on composite keywords
     // ----------------------------------------------------------------------------------------------
 
     @Test
-    public void testIndexOfWord_caseSensitiveComposite() {
+    public void testIndexOfToken_caseSensitiveComposite() {
         String sql = "SELECT * FROM a LEFT JOIN b ON a.id = b.id";
 
-        assertEquals(sql.indexOf("LEFT"), SqlParser.indexOfWord(sql, "LEFT JOIN", 0, true));
+        assertEquals(sql.indexOf("LEFT"), SqlParser.indexOfToken(sql, "LEFT JOIN", 0, true));
         // Wrong case must not match when caseSensitive=true.
-        assertEquals(-1, SqlParser.indexOfWord(sql, "left join", 0, true));
+        assertEquals(-1, SqlParser.indexOfToken(sql, "left join", 0, true));
         // ...but matches when caseSensitive=false.
-        assertEquals(sql.indexOf("LEFT"), SqlParser.indexOfWord(sql, "left join", 0, false));
+        assertEquals(sql.indexOf("LEFT"), SqlParser.indexOfToken(sql, "left join", 0, false));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -2071,30 +2092,30 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testParse_keepCommentsRetainsSlashBodyBlockCommentAsOneToken() {
-        final List<String> words = SqlParser.parse("-- Keep comments\nSELECT /*/x*/ FROM t");
+        final List<String> tokens = SqlParser.parse("-- Keep comments\nSELECT /*/x*/ FROM t");
 
-        assertTrue(words.contains("/*/x*/"), "the whole /*/x*/ must be kept as a single comment token: " + words);
+        assertTrue(tokens.contains("/*/x*/"), "the whole /*/x*/ must be kept as a single comment token: " + tokens);
     }
 
     @Test
-    public void testNextWord_skipsBlockCommentWithSlashBody() {
-        assertEquals("name", SqlParser.nextWord("/*/x*/ name", 0));
+    public void testNextToken_skipsBlockCommentWithSlashBody() {
+        assertEquals("name", SqlParser.nextToken("/*/x*/ name", 0));
     }
 
     @Test
-    public void testNextWordEnd_skipsBlockCommentWithSlashBody() {
+    public void testNextTokenEndIndex_skipsBlockCommentWithSlashBody() {
         final String sql = "/*/x*/ name";
 
-        assertEquals(sql.indexOf("name") + "name".length(), SqlParser.nextWordEnd(sql, 0));
+        assertEquals(sql.indexOf("name") + "name".length(), SqlParser.nextTokenEndIndex(sql, 0));
     }
 
     @Test
-    public void testIndexOfWord_doesNotMatchKeywordInsideSlashBodyComment() {
+    public void testIndexOfToken_doesNotMatchKeywordInsideSlashBodyComment() {
         // FROM is inside the "/*/FROM*/" comment; the only real keyword is the trailing SELECT.
         final String sql = "/*/FROM*/ SELECT 1";
 
-        assertEquals(-1, SqlParser.indexOfWord(sql, "FROM", 0, false));
-        assertEquals(sql.indexOf("SELECT"), SqlParser.indexOfWord(sql, "SELECT", 0, false));
+        assertEquals(-1, SqlParser.indexOfToken(sql, "FROM", 0, false));
+        assertEquals(sql.indexOf("SELECT"), SqlParser.indexOfToken(sql, "SELECT", 0, false));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -2114,10 +2135,10 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testParse_earlierHashTempTableDoesNotHideLaterHashTempTable() {
-        final List<String> words = SqlParser.parse("UPDATE #t1 SET x = 1 FROM #t2");
+        final List<String> tokens = SqlParser.parse("UPDATE #t1 SET x = 1 FROM #t2");
 
-        assertTrue(words.contains("#t1"), words.toString());
-        assertTrue(words.contains("#t2"), words.toString());
+        assertTrue(tokens.contains("#t1"), tokens.toString());
+        assertTrue(tokens.contains("#t2"), tokens.toString());
     }
 
     @Test
@@ -2148,10 +2169,10 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testParse_realHashCommentStillStripped() {
         // A genuine MySQL '#' comment must still be stripped (the fix must not over-correct).
-        final List<String> words = SqlParser.parse("SELECT 1 # trailing comment\nFROM t");
+        final List<String> tokens = SqlParser.parse("SELECT 1 # trailing comment\nFROM t");
 
-        assertTrue(words.contains("FROM"));
-        assertTrue(words.stream().noneMatch(w -> w.contains("trailing")));
+        assertTrue(tokens.contains("FROM"));
+        assertTrue(tokens.stream().noneMatch(w -> w.contains("trailing")));
     }
 
     @Test
@@ -2305,8 +2326,11 @@ public class SqlParserTest extends TestBase {
         assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; ALTER TABLE t ADD COLUMN c INT"));
         assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; CREATE TABLE t (c INT)"));
         assertFalse(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1); REPLACE INTO t VALUES (2)"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; INSERT OR REPLACE INTO t VALUES (2)"));
         assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; TRUNCATE TABLE t"));
         assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; DROP TABLE t"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; ALTER TABLE t ADD COLUMN c INT"));
+        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; CREATE TABLE t (c INT)"));
     }
 
     @Test
@@ -2329,21 +2353,21 @@ public class SqlParserTest extends TestBase {
     public void testParse_hashTempTableAfterCommaInFromListIsKept() {
         // Regression: "#t2 WHERE id = 1" used to be swallowed as a MySQL hash comment because the
         // backward scan from '#t2' landed on ',' instead of the FROM keyword.
-        final List<String> words = SqlParser.parse("SELECT * FROM #t1, #t2 WHERE id = 1");
+        final List<String> tokens = SqlParser.parse("SELECT * FROM #t1, #t2 WHERE id = 1");
 
-        assertTrue(words.contains("#t1"), words.toString());
-        assertTrue(words.contains("#t2"), words.toString());
-        assertTrue(words.contains("WHERE"), words.toString());
-        assertTrue(words.contains("1"), words.toString());
+        assertTrue(tokens.contains("#t1"), tokens.toString());
+        assertTrue(tokens.contains("#t2"), tokens.toString());
+        assertTrue(tokens.contains("WHERE"), tokens.toString());
+        assertTrue(tokens.contains("1"), tokens.toString());
     }
 
     @Test
     public void testParse_hashTempTableListAfterIntoKeepsTail() {
-        final List<String> words = SqlParser.parse("SELECT a INTO #t1, #t2 FROM x");
+        final List<String> tokens = SqlParser.parse("SELECT a INTO #t1, #t2 FROM x");
 
-        assertTrue(words.contains("#t2"), words.toString());
-        assertTrue(words.contains("FROM"), words.toString());
-        assertTrue(words.contains("x"), words.toString());
+        assertTrue(tokens.contains("#t2"), tokens.toString());
+        assertTrue(tokens.contains("FROM"), tokens.toString());
+        assertTrue(tokens.contains("x"), tokens.toString());
     }
 
     @Test
@@ -2369,10 +2393,10 @@ public class SqlParserTest extends TestBase {
     public void testParse_hashAfterCommaInSelectListStaysComment() {
         // SELECT is not a hash-identifier context keyword, so "SELECT a, #..." remains a MySQL
         // hash comment even though a comma precedes the '#'.
-        final List<String> words = SqlParser.parse("SELECT a, #comment\nFROM t");
+        final List<String> tokens = SqlParser.parse("SELECT a, #comment\nFROM t");
 
-        assertFalse(words.contains("#comment"), words.toString());
-        assertTrue(words.contains("FROM"), words.toString());
+        assertFalse(tokens.contains("#comment"), tokens.toString());
+        assertTrue(tokens.contains("FROM"), tokens.toString());
     }
 
     @Test
@@ -2387,19 +2411,19 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testParse_hashTempTableListAcrossLinesIsKept() {
         // The backward walk may cross a newline between the comma and the earlier list elements.
-        final List<String> words = SqlParser.parse("SELECT * FROM #t1,\n#t2 WHERE id = 1");
+        final List<String> tokens = SqlParser.parse("SELECT * FROM #t1,\n#t2 WHERE id = 1");
 
-        assertTrue(words.contains("#t2"), words.toString());
-        assertTrue(words.contains("WHERE"), words.toString());
+        assertTrue(tokens.contains("#t2"), tokens.toString());
+        assertTrue(tokens.contains("WHERE"), tokens.toString());
     }
 
     @Test
     public void testParse_hashTempTableJoinChainStillKept() {
         // The keyword-adjacent (comma-less) recognition is unchanged.
-        final List<String> words = SqlParser.parse("SELECT * FROM #t1 JOIN #t2 ON a = b");
+        final List<String> tokens = SqlParser.parse("SELECT * FROM #t1 JOIN #t2 ON a = b");
 
-        assertTrue(words.contains("#t1"), words.toString());
-        assertTrue(words.contains("#t2"), words.toString());
+        assertTrue(tokens.contains("#t1"), tokens.toString());
+        assertTrue(tokens.contains("#t2"), tokens.toString());
     }
 
     @Test

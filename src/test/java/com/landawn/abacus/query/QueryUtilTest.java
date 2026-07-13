@@ -61,6 +61,30 @@ public class QueryUtilTest extends TestBase {
         }
     }
 
+    static class CaseDistinctColumns {
+        @Column("code")
+        private String lowerCaseColumn;
+
+        @Column("CODE")
+        private String upperCaseColumn;
+
+        public String getLowerCaseColumn() {
+            return lowerCaseColumn;
+        }
+
+        public void setLowerCaseColumn(final String lowerCaseColumn) {
+            this.lowerCaseColumn = lowerCaseColumn;
+        }
+
+        public String getUpperCaseColumn() {
+            return upperCaseColumn;
+        }
+
+        public void setUpperCaseColumn(final String upperCaseColumn) {
+            this.upperCaseColumn = upperCaseColumn;
+        }
+    }
+
     @Test
     public void testGetTableNameAndAliasHonorsTableValueAndAliasOnly() {
         // Regression (2026-07-03): only @Table.name() was read, so the deprecated @Table("...") value
@@ -74,6 +98,14 @@ public class QueryUtilTest extends TestBase {
     public void testGetColumn2PropNameMap() {
         ImmutableMap<String, String> map = QueryUtil.columnToPropertyMap(Account.class);
         assertNotNull(map);
+    }
+
+    @Test
+    public void testColumnToPropertyMapExactNamesWinOverCaseFoldedAliases() {
+        ImmutableMap<String, String> map = QueryUtil.columnToPropertyMap(CaseDistinctColumns.class);
+
+        assertEquals("lowerCaseColumn", map.get("code"));
+        assertEquals("upperCaseColumn", map.get("CODE"));
     }
 
     @Test
@@ -383,12 +415,18 @@ public class QueryUtilTest extends TestBase {
         assertEquals(new QueryUtil.ColumnInfo("first_name", true), map.get("firstName"));
         assertEquals(new QueryUtil.ColumnInfo("first_name", true), map.get("first_name"));
         assertEquals("first_name", map.get("firstName").columnName());
-        assertTrue(map.get("firstName").hasNoDot());
+        assertTrue(map.get("firstName").isUnqualified());
 
         ImmutableMap<String, QueryUtil.ColumnInfo> nestedMap = QueryUtil.propToColumnInfoMap(NestedRoot.class, NamingPolicy.SNAKE_CASE);
         QueryUtil.ColumnInfo nested = nestedMap.get("branch.firstLeaf.value");
         assertEquals(QueryUtil.propertyToColumnMap(NestedRoot.class, NamingPolicy.SNAKE_CASE).get("branch.firstLeaf.value"), nested.columnName());
-        assertFalse(nested.hasNoDot());
+        assertFalse(nested.isUnqualified());
+    }
+
+    @Test
+    public void testColumnInfoIsUnqualifiedIsAHardRename() throws NoSuchMethodException {
+        assertEquals(boolean.class, QueryUtil.ColumnInfo.class.getMethod("isUnqualified").getReturnType());
+        assertThrows(NoSuchMethodException.class, () -> QueryUtil.ColumnInfo.class.getMethod("hasNoDot"));
     }
 
     @Test
@@ -999,7 +1037,7 @@ public class QueryUtilTest extends TestBase {
         ImmutableMap<String, QueryUtil.ColumnInfo> result = QueryUtil.propToColumnInfoMap(QueryUtilTest.AliaslessEntity.class, null);
 
         assertEquals("simple_value", result.get("simpleValue").columnName());
-        assertTrue(result.get("simpleValue").hasNoDot());
+        assertTrue(result.get("simpleValue").isUnqualified());
     }
 
     @Test

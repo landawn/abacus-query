@@ -20,6 +20,12 @@ public class ClauseTest extends TestBase {
         }
     }
 
+    private static final class TestComposableWrapper extends ComposableCell {
+        TestComposableWrapper(final Condition condition) {
+            super(Operator.NOT, condition);
+        }
+    }
+
     @Test
     public void testConstructor() {
         Condition condition = Filters.eq("test", "value");
@@ -57,7 +63,7 @@ public class ClauseTest extends TestBase {
         Condition condition = Filters.eq("userName", "John");
         TestClause clause = new TestClause(Operator.WHERE, condition);
 
-        String result = clause.toString(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
+        String result = clause.toSql(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertTrue(result.contains("WHERE"));
@@ -182,6 +188,24 @@ public class ClauseTest extends TestBase {
     public void testConstructorRejectsNestedClauses() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(new OrderBy("name")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Having(new Where(Filters.eq("a", 1))));
+    }
+
+    @Test
+    public void testConstructorRejectsWrappedOnConnector() {
+        final Condition wrappedOn = new TestComposableWrapper(new On("orders.customer_id", "customers.id"));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.WHERE, wrappedOn));
+    }
+
+    @Test
+    public void testConstructorRejectsOtherWrappedNonPredicateComponents() {
+        final SubQuery subQuery = new SubQuery("SELECT id FROM users");
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.WHERE, new TestComposableWrapper(new OrderBy("name"))));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.WHERE, new TestComposableWrapper(new Any(subQuery))));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.WHERE, new TestComposableWrapper(new Expression(" "))));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.WHERE, new Equal()));
+        Assertions.assertDoesNotThrow(() -> new TestClause(Operator.WHERE, new TestComposableWrapper(new Equal("id", 1))));
     }
 
     @Test

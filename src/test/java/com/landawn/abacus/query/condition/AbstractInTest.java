@@ -1,6 +1,7 @@
 package com.landawn.abacus.query.condition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -68,6 +69,17 @@ public class AbstractInTest extends TestBase {
         assertThrows(UnsupportedOperationException.class, () -> ((List<Object>) condition.values()).add("CLOSED"));
     }
 
+    @Test
+    public void testUsesRowValueConstructorIsAHardRename() throws NoSuchMethodException {
+        final TestAbstractIn scalar = new TestAbstractIn("status", Arrays.asList("ACTIVE", "PENDING"));
+        final TestRowAbstractIn rowValue = new TestRowAbstractIn(Operator.IN);
+
+        assertFalse(scalar.usesRowValueConstructor());
+        assertTrue(rowValue.usesRowValueConstructor());
+        assertEquals(boolean.class, AbstractIn.class.getMethod("usesRowValueConstructor").getReturnType());
+        assertThrows(NoSuchMethodException.class, () -> AbstractIn.class.getMethod("rowValueConstructor"));
+    }
+
     // Verifies direct values and nested condition values are flattened into parameters.
     @Test
     public void testParameters() {
@@ -87,7 +99,7 @@ public class AbstractInTest extends TestBase {
     public void testToString() {
         final TestAbstractIn condition = new TestAbstractIn("orderStatus", Arrays.asList("ACTIVE", "PENDING"));
 
-        final String sql = condition.toString(NamingPolicy.SNAKE_CASE);
+        final String sql = condition.toSql(NamingPolicy.SNAKE_CASE);
 
         assertTrue(sql.contains("order_status"));
         assertTrue(sql.contains("IN"));
@@ -98,7 +110,7 @@ public class AbstractInTest extends TestBase {
     public void testToString_NullNamingPolicy() {
         final TestAbstractIn condition = new TestAbstractIn("status", Arrays.asList(1, 2, 3));
 
-        final String sql = condition.toString(null);
+        final String sql = condition.toSql(null);
 
         assertTrue(sql.contains("status"));
         assertTrue(sql.contains("1"));
@@ -153,7 +165,7 @@ public class AbstractInTest extends TestBase {
     public void testToString_WithSubQueryValue_Batch2() {
         final TestAbstractIn condition = new TestAbstractIn("userId", Arrays.asList(Filters.subQuery("SELECT id FROM users")));
 
-        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        final String sql = condition.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(sql.contains("userId IN"));
         assertTrue(sql.contains("(SELECT id FROM users)"));
@@ -163,7 +175,7 @@ public class AbstractInTest extends TestBase {
     public void testDefaultConstructorToString() {
         final EmptyAbstractIn condition = new EmptyAbstractIn();
 
-        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        final String sql = condition.toSql(NamingPolicy.NO_CHANGE);
 
         assertNotNull(sql);
     }
@@ -175,7 +187,7 @@ public class AbstractInTest extends TestBase {
     @Test
     public void testToString_DateValuesAreQuoted_Pass3() {
         final TestAbstractIn condition = new TestAbstractIn("orderDate", Arrays.asList(new java.util.Date(0L), new java.util.Date(86400000L)));
-        final String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        final String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("'"), "Date values must be quoted, got: " + sql);
         assertTrue(!sql.contains("Wed Dec") && !sql.contains("Thu Jan") && !sql.contains("PST"),
                 "Output must not contain Java's Date.toString() form, got: " + sql);
@@ -188,6 +200,6 @@ public class AbstractInTest extends TestBase {
     @Test
     public void testToString_NaNValueIsRejected_Pass3() {
         final TestAbstractIn condition = new TestAbstractIn("v", Arrays.asList(1.0, Double.NaN, 2.0));
-        assertThrows(IllegalArgumentException.class, () -> condition.toString(NamingPolicy.NO_CHANGE));
+        assertThrows(IllegalArgumentException.class, () -> condition.toSql(NamingPolicy.NO_CHANGE));
     }
 }

@@ -92,7 +92,7 @@ public class BetweenTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         Between condition = new Between("age", 18, 65);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("age"));
         assertTrue(result.contains("BETWEEN"));
         assertTrue(result.contains("18"));
@@ -102,7 +102,7 @@ public class BetweenTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         Between condition = new Between("userAge", 18, 65);
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_age"));
     }
 
@@ -207,7 +207,7 @@ public class BetweenTest extends TestBase {
     @Test
     public void testToString_WithNullValues() {
         Between condition = new Between("value", null, null);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("value"));
         assertTrue(result.contains("BETWEEN"));
     }
@@ -295,7 +295,7 @@ public class BetweenTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         Between between = Filters.between("orderDate", "2023-01-01", "2023-12-31");
-        String result = between.toString(NamingPolicy.SNAKE_CASE);
+        String result = between.toSql(NamingPolicy.SNAKE_CASE);
         Assertions.assertEquals("order_date BETWEEN '2023-01-01' AND '2023-12-31'", result);
     }
 

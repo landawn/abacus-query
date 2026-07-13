@@ -33,6 +33,15 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
+    public void testAppendPlaceholdersIsAHardRename() throws NoSuchMethodException {
+        assertEquals(DynamicQuery.WhereClause.class, DynamicQuery.WhereClause.class.getMethod("appendPlaceholders", int.class).getReturnType());
+        assertEquals(DynamicQuery.HavingClause.class, DynamicQuery.HavingClause.class.getMethod("appendPlaceholders", int.class).getReturnType());
+
+        assertThrows(NoSuchMethodException.class, () -> DynamicQuery.WhereClause.class.getMethod("placeholders", int.class));
+        assertThrows(NoSuchMethodException.class, () -> DynamicQuery.HavingClause.class.getMethod("placeholders", int.class));
+    }
+
+    @Test
     public void testSelectAppendSingleColumn() {
         Builder builder = DynamicQuery.builder();
         builder.select().append("id");
@@ -454,7 +463,7 @@ public class DynamicQueryTest extends TestBase {
         Builder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
-        builder.where().append("id IN (").placeholders(3).append(")");
+        builder.where().append("id IN (").appendPlaceholders(3).append(")");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE id IN (?, ?, ? )", sql);
     }
@@ -464,7 +473,7 @@ public class DynamicQueryTest extends TestBase {
         Builder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
-        builder.where().append("status IN ").placeholders(2, "(", ")");
+        builder.where().append("status IN ").appendPlaceholders(2, "(", ")");
         String sql = builder.build();
         assertEquals("SELECT * FROM users WHERE status IN (?, ?)", sql);
     }
@@ -605,49 +614,49 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
-    public void testHavingPlaceholders() {
+    public void testHavingAppendPlaceholders() {
         Builder builder = DynamicQuery.builder();
         builder.select().append("region");
         builder.from().append("sales");
         builder.groupBy().append("region");
-        builder.having().append("COUNT(*) IN (").placeholders(3).append(")");
+        builder.having().append("COUNT(*) IN (").appendPlaceholders(3).append(")");
         String sql = builder.build();
         assertEquals("SELECT region FROM sales GROUP BY region HAVING COUNT(*) IN (?, ?, ? )", sql);
     }
 
     @Test
-    public void testHavingPlaceholdersWithPrefixPostfix() {
+    public void testHavingAppendPlaceholdersWithPrefixPostfix() {
         Builder builder = DynamicQuery.builder();
         builder.select().append("region");
         builder.from().append("sales");
         builder.groupBy().append("region");
-        builder.having().append("COUNT(*) IN ").placeholders(2, "(", ")");
+        builder.having().append("COUNT(*) IN ").appendPlaceholders(2, "(", ")");
         String sql = builder.build();
         assertEquals("SELECT region FROM sales GROUP BY region HAVING COUNT(*) IN (?, ?)", sql);
     }
 
     @Test
-    public void testHavingPlaceholdersZeroEmitsNothing() {
+    public void testHavingAppendPlaceholdersZeroEmitsNothing() {
         Builder builder = DynamicQuery.builder();
-        builder.having().append("x").placeholders(0, "(", ")");
+        builder.having().append("x").appendPlaceholders(0, "(", ")");
         String sql = builder.build();
         assertEquals("HAVING x", sql);
     }
 
     @Test
-    public void testHavingPlaceholdersNegativeThrows() {
+    public void testHavingAppendPlaceholdersNegativeThrows() {
         Builder builder = DynamicQuery.builder();
         DynamicQuery.HavingClause having = builder.having();
-        assertThrows(IllegalArgumentException.class, () -> having.placeholders(-1));
-        assertThrows(IllegalArgumentException.class, () -> having.placeholders(-1, "(", ")"));
+        assertThrows(IllegalArgumentException.class, () -> having.appendPlaceholders(-1));
+        assertThrows(IllegalArgumentException.class, () -> having.appendPlaceholders(-1, "(", ")"));
     }
 
     @Test
-    public void testHavingPlaceholdersNullPrefixOrPostfixThrows() {
+    public void testHavingAppendPlaceholdersNullPrefixOrPostfixThrows() {
         Builder builder = DynamicQuery.builder();
         DynamicQuery.HavingClause having = builder.having();
-        assertThrows(IllegalArgumentException.class, () -> having.placeholders(3, null, ")"));
-        assertThrows(IllegalArgumentException.class, () -> having.placeholders(3, "(", null));
+        assertThrows(IllegalArgumentException.class, () -> having.appendPlaceholders(3, null, ")"));
+        assertThrows(IllegalArgumentException.class, () -> having.appendPlaceholders(3, "(", null));
     }
 
     @Test
@@ -1031,7 +1040,7 @@ public class DynamicQueryTest extends TestBase {
             Builder builder = DynamicQuery.builder();
             builder.select().append("*");
             builder.from().append("users");
-            builder.where().append("id IN (").placeholders(-1).append(")");
+            builder.where().append("id IN (").appendPlaceholders(-1).append(")");
             builder.build();
         });
     }
@@ -1593,12 +1602,12 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
-    public void test2ndPass_placeholders_nZero_emitsNothing() {
-        // placeholders(0) should write nothing to the buffer.
+    public void test2ndPass_appendPlaceholders_nZero_emitsNothing() {
+        // appendPlaceholders(0) should write nothing to the buffer.
         Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
-        b.where().append("id IN (").placeholders(0); // adds nothing after "("
+        b.where().append("id IN (").appendPlaceholders(0); // adds nothing after "("
         // Then we'd usually close with ")" via raw append
         b.where().append(")");
         String sql = b.build();
@@ -1606,32 +1615,32 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
-    public void test2ndPass_placeholders_nOne_emitsSingleQuestionMark_noTrailingComma() {
+    public void test2ndPass_appendPlaceholders_nOne_emitsSingleQuestionMark_noTrailingComma() {
         Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
-        b.where().append("id IN ").placeholders(1, "(", ")");
+        b.where().append("id IN ").appendPlaceholders(1, "(", ")");
         String sql = b.build();
         assertEquals("SELECT * FROM t WHERE id IN (?)", sql);
     }
 
     @Test
-    public void test2ndPass_placeholders_nThree_emitsCorrectSeparators() {
+    public void test2ndPass_appendPlaceholders_nThree_emitsCorrectSeparators() {
         Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
-        b.where().append("id IN ").placeholders(3, "(", ")");
+        b.where().append("id IN ").appendPlaceholders(3, "(", ")");
         String sql = b.build();
         assertEquals("SELECT * FROM t WHERE id IN (?, ?, ?)", sql);
     }
 
     @Test
-    public void test2ndPass_placeholdersWithPrefixPostfix_nZero_emitsNeitherPrefixNorPostfix() {
+    public void test2ndPass_appendPlaceholdersWithPrefixPostfix_nZero_emitsNeitherPrefixNorPostfix() {
         // Documented: "If placeholderCount is 0, neither prefix nor postfix is appended."
         Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
-        b.where().append("x").placeholders(0, "(", ")");
+        b.where().append("x").appendPlaceholders(0, "(", ")");
         String sql = b.build();
         assertEquals("SELECT * FROM t WHERE x", sql);
     }
@@ -1681,23 +1690,23 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
-    public void test2ndPass_placeholdersNegative_throwsIAE() {
+    public void test2ndPass_appendPlaceholdersNegative_throwsIAE() {
         Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
         var w = b.where().append("x");
-        assertThrows(IllegalArgumentException.class, () -> w.placeholders(-1));
-        assertThrows(IllegalArgumentException.class, () -> w.placeholders(-1, "(", ")"));
+        assertThrows(IllegalArgumentException.class, () -> w.appendPlaceholders(-1));
+        assertThrows(IllegalArgumentException.class, () -> w.appendPlaceholders(-1, "(", ")"));
     }
 
     @Test
-    public void test2ndPass_placeholdersNullPrefixOrPostfix_throws() {
+    public void test2ndPass_appendPlaceholdersNullPrefixOrPostfix_throws() {
         Builder b = DynamicQuery.builder();
         b.select().append("*");
         b.from().append("t");
         var w = b.where().append("x");
-        assertThrows(IllegalArgumentException.class, () -> w.placeholders(3, null, ")"));
-        assertThrows(IllegalArgumentException.class, () -> w.placeholders(3, "(", null));
+        assertThrows(IllegalArgumentException.class, () -> w.appendPlaceholders(3, null, ")"));
+        assertThrows(IllegalArgumentException.class, () -> w.appendPlaceholders(3, "(", null));
     }
 
     @Test
@@ -1787,27 +1796,27 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
-    public void testWherePlaceholdersRequireInitializedClause() {
+    public void testWhereAppendPlaceholdersRequireInitializedClause() {
         Builder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
         DynamicQuery.WhereClause where = builder.where();
 
         // Without a prior append/and/or, placeholders would emit "... FROM users ?, ?, ?".
-        assertThrows(IllegalStateException.class, () -> where.placeholders(3));
-        assertThrows(IllegalStateException.class, () -> where.placeholders(3, "(", ")"));
+        assertThrows(IllegalStateException.class, () -> where.appendPlaceholders(3));
+        assertThrows(IllegalStateException.class, () -> where.appendPlaceholders(3, "(", ")"));
 
         // Argument validation still comes first (matches the FromClause join ordering).
-        assertThrows(IllegalArgumentException.class, () -> where.placeholders(-1));
-        assertThrows(IllegalArgumentException.class, () -> where.placeholders(3, null, ")"));
+        assertThrows(IllegalArgumentException.class, () -> where.appendPlaceholders(-1));
+        assertThrows(IllegalArgumentException.class, () -> where.appendPlaceholders(3, null, ")"));
 
         // Once initialized, placeholders work as before.
-        where.append("id IN ").placeholders(2, "(", ")");
+        where.append("id IN ").appendPlaceholders(2, "(", ")");
         assertEquals("SELECT * FROM users WHERE id IN (?, ?)", builder.build());
     }
 
     @Test
-    public void testHavingPlaceholdersRequireInitializedClause() {
+    public void testHavingAppendPlaceholdersRequireInitializedClause() {
         Builder builder = DynamicQuery.builder();
         builder.select().append("region");
         builder.from().append("sales");
@@ -1815,36 +1824,44 @@ public class DynamicQueryTest extends TestBase {
         DynamicQuery.HavingClause having = builder.having();
 
         // Without a prior append/and/or, placeholders would emit "... GROUP BY region ?, ?".
-        assertThrows(IllegalStateException.class, () -> having.placeholders(2));
-        assertThrows(IllegalStateException.class, () -> having.placeholders(2, "(", ")"));
+        assertThrows(IllegalStateException.class, () -> having.appendPlaceholders(2));
+        assertThrows(IllegalStateException.class, () -> having.appendPlaceholders(2, "(", ")"));
 
         // Argument validation still comes first (matches the FromClause join ordering).
-        assertThrows(IllegalArgumentException.class, () -> having.placeholders(-1));
-        assertThrows(IllegalArgumentException.class, () -> having.placeholders(2, "(", null));
+        assertThrows(IllegalArgumentException.class, () -> having.appendPlaceholders(-1));
+        assertThrows(IllegalArgumentException.class, () -> having.appendPlaceholders(2, "(", null));
 
         // Once initialized, placeholders work as before.
-        having.append("COUNT(*) IN ").placeholders(2, "(", ")");
+        having.append("COUNT(*) IN ").appendPlaceholders(2, "(", ")");
         assertEquals("SELECT region FROM sales GROUP BY region HAVING COUNT(*) IN (?, ?)", builder.build());
     }
 
     @Test
-    public void testSetOperationRendersAfterOrderByRegardlessOfCallOrder() {
-        // Documented behavior: set operations live in the trailing buffer, which build() appends
-        // after every clause builder — orderBy() therefore always renders before the set operator.
+    public void testSetOperationRendersBeforeFinalOrderByAndPaginationRegardlessOfCallOrder() {
+        // Regression: set operations used to share the trailing-fragment buffer, so orderBy()
+        // rendered first and produced invalid "ORDER BY ... UNION ..." SQL.
         Builder b1 = DynamicQuery.builder();
         b1.select().append("id");
         b1.from().append("t1");
         b1.union("SELECT id FROM t2");
         b1.orderBy().append("id");
-        assertEquals("SELECT id FROM t1 ORDER BY id UNION SELECT id FROM t2", b1.build());
+        assertEquals("SELECT id FROM t1 UNION SELECT id FROM t2 ORDER BY id", b1.build());
 
-        // Recommended pattern: order the combined result with append(...) after the set operation.
+        // Raw trailing clauses still follow the combined query.
         Builder b2 = DynamicQuery.builder();
         b2.select().append("id");
         b2.from().append("t1");
         b2.union("SELECT id FROM t2");
         b2.append("ORDER BY id");
         assertEquals("SELECT id FROM t1 UNION SELECT id FROM t2 ORDER BY id", b2.build());
+
+        // Typed pagination is also rendered after the set operation even when invoked first.
+        Builder b3 = DynamicQuery.builder();
+        b3.select().append("id");
+        b3.from().append("t1");
+        b3.limit(10);
+        b3.unionAll("SELECT id FROM t2");
+        assertEquals("SELECT id FROM t1 UNION ALL SELECT id FROM t2 LIMIT 10", b3.build());
     }
 
     @Test

@@ -166,6 +166,9 @@ public final class DynamicQuery {
         /** The {@link OrderByClause} for this builder. */
         private OrderByClause orderByClause;
 
+        /** Set operations rendered before the final ORDER BY and pagination clauses. */
+        private StringBuilder setOperations = null;
+
         /** The {@link StringBuilder} for additional SQL parts. */
         private StringBuilder moreParts = null;
 
@@ -488,13 +491,9 @@ public final class DynamicQuery {
          * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
          * sub-query (unlike {@code SqlBuilder}'s {@code union(String)}) — raw by design.</p>
          *
-         * <p><b>&#9888;&#65039; Rendering order:</b> this method writes into the builder's trailing buffer, which
-         * {@link #build()} appends <em>after</em> every clause builder ({@code WHERE}, {@code GROUP BY},
-         * {@code HAVING}, {@code ORDER BY}) — regardless of the order in which the methods are invoked.
-         * In particular, combining this method with {@link #orderBy()} renders
-         * {@code ... ORDER BY ... UNION SELECT ...}, which most databases reject. To apply
-         * {@code ORDER BY} to the combined result, call {@code append("ORDER BY ...")} <em>after</em>
-         * this method instead of using {@link #orderBy()}.</p>
+         * <p>Set operations are rendered after the primary query's {@code HAVING} clause and before
+         * the final {@link #orderBy()} and pagination clauses, regardless of method-call order. Thus
+         * {@code orderBy()} orders the combined result.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -511,7 +510,7 @@ public final class DynamicQuery {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
-            getStringBuilderForMoreParts().append(" UNION ").append(query);
+            getStringBuilderForSetOperations().append(" UNION ").append(query);
 
             return this;
         }
@@ -523,13 +522,9 @@ public final class DynamicQuery {
          * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
          * sub-query (unlike {@code SqlBuilder}'s {@code unionAll(String)}) — raw by design.</p>
          *
-         * <p><b>&#9888;&#65039; Rendering order:</b> this method writes into the builder's trailing buffer, which
-         * {@link #build()} appends <em>after</em> every clause builder ({@code WHERE}, {@code GROUP BY},
-         * {@code HAVING}, {@code ORDER BY}) — regardless of the order in which the methods are invoked.
-         * In particular, combining this method with {@link #orderBy()} renders
-         * {@code ... ORDER BY ... UNION ALL SELECT ...}, which most databases reject. To apply
-         * {@code ORDER BY} to the combined result, call {@code append("ORDER BY ...")} <em>after</em>
-         * this method instead of using {@link #orderBy()}.</p>
+         * <p>Set operations are rendered after the primary query's {@code HAVING} clause and before
+         * the final {@link #orderBy()} and pagination clauses, regardless of method-call order. Thus
+         * {@code orderBy()} orders the combined result.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -546,7 +541,7 @@ public final class DynamicQuery {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
-            getStringBuilderForMoreParts().append(" UNION ALL ").append(query);
+            getStringBuilderForSetOperations().append(" UNION ALL ").append(query);
 
             return this;
         }
@@ -558,13 +553,9 @@ public final class DynamicQuery {
          * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
          * sub-query (unlike {@code SqlBuilder}'s {@code intersect(String)}) — raw by design.</p>
          *
-         * <p><b>&#9888;&#65039; Rendering order:</b> this method writes into the builder's trailing buffer, which
-         * {@link #build()} appends <em>after</em> every clause builder ({@code WHERE}, {@code GROUP BY},
-         * {@code HAVING}, {@code ORDER BY}) — regardless of the order in which the methods are invoked.
-         * In particular, combining this method with {@link #orderBy()} renders
-         * {@code ... ORDER BY ... INTERSECT SELECT ...}, which most databases reject. To apply
-         * {@code ORDER BY} to the combined result, call {@code append("ORDER BY ...")} <em>after</em>
-         * this method instead of using {@link #orderBy()}.</p>
+         * <p>Set operations are rendered after the primary query's {@code HAVING} clause and before
+         * the final {@link #orderBy()} and pagination clauses, regardless of method-call order. Thus
+         * {@code orderBy()} orders the combined result.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -581,7 +572,7 @@ public final class DynamicQuery {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
-            getStringBuilderForMoreParts().append(" INTERSECT ").append(query);
+            getStringBuilderForSetOperations().append(" INTERSECT ").append(query);
 
             return this;
         }
@@ -593,13 +584,9 @@ public final class DynamicQuery {
          * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
          * sub-query (unlike {@code SqlBuilder}'s {@code except(String)}) — raw by design.</p>
          *
-         * <p><b>&#9888;&#65039; Rendering order:</b> this method writes into the builder's trailing buffer, which
-         * {@link #build()} appends <em>after</em> every clause builder ({@code WHERE}, {@code GROUP BY},
-         * {@code HAVING}, {@code ORDER BY}) — regardless of the order in which the methods are invoked.
-         * In particular, combining this method with {@link #orderBy()} renders
-         * {@code ... ORDER BY ... EXCEPT SELECT ...}, which most databases reject. To apply
-         * {@code ORDER BY} to the combined result, call {@code append("ORDER BY ...")} <em>after</em>
-         * this method instead of using {@link #orderBy()}.</p>
+         * <p>Set operations are rendered after the primary query's {@code HAVING} clause and before
+         * the final {@link #orderBy()} and pagination clauses, regardless of method-call order. Thus
+         * {@code orderBy()} orders the combined result.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -616,7 +603,7 @@ public final class DynamicQuery {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
-            getStringBuilderForMoreParts().append(" EXCEPT ").append(query);
+            getStringBuilderForSetOperations().append(" EXCEPT ").append(query);
 
             return this;
         }
@@ -628,13 +615,9 @@ public final class DynamicQuery {
          * <p>The query string is appended verbatim and is <em>not</em> validated as a {@code SELECT}
          * sub-query (unlike {@code SqlBuilder}'s {@code minus(String)}) — raw by design.</p>
          *
-         * <p><b>&#9888;&#65039; Rendering order:</b> this method writes into the builder's trailing buffer, which
-         * {@link #build()} appends <em>after</em> every clause builder ({@code WHERE}, {@code GROUP BY},
-         * {@code HAVING}, {@code ORDER BY}) — regardless of the order in which the methods are invoked.
-         * In particular, combining this method with {@link #orderBy()} renders
-         * {@code ... ORDER BY ... MINUS SELECT ...}, which most databases reject. To apply
-         * {@code ORDER BY} to the combined result, call {@code append("ORDER BY ...")} <em>after</em>
-         * this method instead of using {@link #orderBy()}.</p>
+         * <p>Set operations are rendered after the primary query's {@code HAVING} clause and before
+         * the final {@link #orderBy()} and pagination clauses, regardless of method-call order. Thus
+         * {@code orderBy()} orders the combined result.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -651,7 +634,7 @@ public final class DynamicQuery {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
-            getStringBuilderForMoreParts().append(" MINUS ").append(query);
+            getStringBuilderForSetOperations().append(" MINUS ").append(query);
 
             return this;
         }
@@ -791,6 +774,16 @@ public final class DynamicQuery {
             return moreParts;
         }
 
+        private StringBuilder getStringBuilderForSetOperations() {
+            checkNotBuilt();
+
+            if (setOperations == null) {
+                setOperations = Objectory.createStringBuilder();
+            }
+
+            return setOperations;
+        }
+
         /**
          * Verifies this builder is still open, throwing if {@link #build()} has already run.
          * {@code build()} nulls out {@code selectClause} in its {@code finally} block, so a {@code null}
@@ -811,9 +804,10 @@ public final class DynamicQuery {
          * After calling {@code build()}, this builder is closed and must not be reused: any subsequent
          * call to a builder method (including {@code build()} itself) throws {@link IllegalStateException}.
          *
-         * <p>The method combines all SQL components in the correct order and returns
-         * the complete SQL statement. Internal {@link StringBuilder} objects are recycled
-         * to the object pool for performance optimization.</p>
+         * <p>The method combines the primary clauses, set operations, final {@code ORDER BY}, and
+         * trailing pagination/raw fragments in SQL grammar order and returns the complete statement.
+         * Internal {@link StringBuilder} objects are recycled to the object pool for performance
+         * optimization.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -864,6 +858,14 @@ public final class DynamicQuery {
                     selectClause.sb.append(havingClause.sb);
                 }
 
+                if (setOperations != null) {
+                    if (selectClause.sb.isEmpty() && !setOperations.isEmpty() && setOperations.charAt(0) == ' ') {
+                        selectClause.sb.append(setOperations, 1, setOperations.length());
+                    } else {
+                        selectClause.sb.append(setOperations);
+                    }
+                }
+
                 if (orderByClause != null && !orderByClause.sb.isEmpty()) {
                     if (!selectClause.sb.isEmpty()) {
                         selectClause.sb.append(" ");
@@ -911,6 +913,11 @@ public final class DynamicQuery {
                 if (orderByClause != null) {
                     orderByClause.close();
                     orderByClause = null;
+                }
+
+                if (setOperations != null) {
+                    Objectory.recycle(setOperations);
+                    setOperations = null;
                 }
 
                 if (moreParts != null) {
@@ -1687,7 +1694,7 @@ public final class DynamicQuery {
      *     .append("status = ?")
      *     .and("age >= ?")
      *     .or("vip = true")
-     *     .and("city IN ").placeholders(3, "(", ")");
+     *     .and("city IN ").appendPlaceholders(3, "(", ")");
      * // Generates: WHERE status = ? AND age >= ? OR vip = true AND city IN (?, ?, ?)
      * }</pre>
      *
@@ -1734,16 +1741,16 @@ public final class DynamicQuery {
          *
          * <p><b>&#9888;&#65039;</b> This method writes only the {@code ?} characters separated by {@code ", "} into the
          * underlying buffer; it does not insert any surrounding whitespace or parentheses. Use the
-         * {@link #placeholders(int, String, String)} overload when you also need a prefix/postfix
+         * {@link #appendPlaceholders(int, String, String)} overload when you also need a prefix/postfix
          * (e.g. parentheses for an {@code IN} list).</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * where.append("id IN (").placeholders(3).append(")");
+         * where.append("id IN (").appendPlaceholders(3).append(")");
          * // sb contents so far: "WHERE id IN (?, ?, ? )"
-         * // Note: placeholders(int) appends the markers with no leading space, while append(String)
+         * // Note: appendPlaceholders(int) appends the markers with no leading space, while append(String)
          * // inserts a single space before each fragment, so a manual close paren is preceded by a space.
-         * // Prefer placeholders(int, String, String) when you want the parentheses tightly attached.
+         * // Prefer appendPlaceholders(int, String, String) when you want the parentheses tightly attached.
          * }</pre>
          *
          * @param placeholderCount the number of question marks to append (must not be negative)
@@ -1753,12 +1760,12 @@ public final class DynamicQuery {
          *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)}),
          *         or if this clause builder has already been closed by {@code build()}
          */
-        public WhereClause placeholders(final int placeholderCount) {
+        public WhereClause appendPlaceholders(final int placeholderCount) {
             checkOpen();
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
             requireWhereInitialized();
 
-            appendPlaceholders(placeholderCount);
+            appendPlaceholderSequence(placeholderCount);
 
             return this;
         }
@@ -1769,7 +1776,7 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * where.append("status IN ").placeholders(3, "(", ")");
+         * where.append("status IN ").appendPlaceholders(3, "(", ")");
          * // Generates: status IN (?, ?, ?)
          * }</pre>
          *
@@ -1784,7 +1791,7 @@ public final class DynamicQuery {
          *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)}),
          *         or if this clause builder has already been closed by {@code build()}
          */
-        public WhereClause placeholders(final int placeholderCount, final String prefix, final String postfix) {
+        public WhereClause appendPlaceholders(final int placeholderCount, final String prefix, final String postfix) {
             checkOpen();
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
             N.checkArgNotNull(prefix, "prefix");
@@ -1793,7 +1800,7 @@ public final class DynamicQuery {
 
             if (placeholderCount > 0) {
                 sb.append(prefix);
-                appendPlaceholders(placeholderCount);
+                appendPlaceholderSequence(placeholderCount);
                 sb.append(postfix);
             }
 
@@ -1802,11 +1809,11 @@ public final class DynamicQuery {
 
         /**
          * Appends {@code placeholderCount} comma-separated {@code ?} placeholders, with no surrounding
-         * prefix/postfix. Shared by the {@code placeholders(...)} overloads.
+         * prefix/postfix. Shared by the {@code appendPlaceholders(...)} overloads.
          *
          * @param placeholderCount the number of {@code ?} placeholders to append
          */
-        private void appendPlaceholders(final int placeholderCount) {
+        private void appendPlaceholderSequence(final int placeholderCount) {
             for (int i = 0; i < placeholderCount; i++) {
                 if (i > 0) {
                     sb.append(", ?");
@@ -2154,16 +2161,16 @@ public final class DynamicQuery {
          *
          * <p><b>&#9888;&#65039;</b> This method writes only the {@code ?} characters separated by {@code ", "} into the
          * underlying buffer; it does not insert any surrounding whitespace or parentheses. Use the
-         * {@link #placeholders(int, String, String)} overload when you also need a prefix/postfix
+         * {@link #appendPlaceholders(int, String, String)} overload when you also need a prefix/postfix
          * (e.g. parentheses for an {@code IN} list).</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * having.append("MAX(score) IN (").placeholders(3).append(")");
+         * having.append("MAX(score) IN (").appendPlaceholders(3).append(")");
          * // sb contents so far: "HAVING MAX(score) IN (?, ?, ? )"
-         * // Note: placeholders(int) appends the markers with no leading space, while append(String)
+         * // Note: appendPlaceholders(int) appends the markers with no leading space, while append(String)
          * // inserts a single space before each fragment, so a manual close paren is preceded by a space.
-         * // Prefer placeholders(int, String, String) when you want the parentheses tightly attached.
+         * // Prefer appendPlaceholders(int, String, String) when you want the parentheses tightly attached.
          * }</pre>
          *
          * @param placeholderCount the number of question marks to append (must not be negative)
@@ -2173,12 +2180,12 @@ public final class DynamicQuery {
          *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)}),
          *         or if this clause builder has already been closed by {@code build()}
          */
-        public HavingClause placeholders(final int placeholderCount) {
+        public HavingClause appendPlaceholders(final int placeholderCount) {
             checkOpen();
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
             requireHavingInitialized();
 
-            appendPlaceholders(placeholderCount);
+            appendPlaceholderSequence(placeholderCount);
 
             return this;
         }
@@ -2189,7 +2196,7 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * having.append("MAX(score) IN ").placeholders(3, "(", ")");
+         * having.append("MAX(score) IN ").appendPlaceholders(3, "(", ")");
          * // Generates: MAX(score) IN (?, ?, ?)
          * }</pre>
          *
@@ -2204,7 +2211,7 @@ public final class DynamicQuery {
          *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)}),
          *         or if this clause builder has already been closed by {@code build()}
          */
-        public HavingClause placeholders(final int placeholderCount, final String prefix, final String postfix) {
+        public HavingClause appendPlaceholders(final int placeholderCount, final String prefix, final String postfix) {
             checkOpen();
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
             N.checkArgNotNull(prefix, "prefix");
@@ -2213,7 +2220,7 @@ public final class DynamicQuery {
 
             if (placeholderCount > 0) {
                 sb.append(prefix);
-                appendPlaceholders(placeholderCount);
+                appendPlaceholderSequence(placeholderCount);
                 sb.append(postfix);
             }
 
@@ -2222,11 +2229,11 @@ public final class DynamicQuery {
 
         /**
          * Appends {@code placeholderCount} comma-separated {@code ?} placeholders, with no surrounding
-         * prefix/postfix. Shared by the {@code placeholders(...)} overloads.
+         * prefix/postfix. Shared by the {@code appendPlaceholders(...)} overloads.
          *
          * @param placeholderCount the number of {@code ?} placeholders to append
          */
-        private void appendPlaceholders(final int placeholderCount) {
+        private void appendPlaceholderSequence(final int placeholderCount) {
             for (int i = 0; i < placeholderCount; i++) {
                 if (i > 0) {
                     sb.append(", ?");

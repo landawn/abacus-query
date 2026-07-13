@@ -65,7 +65,7 @@ public class IsInfiniteTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         IsInfinite condition = new IsInfinite("growthRate");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("growthRate"));
         assertTrue(result.contains("IS"));
         assertTrue(result.contains("INFINITE"));
@@ -74,14 +74,14 @@ public class IsInfiniteTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         IsInfinite condition = new IsInfinite("growthRate");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("growth_rate"));
     }
 
     @Test
     public void testToString_ScreamingSnakeCase() {
         IsInfinite condition = new IsInfinite("fieldName");
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
         assertTrue(result.contains("FIELD_NAME"));
     }
 
@@ -177,7 +177,7 @@ public class IsInfiniteTest extends TestBase {
     public void testComplexPropertyName() {
         IsInfinite condition = new IsInfinite("calculation.result.value");
         assertEquals("calculation.result.value", condition.propName());
-        String str = condition.toString(NamingPolicy.NO_CHANGE);
+        String str = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("calculation.result.value"));
     }
 
@@ -185,7 +185,7 @@ public class IsInfiniteTest extends TestBase {
     public void testDivisionByZeroScenario() {
         // Represents checking if division resulted in infinity
         IsInfinite condition = new IsInfinite("averagePerUnit");
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("averagePerUnit"));
         assertTrue(sql.contains("IS INFINITE"));
     }
@@ -233,7 +233,7 @@ public class IsInfiniteTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         IsInfinite condition = new IsInfinite("interestRate");
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("INTEREST_RATE"));
         Assertions.assertTrue(result.contains("IS"));

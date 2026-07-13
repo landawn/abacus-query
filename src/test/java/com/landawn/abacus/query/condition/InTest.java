@@ -130,7 +130,7 @@ public class InTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         In condition = new In("status", Arrays.asList("active", "pending"));
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(result.contains("status"));
         assertTrue(result.contains("IN"));
@@ -141,7 +141,7 @@ public class InTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         In condition = new In("orderStatus", Arrays.asList("active"));
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("order_status"));
         assertTrue(result.contains("IN"));
@@ -150,7 +150,7 @@ public class InTest extends TestBase {
     @Test
     public void testToString_MultipleValues() {
         In condition = new In("id", Arrays.asList(1, 2, 3, 4, 5));
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(result.contains("id"));
         assertTrue(result.contains("IN"));
@@ -224,7 +224,7 @@ public class InTest extends TestBase {
         In statusCheck = new In("status", statuses);
 
         assertEquals(3, statusCheck.parameters().size());
-        assertTrue(statusCheck.toString(NamingPolicy.NO_CHANGE).contains("IN"));
+        assertTrue(statusCheck.toSql(NamingPolicy.NO_CHANGE).contains("IN"));
     }
 
     @Test
@@ -251,7 +251,7 @@ public class InTest extends TestBase {
         List<String> priorities = Arrays.asList("HIGH", "CRITICAL");
         In priorityFilter = new In("priority", priorities);
 
-        String sql = priorityFilter.toString(NamingPolicy.NO_CHANGE);
+        String sql = priorityFilter.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("priority"));
         assertTrue(sql.contains("IN"));
     }
@@ -340,7 +340,7 @@ public class InTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         In condition = new In("productId", Arrays.asList(101, 102, 103));
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("PRODUCT_ID"));
         Assertions.assertTrue(result.contains("IN"));
@@ -430,14 +430,14 @@ public class InTest extends TestBase {
     public void testMultiColumn_ToString() {
         In condition = new In(Arrays.asList("first_name", "last_name"), Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
 
-        assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.NO_CHANGE));
+        assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
     public void testMultiColumn_ToString_SnakeCase() {
         In condition = new In(Arrays.asList("firstName", "lastName"), Arrays.asList(Arrays.asList("John", "Doe")));
 
-        assertEquals("(first_name, last_name) IN (('John', 'Doe'))", condition.toString(NamingPolicy.SNAKE_CASE));
+        assertEquals("(first_name, last_name) IN (('John', 'Doe'))", condition.toSql(NamingPolicy.SNAKE_CASE));
     }
 
     @Test
@@ -488,7 +488,7 @@ public class InTest extends TestBase {
         assertEquals("a", condition.propName());
         assertEquals(Arrays.asList(Arrays.asList(1), Arrays.asList(2)), condition.values());
         assertEquals(Arrays.asList(1, 2), condition.parameters());
-        assertEquals("(a) IN ((1), (2))", condition.toString(NamingPolicy.NO_CHANGE));
+        assertEquals("(a) IN ((1), (2))", condition.toSql(NamingPolicy.NO_CHANGE));
 
         In scalar = new In("a", Arrays.asList(1, 2));
         assertNotEquals(scalar, condition);
@@ -516,7 +516,7 @@ public class InTest extends TestBase {
 
         assertEquals(1, condition.values().size());
         assertEquals(Arrays.asList("John", "Doe"), condition.values().get(0));
-        assertEquals("(first_name, last_name) IN (('John', 'Doe'))", condition.toString(NamingPolicy.NO_CHANGE));
+        assertEquals("(first_name, last_name) IN (('John', 'Doe'))", condition.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -527,7 +527,7 @@ public class InTest extends TestBase {
         assertEquals(Arrays.asList("John", "Doe"), condition.values().get(0));
         assertEquals(Arrays.asList("Jane", "Roe"), condition.values().get(1));
         assertEquals(Arrays.asList("John", "Doe", "Jane", "Roe"), condition.parameters());
-        assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.NO_CHANGE));
+        assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -545,7 +545,7 @@ public class InTest extends TestBase {
         assertEquals(Arrays.asList("John", "Doe"), condition.values().get(0));
         assertEquals(Arrays.asList("Jane", "Roe"), condition.values().get(1));
         // Values are extracted in propNames order regardless of map iteration order.
-        assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.SNAKE_CASE));
+        assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toSql(NamingPolicy.SNAKE_CASE));
     }
 
     @Test
@@ -569,7 +569,7 @@ public class InTest extends TestBase {
         assertEquals(2, condition.values().size());
         assertEquals(Arrays.asList("John", "Doe"), condition.values().get(0));
         assertEquals(Arrays.asList("Jane", "Roe"), condition.values().get(1));
-        assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toString(NamingPolicy.SNAKE_CASE));
+        assertEquals("(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))", condition.toSql(NamingPolicy.SNAKE_CASE));
     }
 
     @Test

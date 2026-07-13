@@ -154,7 +154,7 @@ public abstract class ComposableCell extends ComposableCondition {
     }
 
     /**
-     * Converts this {@code ComposableCell} to its string representation using the specified naming policy.
+     * Converts this {@code ComposableCell} to its SQL representation using the specified naming policy.
      * The output format is: {@code OPERATOR (condition_string)}
      * (the inner condition is always enclosed in parentheses).
      * If the operator is {@code null} (only possible for an uninitialized instance), the literal
@@ -163,14 +163,14 @@ public abstract class ComposableCell extends ComposableCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Not not = new Not(Filters.eq("status", "active"));
-     * not.toString(NamingPolicy.NO_CHANGE);   // returns "NOT (status = 'active')"
+     * not.toSql(NamingPolicy.NO_CHANGE);   // returns "NOT (status = 'active')"
      *
      * Exists exists = new Exists(Filters.subQuery("SELECT 1"));
-     * exists.toString(NamingPolicy.NO_CHANGE); // returns "EXISTS (SELECT 1)"
+     * exists.toSql(NamingPolicy.NO_CHANGE); // returns "EXISTS (SELECT 1)"
      *
      * // Edge: naming policy rewrites property names in the wrapped condition
      * Not w = new Not(Filters.eq("firstName", "John"));
-     * w.toString(NamingPolicy.SNAKE_CASE);    // returns "NOT (first_name = 'John')"
+     * w.toSql(NamingPolicy.SNAKE_CASE);    // returns "NOT (first_name = 'John')"
      *
      * // Edge: a null naming policy falls back to NO_CHANGE; an uninitialized
      * // instance (null operator) renders the literal "null" for the operator
@@ -178,13 +178,13 @@ public abstract class ComposableCell extends ComposableCondition {
      *
      * @param namingPolicy the naming policy to apply to property names within the wrapped condition;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
-     * @return a string representation of this ComposableCell
+     * @return a SQL representation of this ComposableCell
      */
     @Override
-    public String toString(final NamingPolicy namingPolicy) {
+    public String toSql(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Condition cond = condition();
-        final String conditionString = cond == null ? "" : cond.toString(effectiveNamingPolicy);
+        final String conditionString = cond == null ? "" : cond.toSql(effectiveNamingPolicy);
         final Operator op = operator();
         final String opStr = op == null ? Strings.NULL : op.toString();
         return opStr + SK._SPACE + SK._PARENTHESIS_L + conditionString + SK._PARENTHESIS_R;

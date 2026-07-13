@@ -21,16 +21,18 @@ import com.landawn.abacus.util.NamingPolicy;
 
 /**
  * The base interface for all query conditions.
- * Conditions are immutable objects that represent various types of query criteria,
+ * Standard conditions are structurally immutable objects that represent various types of query criteria,
  * such as equality checks, comparisons, composable operations, and SQL clauses.
  *
  * <p>This interface defines the contract that all conditions must follow, providing
- * methods for operator access, parameter management, and string representation.
+ * methods for operator access, parameter management, and SQL representation.
  * Composable operations (AND, OR, NOT) are available on the abstract subclass
  * {@link ComposableCondition}. Conditions are designed to be composable, allowing
  * complex queries to be built from simple building blocks.</p>
  *
- * <p>Conditions are immutable after construction.</p>
+ * <p>Standard implementations do not expose mutable condition structure after construction. Parameter
+ * values and custom {@code Condition} implementations are not deep-copied, however, so callers must not
+ * mutate them while the containing condition is in use.</p>
  *
  * <p>Common implementations include:</p>
  * <ul>
@@ -117,7 +119,7 @@ public interface Condition extends Immutable {
     ImmutableList<Object> parameters();
 
     /**
-     * Returns a string representation of this condition using the specified naming policy.
+     * Returns a SQL representation of this condition using the specified naming policy.
      * The naming policy determines how property names are formatted in the output.
      *
      * <p><b>Usage Examples:</b></p>
@@ -125,18 +127,18 @@ public interface Condition extends Immutable {
      * Condition eq = Filters.equal("firstName", "John");
      *
      * // No change to property names
-     * String noChange = eq.toString(NamingPolicy.NO_CHANGE);       // "firstName = 'John'"
+     * String noChange = eq.toSql(NamingPolicy.NO_CHANGE);       // "firstName = 'John'"
      *
      * // Convert to lower case with underscores (snake_case)
-     * String lower = eq.toString(NamingPolicy.SNAKE_CASE);   // "first_name = 'John'"
+     * String lower = eq.toSql(NamingPolicy.SNAKE_CASE);   // "first_name = 'John'"
      *
      * // Convert to upper case with underscores (SCREAMING_SNAKE_CASE)
-     * String upper = eq.toString(NamingPolicy.SCREAMING_SNAKE_CASE);   // "FIRST_NAME = 'John'"
+     * String upper = eq.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);   // "FIRST_NAME = 'John'"
      * }</pre>
      *
      * @param namingPolicy the policy for formatting property names; a {@code null} naming policy is
      *                     treated as {@link NamingPolicy#NO_CHANGE} by the standard implementations
-     * @return a string representation of this condition
+     * @return a SQL representation of this condition
      */
-    String toString(NamingPolicy namingPolicy);
+    String toSql(NamingPolicy namingPolicy);
 }

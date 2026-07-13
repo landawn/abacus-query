@@ -94,7 +94,7 @@ public class OrTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         Or junction = new Or(new Equal("a", 1), new Equal("b", 2));
-        String result = junction.toString(NamingPolicy.NO_CHANGE);
+        String result = junction.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("OR"));
         assertTrue(result.contains("a"));
         assertTrue(result.contains("b"));
@@ -103,14 +103,14 @@ public class OrTest extends TestBase {
     @Test
     public void testToString_EmptyConditions() {
         Or junction = new Or();
-        String result = junction.toString(NamingPolicy.NO_CHANGE);
+        String result = junction.toSql(NamingPolicy.NO_CHANGE);
         assertEquals("", result);
     }
 
     @Test
     public void testToString_SingleCondition() {
         Or junction = new Or(new Equal("status", "active"));
-        String result = junction.toString(NamingPolicy.NO_CHANGE);
+        String result = junction.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("status"));
         assertFalse(result.contains("OR"));
     }

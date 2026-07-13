@@ -100,7 +100,7 @@ public class BinaryTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         Binary condition = new Binary("userName", Operator.EQUAL, "Alice");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("userName"));
         assertTrue(result.contains("Alice"));
         assertTrue(result.contains("="));
@@ -109,28 +109,28 @@ public class BinaryTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         Binary condition = new Binary("userName", Operator.GREATER_THAN, "Bob");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 
     @Test
     public void testToStringWithNullAndEqualOperator() {
         Binary condition = new Binary("deletedAt", Operator.EQUAL, null);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertEquals("deletedAt IS NULL", result);
     }
 
     @Test
     public void testToStringWithNullAndNotEqualOperator() {
         Binary condition = new Binary("deletedAt", Operator.NOT_EQUAL, null);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertEquals("deletedAt IS NOT NULL", result);
     }
 
     @Test
     public void testToString_WithSubQueryAddsParentheses() {
         Binary condition = new Binary("userId", Operator.EQUAL, Filters.subQuery("SELECT id FROM users"));
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("= (SELECT id FROM users)"));
     }
 
@@ -346,7 +346,7 @@ public class BinaryTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         Binary binary = Filters.binary("firstName", Operator.LIKE, "John%");
-        String result = binary.toString(NamingPolicy.SNAKE_CASE);
+        String result = binary.toSql(NamingPolicy.SNAKE_CASE);
 
         Assertions.assertEquals("first_name LIKE 'John%'", result);
     }
@@ -469,7 +469,7 @@ public class BinaryTest extends TestBase {
     public void testToStringWithNullAndNotEqualAnsi_Batch2() {
         Binary binary = new Binary("deleted", Operator.NOT_EQUAL_ANSI, null);
 
-        Assertions.assertEquals("deleted IS NOT NULL", binary.toString(null));
+        Assertions.assertEquals("deleted IS NOT NULL", binary.toSql(null));
     }
 
     @Test
@@ -521,8 +521,8 @@ public class BinaryTest extends TestBase {
         Binary binary = new Binary();
 
         Assertions.assertNotNull(binary.toString());
-        Assertions.assertNotNull(binary.toString(NamingPolicy.NO_CHANGE));
-        Assertions.assertNotNull(binary.toString(null));
+        Assertions.assertNotNull(binary.toSql(NamingPolicy.NO_CHANGE));
+        Assertions.assertNotNull(binary.toSql(null));
     }
 
     @Test
@@ -537,7 +537,7 @@ public class BinaryTest extends TestBase {
     public void testToStringWithNullValueAndNonNullOperator() {
         Binary binary = new Binary("col", Operator.GREATER_THAN, null);
 
-        String result = binary.toString(NamingPolicy.NO_CHANGE);
+        String result = binary.toSql(NamingPolicy.NO_CHANGE);
 
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.contains("col"));
@@ -569,7 +569,7 @@ public class BinaryTest extends TestBase {
         SubQuery sub = new SubQuery("users", java.util.Arrays.asList("id"), Filters.eq("active", true));
         Binary binary = new Binary("userId", Operator.EQUAL, sub);
 
-        String result = binary.toString(NamingPolicy.NO_CHANGE);
+        String result = binary.toSql(NamingPolicy.NO_CHANGE);
 
         Assertions.assertTrue(result.contains("(SELECT"), "subquery must be wrapped in parens: " + result);
         Assertions.assertTrue(result.endsWith(")"), "subquery should end with closing paren: " + result);
@@ -586,7 +586,7 @@ public class BinaryTest extends TestBase {
     @Test
     public void testToString_DateValueIsQuotedISOLiteral_Pass3() {
         Binary binary = new Binary("orderDate", Operator.EQUAL, new java.util.Date(0L));
-        String result = binary.toString(NamingPolicy.NO_CHANGE);
+        String result = binary.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("'"), "Date value must be wrapped in quotes, got: " + result);
         assertTrue(!result.contains("Wed Dec") && !result.contains("Thu Jan") && !result.contains("PST") && !result.contains("PDT"),
                 "Output must not contain Java's Date.toString() form, got: " + result);
@@ -599,10 +599,10 @@ public class BinaryTest extends TestBase {
     @Test
     public void testToString_NaNValueIsRejected_Pass3() {
         Binary binary = new Binary("v", Operator.EQUAL, Double.NaN);
-        assertThrows(IllegalArgumentException.class, () -> binary.toString(NamingPolicy.NO_CHANGE));
+        assertThrows(IllegalArgumentException.class, () -> binary.toSql(NamingPolicy.NO_CHANGE));
 
         Binary binary2 = new Binary("v", Operator.EQUAL, Double.POSITIVE_INFINITY);
-        assertThrows(IllegalArgumentException.class, () -> binary2.toString(NamingPolicy.NO_CHANGE));
+        assertThrows(IllegalArgumentException.class, () -> binary2.toSql(NamingPolicy.NO_CHANGE));
     }
 
     /**
@@ -613,7 +613,7 @@ public class BinaryTest extends TestBase {
     @Test
     public void testToString_TrailingBackslashKeepsLiteralBalanced_Pass3() {
         Binary binary = new Binary("name", Operator.EQUAL, "x" + (char) 92);
-        String result = binary.toString(NamingPolicy.NO_CHANGE);
+        String result = binary.toSql(NamingPolicy.NO_CHANGE);
 
         // Locate the closing quote of the literal: count quotes to ensure exactly two
         // (the opening and closing of the string literal). A broken literal would have an
@@ -639,7 +639,7 @@ public class BinaryTest extends TestBase {
     @Test
     public void testToString_CharacterValueIsQuoted_Pass3() {
         Binary binary = new Binary("c", Operator.EQUAL, '\'');
-        String result = binary.toString(NamingPolicy.NO_CHANGE);
+        String result = binary.toSql(NamingPolicy.NO_CHANGE);
 
         // Body of the literal must contain an escaped quote (either \' or '').
         assertTrue(result.contains("\\'") || result.contains("''"), "Single-quote Character must be escaped, got: " + result);
@@ -655,9 +655,9 @@ public class BinaryTest extends TestBase {
         Binary binary = Filters.binary("firstName", Operator.LIKE, "John%");
 
         for (int i = 0; i < 100; i++) {
-            assertEquals("firstName LIKE 'John%'", binary.toString(NamingPolicy.NO_CHANGE));
-            assertEquals("first_name LIKE 'John%'", binary.toString(NamingPolicy.SNAKE_CASE));
-            assertEquals("FIRST_NAME LIKE 'John%'", binary.toString(NamingPolicy.SCREAMING_SNAKE_CASE));
+            assertEquals("firstName LIKE 'John%'", binary.toSql(NamingPolicy.NO_CHANGE));
+            assertEquals("first_name LIKE 'John%'", binary.toSql(NamingPolicy.SNAKE_CASE));
+            assertEquals("FIRST_NAME LIKE 'John%'", binary.toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
         }
     }
 }

@@ -20,6 +20,12 @@ import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class OnTest extends TestBase {
+    private static final class TestComposableWrapper extends ComposableCell {
+        TestComposableWrapper(final Condition condition) {
+            super(Operator.NOT, condition);
+        }
+    }
+
     @Test
     public void testConstructor_SimpleEquality() {
         On on = new On("orders.customer_id", "customers.id");
@@ -54,6 +60,12 @@ public class OnTest extends TestBase {
     }
 
     @Test
+    public void testConstructorRejectsWrappedNonPredicateComponent() {
+        assertThrows(IllegalArgumentException.class, () -> new On(new TestComposableWrapper(new Where(Filters.eq("active", true)))));
+        assertThrows(IllegalArgumentException.class, () -> new On(new TestComposableWrapper(Filters.any(new SubQuery("SELECT id FROM users")))));
+    }
+
+    @Test
     public void testGetCondition() {
         Equal condition = new Equal("users.id", "posts.user_id");
         On on = new On(condition);
@@ -81,7 +93,7 @@ public class OnTest extends TestBase {
     @Test
     public void testToString() {
         On on = new On("orders.customer_id", "customers.id");
-        String result = on.toString(NamingPolicy.NO_CHANGE);
+        String result = on.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("ON"));
     }
 

@@ -29,7 +29,7 @@ import com.landawn.abacus.util.Splitter;
 import com.landawn.abacus.util.Strings;
 
 /**
- * A utility class for parsing SQL statements into individual words and tokens.
+ * A utility class for parsing SQL statements into lexical SQL tokens.
  * This parser recognizes SQL keywords, operators, identifiers, and various SQL-specific
  * separators while preserving the structure and meaning of the SQL statement.
  *
@@ -54,7 +54,9 @@ import com.landawn.abacus.util.Strings;
  *   <li>Multi-character operators (e.g. {@code >=}, {@code <>}, {@code ->>}, PostgreSQL
  *       {@code #-} and {@code @?}) are emitted
  *       as single tokens; additional separators can be registered via
- *       {@link #registerSeparator(String)} / {@link #registerSeparator(char)}.</li>
+ *       {@link #registerSeparator(String)} / {@link #registerSeparator(char)}. Separator-registry
+ *       mutations are serialized so concurrent registrations, removals, and resets cannot publish
+ *       a derived lookup table that permanently omits another completed mutation.</li>
  *   <li>iBatis/MyBatis {@code #{...}} markers and registered PostgreSQL hash operators are
  *       not mistaken for hash comments.</li>
  *   <li>{@code #} that opens a hash-prefixed identifier (e.g. a temp table name appearing
@@ -69,7 +71,7 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * String sql = "SELECT * FROM users WHERE age > 25 ORDER BY name";
- * List<String> words = SqlParser.parse(sql);
+ * List<String> tokens = SqlParser.parse(sql);
  * // Result: ["SELECT", " ", "*", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">", " ", "25", " ", "ORDER", " ", "BY", " ", "name"]
  * }</pre>
  *
@@ -355,55 +357,55 @@ public final class SqlParser {
         multiCharSeparatorNonAsciiFirstChar = nonAsciiFirstChar;
     }
 
-    private static final Map<String, String[]> compositeWords = new ConcurrentHashMap<>(64);
+    private static final Map<String, String[]> compositeTokens = new ConcurrentHashMap<>(64);
 
     /**
      * Reused space-splitter (immutable config) instead of constructing one per split call.
-     * Empty sub-words are omitted so a composite word containing consecutive spaces (e.g.
-     * {@code "ORDER  BY"}) splits to the same sub-words as its single-spaced form instead of
-     * producing an empty, never-matching middle sub-word.
+     * Empty components are omitted so a composite token containing consecutive spaces (e.g.
+     * {@code "ORDER  BY"}) splits to the same component tokens as its single-spaced form instead
+     * of producing an empty, never-matching middle component.
      */
-    private static final Splitter WORD_SPLITTER = Splitter.with(SK.SPACE).trimResults().omitEmptyStrings();
+    private static final Splitter TOKEN_SPLITTER = Splitter.with(SK.SPACE).trimResults().omitEmptyStrings();
 
     static {
-        compositeWords.put(SK.LEFT_JOIN, new String[] { "LEFT", "JOIN" });
-        compositeWords.put(SK.RIGHT_JOIN, new String[] { "RIGHT", "JOIN" });
-        compositeWords.put(SK.FULL_JOIN, new String[] { "FULL", "JOIN" });
-        compositeWords.put(SK.CROSS_JOIN, new String[] { "CROSS", "JOIN" });
-        compositeWords.put(SK.NATURAL_JOIN, new String[] { "NATURAL", "JOIN" });
-        compositeWords.put(SK.INNER_JOIN, new String[] { "INNER", "JOIN" });
-        compositeWords.put(SK.GROUP_BY, new String[] { "GROUP", "BY" });
-        compositeWords.put(SK.ORDER_BY, new String[] { "ORDER", "BY" });
-        compositeWords.put(SK.FOR_UPDATE, new String[] { "FOR", "UPDATE" });
-        compositeWords.put(SK.FETCH_FIRST, new String[] { "FETCH", "FIRST" });
-        compositeWords.put(SK.FETCH_NEXT, new String[] { "FETCH", "NEXT" });
-        compositeWords.put(SK.ROWS_ONLY, new String[] { "ROWS", "ONLY" });
-        compositeWords.put(SK.UNION_ALL, new String[] { "UNION", "ALL" });
-        compositeWords.put(SK.IS_NOT, new String[] { "IS", "NOT" });
-        compositeWords.put(SK.IS_NULL, new String[] { "IS", "NULL" });
-        compositeWords.put(SK.IS_NOT_NULL, new String[] { "IS", "NOT", "NULL" });
-        compositeWords.put(SK.IS_EMPTY, new String[] { "IS", "EMPTY" });
-        compositeWords.put(SK.IS_NOT_EMPTY, new String[] { "IS", "NOT", "EMPTY" });
-        compositeWords.put(SK.IS_BLANK, new String[] { "IS", "BLANK" });
-        compositeWords.put(SK.IS_NOT_BLANK, new String[] { "IS", "NOT", "BLANK" });
-        compositeWords.put(SK.NOT_IN, new String[] { "NOT", "IN" });
-        compositeWords.put(SK.NOT_EXISTS, new String[] { "NOT", "EXISTS" });
-        compositeWords.put(SK.NOT_LIKE, new String[] { "NOT", "LIKE" });
-        compositeWords.put(SK.PARTITION_BY, new String[] { "PARTITION", "BY" });
+        compositeTokens.put(SK.LEFT_JOIN, new String[] { "LEFT", "JOIN" });
+        compositeTokens.put(SK.RIGHT_JOIN, new String[] { "RIGHT", "JOIN" });
+        compositeTokens.put(SK.FULL_JOIN, new String[] { "FULL", "JOIN" });
+        compositeTokens.put(SK.CROSS_JOIN, new String[] { "CROSS", "JOIN" });
+        compositeTokens.put(SK.NATURAL_JOIN, new String[] { "NATURAL", "JOIN" });
+        compositeTokens.put(SK.INNER_JOIN, new String[] { "INNER", "JOIN" });
+        compositeTokens.put(SK.GROUP_BY, new String[] { "GROUP", "BY" });
+        compositeTokens.put(SK.ORDER_BY, new String[] { "ORDER", "BY" });
+        compositeTokens.put(SK.FOR_UPDATE, new String[] { "FOR", "UPDATE" });
+        compositeTokens.put(SK.FETCH_FIRST, new String[] { "FETCH", "FIRST" });
+        compositeTokens.put(SK.FETCH_NEXT, new String[] { "FETCH", "NEXT" });
+        compositeTokens.put(SK.ROWS_ONLY, new String[] { "ROWS", "ONLY" });
+        compositeTokens.put(SK.UNION_ALL, new String[] { "UNION", "ALL" });
+        compositeTokens.put(SK.IS_NOT, new String[] { "IS", "NOT" });
+        compositeTokens.put(SK.IS_NULL, new String[] { "IS", "NULL" });
+        compositeTokens.put(SK.IS_NOT_NULL, new String[] { "IS", "NOT", "NULL" });
+        compositeTokens.put(SK.IS_EMPTY, new String[] { "IS", "EMPTY" });
+        compositeTokens.put(SK.IS_NOT_EMPTY, new String[] { "IS", "NOT", "EMPTY" });
+        compositeTokens.put(SK.IS_BLANK, new String[] { "IS", "BLANK" });
+        compositeTokens.put(SK.IS_NOT_BLANK, new String[] { "IS", "NOT", "BLANK" });
+        compositeTokens.put(SK.NOT_IN, new String[] { "NOT", "IN" });
+        compositeTokens.put(SK.NOT_EXISTS, new String[] { "NOT", "EXISTS" });
+        compositeTokens.put(SK.NOT_LIKE, new String[] { "NOT", "LIKE" });
+        compositeTokens.put(SK.PARTITION_BY, new String[] { "PARTITION", "BY" });
 
-        final List<String> list = new ArrayList<>(compositeWords.keySet());
+        final List<String> list = new ArrayList<>(compositeTokens.keySet());
 
         for (String e : list) {
             e = e.toLowerCase(Locale.ROOT);
 
-            if (!compositeWords.containsKey(e)) {
-                compositeWords.put(e, WORD_SPLITTER.splitToArray(e));
+            if (!compositeTokens.containsKey(e)) {
+                compositeTokens.put(e, TOKEN_SPLITTER.splitToArray(e));
             }
 
             e = e.toUpperCase(Locale.ROOT);
 
-            if (!compositeWords.containsKey(e)) {
-                compositeWords.put(e, WORD_SPLITTER.splitToArray(e));
+            if (!compositeTokens.containsKey(e)) {
+                compositeTokens.put(e, TOKEN_SPLITTER.splitToArray(e));
             }
         }
     }
@@ -412,7 +414,7 @@ public final class SqlParser {
     }
 
     /**
-     * Parses a SQL statement into a list of individual words and tokens.
+     * Parses a SQL statement into a list of lexical SQL tokens.
      * This method tokenizes the SQL string while preserving the semantic meaning
      * of SQL constructs such as keywords, operators, identifiers, and literals.
      *
@@ -425,7 +427,7 @@ public final class SqlParser {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<String> words = SqlParser.parse("SELECT name, age FROM users WHERE age >= 18");
+     * List<String> tokens = SqlParser.parse("SELECT name, age FROM users WHERE age >= 18");
      * // Result: ["SELECT", " ", "name", ",", " ", "age", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">=", " ", "18"]
      * }</pre>
      *
@@ -438,7 +440,7 @@ public final class SqlParser {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
-            final List<String> words = new ArrayList<>(Math.max(16, sqlLength / 4));
+            final List<String> tokens = new ArrayList<>(Math.max(16, sqlLength / 4));
 
             String temp = "";
             char quoteChar = 0;
@@ -470,7 +472,7 @@ public final class SqlParser {
                             bsEscaped = false;
                         } else {
                             // Even count (including 0) of preceding backslashes -> quote NOT escaped.
-                            words.add(sb.toString());
+                            tokens.add(sb.toString());
                             sb.setLength(0);
 
                             quoteChar = 0;
@@ -486,7 +488,7 @@ public final class SqlParser {
                     // Line comment (-- ...): always discarded (unlike block comments, the "Keep
                     // comments" marker does not preserve these). Skip to the end of the line.
                     if (!sb.isEmpty()) {
-                        words.add(sb.toString());
+                        tokens.add(sb.toString());
                         sb.setLength(0);
                     }
 
@@ -514,15 +516,15 @@ public final class SqlParser {
                     } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index)) != null) {
                         // '#'-leading operator such as #>, #>> or ##.
                         if (!sb.isEmpty()) {
-                            words.add(sb.toString());
+                            tokens.add(sb.toString());
                             sb.setLength(0);
                         }
 
-                        words.add(temp);
+                        tokens.add(temp);
                         index += temp.length() - 1;
                     } else { // MySQL hash line comment: always discarded. Skip to the end of the line.
                         if (!sb.isEmpty()) {
-                            words.add(sb.toString());
+                            tokens.add(sb.toString());
                             sb.setLength(0);
                         }
 
@@ -537,7 +539,7 @@ public final class SqlParser {
                     }
                 } else if (ch == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
                     if (!sb.isEmpty()) {
-                        words.add(sb.toString());
+                        tokens.add(sb.toString());
                         sb.setLength(0);
                     }
 
@@ -558,7 +560,7 @@ public final class SqlParser {
                             if (ch == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
                                 sb.append(sql.charAt(++index));
 
-                                words.add(sb.toString());
+                                tokens.add(sb.toString());
                                 sb.setLength(0);
 
                                 break;
@@ -578,31 +580,31 @@ public final class SqlParser {
                             }
                         }
 
-                        appendSpaceAfterSkippedBlockCommentIfNeeded(sql, sqlLength, index, words);
+                        appendSpaceAfterSkippedBlockCommentIfNeeded(sql, sqlLength, index, tokens);
                     }
                 } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index)) != null) {
                     // Multi-character operator (e.g. >=, <>, ->>, :=). Matched before the single-character
                     // separator lookup (same effective precedence as before, when isSeparator matched it
                     // and this branch re-matched it) so the match is computed only once.
                     if (!sb.isEmpty()) {
-                        words.add(sb.toString());
+                        tokens.add(sb.toString());
                         sb.setLength(0);
                     }
 
-                    words.add(temp);
+                    tokens.add(temp);
                     index += temp.length() - 1;
                 } else if (ch < 128 ? ASCII_SEPARATOR[ch] : separators.contains(ch)) {
                     if (!sb.isEmpty()) {
-                        words.add(sb.toString());
+                        tokens.add(sb.toString());
                         sb.setLength(0);
                     }
 
                     if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
-                        if (!words.isEmpty() && !words.get(words.size() - 1).equals(SK.SPACE)) {
-                            words.add(SK.SPACE);
+                        if (!tokens.isEmpty() && !tokens.get(tokens.size() - 1).equals(SK.SPACE)) {
+                            tokens.add(SK.SPACE);
                         }
                     } else {
-                        words.add(String.valueOf(ch));
+                        tokens.add(String.valueOf(ch));
                     }
                 } else {
                     sb.append(ch);
@@ -616,23 +618,23 @@ public final class SqlParser {
             }
 
             if (!sb.isEmpty()) {
-                words.add(sb.toString());
+                tokens.add(sb.toString());
                 sb.setLength(0);
             }
 
-            return words;
+            return tokens;
         } finally {
             Objectory.recycle(sb);
         }
     }
 
     /**
-     * Finds the index of a specific word within a SQL statement, searching from the beginning
+     * Finds the index of a specific token within a SQL statement, searching from the beginning
      * using case-insensitive matching. This is a convenience overload of
-     * {@link #indexOfWord(String, String, int, boolean)} equivalent to
-     * {@code indexOfWord(sql, word, 0, false)}.
+     * {@link #indexOfToken(String, String, int, boolean)} equivalent to
+     * {@code indexOfToken(sql, token, 0, false)}.
      *
-     * <p>Like the four-argument form, this method only reports positions where {@code word}
+     * <p>Like the four-argument form, this method only reports positions where {@code token}
      * appears as a complete SQL token (or composite token such as {@code "LEFT JOIN"}), not where
      * it occurs as a substring of another identifier, and it skips matches inside line, hash and
      * block comments.</p>
@@ -640,26 +642,26 @@ public final class SqlParser {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
-     * int index = SqlParser.indexOfWord(sql, "ORDER BY");   // 40
+     * int index = SqlParser.indexOfToken(sql, "ORDER BY");   // 40
      * }</pre>
      *
      * @param sql the SQL statement to search within (must not be {@code null})
-     * @param word the word or composite keyword to find (must not be {@code null})
-     * @return the index of the word if found, or {@code -1} if not found
-     * @throws NullPointerException if {@code sql} or {@code word} is {@code null}
-     * @see #indexOfWord(String, String, int, boolean)
+     * @param token the token or composite keyword to find (must not be {@code null})
+     * @return the index of the token if found, or {@code -1} if not found
+     * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
+     * @see #indexOfToken(String, String, int, boolean)
      */
-    public static int indexOfWord(final String sql, final String word) {
-        return indexOfWord(sql, word, 0, false);
+    public static int indexOfToken(final String sql, final String token) {
+        return indexOfToken(sql, token, 0, false);
     }
 
     /**
-     * Finds the index of a specific word within a SQL statement, searching from the given position
+     * Finds the index of a specific token within a SQL statement, searching from the given position
      * using case-insensitive matching. This is a convenience overload of
-     * {@link #indexOfWord(String, String, int, boolean)} equivalent to
-     * {@code indexOfWord(sql, word, fromIndex, false)}.
+     * {@link #indexOfToken(String, String, int, boolean)} equivalent to
+     * {@code indexOfToken(sql, token, fromIndex, false)}.
      *
-     * <p>Like the four-argument form, this method only reports positions where {@code word}
+     * <p>Like the four-argument form, this method only reports positions where {@code token}
      * appears as a complete SQL token (or composite token such as {@code "LEFT JOIN"}), not where
      * it occurs as a substring of another identifier, and it skips matches inside line, hash and
      * block comments.</p>
@@ -667,29 +669,29 @@ public final class SqlParser {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
-     * int whereIndex = SqlParser.indexOfWord(sql, "WHERE", 0);   // 20
+     * int whereIndex = SqlParser.indexOfToken(sql, "WHERE", 0);   // 20
      * }</pre>
      *
      * @param sql the SQL statement to search within (must not be {@code null})
-     * @param word the word or composite keyword to find (must not be {@code null})
+     * @param token the token or composite keyword to find (must not be {@code null})
      * @param fromIndex the earliest character position at which a match may be reported (0-based); scanning still begins at the start of {@code sql} for correct tokenization, but any match starting before {@code fromIndex} is skipped; negative values are treated as {@code 0}
-     * @return the index of the word if found, or {@code -1} if not found
-     * @throws NullPointerException if {@code sql} or {@code word} is {@code null}
-     * @see #indexOfWord(String, String, int, boolean)
+     * @return the index of the token if found, or {@code -1} if not found
+     * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
+     * @see #indexOfToken(String, String, int, boolean)
      */
-    public static int indexOfWord(final String sql, final String word, final int fromIndex) {
-        return indexOfWord(sql, word, fromIndex, false);
+    public static int indexOfToken(final String sql, final String token, final int fromIndex) {
+        return indexOfToken(sql, token, fromIndex, false);
     }
 
     /**
-     * Finds the index of a specific word within a SQL statement starting from a given position.
-     * This method is capable of finding both simple words and composite keywords (like "LEFT JOIN").
+     * Finds the index of a specific token within a SQL statement starting from a given position.
+     * This method is capable of finding both simple tokens and composite keywords (like "LEFT JOIN").
      * It respects SQL syntax rules, including quoted identifiers and case sensitivity options.
      *
      * <p>The method handles:</p>
      * <ul>
-     *   <li>Simple words and operators</li>
-     *   <li>Composite keywords (e.g., "GROUP BY", "LEFT JOIN"). Sub-words may be separated by
+     *   <li>Simple tokens and operators</li>
+     *   <li>Composite keywords (e.g., "GROUP BY", "LEFT JOIN"). Sub-tokens may be separated by
      *       any amount of whitespace and/or comments in the source SQL.</li>
      *   <li>Case-sensitive and case-insensitive matching</li>
      *   <li>Quoted identifiers (the entire quoted region is matched as a single token)</li>
@@ -697,36 +699,36 @@ public final class SqlParser {
      * </ul>
      *
      * <p>Unlike {@link String#indexOf(String, int)}, this method only returns a position where
-     * {@code word} appears as a <em>complete</em> SQL token (or composite token), not where it
+     * {@code token} appears as a <em>complete</em> SQL token (or composite token), not where it
      * occurs as a substring of another identifier; matches that fall inside line/hash/block
      * comments are skipped.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
-     * int index = SqlParser.indexOfWord(sql, "ORDER BY", 0, false);
+     * int index = SqlParser.indexOfToken(sql, "ORDER BY", 0, false);
      * // Returns: 40 (the position where "ORDER BY" starts)
      *
-     * int whereIndex = SqlParser.indexOfWord(sql, "WHERE", 0, false);
+     * int whereIndex = SqlParser.indexOfToken(sql, "WHERE", 0, false);
      * // Returns: 20 (the position where "WHERE" starts)
      * }</pre>
      *
      * @param sql the SQL statement to search within (must not be {@code null})
-     * @param word the word or composite keyword to find (must not be {@code null})
+     * @param token the token or composite keyword to find (must not be {@code null})
      * @param fromIndex the earliest character position at which a match may be reported (0-based); scanning still begins at the start of {@code sql} for correct tokenization, but any match starting before {@code fromIndex} is skipped; negative values are treated as {@code 0}
      * @param caseSensitive whether the search should be case-sensitive
-     * @return the index of the word if found, or {@code -1} if not found
-     * @throws NullPointerException if {@code sql} or {@code word} is {@code null}
+     * @return the index of the token if found, or {@code -1} if not found
+     * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
      */
-    public static int indexOfWord(final String sql, final String word, final int fromIndex, final boolean caseSensitive) {
-        String[] subWords = compositeWords.get(word);
+    public static int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive) {
+        String[] componentTokens = compositeTokens.get(token);
 
-        if (subWords == null) {
-            subWords = WORD_SPLITTER.splitToArray(word);
+        if (componentTokens == null) {
+            componentTokens = TOKEN_SPLITTER.splitToArray(token);
         }
 
         //noinspection IfStatementWithIdenticalBranches
-        if (N.len(subWords) <= 1) {
+        if (N.len(componentTokens) <= 1) {
             final StringBuilder sb = Objectory.createStringBuilder();
 
             try {
@@ -760,9 +762,9 @@ public final class SqlParser {
                                 // Even count (including 0) of preceding backslashes -> NOT escaped.
                                 temp = sb.toString();
 
-                                final int matchStart = index - word.length() + 1;
+                                final int matchStart = index - token.length() + 1;
 
-                                if (matchStart >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                                if (matchStart >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
                                     result = matchStart;
 
                                     break;
@@ -782,9 +784,9 @@ public final class SqlParser {
                         // Skip single-line comment (-- ...)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            final int matchStart = index - word.length();
+                            final int matchStart = index - token.length();
 
-                            if (matchStart >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                            if (matchStart >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
                                 result = matchStart;
                                 break;
                             }
@@ -800,9 +802,9 @@ public final class SqlParser {
                         // Skip MySQL single-line comment (# ...)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            final int matchStart = index - word.length();
+                            final int matchStart = index - token.length();
 
-                            if (matchStart >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                            if (matchStart >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
                                 result = matchStart;
                                 break;
                             }
@@ -818,9 +820,9 @@ public final class SqlParser {
                         // Skip block comment (/* ... */)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            final int matchStart = index - word.length();
+                            final int matchStart = index - token.length();
 
-                            if (matchStart >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                            if (matchStart >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
                                 result = matchStart;
                                 break;
                             }
@@ -839,9 +841,9 @@ public final class SqlParser {
                     } else if (isSeparator(sql, sqlLength, index, ch)) {
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            final int matchStart = index - word.length();
+                            final int matchStart = index - token.length();
 
-                            if (matchStart >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                            if (matchStart >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
                                 result = matchStart;
 
                                 break;
@@ -856,14 +858,15 @@ public final class SqlParser {
                         temp = matchMultiCharSeparator(sql, sqlLength, index);
 
                         if (temp != null) {
-                            if (index >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                            if (index >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
                                 result = index;
 
                                 break;
                             }
 
                             index += temp.length() - 1;
-                        } else if (index >= startIndex && (word.equals(String.valueOf(ch)) || (!caseSensitive && word.equalsIgnoreCase(String.valueOf(ch))))) {
+                        } else if (index >= startIndex
+                                && (token.equals(String.valueOf(ch)) || (!caseSensitive && token.equalsIgnoreCase(String.valueOf(ch))))) {
                             result = index;
 
                             break;
@@ -880,9 +883,9 @@ public final class SqlParser {
 
                 if (result < 0 && !sb.isEmpty()) {
                     temp = sb.toString();
-                    final int matchStart = sqlLength - word.length();
+                    final int matchStart = sqlLength - token.length();
 
-                    if (matchStart >= startIndex && (word.equals(temp) || (!caseSensitive && word.equalsIgnoreCase(temp)))) {
+                    if (matchStart >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
                         result = matchStart;
                     }
                 }
@@ -892,25 +895,26 @@ public final class SqlParser {
                 Objectory.recycle(sb);
             }
         } else {
-            int result = indexOfWord(sql, subWords[0], fromIndex, caseSensitive);
+            int result = indexOfToken(sql, componentTokens[0], fromIndex, caseSensitive);
 
             while (result >= 0) {
-                int tmpIndex = result + subWords[0].length();
+                int tmpIndex = result + componentTokens[0].length();
                 boolean matched = true;
 
-                for (int i = 1; i < subWords.length; i++) {
-                    final String nextWord = nextWord(sql, tmpIndex);
+                for (int i = 1; i < componentTokens.length; i++) {
+                    final String nextToken = nextToken(sql, tmpIndex);
 
-                    if (Strings.isNotEmpty(nextWord) && (nextWord.equals(subWords[i]) || (!caseSensitive && nextWord.equalsIgnoreCase(subWords[i])))) {
-                        // Use indexOfWord to skip whitespace AND block/line comments between subwords
-                        final int subWordPos = indexOfWord(sql, subWords[i], tmpIndex, caseSensitive);
+                    if (Strings.isNotEmpty(nextToken)
+                            && (nextToken.equals(componentTokens[i]) || (!caseSensitive && nextToken.equalsIgnoreCase(componentTokens[i])))) {
+                        // Use indexOfToken to skip whitespace and block/line comments between component tokens.
+                        final int componentTokenPos = indexOfToken(sql, componentTokens[i], tmpIndex, caseSensitive);
 
-                        if (subWordPos < 0) {
+                        if (componentTokenPos < 0) {
                             matched = false;
                             break;
                         }
 
-                        tmpIndex = subWordPos + subWords[i].length();
+                        tmpIndex = componentTokenPos + componentTokens[i].length();
                     } else {
                         matched = false;
 
@@ -922,8 +926,8 @@ public final class SqlParser {
                     return result;
                 }
 
-                // First sub-word matched but subsequent words didn't; continue searching from after the current match
-                result = indexOfWord(sql, subWords[0], result + subWords[0].length(), caseSensitive);
+                // The first component matched but a later one did not; continue after the current match.
+                result = indexOfToken(sql, componentTokens[0], result + componentTokens[0].length(), caseSensitive);
             }
 
             return result;
@@ -931,7 +935,7 @@ public final class SqlParser {
     }
 
     /**
-     * Extracts the next word or token from a SQL statement starting at the specified index.
+     * Extracts the next token from a SQL statement starting at the specified index.
      * This method skips leading whitespace and returns the next meaningful token,
      * which could be a keyword, identifier, operator, or separator.
      *
@@ -949,17 +953,17 @@ public final class SqlParser {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT   name,   age FROM users";
-     * String word1 = SqlParser.nextWord(sql, 6);    // Returns: "name" (skips spaces after SELECT)
-     * String word2 = SqlParser.nextWord(sql, 13);   // Returns: ","
-     * String word3 = SqlParser.nextWord(sql, 14);   // Returns: "age" (skips spaces after comma)
+     * String token1 = SqlParser.nextToken(sql, 6);    // Returns: "name" (skips spaces after SELECT)
+     * String token2 = SqlParser.nextToken(sql, 13);   // Returns: ","
+     * String token3 = SqlParser.nextToken(sql, 14);   // Returns: "age" (skips spaces after comma)
      * }</pre>
      *
-     * @param sql the SQL statement to extract the word from (must not be {@code null})
+     * @param sql the SQL statement to extract the token from (must not be {@code null})
      * @param fromIndex the starting position for extraction (0-based); negative values are treated as {@code 0}
-     * @return the next word or token found, or an empty string if no more tokens exist
+     * @return the next token found, or an empty string if no more tokens exist
      * @throws NullPointerException if {@code sql} is {@code null}
      */
-    public static String nextWord(final String sql, final int fromIndex) {
+    public static String nextToken(final String sql, final int fromIndex) {
         final int sqlLength = sql.length();
         final StringBuilder sb = Objectory.createStringBuilder();
 
@@ -1068,9 +1072,9 @@ public final class SqlParser {
     }
 
     /**
-     * Returns the position just past the next word or token in a SQL statement, scanning from
+     * Returns the position just past the next token in a SQL statement, scanning from
      * the specified index. This is the position-returning companion to
-     * {@link #nextWord(String, int)}: it applies the identical scanning rules (skipping leading
+     * {@link #nextToken(String, int)}: it applies the identical scanning rules (skipping leading
      * whitespace and comments, treating a quoted region or multi-character operator as one token)
      * but returns the end index of that token instead of its text. A caller can therefore obtain
      * the next token together with its bounds without re-scanning the string with
@@ -1078,33 +1082,33 @@ public final class SqlParser {
      *
      * <p>The returned index is the offset of the first character <em>after</em> the next token,
      * suitable for passing back as the {@code fromIndex} of a subsequent call to advance through
-     * the SQL. Equivalently, {@code sql.substring(returnedStart, nextWordEnd(sql, fromIndex))}
-     * spans the same token returned by {@link #nextWord(String, int)} (where {@code returnedStart}
+     * the SQL. Equivalently, {@code sql.substring(returnedStart, nextTokenEndIndex(sql, fromIndex))}
+     * spans the same token returned by {@link #nextToken(String, int)} (where {@code returnedStart}
      * is the index of that token's first character).</p>
      *
      * <p>If no further token exists (only trailing whitespace and/or comments remain), the length
-     * of {@code sql} is returned, consistent with {@link #nextWord(String, int)} returning an empty
+     * of {@code sql} is returned, consistent with {@link #nextToken(String, int)} returning an empty
      * string in that case.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT   name,   age FROM users";
-     * int end1 = SqlParser.nextWordEnd(sql, 6);    // 13 (just past "name")
-     * int end2 = SqlParser.nextWordEnd(sql, 13);   // 14 (just past ",")
-     * int end3 = SqlParser.nextWordEnd(sql, 14);   // 20 (just past "age")
+     * int end1 = SqlParser.nextTokenEndIndex(sql, 6);    // 13 (just past "name")
+     * int end2 = SqlParser.nextTokenEndIndex(sql, 13);   // 14 (just past ",")
+     * int end3 = SqlParser.nextTokenEndIndex(sql, 14);   // 20 (just past "age")
      * }</pre>
      *
      * @param sql the SQL statement to scan (must not be {@code null})
      * @param fromIndex the starting position for scanning (0-based); negative values are treated as {@code 0}
-     * @return the index immediately after the next word or token, or the length of {@code sql} if no further token exists
+     * @return the index immediately after the next token, or the length of {@code sql} if no further token exists
      * @throws NullPointerException if {@code sql} is {@code null}
-     * @see #nextWord(String, int)
+     * @see #nextToken(String, int)
      */
-    public static int nextWordEnd(final String sql, final int fromIndex) {
+    public static int nextTokenEndIndex(final String sql, final int fromIndex) {
         final int sqlLength = sql.length();
 
-        // Mirrors nextWord's scan. `started` tracks whether any token character has been
-        // accumulated yet (the analogue of nextWord's `!sb.isEmpty()` guard).
+        // Mirrors nextToken's scan. `started` tracks whether any token character has been
+        // accumulated yet (the analogue of nextToken's `!sb.isEmpty()` guard).
         boolean started = false;
         char quoteChar = 0;
         // Forward-running backslash parity (see parse()): true if the char at the current
@@ -1201,7 +1205,7 @@ public final class SqlParser {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SqlParser.registerSeparator('$');   // Register $ as a separator
-     * List<String> words = SqlParser.parse("SELECT$FROM$users");
+     * List<String> tokens = SqlParser.parse("SELECT$FROM$users");
      * // Result: ["SELECT", "$", "FROM", "$", "users"]
      * }</pre>
      *
@@ -1210,7 +1214,7 @@ public final class SqlParser {
      * @see #unregisterSeparator(char)
      * @see #resetSeparators()
      */
-    public static void registerSeparator(final char separator) {
+    public static synchronized void registerSeparator(final char separator) {
         separators.add(separator);
 
         if (separator < 128) {
@@ -1238,7 +1242,7 @@ public final class SqlParser {
      * @see #unregisterSeparator(String)
      * @see #resetSeparators()
      */
-    public static void registerSeparator(final String separator) {
+    public static synchronized void registerSeparator(final String separator) {
         N.checkArgNotEmpty(separator, "separator");
 
         separators.add(separator);
@@ -1279,7 +1283,7 @@ public final class SqlParser {
      * @param separator the character to unregister as a separator
      * @see #unregisterSeparator(String)
      */
-    public static void unregisterSeparator(final char separator) {
+    public static synchronized void unregisterSeparator(final char separator) {
         unregisterSeparator(String.valueOf(separator));
     }
 
@@ -1310,7 +1314,7 @@ public final class SqlParser {
      * @param separator the separator to unregister (must not be {@code null} or empty)
      * @throws IllegalArgumentException if {@code separator} is {@code null} or empty
      */
-    public static void unregisterSeparator(final String separator) {
+    public static synchronized void unregisterSeparator(final String separator) {
         N.checkArgNotEmpty(separator, "separator");
 
         separators.remove(separator);
@@ -1342,7 +1346,7 @@ public final class SqlParser {
      * SqlParser.resetSeparators();         // restore the original built-in separators
      * }</pre>
      */
-    public static void resetSeparators() {
+    public static synchronized void resetSeparators() {
         loadDefaultSeparators();
     }
 
@@ -1393,17 +1397,17 @@ public final class SqlParser {
     }
 
     private static void appendSpaceAfterSkippedBlockCommentIfNeeded(final String sql, final int sqlLength, final int commentEndIndex,
-            final List<String> words) {
+            final List<String> tokens) {
         final int nextIndex = commentEndIndex + 1;
 
-        if (nextIndex >= sqlLength || words.isEmpty() || SK.SPACE.equals(words.get(words.size() - 1))) {
+        if (nextIndex >= sqlLength || tokens.isEmpty() || SK.SPACE.equals(tokens.get(tokens.size() - 1))) {
             return;
         }
 
         final char nextChar = sql.charAt(nextIndex);
 
         if (!Character.isWhitespace(nextChar) && !isSeparator(sql, sqlLength, nextIndex, nextChar)) {
-            words.add(SK.SPACE);
+            tokens.add(SK.SPACE);
         }
     }
 
@@ -1436,9 +1440,9 @@ public final class SqlParser {
      *
      * <p>A comma is treated as a list continuation: for {@code "FROM #t1, #t2"} the backward walk
      * skips the comma plus the single list element before it (a possibly qualified, quoted,
-     * '#'-prefixed, or parenthesized derived table with an optional alias word) and re-checks from
+     * '#'-prefixed, or parenthesized derived table with an optional alias token) and re-checks from
      * there, so every element of a comma-separated list governed by a context keyword is recognized. Anything else anchors
-     * the decision: a context keyword means identifier, any other word or character (e.g.
+     * the decision: a context keyword means identifier, any other token or character (e.g.
      * {@code SELECT}, {@code '('}, {@code '='}) means comment, so {@code "SELECT a, #comment"}
      * remains a MySQL comment. Ambiguous shapes deliberately fall back to the comment
      * classification.</p>
@@ -1486,13 +1490,13 @@ public final class SqlParser {
                 return false;
             }
 
-            int wordStart = left;
+            int tokenStart = left;
 
-            while (wordStart >= 0 && isIdentifierChar(str.charAt(wordStart))) {
-                wordStart--;
+            while (tokenStart >= 0 && isIdentifierChar(str.charAt(tokenStart))) {
+                tokenStart--;
             }
 
-            final String prevWord = str.substring(wordStart + 1, left + 1).toUpperCase(Locale.ROOT);
+            final String prevWord = str.substring(tokenStart + 1, left + 1).toUpperCase(Locale.ROOT);
             return hashIdentifierContextKeywords.contains(prevWord);
         }
 
@@ -1501,7 +1505,7 @@ public final class SqlParser {
 
     /**
      * Returns whether {@code left} is immediately after an INSERT/DELETE/MERGE target introducer.
-     * Unlike {@link #hashIdentifierContextKeywords}, these operation words are deliberately not
+     * Unlike {@link #hashIdentifierContextKeywords}, these operation tokens are deliberately not
      * general identifier anchors: they are accepted only directly before the target, optionally
      * with a SQL Server {@code TOP [ ( expression ) ] [ PERCENT ]} clause between them.
      */
@@ -1512,16 +1516,16 @@ public final class SqlParser {
             return false;
         }
 
-        int wordStart = identifierWordStart(str, left);
+        int tokenStart = identifierWordStart(str, left);
 
-        if (wordStart >= 0 && hashIdentifierDmlTargetKeywords.contains(str.substring(wordStart, left + 1).toUpperCase(Locale.ROOT))) {
+        if (tokenStart >= 0 && hashIdentifierDmlTargetKeywords.contains(str.substring(tokenStart, left + 1).toUpperCase(Locale.ROOT))) {
             return true;
         }
 
         // TOP may end with PERCENT. Strip it before locating the parenthesized (or legacy bare)
         // expression that follows TOP.
-        if (wordStart >= 0 && "PERCENT".equalsIgnoreCase(str.substring(wordStart, left + 1))) {
-            left = skipBackwardHashContextTrivia(str, wordStart - 1, skipLineComments);
+        if (tokenStart >= 0 && "PERCENT".equalsIgnoreCase(str.substring(tokenStart, left + 1))) {
+            left = skipBackwardHashContextTrivia(str, tokenStart - 1, skipLineComments);
         }
 
         if (left < 0) {
@@ -1539,25 +1543,25 @@ public final class SqlParser {
         } else {
             // SQL Server documents parentheses for data-modification TOP expressions, but accepts
             // the long-standing bare numeric form too (for example, "MERGE TOP 5 #stage").
-            wordStart = identifierWordStart(str, left);
+            tokenStart = identifierWordStart(str, left);
 
-            if (wordStart < 0) {
+            if (tokenStart < 0) {
                 return false;
             }
 
-            left = skipBackwardHashContextTrivia(str, wordStart - 1, skipLineComments);
+            left = skipBackwardHashContextTrivia(str, tokenStart - 1, skipLineComments);
         }
 
-        wordStart = identifierWordStart(str, left);
+        tokenStart = identifierWordStart(str, left);
 
-        if (wordStart < 0 || !"TOP".equalsIgnoreCase(str.substring(wordStart, left + 1))) {
+        if (tokenStart < 0 || !"TOP".equalsIgnoreCase(str.substring(tokenStart, left + 1))) {
             return false;
         }
 
-        left = skipBackwardHashContextTrivia(str, wordStart - 1, skipLineComments);
-        wordStart = identifierWordStart(str, left);
+        left = skipBackwardHashContextTrivia(str, tokenStart - 1, skipLineComments);
+        tokenStart = identifierWordStart(str, left);
 
-        return wordStart >= 0 && hashIdentifierDmlTargetKeywords.contains(str.substring(wordStart, left + 1).toUpperCase(Locale.ROOT));
+        return tokenStart >= 0 && hashIdentifierDmlTargetKeywords.contains(str.substring(tokenStart, left + 1).toUpperCase(Locale.ROOT));
     }
 
     private static int skipBackwardHashContextTrivia(final String str, final int left, final boolean skipLineComments) {
@@ -1583,7 +1587,7 @@ public final class SqlParser {
      * already be positioned on a non-whitespace character), for the list walk in
      * {@link #isLikelyHashPrefixedIdentifier}. An element is at most two whitespace-separated
      * units (a name plus an optional trailing alias, with a free {@code AS} between them) where
-     * each unit is a dot-qualified chain of segments and each segment is an identifier word
+     * each unit is a dot-qualified chain of segments and each segment is an identifier token
      * (optionally '#'-prefixed), a quoted/bracket-quoted identifier, or a balanced parenthesized
      * derived-table expression.
      *
@@ -1632,25 +1636,25 @@ public final class SqlParser {
 
                     left = quoteStart - 1;
                 } else if (isIdentifierChar(ch)) {
-                    int wordStart = left;
+                    int tokenStart = left;
 
-                    while (wordStart >= 0 && isIdentifierChar(str.charAt(wordStart))) {
-                        wordStart--;
+                    while (tokenStart >= 0 && isIdentifierChar(str.charAt(tokenStart))) {
+                        tokenStart--;
                     }
 
-                    final String word = str.substring(wordStart + 1, left + 1).toUpperCase(Locale.ROOT);
+                    final String token = str.substring(tokenStart + 1, left + 1).toUpperCase(Locale.ROOT);
 
-                    if (hashIdentifierContextKeywords.contains(word)) {
+                    if (hashIdentifierContextKeywords.contains(token)) {
                         break outer; // the anchor keyword; leave it for the caller to classify
                     }
 
-                    if ("AS".equals(word) && left == unitStart) {
+                    if ("AS".equals(token) && left == unitStart) {
                         // "name AS alias": the AS keyword does not count against the unit budget.
-                        left = skipBackwardWhitespaceAndBlockComments(str, wordStart);
+                        left = skipBackwardWhitespaceAndBlockComments(str, tokenStart);
                         continue outer;
                     }
 
-                    left = wordStart;
+                    left = tokenStart;
 
                     if (left >= 0 && str.charAt(left) == '#') {
                         left--; // '#'-prefixed segment: the '#' belongs to the identifier
@@ -1675,7 +1679,7 @@ public final class SqlParser {
                 break; // element complete (next list continuation or start of input reached)
             }
 
-            left = beforeGap; // a second unit (the name before an alias word) may follow
+            left = beforeGap; // a second unit (the name before an alias token) may follow
         }
 
         return left;
@@ -1995,8 +1999,8 @@ public final class SqlParser {
     }
 
     /**
-     * Determines if a word at a specific position in a parsed word list represents a function name.
-     * A word is considered a function name if it is followed by the opening parenthesis token,
+     * Determines if a token at a specific position in a parsed token list represents a function name.
+     * A token is considered a function name if it is followed by the opening parenthesis token,
      * either immediately or after whitespace. Multi-character separators that merely start with
      * {@code '('}, such as Oracle's outer-join marker {@code (+)}, are not function-call markers.
      * Space tokens and invalid indices are never considered function names.
@@ -2011,27 +2015,27 @@ public final class SqlParser {
      * }</pre>
      *
      * @param tokens the parsed SQL tokens (typically the result of {@link #parse(String)})
-     * @param index the index of the word to check; invalid indices return {@code false}
-     * @return {@code true} if the word at {@code index} is followed (after zero or more space tokens)
+     * @param index the index of the token to check; invalid indices return {@code false}
+     * @return {@code true} if the token at {@code index} is followed (after zero or more space tokens)
      *         by the {@code "("} token; {@code false} otherwise
-     * @throws NullPointerException if {@code words} is {@code null}
+     * @throws NullPointerException if {@code tokens} is {@code null}
      */
     public static boolean isFunctionName(final List<String> tokens, final int index) {
         return isFunctionName(tokens, tokens.size(), index);
     }
 
     /**
-     * Determines if a word at a specific position in a parsed word list represents a function name,
+     * Determines if a token at a specific position in a parsed token list represents a function name,
      * examining only the tokens below the given exclusive upper bound.
      *
      * @param tokens the parsed SQL tokens (typically the result of {@link #parse(String)})
-     * @param len the exclusive upper bound to search within {@code words} (usually {@code words.size()};
-     *            indices {@code >= len} are not examined; values above {@code words.size()} are capped
-     *            at {@code words.size()})
-     * @param index the index of the word to check; invalid indices return {@code false}
-     * @return {@code true} if the word at {@code index} is followed (after zero or more space tokens)
+     * @param len the exclusive upper bound to search within {@code tokens} (usually {@code tokens.size()};
+     *            indices {@code >= len} are not examined; values above {@code tokens.size()} are capped
+     *            at {@code tokens.size()})
+     * @param index the index of the token to check; invalid indices return {@code false}
+     * @return {@code true} if the token at {@code index} is followed (after zero or more space tokens)
      *         by the {@code "("} token; {@code false} otherwise
-     * @throws NullPointerException if {@code words} is {@code null}
+     * @throws NullPointerException if {@code tokens} is {@code null}
      * @deprecated use {@link #isFunctionName(List, int)}
      */
     @Deprecated
@@ -2047,10 +2051,10 @@ public final class SqlParser {
         }
 
         for (int i = index + 1; i < upperBound; i++) {
-            String word = tokens.get(i);
-            if (SK.PARENTHESIS_L.equals(word)) {
+            String token = tokens.get(i);
+            if (SK.PARENTHESIS_L.equals(token)) {
                 return true;
-            } else if (!SK.SPACE.equals(word)) {
+            } else if (!SK.SPACE.equals(token)) {
                 return false;
             }
         }
@@ -2394,8 +2398,8 @@ public final class SqlParser {
      * {@code update_time} or bracket/quoted identifiers named like keywords are ignored. A
      * {@code null} or empty statement does not lead with {@code SELECT} or {@code INSERT}, so it
      * returns {@code false}. For multi-statement SQL, a later top-level {@code UPDATE},
-     * {@code DELETE}, {@code MERGE}, {@code REPLACE}, {@code TRUNCATE}, {@code DROP} or
-     * {@code ALTER} statement makes this method return {@code false}; the keyword scan matches
+     * {@code DELETE}, {@code MERGE}, {@code REPLACE}, {@code TRUNCATE}, {@code CREATE}, {@code DROP}
+     * or {@code ALTER} statement makes this method return {@code false}; the keyword scan matches
      * only statement-start positions, so the {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL
      * <i>functions</i> do not affect the classification.
      * </p>
@@ -2427,8 +2431,8 @@ public final class SqlParser {
         // REPLACE(...)/TRUNCATE(...) functions from false-positiving.
         return !containsQueryKeyword(sql, "UPDATE") && !containsQueryKeyword(sql, "DELETE") && !containsQueryKeyword(sql, "MERGE")
                 && !containsQueryKeyword(sql, "REPLACE") && !containsQueryKeyword(sql, "TRUNCATE") && !containsQueryKeyword(sql, "DROP")
-                && !containsQueryKeyword(sql, "ALTER") && !containsInsertUpdateClause(sql) && !containsSelectIntoClause(sql)
-                && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
+                && !containsQueryKeyword(sql, "ALTER") && !containsQueryKeyword(sql, "CREATE") && !containsInsertUpdateClause(sql)
+                && !containsSelectIntoClause(sql) && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
     }
 
     private static boolean containsMutationQueryKeyword(final String sql) {
@@ -2441,7 +2445,8 @@ public final class SqlParser {
     }
 
     private static boolean containsInsertUpdateClause(final String sql) {
-        return isInsertOrReplaceQuery(sql) || containsTokenSequence(sql, "ON", "DUPLICATE", "KEY", "UPDATE") || containsOnConflictDoUpdateClause(sql);
+        return containsTokenSequence(sql, "INSERT", "OR", "REPLACE") || containsTokenSequence(sql, "ON", "DUPLICATE", "KEY", "UPDATE")
+                || containsOnConflictDoUpdateClause(sql);
     }
 
     private static boolean containsOnConflictDoUpdateClause(final String sql) {

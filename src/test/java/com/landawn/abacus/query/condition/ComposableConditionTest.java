@@ -1,5 +1,6 @@
 package com.landawn.abacus.query.condition;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,6 +12,12 @@ import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class ComposableConditionTest extends TestBase {
+
+    private static final class TestComposableWrapper extends ComposableCell {
+        TestComposableWrapper(final Condition condition) {
+            super(Operator.NOT, condition);
+        }
+    }
 
     private static final class TestComposableCondition extends ComposableCondition {
         private final Object value;
@@ -29,7 +36,7 @@ public class ComposableConditionTest extends TestBase {
         }
 
         @Override
-        public String toString(final NamingPolicy namingPolicy) {
+        public String toSql(final NamingPolicy namingPolicy) {
             return (namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy).convert(propName) + " = " + value;
         }
     }
@@ -99,5 +106,16 @@ public class ComposableConditionTest extends TestBase {
         final TestComposableCondition left = new TestComposableCondition("status", "ACTIVE");
 
         assertThrows(IllegalArgumentException.class, () -> left.xor(null));
+    }
+
+    @Test
+    public void testCompositionRejectsWrappedNonPredicateComponents() {
+        final TestComposableCondition left = new TestComposableCondition("status", "ACTIVE");
+        final SubQuery subQuery = new SubQuery("SELECT id FROM users");
+
+        assertThrows(IllegalArgumentException.class, () -> left.and(new TestComposableWrapper(new OrderBy("name"))));
+        assertThrows(IllegalArgumentException.class, () -> left.or(new TestComposableWrapper(new Any(subQuery))));
+        assertThrows(IllegalArgumentException.class, () -> left.xor(new TestComposableWrapper(new Expression("   "))));
+        assertDoesNotThrow(() -> left.and(new TestComposableWrapper(new Equal("id", 1))));
     }
 }

@@ -88,7 +88,7 @@ public class LessThanTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         LessThan condition = new LessThan("userName", "Alice");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("userName"));
         assertTrue(result.contains("Alice"));
     }
@@ -96,7 +96,7 @@ public class LessThanTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         LessThan condition = new LessThan("userName", "Bob");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 
@@ -244,7 +244,7 @@ public class LessThanTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         LessThan condition = new LessThan("totalAmount", 5000);
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("TOTAL_AMOUNT"));
         Assertions.assertTrue(result.contains("<"));

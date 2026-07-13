@@ -84,7 +84,7 @@ public class LeftJoinTest extends TestBase {
     @Test
     public void testToString_Simple() {
         LeftJoin join = new LeftJoin("orders");
-        String result = join.toString(NamingPolicy.NO_CHANGE);
+        String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("LEFT JOIN"));
         assertTrue(result.contains("orders"));
     }
@@ -92,7 +92,7 @@ public class LeftJoinTest extends TestBase {
     @Test
     public void testToString_WithCondition() {
         LeftJoin join = new LeftJoin("orders o", new Equal("c.id", "o.customer_id"));
-        String result = join.toString(NamingPolicy.NO_CHANGE);
+        String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("LEFT JOIN"));
         assertTrue(result.contains("orders o"));
     }
@@ -140,7 +140,7 @@ public class LeftJoinTest extends TestBase {
     @Test
     public void testWithAlias() {
         LeftJoin join = new LeftJoin("employee_departments ed");
-        String result = join.toString(NamingPolicy.NO_CHANGE);
+        String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("employee_departments ed"));
     }
 
@@ -264,7 +264,7 @@ public class LeftJoinTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Condition condition = Filters.eq("customerId", Filters.expr("orderId"));
         LeftJoin join = new LeftJoin("orderTable", condition);
-        String result = join.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = join.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("LEFT JOIN"));
         Assertions.assertTrue(result.contains("orderTable"));

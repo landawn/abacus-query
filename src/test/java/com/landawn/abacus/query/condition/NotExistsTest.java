@@ -75,7 +75,7 @@ public class NotExistsTest extends TestBase {
     public void testToString_NoChange() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE status = 'cancelled'");
         NotExists condition = new NotExists(subQuery);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertEquals("NOT EXISTS (SELECT 1 FROM orders WHERE status = 'cancelled')", result);
     }
 
@@ -84,7 +84,7 @@ public class NotExistsTest extends TestBase {
         Condition whereCondition = new Equal("deleted", true);
         SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), whereCondition);
         NotExists condition = new NotExists(subQuery);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("NOT EXISTS"));
         assertTrue(result.contains("SELECT"));
         assertTrue(result.contains("users"));
@@ -151,7 +151,7 @@ public class NotExistsTest extends TestBase {
     public void testFindCustomersWithoutOrders() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE orders.customer_id = customers.id");
         NotExists condition = new NotExists(subQuery);
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("NOT EXISTS"));
         assertTrue(sql.contains("customer_id"));
     }
@@ -161,7 +161,7 @@ public class NotExistsTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM reviews WHERE reviews.product_id = products.id");
         NotExists condition = new NotExists(subQuery);
         assertNotNull(condition);
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("NOT EXISTS"));
     }
 
@@ -178,7 +178,7 @@ public class NotExistsTest extends TestBase {
     public void testOrphanedRecordsCheck() {
         SubQuery subQuery = Filters.subQuery("SELECT 1 FROM parent_table WHERE parent_table.id = child_table.parent_id");
         NotExists condition = new NotExists(subQuery);
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("NOT EXISTS"));
         assertTrue(sql.contains("parent_id"));
     }

@@ -62,9 +62,9 @@ public final class QueryUtil {
      * Describes the database column associated with a property or column lookup key.
      *
      * @param columnName the mapped database column name
-     * @param hasNoDot {@code true} if the lookup key contains no {@code '.'} character
+     * @param isUnqualified {@code true} if the lookup key is unqualified (contains no {@code '.'} character)
      */
-    public record ColumnInfo(String columnName, boolean hasNoDot) {
+    public record ColumnInfo(String columnName, boolean isUnqualified) {
     }
 
     /**
@@ -151,7 +151,7 @@ public final class QueryUtil {
 
     /**
      * Returns column information keyed by both property names and mapped column names.
-     * The {@link ColumnInfo#hasNoDot()} flag describes the lookup key, not the mapped
+     * The {@link ColumnInfo#isUnqualified()} flag describes the lookup key, not the mapped
      * column value: it is {@code true} when the key contains no {@code '.'} character.
      *
      * <p><b>Usage Examples:</b></p>
@@ -162,12 +162,12 @@ public final class QueryUtil {
      *
      * QueryUtil.ColumnInfo result = columnInfoMap.get("firstName");
      * String columnName = result.columnName(); // "first_name"
-     * boolean hasNoDot = result.hasNoDot();    // true
+     * boolean unqualified = result.isUnqualified(); // true
      *
      * // Nested property example
      * QueryUtil.ColumnInfo nested = columnInfoMap.get("address.street");
      * String nestedColumn = nested.columnName(); // e.g. "addr.street"
-     * boolean nestedHasNoDot = nested.hasNoDot(); // false
+     * boolean nestedUnqualified = nested.isUnqualified(); // false
      * }</pre>
      *
      * <p><b>Note:</b> despite the similar name, this is a different method from
@@ -221,6 +221,8 @@ public final class QueryUtil {
     /**
      * Returns a mapping of column names to property names for the specified entity class.
      * The map includes variations of column names in lowercase and uppercase for case-insensitive lookups.
+     * An explicitly declared column spelling takes precedence over a generated case-folded variation,
+     * so distinct quoted columns such as {@code code} and {@code CODE} retain their exact mappings.
      * Only properties whose effective metadata exposes a column name (i.e.
      * {@link PropInfo#columnName} is present) are included. Metadata resolution also honors
      * {@link NonColumn} and {@link Table#columnFields()}/{@link Table#nonColumnFields()}, so an
@@ -255,12 +257,23 @@ public final class QueryUtil {
             final BeanInfo entityInfo = ParserUtil.getBeanInfo(cls);
             final Map<String, String> map = N.newHashMap(entityInfo.propInfoList.size() * 3);
 
+            // Register every exact spelling first. If two quoted identifiers differ only by case,
+            // a folded alias from one must never overwrite the other's exact mapping.
             for (final PropInfo propInfo : entityInfo.propInfoList) {
                 if (propInfo.columnName.isPresent()) {
                     final String columnName = propInfo.columnName.get();
                     map.put(columnName, propInfo.name);
-                    map.put(columnName.toLowerCase(Locale.ROOT), propInfo.name);
-                    map.put(columnName.toUpperCase(Locale.ROOT), propInfo.name);
+                }
+            }
+
+            // Add case-insensitive convenience keys only where no exact spelling (or earlier folded
+            // spelling) is already registered. Ambiguous folded lookups are inherently lossy, but
+            // exact lookups remain deterministic and correct.
+            for (final PropInfo propInfo : entityInfo.propInfoList) {
+                if (propInfo.columnName.isPresent()) {
+                    final String columnName = propInfo.columnName.get();
+                    map.putIfAbsent(columnName.toLowerCase(Locale.ROOT), propInfo.name);
+                    map.putIfAbsent(columnName.toUpperCase(Locale.ROOT), propInfo.name);
                 }
             }
 

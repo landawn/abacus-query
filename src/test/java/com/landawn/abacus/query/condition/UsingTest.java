@@ -93,14 +93,14 @@ public class UsingTest extends TestBase {
     @Test
     public void testToString() {
         Using using = new Using("employee_id");
-        String result = using.toString(NamingPolicy.NO_CHANGE);
+        String result = using.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("USING"));
     }
 
     @Test
     public void testToString_SingleColumnUsesParentheses() {
         Using using = new Using("employee_id");
-        String result = using.toString(NamingPolicy.NO_CHANGE);
+        String result = using.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("USING (employee_id)"));
     }
 

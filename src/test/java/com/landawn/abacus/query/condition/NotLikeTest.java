@@ -88,7 +88,7 @@ public class NotLikeTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         NotLike condition = new NotLike("userName", "Alice");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("userName"));
         assertTrue(result.contains("Alice"));
     }
@@ -96,7 +96,7 @@ public class NotLikeTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         NotLike condition = new NotLike("userName", "Bob");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 
@@ -196,21 +196,21 @@ public class NotLikeTest extends TestBase {
     @Test
     public void testExcludePattern_StartsWith() {
         NotLike condition = new NotLike("code", "TEST%");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("TEST%"));
     }
 
     @Test
     public void testExcludePattern_EndsWith() {
         NotLike condition = new NotLike("filename", "%.tmp");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains(".tmp"));
     }
 
     @Test
     public void testExcludePattern_Contains() {
         NotLike condition = new NotLike("productName", "%temp%");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("temp"));
     }
 
@@ -252,7 +252,7 @@ public class NotLikeTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         NotLike notLike = Filters.notLike("user_name", "admin%");
 
-        String result = notLike.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = notLike.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
         Assertions.assertTrue(result.contains("USER_NAME"));
         Assertions.assertTrue(result.contains("NOT LIKE"));
         Assertions.assertTrue(result.contains("admin%"));

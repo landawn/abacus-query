@@ -94,8 +94,8 @@ public abstract class ComposableCondition extends AbstractCondition {
      *
      * @param condition the condition to AND with this condition (must not be {@code null})
      * @return a new {@link And} condition containing both conditions
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or {@code cond}
-     *                                  is non-composable — a {@link Criteria}, a SQL clause, an
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if either {@code this} or {@code condition}
+     *                                  is or contains a non-composable component — a {@link Criteria}, a SQL clause, an
      *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
      *                                  quantified-subquery operand, or an empty predicate (a blank
      *                                  {@link Expression} or empty {@link Junction})
@@ -122,8 +122,8 @@ public abstract class ComposableCondition extends AbstractCondition {
      *
      * @param condition the condition to OR with this condition (must not be {@code null})
      * @return a new {@link Or} condition containing both conditions
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or {@code cond}
-     *                                  is non-composable — a {@link Criteria}, a SQL clause, an
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if either {@code this} or {@code condition}
+     *                                  is or contains a non-composable component — a {@link Criteria}, a SQL clause, an
      *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
      *                                  quantified-subquery operand, or an empty predicate (a blank
      *                                  {@link Expression} or empty {@link Junction})
@@ -156,9 +156,9 @@ public abstract class ComposableCondition extends AbstractCondition {
      * }</pre>
      *
      * @param condition the condition to XOR with this condition (must not be {@code null})
-     * @return a composable condition representing the exclusive-or {@code (this AND NOT cond) OR (NOT this AND cond)}
-     * @throws IllegalArgumentException if {@code cond} is {@code null}, or if either {@code this} or {@code cond}
-     *                                  is non-composable — a {@link Criteria}, a SQL clause, an
+     * @return a composable condition representing the exclusive-or {@code (this AND NOT condition) OR (NOT this AND condition)}
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if either {@code this} or {@code condition}
+     *                                  is or contains a non-composable component — a {@link Criteria}, a SQL clause, an
      *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
      *                                  quantified-subquery operand, or an empty predicate (a blank
      *                                  {@link Expression} or empty {@link Junction})

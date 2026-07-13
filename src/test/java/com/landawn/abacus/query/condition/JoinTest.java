@@ -20,6 +20,12 @@ import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class JoinTest extends TestBase {
+    private static final class TestComposableWrapper extends ComposableCell {
+        TestComposableWrapper(final Condition condition) {
+            super(Operator.NOT, condition);
+        }
+    }
+
     @Test
     public void testConstructor_SimpleJoin() {
         Join join = new Join("orders");
@@ -81,7 +87,7 @@ public class JoinTest extends TestBase {
     @Test
     public void testToString_Simple() {
         Join join = new Join("orders");
-        String result = join.toString(NamingPolicy.NO_CHANGE);
+        String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("JOIN"));
         assertTrue(result.contains("orders"));
     }
@@ -89,7 +95,7 @@ public class JoinTest extends TestBase {
     @Test
     public void testToString_WithCondition() {
         Join join = new Join("orders o", new Equal("c.id", "o.customer_id"));
-        String result = join.toString(NamingPolicy.NO_CHANGE);
+        String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("JOIN"));
         assertTrue(result.contains("orders o"));
     }
@@ -149,6 +155,18 @@ public class JoinTest extends TestBase {
                 true);
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("products", nestedOn));
+    }
+
+    @Test
+    public void testConstructorRejectsWrappedNonPredicateComponents() {
+        final SubQuery subQuery = new SubQuery("SELECT id FROM users");
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", new TestComposableWrapper(new OrderBy("name"))));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", new TestComposableWrapper(new Any(subQuery))));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", new TestComposableWrapper(new Expression(" "))));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", new Equal()));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", new On()));
+        Assertions.assertDoesNotThrow(() -> new Join("orders", new TestComposableWrapper(new Equal("customers.id", "orders.customer_id"))));
     }
 
     @Test
@@ -279,8 +297,8 @@ public class JoinTest extends TestBase {
         Join plainPredicate = new Join("orders", Filters.expr("customers.id = orders.customer_id"));
         Join explicitOn = new Join("orders", Filters.on("customers.id", "orders.customer_id"));
 
-        Assertions.assertEquals("JOIN orders ON customers.id = orders.customer_id", plainPredicate.toString(NamingPolicy.NO_CHANGE));
-        Assertions.assertEquals("JOIN orders ON customers.id = orders.customer_id", explicitOn.toString(NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("JOIN orders ON customers.id = orders.customer_id", plainPredicate.toSql(NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("JOIN orders ON customers.id = orders.customer_id", explicitOn.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -292,7 +310,7 @@ public class JoinTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Condition condition = Filters.eq("customerId", Filters.expr("orderId"));
         Join join = new Join("orderTable", condition);
-        String result = join.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = join.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("JOIN"));
         Assertions.assertTrue(result.contains("orderTable"));
@@ -364,9 +382,9 @@ public class JoinTest extends TestBase {
     public void testDefaultConstructorToString() {
         Join join = new Join();
 
-        Assertions.assertNotNull(join.toString(NamingPolicy.NO_CHANGE));
+        Assertions.assertNotNull(join.toSql(NamingPolicy.NO_CHANGE));
         Assertions.assertNotNull(join.toString());
-        Assertions.assertNotNull(join.toString(null));
+        Assertions.assertNotNull(join.toSql(null));
     }
 
     @Test
@@ -376,7 +394,7 @@ public class JoinTest extends TestBase {
         // produced invalid SQL fragments. Now should render as plain "null" with no trailing space.
         Join join = new Join();
 
-        String rendered = join.toString(NamingPolicy.NO_CHANGE);
+        String rendered = join.toSql(NamingPolicy.NO_CHANGE);
         Assertions.assertEquals("null", rendered);
         Assertions.assertFalse(rendered.endsWith(" "), "toString() must not end with a trailing space");
     }
@@ -390,7 +408,7 @@ public class JoinTest extends TestBase {
         operatorField.setAccessible(true);
         operatorField.set(join, Operator.INNER_JOIN);
 
-        String rendered = join.toString(NamingPolicy.NO_CHANGE);
+        String rendered = join.toSql(NamingPolicy.NO_CHANGE);
         Assertions.assertEquals("INNER JOIN", rendered);
         Assertions.assertFalse(rendered.endsWith(" "), "toString() must not end with a trailing space");
     }
@@ -399,15 +417,15 @@ public class JoinTest extends TestBase {
     public void testRegularJoinsUnaffectedByFix() {
         // Sanity check that the fix does not regress normal join rendering.
         Join j1 = new Join("orders");
-        Assertions.assertEquals("JOIN orders", j1.toString(NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("JOIN orders", j1.toSql(NamingPolicy.NO_CHANGE));
 
         Join j2 = new Join("orders o", new Equal("c.id", "o.cid"));
-        String r2 = j2.toString(NamingPolicy.NO_CHANGE);
+        String r2 = j2.toSql(NamingPolicy.NO_CHANGE);
         Assertions.assertTrue(r2.startsWith("JOIN orders o"));
         Assertions.assertTrue(r2.contains("c.id"));
 
         InnerJoin ij = new InnerJoin("orders o");
-        Assertions.assertEquals("INNER JOIN orders o", ij.toString(NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("INNER JOIN orders o", ij.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test

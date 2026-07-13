@@ -100,9 +100,10 @@ public abstract class Clause extends Cell {
      * @param condition the condition to wrap (must not be {@code null})
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not a SQL clause operator; or if {@code condition} is
-     *         {@code null}, a {@link Criteria}, another clause
-     *         (e.g. {@code WHERE}, {@code HAVING}), an {@code ON}/{@code USING} condition, an
-     *         {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
+     *         {@code null}, is a {@link Criteria} or another clause
+     *         (e.g. {@code WHERE}, {@code HAVING}), is or contains an {@code ON}/{@code USING} condition or another
+     *         non-predicate component (including a null operator), is an {@code ANY}/{@code ALL}/{@code SOME}
+     *         quantified-subquery operand, or is an empty predicate
      *         (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     protected Clause(final Operator operator, final Condition condition) {
@@ -119,7 +120,7 @@ public abstract class Clause extends Cell {
 
         final Operator condOperator = cond.operator();
 
-        if (cond instanceof Criteria || isClause(cond) || isOnOrUsing(cond) || isQuantifiedSubQueryOperand(cond) || isEmptyPredicate(cond)) {
+        if (containsNonPredicateComponent(cond)) {
             throw new IllegalArgumentException("Condition with operator '" + condOperator + "' cannot be nested inside a clause");
         }
 

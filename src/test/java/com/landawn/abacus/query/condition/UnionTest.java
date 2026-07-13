@@ -48,7 +48,7 @@ public class UnionTest extends TestBase {
     public void testToString() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM customers");
         Union union = new Union(subQuery);
-        String result = union.toString(NamingPolicy.NO_CHANGE);
+        String result = union.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("UNION"));
     }
 

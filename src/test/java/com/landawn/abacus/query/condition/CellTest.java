@@ -40,7 +40,7 @@ public class CellTest extends TestBase {
     public void testToString() {
         final TestCell cell = new TestCell(Operator.WHERE, Filters.eq("userName", "ACTIVE"));
 
-        final String sql = cell.toString(NamingPolicy.SNAKE_CASE);
+        final String sql = cell.toSql(NamingPolicy.SNAKE_CASE);
 
         assertTrue(sql.contains("WHERE"));
         assertTrue(sql.contains("user_name"));
@@ -88,8 +88,8 @@ public class CellTest extends TestBase {
     public void testDefaultConstructorToString() {
         final EmptyTestCell cell = new EmptyTestCell();
 
-        assertNotNull(cell.toString(NamingPolicy.NO_CHANGE));
+        assertNotNull(cell.toSql(NamingPolicy.NO_CHANGE));
         assertNotNull(cell.toString());
-        assertNotNull(cell.toString(null));
+        assertNotNull(cell.toSql(null));
     }
 }

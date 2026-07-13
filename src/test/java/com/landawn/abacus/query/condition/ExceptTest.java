@@ -48,7 +48,7 @@ public class ExceptTest extends TestBase {
     public void testToString() {
         SubQuery subQuery = Filters.subQuery("SELECT product_id FROM sales");
         Except except = new Except(subQuery);
-        String result = except.toString(NamingPolicy.NO_CHANGE);
+        String result = except.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("EXCEPT"));
     }
 
@@ -136,7 +136,7 @@ public class ExceptTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT userId FROM bannedUsers");
         Except except = Filters.except(subQuery);
 
-        String result = except.toString(NamingPolicy.SNAKE_CASE);
+        String result = except.toSql(NamingPolicy.SNAKE_CASE);
         Assertions.assertTrue(result.contains("EXCEPT"));
     }
 

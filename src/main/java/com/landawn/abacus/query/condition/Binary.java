@@ -206,7 +206,7 @@ public class Binary extends ComposableCondition {
      *       {@code IS NOT NULL} with no bind parameter.</li>
      *   <li>If the value is {@code null} with any other operator (e.g. {@code LIKE}), a single-element list
      *       containing {@code null} is returned, mirroring the rendered {@code null} literal
-     *       (see {@link #toString(NamingPolicy)}).</li>
+     *       (see {@link #toSql(NamingPolicy)}).</li>
      *   <li>If the operator is {@code null} (only possible for an uninitialized instance), an empty list
      *       is returned.</li>
      *   <li>If the operator is {@code IN} or {@code NOT IN} and the value is a {@link Collection}, each element is
@@ -279,7 +279,7 @@ public class Binary extends ComposableCondition {
     }
 
     /**
-     * Converts this Binary condition to its string representation using the specified naming policy.
+     * Converts this Binary condition to its SQL representation using the specified naming policy.
      *
      * <p>Normally the format is: {@code propertyName OPERATOR value}.
      * When the value is {@code null} and the operator is {@code =} or {@code IS}, the output is
@@ -293,29 +293,29 @@ public class Binary extends ComposableCondition {
      * <pre>{@code
      * // String values are single-quoted; numbers are unquoted
      * Binary eq = new Equal("name", "John");
-     * String s1 = eq.toString(NamingPolicy.NO_CHANGE);   // "name = 'John'"
+     * String s1 = eq.toSql(NamingPolicy.NO_CHANGE);   // "name = 'John'"
      *
      * Binary gt = new GreaterThan("age", 18);
-     * String s2 = gt.toString(NamingPolicy.NO_CHANGE);   // "age > 18"
+     * String s2 = gt.toSql(NamingPolicy.NO_CHANGE);   // "age > 18"
      *
      * // Null value with = renders as IS NULL; with != renders as IS NOT NULL
      * Binary nullEq = new Equal("deletedAt", (Object) null);
-     * String s3 = nullEq.toString(NamingPolicy.NO_CHANGE);   // "deletedAt IS NULL"
+     * String s3 = nullEq.toSql(NamingPolicy.NO_CHANGE);   // "deletedAt IS NULL"
      *
      * Binary nullNe = new NotEqual("deletedAt", (Object) null);
-     * String s4 = nullNe.toString(NamingPolicy.NO_CHANGE);   // "deletedAt IS NOT NULL"
+     * String s4 = nullNe.toSql(NamingPolicy.NO_CHANGE);   // "deletedAt IS NOT NULL"
      *
      * // Subquery values are parenthesized; a null naming policy uses NO_CHANGE
      * Binary sub = new Equal("userId", Filters.subQuery("SELECT id FROM users"));
-     * String s5 = sub.toString(null);   // "userId = (SELECT id FROM users)"
+     * String s5 = sub.toSql(null);   // "userId = (SELECT id FROM users)"
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply to the property name;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
-     * @return a string representation of this condition
+     * @return a SQL representation of this condition
      */
     @Override
-    public String toString(final NamingPolicy namingPolicy) {
+    public String toSql(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Operator op = operator();
 

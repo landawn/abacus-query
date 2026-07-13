@@ -27,14 +27,14 @@ public class NaturalJoinTest extends TestBase {
         assertEquals(Arrays.asList("employees"), join.joinEntities());
         assertNull(join.condition());
         assertTrue(join.parameters().isEmpty());
-        assertEquals("NATURAL JOIN employees", join.toString(NamingPolicy.NO_CHANGE));
+        assertEquals("NATURAL JOIN employees", join.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
     public void testMultipleEntities() {
         NaturalJoin join = new NaturalJoin(Arrays.asList("employees", "departments"));
         assertEquals(Arrays.asList("employees", "departments"), join.joinEntities());
-        assertEquals("NATURAL JOIN (employees, departments)", join.toString(NamingPolicy.NO_CHANGE));
+        assertEquals("NATURAL JOIN (employees, departments)", join.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test

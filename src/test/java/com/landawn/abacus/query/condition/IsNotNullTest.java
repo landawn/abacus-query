@@ -41,7 +41,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         IsNotNull condition = new IsNotNull("email");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("email"));
         assertTrue(result.contains("IS NOT"));
         assertTrue(result.contains("NULL"));
@@ -50,7 +50,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         IsNotNull condition = new IsNotNull("phoneNumber");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("phone_number"));
     }
 
@@ -78,7 +78,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testUseCaseScenario_RequiredEmail() {
         IsNotNull emailCheck = new IsNotNull("email");
-        assertTrue(emailCheck.toString(NamingPolicy.NO_CHANGE).contains("IS NOT NULL"));
+        assertTrue(emailCheck.toSql(NamingPolicy.NO_CHANGE).contains("IS NOT NULL"));
     }
 
     @Test
@@ -207,7 +207,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         IsNotNull condition = new IsNotNull("firstName");
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("FIRST_NAME"));
         Assertions.assertTrue(result.contains("IS NOT"));
@@ -217,7 +217,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testToStringWithCamelCase() {
         IsNotNull condition = new IsNotNull("phoneNumber");
-        String result = condition.toString(NamingPolicy.CAMEL_CASE);
+        String result = condition.toSql(NamingPolicy.CAMEL_CASE);
 
         Assertions.assertTrue(result.contains("phoneNumber"));
         Assertions.assertTrue(result.contains("IS NOT"));

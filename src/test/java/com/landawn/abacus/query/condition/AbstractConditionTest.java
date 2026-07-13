@@ -88,7 +88,7 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testParameter2String_StringEscapesQuote() {
         Equal condition = new Equal("name", "O'Brien");
-        String str = condition.toString(NamingPolicy.NO_CHANGE);
+        String str = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("O\\'Brien"));
     }
 
@@ -131,7 +131,7 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testToString_WithNamingPolicy() {
         Equal condition = new Equal("userName", "John");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
         assertTrue(result.contains("John"));
     }
@@ -139,7 +139,7 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testToString_WithNoChangePolicy() {
         Equal condition = new Equal("firstName", "Jane");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("firstName"));
         assertTrue(result.contains("Jane"));
     }
@@ -148,7 +148,7 @@ public class AbstractConditionTest extends TestBase {
     public void testParameter2String_WithCondition() {
         Equal innerCondition = new Equal("id", 100);
         Equal outerCondition = new Equal("userId", innerCondition);
-        String str = outerCondition.toString(NamingPolicy.NO_CHANGE);
+        String str = outerCondition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("userId"));
         assertTrue(str.contains("id"));
     }
@@ -157,14 +157,14 @@ public class AbstractConditionTest extends TestBase {
     public void testParameter2String_WithSubQueryAddsParentheses() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         Equal outerCondition = new Equal("userId", subQuery);
-        String str = outerCondition.toString(NamingPolicy.NO_CHANGE);
+        String str = outerCondition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("= (SELECT id FROM users)"));
     }
 
     @Test
     public void testParameter2String_WithIsNull() {
         Equal condition = new Equal("field", IsNull.NULL);
-        String str = condition.toString(NamingPolicy.NO_CHANGE);
+        String str = condition.toSql(NamingPolicy.NO_CHANGE);
         assertNotNull(str);
         assertTrue(str.contains("NULL"));
     }
@@ -180,7 +180,7 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testConcatPropNames_TwoNames() {
         GroupBy groupBy = new GroupBy("col1", "col2");
-        String str = groupBy.toString(NamingPolicy.NO_CHANGE);
+        String str = groupBy.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("col1"));
         assertTrue(str.contains("col2"));
     }
@@ -188,7 +188,7 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testConcatPropNames_ThreeNames() {
         GroupBy groupBy = new GroupBy("col1", "col2", "col3");
-        String str = groupBy.toString(NamingPolicy.NO_CHANGE);
+        String str = groupBy.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("col1"));
         assertTrue(str.contains("col2"));
         assertTrue(str.contains("col3"));
@@ -197,7 +197,7 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testConcatPropNames_FourNames() {
         GroupBy groupBy = new GroupBy("col1", "col2", "col3", "col4");
-        String str = groupBy.toString(NamingPolicy.NO_CHANGE);
+        String str = groupBy.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("col1"));
         assertTrue(str.contains("col2"));
         assertTrue(str.contains("col3"));
@@ -207,14 +207,14 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testConcatPropNames_CollectionSingleItem() {
         OrderBy orderBy = new OrderBy("single");
-        String str = orderBy.toString(NamingPolicy.NO_CHANGE);
+        String str = orderBy.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("single"));
     }
 
     @Test
     public void testConcatPropNames_CollectionTwoItems() {
         OrderBy orderBy = new OrderBy("first", "second");
-        String str = orderBy.toString(NamingPolicy.NO_CHANGE);
+        String str = orderBy.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("first"));
         assertTrue(str.contains("second"));
     }
@@ -222,7 +222,7 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testConcatPropNames_CollectionThreeItems() {
         OrderBy orderBy = new OrderBy("a", "b", "c");
-        String str = orderBy.toString(NamingPolicy.NO_CHANGE);
+        String str = orderBy.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("a"));
         assertTrue(str.contains("b"));
         assertTrue(str.contains("c"));
@@ -231,7 +231,7 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testConcatPropNames_CollectionFourOrMore() {
         OrderBy orderBy = new OrderBy("col1", "col2", "col3", "col4", "col5");
-        String str = orderBy.toString(NamingPolicy.NO_CHANGE);
+        String str = orderBy.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(str.contains("col1"));
         assertTrue(str.contains("col2"));
         assertTrue(str.contains("col3"));
@@ -254,7 +254,7 @@ public class AbstractConditionTest extends TestBase {
         }
 
         @Override
-        public String toString(NamingPolicy namingPolicy) {
+        public String toSql(NamingPolicy namingPolicy) {
             return operator().toString() + " " + value;
         }
 
@@ -428,7 +428,7 @@ public class AbstractConditionTest extends TestBase {
             }
 
             @Override
-            public String toString(NamingPolicy namingPolicy) {
+            public String toSql(NamingPolicy namingPolicy) {
                 return "NULL_OP";
             }
         };

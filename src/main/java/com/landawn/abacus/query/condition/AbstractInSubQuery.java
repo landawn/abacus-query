@@ -302,7 +302,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     }
 
     /**
-     * Converts this condition to its string representation.
+     * Converts this condition to its SQL representation.
      *
      * <p>For a single property: {@code propName IN (subQuery)}</p>
      * <p>For multiple properties: {@code (prop1, prop2, ...) IN (subQuery)}</p>
@@ -317,29 +317,29 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * // Single property -> propName IN (subQuery)
      * SubQuery subQuery = new SubQuery("SELECT id FROM departments WHERE active = true");
      * InSubQuery inSub = new InSubQuery("deptId", subQuery);
-     * String s1 = inSub.toString(NamingPolicy.NO_CHANGE);
+     * String s1 = inSub.toSql(NamingPolicy.NO_CHANGE);
      * // "deptId IN (SELECT id FROM departments WHERE active = true)"
      *
      * // NotInSubQuery uses the NOT IN operator
      * NotInSubQuery notInSub = new NotInSubQuery("deptId", subQuery);
-     * String s2 = notInSub.toString(NamingPolicy.NO_CHANGE);
+     * String s2 = notInSub.toSql(NamingPolicy.NO_CHANGE);
      * // "deptId NOT IN (SELECT id FROM departments WHERE active = true)"
      *
      * // Multiple properties -> (prop1, prop2) IN (subQuery)
      * SubQuery multi = new SubQuery("SELECT firstName, lastName FROM employees");
      * InSubQuery inMulti = new InSubQuery(Arrays.asList("firstName", "lastName"), multi);
-     * String s3 = inMulti.toString(null);   // null naming policy uses NO_CHANGE
+     * String s3 = inMulti.toSql(null);   // null naming policy uses NO_CHANGE
      * // "(firstName, lastName) IN (SELECT firstName, lastName FROM employees)"
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
-     * @return the string representation of the condition
+     * @return the SQL representation of the condition
      */
     @Override
-    public String toString(final NamingPolicy namingPolicy) {
+    public String toSql(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-        final String subQueryString = subQuery == null ? Strings.EMPTY : subQuery.toString(effectiveNamingPolicy);
+        final String subQueryString = subQuery == null ? Strings.EMPTY : subQuery.toSql(effectiveNamingPolicy);
         final Operator op = operator();
         final String opStr = op == null ? Strings.NULL : op.toString();
 

@@ -449,6 +449,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     // counts because a generated "<base>_<n>" may collide with a property literally named "<base>_<n>".
     protected final Set<String> _generatedNamedParameterNames = new HashSet<>(); //NOSONAR
 
+    // Exact NAMED_SQL token emitted for each generated name. Custom formatters are allowed to emit
+    // forms other than ":name", so set-operation collision handling must not assume the default form.
+    protected final Map<String, String> _renderedNamedParameterTokens = new HashMap<>(); //NOSONAR
+
     protected StringBuilder _sb; //NOSONAR
 
     protected Class<?> _entityClass; //NOSONAR
@@ -1008,7 +1012,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * This is a thread-local setting, so each thread can have its own handler.
      * Each builder snapshots the handler in its constructor, so calling this method only affects
      * builders created afterwards on the calling thread; builders that already exist keep the
-     * handler that was in effect when they were created.
+     * handler that was in effect when they were created. The handler should be deterministic,
+     * side-effect free, and make its output depend only on the supplied parameter name: compound-query
+     * assembly may invoke it again with a suffixed name when a sibling query's parameter name must be
+     * made unique.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1173,7 +1180,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             for (final Selection selection : _multiSelects) {
                 final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
-                        : QueryUtil.selectPropertyNames(selection.entityClass(), selection.includeSubEntityProperties(), selection.excludedPropNames());
+                        : QueryUtil.selectPropertyNames(selection.entityClass(), selection.includesSubEntityProperties(), selection.excludedPropNames());
                 allPropNames.addAll(selectPropNames);
             }
 
@@ -1221,7 +1228,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                                 _sb.append(_COMMA_SPACE);
                             }
 
-                            _handlerForNamedParameter.accept(_sb, nextNamedParameterName(columnName));
+                            appendNamedParameter(nextNamedParameterName(columnName));
                         }
 
                         break;
@@ -1486,25 +1493,69 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final String trimmedExpr = expr.trim();
         N.checkArgNotEmpty(trimmedExpr, "expr");
 
+        // Only the first table reference supplies the primary table/alias used while rendering entity
+        // properties. A raw FROM body may contain quoted commas or an inline JOIN; a character-only comma
+        // scan either split quoted identifiers (for example, "accounts,archive") or handed the whole JOIN
+        // to the alias scanner, which then mistook the final predicate token for the primary table alias.
+        final int separatorIdx = findFirstTopLevelFromSeparator(trimmedExpr);
+        final String localTableName = separatorIdx > 0 ? trimmedExpr.substring(0, separatorIdx) : trimmedExpr;
+
+        return from(localTableName.trim(), trimmedExpr);
+    }
+
+    /**
+     * Locates the first top-level separator after the primary table reference in a raw FROM body.
+     * Commas and JOIN-family keywords inside quoted regions, comments, or parentheses are ignored.
+     *
+     * @param fromClause the trimmed text that will be emitted after {@code FROM}
+     * @return the separator index, or {@code -1} when the clause contains one table reference
+     */
+    private static int findFirstTopLevelFromSeparator(final String fromClause) {
         int depth = 0;
-        int commaIdx = -1;
 
-        for (int i = 0; i < trimmedExpr.length(); i++) {
-            final char c = trimmedExpr.charAt(i);
+        for (int i = 0, len = fromClause.length(); i < len; i++) {
+            final int next = skipSqlQuotedOrComment(fromClause, i);
 
-            if (c == '(') {
+            if (next != i) {
+                i = next - 1;
+                continue;
+            }
+
+            final char ch = fromClause.charAt(i);
+
+            if (ch == '(') {
                 depth++;
-            } else if (c == ')') {
-                depth--;
-            } else if (c == SK._COMMA && depth == 0) {
-                commaIdx = i;
-                break;
+            } else if (ch == ')') {
+                if (depth > 0) {
+                    depth--;
+                }
+            } else if (depth == 0 && (ch == SK._COMMA || isTopLevelJoinStart(fromClause, i))) {
+                return i;
             }
         }
 
-        final String localTableName = commaIdx > 0 ? trimmedExpr.substring(0, commaIdx) : trimmedExpr;
+        return -1;
+    }
 
-        return from(localTableName.trim(), trimmedExpr);
+    private static boolean isTopLevelJoinStart(final String sql, final int index) {
+        if (index <= 0 || !isJoinLeadingTrivia(sql, index)) {
+            return false;
+        }
+
+        return isSqlWordAt(sql, index, SK.JOIN) || isSqlWordAt(sql, index, "INNER") || isSqlWordAt(sql, index, "LEFT") || isSqlWordAt(sql, index, "RIGHT")
+                || isSqlWordAt(sql, index, "FULL") || isSqlWordAt(sql, index, "CROSS") || isSqlWordAt(sql, index, "NATURAL") || isSqlWordAt(sql, index, "OUTER")
+                || isSqlWordAt(sql, index, "STRAIGHT_JOIN") || isSqlWordAt(sql, index, "ASOF") || isSqlWordAt(sql, index, "SEMI")
+                || isSqlWordAt(sql, index, "ANTI");
+    }
+
+    private static boolean isJoinLeadingTrivia(final String sql, final int index) {
+        final char previous = sql.charAt(index - 1);
+        return Character.isWhitespace(previous) || (previous == '/' && index > 1 && sql.charAt(index - 2) == '*');
+    }
+
+    private static boolean isSqlWordAt(final String sql, final int index, final String word) {
+        final int end = index + word.length();
+        return end <= sql.length() && sql.regionMatches(true, index, word, 0, word.length()) && isAliasKeywordBoundary(sql, end);
     }
 
     /**
@@ -1676,7 +1727,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 selectionWithClassAlias = Strings.isNotEmpty(selectionClassAlias);
 
                 final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
-                        : QueryUtil.selectPropertyNames(selectionEntityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
+                        : QueryUtil.selectPropertyNames(selectionEntityClass, selection.includesSubEntityProperties(), selection.excludedPropNames());
 
                 for (final String propName : selectPropNames) {
                     if (i++ > 0) {
@@ -2492,7 +2543,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param condition the join condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code null}
      */
     public This on(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
@@ -2650,7 +2701,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param condition the WHERE condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code null}
      * @throws IllegalStateException if {@code WHERE} has already been set on this builder
      * @see Filters
      */
@@ -2683,7 +2734,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnName the property or column name to group by ascending
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
      * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     @Beta
@@ -2753,7 +2804,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnName the property or column name to group by descending
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
      * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     @Beta
@@ -2822,7 +2873,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnName the property or column name to group by (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
      * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     public This groupBy(final String propOrColumnName) {
@@ -3075,7 +3126,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param condition the HAVING condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code null}
      * @throws IllegalStateException if {@code HAVING} has already been set on this builder
      * @see Filters
      */
@@ -3106,7 +3157,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnName the property or column name to order by ascending
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
      * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     @Beta
@@ -3176,7 +3227,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnName the property or column name to order by descending
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
      * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     @Beta
@@ -3245,7 +3296,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnName the property or column name to order by (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
      * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     public This orderBy(final String propOrColumnName) {
@@ -3630,7 +3681,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // the sentinel count == MAX_VALUE / offset == 0; render it from its literal. Everything else —
         // the numeric constructors and string expressions parsed into concrete count/offset — is emitted
         // in the dialect's pagination syntax via limit(int) / limit(int, int).
-        if (Strings.isNotEmpty(limit.literal()) && !limit.resolved()) {
+        if (Strings.isNotEmpty(limit.literal()) && !limit.isResolved()) {
             if (usesFetchPagination() && appendLimitExpressionInFetchSyntax(limit.literal())) {
                 return;
             }
@@ -3643,7 +3694,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             // upper-cases the OFFSET keyword only outside placeholders, so ":offset" / "#{ offset }" do not
             // misfire, and the whole-token match (unlike a raw substring test) keeps a placeholder name such
             // as ":rowOFFSETCount" from spuriously consuming the slot.
-            if (SqlParser.indexOfWord(limit.literal(), SK.OFFSET, 0, true) >= 0) {
+            if (SqlParser.indexOfToken(limit.literal(), SK.OFFSET, 0, true) >= 0) {
                 checkIfAlreadyCalled(SK.OFFSET);
             }
 
@@ -3855,7 +3906,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param condition the condition to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code cond} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code null}
      * @throws IllegalStateException if there is no current SELECT segment, if that segment already
      *                               has a select modifier, or if a clause emitted by the criteria has already been set
      * @see Filters
@@ -4573,9 +4624,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         checkSetOperationSubQuery(sp.query(), operationName);
 
         final Set<String> childParameterNames = new HashSet<>(sqlBuilder._generatedNamedParameterNames);
-        final String sql = uniquifySetOperationNamedParameters(sp.query(), sqlBuilder._namedParameterNameOccurrences, parentOccurrences, childParameterNames);
+        final Map<String, String> childParameterTokens = new HashMap<>(sqlBuilder._renderedNamedParameterTokens);
+        final String sql = uniquifySetOperationNamedParameters(sp.query(), sqlBuilder._namedParameterNameOccurrences, parentOccurrences, childParameterNames,
+                childParameterTokens, sqlBuilder._handlerForNamedParameter);
         mergeNamedParameterOccurrences(sqlBuilder._namedParameterNameOccurrences);
         _generatedNamedParameterNames.addAll(childParameterNames);
+        _renderedNamedParameterTokens.putAll(childParameterTokens);
 
         if (N.notEmpty(sp.parameters())) {
             _parameters.addAll(sp.parameters());
@@ -4617,7 +4671,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     private String uniquifySetOperationNamedParameters(final String sql, final Map<String, Integer> childOccurrences,
-            final Map<String, Integer> parentOccurrences, final Set<String> childParameterNames) {
+            final Map<String, Integer> parentOccurrences, final Set<String> childParameterNames, final Map<String, String> childParameterTokens,
+            final BiConsumer<StringBuilder, String> childParameterHandler) {
         if ((_sqlPolicy != SqlPolicy.NAMED_SQL && _sqlPolicy != SqlPolicy.IBATIS_SQL) || N.isEmpty(childOccurrences) || N.isEmpty(parentOccurrences)) {
             return sql;
         }
@@ -4651,8 +4706,21 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     newName = indexedNamedParameterName(name, ++suffix);
                 }
 
-                result = _sqlPolicy == SqlPolicy.NAMED_SQL ? replaceNamedParameterName(result, oldName, newName)
-                        : replaceIbatisParameterName(result, oldName, newName);
+                if (_sqlPolicy == SqlPolicy.NAMED_SQL) {
+                    final String oldToken = childParameterTokens.get(oldName);
+
+                    if (oldToken == null || oldToken.equals(":" + oldName)) {
+                        result = replaceNamedParameterName(result, oldName, newName);
+                    } else {
+                        final String newToken = renderNamedParameterToken(childParameterHandler, newName);
+
+                        result = replaceRenderedNamedParameterToken(result, oldToken, newToken);
+                        childParameterTokens.remove(oldName);
+                        childParameterTokens.put(newName, newToken);
+                    }
+                } else {
+                    result = replaceIbatisParameterName(result, oldName, newName);
+                }
 
                 childParameterNames.remove(oldName);
                 childParameterNames.add(newName);
@@ -4660,6 +4728,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return result;
+    }
+
+    private static String renderNamedParameterToken(final BiConsumer<StringBuilder, String> handler, final String parameterName) {
+        final StringBuilder sb = new StringBuilder(parameterName.length() + 8);
+        handler.accept(sb, parameterName);
+
+        if (sb.isEmpty()) {
+            throw new IllegalStateException("The custom named-parameter handler emitted an empty token for: " + parameterName);
+        }
+
+        return sb.toString();
     }
 
     private void mergeNamedParameterOccurrences(final Map<String, Integer> occurrences) {
@@ -4750,6 +4829,44 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return sb == null ? sql : sb.append(sql, last, sql.length()).toString();
     }
 
+    /** Replaces an exact custom placeholder token outside SQL quoted regions and comments. */
+    private static String replaceRenderedNamedParameterToken(final String sql, final String oldToken, final String newToken) {
+        StringBuilder sb = null;
+        int last = 0;
+        final int tokenLength = oldToken.length();
+
+        for (int i = 0, len = sql.length(); i <= len - tokenLength; i++) {
+            final int next = skipSqlQuotedOrComment(sql, i);
+
+            if (next != i) {
+                i = next - 1;
+                continue;
+            }
+
+            if (!sql.startsWith(oldToken, i)) {
+                continue;
+            }
+
+            final int end = i + tokenLength;
+            final boolean hasNameCharBefore = isSqlParameterNameChar(oldToken.charAt(0)) && i > 0 && isSqlParameterNameChar(sql.charAt(i - 1));
+            final boolean hasNameCharAfter = isSqlParameterNameChar(oldToken.charAt(tokenLength - 1)) && end < len && isSqlParameterNameChar(sql.charAt(end));
+
+            if (hasNameCharBefore || hasNameCharAfter) {
+                continue;
+            }
+
+            if (sb == null) {
+                sb = new StringBuilder(sql.length() + Math.max(0, newToken.length() - oldToken.length()));
+            }
+
+            sb.append(sql, last, i).append(newToken);
+            last = end;
+            i = end - 1;
+        }
+
+        return sb == null ? sql : sb.append(sql, last, sql.length()).toString();
+    }
+
     private static int skipSqlQuotedOrComment(final String sql, final int start) {
         final int len = sql.length();
         final char ch = sql.charAt(start);
@@ -4805,6 +4922,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (ch == '/' && start + 1 < len && sql.charAt(start + 1) == '*') {
             final int end = sql.indexOf("*/", start + 2);
             return end < 0 ? len : end + 2;
+        }
+
+        if (ch == '#' && isAliasScannerHashCommentStart(sql, start)) {
+            int i = start + 1;
+
+            while (i < len && sql.charAt(i) != '\r' && sql.charAt(i) != '\n') {
+                i++;
+            }
+
+            return i;
         }
 
         return start;
@@ -4953,7 +5080,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     if (columnName.indexOf('=') < 0) {
                         _sb.append(" = ");
 
-                        _handlerForNamedParameter.accept(_sb, nextNamedParameterName(columnName));
+                        appendNamedParameter(nextNamedParameterName(columnName));
                     }
                 }
 
@@ -5478,7 +5605,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         an UPDATE with no columns staged and no prior {@code set(...)} call
      */
     protected void init(final boolean setForUpdate) {
-        // Note: any change, please take a look at: Dsl.fromCondition(final Condition cond, final Class<?> entityClass) first.
+        // Note: any change, please take a look at: Dsl.renderCondition(final Condition cond, final Class<?> entityClass) first.
 
         if (_op == OperationType.ADD && Strings.isEmpty(_tableName)) {
             throw new IllegalStateException("into() must be called to specify the target table before building an INSERT statement");
@@ -5602,15 +5729,26 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected void setParameterForNamedSQL(final String propName, final Object propValue) {
         if (Filters.QME.equals(propValue)) {
             final String namedPropName = nextNamedParameterName(propName);
-            _handlerForNamedParameter.accept(_sb, namedPropName);
+            appendNamedParameter(namedPropName);
         } else if (propValue instanceof Condition) {
             appendConditionAsParameter((Condition) propValue);
         } else {
             final String namedPropName = nextNamedParameterName(propName);
-            _handlerForNamedParameter.accept(_sb, namedPropName);
+            appendNamedParameter(namedPropName);
 
             _parameters.add(propValue);
         }
+    }
+
+    private void appendNamedParameter(final String parameterName) {
+        final int start = _sb.length();
+        _handlerForNamedParameter.accept(_sb, parameterName);
+
+        if (_sb.length() == start) {
+            throw new IllegalStateException("The named-parameter handler emitted an empty token for: " + parameterName);
+        }
+
+        _renderedNamedParameterTokens.put(parameterName, _sb.substring(start));
     }
 
     /**
@@ -5680,6 +5818,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         childBuilder._generatedNamedParameterNames.addAll(_generatedNamedParameterNames);
+        childBuilder._renderedNamedParameterTokens.putAll(_renderedNamedParameterTokens);
     }
 
     /**
@@ -5693,6 +5832,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _generatedNamedParameterNames.clear();
         _generatedNamedParameterNames.addAll(childBuilder._generatedNamedParameterNames);
+
+        _renderedNamedParameterTokens.clear();
+        _renderedNamedParameterTokens.putAll(childBuilder._renderedNamedParameterTokens);
     }
 
     /**
@@ -6059,7 +6201,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         ColumnInfo tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
-            if (tp.hasNoDot() && tableAlias != null && !tableAlias.isEmpty()) {
+            if (tp.isUnqualified() && tableAlias != null && !tableAlias.isEmpty()) {
                 _sb.append(tableAlias).append(SK._PERIOD);
             }
 
@@ -6252,14 +6394,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected static boolean isSubQuery(final String... propOrColumnNames) {
         if (propOrColumnNames.length == 1) {
             final String query = propOrColumnNames[0].trim();
-            int index = SqlParser.indexOfWord(query, SK.SELECT, 0, false);
+            int index = SqlParser.indexOfToken(query, SK.SELECT, 0, false);
 
             if (index == 0) {
                 return true;
             }
 
             if (index > 0) {
-                index = SqlParser.indexOfWord(query, SK.FROM, index, false);
+                index = SqlParser.indexOfToken(query, SK.FROM, index, false);
 
                 return index >= 1;
             }
@@ -6300,7 +6442,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         ColumnInfo tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
-            if (tp.hasNoDot() && _tableAlias != null && !_tableAlias.isEmpty()) {
+            if (tp.isUnqualified() && _tableAlias != null && !_tableAlias.isEmpty()) {
                 return _tableAlias + "." + tp.columnName();
             }
             return tp.columnName();
@@ -6553,10 +6695,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     sb.append(' ').append(selection.tableAlias());
                 }
 
-                if (N.notEmpty(selection.includedPropNames()) || selection.includeSubEntityProperties()) {
+                if (N.notEmpty(selection.includedPropNames()) || selection.includesSubEntityProperties()) {
                     final Class<?> entityClass = selection.entityClass();
                     final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
-                            : QueryUtil.selectPropertyNames(entityClass, selection.includeSubEntityProperties(), selection.excludedPropNames());
+                            : QueryUtil.selectPropertyNames(entityClass, selection.includesSubEntityProperties(), selection.excludedPropNames());
                     final Set<String> excludedPropNames = selection.excludedPropNames();
                     final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 

@@ -141,7 +141,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
         InSubQuery condition = new InSubQuery("user_id", subQuery);
 
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("user_id"));
         assertTrue(result.contains("IN"));
         assertTrue(result.contains("SELECT"));
@@ -153,7 +153,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT department_id, location_id FROM assignments");
         InSubQuery condition = new InSubQuery(columns, subQuery);
 
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("dept_id"));
         assertTrue(result.contains("loc_id"));
         assertTrue(result.contains("IN"));
@@ -164,7 +164,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
         InSubQuery condition = new InSubQuery("userId", subQuery);
 
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_id"));
     }
 
@@ -238,7 +238,7 @@ public class InSubQueryTest extends TestBase {
         InSubQuery condition = new InSubQuery("customer_id", premiumCustomers);
 
         assertNotNull(condition.subQuery());
-        assertTrue(condition.toString(NamingPolicy.NO_CHANGE).contains("customer_id"));
+        assertTrue(condition.toSql(NamingPolicy.NO_CHANGE).contains("customer_id"));
     }
 
     @Test
@@ -257,7 +257,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery activeCategories = Filters.subQuery("SELECT category_id FROM categories WHERE active = true");
         InSubQuery condition = new InSubQuery("category_id", activeCategories);
 
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("category_id"));
         assertTrue(sql.contains("IN"));
     }
@@ -439,7 +439,7 @@ public class InSubQueryTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM table");
         InSubQuery condition = new InSubQuery("userId", subQuery);
 
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("USER_ID"));
         Assertions.assertTrue(result.contains("IN"));

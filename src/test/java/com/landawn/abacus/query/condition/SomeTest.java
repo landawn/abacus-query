@@ -82,7 +82,7 @@ public class SomeTest extends TestBase {
     public void testToString_NoChange() {
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE role = 'manager'");
         Some condition = new Some(subQuery);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("SOME"));
         assertTrue(result.contains("SELECT"));
     }
@@ -92,7 +92,7 @@ public class SomeTest extends TestBase {
         Condition whereCondition = new GreaterThan("experience", 5);
         SubQuery subQuery = Filters.subQuery("employees", Arrays.asList("salary"), whereCondition);
         Some condition = new Some(subQuery);
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("SOME"));
         assertTrue(result.contains("SELECT"));
         assertTrue(result.contains("employees"));
@@ -170,7 +170,7 @@ public class SomeTest extends TestBase {
         // salary > SOME (SELECT salary FROM employees WHERE role = 'manager')
         SubQuery subQuery = Filters.subQuery("SELECT salary FROM employees WHERE role = 'manager'");
         Some condition = new Some(subQuery);
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("SOME"));
         assertTrue(sql.contains("employees"));
     }
@@ -211,7 +211,7 @@ public class SomeTest extends TestBase {
         // project_cost < SOME (SELECT budget FROM departments)
         SubQuery subQuery = Filters.subQuery("SELECT budget FROM departments");
         Some condition = new Some(subQuery);
-        String sql = condition.toString(NamingPolicy.NO_CHANGE);
+        String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("SOME"));
     }
 

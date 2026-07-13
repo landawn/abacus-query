@@ -22,7 +22,9 @@ import java.util.Set;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableSet;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.Accessors;
 
 /**
@@ -71,10 +73,11 @@ import lombok.experimental.Accessors;
  * // ... then pass to Dsl.PSC.select(selections) / selectFrom(selections)
  * }</pre>
  *
- * <p>Note: {@code entityClass}, {@code tableAlias}, {@code classAlias}, and
- * {@code includeSubEntityProperties} use Lombok-generated fluent accessors (a no-arg getter and a
- * single-arg setter sharing the field name), while {@code includedPropNames} and {@code excludedPropNames}
- * have hand-written accessors that defensively copy on write and return immutable views on read.</p>
+ * <p>Note: {@code entityClass}, {@code tableAlias}, and {@code classAlias} use Lombok-generated fluent accessors.
+ * The sub-entity flag uses the predicate getter {@link #includesSubEntityProperties()} and the Lombok-generated
+ * fluent setter {@code includeSubEntityProperties(boolean)}. The {@code includedPropNames} and
+ * {@code excludedPropNames} properties have hand-written accessors that defensively copy on write
+ * and return immutable views on read.</p>
  *
  * @see Dsl#select(List)
  * @see Dsl#selectFrom(List)
@@ -85,25 +88,17 @@ import lombok.experimental.Accessors;
 public final class Selection {
 
     /**
-     * Creates a new empty Selection instance.
-     * Use the fluent setter methods to configure the selection properties.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * Selection selection = new Selection()
-     *     .entityClass(User.class)
-     *     .tableAlias("u")
-     *     .includedPropNames(Arrays.asList("id", "name"));
-     * }</pre>
+     * Creates a new empty selection that can be configured through the fluent setters.
      */
     public Selection() {
-        // Default constructor for fluent API usage
+        // Default constructor for fluent API usage.
     }
 
     private Class<?> entityClass;
     private String tableAlias;
     private String classAlias;
     private Collection<String> includedPropNames;
+    @Getter(AccessLevel.NONE)
     private boolean includeSubEntityProperties;
     private Set<String> excludedPropNames;
 
@@ -134,6 +129,15 @@ public final class Selection {
     }
 
     /**
+     * Returns whether properties from sub-entities are included.
+     *
+     * @return {@code true} if sub-entity properties are included
+     */
+    public boolean includesSubEntityProperties() {
+        return includeSubEntityProperties;
+    }
+
+    /**
      * Sets the property names to include in this selection.
      *
      * <p>The supplied collection is copied defensively, so subsequent mutations of the argument do not
@@ -157,6 +161,32 @@ public final class Selection {
      */
     public Collection<String> includedPropNames() {
         return includedPropNames == null ? null : ImmutableList.wrap((List<String>) includedPropNames);
+    }
+
+    /**
+     * Returns the property names to exclude from this selection.
+     *
+     * <p>The returned set is an immutable view; attempts to modify it throw
+     * {@link UnsupportedOperationException}. Returns {@code null} when no exclusions have been set.</p>
+     *
+     * @return an immutable view of the excluded property names, or {@code null} if none was set
+     */
+    public Set<String> excludedPropNames() {
+        return excludedPropNames == null ? null : ImmutableSet.wrap(excludedPropNames);
+    }
+
+    /**
+     * Sets the property names to exclude from this selection.
+     *
+     * <p>The supplied set is copied defensively, so subsequent mutations of the argument do not affect
+     * this {@code Selection}. Passing {@code null} clears the exclusion set.</p>
+     *
+     * @param excludedPropNames the property names to exclude; can be {@code null}
+     * @return this {@code Selection} instance for method chaining
+     */
+    public Selection excludedPropNames(final Set<String> excludedPropNames) {
+        this.excludedPropNames = excludedPropNames == null ? null : new LinkedHashSet<>(excludedPropNames);
+        return this;
     }
 
     /**
@@ -264,31 +294,5 @@ public final class Selection {
         public Selection build() {
             return new Selection(entityClass, tableAlias, classAlias, includedPropNames, includeSubEntityProperties, excludedPropNames);
         }
-    }
-
-    /**
-     * Sets the property names to exclude from this selection.
-     *
-     * <p>The supplied set is copied defensively, so subsequent mutations of the argument do not affect
-     * this {@code Selection}. Passing {@code null} clears the exclusion set.</p>
-     *
-     * @param excludedPropNames the property names to exclude; can be {@code null}
-     * @return this {@code Selection} instance for method chaining
-     */
-    public Selection excludedPropNames(final Set<String> excludedPropNames) {
-        this.excludedPropNames = excludedPropNames == null ? null : new LinkedHashSet<>(excludedPropNames);
-        return this;
-    }
-
-    /**
-     * Returns the property names to exclude from this selection.
-     *
-     * <p>The returned set is an immutable view; attempts to modify it throw
-     * {@link UnsupportedOperationException}. Returns {@code null} when no exclusions have been set.</p>
-     *
-     * @return an immutable view of the excluded property names, or {@code null} if none was set
-     */
-    public Set<String> excludedPropNames() {
-        return excludedPropNames == null ? null : ImmutableSet.wrap(excludedPropNames);
     }
 }

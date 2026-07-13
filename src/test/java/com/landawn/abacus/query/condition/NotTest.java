@@ -83,7 +83,7 @@ public class NotTest extends TestBase {
         Equal innerCondition = new Equal("userName", "Bob");
         Not condition = new Not(innerCondition);
 
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("NOT"));
         assertTrue(result.contains("userName"));
     }
@@ -93,7 +93,7 @@ public class NotTest extends TestBase {
         Equal innerCondition = new Equal("firstName", "Charlie");
         Not condition = new Not(innerCondition);
 
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("first_name"));
     }
 

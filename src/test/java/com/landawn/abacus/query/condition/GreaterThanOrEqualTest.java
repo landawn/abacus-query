@@ -88,7 +88,7 @@ public class GreaterThanOrEqualTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("userName", "Alice");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("userName"));
         assertTrue(result.contains("Alice"));
     }
@@ -96,7 +96,7 @@ public class GreaterThanOrEqualTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         GreaterThanOrEqual condition = new GreaterThanOrEqual("userName", "Bob");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 
@@ -225,7 +225,7 @@ public class GreaterThanOrEqualTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         GreaterThanOrEqual ge = Filters.ge("firstName", "John");
-        String result = ge.toString(NamingPolicy.SNAKE_CASE);
+        String result = ge.toSql(NamingPolicy.SNAKE_CASE);
         Assertions.assertEquals("first_name >= 'John'", result);
     }
 

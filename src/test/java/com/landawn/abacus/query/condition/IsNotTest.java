@@ -88,7 +88,7 @@ public class IsNotTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         IsNot condition = new IsNot("userName", "Alice");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("userName"));
         assertTrue(result.contains("Alice"));
     }
@@ -96,7 +96,7 @@ public class IsNotTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         IsNot condition = new IsNot("userName", "Bob");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 
@@ -213,7 +213,7 @@ public class IsNotTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         IsNot condition = new IsNot("firstName", null);
-        String result = condition.toString(NamingPolicy.CAMEL_CASE);
+        String result = condition.toSql(NamingPolicy.CAMEL_CASE);
         Assertions.assertEquals("firstName IS NOT NULL", result);
     }
 

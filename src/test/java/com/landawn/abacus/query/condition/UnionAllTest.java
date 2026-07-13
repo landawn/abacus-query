@@ -49,7 +49,7 @@ public class UnionAllTest extends TestBase {
     public void testToString() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM transactions");
         UnionAll unionAll = new UnionAll(subQuery);
-        String result = unionAll.toString(NamingPolicy.NO_CHANGE);
+        String result = unionAll.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("UNION"));
     }
 

@@ -687,7 +687,7 @@ public class ExpressionTest extends TestBase {
     public void testToStringNoChange() {
         Expression expr = new Expression("userName = 'John'");
 
-        String result = expr.toString(NamingPolicy.NO_CHANGE);
+        String result = expr.toSql(NamingPolicy.NO_CHANGE);
 
         assertEquals("userName = 'John'", result);
     }
@@ -696,7 +696,7 @@ public class ExpressionTest extends TestBase {
     public void testToStringWithNamingPolicy() {
         Expression expr = new Expression("firstName");
 
-        String result = expr.toString(NamingPolicy.SNAKE_CASE);
+        String result = expr.toSql(NamingPolicy.SNAKE_CASE);
 
         assertEquals("first_name", result);
     }
@@ -710,7 +710,7 @@ public class ExpressionTest extends TestBase {
     public void testToStringEmpty() {
         Expression expr = new Expression("");
 
-        String result = expr.toString(NamingPolicy.NO_CHANGE);
+        String result = expr.toSql(NamingPolicy.NO_CHANGE);
 
         assertEquals("", result);
     }
@@ -1028,15 +1028,15 @@ public class ExpressionTest extends TestBase {
     public void testToString_FunctionNameWithNamingPolicy_Batch2() {
         Expression expr = Expression.of("SUM(totalAmount)");
 
-        Assertions.assertEquals("SUM(total_amount)", expr.toString(NamingPolicy.SNAKE_CASE));
-        Assertions.assertEquals("SUM(totalAmount)", expr.toString(null));
+        Assertions.assertEquals("SUM(total_amount)", expr.toSql(NamingPolicy.SNAKE_CASE));
+        Assertions.assertEquals("SUM(totalAmount)", expr.toSql(null));
     }
 
     @Test
     public void testToStringDoesNotConvertSqlKeywordLiterals() {
-        assertEquals("CURRENT_DATE", Expression.of("CURRENT_DATE").toString(NamingPolicy.CAMEL_CASE));
-        assertEquals("CURRENT_TIMESTAMP", Expression.of("CURRENT_TIMESTAMP").toString(NamingPolicy.CAMEL_CASE));
-        assertEquals("CURRENT_DATE = created_date", Expression.of("CURRENT_DATE = createdDate").toString(NamingPolicy.SNAKE_CASE));
+        assertEquals("CURRENT_DATE", Expression.of("CURRENT_DATE").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("CURRENT_TIMESTAMP", Expression.of("CURRENT_TIMESTAMP").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("CURRENT_DATE = created_date", Expression.of("CURRENT_DATE = createdDate").toSql(NamingPolicy.SNAKE_CASE));
     }
 
     /**
@@ -1046,11 +1046,11 @@ public class ExpressionTest extends TestBase {
      */
     @Test
     public void testToStringConvertsLowercaseKeywordLikeColumnNames() {
-        assertEquals("ORDER", Expression.of("order").toString(NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("COUNT", Expression.of("count").toString(NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("ROWNUM", Expression.of("rownum").toString(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("ORDER", Expression.of("order").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("COUNT", Expression.of("count").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("ROWNUM", Expression.of("rownum").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
         // The upper-case keyword form is still preserved.
-        assertEquals("CURRENT_DATE", Expression.of("CURRENT_DATE").toString(NamingPolicy.CAMEL_CASE));
+        assertEquals("CURRENT_DATE", Expression.of("CURRENT_DATE").toSql(NamingPolicy.CAMEL_CASE));
     }
 
     /**
@@ -1134,7 +1134,7 @@ public class ExpressionTest extends TestBase {
     }
 
     /**
-     * Regression: the short-literal fast path in {@code toString(NamingPolicy)} must use a full-string
+     * Regression: the short-literal fast path in {@code toSql(NamingPolicy)} must use a full-string
      * (anchored) match and not {@code Matcher.find()}. With {@code find()}, a short literal
      * containing a trailing line terminator such as {@code "col\n"} spuriously satisfies the
      * anchored pattern {@code ^[a-zA-Z0-9_-]+$} (because {@code $} matches before the final
@@ -1148,7 +1148,7 @@ public class ExpressionTest extends TestBase {
     public void testToString_ShortLiteralWithNewlineGoesThroughParser() {
         Expression expr = Expression.of("col\n");
 
-        String result = expr.toString(NamingPolicy.NO_CHANGE);
+        String result = expr.toSql(NamingPolicy.NO_CHANGE);
 
         // Buggy (find()) path returned "col\n" verbatim; correct (matches()) path parses it
         // and collapses the whitespace run, so no line terminator may survive.
@@ -1158,7 +1158,7 @@ public class ExpressionTest extends TestBase {
     }
 
     /**
-     * {@code toString(NamingPolicy)} must return the value rendered for the <i>requested</i> policy.
+     * {@code toSql(NamingPolicy)} must return the value rendered for the <i>requested</i> policy.
      * {@link Expression#of} interns instances, so the same object is reused across calls and must answer
      * each policy correctly even when callers alternate policies on it. (Originally guarded the
      * since-removed single-slot toString cache; kept because the contract must hold regardless of any
@@ -1170,15 +1170,15 @@ public class ExpressionTest extends TestBase {
         assertSame(expr, Expression.of("firstName"), "Expression.of must intern instances");
 
         for (int i = 0; i < 1000; i++) {
-            assertEquals("firstName", expr.toString(NamingPolicy.NO_CHANGE));
-            assertEquals("first_name", expr.toString(NamingPolicy.SNAKE_CASE));
-            assertEquals("FIRST_NAME", expr.toString(NamingPolicy.SCREAMING_SNAKE_CASE));
-            assertEquals("firstName", expr.toString(null)); // null defaults to NO_CHANGE
+            assertEquals("firstName", expr.toSql(NamingPolicy.NO_CHANGE));
+            assertEquals("first_name", expr.toSql(NamingPolicy.SNAKE_CASE));
+            assertEquals("FIRST_NAME", expr.toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+            assertEquals("firstName", expr.toSql(null)); // null defaults to NO_CHANGE
         }
     }
 
     /**
-     * {@code toString(NamingPolicy)} must be thread-safe on a shared interned instance: every call must
+     * {@code toSql(NamingPolicy)} must be thread-safe on a shared interned instance: every call must
      * return the value for its own policy. (Originally a regression test for a data race in the
      * since-removed single-slot toString cache; kept — with a lighter workload — to catch any future
      * reintroduction of unsafe per-instance memoization.)
@@ -1210,7 +1210,7 @@ public class ExpressionTest extends TestBase {
                 }
 
                 for (int i = 0; i < iterations && firstError.get() == null; i++) {
-                    final String got = expr.toString(policy);
+                    final String got = expr.toSql(policy);
 
                     if (!want.equals(got)) {
                         firstError.compareAndSet(null, "policy=" + policy + " expected=" + want + " got=" + got);
@@ -1227,7 +1227,7 @@ public class ExpressionTest extends TestBase {
             thread.join();
         }
 
-        Assertions.assertNull(firstError.get(), "toString(NamingPolicy) returned a value rendered for the wrong policy under concurrency: " + firstError.get());
+        Assertions.assertNull(firstError.get(), "toSql(NamingPolicy) returned a value rendered for the wrong policy under concurrency: " + firstError.get());
     }
 
     @Test
@@ -1235,16 +1235,16 @@ public class ExpressionTest extends TestBase {
         // "price-tax" is SQL subtraction. The short-literal fast path used to hand the whole
         // literal to NamingPolicy.convert, which swallowed the '-' (CAMEL_CASE -> "priceTax");
         // hyphen-containing literals must take the parser path, converting each operand independently.
-        assertEquals("price-tax", Expression.of("price-tax").toString(NamingPolicy.CAMEL_CASE));
-        assertEquals("unit_price-tax", Expression.of("unitPrice-tax").toString(NamingPolicy.SNAKE_CASE));
+        assertEquals("price-tax", Expression.of("price-tax").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("unit_price-tax", Expression.of("unitPrice-tax").toSql(NamingPolicy.SNAKE_CASE));
 
         // Consistent with the >= 16-char parse path, which always preserved the '-'.
-        assertEquals("basePrice-salesTax", Expression.of("base_price-sales_tax").toString(NamingPolicy.CAMEL_CASE));
+        assertEquals("basePrice-salesTax", Expression.of("base_price-sales_tax").toSql(NamingPolicy.CAMEL_CASE));
 
         // Hyphen-free short literals still use the fast path unchanged.
-        assertEquals("first_name", Expression.of("firstName").toString(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name", Expression.of("firstName").toSql(NamingPolicy.SNAKE_CASE));
 
         // The digit-leading pass-through guard is still intact.
-        assertEquals("2faCode", Expression.of("2faCode").toString(NamingPolicy.SNAKE_CASE));
+        assertEquals("2faCode", Expression.of("2faCode").toSql(NamingPolicy.SNAKE_CASE));
     }
 }

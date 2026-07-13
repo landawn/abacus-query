@@ -132,12 +132,12 @@ public class On extends Cell {
      * // SQL: INNER JOIN salary_grades ON ((emp.salary >= salary_grades.min_salary) AND (emp.salary <= salary_grades.max_salary))
      * }</pre>
      *
-     * @param condition the join condition. Any non-clause, non-{@code null} condition is allowed, including
+     * @param condition the join condition. Any non-clause, non-{@code null} predicate is allowed, including
      *            {@link Expression}, {@link Equal}, {@link And}, {@link Or}, or {@link Between}.
      *            Must not be {@code null}.
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is a {@link Criteria},
-     *                                  a SQL clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, or an empty predicate
+     *                                  is or contains a SQL clause, an {@code ON}/{@code USING} condition, an
+     *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
      *                                  (a blank {@link Expression} or empty {@link Junction})
      */
     public On(final Condition condition) {
@@ -147,7 +147,7 @@ public class On extends Cell {
     private static Condition validateOnCondition(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
 
-        if (cond instanceof Criteria || isClause(cond) || containsOnOrUsing(cond) || isQuantifiedSubQueryOperand(cond) || isEmptyPredicate(cond)) {
+        if (containsNonPredicateComponent(cond)) {
             throw new IllegalArgumentException("ON condition type " + cond.getClass().getName()
                     + " is not allowed: use a non-empty predicate without clause, quantified, ON, or USING operators");
         }

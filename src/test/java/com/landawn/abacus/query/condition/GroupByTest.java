@@ -106,7 +106,7 @@ public class GroupByTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         GroupBy groupBy = new GroupBy("productCategory");
-        String result = groupBy.toString(NamingPolicy.SNAKE_CASE);
+        String result = groupBy.toSql(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertTrue(result.contains("product_category") || result.contains("productCategory"));

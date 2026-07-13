@@ -98,6 +98,31 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
+    public void testParse_AdjacentMixedIBatisAndNamedThrows() {
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT :id#{name} FROM users"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT #{name}:id FROM users"));
+    }
+
+    @Test
+    public void testParse_BracketQuotedIdentifiersDoNotCreateParameters() {
+        ParsedSql named = ParsedSql.parse("SELECT [:identifier] FROM users");
+        assertEquals("SELECT [:identifier] FROM users", named.parameterizedSql());
+        assertEquals(0, named.parameterCount());
+
+        ParsedSql ibatis = ParsedSql.parse("SELECT [#{identifier}] FROM users");
+        assertEquals("SELECT [#{identifier}] FROM users", ibatis.parameterizedSql());
+        assertEquals(0, ibatis.parameterCount());
+
+        ParsedSql qualified = ParsedSql.parse("SELECT users.[:identifier] FROM users");
+        assertEquals("SELECT users.[:identifier] FROM users", qualified.parameterizedSql());
+        assertEquals(0, qualified.parameterCount());
+
+        ParsedSql arraySubscript = ParsedSql.parse("SELECT values_array[:index] FROM users");
+        assertEquals("SELECT values_array[?] FROM users", arraySubscript.parameterizedSql());
+        assertEquals(1, arraySubscript.parameterCount());
+    }
+
+    @Test
     public void testParse_NullThrows() {
         assertThrows(IllegalArgumentException.class, () -> {
             ParsedSql.parse(null);

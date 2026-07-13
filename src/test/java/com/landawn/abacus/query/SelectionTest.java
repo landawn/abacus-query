@@ -47,7 +47,7 @@ public class SelectionTest extends TestBase {
         assertNull(s.classAlias());
         assertNull(s.includedPropNames());
         assertNull(s.excludedPropNames());
-        assertFalse(s.includeSubEntityProperties());
+        assertFalse(s.includesSubEntityProperties());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class SelectionTest extends TestBase {
         assertEquals(Account.class, s.entityClass());
         assertEquals("a", s.tableAlias());
         assertEquals("account", s.classAlias());
-        assertTrue(s.includeSubEntityProperties());
+        assertTrue(s.includesSubEntityProperties());
     }
 
     @Test
@@ -70,6 +70,13 @@ public class SelectionTest extends TestBase {
         assertTrue(s == s.includeSubEntityProperties(true));
         assertTrue(s == s.includedPropNames(List.of("id")));
         assertTrue(s == s.excludedPropNames(Set.of("status")));
+    }
+
+    @Test
+    public void testIncludesSubEntityPropertiesIsAHardGetterRename() throws NoSuchMethodException {
+        assertEquals(boolean.class, Selection.class.getMethod("includesSubEntityProperties").getReturnType());
+        assertEquals(Selection.class, Selection.class.getMethod("includeSubEntityProperties", boolean.class).getReturnType());
+        assertThrows(NoSuchMethodException.class, () -> Selection.class.getMethod("includeSubEntityProperties"));
     }
 
     // ------------------------------------------------------------------------
@@ -168,7 +175,7 @@ public class SelectionTest extends TestBase {
         assertEquals("a", s.tableAlias());
         assertEquals("account", s.classAlias());
         assertEquals(2, s.includedPropNames().size());
-        assertTrue(s.includeSubEntityProperties());
+        assertTrue(s.includesSubEntityProperties());
         assertEquals(1, s.excludedPropNames().size());
     }
 
@@ -195,7 +202,7 @@ public class SelectionTest extends TestBase {
         assertNull(s.classAlias());
         assertNull(s.includedPropNames());
         assertNull(s.excludedPropNames());
-        assertFalse(s.includeSubEntityProperties());
+        assertFalse(s.includesSubEntityProperties());
     }
 
     // ------------------------------------------------------------------------
@@ -217,7 +224,7 @@ public class SelectionTest extends TestBase {
         assertEquals("a", s.tableAlias());
         assertEquals("account", s.classAlias());
         assertEquals(2, s.includedPropNames().size());
-        assertTrue(s.includeSubEntityProperties());
+        assertTrue(s.includesSubEntityProperties());
         assertEquals(1, s.excludedPropNames().size());
     }
 
@@ -230,7 +237,7 @@ public class SelectionTest extends TestBase {
         assertNull(s.classAlias());
         assertNull(s.includedPropNames());
         assertNull(s.excludedPropNames());
-        assertFalse(s.includeSubEntityProperties());
+        assertFalse(s.includesSubEntityProperties());
     }
 
     @Test
@@ -328,6 +335,16 @@ public class SelectionTest extends TestBase {
         assertNotNull(sql);
         assertTrue(sql.startsWith("SELECT"));
         assertTrue(sql.contains("account"));
+    }
+
+    @Test
+    public void testDslSelectSnapshotsMutableSelectionDescriptors() {
+        final Selection selection = new Selection().entityClass(Account.class).tableAlias("a").classAlias("account").includedPropNames(Arrays.asList("id"));
+        final SqlBuilder builder = Dsl.PSC.select(selection).from("account a");
+
+        selection.tableAlias("changed").classAlias("changed").includedPropNames(Arrays.asList("firstName"));
+
+        assertEquals("SELECT a.id AS \"account.id\" FROM account a", builder.build().query());
     }
 
     @Test

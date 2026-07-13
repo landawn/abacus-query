@@ -190,7 +190,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             // Row-value mode must be dispatched explicitly (not on the property-name count): a
             // single-prop row-value condition ("(id) IN ((1), (2))") still carries tuple rows,
             // which the scalar path would bind whole as single parameters.
-            if (anyIn.rowValueConstructor()) {
+            if (anyIn.usesRowValueConstructor()) {
                 appendMultiColumnInClause(anyIn.propNames(), anyIn.operator(), anyIn.values());
             } else {
                 appendInClause(anyIn.propNames(), anyIn.operator(), anyIn.values());
@@ -413,7 +413,12 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
     }
 
     private void appendParenthesizedCondition(final Operator operator, final Condition inner) {
-        _sb.append(_SPACE);
+        // Clause methods already leave a trailing space (for example, "WHERE "). Add one only when
+        // needed so NOT/EXISTS conditions do not acquire an observable double space.
+        if (!_sb.isEmpty() && _sb.charAt(_sb.length() - 1) != _SPACE && _sb.charAt(_sb.length() - 1) != SK._PARENTHESIS_L) {
+            _sb.append(_SPACE);
+        }
+
         _sb.append(operator.toString());
         _sb.append(_SPACE);
 

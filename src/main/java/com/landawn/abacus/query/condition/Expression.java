@@ -277,7 +277,7 @@ public class Expression extends ComposableCondition {
      *
      * @param expr the left-hand side of the equality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NULL})
-     * @return a string representation of the equality expression
+     * @return a SQL representation of the equality expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String equal(final String expr, final Object value) { //NOSONAR
@@ -296,7 +296,7 @@ public class Expression extends ComposableCondition {
      *
      * @param expr the left-hand side of the equality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NULL})
-     * @return a string representation of the equality expression
+     * @return a SQL representation of the equality expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     @Beta
@@ -322,7 +322,7 @@ public class Expression extends ComposableCondition {
      *
      * @param expr the left-hand side of the inequality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NOT NULL})
-     * @return a string representation of the not-equal expression
+     * @return a SQL representation of the not-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String notEqual(final String expr, final Object value) {
@@ -341,7 +341,7 @@ public class Expression extends ComposableCondition {
      *
      * @param expr the left-hand side of the inequality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NOT NULL})
-     * @return a string representation of the not-equal expression
+     * @return a SQL representation of the not-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     @Beta
@@ -363,7 +363,7 @@ public class Expression extends ComposableCondition {
      *
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
-     * @return a string representation of the greater-than expression
+     * @return a SQL representation of the greater-than expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String greaterThan(final String expr, final Object value) {
@@ -382,7 +382,7 @@ public class Expression extends ComposableCondition {
      *
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
-     * @return a string representation of the greater-than expression
+     * @return a SQL representation of the greater-than expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     @Beta
@@ -401,7 +401,7 @@ public class Expression extends ComposableCondition {
      *
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
-     * @return a string representation of the greater-than-or-equal expression
+     * @return a SQL representation of the greater-than-or-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String greaterThanOrEqual(final String expr, final Object value) {
@@ -420,7 +420,7 @@ public class Expression extends ComposableCondition {
      *
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
-     * @return a string representation of the greater-than-or-equal expression
+     * @return a SQL representation of the greater-than-or-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     @Beta
@@ -439,7 +439,7 @@ public class Expression extends ComposableCondition {
      *
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
-     * @return a string representation of the less-than expression
+     * @return a SQL representation of the less-than expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String lessThan(final String expr, final Object value) {
@@ -458,7 +458,7 @@ public class Expression extends ComposableCondition {
      *
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
-     * @return a string representation of the less-than expression
+     * @return a SQL representation of the less-than expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     @Beta
@@ -477,7 +477,7 @@ public class Expression extends ComposableCondition {
      *
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
-     * @return a string representation of the less-than-or-equal expression
+     * @return a SQL representation of the less-than-or-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String lessThanOrEqual(final String expr, final Object value) {
@@ -496,7 +496,7 @@ public class Expression extends ComposableCondition {
      *
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
-     * @return a string representation of the less-than-or-equal expression
+     * @return a SQL representation of the less-than-or-equal expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     @Beta
@@ -520,7 +520,7 @@ public class Expression extends ComposableCondition {
      * @param expr the expression to test
      * @param minValue the minimum value (inclusive)
      * @param maxValue the maximum value (inclusive)
-     * @return a string representation of the BETWEEN expression
+     * @return a SQL representation of the BETWEEN expression
      * @throws IllegalArgumentException if {@code minValue} or {@code maxValue} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String between(final String expr, final Object minValue, final Object maxValue) {
@@ -547,7 +547,7 @@ public class Expression extends ComposableCondition {
      * @param expr the expression to test
      * @param minValue the lower bound of the excluded range (inclusive)
      * @param maxValue the upper bound of the excluded range (inclusive)
-     * @return a string representation of the NOT BETWEEN expression
+     * @return a SQL representation of the NOT BETWEEN expression
      * @throws IllegalArgumentException if {@code minValue} or {@code maxValue} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String notBetween(final String expr, final Object minValue, final Object maxValue) {
@@ -573,7 +573,7 @@ public class Expression extends ComposableCondition {
      * @param expr the expression to match
      * @param value the pattern to match against (can include % and _ wildcards); should not be
      *              {@code null} — a {@code null} renders as the literal {@code null}
-     * @return a string representation of the LIKE expression
+     * @return a SQL representation of the LIKE expression
      */
     public static String like(final String expr, final String value) {
         return link(Operator.LIKE, expr, value);
@@ -595,7 +595,7 @@ public class Expression extends ComposableCondition {
      * @param expr the expression to match
      * @param value the pattern to exclude (can include % and _ wildcards); should not be
      *              {@code null} — a {@code null} renders as the literal {@code null}
-     * @return a string representation of the NOT LIKE expression
+     * @return a SQL representation of the NOT LIKE expression
      */
     public static String notLike(final String expr, final String value) {
         return link(Operator.NOT_LIKE, expr, value);
@@ -611,7 +611,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param expr the expression to check for null
-     * @return a string representation of the IS NULL expression
+     * @return a SQL representation of the IS NULL expression
      */
     public static String isNull(final String expr) {
         return link2(Operator.IS, expr, NULL_KEYWORD);
@@ -627,7 +627,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param expr the expression to check for not null
-     * @return a string representation of the IS NOT NULL expression
+     * @return a SQL representation of the IS NOT NULL expression
      */
     public static String isNotNull(final String expr) {
         return link2(Operator.IS_NOT, expr, NULL_KEYWORD);
@@ -685,7 +685,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param exprs the expressions to combine with AND
-     * @return a string representation of the AND expression
+     * @return a SQL representation of the AND expression
      */
     public static String and(final String... exprs) {
         return link2(Operator.AND, exprs);
@@ -702,7 +702,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param exprs the expressions to combine with OR
-     * @return a string representation of the OR expression
+     * @return a SQL representation of the OR expression
      */
     public static String or(final String... exprs) {
         return link2(Operator.OR, exprs);
@@ -723,7 +723,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param operands the values to add
-     * @return a string representation of the addition expression
+     * @return a SQL representation of the addition expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String plus(final Object... operands) {
@@ -745,7 +745,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param operands the values to subtract
-     * @return a string representation of the subtraction expression
+     * @return a SQL representation of the subtraction expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String subtract(final Object... operands) {
@@ -773,7 +773,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param objects the values to subtract
-     * @return a string representation of the subtraction expression
+     * @return a SQL representation of the subtraction expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      * @deprecated Use {@link #subtract(Object...)} instead to avoid confusion with the SQL {@code MINUS} set operation.
      */
@@ -797,7 +797,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param operands the values to multiply
-     * @return a string representation of the multiplication expression
+     * @return a SQL representation of the multiplication expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String multiply(final Object... operands) {
@@ -819,7 +819,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param objects the values to divide
-     * @return a string representation of the division expression
+     * @return a SQL representation of the division expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String divide(final Object... objects) {
@@ -841,7 +841,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param objects the values for modulus operation
-     * @return a string representation of the modulus expression
+     * @return a SQL representation of the modulus expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String modulus(final Object... objects) {
@@ -860,7 +860,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param objects the values for left shift operation
-     * @return a string representation of the left shift expression
+     * @return a SQL representation of the left shift expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String leftShift(final Object... objects) {
@@ -879,7 +879,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param objects the values for right shift operation
-     * @return a string representation of the right shift expression
+     * @return a SQL representation of the right shift expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String rightShift(final Object... objects) {
@@ -900,7 +900,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param objects the values for bitwise AND operation
-     * @return a string representation of the bitwise AND expression
+     * @return a SQL representation of the bitwise AND expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String bitwiseAnd(final Object... objects) {
@@ -918,7 +918,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param objects the values for bitwise OR operation
-     * @return a string representation of the bitwise OR expression
+     * @return a SQL representation of the bitwise OR expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String bitwiseOr(final Object... objects) {
@@ -936,7 +936,7 @@ public class Expression extends ComposableCondition {
      * }</pre>
      *
      * @param objects the values for bitwise XOR operation
-     * @return a string representation of the bitwise XOR expression
+     * @return a SQL representation of the bitwise XOR expression
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String bitwiseXor(final Object... objects) {
@@ -955,7 +955,7 @@ public class Expression extends ComposableCondition {
      * @param operator the operator to use
      * @param literal the left-hand side literal
      * @param value the right-hand side value; may be {@code null}
-     * @return a string representation of the linked expression
+     * @return a SQL representation of the linked expression
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     static String link(final Operator operator, final String literal, final Object value) {
@@ -1829,12 +1829,12 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression.of("firstName").toString(NamingPolicy.SNAKE_CASE);          // returns "first_name"
-     * Expression.of("firstName = 'John'").toString(NamingPolicy.SNAKE_CASE); // returns "first_name = 'John'" (identifier converted, quoted literal kept)
-     * Expression.of("price-tax").toString(NamingPolicy.CAMEL_CASE);          // returns "price-tax" (SQL subtraction preserved; each operand converted independently)
-     * Expression.of("firstName").toString(NamingPolicy.NO_CHANGE);           // returns "firstName"
-     * Expression.of("firstName").toString(null);                             // returns "firstName" (null defaults to NO_CHANGE)
-     * Expression.of("").toString(NamingPolicy.NO_CHANGE);                    // returns "" (empty literal)
+     * Expression.of("firstName").toSql(NamingPolicy.SNAKE_CASE);          // returns "first_name"
+     * Expression.of("firstName = 'John'").toSql(NamingPolicy.SNAKE_CASE); // returns "first_name = 'John'" (identifier converted, quoted literal kept)
+     * Expression.of("price-tax").toSql(NamingPolicy.CAMEL_CASE);          // returns "price-tax" (SQL subtraction preserved; each operand converted independently)
+     * Expression.of("firstName").toSql(NamingPolicy.NO_CHANGE);           // returns "firstName"
+     * Expression.of("firstName").toSql(null);                             // returns "firstName" (null defaults to NO_CHANGE)
+     * Expression.of("").toSql(NamingPolicy.NO_CHANGE);                    // returns "" (empty literal)
      * // an uninitialized instance (null literal, only possible via deserialization) returns "null"
      * }</pre>
      *
@@ -1843,7 +1843,7 @@ public class Expression extends ComposableCondition {
      * @return the expression string with identifiers converted according to the naming policy
      */
     @Override
-    public String toString(final NamingPolicy namingPolicy) {
+    public String toSql(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
 
         if (literal == null) {

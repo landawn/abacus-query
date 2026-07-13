@@ -84,7 +84,7 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testToString_Simple() {
         RightJoin join = new RightJoin("departments");
-        String result = join.toString(NamingPolicy.NO_CHANGE);
+        String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("RIGHT JOIN"));
         assertTrue(result.contains("departments"));
     }
@@ -92,7 +92,7 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testToString_WithCondition() {
         RightJoin join = new RightJoin("products p", new Equal("order_items.product_id", "p.id"));
-        String result = join.toString(NamingPolicy.NO_CHANGE);
+        String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("RIGHT JOIN"));
         assertTrue(result.contains("products p"));
     }

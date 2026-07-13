@@ -208,7 +208,7 @@ public abstract class AbstractBetween extends ComposableCondition {
     }
 
     /**
-     * Converts this condition to its string representation.
+     * Converts this condition to its SQL representation.
      * The format is: {@code propertyName BETWEEN minValue AND maxValue}
      * (or {@code NOT BETWEEN} for {@link NotBetween}).
      * If the operator is {@code null} (only possible for an uninitialized instance), the literal
@@ -218,23 +218,23 @@ public abstract class AbstractBetween extends ComposableCondition {
      * <pre>{@code
      * // Numeric bounds are unquoted
      * Between between = new Between("age", 18, 65);
-     * String s1 = between.toString(NamingPolicy.NO_CHANGE);   // "age BETWEEN 18 AND 65"
+     * String s1 = between.toSql(NamingPolicy.NO_CHANGE);   // "age BETWEEN 18 AND 65"
      *
      * // NotBetween uses the NOT BETWEEN operator
      * NotBetween nb = new NotBetween("age", 18, 65);
-     * String s2 = nb.toString(NamingPolicy.NO_CHANGE);   // "age NOT BETWEEN 18 AND 65"
+     * String s2 = nb.toSql(NamingPolicy.NO_CHANGE);   // "age NOT BETWEEN 18 AND 65"
      *
      * // String bounds are single-quoted; a null naming policy uses NO_CHANGE
      * Between str = new Between("name", "A", "M");
-     * String s3 = str.toString(null);   // "name BETWEEN 'A' AND 'M'"
+     * String s3 = str.toSql(null);   // "name BETWEEN 'A' AND 'M'"
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply to the property name;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
-     * @return a string representation of this condition
+     * @return a SQL representation of this condition
      */
     @Override
-    public String toString(final NamingPolicy namingPolicy) {
+    public String toSql(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Operator op = operator();
         final String opStr = op == null ? Strings.NULL : op.toString();

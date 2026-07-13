@@ -87,7 +87,7 @@ public class LikeTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         Like condition = new Like("userName", "Alice");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("userName"));
         assertTrue(result.contains("Alice"));
     }
@@ -95,7 +95,7 @@ public class LikeTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         Like condition = new Like("userName", "Bob");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("user_name"));
     }
 
@@ -195,21 +195,21 @@ public class LikeTest extends TestBase {
     @Test
     public void testPattercountMatchBetweening_StartsWith() {
         Like condition = new Like("name", "John%");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("John%"));
     }
 
     @Test
     public void testPattercountMatchBetweening_EndsWith() {
         Like condition = new Like("email", "%@example.com");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("@example.com"));
     }
 
     @Test
     public void testPattercountMatchBetweening_Contains() {
         Like condition = new Like("description", "%important%");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("important"));
     }
 
@@ -272,7 +272,7 @@ public class LikeTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         Like condition = new Like("firstName", "J%");
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("FIRST_NAME"));
         Assertions.assertTrue(result.contains("LIKE"));

@@ -47,7 +47,7 @@ public class IntersectTest extends TestBase {
     public void testToString() {
         SubQuery subQuery = Filters.subQuery("SELECT employee_id FROM assignments");
         Intersect intersect = new Intersect(subQuery);
-        String result = intersect.toString(NamingPolicy.NO_CHANGE);
+        String result = intersect.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("INTERSECT"));
     }
 
@@ -166,7 +166,7 @@ public class IntersectTest extends TestBase {
         SubQuery subQuery = Filters.subQuery("SELECT userId FROM userTable");
         Intersect intersect = new Intersect(subQuery);
 
-        String result = intersect.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = intersect.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("INTERSECT"));
         // The SubQuery content might not be affected by naming policy,

@@ -158,7 +158,7 @@ public class OrderByTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         OrderBy orderBy = new OrderBy("userName");
-        String result = orderBy.toString(NamingPolicy.SNAKE_CASE);
+        String result = orderBy.toSql(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertTrue(result.contains("user_name") || result.contains("userName"));

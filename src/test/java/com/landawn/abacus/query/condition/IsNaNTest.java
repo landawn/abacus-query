@@ -51,7 +51,7 @@ public class IsNaNTest extends TestBase {
     @Test
     public void testToString_NoChange() {
         IsNaN condition = new IsNaN("value");
-        String result = condition.toString(NamingPolicy.NO_CHANGE);
+        String result = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("value"));
         assertTrue(result.contains("IS NAN") || result.contains("IS") && result.contains("NAN"));
     }
@@ -59,14 +59,14 @@ public class IsNaNTest extends TestBase {
     @Test
     public void testToString_SnakeCase() {
         IsNaN condition = new IsNaN("myValue");
-        String result = condition.toString(NamingPolicy.SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
         assertTrue(result.contains("my_value"));
     }
 
     @Test
     public void testToString_ScreamingSnakeCase() {
         IsNaN condition = new IsNaN("myValue");
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
         assertTrue(result.contains("MY_VALUE"));
     }
 
@@ -146,7 +146,7 @@ public class IsNaNTest extends TestBase {
     public void testUsageExample_CheckTemperature() {
         IsNaN tempCheck = new IsNaN("temperature");
         assertEquals("temperature", tempCheck.propName());
-        String sql = tempCheck.toString(NamingPolicy.NO_CHANGE);
+        String sql = tempCheck.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("temperature"));
     }
 
@@ -205,7 +205,7 @@ public class IsNaNTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         IsNaN condition = new IsNaN("computedValue");
-        String result = condition.toString(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String result = condition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
 
         Assertions.assertTrue(result.contains("COMPUTED_VALUE"));
         Assertions.assertTrue(result.contains("IS"));

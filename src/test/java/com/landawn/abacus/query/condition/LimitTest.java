@@ -239,7 +239,7 @@ public class LimitTest extends TestBase {
     @Test
     public void testToStringWithCountOnly() {
         Limit limit = new Limit(10);
-        String result = limit.toString(NamingPolicy.NO_CHANGE);
+        String result = limit.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(result.contains("LIMIT"));
         assertTrue(result.contains("10"));
@@ -249,7 +249,7 @@ public class LimitTest extends TestBase {
     @Test
     public void testToStringWithOffsetAndCount() {
         Limit limit = new Limit(10, 20);
-        String result = limit.toString(NamingPolicy.NO_CHANGE);
+        String result = limit.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(result.contains("LIMIT"));
         assertTrue(result.contains("10"));
@@ -260,7 +260,7 @@ public class LimitTest extends TestBase {
     @Test
     public void testToStringWithExpression() {
         Limit limit = new Limit("FETCH FIRST 5 ROWS ONLY");
-        String result = limit.toString(NamingPolicy.NO_CHANGE);
+        String result = limit.toSql(NamingPolicy.NO_CHANGE);
 
         assertEquals("FETCH FIRST 5 ROWS ONLY", result);
     }
@@ -378,7 +378,7 @@ public class LimitTest extends TestBase {
     @Test
     public void testToStringFormat() {
         Limit limit = new Limit(100);
-        String result = limit.toString(NamingPolicy.SNAKE_CASE);
+        String result = limit.toSql(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertTrue(result.contains("100"));
@@ -451,8 +451,8 @@ public class LimitTest extends TestBase {
     @Test
     public void testToStringWithDifferentNamingPolicy() {
         Limit limit = new Limit(10);
-        String result1 = limit.toString(NamingPolicy.NO_CHANGE);
-        String result2 = limit.toString(NamingPolicy.SNAKE_CASE);
+        String result1 = limit.toSql(NamingPolicy.NO_CHANGE);
+        String result2 = limit.toSql(NamingPolicy.SNAKE_CASE);
 
         // Naming policy shouldn't affect LIMIT clause output significantly
         assertNotNull(result1);
@@ -580,13 +580,13 @@ public class LimitTest extends TestBase {
         Limit limit = new Limit();
 
         Assertions.assertNull(limit.operator());
-        String rendered = limit.toString(NamingPolicy.NO_CHANGE);
+        String rendered = limit.toSql(NamingPolicy.NO_CHANGE);
         Assertions.assertFalse(rendered.contains("LIMIT"), "Default-constructed Limit toString must not advertise a LIMIT clause; was: " + rendered);
         Assertions.assertEquals("null", rendered);
 
         // A properly initialised LIMIT 0 still renders correctly.
         Limit zeroRows = new Limit(0);
-        Assertions.assertEquals("LIMIT 0", zeroRows.toString(NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("LIMIT 0", zeroRows.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -599,19 +599,25 @@ public class LimitTest extends TestBase {
     }
 
     @Test
-    public void testResolvedStateDoesNotUseSentinelInference() {
+    public void testIsResolvedDoesNotUseSentinelInference() {
         Limit numeric = new Limit(Integer.MAX_VALUE);
-        Assertions.assertTrue(numeric.resolved());
+        Assertions.assertTrue(numeric.isResolved());
         Assertions.assertEquals(Integer.MAX_VALUE, numeric.resolvedCount().orElseThrow());
         Assertions.assertEquals(0, numeric.resolvedOffset().orElseThrow());
 
         Limit parsed = new Limit(String.valueOf(Integer.MAX_VALUE));
-        Assertions.assertTrue(parsed.resolved());
+        Assertions.assertTrue(parsed.isResolved());
         Assertions.assertEquals(Integer.MAX_VALUE, parsed.resolvedCount().orElseThrow());
 
         Limit opaque = new Limit("? OFFSET ?");
-        Assertions.assertFalse(opaque.resolved());
+        Assertions.assertFalse(opaque.isResolved());
         Assertions.assertTrue(opaque.resolvedCount().isEmpty());
         Assertions.assertTrue(opaque.resolvedOffset().isEmpty());
+    }
+
+    @Test
+    public void testIsResolvedIsAHardRename() throws NoSuchMethodException {
+        Assertions.assertEquals(boolean.class, Limit.class.getMethod("isResolved").getReturnType());
+        Assertions.assertThrows(NoSuchMethodException.class, () -> Limit.class.getMethod("resolved"));
     }
 }

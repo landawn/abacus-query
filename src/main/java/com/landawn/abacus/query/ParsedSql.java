@@ -184,7 +184,13 @@ public final class ParsedSql {
 
                         rebuilt.append(word);
                         word = rebuilt.toString();
-                    } else if (mayContainNamedParameter(word)) {
+                    }
+
+                    // The tokenizer can keep adjacent markers in one token (for example
+                    // ":id#{name}" or "#{name}:id"). Scan the rebuilt token even when it
+                    // originally contained an iBatis marker so the mixed-style guard below
+                    // sees both styles instead of silently leaving the :named marker in SQL.
+                    if (mayContainNamedParameter(word)) {
                         // A single tokenized word may contain one or more ':named' markers because
                         // ':' is not a token separator. Extract markers at safe boundaries so
                         // constructs such as ":a:b" and "array[:ids]" are parameterized, while
@@ -480,7 +486,13 @@ public final class ParsedSql {
     }
 
     private static boolean isQuotedToken(final String token) {
-        return token.indexOf('\'') >= 0 || token.indexOf('"') >= 0 || token.indexOf('`') >= 0;
+        // A token that starts with '[' (or has '[' immediately after a qualification dot) is a
+        // SQL Server bracket-quoted identifier. Do not treat every token containing '[' as quoted:
+        // PostgreSQL-style array subscripts such as "array[:ids]" deliberately support a named
+        // binding inside the brackets.
+        final int bracketIndex = token.indexOf('[');
+        return token.indexOf('\'') >= 0 || token.indexOf('"') >= 0 || token.indexOf('`') >= 0 || bracketIndex == 0
+                || (bracketIndex > 0 && token.charAt(bracketIndex - 1) == '.');
     }
 
     private static int findNextNamedParameterStartIndex(final String token, final int fromIndex) {

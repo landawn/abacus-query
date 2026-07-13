@@ -1521,6 +1521,24 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
+    public void testSetOperationRenamesCustomNamedParameterTokensWithoutCorruptingWrapperText() {
+        AbstractQueryBuilder.setHandlerForNamedParameter((sb, name) -> sb.append("CAST(:").append(name).append(" AS uuid)"));
+
+        try {
+            final SP sp = Dsl.NSC.select("id")
+                    .from("users")
+                    .where(Filters.equal("id", 1))
+                    .union(Dsl.NSC.select("id").from("archived_users").where(Filters.equal("id", 2)))
+                    .build();
+
+            assertEquals("SELECT id FROM users WHERE id = CAST(:id AS uuid) UNION SELECT id FROM archived_users WHERE id = CAST(:id_2 AS uuid)", sp.query());
+            assertEquals(Arrays.asList(1, 2), sp.parameters());
+        } finally {
+            AbstractQueryBuilder.resetHandlerForNamedParameter();
+        }
+    }
+
+    @Test
     public void testUnionAll_StringOverload() {
         String sql = Dsl.PSC.select("id", "name").from("users").unionAll("SELECT id, name FROM customers").build().query();
         assertEquals("SELECT id, name FROM users UNION ALL SELECT id, name FROM customers", sql);
@@ -2154,7 +2172,7 @@ public class SqlBuilderTest extends TestBase {
 
         assertThrows(IllegalStateException.class, () -> Dsl.PSC.update("employees").set("department = 'sales'").append(criteria));
         assertThrows(IllegalStateException.class, () -> Dsl.PSC.deleteFrom("employees").append(criteria));
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.fromCondition(Filters.equal("active", true)).append(criteria));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.renderCondition(Filters.equal("active", true)).append(criteria));
         assertThrows(IllegalStateException.class,
                 () -> Dsl.PSC.select("department").from("employees").union("SELECT department FROM archived_employees").append(criteria));
     }
@@ -3528,7 +3546,7 @@ public class SqlBuilderTest extends TestBase {
         public void testParseCondition() {
             Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000));
 
-            SqlBuilder sb = Dsl.SCSB.fromCondition(cond, Account.class);
+            SqlBuilder sb = Dsl.SCSB.renderCondition(cond, Account.class);
             Assertions.assertNotNull(sb);
 
             String sql = sb.build().query();
@@ -3541,8 +3559,8 @@ public class SqlBuilderTest extends TestBase {
         public void testFromCondition_singleArg_equivalentToNullEntityClass() {
             Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000));
 
-            String viaSingleArg = Dsl.SCSB.fromCondition(cond).build().query();
-            String viaNullClass = Dsl.SCSB.fromCondition(Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000)), null).build().query();
+            String viaSingleArg = Dsl.SCSB.renderCondition(cond).build().query();
+            String viaNullClass = Dsl.SCSB.renderCondition(Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.gt("balance", 1000)), null).build().query();
 
             Assertions.assertEquals(viaNullClass, viaSingleArg);
             Assertions.assertTrue(viaSingleArg.contains("AND"));
@@ -3550,12 +3568,12 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testFromCondition_singleArg_nullCondition() {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.SCSB.fromCondition(null));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.SCSB.renderCondition(null));
         }
 
         @Test
         public void testParseNullCondition() {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.SCSB.fromCondition(null, Account.class));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.SCSB.renderCondition(null, Account.class));
         }
 
         @Test
@@ -4104,7 +4122,7 @@ public class SqlBuilderTest extends TestBase {
         public void testParseCondition() {
             Condition cond = Filters.or(Filters.eq("status", "'ACTIVE'"), Filters.eq("status", "'PENDING'"));
 
-            SqlBuilder sb = Dsl.ACSB.fromCondition(cond, User.class);
+            SqlBuilder sb = Dsl.ACSB.renderCondition(cond, User.class);
             Assertions.assertNotNull(sb);
 
             String sql = sb.build().query();
@@ -4114,7 +4132,7 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testParseNullCondition() {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.ACSB.fromCondition(null, User.class));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.ACSB.renderCondition(null, User.class));
         }
 
         @Test
@@ -4626,7 +4644,7 @@ public class SqlBuilderTest extends TestBase {
         public void testParseCondition() {
             Condition cond = Filters.and(Filters.eq("status", "'ACTIVE'"), Filters.between("registrationDate", "2020-01-01", "2023-12-31"));
 
-            SqlBuilder sb = Dsl.LCSB.fromCondition(cond, Customer.class);
+            SqlBuilder sb = Dsl.LCSB.renderCondition(cond, Customer.class);
             Assertions.assertNotNull(sb);
 
             String sql = sb.build().query();
@@ -4640,7 +4658,7 @@ public class SqlBuilderTest extends TestBase {
             Condition cond = Filters.or(Filters.and(Filters.eq("status", "'PREMIUM'"), Filters.gt("totalPurchases", 5000)),
                     Filters.and(Filters.eq("status", "'GOLD'"), Filters.gt("totalPurchases", 3000)));
 
-            SqlBuilder sb = Dsl.LCSB.fromCondition(cond, Customer.class);
+            SqlBuilder sb = Dsl.LCSB.renderCondition(cond, Customer.class);
             Assertions.assertNotNull(sb);
 
             String sql = sb.build().query();
@@ -4651,7 +4669,7 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testParseNullCondition() {
-            Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.LCSB.fromCondition(null, Customer.class));
+            Assertions.assertThrows(IllegalArgumentException.class, () -> Dsl.LCSB.renderCondition(null, Customer.class));
         }
 
         @Test
@@ -5384,15 +5402,15 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.eq("firstName", "John");
-            SqlBuilder builder = Dsl.PSB.fromCondition(cond, User.class);
+            SqlBuilder builder = Dsl.PSB.renderCondition(cond, User.class);
             assertNotNull(builder);
 
             // Test with null condition
-            assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.fromCondition(null, User.class));
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.renderCondition(null, User.class));
 
             // Test with complex condition
             Condition complexCond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("id", 1));
-            SqlBuilder complexBuilder = Dsl.PSB.fromCondition(complexCond, User.class);
+            SqlBuilder complexBuilder = Dsl.PSB.renderCondition(complexCond, User.class);
             assertNotNull(complexBuilder);
         }
 
@@ -5862,7 +5880,7 @@ public class SqlBuilderTest extends TestBase {
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.like("email", "%@example.com"));
 
-            SqlBuilder builder = Dsl.PSC.fromCondition(cond, Account.class);
+            SqlBuilder builder = Dsl.PSC.renderCondition(cond, Account.class);
             assertNotNull(builder);
 
             String sql = builder.build().query();
@@ -6231,7 +6249,7 @@ public class SqlBuilderTest extends TestBase {
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("id", 1));
 
-            SqlBuilder builder = Dsl.PAC.fromCondition(cond, UserAccount.class);
+            SqlBuilder builder = Dsl.PAC.renderCondition(cond, UserAccount.class);
             assertNotNull(builder);
 
             String sql = builder.build().query();
@@ -6302,7 +6320,7 @@ public class SqlBuilderTest extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> Dsl.PAC.selectFrom((List<Selection>) null));
             assertThrows(IllegalArgumentException.class, () -> Dsl.PAC.count((String) null));
             assertThrows(IllegalArgumentException.class, () -> Dsl.PAC.count((Class<?>) null));
-            assertThrows(IllegalArgumentException.class, () -> Dsl.PAC.fromCondition(null, UserAccount.class));
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PAC.renderCondition(null, UserAccount.class));
         }
     }
 
@@ -6659,7 +6677,7 @@ public class SqlBuilderTest extends TestBase {
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.eq("isActive", true));
 
-            SqlBuilder builder = Dsl.PLC.fromCondition(cond, UserProfile.class);
+            SqlBuilder builder = Dsl.PLC.renderCondition(cond, UserProfile.class);
             assertNotNull(builder);
 
             String sql = builder.build().query();
@@ -7295,7 +7313,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18));
-            String sql = Dsl.NSB.fromCondition(cond, User.class).build().query();
+            String sql = Dsl.NSB.renderCondition(cond, User.class).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("status"));
             Assertions.assertTrue(sql.contains(":status"));
@@ -7318,7 +7336,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testNullArgumentsThrow() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.NSB.fromCondition(null, User.class);
+                Dsl.NSB.renderCondition(null, User.class);
             });
 
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
@@ -8190,7 +8208,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("age", 18), Filters.like("email", "%@example.com"));
-            String sql = Dsl.NSC.fromCondition(cond, User.class).build().query();
+            String sql = Dsl.NSC.renderCondition(cond, User.class).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("first_name = :firstName"));
             Assertions.assertTrue(sql.contains("age > :age"));
@@ -8319,7 +8337,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testNullConditionThrows() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.NSC.fromCondition(null, User.class);
+                Dsl.NSC.renderCondition(null, User.class);
             });
         }
 
@@ -8893,7 +8911,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("status", "ACTIVE"), Filters.gt("balance", 1000));
-            String sql = Dsl.NAC.fromCondition(cond, Account.class).build().query();
+            String sql = Dsl.NAC.renderCondition(cond, Account.class).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("STATUS = :status"));
             Assertions.assertTrue(sql.contains("BALANCE > :balance"));
@@ -9019,7 +9037,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testNullConditionThrows() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.NAC.fromCondition(null, Account.class);
+                Dsl.NAC.renderCondition(null, Account.class);
             });
         }
 
@@ -9682,7 +9700,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testParse() {
             Condition cond = Filters.and(Filters.eq("status", "active"), Filters.gt("balance", 1000));
-            String sql = Dsl.NLC.fromCondition(cond, Account.class).build().query();
+            String sql = Dsl.NLC.renderCondition(cond, Account.class).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("status = :status"));
             Assertions.assertTrue(sql.contains("balance > :balance"));
@@ -9809,7 +9827,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testNullConditionThrows() {
             Assertions.assertThrows(IllegalArgumentException.class, () -> {
-                Dsl.NLC.fromCondition(null, Account.class);
+                Dsl.NLC.renderCondition(null, Account.class);
             });
         }
 
@@ -10454,7 +10472,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testParseCondition() {
             com.landawn.abacus.query.condition.Condition cond = Filters.and(Filters.eq("active", true), Filters.gt("age", 18));
-            String sql = Dsl.MSB.fromCondition(cond, Account.class).build().query();
+            String sql = Dsl.MSB.renderCondition(cond, Account.class).build().query();
             Assertions.assertTrue(sql.contains("active = #{active}"));
             Assertions.assertTrue(sql.contains("AND"));
             Assertions.assertTrue(sql.contains("age > #{age}"));
@@ -10889,7 +10907,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testParseCondition() {
             com.landawn.abacus.query.condition.Condition cond = Filters.and(Filters.eq("firstName", "John"), Filters.gt("age", 18));
-            String sql = Dsl.MSC.fromCondition(cond, User.class).build().query();
+            String sql = Dsl.MSC.renderCondition(cond, User.class).build().query();
             Assertions.assertTrue(sql.contains("first_name = #{firstName}"));
             Assertions.assertTrue(sql.contains("AND"));
             Assertions.assertTrue(sql.contains("age > #{age}"));
@@ -11366,7 +11384,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testParseCondition() {
             com.landawn.abacus.query.condition.Condition cond = Filters.and(Filters.eq("status", "ACTIVE"), Filters.gt("balance", 1000));
-            String sql = Dsl.MAC.fromCondition(cond, Account.class).build().query();
+            String sql = Dsl.MAC.renderCondition(cond, Account.class).build().query();
             Assertions.assertTrue(sql.contains("STATUS = #{status}"));
             Assertions.assertTrue(sql.contains("AND"));
             Assertions.assertTrue(sql.contains("BALANCE > #{balance}"));
@@ -11934,7 +11952,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testParseCondition() {
             com.landawn.abacus.query.condition.Condition cond = Filters.and(Filters.eq("status", "ACTIVE"), Filters.gt("balance", 1000));
-            String sql = Dsl.MLC.fromCondition(cond, Account.class).build().query();
+            String sql = Dsl.MLC.renderCondition(cond, Account.class).build().query();
             Assertions.assertTrue(sql.contains("status = #{status}"));
             Assertions.assertTrue(sql.contains("AND"));
             Assertions.assertTrue(sql.contains("balance > #{balance}"));
@@ -13167,6 +13185,35 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
+    public void testRawFromBodyUsesOnlyPrimaryTableAliasForEntityColumns() {
+        final String inlineJoinSql = Dsl.PSC.select(Account.class).from("test_account a JOIN user_order o ON a.id = o.account_id").build().query();
+        final String quotedCommaSql = Dsl.PSC.select(Account.class).from("\"accounts,archive\" a").build().query();
+        final String qualifiedKeywordTableSql = Dsl.PSC.select(Account.class).from("schema.left l").build().query();
+        final String straightJoinSql = Dsl.PSC.select(Account.class).from("test_account a STRAIGHT_JOIN user_order o ON a.id = o.account_id").build().query();
+        final String outerApplySql = Dsl.PSC.select(Account.class).from("test_account a OUTER APPLY order_summary(a.id) o").build().query();
+
+        assertTrue(inlineJoinSql.startsWith("SELECT a.id"), inlineJoinSql);
+        assertFalse(inlineJoinSql.contains("o.account_id.id"), inlineJoinSql);
+        assertTrue(inlineJoinSql.endsWith(" FROM test_account a JOIN user_order o ON a.id = o.account_id"), inlineJoinSql);
+        assertTrue(quotedCommaSql.startsWith("SELECT a.id"), quotedCommaSql);
+        assertTrue(quotedCommaSql.endsWith(" FROM \"accounts,archive\" a"), quotedCommaSql);
+        assertTrue(qualifiedKeywordTableSql.startsWith("SELECT l.id"), qualifiedKeywordTableSql);
+        assertTrue(qualifiedKeywordTableSql.endsWith(" FROM schema.left l"), qualifiedKeywordTableSql);
+        assertTrue(straightJoinSql.startsWith("SELECT a.id"), straightJoinSql);
+        assertTrue(straightJoinSql.endsWith(" FROM test_account a STRAIGHT_JOIN user_order o ON a.id = o.account_id"), straightJoinSql);
+        assertTrue(outerApplySql.startsWith("SELECT a.id"), outerApplySql);
+        assertTrue(outerApplySql.endsWith(" FROM test_account a OUTER APPLY order_summary(a.id) o"), outerApplySql);
+    }
+
+    @Test
+    public void testParenthesizedUnaryConditionDoesNotAddDoubleSpace() {
+        final AbstractQueryBuilder.SP sp = Dsl.PSC.select("*").from("users").where(Filters.not(Filters.equal("status", "ACTIVE"))).build();
+
+        assertEquals("SELECT * FROM users WHERE NOT (status = ?)", sp.query());
+        assertEquals(Arrays.asList("ACTIVE"), sp.parameters());
+    }
+
+    @Test
     public void testUnsupportedConditionMessageUsesConditionClass() {
         final Condition unsupported = new Condition() {
             @Override
@@ -13180,8 +13227,8 @@ public class SqlBuilderTest extends TestBase {
             }
 
             @Override
-            public String toString(final NamingPolicy namingPolicy) {
-                throw new AssertionError("toString(NamingPolicy) should not be used for unsupported condition messages");
+            public String toSql(final NamingPolicy namingPolicy) {
+                throw new AssertionError("toSql(NamingPolicy) should not be used for unsupported condition messages");
             }
 
             @Override
@@ -13318,7 +13365,7 @@ public class SqlBuilderTest extends TestBase {
         assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").intersect(Arrays.asList("id")));
         assertThrows(IllegalStateException.class,
                 () -> Dsl.PSC.update("current_records").set(Collections.singletonMap("active", false)).except("SELECT id FROM archived_records"));
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.fromCondition(Filters.equal("active", true)).minus("SELECT id FROM archived_records"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.renderCondition(Filters.equal("active", true)).minus("SELECT id FROM archived_records"));
         assertThrows(IllegalStateException.class,
                 () -> Dsl.PSC.select("id")
                         .from("current_records")

@@ -42,7 +42,7 @@ public class HavingTest extends TestBase {
     @Test
     public void testToStringWithNamingPolicy() {
         Having having = new Having(Filters.gt("COUNT(*)", 5));
-        String result = having.toString(NamingPolicy.SNAKE_CASE);
+        String result = having.toSql(NamingPolicy.SNAKE_CASE);
 
         assertNotNull(result);
         assertTrue(result.contains("HAVING"));
@@ -111,7 +111,7 @@ public class HavingTest extends TestBase {
     @Test
     public void testWithAggregateFunction() {
         Having having = new Having(Filters.gt("MAX(salary)", 100000));
-        String result = having.toString(NamingPolicy.SNAKE_CASE);
+        String result = having.toSql(NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.contains("HAVING"));
         assertTrue(result.contains("max") || result.contains("MAX"));
@@ -203,7 +203,7 @@ public class HavingTest extends TestBase {
     @Test
     public void testStringRepresentationFormat() {
         Having having = new Having(Filters.ge("COUNT(*)", 1));
-        String result = having.toString(NamingPolicy.NO_CHANGE);
+        String result = having.toSql(NamingPolicy.NO_CHANGE);
 
         assertTrue(result.startsWith("HAVING"));
         assertTrue(result.contains(">="));

@@ -4177,8 +4177,9 @@ public final class Filters {
      * {@link SqlDialect.ProductInfo}) and it is a generic {@code LIMIT count [OFFSET offset]} form; otherwise
      * it is emitted verbatim.</p>
      *
-     * <p><b>Warning:</b> {@code expr} is included verbatim in the generated SQL. Do not build it
-     * from untrusted input.</p>
+     * <p>This overload does not accept a general raw SQL fragment: unsupported tokens and clause shapes
+     * are rejected by {@link Limit#Limit(String)}. The normalized literal may still be retained for an
+     * unresolved placeholder form as described above.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
