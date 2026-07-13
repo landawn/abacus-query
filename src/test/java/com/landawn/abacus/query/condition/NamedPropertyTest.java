@@ -12,6 +12,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -48,6 +53,41 @@ public class NamedPropertyTest extends TestBase {
         NamedProperty np2 = NamedProperty.of("age");
 
         assertSame(np1, np2, "Should return cached instance");
+    }
+
+    @Test
+    public void testOfMethodCachingIsAtomicDuringConcurrentFirstAccess() throws Exception {
+        final int threadCount = 24;
+        final String propName = "concurrentProperty" + System.nanoTime();
+        final ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        final CountDownLatch ready = new CountDownLatch(threadCount);
+        final CountDownLatch start = new CountDownLatch(1);
+        final List<Future<NamedProperty>> futures = new java.util.ArrayList<>(threadCount);
+
+        try {
+            for (int i = 0; i < threadCount; i++) {
+                futures.add(executor.submit(() -> {
+                    ready.countDown();
+                    assertTrue(start.await(10, TimeUnit.SECONDS));
+                    return NamedProperty.of(propName);
+                }));
+            }
+
+            assertTrue(ready.await(10, TimeUnit.SECONDS));
+            start.countDown();
+
+            final NamedProperty expected = futures.get(0).get(10, TimeUnit.SECONDS);
+
+            for (final Future<NamedProperty> future : futures) {
+                assertSame(expected, future.get(10, TimeUnit.SECONDS));
+            }
+
+            assertSame(expected, NamedProperty.of(propName), "Racing callers must receive the instance retained in the cache");
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        }
     }
 
     @Test

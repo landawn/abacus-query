@@ -23,10 +23,8 @@ package com.landawn.abacus.query.condition;
  * <p>NaN (Not a Number) values can severely impact data analysis and calculations because:</p>
  * <ul>
  *   <li>NaN propagates through calculations (any arithmetic operation with NaN returns NaN)</li>
- *   <li>Standard SQL comparisons against NaN evaluate to UNKNOWN (and behave as {@code false} in
- *       WHERE clauses), so ordinary equality and inequality operators cannot reliably test
- *       whether a value is or is not NaN, making {@code IS NOT NAN} the dependable way
- *       to filter out NaN values</li>
+ *   <li>NaN comparison behavior is database-specific, so ordinary equality and inequality
+ *       operators are not a portable way to test whether a value is or is not NaN</li>
  *   <li>Aggregate functions may produce unexpected results with NaN values</li>
  *   <li>Statistical analyses require valid numeric data</li>
  * </ul>
@@ -99,11 +97,9 @@ public class IsNotNaN extends IsNot {
      * numeric value is NOT NaN. It does not exclude infinities; combine it with
      * {@link IsNotInfinite} when finite numeric values are required.
      *
-     * <p>The generated SQL uses the {@code IS NOT NAN} operator because NaN has special comparison
-     * semantics in SQL: any comparison with NaN (including {@code = NAN} or {@code != NAN})
-     * evaluates to UNKNOWN and therefore behaves as {@code false} in WHERE clauses. Normal
-     * comparison operators thus cannot reliably test for the absence of NaN; {@code IS NOT NAN}
-     * is the correct way to verify that a value is not NaN.</p>
+     * <p>The generated SQL uses the explicit {@code IS NOT NAN} predicate rather than relying on
+     * database-specific equality semantics. As noted above, the predicate itself is also
+     * vendor-specific and must be supported by the selected database.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

@@ -385,7 +385,9 @@ public final class ParsedSql {
     /**
      * Gets the total number of parameters (named or positional) in the SQL.
      * This count includes parameter occurrences of {@code ?}, {@code :paramName}, or {@code #{paramName}},
-     * but excludes {@code ?} tokens recognized as PostgreSQL JSON operators.
+     * but excludes {@code ?} tokens recognized as PostgreSQL JSON-existence operators. The
+     * operator's right operand may be a literal, placeholder, column, or function expression;
+     * SQL ordering/pagination placeholders remain ordinary JDBC parameters.
      * Parameters are only counted for recognized data operation statements (see the class-level
      * documentation); for other SQL this returns {@code 0}.
      *
@@ -537,16 +539,40 @@ public final class ParsedSql {
             return false;
         }
 
-        return !("SELECT".equalsIgnoreCase(word) || "WHERE".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word) || "ON".equalsIgnoreCase(word)
-                || "AND".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "NOT".equalsIgnoreCase(word) || "IN".equalsIgnoreCase(word)
-                || "VALUES".equalsIgnoreCase(word) || "SET".equalsIgnoreCase(word) || "THEN".equalsIgnoreCase(word) || "ELSE".equalsIgnoreCase(word)
-                || "WHEN".equalsIgnoreCase(word));
+        return !isSqlExpressionBoundaryWord(word) && !("SELECT".equalsIgnoreCase(word) || "WHERE".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word)
+                || "ON".equalsIgnoreCase(word) || "AND".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "NOT".equalsIgnoreCase(word)
+                || "IN".equalsIgnoreCase(word) || "VALUES".equalsIgnoreCase(word) || "SET".equalsIgnoreCase(word) || "THEN".equalsIgnoreCase(word)
+                || "ELSE".equalsIgnoreCase(word) || "WHEN".equalsIgnoreCase(word));
     }
 
     private static boolean canFollowJsonQuestionOperator(final String word) {
-        return Strings.isNotEmpty(word)
-                && (word.equals(SK.QUESTION_MARK) || word.charAt(0) == '\'' || word.charAt(0) == '"' || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)
-                        || (word.length() >= 2 && word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(word.charAt(1))));
+        if (Strings.isEmpty(word) || isSqlExpressionBoundaryWord(word)) {
+            return false;
+        }
+
+        final char firstChar = word.charAt(0);
+
+        // PostgreSQL's JSON existence operator accepts any text-valued expression on its right,
+        // including column references and function calls such as "payload ? lower(:key)". Requiring
+        // a literal/placeholder here misclassifies the operator as a JDBC placeholder and then
+        // falsely reports mixed parameter styles when the expression contains a named parameter.
+        return word.equals(SK.QUESTION_MARK) || firstChar == '\'' || firstChar == '"' || firstChar == '`' || firstChar == '(' || firstChar == '['
+                || (firstChar == _PREFIX_OF_NAMED_PARAMETER && word.length() >= 2 && isValidNamedParameterChar(word.charAt(1)))
+                || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || isValidNamedParameterChar(firstChar);
+    }
+
+    private static boolean isSqlExpressionBoundaryWord(final String word) {
+        return "AND".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "FROM".equalsIgnoreCase(word) || "WHERE".equalsIgnoreCase(word)
+                || "GROUP".equalsIgnoreCase(word) || "ORDER".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word) || "LIMIT".equalsIgnoreCase(word)
+                || "OFFSET".equalsIgnoreCase(word) || "FETCH".equalsIgnoreCase(word) || "FOR".equalsIgnoreCase(word) || "RETURNING".equalsIgnoreCase(word)
+                || "UNION".equalsIgnoreCase(word) || "INTERSECT".equalsIgnoreCase(word) || "EXCEPT".equalsIgnoreCase(word) || "MINUS".equalsIgnoreCase(word)
+                || "JOIN".equalsIgnoreCase(word) || "ON".equalsIgnoreCase(word) || "USING".equalsIgnoreCase(word) || "AS".equalsIgnoreCase(word)
+                || "WHEN".equalsIgnoreCase(word) || "THEN".equalsIgnoreCase(word) || "ELSE".equalsIgnoreCase(word) || "END".equalsIgnoreCase(word)
+                || "IS".equalsIgnoreCase(word) || "IN".equalsIgnoreCase(word) || "LIKE".equalsIgnoreCase(word) || "BETWEEN".equalsIgnoreCase(word)
+                || "NOT".equalsIgnoreCase(word) || "BY".equalsIgnoreCase(word) || "ASC".equalsIgnoreCase(word) || "DESC".equalsIgnoreCase(word)
+                || "NULLS".equalsIgnoreCase(word) || "FIRST".equalsIgnoreCase(word) || "LAST".equalsIgnoreCase(word) || "ROW".equalsIgnoreCase(word)
+                || "ROWS".equalsIgnoreCase(word) || "ONLY".equalsIgnoreCase(word) || "TOP".equalsIgnoreCase(word) || "NEXT".equalsIgnoreCase(word)
+                || "DISTINCT".equalsIgnoreCase(word) || "ALL".equalsIgnoreCase(word) || "ANY".equalsIgnoreCase(word) || "SOME".equalsIgnoreCase(word);
     }
 
     private static boolean isCommentOrSpaceToken(final String word) {

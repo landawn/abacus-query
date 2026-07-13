@@ -572,7 +572,7 @@ public class SubQuery extends AbstractCondition {
     public String toString(final NamingPolicy namingPolicy) {
         if (sql == null) {
             final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-            final Map<String, String> prop2ColumnNameMap = entityClass == null ? null : QueryUtil.propertyToColumnMap(entityClass, effectiveNamingPolicy);
+            final Map<String, String> propertyToColumnMap = entityClass == null ? null : QueryUtil.propertyToColumnMap(entityClass, effectiveNamingPolicy);
             final StringBuilder sb = Objectory.createStringBuilder();
 
             try {
@@ -587,10 +587,10 @@ public class SubQuery extends AbstractCondition {
                             sb.append(COMMA_SPACE);
                         }
 
-                        if (prop2ColumnNameMap == null) {
+                        if (propertyToColumnMap == null) {
                             sb.append(effectiveNamingPolicy.convert(propName));
                         } else {
-                            sb.append(prop2ColumnNameMap.getOrDefault(propName, effectiveNamingPolicy.convert(propName)));
+                            sb.append(propertyToColumnMap.getOrDefault(propName, effectiveNamingPolicy.convert(propName)));
                         }
                     }
                 } else {

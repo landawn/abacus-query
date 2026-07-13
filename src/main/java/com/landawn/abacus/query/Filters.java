@@ -17,7 +17,6 @@ package com.landawn.abacus.query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -201,8 +200,8 @@ public final class Filters {
     /**
      * Creates (or returns a cached) {@link NamedProperty} instance representing a property/column name.
      * This is used to reference database columns through a dedicated value object that exposes a
-     * fluent condition-building API. Instances are pooled by {@link NamedProperty#of(String)} so
-     * repeated calls with the same name return the same instance.
+     * fluent condition-building API. Instances are cached by {@link NamedProperty#of(String)} so
+     * repeated calls with the same name can reuse an instance.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -226,6 +225,9 @@ public final class Filters {
      * <p><b>Warning:</b> The literal is appended verbatim into the generated SQL. Do not pass
      * unsanitized user input — use parameterized condition factories (e.g. {@link #equal(String, Object)})
      * instead to avoid SQL injection.</p>
+     *
+     * <p>This delegates to the process-wide cache in {@link Expression#of(String)}. Prefer
+     * {@code new Expression(literal)} for unbounded dynamically generated expressions.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -443,34 +445,14 @@ public final class Filters {
      * {@link NamedProperty#equalsAny(Object...)}: {@code anyEqual} tests one value for each of
      * several properties, while {@code equalsAny} tests several candidate values for one property.</p>
      *
-     * @param props map of property names to values (must not be empty)
+     * @param props map of property names to values (must not be empty). Entries are consumed once during
+     *              this call; subsequent mutations do not affect the returned condition
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or any property name key is {@code null}, empty, or blank
      * @see NamedProperty#equalsAny(Object...)
      */
     public static Or anyEqual(final Map<String, ?> props) {
-        N.checkArgNotEmpty(props, "props");
-
-        final Iterator<? extends Map.Entry<String, ?>> propIter = props.entrySet().iterator();
-
-        if (props.size() == 1) {
-            final Map.Entry<String, ?> prop = propIter.next();
-            return or(equal(prop.getKey(), prop.getValue()));
-        } else if (props.size() == 2) {
-            final Map.Entry<String, ?> prop1 = propIter.next();
-            final Map.Entry<String, ?> prop2 = propIter.next();
-            return equal(prop1.getKey(), prop1.getValue()).or(equal(prop2.getKey(), prop2.getValue()));
-        } else {
-            final Condition[] conds = new Condition[props.size()];
-            Map.Entry<String, ?> prop = null;
-
-            for (int i = 0, size = props.size(); i < size; i++) {
-                prop = propIter.next();
-                conds[i] = Filters.equal(prop.getKey(), prop.getValue());
-            }
-
-            return or(conds);
-        }
+        return or(equalConditions(props));
     }
 
     /**
@@ -487,10 +469,11 @@ public final class Filters {
      *
      * @param entity the entity object whose properties will be used
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entity} is {@code null}
+     * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map (use {@link #anyEqual(Map)})
      */
     public static Or anyEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
+        N.checkArgument(!(entity instanceof Map), "entity must be a bean object; use anyEqual(Map) for maps");
 
         return anyEqual(entity, QueryUtil.selectPropertyNames(entity.getClass(), false, null));
     }
@@ -508,35 +491,13 @@ public final class Filters {
      * }</pre>
      *
      * @param entity the entity object
-     * @param includedPropNames the property names to include (must not be empty)
+     * @param includedPropNames the property names to include (must not be empty). Names are consumed once
+     *                          during this call; subsequent mutations do not affect the returned condition
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entity} is {@code null} or {@code includedPropNames} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map, or if {@code includedPropNames} is {@code null} or empty
      */
     public static Or anyEqual(final Object entity, final Collection<String> includedPropNames) {
-        N.checkArgNotNull(entity, "entity");
-        N.checkArgNotEmpty(includedPropNames, "includedPropNames"); //NOSONAR
-
-        final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
-        final Iterator<String> iter = includedPropNames.iterator();
-
-        if (includedPropNames.size() == 1) {
-            final String propName = iter.next();
-            return or(equal(propName, entityInfo.getPropValue(entity, propName)));
-        } else if (includedPropNames.size() == 2) {
-            final String propName1 = iter.next();
-            final String propName2 = iter.next();
-            return equal(propName1, entityInfo.getPropValue(entity, propName1)).or(equal(propName2, entityInfo.getPropValue(entity, propName2)));
-        } else {
-            final Condition[] conds = new Condition[includedPropNames.size()];
-            String propName = null;
-
-            for (int i = 0, size = includedPropNames.size(); i < size; i++) {
-                propName = iter.next();
-                conds[i] = Filters.equal(propName, entityInfo.getPropValue(entity, propName));
-            }
-
-            return or(conds);
-        }
+        return or(equalConditions(entity, includedPropNames));
     }
 
     /**
@@ -602,42 +563,29 @@ public final class Filters {
      * // SQL fragment: ((status = 'active') AND (type = 'premium'))
      * }</pre>
      *
-     * @param props map of property names to values (must not be empty)
+     * @param props map of property names to values (must not be empty). Entries are consumed once during
+     *              this call; subsequent mutations do not affect the returned condition
      * @return an {@link And} condition
      * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or any property name key is {@code null}, empty, or blank
      */
     public static And allEqual(final Map<String, ?> props) {
-        N.checkArgNotEmpty(props, "props");
-
-        final Iterator<? extends Map.Entry<String, ?>> propIter = props.entrySet().iterator();
-
-        if (props.size() == 1) {
-            final Map.Entry<String, ?> prop = propIter.next();
-            return and(equal(prop.getKey(), prop.getValue()));
-        } else if (props.size() == 2) {
-            final Map.Entry<String, ?> prop1 = propIter.next();
-            final Map.Entry<String, ?> prop2 = propIter.next();
-            return equal(prop1.getKey(), prop1.getValue()).and(equal(prop2.getKey(), prop2.getValue()));
-        } else {
-            final Condition[] conds = new Condition[props.size()];
-            Map.Entry<String, ?> prop = null;
-
-            for (int i = 0, size = props.size(); i < size; i++) {
-                prop = propIter.next();
-                conds[i] = Filters.equal(prop.getKey(), prop.getValue());
-            }
-
-            return and(conds);
-        }
+        return and(equalConditions(props));
     }
 
-    @SuppressWarnings("unchecked")
-    private static Map<String, ?> stringKeyMap(final Map<?, ?> props) {
-        for (final Object propName : props.keySet()) {
-            N.checkArgument(propName instanceof String, "Map keys must be String: " + propName);
+    private static List<Condition> equalConditions(final Map<?, ?> props) {
+        N.checkArgNotEmpty(props, "props");
+
+        final List<Condition> conditions = new ArrayList<>();
+
+        // Read each entry once so live maps cannot desynchronize branch selection, allocation and iteration.
+        for (final Map.Entry<?, ?> prop : props.entrySet()) {
+            final Object propName = prop.getKey();
+            N.checkArgument(propName instanceof String, "Map keys must be non-null String values: " + propName);
+            conditions.add(equal((String) propName, prop.getValue()));
         }
 
-        return (Map<String, ?>) props;
+        N.checkArgNotEmpty(conditions, "props");
+        return conditions;
     }
 
     /**
@@ -654,10 +602,11 @@ public final class Filters {
      *
      * @param entity the entity object whose properties will be used
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code entity} is {@code null}
+     * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map (use {@link #allEqual(Map)})
      */
     public static And allEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
+        N.checkArgument(!(entity instanceof Map), "entity must be a bean object; use allEqual(Map) for maps");
 
         return allEqual(entity, QueryUtil.selectPropertyNames(entity.getClass(), false, null));
     }
@@ -675,35 +624,29 @@ public final class Filters {
      * }</pre>
      *
      * @param entity the entity object
-     * @param includedPropNames the property names to include (must not be empty)
+     * @param includedPropNames the property names to include (must not be empty). Names are consumed once
+     *                          during this call; subsequent mutations do not affect the returned condition
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code entity} is {@code null} or {@code includedPropNames} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map, or if {@code includedPropNames} is {@code null} or empty
      */
     public static And allEqual(final Object entity, final Collection<String> includedPropNames) {
+        return and(equalConditions(entity, includedPropNames));
+    }
+
+    private static List<Condition> equalConditions(final Object entity, final Collection<String> includedPropNames) {
         N.checkArgNotNull(entity, "entity");
+        N.checkArgument(!(entity instanceof Map), "entity must be a bean object; use the map overload for maps");
         N.checkArgNotEmpty(includedPropNames, "includedPropNames");
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
-        final Iterator<String> iter = includedPropNames.iterator();
+        final List<Condition> conditions = new ArrayList<>();
 
-        if (includedPropNames.size() == 1) {
-            final String propName = iter.next();
-            return and(equal(propName, entityInfo.getPropValue(entity, propName)));
-        } else if (includedPropNames.size() == 2) {
-            final String propName1 = iter.next();
-            final String propName2 = iter.next();
-            return equal(propName1, entityInfo.getPropValue(entity, propName1)).and(equal(propName2, entityInfo.getPropValue(entity, propName2)));
-        } else {
-            final Condition[] conds = new Condition[includedPropNames.size()];
-            String propName = null;
-
-            for (int i = 0, size = includedPropNames.size(); i < size; i++) {
-                propName = iter.next();
-                conds[i] = Filters.equal(propName, entityInfo.getPropValue(entity, propName));
-            }
-
-            return and(conds);
+        for (final String propName : includedPropNames) {
+            conditions.add(equal(propName, entityInfo.getPropValue(entity, propName)));
         }
+
+        N.checkArgNotEmpty(conditions, "includedPropNames");
+        return conditions;
     }
 
     /**
@@ -763,8 +706,10 @@ public final class Filters {
      * {@code AND} groups are combined with {@code OR}. This is the compositional counterpart of {@link #anyEqual(Map)} /
      * {@link #allEqual(Map)}: it is literally "any-of-{@code allEqual}".
      *
-     * <p>If the first non-null element is a {@link Map}, all non-null elements must be maps with {@link String} keys.
-     * Otherwise, all properties of each entity are used.</p>
+     * <p>If the first non-null element is a {@link Map}, all non-null elements must be maps with non-null
+     * {@link String} keys. Otherwise, every non-null element must be an entity rather than a map, and all
+     * properties selected from the first entity's class are used. The outer collection is snapshotted before
+     * its element kind is determined.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -784,32 +729,34 @@ public final class Filters {
      *
      * @param entitiesOrPropMaps collection of property maps or entity objects (must not be empty)
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entitiesOrPropMaps} is {@code null} or empty, if all elements are {@code null}, if the first non-null
-     *                                  element is a map and any other non-null element is not a map, or if a map key is not a {@link String}
+     * @throws IllegalArgumentException if {@code entitiesOrPropMaps} is {@code null} or empty, if all elements are {@code null}, if maps and entities
+     *                                  are mixed, if a map is empty, or if a map key is null or is not a {@link String}
      * @see #anyOfAllEqual(Collection, Collection)
      * @see #anyEqual(Map)
      * @see #allEqual(Map)
      */
     @Beta
     public static Or anyOfAllEqual(final Collection<?> entitiesOrPropMaps) {
-        N.checkArgNotEmpty(entitiesOrPropMaps, "entitiesOrPropMaps");
+        N.checkArgNotNull(entitiesOrPropMaps, "entitiesOrPropMaps");
+        final List<?> elements = new ArrayList<>(entitiesOrPropMaps);
+        N.checkArgNotEmpty(elements, "entitiesOrPropMaps");
 
-        final Object firstNonNull = N.firstNonNull(entitiesOrPropMaps).orElseThrow(() -> new IllegalArgumentException("All specified entities/maps are null."));
+        final Object firstNonNull = N.firstNonNull(elements).orElseThrow(() -> new IllegalArgumentException("All specified entities/maps are null."));
 
         if (firstNonNull instanceof Map) {
-            final List<Condition> condList = new ArrayList<>(entitiesOrPropMaps.size());
+            final List<Condition> condList = new ArrayList<>();
 
-            for (final Object entityOrMap : entitiesOrPropMaps) {
+            for (final Object entityOrMap : elements) {
                 if (entityOrMap != null) {
                     N.checkArgument(entityOrMap instanceof Map, "All non-null elements must be Map when the first non-null element is Map");
-                    condList.add(allEqual(stringKeyMap((Map<?, ?>) entityOrMap)));
+                    condList.add(and(equalConditions((Map<?, ?>) entityOrMap)));
                 }
             }
 
             return or(condList);
         }
 
-        return anyOfAllEqual(entitiesOrPropMaps, QueryUtil.selectPropertyNames(firstNonNull.getClass(), false, null));
+        return anyOfAllEqual(elements, QueryUtil.selectPropertyNames(firstNonNull.getClass(), false, null));
     }
 
     /**
@@ -827,26 +774,33 @@ public final class Filters {
      * }</pre>
      *
      * @param entities collection of entity objects (must not be empty)
-     * @param includedPropNames the property names to include (must not be empty)
+     * @param includedPropNames the property names to include (must not be empty). Both input collections are
+     *                          snapshotted during the call
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entities} or {@code includedPropNames} is {@code null} or empty, or all entities are null
+     * @throws IllegalArgumentException if {@code entities} or {@code includedPropNames} is {@code null} or empty,
+     *                                  all entities are null, an element is a map, or a property name is null, empty, blank, or not readable
      * @see #anyOfAllEqual(Collection)
      * @see #allEqual(Object, Collection)
      */
     @Beta
     public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> includedPropNames) {
-        N.checkArgNotEmpty(entities, "entities");
-        N.checkArgNotEmpty(includedPropNames, "includedPropNames");
-        N.checkArgument(!N.allNull(entities), "All specified entities are null.");
+        N.checkArgNotNull(entities, "entities");
+        N.checkArgNotNull(includedPropNames, "includedPropNames");
+        final List<?> entitySnapshot = new ArrayList<>(entities);
+        final List<String> propNameSnapshot = new ArrayList<>(includedPropNames);
+        N.checkArgNotEmpty(entitySnapshot, "entities");
+        N.checkArgNotEmpty(propNameSnapshot, "includedPropNames");
 
-        final List<Condition> condList = new ArrayList<>(entities.size());
+        final List<Condition> condList = new ArrayList<>();
 
-        for (final Object entity : entities) {
+        for (final Object entity : entitySnapshot) {
             if (entity != null) {
-                condList.add(allEqual(entity, includedPropNames));
+                N.checkArgument(!(entity instanceof Map), "All non-null elements must be entity objects; maps require the map overload");
+                condList.add(and(equalConditions(entity, propNameSnapshot)));
             }
         }
 
+        N.checkArgument(!condList.isEmpty(), "All specified entities are null.");
         return or(condList);
     }
 
@@ -1038,35 +992,22 @@ public final class Filters {
      * // (EntityId orders its keys alphabetically, regardless of insertion order)
      * }</pre>
      *
-     * @param entityId the {@link EntityId} containing key-value pairs (must not be null)
+     * @param entityId the {@link EntityId} containing key-value pairs (must not be null). Entries are
+     *                 consumed once as key/value pairs during this call
      * @return an {@link And} condition
      * @throws IllegalArgumentException if {@code entityId} is null or contains no keys
      */
     public static And idToCond(final EntityId entityId) {
         N.checkArgNotNull(entityId, "entityId");
 
-        final Collection<String> selectPropNames = entityId.keySet();
-        N.checkArgNotEmpty(selectPropNames, "entityId");
-        final Iterator<String> iter = selectPropNames.iterator();
+        final List<Condition> conditions = new ArrayList<>();
 
-        if (selectPropNames.size() == 1) {
-            final String propName = iter.next();
-            return and(equal(propName, entityId.get(propName)));
-        } else if (selectPropNames.size() == 2) {
-            final String propName1 = iter.next();
-            final String propName2 = iter.next();
-            return equal(propName1, entityId.get(propName1)).and(equal(propName2, entityId.get(propName2)));
-        } else {
-            final Condition[] conds = new Condition[selectPropNames.size()];
-            String propName = null;
-
-            for (int i = 0, size = selectPropNames.size(); i < size; i++) {
-                propName = iter.next();
-                conds[i] = Filters.equal(propName, entityId.get(propName));
-            }
-
-            return and(conds);
+        for (final Map.Entry<String, Object> entry : entityId.entrySet()) {
+            conditions.add(equal(entry.getKey(), entry.getValue()));
         }
+
+        N.checkArgNotEmpty(conditions, "entityId");
+        return and(conditions);
     }
 
     /**
@@ -1083,22 +1024,22 @@ public final class Filters {
      * // Results in: ((((companyId = 1) AND (userId = 100))) OR (((companyId = 2) AND (userId = 200))))
      * }</pre>
      *
-     * @param entityIds collection of {@link EntityId}s (must not be {@code null} or empty)
+     * @param entityIds collection of {@link EntityId}s (must not be {@code null}, empty, or contain null)
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, or contains an
+     * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, contains null, or contains an
      *         {@link EntityId} with no keys
      */
     public static Or idToCond(final Collection<? extends EntityId> entityIds) {
-        N.checkArgNotEmpty(entityIds, "entityIds");
+        N.checkArgNotNull(entityIds, "entityIds");
 
-        final Iterator<? extends EntityId> iter = entityIds.iterator();
-        final Condition[] conds = new Condition[entityIds.size()];
+        final List<Condition> conditions = new ArrayList<>();
 
-        for (int i = 0, size = entityIds.size(); i < size; i++) {
-            conds[i] = Filters.idToCond(iter.next());
+        for (final EntityId entityId : entityIds) {
+            conditions.add(idToCond(entityId));
         }
 
-        return Filters.or(conds);
+        N.checkArgNotEmpty(conditions, "entityIds");
+        return or(conditions);
     }
 
     /**
@@ -2256,7 +2197,7 @@ public final class Filters {
      *
      * @param propOrColumnName the property/column name to group by ascending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
      */
     public static GroupBy groupByAsc(final String propOrColumnName) {
         return new GroupBy(propOrColumnName, SortDirection.ASC);
@@ -2308,7 +2249,7 @@ public final class Filters {
      *
      * @param propOrColumnName the property/column name to group by descending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
      */
     public static GroupBy groupByDesc(final String propOrColumnName) {
         return new GroupBy(propOrColumnName, SortDirection.DESC);
@@ -2559,7 +2500,7 @@ public final class Filters {
      *
      * @param propOrColumnName the property/column name to order by ascending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
      */
     public static OrderBy orderByAsc(final String propOrColumnName) {
         return new OrderBy(propOrColumnName, SortDirection.ASC);
@@ -2611,7 +2552,7 @@ public final class Filters {
      *
      * @param propOrColumnName the property/column name to order by descending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
      */
     public static OrderBy orderByDesc(final String propOrColumnName) {
         return new OrderBy(propOrColumnName, SortDirection.DESC);

@@ -848,6 +848,7 @@ public class SqlMapperTest extends TestBase {
         attrs.put("id", "evil"); // pretend the user passed a conflicting id
         attrs.put("batchSize", "50");
         mapper.add("realId", "SELECT 1", attrs);
+        assertEquals("evil", mapper.attributes("realId").get("id"), "Programmatic attributes retain their pre-existing API-visible value");
 
         File output = new File(tempDir, "attrs-id-roundtrip.xml");
         mapper.saveTo(output);
@@ -856,6 +857,17 @@ public class SqlMapperTest extends TestBase {
         assertNotNull(reloaded.get("realId"));
         assertNull(reloaded.get("evil"));
         assertEquals("50", reloaded.attributes("realId").get("batchSize"));
+    }
+
+    @Test
+    public void testInvalidXmlAttributeNameIsRejectedWithoutMutation() {
+        SqlMapper mapper = new SqlMapper();
+
+        assertThrows(IllegalArgumentException.class, () -> mapper.add("query", "SELECT 1", Map.of("not an xml name", "10")));
+        assertThrows(IllegalArgumentException.class, () -> mapper.add("query", "SELECT 1", Map.of("p:timeout", "10")));
+        assertThrows(IllegalArgumentException.class, () -> mapper.add("query", "SELECT 1", Map.of("xmlns", "urn:test")));
+        assertTrue(mapper.isEmpty());
+        assertFalse(mapper.containsId("query"));
     }
 
     @Test

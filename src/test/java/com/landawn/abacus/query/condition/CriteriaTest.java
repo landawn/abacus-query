@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -123,9 +124,15 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
-    public void testDistinctBy() {
-        Criteria criteria = Criteria.builder().distinctBy("name, age").build();
-        assertNotNull(criteria);
+    public void testDistinctOn() {
+        Criteria criteria = Criteria.builder().distinctOn("name, age").build();
+
+        assertEquals("DISTINCT ON (name, age)", criteria.selectModifier());
+    }
+
+    @Test
+    public void testDistinctByIsRemoved() {
+        assertThrows(NoSuchMethodException.class, () -> Builder.class.getDeclaredMethod("distinctBy", String.class));
     }
 
     @Test
@@ -521,14 +528,20 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
-    public void testDistinctByEmpty() {
-        Criteria criteria = Criteria.builder().distinctBy("").build();
+    public void testDistinctOnEmpty() {
+        Criteria criteria = Criteria.builder().distinctOn("").build();
         assertEquals("DISTINCT", criteria.selectModifier());
     }
 
     @Test
-    public void testDistinctByNull() {
-        Criteria criteria = Criteria.builder().distinctBy(null).build();
+    public void testDistinctOnNull() {
+        Criteria criteria = Criteria.builder().distinctOn(null).build();
+        assertEquals("DISTINCT", criteria.selectModifier());
+    }
+
+    @Test
+    public void testDistinctOnBlankUsesPlainDistinct() {
+        Criteria criteria = Criteria.builder().distinctOn("   ").build();
         assertEquals("DISTINCT", criteria.selectModifier());
     }
 
@@ -542,6 +555,35 @@ public class CriteriaTest extends TestBase {
     public void testDistinctRowByNull() {
         Criteria criteria = Criteria.builder().distinctRowBy(null).build();
         assertEquals("DISTINCTROW", criteria.selectModifier());
+    }
+
+    @Test
+    public void testDistinctRowByBlankUsesPlainDistinctRow() {
+        Criteria criteria = Criteria.builder().distinctRowBy("\t ").build();
+        assertEquals("DISTINCTROW", criteria.selectModifier());
+    }
+
+    @Test
+    public void testBlankSelectModifierIsCleared() {
+        Criteria criteria = Criteria.builder().distinct().selectModifier("  \t ").build();
+
+        assertNull(criteria.selectModifier());
+        assertEquals("", criteria.toString(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testPackageConstructorDefensivelyCopiesConditions() {
+        List<Condition> source = new ArrayList<>();
+        source.add(new Where(Filters.eq("id", 1)));
+
+        Criteria criteria = new Criteria(null, source);
+        int hashCode = criteria.hashCode();
+        source.clear();
+
+        assertEquals(1, criteria.conditions().size());
+        assertEquals(Arrays.asList(1), criteria.parameters());
+        assertEquals(hashCode, criteria.hashCode());
+        assertEquals(" WHERE id = 1", criteria.toString(NamingPolicy.NO_CHANGE));
     }
 
     @Test

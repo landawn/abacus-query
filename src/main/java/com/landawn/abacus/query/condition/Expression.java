@@ -548,7 +548,7 @@ public class Expression extends ComposableCondition {
      * @param minValue the lower bound of the excluded range (inclusive)
      * @param maxValue the upper bound of the excluded range (inclusive)
      * @return a string representation of the NOT BETWEEN expression
-     * @throws IllegalArgumentException if {@code min} or {@code max} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
+     * @throws IllegalArgumentException if {@code minValue} or {@code maxValue} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String notBetween(final String expr, final Object minValue, final Object maxValue) {
         return link(Operator.NOT_BETWEEN, expr, minValue, maxValue);

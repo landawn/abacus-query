@@ -104,8 +104,10 @@ public class SqlDialectPaginationTest extends TestBase {
     public void testVersionComparisonReturnsFalseWhenNotComparable() {
         assertFalse(ProductInfo.of("MySQL").isVersionAtLeast("8.0")); // absent version ("") -> not comparable
         assertFalse(ProductInfo.of("MySQL", "unknown").isVersionAtLeast("8")); // not leading-numeric
+        assertFalse(ProductInfo.of("MySQL", "8.").isVersionAtLeast("8")); // empty trailing component
         assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast(null)); // null argument
         assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast("abc")); // unparseable argument
+        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast("8.")); // malformed comparison version
         assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtMost(null));
     }
 

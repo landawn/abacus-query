@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.regex.Pattern;
 
 import com.landawn.abacus.annotation.Beta;
@@ -43,8 +44,6 @@ import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.ObjectPool;
 import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
-import com.landawn.abacus.util.Tuple;
-import com.landawn.abacus.util.Tuple.Tuple2;
 
 /**
  * Utility class for handling database query operations, entity-column mappings, and SQL generation helpers.
@@ -58,6 +57,15 @@ import com.landawn.abacus.util.Tuple.Tuple2;
  * @see NamingPolicy
  */
 public final class QueryUtil {
+
+    /**
+     * Describes the database column associated with a property or column lookup key.
+     *
+     * @param columnName the mapped database column name
+     * @param hasNoDot {@code true} if the lookup key contains no {@code '.'} character
+     */
+    public record ColumnInfo(String columnName, boolean hasNoDot) {
+    }
 
     /**
      * Regular expression pattern for validating simple column names.
@@ -87,8 +95,7 @@ public final class QueryUtil {
 
     private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, String>>> entityTablePropColumnNameMap = new ObjectPool<>(POOL_SIZE);
 
-    private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, Tuple2<String, Boolean>>>> entityTablePropColumnNameMap2 = new ObjectPool<>(
-            POOL_SIZE);
+    private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, ColumnInfo>>> entityPropColumnInfoMap = new ObjectPool<>(POOL_SIZE);
 
     /**
      * Caches, per entity class, the {@link PropInfo} objects resolved for that class's ID
@@ -108,7 +115,7 @@ public final class QueryUtil {
      * reference-identity fast paths in the builders (which compare the stored prop-name list with
      * {@code ==} against a fresh no-exclusion call) while still handing back an immutable list.
      */
-    private static final Map<Class<?>, ImmutableList<String>[]> noExclusionPropNamesPool = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, AtomicReferenceArray<ImmutableList<String>>> noExclusionPropNamesPool = new ConcurrentHashMap<>();
 
     /**
      * Returns the cached immutable, no-exclusion property-name list for the given entity class and
@@ -120,22 +127,22 @@ public final class QueryUtil {
      * @param slot the {@code loadPropNamesByClass} array index (0, 1, 2, 3, or 4)
      * @return the memoized immutable list for that (class, slot)
      */
-    @SuppressWarnings("unchecked")
     private static ImmutableList<String> getNoExclusionPropNames(final Class<?> entityClass, final int slot) {
-        final ImmutableList<String>[] cache = noExclusionPropNamesPool.computeIfAbsent(entityClass, cls -> new ImmutableList[5]);
+        final AtomicReferenceArray<ImmutableList<String>> cache = noExclusionPropNamesPool.computeIfAbsent(entityClass, cls -> new AtomicReferenceArray<>(5));
 
-        ImmutableList<String> result = cache[slot];
+        ImmutableList<String> result = cache.get(slot);
 
         if (result == null) {
-            synchronized (cache) {
-                result = cache[slot];
+            final ImmutableList<String> candidate = ImmutableList.copyOf(SqlBuilder.loadPropNamesByClass(entityClass)[slot]);
 
-                if (result == null) {
-                    // Synchronization safely publishes the immutable list through this otherwise
-                    // plain array and avoids duplicate metadata copies on concurrent first access.
-                    result = ImmutableList.copyOf(SqlBuilder.loadPropNamesByClass(entityClass)[slot]);
-                    cache[slot] = result;
-                }
+            // Publish the first completed immutable snapshot atomically. A plain array element read
+            // outside the writer's synchronized block has no happens-before edge and can expose a
+            // stale/null reference; AtomicReferenceArray provides both safe publication and the
+            // stable reference identity required by builder fast paths.
+            if (cache.compareAndSet(slot, null, candidate)) {
+                result = candidate;
+            } else {
+                result = cache.get(slot);
             }
         }
 
@@ -143,24 +150,24 @@ public final class QueryUtil {
     }
 
     /**
-     * Returns a mapping of property names to their corresponding column names and a flag indicating if it's a simple property.
-     * This method is for internal use only and provides detailed mapping information including whether properties
-     * contain dots (indicating nested properties).
+     * Returns column information keyed by both property names and mapped column names.
+     * The {@link ColumnInfo#hasNoDot()} flag describes the lookup key, not the mapped
+     * column value: it is {@code true} when the key contains no {@code '.'} character.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Get property to column mapping with simple property flag
-     * ImmutableMap<String, Tuple2<String, Boolean>> propMap =
-     *     QueryUtil.prop2ColumnNameMap(User.class, NamingPolicy.SNAKE_CASE);
+     * // Get property-to-column details
+     * ImmutableMap<String, QueryUtil.ColumnInfo> columnInfoMap =
+     *     QueryUtil.propToColumnInfoMap(User.class, NamingPolicy.SNAKE_CASE);
      *
-     * Tuple2<String, Boolean> result = propMap.get("firstName");
-     * String columnName = result._1;  // "first_name"
-     * boolean isSimple = result._2;   // true (no dots in property name)
+     * QueryUtil.ColumnInfo result = columnInfoMap.get("firstName");
+     * String columnName = result.columnName(); // "first_name"
+     * boolean hasNoDot = result.hasNoDot();    // true
      *
      * // Nested property example
-     * Tuple2<String, Boolean> nested = propMap.get("address.street");
-     * String nestedColumn = nested._1;     // "<sub-table-alias-or-name>.street" (e.g. "addr.street")
-     * boolean isNestedSimple = nested._2;  // false (key contains a dot)
+     * QueryUtil.ColumnInfo nested = columnInfoMap.get("address.street");
+     * String nestedColumn = nested.columnName(); // e.g. "addr.street"
+     * boolean nestedHasNoDot = nested.hasNoDot(); // false
      * }</pre>
      *
      * <p><b>Note:</b> despite the similar name, this is a different method from
@@ -170,46 +177,42 @@ public final class QueryUtil {
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
-     * @return an immutable map whose entries come in two kinds:
-     *         (1) property-name keys — each property name maps to a {@code (columnName, hasNoDot)} tuple, where
-     *         {@code hasNoDot} is {@code true} when the property name contains no {@code '.'} character; and
-     *         (2) column-name keys — for each entry whose column value is not already a property-name key, the column
-     *         name itself is also inserted as a key mapping to {@code (columnName, hasNoDot)} (where {@code hasNoDot}
-     *         reflects whether the column name contains no {@code '.'}).
+     * @return an immutable map containing property-name keys and, when a mapped column name is not
+     *         already a property-name key, an additional column-name key. Each value contains the
+     *         mapped column name and whether its corresponding lookup key has no dot.
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      * @see #propertyToColumnMap(Class, NamingPolicy)
      */
     @Beta
     @Internal
-    public static ImmutableMap<String, Tuple2<String, Boolean>> prop2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+    public static ImmutableMap<String, ColumnInfo> propToColumnInfoMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
 
-        Map<NamingPolicy, ImmutableMap<String, Tuple2<String, Boolean>>> namingPropColumnNameMap = entityTablePropColumnNameMap2.get(entityClass);
-        ImmutableMap<String, Tuple2<String, Boolean>> result = null;
+        Map<NamingPolicy, ImmutableMap<String, ColumnInfo>> namingPropColumnInfoMap = entityPropColumnInfoMap.get(entityClass);
+        ImmutableMap<String, ColumnInfo> result = null;
 
-        if (namingPropColumnNameMap == null || (result = namingPropColumnNameMap.get(effectiveNamingPolicy)) == null) {
-            final ImmutableMap<String, String> prop2ColumnNameMap = propertyToColumnMap(entityClass, effectiveNamingPolicy);
-            final Map<String, Tuple2<String, Boolean>> newProp2ColumnNameMap = N.newHashMap(prop2ColumnNameMap.size() * 2);
+        if (namingPropColumnInfoMap == null || (result = namingPropColumnInfoMap.get(effectiveNamingPolicy)) == null) {
+            final ImmutableMap<String, String> propertyToColumnMap = propertyToColumnMap(entityClass, effectiveNamingPolicy);
+            final Map<String, ColumnInfo> newPropColumnInfoMap = N.newHashMap(propertyToColumnMap.size() * 2);
 
-            for (final Map.Entry<String, String> entry : prop2ColumnNameMap.entrySet()) {
-                newProp2ColumnNameMap.put(entry.getKey(), Tuple.of(entry.getValue(), entry.getKey().indexOf('.') < 0));
+            for (final Map.Entry<String, String> entry : propertyToColumnMap.entrySet()) {
+                newPropColumnInfoMap.put(entry.getKey(), new ColumnInfo(entry.getValue(), entry.getKey().indexOf('.') < 0));
 
-                if (!prop2ColumnNameMap.containsKey(entry.getValue())) {
-                    newProp2ColumnNameMap.put(entry.getValue(), Tuple.of(entry.getValue(), entry.getValue().indexOf('.') < 0));
+                if (!propertyToColumnMap.containsKey(entry.getValue())) {
+                    newPropColumnInfoMap.put(entry.getValue(), new ColumnInfo(entry.getValue(), entry.getValue().indexOf('.') < 0));
                 }
             }
 
-            result = ImmutableMap.wrap(newProp2ColumnNameMap);
+            result = ImmutableMap.wrap(newPropColumnInfoMap);
 
-            if (namingPropColumnNameMap == null) {
-                final Map<NamingPolicy, ImmutableMap<String, Tuple2<String, Boolean>>> newMap = Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class));
-                final Map<NamingPolicy, ImmutableMap<String, Tuple2<String, Boolean>>> existingMap = entityTablePropColumnNameMap2.putIfAbsent(entityClass,
-                        newMap);
-                namingPropColumnNameMap = existingMap == null ? newMap : existingMap;
+            if (namingPropColumnInfoMap == null) {
+                final Map<NamingPolicy, ImmutableMap<String, ColumnInfo>> newMap = Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class));
+                final Map<NamingPolicy, ImmutableMap<String, ColumnInfo>> existingMap = entityPropColumnInfoMap.putIfAbsent(entityClass, newMap);
+                namingPropColumnInfoMap = existingMap == null ? newMap : existingMap;
             }
 
-            namingPropColumnNameMap.put(effectiveNamingPolicy, result);
+            namingPropColumnInfoMap.put(effectiveNamingPolicy, result);
         }
 
         return result;
@@ -218,9 +221,10 @@ public final class QueryUtil {
     /**
      * Returns a mapping of column names to property names for the specified entity class.
      * The map includes variations of column names in lowercase and uppercase for case-insensitive lookups.
-     * Only properties whose column name is resolvable from a {@code @Column} annotation (i.e.
-     * {@link PropInfo#columnName} is present) are included; properties without a column annotation
-     * are not added to the returned map.
+     * Only properties whose effective metadata exposes a column name (i.e.
+     * {@link PropInfo#columnName} is present) are included. Metadata resolution also honors
+     * {@link NonColumn} and {@link Table#columnFields()}/{@link Table#nonColumnFields()}, so an
+     * otherwise annotated property excluded by the table mapping is not added.
      *
      * <p>This method is useful when you need to map database result set columns back to entity properties,
      * especially when dealing with case-insensitive database systems or when column names don't match

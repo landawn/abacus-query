@@ -7,11 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractCollection;
+import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -65,6 +69,47 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
+    public void testSelectAppendCollectionValidatesAndRendersOneSnapshot() {
+        Collection<String> changingCollection = new AbstractCollection<String>() {
+            private int iteratorCalls;
+
+            @Override
+            public java.util.Iterator<String> iterator() {
+                return Collections.singleton(iteratorCalls++ == 0 ? "id" : "   ").iterator();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        Builder builder = DynamicQuery.builder();
+        builder.select().append(changingCollection);
+
+        assertEquals("SELECT id", builder.build());
+    }
+
+    @Test
+    public void testSelectAppendCollectionRejectsSnapshotThatBecomesEmpty() {
+        Collection<String> disappearingCollection = new AbstractCollection<String>() {
+            @Override
+            public java.util.Iterator<String> iterator() {
+                return Collections.emptyIterator();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        Builder builder = DynamicQuery.builder();
+        assertThrows(IllegalArgumentException.class, () -> builder.select().append(disappearingCollection));
+        assertEquals("", builder.build());
+    }
+
+    @Test
     public void testSelectAppendEmptyCollectionDoesNotCreateSkeleton() {
         Builder builder = DynamicQuery.builder();
         builder.select().append(Arrays.asList());
@@ -87,6 +132,48 @@ public class DynamicQueryTest extends TestBase {
         assertTrue(sql.contains("SELECT"));
         assertTrue(sql.contains("user_id AS uid"));
         assertTrue(sql.contains("user_name AS uname"));
+    }
+
+    @Test
+    public void testSelectAppendMapValidatesAndRendersOneSnapshot() {
+        Map<String, String> changingMap = new AbstractMap<String, String>() {
+            private int entrySetCalls;
+
+            @Override
+            public Set<Entry<String, String>> entrySet() {
+                String alias = entrySetCalls++ == 0 ? "user_id" : "   ";
+                return Collections.singleton(new SimpleImmutableEntry<>("id", alias));
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        Builder builder = DynamicQuery.builder();
+        builder.select().append(changingMap);
+
+        assertEquals("SELECT id AS user_id", builder.build());
+    }
+
+    @Test
+    public void testSelectAppendMapRejectsSnapshotThatBecomesEmpty() {
+        Map<String, String> disappearingMap = new AbstractMap<String, String>() {
+            @Override
+            public Set<Entry<String, String>> entrySet() {
+                return Collections.emptySet();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        Builder builder = DynamicQuery.builder();
+        assertThrows(IllegalArgumentException.class, () -> builder.select().append(disappearingMap));
+        assertEquals("", builder.build());
     }
 
     @Test

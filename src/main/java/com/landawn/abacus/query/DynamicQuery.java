@@ -13,7 +13,9 @@
  */
 package com.landawn.abacus.query;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.landawn.abacus.logging.Logger;
@@ -87,21 +89,33 @@ public final class DynamicQuery {
         }
     }
 
-    private static void checkSqlFragmentsNotBlank(final Collection<String> values, final String argName) {
+    private static Collection<String> copyAndCheckSqlFragmentsNotBlank(final Collection<String> values, final String argName) {
         N.checkArgNotNull(values, argName);
 
-        for (final String value : values) {
+        // Validate and render the same snapshot. Iterating a live/weakly-consistent input twice can
+        // otherwise validate one set of values and append a different set.
+        final Collection<String> copy = new ArrayList<>(values);
+        N.checkArgNotEmpty(copy, argName);
+
+        for (final String value : copy) {
             checkSqlFragmentNotBlank(value, "Element in " + argName);
         }
+
+        return copy;
     }
 
-    private static void checkSqlFragmentMapNotBlank(final Map<String, String> values, final String argName) {
+    private static Map<String, String> copyAndCheckSqlFragmentMapNotBlank(final Map<String, String> values, final String argName) {
         N.checkArgNotNull(values, argName);
 
-        for (final Map.Entry<String, String> entry : values.entrySet()) {
+        final Map<String, String> copy = new LinkedHashMap<>(values);
+        N.checkArgNotEmpty(copy, argName);
+
+        for (final Map.Entry<String, String> entry : copy.entrySet()) {
             checkSqlFragmentNotBlank(entry.getKey(), "Key in " + argName);
             checkSqlFragmentNotBlank(entry.getValue(), "Value in " + argName);
         }
+
+        return copy;
     }
 
     /**
@@ -128,7 +142,9 @@ public final class DynamicQuery {
 
     /**
      * Builder for constructing dynamic SQL queries clause by clause.
-     * Instances and retained clause handles are mutable and are not thread-safe.
+     * Instances and retained clause handles are mutable and are not thread-safe. A builder is
+     * one-shot: invoking {@link #build()} permanently closes it and all retained clause handles,
+     * including when building terminates exceptionally.
      */
     public static class Builder {
 
@@ -1016,6 +1032,8 @@ public final class DynamicQuery {
         /**
          * Appends multiple columns to the {@code SELECT} clause.
          * Columns are separated by commas. If the collection is empty, this method does nothing.
+         * A non-empty collection is snapshotted before validation and rendering, so both phases
+         * observe the same elements even if the supplied collection is live or mutable.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1026,7 +1044,8 @@ public final class DynamicQuery {
          * @param columns collection of column names to select (may be {@code null} or empty;
          *                individual elements must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
-         * @throws IllegalArgumentException if any element in {@code columns} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if a non-empty input yields an empty snapshot, or any
+         *                                  snapshotted element is {@code null}, empty, or blank
          */
         public SelectClause append(final Collection<String> columns) {
             checkOpen();
@@ -1036,11 +1055,11 @@ public final class DynamicQuery {
                 return this;
             }
 
-            checkSqlFragmentsNotBlank(columns, "columns");
+            final Collection<String> columnsSnapshot = copyAndCheckSqlFragmentsNotBlank(columns, "columns");
 
             startClauseFragment(this, "SELECT ", ", ");
 
-            sb.append(Strings.join(columns, ", "));
+            sb.append(Strings.join(columnsSnapshot, ", "));
 
             return this;
         }
@@ -1050,6 +1069,7 @@ public final class DynamicQuery {
          * Each entry in the map represents a column-alias pair. If the map is empty, this method does nothing.
          * Columns are emitted in the map's iteration order, so use a {@link java.util.LinkedHashMap}
          * if a stable column order matters.
+         * A non-empty map is snapshotted before validation and rendering.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1063,7 +1083,8 @@ public final class DynamicQuery {
          * @param columnAliases map where keys are column names and values are aliases (may be {@code null} or empty;
          *        individual keys and values must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
-         * @throws IllegalArgumentException if any key or value in the map is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if a non-empty input yields an empty snapshot, or any
+         *                                  snapshotted key or value is {@code null}, empty, or blank
          */
         public SelectClause append(final Map<String, String> columnAliases) {
             checkOpen();
@@ -1073,11 +1094,11 @@ public final class DynamicQuery {
                 return this;
             }
 
-            checkSqlFragmentMapNotBlank(columnAliases, "columnAliases");
+            final Map<String, String> columnAliasesSnapshot = copyAndCheckSqlFragmentMapNotBlank(columnAliases, "columnAliases");
 
             startClauseFragment(this, "SELECT ", ", ");
 
-            sb.append(Strings.joinEntries(columnAliases, ", ", " AS "));
+            sb.append(Strings.joinEntries(columnAliasesSnapshot, ", ", " AS "));
 
             return this;
         }
@@ -1226,6 +1247,7 @@ public final class DynamicQuery {
         /**
          * Appends multiple tables to the {@code FROM} clause.
          * Tables are separated by commas (creating a cross join). If the collection is empty, this method does nothing.
+         * A non-empty collection is snapshotted before validation and rendering.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1236,7 +1258,8 @@ public final class DynamicQuery {
          * @param tables collection of table names to add (may be {@code null} or empty;
          *               individual elements must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
-         * @throws IllegalArgumentException if any element in {@code tables} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if a non-empty input yields an empty snapshot, or any
+         *                                  snapshotted element is {@code null}, empty, or blank
          */
         public FromClause append(final Collection<String> tables) {
             checkOpen();
@@ -1246,11 +1269,11 @@ public final class DynamicQuery {
                 return this;
             }
 
-            checkSqlFragmentsNotBlank(tables, "tables");
+            final Collection<String> tablesSnapshot = copyAndCheckSqlFragmentsNotBlank(tables, "tables");
 
             startClauseFragment(this, "FROM ", ", ");
 
-            sb.append(Strings.join(tables, ", "));
+            sb.append(Strings.join(tablesSnapshot, ", "));
 
             return this;
         }
@@ -1692,7 +1715,7 @@ public final class DynamicQuery {
          *
          * @param expr the SQL expression to append (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public WhereClause append(final String expr) {
             checkOpen();
@@ -1812,7 +1835,7 @@ public final class DynamicQuery {
          *
          * @param expr the SQL expression to add with {@code AND} (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public WhereClause and(final String expr) {
             checkOpen();
@@ -1842,7 +1865,7 @@ public final class DynamicQuery {
          *
          * @param expr the SQL expression to add with {@code OR} (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public WhereClause or(final String expr) {
             checkOpen();
@@ -1961,7 +1984,7 @@ public final class DynamicQuery {
          *
          * @param propOrColumnName the property or column name to group by (must not be {@code null}, empty, or blank)
          * @return this {@link GroupByClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code column} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
          */
         public GroupByClause append(final String propOrColumnName) {
             checkOpen();
@@ -1977,6 +2000,7 @@ public final class DynamicQuery {
         /**
          * Appends multiple columns to the {@code GROUP BY} clause.
          * Columns are separated by commas. If the collection is empty, this method does nothing.
+         * A non-empty collection is snapshotted before validation and rendering.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1987,7 +2011,8 @@ public final class DynamicQuery {
          * @param columns collection of column names to group by (may be {@code null} or empty;
          *                individual elements must not be {@code null}, empty, or blank)
          * @return this {@link GroupByClause} instance for method chaining
-         * @throws IllegalArgumentException if any element in {@code columns} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if a non-empty input yields an empty snapshot, or any
+         *                                  snapshotted element is {@code null}, empty, or blank
          */
         public GroupByClause append(final Collection<String> columns) {
             checkOpen();
@@ -1997,11 +2022,11 @@ public final class DynamicQuery {
                 return this;
             }
 
-            checkSqlFragmentsNotBlank(columns, "columns");
+            final Collection<String> columnsSnapshot = copyAndCheckSqlFragmentsNotBlank(columns, "columns");
 
             startClauseFragment(this, "GROUP BY ", ", ");
 
-            sb.append(Strings.join(columns, ", "));
+            sb.append(Strings.join(columnsSnapshot, ", "));
 
             return this;
         }
@@ -2110,7 +2135,7 @@ public final class DynamicQuery {
          *
          * @param expr the SQL expression to append (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public HavingClause append(final String expr) {
             checkOpen();
@@ -2230,7 +2255,7 @@ public final class DynamicQuery {
          *
          * @param expr the SQL expression to add with {@code AND} (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public HavingClause and(final String expr) {
             checkOpen();
@@ -2260,7 +2285,7 @@ public final class DynamicQuery {
          *
          * @param expr the SQL expression to add with {@code OR} (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code cond} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public HavingClause or(final String expr) {
             checkOpen();
@@ -2379,7 +2404,7 @@ public final class DynamicQuery {
          *
          * @param propOrColumnName the property or column name with optional {@code ASC}/{@code DESC} (must not be {@code null}, empty, or blank)
          * @return this {@link OrderByClause} instance for method chaining
-         * @throws IllegalArgumentException if {@code column} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
          */
         public OrderByClause append(final String propOrColumnName) {
             checkOpen();
@@ -2396,6 +2421,7 @@ public final class DynamicQuery {
          * Appends multiple columns to the {@code ORDER BY} clause.
          * Columns are separated by commas. Sort direction can be included with each column.
          * If the collection is empty, this method does nothing.
+         * A non-empty collection is snapshotted before validation and rendering.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -2406,7 +2432,8 @@ public final class DynamicQuery {
          * @param columns collection of column names with optional sort directions (may be {@code null} or empty;
          *                individual elements must not be {@code null}, empty, or blank)
          * @return this {@link OrderByClause} instance for method chaining
-         * @throws IllegalArgumentException if any element in {@code columns} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if a non-empty input yields an empty snapshot, or any
+         *                                  snapshotted element is {@code null}, empty, or blank
          */
         public OrderByClause append(final Collection<String> columns) {
             checkOpen();
@@ -2416,11 +2443,11 @@ public final class DynamicQuery {
                 return this;
             }
 
-            checkSqlFragmentsNotBlank(columns, "columns");
+            final Collection<String> columnsSnapshot = copyAndCheckSqlFragmentsNotBlank(columns, "columns");
 
             startClauseFragment(this, "ORDER BY ", ", ");
 
-            sb.append(Strings.join(columns, ", "));
+            sb.append(Strings.join(columnsSnapshot, ", "));
 
             return this;
         }

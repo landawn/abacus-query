@@ -96,8 +96,8 @@ public class CrossJoin extends Join {
     /**
      * Creates a CROSS JOIN clause with multiple tables/entities and no join condition.
      * This produces the Cartesian product of the listed tables. The rendered SQL is
-     * {@code CROSS JOIN (t1, t2, ...)}. This is a convenience equivalent to
-     * {@code new CrossJoin(joinEntities)}.
+     * {@code CROSS JOIN (t1, t2, ...)}. The collection is copied by the base class, so later
+     * changes to the supplied collection do not affect the join.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

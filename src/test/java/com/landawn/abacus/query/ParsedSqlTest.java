@@ -1203,6 +1203,19 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
+    public void testParse_PostgresJsonQuestionOperatorWithFunctionRhs() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM events WHERE payload ? lower(:key) AND id = :id");
+        Assertions.assertEquals("SELECT * FROM events WHERE payload ? lower(?) AND id = ?", parsed.parameterizedSql());
+        Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertEquals(Arrays.asList("key", "id"), parsed.namedParameters());
+
+        parsed = ParsedSql.parse("SELECT * FROM events WHERE payload ? CAST(:key AS text) AND id = :id");
+        Assertions.assertEquals("SELECT * FROM events WHERE payload ? CAST(? AS text) AND id = ?", parsed.parameterizedSql());
+        Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertEquals(Arrays.asList("key", "id"), parsed.namedParameters());
+    }
+
+    @Test
     public void testParse_PostgresJsonQuestionAndOperatorWithNamedParameters() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM events WHERE payload ?& array[:keys] AND id = :id");
         Assertions.assertEquals("SELECT * FROM events WHERE payload ?& array[?] AND id = ?", parsed.parameterizedSql());
@@ -1215,6 +1228,14 @@ public class ParsedSqlTest extends TestBase {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM events WHERE payload ? ? AND tenant_id = ?");
         Assertions.assertEquals("SELECT * FROM events WHERE payload ? ? AND tenant_id = ?", parsed.parameterizedSql());
         Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertTrue(parsed.namedParameters().isEmpty());
+    }
+
+    @Test
+    public void testParse_PositionalPaginationAndOrderingParametersAreNotJsonOperators() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM events ORDER BY ? ASC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        Assertions.assertEquals(3, parsed.parameterCount());
         Assertions.assertTrue(parsed.namedParameters().isEmpty());
     }
 }

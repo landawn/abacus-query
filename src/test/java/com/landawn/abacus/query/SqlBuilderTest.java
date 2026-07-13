@@ -51,7 +51,6 @@ import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.ImmutableSet;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.Tuple.Tuple2;
 
 @Tag("2025")
 public class SqlBuilderTest extends TestBase {
@@ -792,13 +791,13 @@ public class SqlBuilderTest extends TestBase {
     @Test
     public void testIncompleteSetOperationSegmentThrowsInsteadOfTruncating() {
         // Previously built "SELECT id FROM t UNION " with the staged columns silently dropped.
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t").union("id", "name").build());
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t").union(Arrays.asList("id", "name")).build());
 
         // A non-SELECT sibling builder is rejected up front instead of being staged as a "column list".
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("t").union(Dsl.PSC.update("t2").set("a")));
 
         // Completing the segment still works.
-        String sql = Dsl.PSC.select("id").from("t").union("id", "name").from("t2").build().query();
+        String sql = Dsl.PSC.select("id").from("t").union(Arrays.asList("id", "name")).from("t2").build().query();
         assertTrue(sql.startsWith("SELECT id FROM t UNION SELECT "));
         assertTrue(sql.endsWith("FROM t2"));
     }
@@ -890,7 +889,7 @@ public class SqlBuilderTest extends TestBase {
 
         // A modifier staged before a column-list set operation is still rendered by the follow-up from().
         assertEquals("SELECT id FROM t1 UNION SELECT DISTINCT id, name FROM t2",
-                Dsl.PSC.select("id").from("t1").union("id", "name").distinct().from("t2").build().query());
+                Dsl.PSC.select("id").from("t1").union(Arrays.asList("id", "name")).distinct().from("t2").build().query());
     }
 
     @Test
@@ -1528,12 +1527,6 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
-    public void testUnionAll_VarargsOverload() {
-        String sql = Dsl.PSC.select("id", "name").from("users").unionAll("id", "name").from("customers").build().query();
-        assertEquals("SELECT id, name FROM users UNION ALL SELECT id, name FROM customers", sql);
-    }
-
-    @Test
     public void testUnionAll_CollectionOverload() {
         String sql = Dsl.PSC.select("id", "name").from("users").unionAll(Arrays.asList("id", "name")).from("customers").build().query();
         assertEquals("SELECT id, name FROM users UNION ALL SELECT id, name FROM customers", sql);
@@ -1542,12 +1535,6 @@ public class SqlBuilderTest extends TestBase {
     @Test
     public void testIntersect_StringOverload() {
         String sql = Dsl.PSC.select("id", "name").from("users").intersect("SELECT id, name FROM customers").build().query();
-        assertEquals("SELECT id, name FROM users INTERSECT SELECT id, name FROM customers", sql);
-    }
-
-    @Test
-    public void testIntersect_VarargsOverload() {
-        String sql = Dsl.PSC.select("id", "name").from("users").intersect("id", "name").from("customers").build().query();
         assertEquals("SELECT id, name FROM users INTERSECT SELECT id, name FROM customers", sql);
     }
 
@@ -1564,12 +1551,6 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
-    public void testExcept_VarargsOverload() {
-        String sql = Dsl.PSC.select("id", "name").from("users").except("id", "name").from("customers").build().query();
-        assertEquals("SELECT id, name FROM users EXCEPT SELECT id, name FROM customers", sql);
-    }
-
-    @Test
     public void testExcept_CollectionOverload() {
         String sql = Dsl.PSC.select("id", "name").from("users").except(Arrays.asList("id", "name")).from("customers").build().query();
         assertEquals("SELECT id, name FROM users EXCEPT SELECT id, name FROM customers", sql);
@@ -1578,12 +1559,6 @@ public class SqlBuilderTest extends TestBase {
     @Test
     public void testMinus_StringOverload() {
         String sql = Dsl.PSC.select("id", "name").from("users").minus("SELECT id, name FROM customers").build().query();
-        assertEquals("SELECT id, name FROM users MINUS SELECT id, name FROM customers", sql);
-    }
-
-    @Test
-    public void testMinus_VarargsOverload() {
-        String sql = Dsl.PSC.select("id", "name").from("users").minus("id", "name").from("customers").build().query();
         assertEquals("SELECT id, name FROM users MINUS SELECT id, name FROM customers", sql);
     }
 
@@ -1647,6 +1622,21 @@ public class SqlBuilderTest extends TestBase {
     public void testAppendIf_StringFalse() {
         String sql = Dsl.PSC.select("*").from("users").appendIf(false, " FOR UPDATE").build().query();
         assertEquals("SELECT * FROM users", sql);
+    }
+
+    @Test
+    public void testAppendIfRejectsClosedBuilderForBothBranchesAndOverloads() {
+        SqlBuilder conditionBuilder = Dsl.PSC.select("*").from("users");
+        conditionBuilder.build();
+
+        assertThrows(IllegalStateException.class, () -> conditionBuilder.appendIf(false, Filters.eq("id", 1)));
+        assertThrows(IllegalStateException.class, () -> conditionBuilder.appendIf(true, Filters.eq("id", 1)));
+
+        SqlBuilder expressionBuilder = Dsl.PSC.select("*").from("users");
+        expressionBuilder.build();
+
+        assertThrows(IllegalStateException.class, () -> expressionBuilder.appendIf(false, "FOR UPDATE"));
+        assertThrows(IllegalStateException.class, () -> expressionBuilder.appendIf(true, "FOR UPDATE"));
     }
 
     @Test
@@ -2138,6 +2128,47 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
+    public void testCriteriaSelectModifiersAreAppliedToCurrentSelect() {
+        assertEquals("SELECT DISTINCT department FROM employees",
+                Dsl.PSC.select("department").from("employees").append(Criteria.builder().distinct().build()).build().query());
+        assertEquals("SELECT DISTINCT ON (department) department FROM employees",
+                Dsl.PSC.select("department").from("employees").append(Criteria.builder().distinctOn("department").build()).build().query());
+        assertEquals("SELECT DISTINCTROW department FROM employees",
+                Dsl.PSC.select("department").from("employees").append(Criteria.builder().distinctRow().build()).build().query());
+        assertEquals("SELECT DISTINCTROW(department) department FROM employees",
+                Dsl.PSC.select("department").from("employees").append(Criteria.builder().distinctRowBy("department").build()).build().query());
+        assertEquals("SELECT SQL_CALC_FOUND_ROWS department FROM employees",
+                Dsl.PSC.select("department").from("employees").append(Criteria.builder().selectModifier("SQL_CALC_FOUND_ROWS").build()).build().query());
+    }
+
+    @Test
+    public void testCriteriaSelectModifierConflictsWithExistingBuilderModifier() {
+        Criteria criteria = Criteria.builder().distinct().build();
+
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("department").distinct().from("employees").append(criteria));
+    }
+
+    @Test
+    public void testCriteriaSelectModifierRequiresCurrentSelectSegment() {
+        Criteria criteria = Criteria.builder().distinct().build();
+
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.update("employees").set("department = 'sales'").append(criteria));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.deleteFrom("employees").append(criteria));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.fromCondition(Filters.equal("active", true)).append(criteria));
+        assertThrows(IllegalStateException.class,
+                () -> Dsl.PSC.select("department").from("employees").union("SELECT department FROM archived_employees").append(criteria));
+    }
+
+    @Test
+    public void testRejectedCriteriaDoesNotLeaveSelectModifierBehind() {
+        SqlBuilder builder = Dsl.PSC.select("department").from("employees").where("department IS NULL");
+        Criteria criteria = Criteria.builder().distinct().where("department IS NOT NULL").build();
+
+        assertThrows(IllegalStateException.class, () -> builder.append(criteria));
+        assertEquals("SELECT department FROM employees WHERE department IS NULL", builder.build().query());
+    }
+
+    @Test
     public void testExpressionCondition() {
         String sql = Dsl.PSC.select("*").from("users").where(Filters.expr("age > 18 AND status = 'ACTIVE'")).build().query();
 
@@ -2227,15 +2258,15 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
-    public void testProp2ColumnNameMap() {
-        ImmutableMap<String, Tuple2<String, Boolean>> map = AbstractQueryBuilder.prop2ColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE);
+    public void testPropToColumnInfoMap() {
+        ImmutableMap<String, QueryUtil.ColumnInfo> map = AbstractQueryBuilder.propToColumnInfoMap(Account.class, NamingPolicy.SNAKE_CASE);
 
         assertNotNull(map);
         assertTrue(map.containsKey("firstName"));
         assertTrue(map.containsKey("status"));
 
-        assertEquals("first_name", map.get("firstName")._1);
-        assertEquals("account_status", map.get("status")._1); // Should use @Column annotation
+        assertEquals("first_name", map.get("firstName").columnName());
+        assertEquals("account_status", map.get("status").columnName()); // Should use @Column annotation
     }
 
     @Test
@@ -2500,6 +2531,36 @@ public class SqlBuilderTest extends TestBase {
         entities.add(new Order());
 
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.batchInsert(entities));
+    }
+
+    @Test
+    public void testBatchInsertRejectsDifferentBeanClassesWithSameProperties() {
+        final BatchEntityWithId first = new BatchEntityWithId();
+        first.setName("first");
+        final BatchEntityWithOtherId second = new BatchEntityWithOtherId();
+        second.setName("second");
+
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.batchInsert(Arrays.asList(first, null, second)));
+
+        assertTrue(ex.getMessage().contains("same runtime class"), ex.getMessage());
+        assertTrue(ex.getMessage().contains(BatchEntityWithId.class.getName()), ex.getMessage());
+        assertTrue(ex.getMessage().contains(BatchEntityWithOtherId.class.getName()), ex.getMessage());
+    }
+
+    @Test
+    public void testBatchInsertAllowsSameBeanClassWithNullRows() {
+        final BatchEntityWithId first = new BatchEntityWithId();
+        first.setOtherId(10);
+        first.setName("first");
+        final BatchEntityWithId second = new BatchEntityWithId();
+        second.setOtherId(20);
+        second.setName("second");
+
+        final SP sp = Dsl.PSC.batchInsert(Arrays.asList(first, null, second)).into("batch_entity").build();
+
+        assertTrue(sp.query().startsWith("INSERT INTO batch_entity"), sp.query());
+        assertTrue(sp.query().contains("), ("), sp.query());
+        assertEquals(4, sp.parameters().size());
     }
 
     @Test
@@ -7823,17 +7884,13 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testBatchInsert() {
-            List<User> users = Arrays.asList(new User() {
-                {
-                    setFirstName("John");
-                    setLastName("Doe");
-                }
-            }, new User() {
-                {
-                    setFirstName("Jane");
-                    setLastName("Smith");
-                }
-            });
+            final User john = new User();
+            john.setFirstName("John");
+            john.setLastName("Doe");
+            final User jane = new User();
+            jane.setFirstName("Jane");
+            jane.setLastName("Smith");
+            List<User> users = Arrays.asList(john, jane);
 
             String sql = Dsl.NSC.batchInsert(users).into("users").build().query();
             Assertions.assertNotNull(sql);
@@ -8530,17 +8587,13 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testBatchInsert() {
-            List<Account> accounts = Arrays.asList(new Account() {
-                {
-                    setFirstName("John");
-                    setLastName("Doe");
-                }
-            }, new Account() {
-                {
-                    setFirstName("Jane");
-                    setLastName("Smith");
-                }
-            });
+            final Account john = new Account();
+            john.setFirstName("John");
+            john.setLastName("Doe");
+            final Account jane = new Account();
+            jane.setFirstName("Jane");
+            jane.setLastName("Smith");
+            List<Account> accounts = Arrays.asList(john, jane);
 
             String sql = Dsl.NAC.batchInsert(accounts).into("ACCOUNT").build().query();
             Assertions.assertNotNull(sql);
@@ -9321,17 +9374,13 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testBatchInsert() {
-            List<Account> accounts = Arrays.asList(new Account() {
-                {
-                    setFirstName("John");
-                    setLastName("Doe");
-                }
-            }, new Account() {
-                {
-                    setFirstName("Jane");
-                    setLastName("Smith");
-                }
-            });
+            final Account john = new Account();
+            john.setFirstName("John");
+            john.setLastName("Doe");
+            final Account jane = new Account();
+            jane.setFirstName("Jane");
+            jane.setLastName("Smith");
+            List<Account> accounts = Arrays.asList(john, jane);
 
             String sql = Dsl.NLC.batchInsert(accounts).into("account").build().query();
             Assertions.assertNotNull(sql);
@@ -13090,6 +13139,34 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
+    public void testSelectExpressionFindsOnlyTopLevelAsAlias() {
+        assertEquals("SELECT CAST(created_at AS date) AS createdDay FROM events",
+                Dsl.NSC.select("CAST(created_at AS DATE) AS createdDay").from("events").build().query());
+        assertEquals("SELECT CONCAT(' AS ', name) AS label FROM events", Dsl.NSC.select("CONCAT(' AS ', name) AS label").from("events").build().query());
+        assertEquals("SELECT \"created AS date\" AS label FROM events", Dsl.NSC.select("\"created AS date\" AS label").from("events").build().query());
+    }
+
+    @Test
+    public void testFromAliasScannerSkipsQuotesCommentsAndNestedParentheses() {
+        final String subquerySql = Dsl.PSC.select(Account.class).from("(SELECT ')' AS marker FROM account /* ) */) e").build().query();
+        final String doubleQuotedTableSql = Dsl.PSC.select(Account.class).from("\"Order Details\" od").build().query();
+        final String bracketQuotedTableSql = Dsl.PSC.select(Account.class).from("[Order Details] AS od").build().query();
+        final String commentSeparatedAliasSql = Dsl.PSC.select(Account.class).from("account -- AS ignored\n e").build().query();
+        final String trailingCommentSql = Dsl.PSC.select(Account.class).from("account /* no alias */").build().query();
+
+        assertTrue(subquerySql.startsWith("SELECT e."), subquerySql);
+        assertTrue(subquerySql.endsWith(" FROM (SELECT ')' AS marker FROM account /* ) */) e"), subquerySql);
+        assertTrue(doubleQuotedTableSql.startsWith("SELECT od."), doubleQuotedTableSql);
+        assertTrue(doubleQuotedTableSql.endsWith(" FROM \"Order Details\" od"), doubleQuotedTableSql);
+        assertTrue(bracketQuotedTableSql.startsWith("SELECT od."), bracketQuotedTableSql);
+        assertTrue(bracketQuotedTableSql.endsWith(" FROM [Order Details] AS od"), bracketQuotedTableSql);
+        assertTrue(commentSeparatedAliasSql.startsWith("SELECT e."), commentSeparatedAliasSql);
+        assertTrue(commentSeparatedAliasSql.endsWith(" FROM account -- AS ignored\n e"), commentSeparatedAliasSql);
+        assertFalse(trailingCommentSql.startsWith("SELECT /*"), trailingCommentSql);
+        assertTrue(trailingCommentSql.endsWith(" FROM account /* no alias */"), trailingCommentSql);
+    }
+
+    @Test
     public void testUnsupportedConditionMessageUsesConditionClass() {
         final Condition unsupported = new Condition() {
             @Override
@@ -13229,10 +13306,52 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
-    public void testSetOperationVarargsRejectsMutationContainingNestedSelect() {
-        SqlBuilder builder = Dsl.PSC.select("id").from("current_records");
+    public void testSetOperationPropertyVarargsOverloadsAreRemoved() {
+        for (final String methodName : Arrays.asList("union", "unionAll", "intersect", "except", "minus")) {
+            assertThrows(NoSuchMethodException.class, () -> AbstractQueryBuilder.class.getDeclaredMethod(methodName, String[].class));
+        }
+    }
 
-        assertThrows(IllegalArgumentException.class, () -> builder.union(new String[] { "UPDATE target SET value = (SELECT value FROM source) FROM target" }));
+    @Test
+    public void testSetOperationsRequireACompleteSelectLeftOperand() {
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").union("SELECT id FROM archived_records"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").intersect(Arrays.asList("id")));
+        assertThrows(IllegalStateException.class,
+                () -> Dsl.PSC.update("current_records").set(Collections.singletonMap("active", false)).except("SELECT id FROM archived_records"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.fromCondition(Filters.equal("active", true)).minus("SELECT id FROM archived_records"));
+        assertThrows(IllegalStateException.class,
+                () -> Dsl.PSC.select("id")
+                        .from("current_records")
+                        .union("SELECT id FROM archived_records")
+                        .distinct()
+                        .except("SELECT id FROM deleted_records"));
+    }
+
+    @Test
+    public void testRejectedSiblingSetOperationDoesNotConsumeRightBuilder() {
+        SqlBuilder right = Dsl.PSC.select("id").from("archived_records");
+
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").unionAll(right));
+        assertEquals("SELECT id FROM archived_records", right.build().query());
+    }
+
+    @Test
+    public void testCompleteLiteralSetOperandsCanBeChained() {
+        String sql = Dsl.PSC.select("id")
+                .from("current_records")
+                .union("SELECT id FROM archived_records")
+                .except("SELECT id FROM deleted_records")
+                .build()
+                .query();
+
+        assertEquals("SELECT id FROM current_records UNION SELECT id FROM archived_records EXCEPT SELECT id FROM deleted_records", sql);
+    }
+
+    @Test
+    public void testSetOperationsRejectTerminalClausesOnLeftOperand() {
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("current_records").orderBy("id").union("SELECT id FROM archived_records"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("current_records").limit(10).intersect("SELECT id FROM archived_records"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("current_records").forUpdate().minus("SELECT id FROM archived_records"));
     }
 
     @Test
@@ -13249,6 +13368,68 @@ public class SqlBuilderTest extends TestBase {
 
         public void setValue(final String value) {
             this.value = value;
+        }
+    }
+
+    static final class BatchEntityWithId {
+        @Id
+        private long id;
+        private long otherId;
+        private String name;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public long getOtherId() {
+            return otherId;
+        }
+
+        public void setOtherId(final long otherId) {
+            this.otherId = otherId;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+    }
+
+    static final class BatchEntityWithOtherId {
+        private long id;
+        @Id
+        private long otherId;
+        private String name;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public long getOtherId() {
+            return otherId;
+        }
+
+        public void setOtherId(final long otherId) {
+            this.otherId = otherId;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
         }
     }
 }

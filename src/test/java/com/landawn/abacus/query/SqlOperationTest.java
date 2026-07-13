@@ -43,8 +43,13 @@ public class SqlOperationTest extends TestBase {
         assertNull(SqlOperation.of("INVALID"));
         assertNull(SqlOperation.of("TRUNCATE"));
         assertNull(SqlOperation.of(""));
+        assertNull(SqlOperation.of(" "));
+        assertNull(SqlOperation.of(" SELECT"));
+        assertNull(SqlOperation.of("SELECT "));
         assertEquals(SqlOperation.SELECT, SqlOperation.of("select"));
         assertEquals(SqlOperation.SELECT, SqlOperation.of("Select"));
+        assertEquals(SqlOperation.BEGIN_TRANSACTION, SqlOperation.of("Begin Transaction"));
+        assertEquals(SqlOperation.BEGIN_TRANSACTION, SqlOperation.of("begin_transaction"));
     }
 
     @Test

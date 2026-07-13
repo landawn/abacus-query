@@ -169,7 +169,8 @@ public enum SqlOperation {
     /**
      * Retrieves the {@code SqlOperation} enum value corresponding to the given operation name.
      * The lookup is case-insensitive and matches against both the SQL token representation
-     * and the enum constant name.
+     * and the enum constant name. Matching is otherwise exact: surrounding whitespace is not
+     * trimmed, and {@code null}, empty, blank, or unsupported input returns {@code null}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -188,7 +189,8 @@ public enum SqlOperation {
      * SqlOperation nil = SqlOperation.of(null);                 // returns null
      * }</pre>
      *
-     * @param name the SQL operation name to look up (case-insensitive); may be {@code null}
+     * @param name the exact SQL operation token or enum constant name to look up (case-insensitive,
+     *             without surrounding whitespace); may be {@code null}
      * @return the corresponding {@code SqlOperation} enum value, or {@code null} if {@code name} is
      *         {@code null} or no matching operation is found
      */

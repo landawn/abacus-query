@@ -27,7 +27,8 @@ import com.landawn.abacus.util.Strings;
 /**
  * A utility class that provides a fluent API for creating SQL conditions based on a property name.
  * The {@link #of(String)} factory uses a bounded cache to reuse recently requested property names.
- * Direct construction bypasses that cache.
+ * Direct construction bypasses that cache. Cache insertion is coordinated so concurrent calls for the
+ * same previously unseen name return the same instance while that entry remains cached.
  *
  * <p>NamedProperty simplifies the creation of various SQL conditions by providing convenient
  * methods that automatically include the property name. Instead of repeatedly specifying the
@@ -36,7 +37,7 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>Key features:</p>
  * <ul>
- *   <li>Instance caching for memory efficiency (using {@link #of(String)})</li>
+ *   <li>Bounded instance reuse for property names (using {@link #of(String)})</li>
  *   <li>Fluent API for creating various SQL conditions</li>
  *   <li>Support for comparison operators (equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual)</li>
  *   <li>Support for pattern matching (like, notLike, startsWith, notStartsWith, endsWith, notEndsWith, contains, notContains)</li>
@@ -96,7 +97,7 @@ public class NamedProperty {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * NamedProperty age = new NamedProperty("age");
-     * // However, prefer using: NamedProperty.of("age") for caching benefits
+     * // Use NamedProperty.of("age") when the name comes from a finite application schema
      * }</pre>
      *
      * @param propName the property name; must not be {@code null}, empty, or blank
@@ -111,9 +112,9 @@ public class NamedProperty {
     }
 
     /**
-     * Returns or creates a NamedProperty instance for the specified property name using a bounded cache.
-     * Callers must not rely on reference identity: entries may be evicted, and concurrent first access
-     * may create more than one instance.
+     * Returns or atomically creates a cached NamedProperty instance for the specified property name.
+     * Concurrent first access is coordinated, so racing callers receive the same instance. The cache is
+     * bounded and entries may later be evicted; reference identity is therefore not a permanent API guarantee.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -139,17 +140,20 @@ public class NamedProperty {
             throw new IllegalArgumentException("Property name must not be null, empty, or blank");
         }
 
-        // ObjectPool is bounded and its inherited putIfAbsent is not atomic. This is best-effort reuse;
-        // object identity is deliberately not part of the public contract.
-        NamedProperty cached = instancePool.get(propName);
+        // ObjectPool's inherited putIfAbsent is not atomic with the preceding get. Coordinate every
+        // factory access so concurrent first callers cannot receive a losing instance while retaining
+        // the pool's bounded eviction behavior.
+        synchronized (instancePool) {
+            NamedProperty cached = instancePool.get(propName);
 
-        if (cached == null) {
-            final NamedProperty created = new NamedProperty(propName);
-            final NamedProperty raced = instancePool.putIfAbsent(propName, created);
-            cached = raced == null ? created : raced;
+            if (cached == null) {
+                final NamedProperty created = new NamedProperty(propName);
+                final NamedProperty raced = instancePool.putIfAbsent(propName, created);
+                cached = raced == null ? created : raced;
+            }
+
+            return cached;
         }
-
-        return cached;
     }
 
     /**

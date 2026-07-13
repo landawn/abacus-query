@@ -89,7 +89,9 @@ public interface Condition extends Immutable {
      * Operator andOp = combined.operator();   // Operator.AND
      * }</pre>
      *
-     * @return the operator for this condition
+     * @return the operator for this condition; standard constructed implementations return a
+     *         non-{@code null} value (a {@code null} is possible only in an uninitialized
+     *         serialization-framework instance or a non-conforming custom implementation)
      */
     Operator operator();
 

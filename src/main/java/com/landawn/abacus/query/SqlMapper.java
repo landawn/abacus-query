@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
@@ -517,11 +518,11 @@ public final class SqlMapper {
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the parsed SQL to associate with the identifier (must not be {@code null})
-     * @param attributes additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty,
-     *              but keys must be non-empty and values must be non-null
+     * @param attributes additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout);
+     *              may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
      * @throws IllegalArgumentException if {@code sql} is {@code null}; if the id is {@code null}/empty, contains whitespace,
      *                                  exceeds {@link #MAX_ID_LENGTH} characters, or already exists; or if {@code attrs}
-     *                                  contains a {@code null}/empty key or a {@code null} value
+     *                                  contains a {@code null}/empty/invalid or namespace-qualified XML attribute name, or a {@code null} value
      */
     public void add(final String id, final ParsedSql sql, final Map<String, String> attributes) {
         N.checkArgNotNull(sql, "sql");
@@ -572,12 +573,12 @@ public final class SqlMapper {
      *
      * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the SQL string to parse and store (must not be {@code null} or blank)
-     * @param attributes additional attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty,
-     *              but keys must be non-empty and values must be non-null
+     * @param attributes additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout);
+     *              may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
      * @throws IllegalArgumentException if {@code sql} is {@code null} or blank (blank is rejected by {@link ParsedSql#parse(String)});
      *                                  if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH}
      *                                  characters, or already exists; or if {@code attrs} contains a {@code null}/empty key
-     *                                  or a {@code null} value
+     *                                  or a {@code null} value; or an invalid/namespace-qualified XML attribute name
      */
     public void add(final String id, final String sql, final Map<String, String> attributes) {
         N.checkArgNotNull(sql, "sql");
@@ -626,14 +627,29 @@ public final class SqlMapper {
             return ImmutableMap.empty();
         }
 
-        final ImmutableMap<String, String> result = ImmutableMap.copyOf(attrs);
+        // Snapshot first so validation and copying see one stable set of entries.
+        final Map<String, String> snapshot = new LinkedHashMap<>(attrs);
 
-        for (final Map.Entry<String, String> entry : result.entrySet()) {
+        final Document validationDocument = XmlUtil.createDOMParser(true, true).newDocument();
+
+        for (final Map.Entry<String, String> entry : snapshot.entrySet()) {
             N.checkArgNotEmpty(entry.getKey(), "attribute name");
             N.checkArgNotNull(entry.getValue(), "attribute value for '" + entry.getKey() + "'");
+
+            if (entry.getKey().indexOf(':') >= 0 || "xmlns".equals(entry.getKey())) {
+                throw new IllegalArgumentException("Namespace-qualified XML attributes are not supported: " + entry.getKey());
+            }
+
+            try {
+                // Delegate XML Name validation to the same DOM implementation used by saveTo(...), rather
+                // than maintaining an incomplete ASCII-only approximation of the XML Name grammar.
+                validationDocument.createAttribute(entry.getKey());
+            } catch (final DOMException e) {
+                throw new IllegalArgumentException("Invalid XML attribute name: " + entry.getKey(), e);
+            }
         }
 
-        return result;
+        return ImmutableMap.copyOf(snapshot);
     }
 
     /**

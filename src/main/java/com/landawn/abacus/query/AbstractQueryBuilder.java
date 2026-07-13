@@ -74,7 +74,7 @@ import com.landawn.abacus.util.OperationType;
 import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.Throwables;
-import com.landawn.abacus.util.Tuple.Tuple2;
+import com.landawn.abacus.query.QueryUtil.ColumnInfo;
 import com.landawn.abacus.util.u.Optional;
 import com.landawn.abacus.util.stream.Stream;
 
@@ -455,7 +455,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected BeanInfo _entityInfo; //NOSONAR
 
-    protected ImmutableMap<String, Tuple2<String, Boolean>> _propColumnNameMap; //NOSONAR
+    protected ImmutableMap<String, ColumnInfo> _propColumnNameMap; //NOSONAR
 
     protected OperationType _op; //NOSONAR
 
@@ -475,7 +475,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected List<Selection> _multiSelects; //NOSONAR
 
-    protected Map<String, Map<String, Tuple2<String, Boolean>>> _aliasPropColumnNameMap; //NOSONAR
+    protected Map<String, Map<String, ColumnInfo>> _aliasPropColumnNameMap; //NOSONAR
 
     protected Map<String, Object> _props; //NOSONAR
 
@@ -1083,8 +1083,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * ({@code union}/{@code unionAll}/{@code intersect}/{@code except}/{@code minus} taking a single query
      * string, or the SQL built by the sibling-builder overloads). These overloads are dedicated to appending
      * a complete sub-query, so the argument must satisfy the {@link #isSubQuery(String...)} heuristic.
-     * Without this check a non-{@code SELECT} string would silently fall through to the column-list
-     * varargs path, where the staged "columns" are only consumed by a follow-up {@code from(...)}.
      *
      * @param query the query string to validate
      * @param operationName the set-operation method name (e.g. {@code "union"}) used in the error message
@@ -1096,8 +1094,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (!isSubQuery(query) || !SqlParser.isReadOnlyQuery(query)) {
             throw new IllegalArgumentException("The query argument to " + operationName
                     + " must be a complete SELECT sub-query (starting with 'SELECT', or containing 'SELECT ... FROM'), but was: \"" + query
-                    + "\". To start a new SELECT from a column list, use " + operationName + "(String...) or " + operationName
-                    + "(Collection) followed by from(...).");
+                    + "\". To start a new SELECT from a column list, use " + operationName + "(Collection) followed by from(...).");
         }
     }
 
@@ -1656,13 +1653,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             for (final Selection selection : _multiSelects) {
                 if (Strings.isNotEmpty(selection.tableAlias())) {
-                    _aliasPropColumnNameMap.put(selection.tableAlias(), prop2ColumnNameMap(selection.entityClass(), _namingPolicy));
+                    _aliasPropColumnNameMap.put(selection.tableAlias(), propToColumnInfoMap(selection.entityClass(), _namingPolicy));
                 }
             }
 
             Class<?> selectionEntityClass = null;
             BeanInfo selectionBeanInfo = null;
-            ImmutableMap<String, Tuple2<String, Boolean>> selectionPropColumnNameMap = null;
+            ImmutableMap<String, ColumnInfo> selectionPropColumnNameMap = null;
             String selectionTableAlias = null;
             String selectionClassAlias = null;
             boolean selectionWithClassAlias = false;
@@ -1672,7 +1669,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             for (final Selection selection : _multiSelects) {
                 selectionEntityClass = selection.entityClass();
                 selectionBeanInfo = Beans.isBeanClass(selectionEntityClass) ? ParserUtil.getBeanInfo(selectionEntityClass) : null;
-                selectionPropColumnNameMap = Beans.isBeanClass(selectionEntityClass) ? prop2ColumnNameMap(selectionEntityClass, _namingPolicy) : null;
+                selectionPropColumnNameMap = Beans.isBeanClass(selectionEntityClass) ? propToColumnInfoMap(selectionEntityClass, _namingPolicy) : null;
                 selectionTableAlias = selection.tableAlias();
 
                 selectionClassAlias = selection.classAlias();
@@ -1703,8 +1700,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Appends the SELECT operation and modifier to the SQL string builder before the FROM clause.
-     * Parses the table name to extract table alias if present, and validates that the operation is a QUERY
-     * and that column names have been set.
+     * Parses the table name to extract a top-level table alias if present, ignoring whitespace and
+     * {@code AS} text inside quoted regions, comments, and nested parentheses. Also validates that
+     * the operation is a QUERY and that column names have been set.
      *
      * @param tableName the table name, optionally including an alias (e.g., "users u")
      * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
@@ -1726,34 +1724,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         final String trimmedTableName = tableName.trim();
-        int idx = -1;
+        final TopLevelAlias tableAlias = findTopLevelAlias(trimmedTableName, false);
 
-        if (!trimmedTableName.isEmpty() && trimmedTableName.charAt(0) == '(') {
-            // For subquery expressions like "(SELECT * FROM users) t", find the closing parenthesis first
-            int depth = 0;
-            for (int i = 0; i < trimmedTableName.length(); i++) {
-                final char ch = trimmedTableName.charAt(i);
-                if (ch == '(') {
-                    depth++;
-                } else if (ch == ')') {
-                    depth--;
-                    if (depth == 0) {
-                        // Find the space after the closing parenthesis
-                        final int spaceIdx = trimmedTableName.indexOf(' ', i + 1);
-                        if (spaceIdx > 0) {
-                            idx = spaceIdx;
-                        }
-                        break;
-                    }
-                }
-            }
-        } else {
-            idx = trimmedTableName.indexOf(' ');
-        }
-
-        if (idx > 0) {
-            _tableName = trimmedTableName.substring(0, idx).trim();
-            _tableAlias = normalizeTableAlias(trimmedTableName.substring(idx + 1).trim());
+        if (tableAlias != null) {
+            _tableName = trimmedTableName.substring(0, tableAlias.expressionEnd()).trim();
+            _tableAlias = normalizeTableAlias(trimmedTableName.substring(tableAlias.aliasStart()).trim());
         } else {
             _tableName = trimmedTableName;
         }
@@ -1791,10 +1766,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         if (N.isEmpty(_propColumnNameMap) && Beans.isBeanClass(entityClass)) {
-            _propColumnNameMap = prop2ColumnNameMap(entityClass, _namingPolicy);
+            _propColumnNameMap = propToColumnInfoMap(entityClass, _namingPolicy);
         }
 
-        _aliasPropColumnNameMap.put(alias, Beans.isBeanClass(entityClass) ? prop2ColumnNameMap(entityClass, _namingPolicy) : _propColumnNameMap);
+        _aliasPropColumnNameMap.put(alias, Beans.isBeanClass(entityClass) ? propToColumnInfoMap(entityClass, _namingPolicy) : _propColumnNameMap);
     }
 
     private static String normalizeTableAlias(final String tableAlias) {
@@ -1807,6 +1782,185 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return tableAlias;
+    }
+
+    /**
+     * Finds an alias separator at SQL nesting depth zero. Quoted strings/identifiers, line, hash
+     * and block comments, and parenthesized regions are skipped, so their whitespace, parentheses and
+     * {@code AS} text cannot be mistaken for the outer alias boundary.
+     *
+     * @param sqlFragment the table or select-expression fragment to scan
+     * @param explicitAsRequired whether only an explicit top-level {@code AS} is accepted; if
+     *        {@code false}, the last top-level trivia boundary is accepted as an implicit table-alias separator
+     * @return the expression end and alias start, or {@code null} when no qualifying alias is present
+     */
+    private static TopLevelAlias findTopLevelAlias(final String sqlFragment, final boolean explicitAsRequired) {
+        final int len = sqlFragment.length();
+        int depth = 0;
+        char quoteChar = 0;
+        boolean bracketQuoted = false;
+        boolean backslashEscaped = false;
+        int pendingImplicitExpressionEnd = -1;
+        TopLevelAlias explicitAlias = null;
+        TopLevelAlias implicitAlias = null;
+
+        for (int i = 0; i < len; i++) {
+            final char ch = sqlFragment.charAt(i);
+
+            if (quoteChar != 0) {
+                if (ch == quoteChar) {
+                    if (backslashEscaped) {
+                        backslashEscaped = false;
+                    } else if (i < len - 1 && sqlFragment.charAt(i + 1) == quoteChar) {
+                        i++;
+                    } else {
+                        quoteChar = 0;
+                    }
+                } else if (ch == '\\') {
+                    backslashEscaped = !backslashEscaped;
+                } else {
+                    backslashEscaped = false;
+                }
+
+                continue;
+            }
+
+            if (bracketQuoted) {
+                if (ch == ']') {
+                    if (i < len - 1 && sqlFragment.charAt(i + 1) == ']') {
+                        i++;
+                    } else {
+                        bracketQuoted = false;
+                    }
+                }
+
+                continue;
+            }
+
+            if (Character.isWhitespace(ch)) {
+                if (depth == 0 && pendingImplicitExpressionEnd < 0) {
+                    pendingImplicitExpressionEnd = i;
+                }
+
+                continue;
+            } else if (ch == '-' && i < len - 1 && sqlFragment.charAt(i + 1) == '-') {
+                if (depth == 0 && pendingImplicitExpressionEnd < 0) {
+                    pendingImplicitExpressionEnd = i;
+                }
+
+                i += 2;
+
+                while (i < len && sqlFragment.charAt(i) != '\n' && sqlFragment.charAt(i) != '\r') {
+                    i++;
+                }
+
+                i--;
+                continue;
+            } else if (ch == '#' && isAliasScannerHashCommentStart(sqlFragment, i)) {
+                if (depth == 0 && pendingImplicitExpressionEnd < 0) {
+                    pendingImplicitExpressionEnd = i;
+                }
+
+                while (++i < len && sqlFragment.charAt(i) != '\n' && sqlFragment.charAt(i) != '\r') {
+                    // Skip MySQL hash comment.
+                }
+
+                i--;
+                continue;
+            } else if (ch == '/' && i < len - 1 && sqlFragment.charAt(i + 1) == '*') {
+                if (depth == 0 && pendingImplicitExpressionEnd < 0) {
+                    pendingImplicitExpressionEnd = i;
+                }
+
+                i += 2;
+
+                while (i < len - 1 && !(sqlFragment.charAt(i) == '*' && sqlFragment.charAt(i + 1) == '/')) {
+                    i++;
+                }
+
+                if (i < len - 1) {
+                    i++;
+                }
+
+                continue;
+            }
+
+            if (depth == 0 && pendingImplicitExpressionEnd >= 0) {
+                if (pendingImplicitExpressionEnd > 0) {
+                    implicitAlias = new TopLevelAlias(pendingImplicitExpressionEnd, i);
+                }
+
+                pendingImplicitExpressionEnd = -1;
+            }
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                quoteChar = ch;
+                backslashEscaped = false;
+                continue;
+            } else if (ch == '[') {
+                bracketQuoted = true;
+                continue;
+            } else if (ch == '(') {
+                depth++;
+                continue;
+            } else if (ch == ')') {
+                if (depth > 0) {
+                    depth--;
+                }
+
+                continue;
+            }
+
+            if (depth != 0) {
+                continue;
+            }
+
+            if ((ch == 'A' || ch == 'a') && i < len - 1 && (sqlFragment.charAt(i + 1) == 'S' || sqlFragment.charAt(i + 1) == 's')
+                    && isAliasKeywordBoundary(sqlFragment, i - 1) && isAliasKeywordBoundary(sqlFragment, i + 2)) {
+                int aliasStart = i + 2;
+
+                while (aliasStart < len && Character.isWhitespace(sqlFragment.charAt(aliasStart))) {
+                    aliasStart++;
+                }
+
+                if (explicitAlias == null && i > 0 && aliasStart < len) {
+                    explicitAlias = new TopLevelAlias(i, aliasStart);
+                }
+
+                i++;
+            }
+        }
+
+        return explicitAlias != null ? explicitAlias : explicitAsRequired ? null : implicitAlias;
+    }
+
+    private static boolean isAliasKeywordBoundary(final String sqlFragment, final int index) {
+        if (index < 0 || index >= sqlFragment.length()) {
+            return true;
+        }
+
+        final char ch = sqlFragment.charAt(index);
+        return ch != '.' && ch != '_' && ch != '$' && !Character.isLetterOrDigit(ch);
+    }
+
+    private static boolean isAliasScannerHashCommentStart(final String sqlFragment, final int index) {
+        if (index < sqlFragment.length() - 1) {
+            final char next = sqlFragment.charAt(index + 1);
+
+            if (next == '{' || next == '>' || next == '-' || next == '#' || (index > 0 && sqlFragment.charAt(index - 1) == '?')) {
+                return false;
+            }
+
+            if ((index == 0 || sqlFragment.charAt(index - 1) == '.') && (next == '_' || next == '$' || Character.isLetterOrDigit(next))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private record TopLevelAlias(int expressionEnd, int aliasStart) {
+        // Compact scan result shared by FROM-table and SELECT-expression alias parsing.
     }
 
     /**
@@ -3682,17 +3836,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Appends a condition to the SQL statement.
-     * <p>A {@link Criteria} is expanded into its JOIN/WHERE/GROUP&nbsp;BY/HAVING/set-operation/ORDER&nbsp;BY/LIMIT
-     * parts. A clause condition ({@code Where}, {@code GroupBy}, {@code Having}, {@code OrderBy}, {@code Limit})
+     * <p>A {@link Criteria} applies its SELECT modifier to the current SELECT segment and is then expanded
+     * into its JOIN/WHERE/GROUP&nbsp;BY/HAVING/set-operation/ORDER&nbsp;BY/LIMIT parts. A clause condition
+     * ({@code Where}, {@code GroupBy}, {@code Having}, {@code OrderBy}, {@code Limit})
      * is rendered with its own keyword. Any other condition is appended with a leading {@code WHERE} keyword
      * (unless this builder is condition-only). A multi-element {@link com.landawn.abacus.query.condition.Junction}
      * is rendered with each member
      * parenthesized individually and joined by the junction operator, with no surrounding parentheses.</p>
-     *
-     * <p><b>&#9888;&#65039;</b> A {@link Criteria}'s select modifier ({@code DISTINCT} etc.) is <i>not</i> applied by this
-     * method: it belongs to the SELECT list, which has already been rendered by the time a condition is
-     * appended. It is exposed via {@link Criteria#selectModifier()} for callers (such as abacus-jdbc)
-     * that render the SELECT themselves.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3706,7 +3856,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param condition the condition to append
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code cond} is {@code null}
-     * @throws IllegalStateException if a clause it emits has already been set
+     * @throws IllegalStateException if there is no current SELECT segment, if that segment already
+     *                               has a select modifier, or if a clause emitted by the criteria has already been set
      * @see Filters
      */
     @Beta
@@ -3717,10 +3868,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         if (condition instanceof final Criteria criteria) {
             final Collection<Join> joins = criteria.joins();
+            final String criteriaSelectModifier = criteria.selectModifier();
 
-            // The criteria's select modifier (criteria.selectModifier(), e.g. DISTINCT) is intentionally
-            // not rendered here -- the SELECT list is already emitted; callers such as abacus-jdbc read it
-            // via Criteria.selectModifier() and apply it themselves.
+            if (Strings.isNotEmpty(criteriaSelectModifier)) {
+                if (_op != OperationType.QUERY || _isForConditionOnly || _selectKeywordEndIdx < 0) {
+                    throw new IllegalStateException("The Criteria select modifier ('" + criteriaSelectModifier + "') requires a current SELECT segment");
+                }
+
+                if (Strings.isNotEmpty(_selectModifier)) {
+                    throw new IllegalStateException("selectModifier has already been set and cannot be set again");
+                }
+            }
 
             if (N.notEmpty(joins)) {
                 for (final Join join : joins) {
@@ -3803,6 +3961,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (limit != null) {
                 appendLimit(limit);
             }
+
+            // Apply the modifier only after all Criteria clauses have been accepted. This prevents a
+            // duplicate-clause failure from leaving an otherwise rejected Criteria's modifier behind.
+            if (Strings.isNotEmpty(criteriaSelectModifier)) {
+                selectModifier(criteriaSelectModifier);
+            }
         } else if (condition instanceof Clause) {
             if (condition instanceof final Limit limit) {
                 appendLimit(limit);
@@ -3884,11 +4048,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param b if true, the condition will be appended
      * @param condition the condition to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code b} is {@code true} and {@code cond} is {@code null}
-     * @throws IllegalStateException if {@code b} is {@code true} and a clause emitted by {@code cond} has already been set
+     * @throws IllegalArgumentException if {@code b} is {@code true} and {@code condition} is {@code null}
+     * @throws IllegalStateException if this builder has already been closed by {@link #build()}, or if {@code b} is
+     *                               {@code true} and a clause emitted by {@code condition} has already been set
      */
     @Beta
     public This appendIf(final boolean b, final Condition condition) {
+        checkOpen();
+
         if (b) {
             append(condition);
         }
@@ -3915,9 +4082,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code b} is {@code true} and {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if this builder has already been closed by {@link #build()}
      */
     @Beta
     public This appendIf(final boolean b, final String expr) {
+        checkOpen();
+
         if (b) {
             append(expr);
         }
@@ -4014,6 +4184,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a UNION clause with a SQL query string.
      * UNION combines result sets from two queries and removes duplicates.
+     * This overload always treats its argument as a complete query; use {@link #union(Collection)}
+     * to generate the right-hand {@code SELECT} from property or column names.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4029,41 +4201,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
      */
     public This union(final String query) {
-        checkSetOperationSubQuery(query, "union");
-
-        return union(N.asArray(query));
-    }
-
-    /**
-     * Starts a new SELECT query for UNION operation.
-     * This method prepares the builder to specify a second SELECT query after UNION.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("id", "name")
-     *                 .from("users")
-     *                 .union("id", "name")
-     *                 .from("customers")
-     *                 .build().query();
-     * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
-     * }</pre>
-     *
-     * <p><b>&#9888;&#65039; Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
-     * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
-     * {@code FROM} keyword), it is treated as a complete sub-query and
-     * appended verbatim after the {@code UNION} keyword (no following {@code from(...)} is required).
-     * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
-     * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
-     * {@code SELECT}, use {@link #union(Collection)} with a single-element collection: the collection form
-     * always treats its elements as a column list (the sub-query heuristic does not apply there).</p>
-     *
-     * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
-     * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
-     *         or is a single sub-query-like argument that is not read-only
-     */
-    public This union(final String... propOrColumnNames) {
-        return appendSetOperation(_SPACE_UNION_SPACE, "union", propOrColumnNames);
+        return appendSetOperation(_SPACE_UNION_SPACE, "union", query);
     }
 
     /**
@@ -4112,6 +4250,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a UNION ALL clause with a SQL query string.
      * UNION ALL combines result sets from two queries and keeps all duplicates.
+     * This overload always treats its argument as a complete query; use {@link #unionAll(Collection)}
+     * to generate the right-hand {@code SELECT} from property or column names.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4127,41 +4267,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
      */
     public This unionAll(final String query) {
-        checkSetOperationSubQuery(query, "unionAll");
-
-        return unionAll(N.asArray(query));
-    }
-
-    /**
-     * Starts a new SELECT query for UNION ALL operation.
-     * This method prepares the builder to specify a second SELECT query after UNION ALL.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("id", "name")
-     *                 .from("users")
-     *                 .unionAll("id", "name")
-     *                 .from("customers")
-     *                 .build().query();
-     * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
-     * }</pre>
-     *
-     * <p><b>&#9888;&#65039; Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
-     * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
-     * {@code FROM} keyword), it is treated as a complete sub-query and
-     * appended verbatim after the {@code UNION ALL} keyword (no following {@code from(...)} is required).
-     * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
-     * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
-     * {@code SELECT}, use {@link #unionAll(Collection)} with a single-element collection: the collection form
-     * always treats its elements as a column list (the sub-query heuristic does not apply there).</p>
-     *
-     * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
-     * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
-     *         or is a single sub-query-like argument that is not read-only
-     */
-    public This unionAll(final String... propOrColumnNames) {
-        return appendSetOperation(_SPACE_UNION_ALL_SPACE, "unionAll", propOrColumnNames);
+        return appendSetOperation(_SPACE_UNION_ALL_SPACE, "unionAll", query);
     }
 
     /**
@@ -4210,6 +4316,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds an INTERSECT clause with a SQL query string.
      * INTERSECT returns only rows that appear in both result sets.
+     * This overload always treats its argument as a complete query; use {@link #intersect(Collection)}
+     * to generate the right-hand {@code SELECT} from property or column names.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4225,41 +4333,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
      */
     public This intersect(final String query) {
-        checkSetOperationSubQuery(query, "intersect");
-
-        return intersect(N.asArray(query));
-    }
-
-    /**
-     * Starts a new SELECT query for INTERSECT operation.
-     * This method prepares the builder to specify a second SELECT query after INTERSECT.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("id", "name")
-     *                 .from("users")
-     *                 .intersect("id", "name")
-     *                 .from("premium_users")
-     *                 .build().query();
-     * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
-     * }</pre>
-     *
-     * <p><b>&#9888;&#65039; Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
-     * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
-     * {@code FROM} keyword), it is treated as a complete sub-query and
-     * appended verbatim after the {@code INTERSECT} keyword (no following {@code from(...)} is required).
-     * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
-     * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
-     * {@code SELECT}, use {@link #intersect(Collection)} with a single-element collection: the collection form
-     * always treats its elements as a column list (the sub-query heuristic does not apply there).</p>
-     *
-     * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
-     * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
-     *         or is a single sub-query-like argument that is not read-only
-     */
-    public This intersect(final String... propOrColumnNames) {
-        return appendSetOperation(_SPACE_INTERSECT_SPACE, "intersect", propOrColumnNames);
+        return appendSetOperation(_SPACE_INTERSECT_SPACE, "intersect", query);
     }
 
     /**
@@ -4308,6 +4382,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds an EXCEPT clause with a SQL query string.
      * EXCEPT returns rows from the first query that don't appear in the second query.
+     * This overload always treats its argument as a complete query; use {@link #except(Collection)}
+     * to generate the right-hand {@code SELECT} from property or column names.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4323,41 +4399,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
      */
     public This except(final String query) {
-        checkSetOperationSubQuery(query, "except");
-
-        return except(N.asArray(query));
-    }
-
-    /**
-     * Starts a new SELECT query for EXCEPT operation.
-     * This method prepares the builder to specify a second SELECT query after EXCEPT.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("id", "name")
-     *                 .from("users")
-     *                 .except("id", "name")
-     *                 .from("inactive_users")
-     *                 .build().query();
-     * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
-     * }</pre>
-     *
-     * <p><b>&#9888;&#65039; Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
-     * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
-     * {@code FROM} keyword), it is treated as a complete sub-query and
-     * appended verbatim after the {@code EXCEPT} keyword (no following {@code from(...)} is required).
-     * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
-     * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
-     * {@code SELECT}, use {@link #except(Collection)} with a single-element collection: the collection form
-     * always treats its elements as a column list (the sub-query heuristic does not apply there).</p>
-     *
-     * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
-     * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
-     *         or is a single sub-query-like argument that is not read-only
-     */
-    public This except(final String... propOrColumnNames) {
-        return appendSetOperation(_SPACE_EXCEPT_SPACE, "except", propOrColumnNames);
+        return appendSetOperation(_SPACE_EXCEPT_SPACE, "except", query);
     }
 
     /**
@@ -4407,6 +4449,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a MINUS clause with a SQL query string (Oracle syntax).
      * MINUS is Oracle's equivalent to EXCEPT - returns rows from the first query that don't appear in the second.
+     * This overload always treats its argument as a complete query; use {@link #minus(Collection)}
+     * to generate the right-hand {@code SELECT} from property or column names.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4422,41 +4466,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
      */
     public This minus(final String query) {
-        checkSetOperationSubQuery(query, "minus");
-
-        return minus(N.asArray(query));
-    }
-
-    /**
-     * Starts a new SELECT query for MINUS operation (Oracle syntax).
-     * This method prepares the builder to specify a second SELECT query after MINUS.
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.select("id", "name")
-     *                 .from("users")
-     *                 .minus("id", "name")
-     *                 .from("inactive_users")
-     *                 .build().query();
-     * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
-     * }</pre>
-     *
-     * <p><b>&#9888;&#65039; Column-list vs. sub-query heuristic:</b> if exactly one argument is supplied and, after
-     * trimming, it begins with the {@code SELECT} keyword (or contains a {@code SELECT} followed by a
-     * {@code FROM} keyword), it is treated as a complete sub-query and
-     * appended verbatim after the {@code MINUS} keyword (no following {@code from(...)} is required).
-     * Otherwise the argument(s) are treated as a column list for the next {@code SELECT}, to be completed
-     * by a subsequent {@code from(...)}. To force a single literal column name that happens to start with
-     * {@code SELECT}, use {@link #minus(Collection)} with a single-element collection: the collection form
-     * always treats its elements as a column list (the sub-query heuristic does not apply there).</p>
-     *
-     * @param propOrColumnNames the columns for the next {@code SELECT}, or a single complete {@code SELECT ...} sub-query
-     * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
-     *         or is a single sub-query-like argument that is not read-only
-     */
-    public This minus(final String... propOrColumnNames) {
-        return appendSetOperation(_SPACE_EXCEPT_MINUS_SPACE, "minus", propOrColumnNames);
+        return appendSetOperation(_SPACE_EXCEPT_MINUS_SPACE, "minus", query);
     }
 
     /**
@@ -4483,23 +4493,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Shared implementation for the varargs set-operation starters
-     * ({@code union}/{@code unionAll}/{@code intersect}/{@code except}/{@code minus}): resets the
-     * builder to a fresh QUERY, appends the set-operation keyword, and — when the single argument is
-     * itself a sub-query — appends it directly; otherwise the columns are emitted later by {@code from(...)}.
+     * Shared implementation for the raw-query set-operation overloads. It validates and appends
+     * the complete right-hand {@code SELECT} query after resetting per-segment builder state.
      *
      * @param keyword the set-operation keyword token (e.g. {@link #_SPACE_UNION_SPACE})
      * @param operationName the public set-operation method name used in validation messages
-     * @param propOrColumnNames the columns of the following SELECT, or a single sub-query string
+     * @param query the complete read-only {@code SELECT} query to append
      * @return this builder instance for method chaining
      */
     @SuppressWarnings("unchecked")
-    private This appendSetOperation(final char[] keyword, final String operationName, final String... propOrColumnNames) {
-        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+    private This appendSetOperation(final char[] keyword, final String operationName, final String query) {
+        checkSetOperationSubQuery(query, operationName);
+        checkCanAppendSetOperation(operationName);
 
         _op = OperationType.QUERY;
 
-        _propOrColumnNames = new ArrayList<>(Array.asList(propOrColumnNames));
+        _propOrColumnNames = null;
         _propOrColumnNameAliases = null;
         _multiSelects = null;
 
@@ -4509,15 +4518,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _selectModifier = null;
         _selectKeywordEndIdx = -1;
 
-        _sb.append(keyword);
-
-        // A single sub-query argument is appended directly; otherwise columns are built in from(...).
-        if (isSubQuery(propOrColumnNames)) {
-            checkSetOperationSubQuery(propOrColumnNames[0], operationName);
-            _sb.append(propOrColumnNames[0]);
-
-            _propOrColumnNames = null;
-        }
+        _sb.append(keyword).append(query);
 
         return (This) this;
     }
@@ -4534,6 +4535,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     @SuppressWarnings("unchecked")
     private This appendSetOperation(final char[] keyword, final Collection<String> propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+        checkCanAppendSetOperation(new String(keyword).trim());
 
         _op = OperationType.QUERY;
 
@@ -4559,6 +4561,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private This appendSetOperation(final char[] keyword, final This sqlBuilder, final String operationName) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
         N.checkArgument(sqlBuilder != this, "Cannot apply " + operationName + " with the same SqlBuilder instance");
+        checkCanAppendSetOperation(operationName);
         final Map<String, Integer> parentOccurrences = N.isEmpty(_namedParameterNameOccurrences) ? Collections.emptyMap()
                 : new HashMap<>(_namedParameterNameOccurrences);
 
@@ -4579,6 +4582,38 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return appendSetOperation(keyword, operationName, sql);
+    }
+
+    /**
+     * Verifies that a set operation has a complete query on its left-hand side. A staged SELECT list
+     * is not a query until {@link #from(String)} renders it, and data-modification statements cannot
+     * legally be used as the left operand of {@code UNION}, {@code INTERSECT}, {@code EXCEPT}, or
+     * {@code MINUS}. A preceding set-operation operand supplied as a complete SQL string is considered
+     * complete even though it did not call {@code from(...)} on this builder.
+     * Terminal clauses that apply to a completed result ({@code ORDER BY}, pagination, and
+     * {@code FOR UPDATE}) must be added after the final set operand; appending a set operator after
+     * one of them would place the operator in an invalid position.
+     *
+     * @param operationName the public set-operation name used in the exception message
+     * @throws IllegalStateException if the current operation is not a query or its current SELECT
+     *         segment has not been completed
+     */
+    private void checkCanAppendSetOperation(final String operationName) {
+        if (_op != OperationType.QUERY || _isForConditionOnly) {
+            throw new IllegalStateException(operationName + " requires a complete SELECT query on its left-hand side");
+        }
+
+        final boolean completeLiteralOperand = !_sb.isEmpty() && N.isEmpty(_propOrColumnNames) && N.isEmpty(_propOrColumnNameAliases)
+                && N.isEmpty(_multiSelects) && Strings.isEmpty(_selectModifier) && _selectKeywordEndIdx < 0;
+
+        if (!_hasFromBeenSet && !completeLiteralOperand) {
+            throw new IllegalStateException(operationName + " requires from(...) to complete the current SELECT segment first");
+        }
+
+        if (calledOpSet.contains(SK.ORDER_BY) || calledOpSet.contains(SK.LIMIT) || calledOpSet.contains(SK.OFFSET) || calledOpSet.contains(SK.FETCH_FIRST)
+                || calledOpSet.contains(SK.FETCH_NEXT) || calledOpSet.contains(SK.FOR_UPDATE)) {
+            throw new IllegalStateException(operationName + " must be added before ORDER BY, pagination, or FOR UPDATE clauses");
+        }
     }
 
     private String uniquifySetOperationNamedParameters(final String sql, final Map<String, Integer> childOccurrences,
@@ -5285,9 +5320,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         SET columns)
      */
     public SP build() {
-        if (_sb == null) {
-            throw new IllegalStateException("SqlBuilder is closed and cannot be reused after build() was called");
-        }
+        checkOpen();
 
         String sql = null;
 
@@ -5307,6 +5340,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return new SP(sql, ImmutableList.wrap(_parameters));
+    }
+
+    private void checkOpen() {
+        if (_sb == null) {
+            throw new IllegalStateException("SqlBuilder is closed and cannot be reused after build() was called");
+        }
     }
 
     /**
@@ -5515,7 +5554,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         if (Beans.isBeanClass(entityClass)) {
             _entityInfo = ParserUtil.getBeanInfo(entityClass);
-            _propColumnNameMap = prop2ColumnNameMap(entityClass, _namingPolicy);
+            _propColumnNameMap = propToColumnInfoMap(entityClass, _namingPolicy);
         } else {
             _entityInfo = null;
             _propColumnNameMap = null;
@@ -6014,17 +6053,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param isForSelect whether this column is being appended in a SELECT clause (adds AS alias)
      * @param quotePropAlias whether to wrap the property alias in the dialect's identifier quote
      */
-    protected void appendColumnName(final Class<?> entityClass, final BeanInfo entityInfo,
-            final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String tableAlias, final String propName, final String propAlias,
-            final boolean withClassAlias, final String classAlias, final boolean isForSelect, boolean quotePropAlias) {
-        Tuple2<String, Boolean> tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
+    protected void appendColumnName(final Class<?> entityClass, final BeanInfo entityInfo, final ImmutableMap<String, ColumnInfo> propColumnNameMap,
+            final String tableAlias, final String propName, final String propAlias, final boolean withClassAlias, final String classAlias,
+            final boolean isForSelect, boolean quotePropAlias) {
+        ColumnInfo tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
-            if (tp._2 && tableAlias != null && !tableAlias.isEmpty()) {
+            if (tp.hasNoDot() && tableAlias != null && !tableAlias.isEmpty()) {
                 _sb.append(tableAlias).append(SK._PERIOD);
             }
 
-            _sb.append(tp._1);
+            _sb.append(tp.columnName());
 
             if (isForSelect && (withClassAlias || _namingPolicy != NamingPolicy.NO_CHANGE)) {
                 _sb.append(_SPACE_AS_SPACE);
@@ -6055,7 +6094,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 final String propEntityTableAliasOrName = tableAliasOrName(propEntityClass, _namingPolicy);
 
-                final ImmutableMap<String, Tuple2<String, Boolean>> subPropColumnNameMap = prop2ColumnNameMap(propEntityClass, _namingPolicy);
+                final ImmutableMap<String, ColumnInfo> subPropColumnNameMap = propToColumnInfoMap(propEntityClass, _namingPolicy);
 
                 final Collection<String> subSelectPropNames = QueryUtil.selectPropertyNames(propEntityClass, false, null);
                 int i = 0;
@@ -6065,10 +6104,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         _sb.append(_COMMA_SPACE);
                     }
 
-                    final Tuple2<String, Boolean> subTp = subPropColumnNameMap.get(subPropName);
+                    final ColumnInfo subTp = subPropColumnNameMap.get(subPropName);
                     _sb.append(propEntityTableAliasOrName)
                             .append(SK._PERIOD)
-                            .append(subTp != null ? subTp._1 : normalizeColumnName(subPropName, _namingPolicy));
+                            .append(subTp != null ? subTp.columnName() : normalizeColumnName(subPropName, _namingPolicy));
 
                     if (isForSelect) {
                         _sb.append(_SPACE_AS_SPACE);
@@ -6094,14 +6133,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (index > 0) {
                 final String propTableAlias = propName.substring(0, index);
-                final Map<String, Tuple2<String, Boolean>> newPropColumnNameMap = _aliasPropColumnNameMap.get(propTableAlias);
+                final Map<String, ColumnInfo> newPropColumnNameMap = _aliasPropColumnNameMap.get(propTableAlias);
 
                 if (newPropColumnNameMap != null) {
                     final String newPropName = propName.substring(index + 1);
                     tp = newPropColumnNameMap.get(newPropName);
 
                     if (tp != null) {
-                        _sb.append(propTableAlias).append('.').append(tp._1);
+                        _sb.append(propTableAlias).append('.').append(tp.columnName());
 
                         if (isForSelect && (withClassAlias || _namingPolicy != NamingPolicy.NO_CHANGE)) {
                             _sb.append(_SPACE_AS_SPACE);
@@ -6152,13 +6191,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 }
             }
         } else if (isForSelect) {
-            int index = Strings.indexOfIgnoreCase(propName, " AS ");
+            final TopLevelAlias selectAlias = findTopLevelAlias(propName, true);
 
-            if (index > 0) {
-                Dsl.validateColumnAlias(propName.substring(0, index).trim(), propName.substring(index + 4).trim());
+            if (selectAlias != null) {
+                final String expression = propName.substring(0, selectAlias.expressionEnd()).trim();
+                final String alias = propName.substring(selectAlias.aliasStart()).trim();
+                Dsl.validateColumnAlias(expression, alias);
                 //noinspection ConstantValue
-                appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, propName.substring(0, index).trim(),
-                        propName.substring(index + 4).trim(), withClassAlias, classAlias, isForSelect, false);
+                appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, expression, alias, withClassAlias, classAlias, isForSelect, false);
             } else {
                 appendStringExpr(propName, true);
 
@@ -6256,14 +6296,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propName the property name to normalize
      * @return the normalized column name, optionally prefixed with a table alias
      */
-    protected String normalizeColumnName(final ImmutableMap<String, Tuple2<String, Boolean>> propColumnNameMap, final String propName) {
-        Tuple2<String, Boolean> tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
+    protected String normalizeColumnName(final ImmutableMap<String, ColumnInfo> propColumnNameMap, final String propName) {
+        ColumnInfo tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
-            if (tp._2 && _tableAlias != null && !_tableAlias.isEmpty()) {
-                return _tableAlias + "." + tp._1;
+            if (tp.hasNoDot() && _tableAlias != null && !_tableAlias.isEmpty()) {
+                return _tableAlias + "." + tp.columnName();
             }
-            return tp._1;
+            return tp.columnName();
         }
 
         if (_aliasPropColumnNameMap != null && !_aliasPropColumnNameMap.isEmpty()) {
@@ -6271,14 +6311,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (index > 0) {
                 final String propTableAlias = propName.substring(0, index);
-                final Map<String, Tuple2<String, Boolean>> newPropColumnNameMap = _aliasPropColumnNameMap.get(propTableAlias);
+                final Map<String, ColumnInfo> newPropColumnNameMap = _aliasPropColumnNameMap.get(propTableAlias);
 
                 if (newPropColumnNameMap != null) {
                     final String newPropName = propName.substring(index + 1);
                     tp = newPropColumnNameMap.get(newPropName);
 
                     if (tp != null) {
-                        return propTableAlias + "." + tp._1;
+                        return propTableAlias + "." + tp.columnName();
                     }
                 }
             }
@@ -6354,7 +6394,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <ul>
      *   <li>If it is a {@link Map}, every other non-null element must also be a {@code Map} with the
      *       exact same key set; each row is defensively copied and no property is removed.</li>
-     *   <li>If it is a bean, every other non-null element must have the same insertable property set;
+     *   <li>If it is a bean, every other non-null element must have the same runtime class;
      *       a property is removed from every row only when it is {@code null} across all entities. A
      *       default-valued ID column is removed only when every row has a completely default ID; for
      *       composite IDs, assigning any component retains every non-null component column.</li>
@@ -6364,7 +6404,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return a list of property-value maps suitable for batch insert
      * @throws IllegalArgumentException if every element is {@code null}; if a map is empty, has a non-string
      *         or blank key, or does not share the same key set as the other map rows; if elements have mixed
-     *         types (some {@code Map}, some bean); if bean rows do not share the same insertable property set;
+     *         types (some {@code Map}, some bean); if bean rows do not have the same runtime class;
      *         or if no bean column remains after all-null/default columns are removed
      */
     protected static List<Map<String, Object>> toInsertPropsList(final Collection<?> propsList) {
@@ -6420,16 +6460,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             final Class<?> currentEntityClass = entity.getClass();
-            final Collection<String> currentPropNames = QueryUtil.insertPropertyNames(currentEntityClass, null);
-            N.checkArgument(propNames.equals(currentPropNames),
-                    "All non-null entities in propsList must have the same insertable property set. First entity class: " + entityClass.getName()
-                            + ", current entity class: " + currentEntityClass.getName());
+            N.checkArgument(currentEntityClass == entityClass, "All non-null bean entities in propsList must have the same runtime class. Expected: "
+                    + entityClass.getName() + ", current: " + currentEntityClass.getName());
 
-            final BeanInfo beanInfo = ParserUtil.getBeanInfo(currentEntityClass);
             final Map<String, Object> props = N.newLinkedHashMap(propNames.size());
 
             for (final String propName : propNames) {
-                props.put(propName, beanInfo.getPropValue(entity, propName));
+                props.put(propName, firstEntityBeanInfo.getPropValue(entity, propName));
             }
 
             newPropsList.add(props);
@@ -6485,10 +6522,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class
      * @param namingPolicy the naming policy
-     * @return an immutable map from property names to column name tuples
+     * @return an immutable map from property and column lookup keys to column information
      */
-    protected static ImmutableMap<String, Tuple2<String, Boolean>> prop2ColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
-        return QueryUtil.prop2ColumnNameMap(entityClass, namingPolicy);
+    protected static ImmutableMap<String, ColumnInfo> propToColumnInfoMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+        return QueryUtil.propToColumnInfoMap(entityClass, namingPolicy);
     }
 
     /**

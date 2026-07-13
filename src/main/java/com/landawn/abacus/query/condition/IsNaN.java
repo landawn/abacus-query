@@ -36,9 +36,11 @@ import com.landawn.abacus.query.Filters;
  * <p>Important properties of NaN:</p>
  * <ul>
  *   <li>NaN is not equal to anything, including itself (under IEEE 754 {@code NaN == NaN} is {@code false})</li>
- *   <li>Standard SQL comparisons against NaN evaluate to UNKNOWN (and behave as {@code false} in WHERE clauses)</li>
+ *   <li>Comparison behavior is database-specific; do not assume ordinary equality or inequality
+ *       provides a portable NaN test</li>
  *   <li>NaN propagates through calculations (any arithmetic operation with NaN returns NaN)</li>
- *   <li>Must use {@code IS NAN} or {@code IS NOT NAN} to reliably test for NaN values</li>
+ *   <li>Where supported, explicit {@code IS NAN}/{@code IS NOT NAN} predicates make the
+ *       intended test unambiguous</li>
  * </ul>
  *
  * <p><b>SQL portability note:</b> {@code IS NAN} is not standard ANSI SQL. Support for this
@@ -102,10 +104,9 @@ public class IsNaN extends Is {
      * result. This is crucial for data validation, quality checks, and identifying
      * calculation errors in floating-point operations.
      *
-     * <p>The generated SQL uses the {@code IS NAN} operator because NaN has special comparison
-     * semantics in SQL: any comparison with NaN (including {@code = NAN}) evaluates to UNKNOWN
-     * and therefore behaves as {@code false} in WHERE clauses. {@code IS NAN} is the only
-     * reliable way to test for NaN values.</p>
+     * <p>The generated SQL uses the explicit {@code IS NAN} predicate rather than relying on
+     * database-specific equality semantics. As noted above, the predicate itself is also
+     * vendor-specific and must be supported by the selected database.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

@@ -6,11 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -397,6 +401,43 @@ public class UsingTest extends TestBase {
         // Verify order is maintained
         Assertions.assertTrue(firstIndex < secondIndex);
         Assertions.assertTrue(secondIndex < thirdIndex);
+    }
+
+    @Test
+    public void testConstructorSnapshotsCollectionBeforeRendering() {
+        final AtomicInteger iteratorCount = new AtomicInteger();
+        final AbstractCollection<String> liveColumns = new AbstractCollection<>() {
+            @Override
+            public Iterator<String> iterator() {
+                final String value = iteratorCount.getAndIncrement() == 0 ? "employee_id" : "orders.employee_id";
+                return Collections.singleton(value).iterator();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        final Using using = new Using(liveColumns);
+
+        Assertions.assertEquals(Collections.singletonList("employee_id"), using.columnNames());
+        Assertions.assertEquals("USING (employee_id)", using.toString());
+        Assertions.assertEquals(1, iteratorCount.get(), "The input must be snapshotted in one validated pass");
+
+        final AbstractCollection<String> disappearsDuringSnapshot = new AbstractCollection<>() {
+            @Override
+            public Iterator<String> iterator() {
+                return Collections.emptyIterator();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        assertThrows(IllegalArgumentException.class, () -> new Using(disappearsDuringSnapshot));
     }
 
     @Test

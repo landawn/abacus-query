@@ -522,7 +522,7 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code entitiesOrPropMaps} is null or empty, if every element is
      *         {@code null}; if a map is empty, contains a non-string or blank key, or does not share
      *         the same key set as the other rows; if elements have mixed types (some {@code Map}, some
-     *         bean); if bean rows do not share an insertable property set; or if no bean column remains
+     *         bean); if bean rows do not have the same runtime class; or if no bean column remains
      *         after columns that are null/default in every row are removed
      */
     @Beta

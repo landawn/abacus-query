@@ -214,7 +214,7 @@ public class SqlDialect {
 
         /**
          * Returns whether this descriptor names MariaDB. The match is a case-insensitive substring test
-         * against {@link #name()}..
+         * against {@link #name()}.
          *
          * @return {@code true} if {@link #name()} contains {@code "mariadb"} (case-insensitively)
          */
@@ -235,7 +235,7 @@ public class SqlDialect {
         /**
          * Returns whether this descriptor names Microsoft SQL Server. The match is a case-insensitive
          * substring test against {@link #name()}, so raw JDBC values such as {@code "Microsoft SQL Server"}
-         * are recognized..
+         * are recognized.
          *
          * @return {@code true} if {@link #name()} contains {@code "sql server"} or {@code "sqlserver"} (case-insensitively)
          */
@@ -247,7 +247,7 @@ public class SqlDialect {
          * Returns whether this descriptor names Oracle Database. The match is a case-insensitive
          * substring test against {@link #name()}, so raw JDBC values from
          * {@code DatabaseMetaData.getDatabaseProductName()} such as {@code "Oracle Database 19c"}
-         * are recognized..
+         * are recognized.
          *
          * @return {@code true} if {@link #name()} contains {@code "oracle"} (case-insensitively)
          */
@@ -257,7 +257,7 @@ public class SqlDialect {
 
         /**
          * Returns whether this descriptor names IBM DB2. The match is a case-insensitive substring
-         * test against {@link #name()}..
+         * test against {@link #name()}.
          *
          * @return {@code true} if {@link #name()} contains {@code "db2"} (case-insensitively)
          */
@@ -267,7 +267,7 @@ public class SqlDialect {
 
         /**
          * Returns whether this descriptor names H2 Database. The match is a case-insensitive substring
-         * test against {@link #name()}..
+         * test against {@link #name()}.
          *
          * @return {@code true} if {@link #name()} contains {@code "h2"} (case-insensitively)
          */
@@ -277,7 +277,7 @@ public class SqlDialect {
 
         /**
          * Returns whether this descriptor names SQLite. The match is a case-insensitive substring test
-         * against {@link #name()}..
+         * against {@link #name()}.
          *
          * @return {@code true} if {@link #name()} contains {@code "sqlite"} (case-insensitively)
          */
@@ -331,7 +331,7 @@ public class SqlDialect {
         /**
          * Parses the leading dot-separated run of integer components of a version string (for example
          * {@code "8.0.32"} to {@code [8, 0, 32]} and {@code "19c"} to {@code [19]}), or {@code null} when the
-         * string is {@code null}, blank, does not begin with a digit, or has an unparseable component.
+         * string is {@code null}, blank, does not begin with a digit, or has an empty/unparseable component.
          */
         private static long[] parseVersionComponents(final String version) {
             if (Strings.isBlank(version)) {
@@ -350,7 +350,9 @@ public class SqlDialect {
                 end++;
             }
 
-            final String[] parts = trimmed.substring(0, end).split("\\.");
+            // Retain trailing empty components so malformed versions such as "8." and "8.."
+            // are rejected instead of silently comparing as version 8.
+            final String[] parts = trimmed.substring(0, end).split("\\.", -1);
             final long[] components = new long[parts.length];
 
             try {

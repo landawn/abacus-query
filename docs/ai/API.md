@@ -4537,13 +4537,13 @@ A container representing a complete SQL query structure composed of multiple cla
 #### Public Instance Methods
 ##### selectModifier(...) -> String
 - **Signature:** `public String selectModifier()`
-- **Summary:** Returns the SELECT modifier (e.g., {@code DISTINCT} , {@code DISTINCTROW} , {@code DISTINCT(col1, col2)} , or any custom modifier set via {@link Builder#selectModifier(String)} ), or {@code null} if none was set.
+- **Summary:** Returns the SELECT modifier (e.g., {@code DISTINCT} , {@code DISTINCTROW} , {@code DISTINCT ON (col1, col2)} , or any custom modifier set via {@link Builder#selectModifier(String)} ), or {@code null} if none was set.
 - **Contract:**
-  - Returns the SELECT modifier (e.g., {@code DISTINCT} , {@code DISTINCTROW} , {@code DISTINCT(col1, col2)} , or any custom modifier set via {@link Builder#selectModifier(String)} ), or {@code null} if none was set.
+  - {@code SqlBuilder.append(Criteria)} applies the modifier to its current SELECT segment.
 - **Parameters:**
   - (none)
 - **Returns:** the SELECT modifier, or {@code null} if not set
-- **See also:** Builder#distinct(), Builder#distinctBy(String), Builder#distinctRow(), Builder#distinctRowBy(String), Builder#selectModifier(String)
+- **See also:** Builder#distinct(), Builder#distinctOn(String), Builder#distinctRow(), Builder#distinctRowBy(String), Builder#selectModifier(String)
 ##### joins(...) -> ImmutableList<Join>
 - **Signature:** `public ImmutableList<Join> joins()`
 - **Summary:** Returns all JOIN clauses (JOIN, INNER JOIN, LEFT JOIN, RIGHT JOIN, FULL JOIN, CROSS JOIN, NATURAL JOIN) in the order they were added.
@@ -4658,24 +4658,24 @@ A mutable builder for constructing {@link Criteria} instances with a fluent API.
 - **Signature:** `public Builder distinct()`
 - **Summary:** Sets the DISTINCT modifier for the query.
 - **Contract:**
-  - This library's {@code SqlBuilder} does <i> not </i> apply it when appending a {@code Criteria} ; use {@code SqlBuilder} 's own {@code distinct()} or {@code selectModifier(String)} to get {@code SELECT DISTINCT} in SQL rendered here.
+  - Appending the built {@code Criteria} to a {@code SqlBuilder} applies the modifier to the current SELECT segment.
 - **Parameters:**
   - (none)
 - **Returns:** this Builder instance for method chaining
-- **See also:** #distinctBy(String)
-##### distinctBy(...) -> Builder
-- **Signature:** `public Builder distinctBy(final String columnNames)`
-- **Summary:** Sets the DISTINCT modifier with specific columns.
+- **See also:** #distinctOn(String)
+##### distinctOn(...) -> Builder
+- **Signature:** `public Builder distinctOn(final String columnNames)`
+- **Summary:** Sets the PostgreSQL-style DISTINCT ON modifier with specific expressions.
 - **Contract:**
-  - If {@code columnNames} is {@code null} or empty, a plain {@code DISTINCT} modifier (without parentheses) is used.
+  - If {@code columnNames} is {@code null}, empty, or blank, a plain {@code DISTINCT} modifier is used.
 - **Parameters:**
-  - `columnNames` (`String`) — the columns to apply DISTINCT to; if {@code null} or empty, plain {@code DISTINCT} is used
+  - `columnNames` (`String`) — the expressions for DISTINCT ON; if {@code null}, empty, or blank, plain {@code DISTINCT} is used
 - **Returns:** this Builder instance for method chaining
 ##### distinctRow(...) -> Builder
 - **Signature:** `public Builder distinctRow()`
 - **Summary:** Sets the DISTINCTROW modifier for the query.
 - **Contract:**
-  - Like {@link #distinct()} , the modifier is only exposed via {@link Criteria#selectModifier()} for external consumers; this library's {@code SqlBuilder} does not apply it when appending a {@code Criteria} ; use {@code SqlBuilder.selectModifier("DISTINCTROW")} to get it in SQL rendered here.
+  - Appending the built {@code Criteria} to a {@code SqlBuilder} applies the modifier to the current SELECT segment.
 - **Parameters:**
   - (none)
 - **Returns:** this Builder instance for method chaining
@@ -7605,4 +7605,3 @@ Represents a WHERE clause in SQL queries.
 - **Summary:** Creates a WHERE clause with the specified condition.
 - **Parameters:**
   - `condition` (`Condition`) — the condition to apply in the WHERE clause. Must not be {@code null} .
-

@@ -34,10 +34,11 @@ import com.landawn.abacus.util.Strings;
  * ({@link Join}, {@link Where}, {@link GroupBy}, {@link Having}, {@link OrderBy}, {@link Limit},
  * and set operations like {@link Union}/{@link UnionAll}/{@link Intersect}/{@link Except}/{@link Minus}).
  *
- * <p>Instances are effectively immutable once built: the constituent conditions list is final
- * and never mutated post-construction, and all collection accessors ({@link #conditions()},
+ * <p>Instances are structurally immutable once built: the constituent-condition list is defensively
+ * copied at construction time and never mutated post-construction, and all collection accessors ({@link #conditions()},
  * {@link #joins()}, {@link #setOperations()}, {@link #findConditions(Operator)}) return
- * unmodifiable lists.</p>
+ * unmodifiable lists. As with other composite conditions, callers should not mutate custom condition
+ * elements after construction.</p>
  *
  * <p>Instances are created via {@link #builder()}. Each clause is independent and should not
  * be nested inside another clause; compose multiple clauses within a single {@code Criteria}.</p>
@@ -96,33 +97,35 @@ public class Criteria extends AbstractCondition {
     /**
      * Creates a new Criteria instance with the specified select modifier and condition list.
      * This constructor is package-private; use {@link #builder()} to construct instances.
-     * The supplied {@code conditions} list is stored by reference (no defensive copy), so
-     * callers must pass a freshly created list that they will not retain or mutate afterwards.
+     * The supplied {@code conditions} list is defensively copied so subsequent changes to the
+     * caller's list cannot change this condition or invalidate its cached parameters/hash code.
      *
      * @param selectModifier the SELECT modifier (e.g., {@code DISTINCT}), or {@code null} for none
-     * @param conditions the list of conditions representing the query clauses; stored by reference
+     * @param conditions the list of conditions representing the query clauses; defensively copied
+     * @throws IllegalArgumentException if {@code conditions} is {@code null}
      */
     Criteria(String selectModifier, List<Condition> conditions) {
         super(Operator.EMPTY);
         this.selectModifier = selectModifier;
-        this.conditions = conditions;
+        this.conditions = new ArrayList<>(N.checkArgNotNull(conditions, "conditions"));
     }
 
     /**
      * Returns the SELECT modifier (e.g., {@code DISTINCT}, {@code DISTINCTROW},
-     * {@code DISTINCT(col1, col2)}, or any custom modifier set via
+     * {@code DISTINCT ON (col1, col2)}, or any custom modifier set via
      * {@link Builder#selectModifier(String)}), or {@code null} if none was set.
+     * {@code SqlBuilder.append(Criteria)} applies this modifier to its current SELECT segment.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria.builder().build().selectModifier();                    // returns null
      * Criteria.builder().distinct().build().selectModifier();         // returns "DISTINCT"
-     * Criteria.builder().distinctBy("a, b").build().selectModifier(); // returns "DISTINCT(a, b)"
+     * Criteria.builder().distinctOn("a, b").build().selectModifier(); // returns "DISTINCT ON (a, b)"
      * }</pre>
      *
      * @return the SELECT modifier, or {@code null} if not set
      * @see Builder#distinct()
-     * @see Builder#distinctBy(String)
+     * @see Builder#distinctOn(String)
      * @see Builder#distinctRow()
      * @see Builder#distinctRowBy(String)
      * @see Builder#selectModifier(String)
@@ -671,11 +674,8 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Sets the DISTINCT modifier for the query.
-         * The modifier is stored on the built {@code Criteria} and exposed via
-         * {@link Criteria#selectModifier()} for external consumers (such as abacus-jdbc) that
-         * render the {@code SELECT} clause. This library's {@code SqlBuilder} does <i>not</i> apply
-         * it when appending a {@code Criteria}; use {@code SqlBuilder}'s own {@code distinct()} or
-         * {@code selectModifier(String)} to get {@code SELECT DISTINCT} in SQL rendered here.
+         * The modifier is stored on the built {@code Criteria}. When the criteria is appended to
+         * a {@code SqlBuilder}, it is applied to that builder's current {@code SELECT} segment.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -688,7 +688,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @return this Builder instance for method chaining
-         * @see #distinctBy(String)
+         * @see #distinctOn(String)
          */
         public Builder distinct() {
             selectModifier = SK.DISTINCT;
@@ -697,28 +697,29 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Sets the DISTINCT modifier with specific columns.
-         * Only the specified columns are considered for duplicate removal.
-         * If {@code columnNames} is {@code null} or empty, a plain {@code DISTINCT}
-         * modifier (without parentheses) is used.
+         * Sets the PostgreSQL-style {@code DISTINCT ON} modifier with specific expressions.
+         * The database dialect used to execute the generated SQL must support this syntax.
+         * If {@code columnNames} is {@code null}, empty, or blank, a plain {@code DISTINCT}
+         * modifier is used.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria.builder().distinctBy("department, location").build().selectModifier();
-         * // returns "DISTINCT(department, location)"
+         * Criteria.builder().distinctOn("department, location").build().selectModifier();
+         * // returns "DISTINCT ON (department, location)"
          *
-         * Criteria.builder().distinctBy("city").build().selectModifier();   // returns "DISTINCT(city)"
+         * Criteria.builder().distinctOn("city").build().selectModifier();   // returns "DISTINCT ON (city)"
          *
-         * // null or empty falls back to a plain DISTINCT (no parentheses).
-         * Criteria.builder().distinctBy(null).build().selectModifier();     // returns "DISTINCT"
-         * Criteria.builder().distinctBy("").build().selectModifier();       // returns "DISTINCT"
+         * // null, empty, or blank falls back to a plain DISTINCT (no parentheses).
+         * Criteria.builder().distinctOn(null).build().selectModifier();     // returns "DISTINCT"
+         * Criteria.builder().distinctOn("").build().selectModifier();       // returns "DISTINCT"
          * }</pre>
          *
-         * @param columnNames the columns to apply DISTINCT to; if {@code null} or empty, plain {@code DISTINCT} is used
+         * @param columnNames the expressions for {@code DISTINCT ON}; if {@code null}, empty, or blank,
+         *                    plain {@code DISTINCT} is used
          * @return this Builder instance for method chaining
          */
-        public Builder distinctBy(final String columnNames) {
-            selectModifier = Strings.isEmpty(columnNames) ? SK.DISTINCT : SK.DISTINCT + "(" + columnNames + ")";
+        public Builder distinctOn(final String columnNames) {
+            selectModifier = Strings.isBlank(columnNames) ? SK.DISTINCT : SK.DISTINCT + " ON (" + columnNames + ")";
 
             return this;
         }
@@ -726,10 +727,8 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets the DISTINCTROW modifier for the query.
          * DISTINCTROW is similar to DISTINCT but may have database-specific behavior.
-         * Like {@link #distinct()}, the modifier is only exposed via
-         * {@link Criteria#selectModifier()} for external consumers; this library's
-         * {@code SqlBuilder} does not apply it when appending a {@code Criteria}; use
-         * {@code SqlBuilder.selectModifier("DISTINCTROW")} to get it in SQL rendered here.
+         * Like {@link #distinct()}, the modifier is applied to the current {@code SELECT}
+         * when this criteria is appended to a {@code SqlBuilder}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -751,7 +750,7 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets the DISTINCTROW modifier with specific columns.
          * Only the specified columns are considered for duplicate removal.
-         * If {@code columnNames} is {@code null} or empty, a plain {@code DISTINCTROW}
+         * If {@code columnNames} is {@code null}, empty, or blank, a plain {@code DISTINCTROW}
          * modifier (without parentheses) is used.
          *
          * <p><b>Usage Examples:</b></p>
@@ -759,15 +758,16 @@ public class Criteria extends AbstractCondition {
          * Criteria.builder().distinctRowBy("category, subcategory").build().selectModifier();
          * // returns "DISTINCTROW(category, subcategory)"
          *
-         * // null or empty falls back to a plain DISTINCTROW (no parentheses).
+         * // null, empty, or blank falls back to a plain DISTINCTROW (no parentheses).
          * Criteria.builder().distinctRowBy(null).build().selectModifier();   // returns "DISTINCTROW"
          * }</pre>
          *
-         * @param columnNames the columns to apply DISTINCTROW to; if {@code null} or empty, plain {@code DISTINCTROW} is used
+         * @param columnNames the columns to apply DISTINCTROW to; if {@code null}, empty, or blank,
+         *                    plain {@code DISTINCTROW} is used
          * @return this Builder instance for method chaining
          */
         public Builder distinctRowBy(final String columnNames) {
-            selectModifier = Strings.isEmpty(columnNames) ? SK.DISTINCTROW : SK.DISTINCTROW + "(" + columnNames + ")";
+            selectModifier = Strings.isBlank(columnNames) ? SK.DISTINCTROW : SK.DISTINCTROW + "(" + columnNames + ")";
 
             return this;
         }
@@ -775,24 +775,24 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets a custom SELECT modifier.
          * This allows for database-specific modifiers not covered by other methods.
-         * An empty string is treated as no modifier (normalized to {@code null}).
+         * An empty or blank string is treated as no modifier (normalized to {@code null}).
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.builder().selectModifier("SQL_CALC_FOUND_ROWS").build().selectModifier();
          * // returns "SQL_CALC_FOUND_ROWS"
          *
-         * // Passing null (or an empty string) clears any previously set modifier.
+         * // Passing null (or an empty/blank string) clears any previously set modifier.
          * Criteria.builder().selectModifier(null).build().selectModifier();   // returns null
          * }</pre>
          *
-         * @param selectModifier the custom SELECT modifier; {@code null} or an empty string means no modifier
+         * @param selectModifier the custom SELECT modifier; {@code null}, empty, or blank means no modifier
          * @return this Builder instance for method chaining
          */
         public Builder selectModifier(final String selectModifier) {
-            // Normalize empty to null so a Criteria built with selectModifier("") equals one built with
+            // Normalize blank to null so a Criteria built with selectModifier("") equals one built with
             // no modifier at all -- the two already render identically and share a hash code.
-            this.selectModifier = Strings.isEmpty(selectModifier) ? null : selectModifier;
+            this.selectModifier = Strings.isBlank(selectModifier) ? null : selectModifier;
 
             return this;
         }
@@ -2600,7 +2600,7 @@ public class Criteria extends AbstractCondition {
          * @return a new Criteria instance
          */
         public Criteria build() {
-            return new Criteria(this.selectModifier, new ArrayList<>(conditions));
+            return new Criteria(this.selectModifier, conditions);
         }
 
         //    /**

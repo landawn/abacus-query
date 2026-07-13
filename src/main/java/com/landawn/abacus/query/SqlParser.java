@@ -58,7 +58,9 @@ import com.landawn.abacus.util.Strings;
  *   <li>iBatis/MyBatis {@code #{...}} markers and registered PostgreSQL hash operators are
  *       not mistaken for hash comments.</li>
  *   <li>{@code #} that opens a hash-prefixed identifier (e.g. a temp table name appearing
- *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE},
+ *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE}, or in the
+ *       target position after {@code INSERT}, {@code DELETE} or {@code MERGE} and an optional
+ *       {@code TOP} clause,
  *       allowing intervening whitespace or comments, including as a later element of a
  *       comma-separated list governed by one of those keywords, e.g. {@code "FROM #t1, #t2"})
  *       is treated as part of the identifier, not as a hash comment or separator.</li>
@@ -115,6 +117,7 @@ public final class SqlParser {
 
     private static final AtomicInteger maxSeparatorLength = new AtomicInteger(1);
     private static final Set<String> hashIdentifierContextKeywords = N.asSet(SK.FROM, SK.JOIN, SK.INTO, SK.UPDATE, "TABLE");
+    private static final Set<String> hashIdentifierDmlTargetKeywords = N.asSet("INSERT", "DELETE", "MERGE");
 
     private static final Set<Object> separators = ConcurrentHashMap.newKeySet();
 
@@ -504,7 +507,8 @@ public final class SqlParser {
                         // iBatis/MyBatis #{...} parameter marker: '#' is part of the token.
                         sb.append(ch);
                     } else if (isLikelyHashPrefixedIdentifier(sql, sqlLength, index)) {
-                        // Hash-prefixed identifier (e.g. a temp table after FROM/JOIN/INTO/UPDATE/TABLE):
+                        // Hash-prefixed identifier (e.g. a temp table after a table-context keyword or
+                        // in an INSERT/DELETE/MERGE target position):
                         // '#' is part of the token.
                         sb.append(ch);
                     } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index)) != null) {
@@ -1351,7 +1355,8 @@ public final class SqlParser {
      * <ul>
      *   <li>{@code #} followed by <code>{</code> is not considered a separator (MyBatis/iBatis {@code #{...}} syntax)</li>
      *   <li>{@code #} that starts a hash-prefixed identifier (e.g. a temp table name appearing
-     *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE},
+     *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE}, or as
+     *       an {@code INSERT}, {@code DELETE} or {@code MERGE} target after an optional {@code TOP} clause,
      *       with optional whitespace/comments in between, including as a later element of a
      *       comma-separated list such as {@code "FROM #t1, #t2"}) is not considered a separator</li>
      *   <li>All registered single-character and multi-character separators are checked</li>
@@ -1425,12 +1430,14 @@ public final class SqlParser {
      * SQL Server temp table) rather than a MySQL hash comment. The character following the
      * {@code '#'} must be an identifier character, and scanning backward (skipping whitespace and
      * comments) must reach one of the {@link #hashIdentifierContextKeywords} ({@code FROM},
-     * {@code JOIN}, {@code INTO}, {@code UPDATE}, {@code TABLE}).
+     * {@code JOIN}, {@code INTO}, {@code UPDATE}, {@code TABLE}), or the hash must be exactly where
+     * an {@code INSERT}, {@code DELETE} or {@code MERGE} target is expected, including after an
+     * optional {@code TOP} clause.
      *
      * <p>A comma is treated as a list continuation: for {@code "FROM #t1, #t2"} the backward walk
-     * skips the comma plus the single list element before it (a possibly qualified, quoted or
-     * '#'-prefixed name with an optional alias word) and re-checks from there, so every element of
-     * a comma-separated list governed by a context keyword is recognized. Anything else anchors
+     * skips the comma plus the single list element before it (a possibly qualified, quoted,
+     * '#'-prefixed, or parenthesized derived table with an optional alias word) and re-checks from
+     * there, so every element of a comma-separated list governed by a context keyword is recognized. Anything else anchors
      * the decision: a context keyword means identifier, any other word or character (e.g.
      * {@code SELECT}, {@code '('}, {@code '='}) means comment, so {@code "SELECT a, #comment"}
      * remains a MySQL comment. Ambiguous shapes deliberately fall back to the comment
@@ -1448,6 +1455,10 @@ public final class SqlParser {
         }
 
         int left = skipBackwardWhitespaceAndComments(str, index - 1);
+
+        if (isHashIdentifierDmlTargetContext(str, left, true)) {
+            return true;
+        }
 
         // Walk backward over ","-separated list elements until something other than a list
         // continuation anchors the decision. Only the first skip above is line-comment-aware;
@@ -1489,12 +1500,92 @@ public final class SqlParser {
     }
 
     /**
+     * Returns whether {@code left} is immediately after an INSERT/DELETE/MERGE target introducer.
+     * Unlike {@link #hashIdentifierContextKeywords}, these operation words are deliberately not
+     * general identifier anchors: they are accepted only directly before the target, optionally
+     * with a SQL Server {@code TOP [ ( expression ) ] [ PERCENT ]} clause between them.
+     */
+    private static boolean isHashIdentifierDmlTargetContext(final String str, int left, final boolean skipLineComments) {
+        left = skipBackwardHashContextTrivia(str, left, skipLineComments);
+
+        if (left < 0) {
+            return false;
+        }
+
+        int wordStart = identifierWordStart(str, left);
+
+        if (wordStart >= 0 && hashIdentifierDmlTargetKeywords.contains(str.substring(wordStart, left + 1).toUpperCase(Locale.ROOT))) {
+            return true;
+        }
+
+        // TOP may end with PERCENT. Strip it before locating the parenthesized (or legacy bare)
+        // expression that follows TOP.
+        if (wordStart >= 0 && "PERCENT".equalsIgnoreCase(str.substring(wordStart, left + 1))) {
+            left = skipBackwardHashContextTrivia(str, wordStart - 1, skipLineComments);
+        }
+
+        if (left < 0) {
+            return false;
+        }
+
+        if (str.charAt(left) == ')') {
+            final int openingParenthesis = findMatchingOpeningParenthesis(str, left);
+
+            if (openingParenthesis < 0) {
+                return false;
+            }
+
+            left = skipBackwardHashContextTrivia(str, openingParenthesis - 1, skipLineComments);
+        } else {
+            // SQL Server documents parentheses for data-modification TOP expressions, but accepts
+            // the long-standing bare numeric form too (for example, "MERGE TOP 5 #stage").
+            wordStart = identifierWordStart(str, left);
+
+            if (wordStart < 0) {
+                return false;
+            }
+
+            left = skipBackwardHashContextTrivia(str, wordStart - 1, skipLineComments);
+        }
+
+        wordStart = identifierWordStart(str, left);
+
+        if (wordStart < 0 || !"TOP".equalsIgnoreCase(str.substring(wordStart, left + 1))) {
+            return false;
+        }
+
+        left = skipBackwardHashContextTrivia(str, wordStart - 1, skipLineComments);
+        wordStart = identifierWordStart(str, left);
+
+        return wordStart >= 0 && hashIdentifierDmlTargetKeywords.contains(str.substring(wordStart, left + 1).toUpperCase(Locale.ROOT));
+    }
+
+    private static int skipBackwardHashContextTrivia(final String str, final int left, final boolean skipLineComments) {
+        return skipLineComments ? skipBackwardWhitespaceAndComments(str, left) : skipBackwardWhitespaceAndBlockComments(str, left);
+    }
+
+    private static int identifierWordStart(final String str, final int end) {
+        if (end < 0 || !isIdentifierChar(str.charAt(end))) {
+            return -1;
+        }
+
+        int start = end;
+
+        while (start > 0 && isIdentifierChar(str.charAt(start - 1))) {
+            start--;
+        }
+
+        return start;
+    }
+
+    /**
      * Consumes one comma-separated list element backward, starting at {@code start} (which must
      * already be positioned on a non-whitespace character), for the list walk in
      * {@link #isLikelyHashPrefixedIdentifier}. An element is at most two whitespace-separated
      * units (a name plus an optional trailing alias, with a free {@code AS} between them) where
      * each unit is a dot-qualified chain of segments and each segment is an identifier word
-     * (optionally '#'-prefixed) or a quoted/bracket-quoted identifier.
+     * (optionally '#'-prefixed), a quoted/bracket-quoted identifier, or a balanced parenthesized
+     * derived-table expression.
      *
      * <p>Returns the index of the first character before the consumed element (possibly
      * {@code -1}), or {@code start} unchanged if no element was recognized there. A hash-identifier
@@ -1512,7 +1603,19 @@ public final class SqlParser {
             while (true) {
                 final char ch = str.charAt(left);
 
-                if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == ']') {
+                if (ch == ')') {
+                    // A derived table may be the element before the comma: "FROM (SELECT ...) d,
+                    // #tmp". Consume its balanced parenthesized body as the name unit after the
+                    // alias; otherwise the walk stops at ')' and misclassifies #tmp as a comment,
+                    // potentially hiding a later statement from the read-only safety checks.
+                    final int openingParenthesis = findMatchingOpeningParenthesis(str, left);
+
+                    if (openingParenthesis < 0) {
+                        break outer;
+                    }
+
+                    left = openingParenthesis - 1;
+                } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == ']') {
                     // Quoted / bracket-quoted identifier segment: skip back to the opening quote.
                     // (Escaped/doubled closing quotes are not un-escaped here; a mismatch makes the
                     // walk stop early, which conservatively yields the comment classification.)
@@ -1576,6 +1679,88 @@ public final class SqlParser {
         }
 
         return left;
+    }
+
+    /**
+     * Finds the opening parenthesis paired with {@code closingParenthesis}, ignoring parentheses
+     * inside quoted text, bracket-quoted identifiers, and SQL line/block comments.
+     */
+    private static int findMatchingOpeningParenthesis(final String str, final int closingParenthesis) {
+        final List<Integer> openings = new ArrayList<>(4);
+        char quoteChar = 0;
+        boolean backslashEscaped = false;
+        boolean inBracketQuotedIdentifier = false;
+
+        for (int i = 0; i <= closingParenthesis; i++) {
+            final char ch = str.charAt(i);
+
+            if (quoteChar != 0) {
+                if (ch == quoteChar) {
+                    if (backslashEscaped) {
+                        backslashEscaped = false;
+                    } else if (i < closingParenthesis && str.charAt(i + 1) == quoteChar) {
+                        i++;
+                    } else {
+                        quoteChar = 0;
+                    }
+                } else if (ch == '\\') {
+                    backslashEscaped = !backslashEscaped;
+                } else {
+                    backslashEscaped = false;
+                }
+
+                continue;
+            }
+
+            if (inBracketQuotedIdentifier) {
+                if (ch == ']') {
+                    if (i < closingParenthesis && str.charAt(i + 1) == ']') {
+                        i++;
+                    } else {
+                        inBracketQuotedIdentifier = false;
+                    }
+                }
+
+                continue;
+            }
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                quoteChar = ch;
+                backslashEscaped = false;
+            } else if (ch == '[') {
+                inBracketQuotedIdentifier = true;
+            } else if (ch == '-' && i < closingParenthesis && str.charAt(i + 1) == '-') {
+                i += 2;
+
+                while (i <= closingParenthesis && str.charAt(i) != ENTER && str.charAt(i) != ENTER_2) {
+                    i++;
+                }
+            } else if (ch == '/' && i < closingParenthesis && str.charAt(i + 1) == '*') {
+                i += 2;
+
+                while (i < closingParenthesis && !(str.charAt(i) == '*' && str.charAt(i + 1) == '/')) {
+                    i++;
+                }
+
+                if (i < closingParenthesis) {
+                    i++;
+                }
+            } else if (ch == '(') {
+                openings.add(i);
+            } else if (ch == ')') {
+                if (openings.isEmpty()) {
+                    return -1;
+                }
+
+                final int opening = openings.remove(openings.size() - 1);
+
+                if (i == closingParenthesis) {
+                    return opening;
+                }
+            }
+        }
+
+        return -1;
     }
 
     private static int skipBackwardWhitespaceAndComments(final String str, int left) {
@@ -1746,6 +1931,10 @@ public final class SqlParser {
 
         if (left < 0) {
             return false;
+        }
+
+        if (isHashIdentifierDmlTargetContext(str, left, false)) {
+            return true;
         }
 
         int end = left;

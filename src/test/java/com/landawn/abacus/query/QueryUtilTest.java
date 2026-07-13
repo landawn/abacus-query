@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -30,8 +32,6 @@ import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.Tuple;
-import com.landawn.abacus.util.Tuple.Tuple2;
 
 @Tag("2025")
 public class QueryUtilTest extends TestBase {
@@ -77,6 +77,15 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
+    public void testColumnToPropertyMapRespectsTableColumnExclusions() {
+        ImmutableMap<String, String> map = QueryUtil.columnToPropertyMap(TestUser.class);
+
+        assertEquals("name", map.get("user_name"));
+        assertFalse(map.containsKey("tempData"), map.toString());
+        assertFalse(map.containsValue("tempData"), map.toString());
+    }
+
+    @Test
     public void testGetColumn2PropNameMap_NullClass() {
         assertThrows(IllegalArgumentException.class, () -> {
             QueryUtil.columnToPropertyMap(null);
@@ -84,31 +93,31 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testGetProp2ColumnNameMap() {
+    public void testPropertyToColumnMap() {
         ImmutableMap<String, String> map = QueryUtil.propertyToColumnMap(Account.class, NamingPolicy.SNAKE_CASE);
         assertNotNull(map);
     }
 
     @Test
-    public void testGetProp2ColumnNameMap_NoChange() {
+    public void testPropertyToColumnMap_NoChange() {
         ImmutableMap<String, String> map = QueryUtil.propertyToColumnMap(Account.class, NamingPolicy.NO_CHANGE);
         assertNotNull(map);
     }
 
     @Test
-    public void testGetProp2ColumnNameMap_UpperCase() {
+    public void testPropertyToColumnMap_UpperCase() {
         ImmutableMap<String, String> map = QueryUtil.propertyToColumnMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
         assertNotNull(map);
     }
 
     @Test
-    public void testGetProp2ColumnNameMap_NullClass() {
+    public void testPropertyToColumnMap_NullClass() {
         ImmutableMap<String, String> map = QueryUtil.propertyToColumnMap(null, NamingPolicy.SNAKE_CASE);
         assertTrue(map.isEmpty());
     }
 
     @Test
-    public void testGetProp2ColumnNameMap_MapClass() {
+    public void testPropertyToColumnMap_MapClass() {
         ImmutableMap<String, String> map = QueryUtil.propertyToColumnMap(HashMap.class, NamingPolicy.SNAKE_CASE);
         assertTrue(map.isEmpty());
     }
@@ -317,7 +326,7 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testGetProp2ColumnNameMap_DifferentPolicies() {
+    public void testPropertyToColumnMap_DifferentPolicies() {
         ImmutableMap<String, String> lower = QueryUtil.propertyToColumnMap(Account.class, NamingPolicy.SNAKE_CASE);
         ImmutableMap<String, String> upper = QueryUtil.propertyToColumnMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
         ImmutableMap<String, String> noChange = QueryUtil.propertyToColumnMap(Account.class, NamingPolicy.NO_CHANGE);
@@ -368,27 +377,38 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testProp2ColumnNameMap() {
-        ImmutableMap<String, Tuple.Tuple2<String, Boolean>> map = QueryUtil.prop2ColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE);
-        assertNotNull(map);
+    public void testPropToColumnInfoMap() {
+        ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(Account.class, NamingPolicy.SNAKE_CASE);
+
+        assertEquals(new QueryUtil.ColumnInfo("first_name", true), map.get("firstName"));
+        assertEquals(new QueryUtil.ColumnInfo("first_name", true), map.get("first_name"));
+        assertEquals("first_name", map.get("firstName").columnName());
+        assertTrue(map.get("firstName").hasNoDot());
+
+        ImmutableMap<String, QueryUtil.ColumnInfo> nestedMap = QueryUtil.propToColumnInfoMap(NestedRoot.class, NamingPolicy.SNAKE_CASE);
+        QueryUtil.ColumnInfo nested = nestedMap.get("branch.firstLeaf.value");
+        assertEquals(QueryUtil.propertyToColumnMap(NestedRoot.class, NamingPolicy.SNAKE_CASE).get("branch.firstLeaf.value"), nested.columnName());
+        assertFalse(nested.hasNoDot());
     }
 
     @Test
-    public void testProp2ColumnNameMap_UpperCase() {
-        ImmutableMap<String, Tuple.Tuple2<String, Boolean>> map = QueryUtil.prop2ColumnNameMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
-        assertNotNull(map);
+    public void testPropToColumnInfoMap_UpperCase() {
+        ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
+
+        assertEquals(new QueryUtil.ColumnInfo("FIRST_NAME", true), map.get("firstName"));
     }
 
     @Test
-    public void testProp2ColumnNameMap_NoChange() {
-        ImmutableMap<String, Tuple.Tuple2<String, Boolean>> map = QueryUtil.prop2ColumnNameMap(Account.class, NamingPolicy.NO_CHANGE);
-        assertNotNull(map);
+    public void testPropToColumnInfoMap_NoChange() {
+        ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(Account.class, NamingPolicy.NO_CHANGE);
+
+        assertEquals(new QueryUtil.ColumnInfo("firstName", true), map.get("firstName"));
     }
 
     @Test
-    public void testProp2ColumnNameMap_NullClass() {
+    public void testPropToColumnInfoMap_NullClass() {
         assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.prop2ColumnNameMap(null, NamingPolicy.SNAKE_CASE);
+            QueryUtil.propToColumnInfoMap(null, NamingPolicy.SNAKE_CASE);
         });
     }
 
@@ -639,6 +659,27 @@ public class QueryUtilTest extends TestBase {
         }
     }
 
+    static class ConcurrentCacheEntity {
+        private long id;
+        private String value;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(final String value) {
+            this.value = value;
+        }
+    }
+
     @Table(name = "aliasless_table")
     static class AliaslessEntity {
         private String simpleValue;
@@ -700,7 +741,7 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testGetProp2ColumnNameMapWithRepeatedNestedType() {
+    public void testPropertyToColumnMapWithRepeatedNestedType() {
         final ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(NestedRoot.class, NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.containsKey("branch.firstLeaf.value"));
@@ -708,7 +749,7 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testGetProp2ColumnNameMapCapsDeepNestedExpansion() {
+    public void testPropertyToColumnMapCapsDeepNestedExpansion() {
         final ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(DeepNestedRoot.class, NamingPolicy.SNAKE_CASE);
 
         assertFalse(result.containsKey("middle.leaf.tail.value"));
@@ -773,7 +814,7 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testGetProp2ColumnNameMap_WithSelfReferentialEntityDoesNotThrow() {
+    public void testPropertyToColumnMap_WithSelfReferentialEntityDoesNotThrow() {
         ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(SelfReferentialEntity.class, NamingPolicy.SNAKE_CASE);
 
         assertEquals("id", result.get("id"));
@@ -834,6 +875,50 @@ public class QueryUtilTest extends TestBase {
         // Sub-entity variant uses a different slot, so it is a different (but also stable) instance.
         ImmutableList<String> withSub = QueryUtil.selectPropertyNames(TestUser.class, true, null);
         assertSame(withSub, QueryUtil.selectPropertyNames(TestUser.class, true, null));
+    }
+
+    @Test
+    public void testGetSelectPropNames_ConcurrentFirstAccessReturnsSafelyPublishedStableInstance() throws InterruptedException {
+        final int threadCount = 24;
+        final ImmutableList<?>[] results = new ImmutableList<?>[threadCount];
+        final CountDownLatch ready = new CountDownLatch(threadCount);
+        final CountDownLatch start = new CountDownLatch(1);
+        final CountDownLatch done = new CountDownLatch(threadCount);
+        final Thread[] threads = new Thread[threadCount];
+
+        for (int i = 0; i < threadCount; i++) {
+            final int index = i;
+            threads[i] = new Thread(() -> {
+                ready.countDown();
+
+                try {
+                    start.await();
+                    results[index] = QueryUtil.selectPropertyNames(ConcurrentCacheEntity.class, false, null);
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    done.countDown();
+                }
+            });
+            threads[i].setDaemon(true);
+            threads[i].start();
+        }
+
+        assertTrue(ready.await(10, TimeUnit.SECONDS), "Worker threads did not become ready");
+        start.countDown();
+        assertTrue(done.await(10, TimeUnit.SECONDS), "Concurrent cache initialization did not complete");
+
+        for (final Thread thread : threads) {
+            thread.join();
+        }
+
+        assertNotNull(results[0]);
+        assertTrue(results[0].contains("id"));
+        assertTrue(results[0].contains("value"));
+
+        for (int i = 1; i < results.length; i++) {
+            assertSame(results[0], results[i]);
+        }
     }
 
     @Test
@@ -910,22 +995,22 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testProp2ColumnNameMap_NullNamingPolicyUsesSnakeCase() {
-        ImmutableMap<String, Tuple2<String, Boolean>> result = QueryUtil.prop2ColumnNameMap(QueryUtilTest.AliaslessEntity.class, null);
+    public void testPropToColumnInfoMap_NullNamingPolicyUsesSnakeCase() {
+        ImmutableMap<String, QueryUtil.ColumnInfo> result = QueryUtil.propToColumnInfoMap(QueryUtilTest.AliaslessEntity.class, null);
 
-        assertEquals("simple_value", result.get("simpleValue")._1);
-        assertTrue(result.get("simpleValue")._2);
+        assertEquals("simple_value", result.get("simpleValue").columnName());
+        assertTrue(result.get("simpleValue").hasNoDot());
     }
 
     @Test
-    public void testGetProp2ColumnNameMap_NullNamingPolicyUsesSnakeCase() {
+    public void testPropertyToColumnMap_NullNamingPolicyUsesSnakeCase() {
         ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(QueryUtilTest.AliaslessEntity.class, null);
 
         assertEquals("simple_value", result.get("simpleValue"));
     }
 
     @Test
-    public void testGetProp2ColumnNameMap_AllNonColumnProperties() {
+    public void testPropertyToColumnMap_AllNonColumnProperties() {
         ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(QueryUtilTest.NonColumnOnlyEntity.class, NamingPolicy.SNAKE_CASE);
 
         assertTrue(result.isEmpty());
@@ -939,7 +1024,7 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testGetProp2ColumnNameMap_NullEntityClassReturnsEmpty() {
+    public void testPropertyToColumnMap_NullEntityClassReturnsEmpty() {
         // Documented contract: null entityClass returns an empty map (does not throw).
         ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(null, NamingPolicy.SNAKE_CASE);
         assertNotNull(result);
@@ -947,7 +1032,7 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testGetProp2ColumnNameMap_NullEntityClassAndNullPolicyReturnsEmpty() {
+    public void testPropertyToColumnMap_NullEntityClassAndNullPolicyReturnsEmpty() {
         // Both null: still returns empty map.
         ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(null, null);
         assertNotNull(result);
@@ -955,7 +1040,7 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testGetProp2ColumnNameMap_MapEntityClassReturnsEmpty() {
+    public void testPropertyToColumnMap_MapEntityClassReturnsEmpty() {
         // Map-assignable classes get an empty map (documented behavior).
         ImmutableMap<String, String> result = QueryUtil.propertyToColumnMap(HashMap.class, NamingPolicy.SNAKE_CASE);
         assertNotNull(result);

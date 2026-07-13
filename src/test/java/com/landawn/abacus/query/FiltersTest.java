@@ -8,8 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractCollection;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -2793,6 +2796,119 @@ public class FiltersTest extends TestBase {
         assertEquals(expression, Filters.notLike("name", (Object) expression).propValue());
         assertEquals(Arrays.asList("NEW", "OPEN"), Filters.in("status", "NEW", "OPEN").parameters());
         assertEquals(Arrays.asList("CLOSED", "DELETED"), Filters.notIn("status", "CLOSED", "DELETED").parameters());
+    }
+
+    @Test
+    public void testEqualityFactoriesConsumeLiveMapInOnePass() {
+        final Or any = Filters.anyEqual(mapWithUnstableSize());
+        final And all = Filters.allEqual(mapWithUnstableSize());
+
+        assertEquals(3, any.conditions().size());
+        assertEquals(3, all.conditions().size());
+        assertEquals(Arrays.asList(1, 2, 3), any.parameters());
+        assertEquals(Arrays.asList(1, 2, 3), all.parameters());
+    }
+
+    @Test
+    public void testEntityEqualityFactoriesConsumePropertyNamesInOnePass() {
+        final Account account = new Account().setId(7L).setFirstName("Ada").setLastName("Lovelace");
+        final Or any = Filters.anyEqual(account, collectionWithUnstableSize("id", "firstName", "lastName"));
+        final And all = Filters.allEqual(account, collectionWithUnstableSize("id", "firstName", "lastName"));
+
+        assertEquals(3, any.conditions().size());
+        assertEquals(3, all.conditions().size());
+        assertEquals(Arrays.asList(7L, "Ada", "Lovelace"), any.parameters());
+        assertEquals(Arrays.asList(7L, "Ada", "Lovelace"), all.parameters());
+    }
+
+    @Test
+    public void testIdCollectionFactoryConsumesInputInOnePass() {
+        final Collection<EntityId> entityIds = collectionWithUnstableSize(EntityId.of("id", 1), EntityId.of("id", 2));
+
+        final Or condition = Filters.idToCond(entityIds);
+
+        assertEquals(2, condition.conditions().size());
+        assertEquals(Arrays.asList(1, 2), condition.parameters());
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @Test
+    public void testEqualityFactoriesRejectRawMapsWithNonStringKeysConsistently() {
+        final Map rawMap = new LinkedHashMap();
+        rawMap.put(1, "value");
+
+        final IllegalArgumentException anyFailure = assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(rawMap));
+        final IllegalArgumentException allFailure = assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(rawMap));
+
+        assertTrue(anyFailure.getMessage().contains("String"));
+        assertTrue(allFailure.getMessage().contains("String"));
+    }
+
+    @Test
+    public void testAnyOfAllEqualRejectsMixedEntitiesAndMapsInEitherOrder() {
+        final Account account = new Account().setId(3L);
+        final Map<String, Object> props = new LinkedHashMap<>();
+        props.put("id", 4L);
+
+        assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(props, account)));
+        assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(account, props)));
+        assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(account, props), Arrays.asList("id")));
+    }
+
+    @Test
+    public void testBeanEqualityOverloadsDirectMapCallersToMapOverloads() {
+        final Map<String, Object> props = new LinkedHashMap<>();
+        props.put("id", 4L);
+
+        assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual((Object) props));
+        assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual((Object) props, Arrays.asList("id")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual((Object) props));
+        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual((Object) props, Arrays.asList("id")));
+    }
+
+    private static Map<String, Object> mapWithUnstableSize() {
+        final Map<String, Object> result = new LinkedHashMap<>() {
+            private int sizeCalls;
+
+            @Override
+            public int size() {
+                return sizeCalls++ == 0 ? super.size() : super.size() + 1;
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return false;
+            }
+        };
+
+        result.put("a", 1);
+        result.put("b", 2);
+        result.put("c", 3);
+        return result;
+    }
+
+    @SafeVarargs
+    private static <T> Collection<T> collectionWithUnstableSize(final T... values) {
+        final List<T> snapshot = Arrays.asList(values);
+
+        return new AbstractCollection<>() {
+            private int sizeCalls;
+
+            @Override
+            public Iterator<T> iterator() {
+                return snapshot.iterator();
+            }
+
+            @Override
+            public int size() {
+                return sizeCalls++ == 0 ? snapshot.size() : snapshot.size() + 1;
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return false;
+            }
+        };
     }
 
     @Test

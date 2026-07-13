@@ -144,9 +144,7 @@ public class Using extends Cell {
      */
     @Deprecated
     public Using(final String... columnNames) {
-        super(Operator.USING, createUsingCondition(columnNames));
-
-        this.columnNames = copyColumnNames(columnNames);
+        this(prepare(columnNames));
     }
 
     /**
@@ -179,7 +177,8 @@ public class Using extends Cell {
      *
      * @param columnNames collection of column names to join on. Must not be {@code null} or empty, and individual
      *                    names must not be {@code null}, empty, or blank. Names must be unqualified (cannot contain a {@code .}) and must each be a single column name (cannot contain {@code ,}, {@code (}, or {@code )}).
-     *                    Order matters for some databases; use a {@code LinkedHashSet} or {@code List} to preserve insertion order.
+     *                    The collection is read once and snapshotted. Order matters for some databases; use a
+     *                    {@code LinkedHashSet} or {@code List} to preserve insertion order.
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
      *                                  a qualified (dotted) column name, or a name containing {@code ,}, {@code (}, or {@code )}
      * @deprecated It's recommended to use {@link Filters#on(java.util.Map)} instead of {@code Using} for better
@@ -188,9 +187,13 @@ public class Using extends Cell {
      */
     @Deprecated
     public Using(final Collection<String> columnNames) {
-        super(Operator.USING, createUsingCondition(columnNames));
+        this(prepare(columnNames));
+    }
 
-        this.columnNames = copyColumnNames(columnNames);
+    private Using(final Prepared prepared) {
+        super(Operator.USING, prepared.condition);
+
+        this.columnNames = prepared.columnNames;
     }
 
     /**
@@ -231,18 +234,37 @@ public class Using extends Cell {
         return view;
     }
 
-    private static List<String> copyColumnNames(final String... columnNames) {
+    private record Prepared(List<String> columnNames, Condition condition) {
+    }
+
+    private static Prepared prepare(final String... columnNames) {
+        N.checkArgNotEmpty(columnNames, "columnNames");
+
         final List<String> copy = new ArrayList<>(columnNames.length);
 
         for (final String columnName : columnNames) {
+            validateColumnName(columnName);
             copy.add(columnName);
         }
 
-        return copy;
+        N.checkArgNotEmpty(copy, "columnNames");
+        return new Prepared(copy, createUsingConditionFromSnapshot(copy));
     }
 
-    private static List<String> copyColumnNames(final Collection<String> columnNames) {
-        return new ArrayList<>(columnNames);
+    private static Prepared prepare(final Collection<String> columnNames) {
+        N.checkArgNotEmpty(columnNames, "columnNames");
+
+        final List<String> copy = new ArrayList<>(columnNames.size());
+
+        // Validate and copy in the same pass. Besides avoiding redundant iteration, this keeps the
+        // structured accessor and rendered expression consistent for live/custom collections.
+        for (final String columnName : columnNames) {
+            validateColumnName(columnName);
+            copy.add(columnName);
+        }
+
+        N.checkArgNotEmpty(copy, "columnNames");
+        return new Prepared(copy, createUsingConditionFromSnapshot(copy));
     }
 
     /**
@@ -268,13 +290,7 @@ public class Using extends Cell {
      *                                  a qualified (dotted) column name, or a name containing {@code ,}, {@code (}, or {@code )}
      */
     static Condition createUsingCondition(final String... columnNames) {
-        N.checkArgNotEmpty(columnNames, "columnNames");
-
-        for (final String columnName : columnNames) {
-            validateColumnName(columnName);
-        }
-
-        return Filters.expr(parenthesizeColumnNames(concatPropNames(columnNames)));
+        return prepare(columnNames).condition;
     }
 
     /**
@@ -302,12 +318,10 @@ public class Using extends Cell {
      *                                  a qualified (dotted) column name, or a name containing {@code ,}, {@code (}, or {@code )}
      */
     static Condition createUsingCondition(final Collection<String> columnNames) {
-        N.checkArgNotEmpty(columnNames, "columnNames");
+        return prepare(columnNames).condition;
+    }
 
-        for (final String columnName : columnNames) {
-            validateColumnName(columnName);
-        }
-
+    private static Condition createUsingConditionFromSnapshot(final List<String> columnNames) {
         return Filters.expr(parenthesizeColumnNames(concatPropNames(columnNames)));
     }
 

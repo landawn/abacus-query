@@ -2154,6 +2154,48 @@ public class SqlParserTest extends TestBase {
         assertTrue(words.stream().noneMatch(w -> w.contains("trailing")));
     }
 
+    @Test
+    public void testParse_hashTempTableAsImplicitDmlTargetIsKept() {
+        final List<String> insertWords = SqlParser.parse("INSERT #stage (id) VALUES (1)");
+        final List<String> deleteWords = SqlParser.parse("DELETE #stage WHERE id = 1");
+        final List<String> mergeWords = SqlParser.parse("MERGE #stage USING source ON 1 = 1 WHEN MATCHED THEN DELETE");
+
+        assertTrue(insertWords.contains("#stage"), insertWords.toString());
+        assertTrue(insertWords.contains("VALUES"), insertWords.toString());
+        assertTrue(deleteWords.contains("#stage"), deleteWords.toString());
+        assertTrue(deleteWords.contains("WHERE"), deleteWords.toString());
+        assertTrue(mergeWords.contains("#stage"), mergeWords.toString());
+        assertTrue(mergeWords.contains("USING"), mergeWords.toString());
+    }
+
+    @Test
+    public void testParse_hashTempTableAfterDmlTopClauseIsKept() {
+        final List<String> insertWords = SqlParser.parse("INSERT TOP (10) #stage (id) VALUES (1)");
+        final List<String> deleteWords = SqlParser.parse("DELETE TOP (25) PERCENT #stage WHERE id = 1");
+        final List<String> mergeWords = SqlParser.parse("MERGE TOP 5 #stage USING source ON 1 = 1 WHEN MATCHED THEN DELETE");
+
+        assertTrue(insertWords.contains("#stage"), insertWords.toString());
+        assertTrue(deleteWords.contains("#stage"), deleteWords.toString());
+        assertTrue(mergeWords.contains("#stage"), mergeWords.toString());
+    }
+
+    @Test
+    public void testParse_hashCommentsOutsideDmlTargetPositionRemainComments() {
+        final List<String> insertWords = SqlParser.parse("INSERT INTO stage (id) #comment\nVALUES (1)");
+        final List<String> deleteWords = SqlParser.parse("DELETE FROM stage #comment\nWHERE id = 1");
+        final List<String> mergeWords = SqlParser.parse("MERGE stage #comment\nUSING source ON stage.id = source.id");
+        final List<String> selectWords = SqlParser.parse("SELECT INSERT, #comment\nFROM source");
+
+        assertFalse(insertWords.contains("#comment"), insertWords.toString());
+        assertTrue(insertWords.contains("VALUES"), insertWords.toString());
+        assertFalse(deleteWords.contains("#comment"), deleteWords.toString());
+        assertTrue(deleteWords.contains("WHERE"), deleteWords.toString());
+        assertFalse(mergeWords.contains("#comment"), mergeWords.toString());
+        assertTrue(mergeWords.contains("USING"), mergeWords.toString());
+        assertFalse(selectWords.contains("#comment"), selectWords.toString());
+        assertTrue(selectWords.contains("FROM"), selectWords.toString());
+    }
+
     // ----------------------------------------------------------------------------------------------
     // SELECT ... INTO detection: only an INTO in the SELECT list (before that query's FROM) counts.
     // Table names after FROM, qualified names such as t.into, and identifiers merely containing
@@ -2310,6 +2352,17 @@ public class SqlParserTest extends TestBase {
         // ';' and the DELETE statement from the mutation-keyword scan.
         assertFalse(SqlParser.isReadOnlyQuery("SELECT * FROM #t1, #t2; DELETE FROM users"));
         assertFalse(SqlParser.isNoUpdateQuery("SELECT * FROM #t1, #t2; DELETE FROM users"));
+    }
+
+    @Test
+    public void testReadOnlyAndNoUpdateGates_hashTempAfterDerivedTableDoesNotHideLaterDelete() {
+        final String sql = "SELECT * FROM (SELECT 1) derived, #tmp; DELETE FROM users";
+        final String quotedAndCommented = "SELECT * FROM (SELECT ')' AS value /* ) */) derived, #tmp; DELETE FROM users";
+
+        assertFalse(SqlParser.isReadOnlyQuery(sql));
+        assertFalse(SqlParser.isNoUpdateQuery(sql));
+        assertFalse(SqlParser.isReadOnlyQuery(quotedAndCommented));
+        assertFalse(SqlParser.isNoUpdateQuery(quotedAndCommented));
     }
 
     @Test
