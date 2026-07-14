@@ -42,7 +42,7 @@ package com.landawn.abacus.query.condition;
  * // SQL: email IS NULL
  *
  * // Check against a custom expression
- * Expression customExpr = Filters.expr("UNKNOWN");
+ * SqlExpression customExpr = Filters.expr("UNKNOWN");
  * Is unknownCheck = new Is("status", customExpr);
  * // SQL: status IS UNKNOWN
  * }</pre>
@@ -70,7 +70,7 @@ public class Is extends Binary {
     /**
      * Creates a new {@code IS} condition with the specified property name and right-hand value.
      * The generated SQL takes the form {@code propName IS propValue}, where {@code propValue} is
-     * typically an {@link Expression} representing a special SQL keyword such as {@code NULL}
+     * typically an {@link SqlExpression} representing a special SQL keyword such as {@code NULL}
      * or a custom expression like {@code UNKNOWN}.
      *
      * <p>If {@code propValue} is the Java {@code null} reference, the generated SQL collapses to
@@ -83,14 +83,15 @@ public class Is extends Binary {
      * // SQL: phone_number IS NULL
      *
      * // Custom database-specific value
-     * Expression unknownExpr = Filters.expr("UNKNOWN");
+     * SqlExpression unknownExpr = Filters.expr("UNKNOWN");
      * Is triStateCheck = new Is("verification_status", unknownExpr);
      * // SQL: verification_status IS UNKNOWN
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
      * @param propValue the right-hand value of the IS predicate; may be {@code null} (renders as
-     *            {@code IS NULL}) or an {@link Expression} for a SQL keyword
+     *            {@code IS NULL}), an {@link SqlExpression} for a SQL keyword, or another value
+     *            rendered by {@link Binary}; whether that value is valid with {@code IS} is dialect-specific
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public Is(final String propName, final Object propValue) {

@@ -108,7 +108,7 @@ public class Or extends Junction {
      *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             is an {@code ON}/{@code USING} connector, is an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
-     *             (a blank {@link Expression} or empty {@link Junction})
+     *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public Or(final Condition... conditions) {
         super(Operator.OR, conditions);
@@ -145,7 +145,7 @@ public class Or extends Junction {
      *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             is an {@code ON}/{@code USING} connector, is an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
-     *             (a blank {@link Expression} or empty {@link Junction})
+     *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public Or(final Collection<? extends Condition> conditions) {
         super(Operator.OR, conditions);
@@ -203,7 +203,7 @@ public class Or extends Junction {
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is non-composable —
      *             a {@link Criteria}, a {@link Clause} condition (such as {@link Where} or {@link OrderBy}),
      *             an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *             operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *             operand, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     @Override
     public Or or(final Condition condition) {

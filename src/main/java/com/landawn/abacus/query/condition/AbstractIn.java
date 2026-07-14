@@ -103,11 +103,14 @@ public abstract class AbstractIn extends ComposableCondition {
         super(validateOperator(operator));
 
         checkPropName(propName);
-        N.checkArgNotEmpty(values, "values");
+        N.checkArgNotNull(values, "values");
+
+        final List<?> valuesCopy = new ArrayList<>(values);
+        N.checkArgNotEmpty(valuesCopy, "values");
 
         this.propNames = ImmutableList.wrap(Collections.singletonList(propName));
         this.rowValueConstructor = false;
-        this.values = new ArrayList<>(values);
+        this.values = valuesCopy;
     }
 
     /**
@@ -150,12 +153,15 @@ public abstract class AbstractIn extends ComposableCondition {
 
         this.propNames = copyAndValidatePropNames(propNames);
         this.rowValueConstructor = true;
-        N.checkArgNotEmpty(valueRows, "valueRows");
+        N.checkArgNotNull(valueRows, "valueRows");
+
+        final List<?> valueRowsCopy = new ArrayList<>(valueRows);
+        N.checkArgNotEmpty(valueRowsCopy, "valueRows");
 
         final int arity = this.propNames.size();
-        final List<List<Object>> copy = new ArrayList<>(valueRows.size());
+        final List<List<Object>> copy = new ArrayList<>(valueRowsCopy.size());
 
-        for (final Object row : valueRows) {
+        for (final Object row : valueRowsCopy) {
             N.checkArgNotNull(row, "value row");
 
             // Each tuple is wrapped unmodifiable so values() is immutable in depth, not just at the
@@ -233,14 +239,13 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     private static ImmutableList<String> copyAndValidatePropNames(final Collection<String> propNames) {
-        N.checkArgNotEmpty(propNames, "propNames");
+        N.checkArgNotNull(propNames, "propNames");
 
-        final List<String> copy = new ArrayList<>(propNames.size());
+        final List<String> copy = new ArrayList<>(propNames);
+        N.checkArgNotEmpty(copy, "propNames");
 
-        for (final String propName : propNames) {
+        for (final String propName : copy) {
             checkPropName(propName);
-
-            copy.add(propName);
         }
 
         return ImmutableList.wrap(copy);
@@ -425,6 +430,7 @@ public abstract class AbstractIn extends ComposableCondition {
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return the SQL representation, e.g., {@code "status IN ('active', 'pending')"} or, for a
      *         multi-column condition, {@code "(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))"}
+     * @throws IllegalArgumentException if a scalar or row value is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {

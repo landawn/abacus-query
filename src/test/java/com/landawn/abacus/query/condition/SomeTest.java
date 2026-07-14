@@ -319,4 +319,16 @@ public class SomeTest extends TestBase {
         // Would be used like: project_cost < SOME (SELECT budget FROM departments WHERE active = true AND fiscal_year > 2023)
         Assertions.assertEquals(2, some.parameters().size());
     }
+
+    @Test
+    public void testStructuredSubQueryMustProjectOneColumn() {
+        SubQuery scalar = Filters.subQuery("employees", Arrays.asList("salary"), (Condition) null);
+        Assertions.assertEquals(scalar, new Some(scalar).subQuery());
+
+        SubQuery rowValue = Filters.subQuery("employees", Arrays.asList("salary", "bonus"), (Condition) null);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Some(rowValue));
+
+        // Raw SQL projection arity is intentionally unknown and remains accepted.
+        Assertions.assertNotNull(new Some(Filters.subQuery("SELECT salary, bonus FROM employees")));
+    }
 }

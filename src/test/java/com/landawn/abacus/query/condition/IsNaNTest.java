@@ -228,7 +228,7 @@ public class IsNaNTest extends TestBase {
     @Test
     public void testNANConstant() {
         Assertions.assertNotNull(IsNaN.NAN);
-        // Verify it's an Expression
+        // Verify it's an SqlExpression
         Assertions.assertTrue(IsNaN.NAN.toString().contains("NAN"));
     }
 

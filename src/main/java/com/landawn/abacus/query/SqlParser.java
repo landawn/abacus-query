@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.SK;
-import com.landawn.abacus.util.Splitter;
 import com.landawn.abacus.util.Strings;
 
 /**
@@ -55,7 +54,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Multi-character operators (e.g. {@code >=}, {@code <>}, {@code ->>}, PostgreSQL
  *       {@code #-} and {@code @?}) are emitted
  *       as single tokens. Additional separators can be configured without global mutation by using
- *       {@link #tokenizerConfigBuilder()} and an instance-scoped {@link Tokenizer}.</li>
+ *       {@link TokenizerConfig#builder()} and an instance-scoped {@link Tokenizer}.</li>
  *   <li>iBatis/MyBatis {@code #{...}} markers and configured PostgreSQL hash operators are
  *       not mistaken for hash comments.</li>
  *   <li>{@code #} that opens a hash-prefixed identifier (e.g. a temp table name appearing
@@ -74,7 +73,7 @@ import com.landawn.abacus.util.Strings;
  * // Result: ["SELECT", " ", "*", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">", " ", "25", " ", "ORDER", " ", "BY", " ", "name"]
  *
  * SqlParser.Tokenizer postgresTokenizer = SqlParser.tokenizer(
- *         SqlParser.tokenizerConfigBuilder().withSeparator("::").build());
+ *         SqlParser.TokenizerConfig.builder().withSeparator("::").build());
  * List<String> postgresTokens = postgresTokenizer.parse("payload::jsonb");
  * // Result: ["payload", "::", "jsonb"]
  * }</pre>
@@ -82,9 +81,9 @@ import com.landawn.abacus.util.Strings;
  * <p id="query-classification"><b>Query classification:</b> the {@link #isSelectQuery(String)},
  * {@link #isInsertQuery(String)}, {@link #isUpdateQuery(String)}, {@link #isDeleteQuery(String)},
  * {@link #isInsertOrReplaceQuery(String)}, {@link #isReadOnlyQuery(String)} and
- * {@link #isNoUpdateQuery(String)} predicates classify a statement as summarized below. Each cell shows
+ * {@link #isReadOrInsertQuery(String)} predicates classify a statement as summarized below. Each cell shows
  * whether the predicate in that column returns {@code true} (Y) or {@code false} (N) for the statement
- * kind in that row. Note every read-only statement is also a no-update statement, but not vice versa.</p>
+ * kind in that row. Every read-only statement also qualifies as read-or-insert, but not vice versa.</p>
  * <table border="1">
  * <caption>{@code SqlParser} query-classification predicates by statement kind</caption>
  * <tr>
@@ -95,7 +94,7 @@ import com.landawn.abacus.util.Strings;
  *   <th>{@code isDeleteQuery}</th>
  *   <th>{@code isInsertOrReplaceQuery}</th>
  *   <th>{@code isReadOnlyQuery}</th>
- *   <th>{@code isNoUpdateQuery}</th>
+ *   <th>{@code isReadOrInsertQuery}</th>
  * </tr>
  * <tr><td>{@code SELECT}</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>Y</td><td>Y</td></tr>
  * <tr><td>{@code SELECT ... INTO}</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
@@ -108,6 +107,7 @@ import com.landawn.abacus.util.Strings;
  * <tr><td>{@code UPDATE}</td><td>N</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
  * <tr><td>{@code DELETE}</td><td>N</td><td>N</td><td>N</td><td>Y</td><td>N</td><td>N</td><td>N</td></tr>
  * <tr><td>{@code MERGE} / {@code REPLACE} / {@code TRUNCATE} / {@code CREATE} / {@code ALTER} / {@code DROP}</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+ * <tr><td>{@code CALL} / JDBC {@code {call ...}} / {@code EXEC} / {@code EXECUTE}</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
  * </table>
  *
  */
@@ -220,17 +220,7 @@ public final class SqlParser {
         return separators;
     }
 
-    private static final TokenizerConfig DEFAULT_TOKENIZER_CONFIG = new TokenizerConfig(defaultSeparators());
-
     private static final Map<String, String[]> compositeTokens = new ConcurrentHashMap<>(64);
-
-    /**
-     * Reused space-splitter (immutable config) instead of constructing one per split call.
-     * Empty components are omitted so a composite token containing consecutive spaces (e.g.
-     * {@code "ORDER  BY"}) splits to the same component tokens as its single-spaced form instead
-     * of producing an empty, never-matching middle component.
-     */
-    private static final Splitter TOKEN_SPLITTER = Splitter.with(SK.SPACE).trimResults().omitEmptyStrings();
 
     static {
         compositeTokens.put(SK.LEFT_JOIN, new String[] { "LEFT", "JOIN" });
@@ -264,29 +254,65 @@ public final class SqlParser {
             e = e.toLowerCase(Locale.ROOT);
 
             if (!compositeTokens.containsKey(e)) {
-                compositeTokens.put(e, TOKEN_SPLITTER.splitToArray(e));
+                compositeTokens.put(e, splitTokenComponents(e));
             }
 
             e = e.toUpperCase(Locale.ROOT);
 
             if (!compositeTokens.containsKey(e)) {
-                compositeTokens.put(e, TOKEN_SPLITTER.splitToArray(e));
+                compositeTokens.put(e, splitTokenComponents(e));
             }
         }
     }
+
+    private static final TokenizerConfig DEFAULT_TOKENIZER_CONFIG = new TokenizerConfig(defaultSeparators());
+
+    private static final Tokenizer DEFAULT_TOKENIZER = new Tokenizer(DEFAULT_TOKENIZER_CONFIG);
 
     private SqlParser() {
     }
 
     /**
+     * Splits a search token on every Java/SQL whitespace character rather than only a literal
+     * space. Empty components are omitted so differently formatted composite keywords such as
+     * {@code "ORDER  BY"}, {@code "ORDER\tBY"}, and {@code "ORDER\nBY"} are equivalent.
+     */
+    private static String[] splitTokenComponents(final String token) {
+        final List<String> components = new ArrayList<>();
+        final int length = token.length();
+        int start = 0;
+
+        while (start < length) {
+            while (start < length && Character.isWhitespace(token.charAt(start))) {
+                start++;
+            }
+
+            if (start >= length) {
+                break;
+            }
+
+            int end = start + 1;
+
+            while (end < length && !Character.isWhitespace(token.charAt(end))) {
+                end++;
+            }
+
+            components.add(token.substring(start, end));
+            start = end;
+        }
+
+        return components.toArray(EMPTY_STRING_ARRAY);
+    }
+
+    /**
      * Starts an immutable tokenizer configuration from the built-in SQL separators.
-     * Customizations made through the returned builder affect only tokenizers created with the
-     * resulting configuration.
      *
      * @return a builder initialized with the default separators
+     * @deprecated use {@link TokenizerConfig#builder()}; builder creation belongs to the type being built
      */
+    @Deprecated
     public static TokenizerConfig.Builder tokenizerConfigBuilder() {
-        return new TokenizerConfig.Builder(DEFAULT_TOKENIZER_CONFIG);
+        return TokenizerConfig.builder();
     }
 
     /**
@@ -299,12 +325,12 @@ public final class SqlParser {
     }
 
     /**
-     * Creates an instance-scoped tokenizer using the built-in separator configuration.
+     * Returns the default tokenizer using the built-in separator configuration.
      *
      * @return a tokenizer using {@link #defaultTokenizerConfig()}
      */
     public static Tokenizer tokenizer() {
-        return new Tokenizer(DEFAULT_TOKENIZER_CONFIG);
+        return DEFAULT_TOKENIZER;
     }
 
     /**
@@ -321,8 +347,8 @@ public final class SqlParser {
     }
 
     /**
-     * Immutable separator configuration for {@link Tokenizer}. Instances are created from
-     * {@link SqlParser#tokenizerConfigBuilder()} and can safely be shared between threads.
+     * Immutable separator configuration for {@link Tokenizer}. Instances are created with
+     * {@link #builder()} or derived with {@link #toBuilder()}, and can safely be shared between threads.
      *
      * <p>SQL lexical structure takes precedence over configured separators: quoted regions remain
      * whole tokens, comments are skipped, {@code #{...}} remains a MyBatis parameter marker, and a
@@ -399,6 +425,26 @@ public final class SqlParser {
         }
 
         /**
+         * Starts a configuration builder initialized with the built-in SQL separators.
+         * Changes made through the builder are instance-scoped and do not affect the static parser.
+         *
+         * @return a new builder initialized with the default separators
+         */
+        public static Builder builder() {
+            return new Builder(DEFAULT_TOKENIZER_CONFIG);
+        }
+
+        /**
+         * Creates a builder initialized with this configuration's separators.
+         * The builder owns a defensive copy, so subsequent changes do not mutate this configuration.
+         *
+         * @return a new builder initialized from this configuration
+         */
+        public Builder toBuilder() {
+            return new Builder(this);
+        }
+
+        /**
          * Returns the configured separators as an immutable set.
          *
          * @return the configured separators
@@ -427,8 +473,8 @@ public final class SqlParser {
         }
 
         /**
-         * Builder for immutable {@link TokenizerConfig} instances. Obtain a builder initialized
-         * with the built-in separators from {@link SqlParser#tokenizerConfigBuilder()}.
+         * Builder for immutable {@link TokenizerConfig} instances. Use {@link TokenizerConfig#builder()}
+         * for the defaults or {@link TokenizerConfig#toBuilder()} to derive a modified configuration.
          */
         public static final class Builder {
             private final Set<String> separators;
@@ -594,6 +640,19 @@ public final class SqlParser {
          */
         public int nextTokenEndIndex(final String sql, final int fromIndex) {
             return SqlParser.nextTokenEndIndex(sql, fromIndex, tokenizerConfig);
+        }
+
+        /**
+         * Checks whether the statement is a read-only SELECT using this tokenizer's configured
+         * separator rules. In particular, configured hash-prefixed operators are not mistaken for
+         * MySQL hash comments while scanning later statements.
+         *
+         * @param sql the SQL statement to classify; may be empty or {@code null}
+         * @return {@code true} if the SQL is a read-only SELECT query, {@code false} otherwise
+         * @see SqlParser#isReadOnlyQuery(String)
+         */
+        public boolean isReadOnlyQuery(final String sql) {
+            return SqlParser.isReadOnlyQuery(sql, tokenizerConfig);
         }
     }
 
@@ -889,7 +948,8 @@ public final class SqlParser {
      * <p>Unlike {@link String#indexOf(String, int)}, this method only returns a position where
      * {@code token} appears as a <em>complete</em> SQL token (or composite token), not where it
      * occurs as a substring of another identifier; matches that fall inside line/hash/block
-     * comments are skipped.</p>
+     * comments are skipped. Leading and trailing whitespace in {@code token} is ignored, and runs
+     * of whitespace inside a composite token are treated as a separator between its components.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -927,9 +987,14 @@ public final class SqlParser {
             componentTokens = compositeTokens.get(token);
 
             if (componentTokens == null) {
-                componentTokens = TOKEN_SPLITTER.splitToArray(token);
+                componentTokens = splitTokenComponents(token);
             }
         }
+
+        // Component splitting trims surrounding whitespace. Use the normalized single component for comparisons
+        // as well; otherwise a padded target such as "  WHERE  " is classified as one token above
+        // but can never match because the scanner produces "WHERE" without the padding.
+        final String searchToken = N.len(componentTokens) == 1 ? componentTokens[0] : token;
 
         //noinspection IfStatementWithIdenticalBranches
         if (N.len(componentTokens) <= 1) {
@@ -966,9 +1031,9 @@ public final class SqlParser {
                                 // Even count (including 0) of preceding backslashes -> NOT escaped.
                                 temp = sb.toString();
 
-                                final int matchStart = index - token.length() + 1;
+                                final int matchStart = index - searchToken.length() + 1;
 
-                                if (matchStart >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
+                                if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                                     result = matchStart;
 
                                     break;
@@ -988,9 +1053,9 @@ public final class SqlParser {
                         // Skip single-line comment (-- ...)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            final int matchStart = index - token.length();
+                            final int matchStart = index - searchToken.length();
 
-                            if (matchStart >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
+                            if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                                 result = matchStart;
                                 break;
                             }
@@ -1006,9 +1071,9 @@ public final class SqlParser {
                         // Skip MySQL single-line comment (# ...)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            final int matchStart = index - token.length();
+                            final int matchStart = index - searchToken.length();
 
-                            if (matchStart >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
+                            if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                                 result = matchStart;
                                 break;
                             }
@@ -1024,9 +1089,9 @@ public final class SqlParser {
                         // Skip block comment (/* ... */)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            final int matchStart = index - token.length();
+                            final int matchStart = index - searchToken.length();
 
-                            if (matchStart >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
+                            if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                                 result = matchStart;
                                 break;
                             }
@@ -1045,9 +1110,9 @@ public final class SqlParser {
                     } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig)) {
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            final int matchStart = index - token.length();
+                            final int matchStart = index - searchToken.length();
 
-                            if (matchStart >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
+                            if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                                 result = matchStart;
 
                                 break;
@@ -1062,7 +1127,7 @@ public final class SqlParser {
                         temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig);
 
                         if (temp != null) {
-                            if (index >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
+                            if (index >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                                 result = index;
 
                                 break;
@@ -1070,7 +1135,7 @@ public final class SqlParser {
 
                             index += temp.length() - 1;
                         } else if (index >= startIndex
-                                && (token.equals(String.valueOf(ch)) || (!caseSensitive && token.equalsIgnoreCase(String.valueOf(ch))))) {
+                                && (searchToken.equals(String.valueOf(ch)) || (!caseSensitive && searchToken.equalsIgnoreCase(String.valueOf(ch))))) {
                             result = index;
 
                             break;
@@ -1087,9 +1152,9 @@ public final class SqlParser {
 
                 if (result < 0 && !sb.isEmpty()) {
                     temp = sb.toString();
-                    final int matchStart = sqlLength - token.length();
+                    final int matchStart = sqlLength - searchToken.length();
 
-                    if (matchStart >= startIndex && (token.equals(temp) || (!caseSensitive && token.equalsIgnoreCase(temp)))) {
+                    if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                         result = matchStart;
                     }
                 }
@@ -1474,10 +1539,6 @@ public final class SqlParser {
         }
     }
 
-    private static boolean isHashCommentStart(final String str, final int len, final int index) {
-        return isHashCommentStart(str, len, index, DEFAULT_TOKENIZER_CONFIG);
-    }
-
     private static boolean isHashCommentStart(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig) {
         if (str.charAt(index) != '#') {
             return false;
@@ -1542,7 +1603,7 @@ public final class SqlParser {
 
             if (ch == ',') {
                 final int beforeComma = skipBackwardWhitespaceAndBlockComments(str, left - 1);
-                final int beforeElement = skipBackwardListElement(str, beforeComma);
+                final int beforeElement = skipBackwardListElement(str, beforeComma, tokenizerConfig);
 
                 if (beforeElement >= beforeComma) {
                     // No recognizable list element before the ',' -> not an identifier list.
@@ -1600,7 +1661,7 @@ public final class SqlParser {
         }
 
         if (str.charAt(left) == ')') {
-            final int openingParenthesis = findMatchingOpeningParenthesis(str, left);
+            final int openingParenthesis = findMatchingOpeningParenthesis(str, left, tokenizerConfig);
 
             if (openingParenthesis < 0) {
                 return false;
@@ -1663,7 +1724,7 @@ public final class SqlParser {
      * context keyword is never consumed: it is left in place for the caller to classify, so
      * {@code "FROM t1, #t2"} stops in front of {@code FROM} after consuming {@code t1}.</p>
      */
-    private static int skipBackwardListElement(final String str, final int start) {
+    private static int skipBackwardListElement(final String str, final int start, final TokenizerConfig tokenizerConfig) {
         int left = start;
         int units = 0;
 
@@ -1679,7 +1740,7 @@ public final class SqlParser {
                     // #tmp". Consume its balanced parenthesized body as the name unit after the
                     // alias; otherwise the walk stops at ')' and misclassifies #tmp as a comment,
                     // potentially hiding a later statement from the read-only safety checks.
-                    final int openingParenthesis = findMatchingOpeningParenthesis(str, left);
+                    final int openingParenthesis = findMatchingOpeningParenthesis(str, left, tokenizerConfig);
 
                     if (openingParenthesis < 0) {
                         break outer;
@@ -1688,14 +1749,9 @@ public final class SqlParser {
                     left = openingParenthesis - 1;
                 } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == ']') {
                     // Quoted / bracket-quoted identifier segment: skip back to the opening quote.
-                    // (Escaped/doubled closing quotes are not un-escaped here; a mismatch makes the
-                    // walk stop early, which conservatively yields the comment classification.)
                     final char openChar = ch == ']' ? '[' : ch;
-                    int quoteStart = left - 1;
-
-                    while (quoteStart >= 0 && str.charAt(quoteStart) != openChar) {
-                        quoteStart--;
-                    }
+                    final int quoteStart = ch == ']' ? findOpeningBracketQuotedIdentifier(str, left, tokenizerConfig)
+                            : findOpeningQuoteBackward(str, left, openChar);
 
                     if (quoteStart < 0) {
                         break outer; // unbalanced quote -> not a recognizable element
@@ -1753,10 +1809,121 @@ public final class SqlParser {
     }
 
     /**
-     * Finds the opening parenthesis paired with {@code closingParenthesis}, ignoring parentheses
-     * inside quoted text, bracket-quoted identifiers, and SQL line/block comments.
+     * Finds the opening quote paired with {@code closingQuote} while scanning a quoted identifier
+     * backward. Doubled SQL quotes and backslash-escaped quotes are content, not opening delimiters.
      */
-    private static int findMatchingOpeningParenthesis(final String str, final int closingParenthesis) {
+    private static int findOpeningQuoteBackward(final String str, final int closingQuote, final char quoteChar) {
+        int index = closingQuote - 1;
+
+        while (index >= 0) {
+            if (str.charAt(index) != quoteChar) {
+                index--;
+                continue;
+            }
+
+            int backslashCount = 0;
+            int beforeQuote = index - 1;
+
+            while (beforeQuote >= 0 && str.charAt(beforeQuote) == '\\') {
+                backslashCount++;
+                beforeQuote--;
+            }
+
+            if ((backslashCount & 1) != 0) {
+                index = beforeQuote;
+            } else if (index > 0 && str.charAt(index - 1) == quoteChar) {
+                index -= 2;
+            } else {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Finds the opening bracket paired with {@code closingBracket}. A forward lexical scan is
+     * necessary because an unescaped {@code '['} is legal content inside a bracket-quoted SQL
+     * Server identifier, while doubled {@code "]]"} represents a literal closing bracket.
+     */
+    private static int findOpeningBracketQuotedIdentifier(final String str, final int closingBracket, final TokenizerConfig tokenizerConfig) {
+        int openingBracket = -1;
+        char quoteChar = 0;
+        boolean backslashEscaped = false;
+
+        for (int index = 0; index <= closingBracket; index++) {
+            final char ch = str.charAt(index);
+
+            if (quoteChar != 0) {
+                if (ch == quoteChar) {
+                    if (backslashEscaped) {
+                        backslashEscaped = false;
+                    } else if (index < closingBracket && str.charAt(index + 1) == quoteChar) {
+                        index++;
+                    } else {
+                        quoteChar = 0;
+                    }
+                } else if (ch == '\\') {
+                    backslashEscaped = !backslashEscaped;
+                } else {
+                    backslashEscaped = false;
+                }
+
+                continue;
+            }
+
+            if (openingBracket >= 0) {
+                if (ch == ']') {
+                    if (index < closingBracket && str.charAt(index + 1) == ']') {
+                        index++;
+                    } else if (index == closingBracket) {
+                        return openingBracket;
+                    } else {
+                        openingBracket = -1;
+                    }
+                }
+
+                continue;
+            }
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                quoteChar = ch;
+                backslashEscaped = false;
+            } else if (ch == '[') {
+                openingBracket = index;
+            } else if (ch == '-' && index < closingBracket && str.charAt(index + 1) == '-') {
+                index += 2;
+
+                while (index <= closingBracket && str.charAt(index) != ENTER && str.charAt(index) != ENTER_2) {
+                    index++;
+                }
+            } else if (ch == '#' && isHashCommentStart(str, str.length(), index, tokenizerConfig)) {
+                index++;
+
+                while (index <= closingBracket && str.charAt(index) != ENTER && str.charAt(index) != ENTER_2) {
+                    index++;
+                }
+            } else if (ch == '/' && index < closingBracket && str.charAt(index + 1) == '*') {
+                index += 2;
+
+                while (index < closingBracket && !(str.charAt(index) == '*' && str.charAt(index + 1) == '/')) {
+                    index++;
+                }
+
+                if (index < closingBracket) {
+                    index++;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Finds the opening parenthesis paired with {@code closingParenthesis}, ignoring parentheses
+     * inside quoted text, bracket-quoted identifiers, and SQL line/block/hash comments.
+     */
+    private static int findMatchingOpeningParenthesis(final String str, final int closingParenthesis, final TokenizerConfig tokenizerConfig) {
         final List<Integer> openings = new ArrayList<>(4);
         char quoteChar = 0;
         boolean backslashEscaped = false;
@@ -1806,6 +1973,12 @@ public final class SqlParser {
                 while (i <= closingParenthesis && str.charAt(i) != ENTER && str.charAt(i) != ENTER_2) {
                     i++;
                 }
+            } else if (ch == '#' && isHashCommentStart(str, str.length(), i, tokenizerConfig)) {
+                i++;
+
+                while (i <= closingParenthesis && str.charAt(i) != ENTER && str.charAt(i) != ENTER_2) {
+                    i++;
+                }
             } else if (ch == '/' && i < closingParenthesis && str.charAt(i + 1) == '*') {
                 i += 2;
 
@@ -1832,10 +2005,6 @@ public final class SqlParser {
         }
 
         return -1;
-    }
-
-    private static int skipBackwardWhitespaceAndComments(final String str, int left) {
-        return skipBackwardWhitespaceAndComments(str, left, DEFAULT_TOKENIZER_CONFIG);
     }
 
     private static int skipBackwardWhitespaceAndComments(final String str, int left, final TokenizerConfig tokenizerConfig) {
@@ -2092,28 +2261,9 @@ public final class SqlParser {
      * @throws NullPointerException if {@code tokens} is {@code null}
      */
     public static boolean isFunctionName(final List<String> tokens, final int index) {
-        return isFunctionName(tokens, tokens.size(), index);
-    }
+        final int size = tokens.size();
 
-    /**
-     * Determines if a token at a specific position in a parsed token list represents a function name,
-     * examining only the tokens below the given exclusive upper bound.
-     *
-     * @param tokens the parsed SQL tokens (typically the result of {@link #parse(String)})
-     * @param len the exclusive upper bound to search within {@code tokens} (usually {@code tokens.size()};
-     *            indices {@code >= len} are not examined; values above {@code tokens.size()} are capped
-     *            at {@code tokens.size()})
-     * @param index the index of the token to check; invalid indices return {@code false}
-     * @return {@code true} if the token at {@code index} is followed (after zero or more space tokens)
-     *         by the {@code "("} token; {@code false} otherwise
-     * @throws NullPointerException if {@code tokens} is {@code null}
-     * @deprecated use {@link #isFunctionName(List, int)}
-     */
-    @Deprecated
-    public static boolean isFunctionName(final List<String> tokens, final int len, final int index) {
-        final int upperBound = Math.min(len, tokens.size());
-
-        if (index < 0 || index >= upperBound) {
+        if (index < 0 || index >= size) {
             return false;
         }
 
@@ -2121,8 +2271,42 @@ public final class SqlParser {
             return false;
         }
 
-        for (int i = index + 1; i < upperBound; i++) {
+        for (int i = index + 1; i < size; i++) {
             String token = tokens.get(i);
+            if (SK.PARENTHESIS_L.equals(token)) {
+                return true;
+            } else if (!SK.SPACE.equals(token)) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determines whether a token is a function name while examining only tokens below the supplied
+     * exclusive upper bound. This compatibility overload preserves the historical bounded-scan
+     * behavior; values above {@code tokens.size()} are capped at the list size.
+     *
+     * @param tokens the parsed SQL tokens (typically the result of {@link #parse(String)})
+     * @param len the exclusive upper bound for the scan; values above {@code tokens.size()} are capped
+     * @param index the index of the candidate function-name token
+     * @return {@code true} if an opening-parenthesis token occurs after {@code index}, with only space
+     *         tokens between them, and before the effective upper bound; {@code false} otherwise
+     * @throws NullPointerException if {@code tokens} is {@code null}
+     * @deprecated use {@link #isFunctionName(List, int)} when the complete token list should be examined
+     */
+    @Deprecated
+    public static boolean isFunctionName(final List<String> tokens, final int len, final int index) {
+        final int upperBound = Math.min(len, tokens.size());
+
+        if (index < 0 || index >= upperBound || SK.SPACE.equals(tokens.get(index))) {
+            return false;
+        }
+
+        for (int i = index + 1; i < upperBound; i++) {
+            final String token = tokens.get(i);
+
             if (SK.PARENTHESIS_L.equals(token)) {
                 return true;
             } else if (!SK.SPACE.equals(token)) {
@@ -2175,7 +2359,7 @@ public final class SqlParser {
      * @see #isDeleteQuery(String)
      * @see #isInsertOrReplaceQuery(String)
      * @see #isReadOnlyQuery(String)
-     * @see #isNoUpdateQuery(String)
+     * @see #isReadOrInsertQuery(String)
      */
     public static boolean isSelectQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
@@ -2191,9 +2375,10 @@ public final class SqlParser {
      * modify data.
      * <p>
      * A statement is considered read-only only if its leading keyword is {@code SELECT}
-     * (see {@link #isSelectQuery(String)}) <i>and</i> it contains no top-level mutation or DDL keyword
+     * (see {@link #isSelectQuery(String)}) <i>and</i> it contains no top-level mutation, DDL, or procedure-invocation keyword
      * ({@code INSERT}, {@code UPDATE}, {@code DELETE}, {@code MERGE}, {@code REPLACE}, {@code TRUNCATE},
-     * {@code CREATE}, {@code ALTER} or {@code DROP}) and no standalone
+     * {@code CREATE}, {@code ALTER} or {@code DROP}), no procedure invocation ({@code CALL}, JDBC
+     * {@code {call ...}} / {@code {? = call ...}}, {@code EXEC} or {@code EXECUTE}), and no standalone
      * {@code SELECT ... INTO ...} clause. The {@code INTO} check is limited to the SELECT list
      * before that SELECT's {@code FROM}; table names after {@code FROM} and qualified identifiers
      * such as {@code t.into} do not count as {@code SELECT ... INTO}. Keyword matching ignores
@@ -2201,7 +2386,7 @@ public final class SqlParser {
      * identifier tokens, so a SELECT that merely returns the literal text {@code 'DELETE'} or a
      * column named {@code into$} is still treated as read-only, whereas a data-changing CTE such as
      * {@code WITH t AS (...) DELETE ...} is not. For multi-statement SQL, a later statement that
-     * starts with one of the mutation or DDL keywords listed above also makes the SQL
+     * starts with one of the mutation, DDL, or procedure-invocation keywords listed above also makes the SQL
      * non-read-only, including when that later statement starts with a {@code WITH} clause or
      * leading parentheses. The keyword scan matches only statement-start positions, so the
      * {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL <i>functions</i> inside a SELECT do not
@@ -2219,14 +2404,22 @@ public final class SqlParser {
      * @see #isUpdateQuery(String)
      * @see #isDeleteQuery(String)
      * @see #isInsertOrReplaceQuery(String)
-     * @see #isNoUpdateQuery(String)
+     * @see #isReadOrInsertQuery(String)
      */
     public static boolean isReadOnlyQuery(final String sql) {
+        return isReadOnlyQuery(sql, DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    private static boolean isReadOnlyQuery(final String sql, final TokenizerConfig tokenizerConfig) {
         if (Strings.isEmpty(sql)) {
             return false;
         }
 
-        return isSelectQuery(sql) && !containsMutationQueryKeyword(sql) && !containsSelectIntoClause(sql);
+        return isSelectQuery(sql, tokenizerConfig) && !containsMutationQueryKeyword(sql, tokenizerConfig) && !containsSelectIntoClause(sql, tokenizerConfig);
+    }
+
+    private static boolean isSelectQuery(final String sql, final TokenizerConfig tokenizerConfig) {
+        return !Strings.isEmpty(sql) && "SELECT".equalsIgnoreCase(getLeadingQueryKeyword(sql, tokenizerConfig));
     }
 
     /**
@@ -2270,7 +2463,7 @@ public final class SqlParser {
      * @see #isDeleteQuery(String)
      * @see #isInsertOrReplaceQuery(String)
      * @see #isReadOnlyQuery(String)
-     * @see #isNoUpdateQuery(String)
+     * @see #isReadOrInsertQuery(String)
      */
     public static boolean isInsertQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
@@ -2318,7 +2511,7 @@ public final class SqlParser {
      * @see #isDeleteQuery(String)
      * @see #isInsertOrReplaceQuery(String)
      * @see #isReadOnlyQuery(String)
-     * @see #isNoUpdateQuery(String)
+     * @see #isReadOrInsertQuery(String)
      */
     public static boolean isUpdateQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
@@ -2366,7 +2559,7 @@ public final class SqlParser {
      * @see #isUpdateQuery(String)
      * @see #isInsertOrReplaceQuery(String)
      * @see #isReadOnlyQuery(String)
-     * @see #isNoUpdateQuery(String)
+     * @see #isReadOrInsertQuery(String)
      */
     public static boolean isDeleteQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
@@ -2410,7 +2603,7 @@ public final class SqlParser {
      * @see #isUpdateQuery(String)
      * @see #isDeleteQuery(String)
      * @see #isReadOnlyQuery(String)
-     * @see #isNoUpdateQuery(String)
+     * @see #isReadOrInsertQuery(String)
      */
     public static boolean isInsertOrReplaceQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
@@ -2442,18 +2635,19 @@ public final class SqlParser {
     }
 
     /**
-     * Checks whether the given SQL statement neither updates nor deletes existing rows. The name
-     * deliberately mirrors the {@code NoUpdateDao} gate in abacus-jdbc, which uses exactly this
-     * check: it permits reads and plain inserts of new rows but forbids statements that mutate
-     * existing data.
+     * Checks whether the given SQL statement is a read or a plain/safe insert. This method permits
+     * reads and inserts of new rows but rejects statements that can mutate existing data.
      * <p>
-     * A statement qualifies as "no-update" only if its leading keyword is {@code SELECT} or
+     * A statement qualifies as read-or-insert only if its leading keyword is {@code SELECT} or
      * {@code INSERT} <i>and</i> it contains none of the following (matching outside of quoted string
      * literals and SQL comments):
      * </p>
      * <ul>
-     *   <li>a top-level {@code UPDATE}, {@code DELETE} or {@code MERGE} keyword (matched only at
-     *       statement-start positions, so e.g. {@code SELECT ... FOR UPDATE} is still accepted); or</li>
+     *   <li>a top-level {@code UPDATE}, {@code DELETE}, {@code MERGE}, {@code REPLACE}, {@code TRUNCATE},
+     *       {@code CREATE}, {@code ALTER} or {@code DROP} keyword (matched only at statement-start
+     *       positions, so e.g. {@code SELECT ... FOR UPDATE} is still accepted);</li>
+     *   <li>a procedure invocation introduced by {@code CALL}, JDBC {@code {call ...}} /
+     *       {@code {? = call ...}}, {@code EXEC} or {@code EXECUTE}; or</li>
      *   <li>an upsert clause that can modify existing rows, namely {@code INSERT OR REPLACE},
      *       {@code ON DUPLICATE KEY UPDATE} (MySQL) or {@code ON CONFLICT ... DO UPDATE}
      *       (PostgreSQL/SQLite). These clauses are recognized outside quoted literals,
@@ -2469,8 +2663,10 @@ public final class SqlParser {
      * {@code update_time} or bracket/quoted identifiers named like keywords are ignored. A
      * {@code null} or empty statement does not lead with {@code SELECT} or {@code INSERT}, so it
      * returns {@code false}. For multi-statement SQL, a later top-level {@code UPDATE},
-     * {@code DELETE}, {@code MERGE}, {@code REPLACE}, {@code TRUNCATE}, {@code CREATE}, {@code DROP}
-     * or {@code ALTER} statement makes this method return {@code false}; the keyword scan matches
+     * {@code DELETE}, {@code MERGE}, {@code REPLACE}, {@code TRUNCATE}, {@code CREATE}, {@code DROP},
+     * {@code ALTER}, {@code CALL}, JDBC {@code {call ...}} / {@code {? = call ...}}, {@code EXEC} or
+     * {@code EXECUTE} statement makes this method return {@code false}. Procedure calls are
+     * conservatively rejected because their effects cannot be determined from the SQL text; the keyword scan matches
      * only statement-start positions, so the {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL
      * <i>functions</i> do not affect the classification.
      * </p>
@@ -2480,16 +2676,17 @@ public final class SqlParser {
      * this predicate relates to the other {@code is...Query} methods.</p>
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
-     * @return {@code true} if the SQL neither updates nor deletes existing rows, {@code false} otherwise
-     *         (including for a {@code null} or empty statement)
+     * @return {@code true} for an accepted read or plain/safe insert; {@code false} otherwise,
+     *         including for a {@code null} or empty statement
      * @see #isSelectQuery(String)
      * @see #isInsertQuery(String)
      * @see #isUpdateQuery(String)
      * @see #isDeleteQuery(String)
      * @see #isInsertOrReplaceQuery(String)
      * @see #isReadOnlyQuery(String)
+     * @see #isNonUpdateQuery(String)
      */
-    public static boolean isNoUpdateQuery(final String sql) {
+    public static boolean isReadOrInsertQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
             return false;
         }
@@ -2502,17 +2699,136 @@ public final class SqlParser {
         // REPLACE(...)/TRUNCATE(...) functions from false-positiving.
         return !containsQueryKeyword(sql, "UPDATE") && !containsQueryKeyword(sql, "DELETE") && !containsQueryKeyword(sql, "MERGE")
                 && !containsQueryKeyword(sql, "REPLACE") && !containsQueryKeyword(sql, "TRUNCATE") && !containsQueryKeyword(sql, "DROP")
-                && !containsQueryKeyword(sql, "ALTER") && !containsQueryKeyword(sql, "CREATE") && !containsInsertUpdateClause(sql)
-                && !containsSelectIntoClause(sql) && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
+                && !containsQueryKeyword(sql, "ALTER") && !containsQueryKeyword(sql, "CREATE") && !containsProcedureInvocation(sql, DEFAULT_TOKENIZER_CONFIG)
+                && !containsInsertUpdateClause(sql) && !containsSelectIntoClause(sql) && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
     }
 
-    private static boolean containsMutationQueryKeyword(final String sql) {
+    /**
+     * Compatibility alias for the historical {@code NoUpdateDao} terminology. Despite its name,
+     * this predicate accepts both reads and plain/safe inserts.
+     *
+     * @param sql the SQL statement to check; may be empty or {@code null}
+     * @return the result of {@link #isReadOrInsertQuery(String)}
+     * @deprecated use {@link #isReadOrInsertQuery(String)}, whose name describes the accepted statement kinds
+     */
+    @Deprecated
+    public static boolean isNonUpdateQuery(final String sql) {
+        return isReadOrInsertQuery(sql);
+    }
+
+    /**
+     * Compatibility alias for the original public API name. Despite its historical name, this
+     * predicate accepts both reads and plain/safe inserts.
+     *
+     * @param sql the SQL statement to check; may be empty or {@code null}
+     * @return the result of {@link #isReadOrInsertQuery(String)}
+     * @deprecated use {@link #isReadOrInsertQuery(String)}, whose name describes the accepted statement kinds
+     */
+    @Deprecated
+    public static boolean isNoUpdateQuery(final String sql) {
+        return isReadOrInsertQuery(sql);
+    }
+
+    private static boolean containsMutationQueryKeyword(final String sql, final TokenizerConfig tokenizerConfig) {
         // containsQueryKeyword matches only at statement-start positions (start of SQL, after ';', or a CTE
         // body's "AS ("), so the REPLACE(...)/TRUNCATE(...) string/numeric FUNCTIONS -- which always appear
         // mid-statement -- cannot false-positive here.
-        return containsQueryKeyword(sql, "INSERT") || containsQueryKeyword(sql, "UPDATE") || containsQueryKeyword(sql, "DELETE")
-                || containsQueryKeyword(sql, "MERGE") || containsQueryKeyword(sql, "REPLACE") || containsQueryKeyword(sql, "TRUNCATE")
-                || containsQueryKeyword(sql, "DROP") || containsQueryKeyword(sql, "ALTER") || containsQueryKeyword(sql, "CREATE");
+        return containsQueryKeyword(sql, "INSERT", tokenizerConfig) || containsQueryKeyword(sql, "UPDATE", tokenizerConfig)
+                || containsQueryKeyword(sql, "DELETE", tokenizerConfig) || containsQueryKeyword(sql, "MERGE", tokenizerConfig)
+                || containsQueryKeyword(sql, "REPLACE", tokenizerConfig) || containsQueryKeyword(sql, "TRUNCATE", tokenizerConfig)
+                || containsQueryKeyword(sql, "DROP", tokenizerConfig) || containsQueryKeyword(sql, "ALTER", tokenizerConfig)
+                || containsQueryKeyword(sql, "CREATE", tokenizerConfig) || containsProcedureInvocation(sql, tokenizerConfig);
+    }
+
+    /**
+     * Detects procedure invocations only where a statement verb may begin. Besides standard
+     * {@code CALL}, this recognizes the JDBC call escapes {@code {call ...}} and
+     * {@code {? = call ...}}, plus SQL Server's {@code EXEC}/{@code EXECUTE}. Quoted text,
+     * quoted identifiers, comments, larger identifier tokens, and function-like tokens appearing
+     * after a statement's leading verb are ignored.
+     */
+    private static boolean containsProcedureInvocation(final String sql, final TokenizerConfig tokenizerConfig) {
+        if (Strings.isEmpty(sql)) {
+            return false;
+        }
+
+        int index = 0;
+        boolean canStartStatement = true;
+
+        while (index < sql.length()) {
+            index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig);
+
+            if (index >= sql.length()) {
+                break;
+            }
+
+            final char ch = sql.charAt(index);
+
+            if (ch == '\'' || ch == '"' || ch == '`') {
+                index = skipQuotedLiteral(sql, index, ch);
+                canStartStatement = false;
+                continue;
+            } else if (ch == '[') {
+                index = skipBracketQuotedIdentifier(sql, index);
+                canStartStatement = false;
+                continue;
+            }
+
+            if (canStartStatement) {
+                if (ch == '(') {
+                    index++;
+                    continue;
+                }
+
+                if (ch == '{') {
+                    if (isJdbcCallEscape(sql, index, tokenizerConfig)) {
+                        return true;
+                    }
+
+                    canStartStatement = false;
+                    index++;
+                    continue;
+                }
+
+                if (Character.isLetter(ch)) {
+                    final String token = readKeyword(sql, index, tokenizerConfig);
+
+                    if ("CALL".equalsIgnoreCase(token) || "EXEC".equalsIgnoreCase(token) || "EXECUTE".equalsIgnoreCase(token)) {
+                        return true;
+                    }
+
+                    canStartStatement = false;
+                    index += token.length();
+                    continue;
+                }
+            }
+
+            if (ch == ';') {
+                canStartStatement = true;
+            } else if (!Character.isWhitespace(ch)) {
+                canStartStatement = false;
+            }
+
+            index++;
+        }
+
+        return false;
+    }
+
+    private static boolean isJdbcCallEscape(final String sql, final int openingBraceIndex, final TokenizerConfig tokenizerConfig) {
+        int index = skipLeadingWhitespaceAndComments(sql, openingBraceIndex + 1, tokenizerConfig);
+
+        if (index < sql.length() && sql.charAt(index) == '?') {
+            index = skipLeadingWhitespaceAndComments(sql, index + 1, tokenizerConfig);
+
+            if (index >= sql.length() || sql.charAt(index) != '=') {
+                return false;
+            }
+
+            index = skipLeadingWhitespaceAndComments(sql, index + 1, tokenizerConfig);
+        }
+
+        return "CALL".equalsIgnoreCase(readKeyword(sql, index, tokenizerConfig));
     }
 
     private static boolean containsInsertUpdateClause(final String sql) {
@@ -2604,10 +2920,18 @@ public final class SqlParser {
     }
 
     private static boolean containsSelectIntoClause(final String sql) {
-        return isSelectQuery(sql) && containsSelectListIntoToken(sql);
+        return containsSelectIntoClause(sql, DEFAULT_TOKENIZER_CONFIG);
     }
 
-    private static boolean containsSelectListIntoToken(final String sql) {
+    private static boolean containsSelectIntoClause(final String sql, final TokenizerConfig tokenizerConfig) {
+        // Scan every SELECT in the SQL, not only when the first statement is a SELECT. The
+        // no-update gate also permits a leading INSERT, and a later statement such as
+        // "INSERT ...; SELECT value INTO new_table ..." must not be allowed to create a table.
+        // containsSelectListIntoToken already distinguishes INSERT INTO from SELECT-list INTO.
+        return containsSelectListIntoToken(sql, tokenizerConfig);
+    }
+
+    private static boolean containsSelectListIntoToken(final String sql, final TokenizerConfig tokenizerConfig) {
         if (Strings.isEmpty(sql)) {
             return false;
         }
@@ -2617,7 +2941,7 @@ public final class SqlParser {
         int depth = 0;
 
         while (index < sql.length()) {
-            index = skipLeadingWhitespaceAndComments(sql, index);
+            index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig);
 
             if (index >= sql.length()) {
                 break;
@@ -2658,12 +2982,12 @@ public final class SqlParser {
 
                 if ("SELECT".equalsIgnoreCase(token)) {
                     setSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth, true);
-                } else if ("FROM".equalsIgnoreCase(token) && !isDotQualifiedToken(sql, index, index + token.length())) {
+                } else if ("FROM".equalsIgnoreCase(token) && !isDotQualifiedToken(sql, index, index + token.length(), tokenizerConfig)) {
                     if (isSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth)) {
                         setSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth, false);
                     }
                 } else if ("INTO".equalsIgnoreCase(token) && isSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth)
-                        && !isDotQualifiedToken(sql, index, index + token.length())) {
+                        && !isDotQualifiedToken(sql, index, index + token.length(), tokenizerConfig)) {
                     return true;
                 }
 
@@ -2695,14 +3019,14 @@ public final class SqlParser {
         }
     }
 
-    private static boolean isDotQualifiedToken(final String sql, final int startIndex, final int endIndex) {
-        final int previousIndex = skipBackwardWhitespaceAndComments(sql, startIndex - 1);
+    private static boolean isDotQualifiedToken(final String sql, final int startIndex, final int endIndex, final TokenizerConfig tokenizerConfig) {
+        final int previousIndex = skipBackwardWhitespaceAndComments(sql, startIndex - 1, tokenizerConfig);
 
         if (previousIndex >= 0 && sql.charAt(previousIndex) == '.') {
             return true;
         }
 
-        final int nextIndex = skipLeadingWhitespaceAndComments(sql, endIndex);
+        final int nextIndex = skipLeadingWhitespaceAndComments(sql, endIndex, tokenizerConfig);
 
         return nextIndex < sql.length() && sql.charAt(nextIndex) == '.';
     }
@@ -2759,6 +3083,10 @@ public final class SqlParser {
     }
 
     private static boolean containsQueryKeyword(final String sql, final String keywordToFind) {
+        return containsQueryKeyword(sql, keywordToFind, DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    private static boolean containsQueryKeyword(final String sql, final String keywordToFind, final TokenizerConfig tokenizerConfig) {
         if (Strings.isEmpty(sql)) {
             return false;
         }
@@ -2768,7 +3096,7 @@ public final class SqlParser {
         String previousKeyword = "";
 
         while (index < sql.length()) {
-            index = skipLeadingWhitespaceAndComments(sql, index);
+            index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig);
 
             if (index >= sql.length()) {
                 break;
@@ -2787,12 +3115,12 @@ public final class SqlParser {
             }
 
             if (Character.isLetter(ch)) {
-                final String token = readKeyword(sql, index);
+                final String token = readKeyword(sql, index, tokenizerConfig);
 
                 if (canStartQueryKeyword && "WITH".equalsIgnoreCase(token)) {
-                    final int queryKeywordIndex = findKeywordIndexAfterWithClause(sql, index + token.length());
+                    final int queryKeywordIndex = findKeywordIndexAfterWithClause(sql, index + token.length(), tokenizerConfig);
 
-                    if (queryKeywordIndex >= 0 && keywordToFind.equalsIgnoreCase(readKeyword(sql, queryKeywordIndex))) {
+                    if (queryKeywordIndex >= 0 && keywordToFind.equalsIgnoreCase(readKeyword(sql, queryKeywordIndex, tokenizerConfig))) {
                         return true;
                     }
                 }
@@ -2822,29 +3150,37 @@ public final class SqlParser {
     }
 
     private static String getLeadingQueryKeyword(final String sql) {
-        final int index = getLeadingQueryKeywordIndex(sql);
-        return index >= 0 ? readKeyword(sql, index) : "";
+        return getLeadingQueryKeyword(sql, DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    private static String getLeadingQueryKeyword(final String sql, final TokenizerConfig tokenizerConfig) {
+        final int index = getLeadingQueryKeywordIndex(sql, tokenizerConfig);
+        return index >= 0 ? readKeyword(sql, index, tokenizerConfig) : "";
     }
 
     private static int getLeadingQueryKeywordIndex(final String sql) {
+        return getLeadingQueryKeywordIndex(sql, DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    private static int getLeadingQueryKeywordIndex(final String sql, final TokenizerConfig tokenizerConfig) {
         if (Strings.isEmpty(sql)) {
             return -1;
         }
 
-        int index = skipLeadingWhitespaceAndComments(sql, 0);
+        int index = skipLeadingWhitespaceAndComments(sql, 0, tokenizerConfig);
 
         // A query may be wrapped in one or more leading parentheses, e.g. "(SELECT 1)" or
         // "(SELECT a FROM t1) UNION ALL (SELECT a FROM t2)". Skip past those so the leading verb
         // (SELECT/INSERT/...) is still recognized instead of being classified as no leading keyword.
         while (index < sql.length() && sql.charAt(index) == '(') {
-            index = skipLeadingWhitespaceAndComments(sql, index + 1);
+            index = skipLeadingWhitespaceAndComments(sql, index + 1, tokenizerConfig);
         }
 
         if (index >= sql.length()) {
             return -1;
         }
 
-        String keyword = readKeyword(sql, index);
+        String keyword = readKeyword(sql, index, tokenizerConfig);
 
         if (Strings.isEmpty(keyword)) {
             return -1;
@@ -2855,22 +3191,22 @@ public final class SqlParser {
         }
 
         index += keyword.length();
-        index = skipLeadingWhitespaceAndComments(sql, index);
+        index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig);
 
-        keyword = readKeyword(sql, index);
+        keyword = readKeyword(sql, index, tokenizerConfig);
 
         if ("RECURSIVE".equalsIgnoreCase(keyword)) {
             index += keyword.length();
         }
 
-        return findKeywordIndexAfterWithClause(sql, index);
+        return findKeywordIndexAfterWithClause(sql, index, tokenizerConfig);
     }
 
-    private static int findKeywordIndexAfterWithClause(final String sql, int fromIndex) {
+    private static int findKeywordIndexAfterWithClause(final String sql, int fromIndex, final TokenizerConfig tokenizerConfig) {
         int depth = 0;
 
         while (fromIndex < sql.length()) {
-            fromIndex = skipLeadingWhitespaceAndComments(sql, fromIndex);
+            fromIndex = skipLeadingWhitespaceAndComments(sql, fromIndex, tokenizerConfig);
 
             if (fromIndex >= sql.length()) {
                 break;
@@ -2902,7 +3238,7 @@ public final class SqlParser {
             }
 
             if (Character.isLetter(ch)) {
-                final String token = readKeyword(sql, fromIndex);
+                final String token = readKeyword(sql, fromIndex, tokenizerConfig);
 
                 if (depth == 0 && isQueryKeyword(token)) {
                     return fromIndex;
@@ -2924,6 +3260,10 @@ public final class SqlParser {
     }
 
     private static int skipLeadingWhitespaceAndComments(final String sql, int fromIndex) {
+        return skipLeadingWhitespaceAndComments(sql, fromIndex, DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    private static int skipLeadingWhitespaceAndComments(final String sql, int fromIndex, final TokenizerConfig tokenizerConfig) {
         while (fromIndex < sql.length()) {
             while (fromIndex < sql.length() && Character.isWhitespace(sql.charAt(fromIndex))) {
                 fromIndex++;
@@ -2954,7 +3294,7 @@ public final class SqlParser {
                 continue;
             }
 
-            if (sql.charAt(fromIndex) == '#' && isHashCommentStart(sql, sql.length(), fromIndex)) {
+            if (sql.charAt(fromIndex) == '#' && isHashCommentStart(sql, sql.length(), fromIndex, tokenizerConfig)) {
                 do {
                     fromIndex++;
                 } while (fromIndex < sql.length() && sql.charAt(fromIndex) != '\n' && sql.charAt(fromIndex) != '\r');
@@ -3016,7 +3356,11 @@ public final class SqlParser {
     }
 
     private static String readKeyword(final String sql, int fromIndex) {
-        fromIndex = skipLeadingWhitespaceAndComments(sql, fromIndex);
+        return readKeyword(sql, fromIndex, DEFAULT_TOKENIZER_CONFIG);
+    }
+
+    private static String readKeyword(final String sql, int fromIndex, final TokenizerConfig tokenizerConfig) {
+        fromIndex = skipLeadingWhitespaceAndComments(sql, fromIndex, tokenizerConfig);
 
         if (fromIndex >= sql.length() || !Character.isLetter(sql.charAt(fromIndex))) {
             return "";

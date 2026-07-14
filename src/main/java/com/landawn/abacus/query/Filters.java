@@ -33,7 +33,6 @@ import com.landawn.abacus.query.condition.CrossJoin;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Except;
 import com.landawn.abacus.query.condition.Exists;
-import com.landawn.abacus.query.condition.Expression;
 import com.landawn.abacus.query.condition.FullJoin;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.GreaterThanOrEqual;
@@ -74,6 +73,7 @@ import com.landawn.abacus.query.condition.Or;
 import com.landawn.abacus.query.condition.OrderBy;
 import com.landawn.abacus.query.condition.RightJoin;
 import com.landawn.abacus.query.condition.Some;
+import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Union;
 import com.landawn.abacus.query.condition.UnionAll;
@@ -90,7 +90,8 @@ import com.landawn.abacus.util.SK;
  *
  * <p><b>Warning:</b> Value-based methods (e.g., {@code equal}, {@code in}, {@code between}) capture structured
  * values that are later rendered according to the {@link SqlBuilder} policy. APIs that accept raw SQL fragments
- * (e.g., {@code expr(...)}) append those fragments verbatim and must not be built from untrusted data.</p>
+ * (e.g., {@code expr(...)}) treat those fragments as SQL rather than bind values; detected identifiers may still
+ * be converted by the builder's naming policy. Raw fragments must not be built from untrusted data.</p>
  *
  * <p><b>API Categories:</b></p>
  * <ul>
@@ -133,12 +134,12 @@ import com.landawn.abacus.util.SK;
  * }</pre>
  *
  * @see Condition
- * @see Expression
+ * @see SqlExpression
  * @see SqlBuilder
  */
 public final class Filters {
     /**
-     * Expression representing a question mark literal ("?") for use in parameterized SQL queries.
+     * A SQL expression representing a question mark literal ({@code ?}) for use in parameterized SQL queries.
      * This constant is used when creating conditions with placeholders for prepared statements.
      *
      * <p><b>Usage Examples:</b></p>
@@ -147,13 +148,13 @@ public final class Filters {
      * Equal condition = Filters.equal("age");
      * }</pre>
      */
-    public static final Expression QME = Expression.of(SK.QUESTION_MARK);
+    public static final SqlExpression QME = SqlExpression.of(SK.QUESTION_MARK);
 
-    /** Expression representing {@code "1 < 2"} which always evaluates to {@code true}. */
-    private static final Expression ALWAYS_TRUE = Expression.of("1 < 2");
+    /** A SQL expression representing {@code "1 < 2"} which always evaluates to {@code true}. */
+    private static final SqlExpression ALWAYS_TRUE = SqlExpression.of("1 < 2");
 
-    /** Expression representing {@code "1 > 2"} which always evaluates to {@code false}. */
-    private static final Expression ALWAYS_FALSE = Expression.of("1 > 2");
+    /** A SQL expression representing {@code "1 > 2"} which always evaluates to {@code false}. */
+    private static final SqlExpression ALWAYS_FALSE = SqlExpression.of("1 > 2");
 
     private Filters() {
         // utility class
@@ -169,12 +170,12 @@ public final class Filters {
      * // Filters.alwaysTrue() renders the literal: 1 < 2
      * }</pre>
      *
-     * @return an {@link Expression} that always evaluates to true (1 &lt; 2)
+     * @return an {@link SqlExpression} that always evaluates to true (1 &lt; 2)
      * @deprecated dangerous; could silently bypass all filtering, returning all rows.
      *             Avoid using this method; restructure the conditional logic instead.
      */
     @Deprecated
-    public static Expression alwaysTrue() {
+    public static SqlExpression alwaysTrue() {
         return ALWAYS_TRUE;
     }
 
@@ -188,12 +189,12 @@ public final class Filters {
      * // Filters.alwaysFalse() renders the literal: 1 > 2
      * }</pre>
      *
-     * @return an {@link Expression} that always evaluates to false (1 &gt; 2)
+     * @return an {@link SqlExpression} that always evaluates to false (1 &gt; 2)
      * @deprecated dangerous; could silently return zero rows.
      *             Avoid using this method; restructure the conditional logic instead.
      */
     @Deprecated
-    public static Expression alwaysFalse() {
+    public static SqlExpression alwaysFalse() {
         return ALWAYS_FALSE;
     }
 
@@ -219,28 +220,29 @@ public final class Filters {
     }
 
     /**
-     * Creates an {@link Expression} from a string literal.
+     * Creates an {@link SqlExpression} from a string literal.
      * This allows for custom SQL expressions to be included in queries.
      *
-     * <p><b>Warning:</b> The literal is appended verbatim into the generated SQL. Do not pass
-     * unsanitized user input — use parameterized condition factories (e.g. {@link #equal(String, Object)})
-     * instead to avoid SQL injection.</p>
+     * <p><b>Warning:</b> The literal is treated as SQL rather than as a bind value. A builder may
+     * still apply its naming policy to detected identifiers. Do not pass unsanitized user input —
+     * use parameterized condition factories (e.g. {@link #equal(String, Object)}) instead to avoid
+     * SQL injection.</p>
      *
-     * <p>This delegates to the process-wide cache in {@link Expression#of(String)}. Prefer
-     * {@code new Expression(literal)} for unbounded dynamically generated expressions.</p>
+     * <p>This delegates to the process-wide cache in {@link SqlExpression#of(String)}. Prefer
+     * {@code new SqlExpression(literal)} for unbounded dynamically generated expressions.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression expr = Filters.expr("UPPER(name) = 'JOHN'");
+     * SqlExpression expr = Filters.expr("UPPER(name) = 'JOHN'");
      * // SQL fragment: UPPER(name) = 'JOHN'
      * }</pre>
      *
      * @param literal the SQL expression as a string (must not be {@code null})
-     * @return an {@link Expression} instance
+     * @return an {@link SqlExpression} instance
      * @throws IllegalArgumentException if {@code literal} is {@code null}
      */
-    public static Expression expr(final String literal) {
-        return Expression.of(literal);
+    public static SqlExpression expr(final String literal) {
+        return SqlExpression.of(literal);
     }
 
     /**
@@ -274,7 +276,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or is non-composable — a Criteria, a clause
      *             (for example {@code WHERE}, {@code HAVING}, or {@code ORDER BY}), an {@code ON}/{@code USING} connector,
      *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
-     *             (a blank {@link Expression} or empty {@link Junction})
+     *             (a blank {@link SqlExpression} or empty {@link Junction})
      * @see Not
      * @see Condition
      */
@@ -304,7 +306,7 @@ public final class Filters {
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
-     * @param operator the binary comparison operator to use (must not be {@code null}; membership and structural operators are rejected)
+     * @param operator the binary comparison or membership operator to use (must not be {@code null}; structural operators are rejected)
      * @param propValue the value to compare against; may be a literal, {@code null}, or another
      *                  {@link Condition} such as a {@link SubQuery}. For an {@code IN}/{@code NOT_IN}
      *                  operator, a {@link Collection} or array value is copied defensively and must be non-empty.
@@ -475,7 +477,7 @@ public final class Filters {
         N.checkArgNotNull(entity, "entity");
         N.checkArgument(!(entity instanceof Map), "entity must be a bean object; use anyEqual(Map) for maps");
 
-        return anyEqual(entity, QueryUtil.selectPropertyNames(entity.getClass(), false, null));
+        return anyEqual(entity, QueryUtil.selectPropNames(entity.getClass(), false, null));
     }
 
     /**
@@ -494,7 +496,9 @@ public final class Filters {
      * @param includedPropNames the property names to include (must not be empty). Names are consumed once
      *                          during this call; subsequent mutations do not affect the returned condition
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map, or if {@code includedPropNames} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map, or if
+     *                                  {@code includedPropNames} is {@code null}, empty, contains a
+     *                                  {@code null}, empty, or blank name, or names an unreadable property
      */
     public static Or anyEqual(final Object entity, final Collection<String> includedPropNames) {
         return or(equalConditions(entity, includedPropNames));
@@ -608,7 +612,7 @@ public final class Filters {
         N.checkArgNotNull(entity, "entity");
         N.checkArgument(!(entity instanceof Map), "entity must be a bean object; use allEqual(Map) for maps");
 
-        return allEqual(entity, QueryUtil.selectPropertyNames(entity.getClass(), false, null));
+        return allEqual(entity, QueryUtil.selectPropNames(entity.getClass(), false, null));
     }
 
     /**
@@ -627,7 +631,9 @@ public final class Filters {
      * @param includedPropNames the property names to include (must not be empty). Names are consumed once
      *                          during this call; subsequent mutations do not affect the returned condition
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map, or if {@code includedPropNames} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map, or if
+     *                                  {@code includedPropNames} is {@code null}, empty, contains a
+     *                                  {@code null}, empty, or blank name, or names an unreadable property
      */
     public static And allEqual(final Object entity, final Collection<String> includedPropNames) {
         return and(equalConditions(entity, includedPropNames));
@@ -730,7 +736,7 @@ public final class Filters {
      * @param entitiesOrPropMaps collection of property maps or entity objects (must not be empty)
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entitiesOrPropMaps} is {@code null} or empty, if all elements are {@code null}, if maps and entities
-     *                                  are mixed, if a map is empty, or if a map key is null or is not a {@link String}
+     *                                  are mixed, if a map is empty, or if a map key is not a non-blank {@link String}
      * @see #anyOfAllEqual(Collection, Collection)
      * @see #anyEqual(Map)
      * @see #allEqual(Map)
@@ -756,7 +762,7 @@ public final class Filters {
             return or(condList);
         }
 
-        return anyOfAllEqual(elements, QueryUtil.selectPropertyNames(firstNonNull.getClass(), false, null));
+        return anyOfAllEqual(elements, QueryUtil.selectPropNames(firstNonNull.getClass(), false, null));
     }
 
     /**
@@ -1063,8 +1069,8 @@ public final class Filters {
      *
      * @param entityIds collection of {@link EntityId}s (must not be {@code null} or empty)
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, or contains an
-     *         {@link EntityId} with no keys
+     * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, contains {@code null},
+     *         or contains an {@link EntityId} with no keys
      * @deprecated the digit-abbreviation name is inconsistent with this class's spelled-out naming
      *             convention; use {@link #idToCond(Collection)} instead
      */
@@ -1944,7 +1950,7 @@ public final class Filters {
      * ({@link #isNull(String)}, {@link #isNaN(String)}, {@link #isInfinite(String)}) for those well-known cases.
      *
      * <p>If {@code propValue} is Java {@code null}, the rendered SQL collapses to {@code propName IS NULL}.
-     * Otherwise {@code propValue} is typically an {@link Expression} representing the desired SQL keyword.</p>
+     * Otherwise {@code propValue} is typically an {@link SqlExpression} representing the desired SQL keyword.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1953,7 +1959,7 @@ public final class Filters {
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
-     * @param propValue the right-hand value (typically an {@link Expression}); may be {@code null}
+     * @param propValue the right-hand value (typically an {@link SqlExpression}); may be {@code null}
      *                  (renders as {@code IS NULL})
      * @return an {@link Is} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
@@ -1970,7 +1976,7 @@ public final class Filters {
      * well-known cases.
      *
      * <p>If {@code propValue} is Java {@code null}, the rendered SQL collapses to
-     * {@code propName IS NOT NULL}. Otherwise {@code propValue} is typically an {@link Expression}
+     * {@code propName IS NOT NULL}. Otherwise {@code propValue} is typically an {@link SqlExpression}
      * representing the desired SQL keyword.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -1980,7 +1986,7 @@ public final class Filters {
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
-     * @param propValue the right-hand value (typically an {@link Expression}); may be {@code null}
+     * @param propValue the right-hand value (typically an {@link SqlExpression}); may be {@code null}
      *                  (renders as {@code IS NOT NULL})
      * @return an {@link IsNot} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
@@ -2009,7 +2015,7 @@ public final class Filters {
      * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
      *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
-     *             (a blank {@link Expression} or empty {@link Junction})
+     *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public static Or or(final Condition... conditions) {
         return new Or(conditions);
@@ -2035,7 +2041,7 @@ public final class Filters {
      * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
      *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
-     *             (a blank {@link Expression} or empty {@link Junction})
+     *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public static Or or(final Collection<? extends Condition> conditions) {
         return new Or(conditions);
@@ -2061,7 +2067,7 @@ public final class Filters {
      * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
      *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
-     *             (a blank {@link Expression} or empty {@link Junction})
+     *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public static And and(final Condition... conditions) {
         return new And(conditions);
@@ -2087,7 +2093,7 @@ public final class Filters {
      * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
      *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
-     *             (a blank {@link Expression} or empty {@link Junction})
+     *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public static And and(final Collection<? extends Condition> conditions) {
         return new And(conditions);
@@ -2115,7 +2121,7 @@ public final class Filters {
      *             or if any element of {@code conditions} is {@code null}, or is a Criteria, a clause
      *             (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
-     *             (a blank {@link Expression} or empty {@link Junction})
+     *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     @Beta
     public static Junction junction(final Operator operator, final Condition... conditions) {
@@ -2142,7 +2148,7 @@ public final class Filters {
      *             or if any element of {@code conditions} is {@code null}, or is a Criteria, a clause
      *             (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
-     *             (a blank {@link Expression} or empty {@link Junction})
+     *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     @Beta
     public static Junction junction(final Operator operator, final Collection<? extends Condition> conditions) {
@@ -2160,7 +2166,7 @@ public final class Filters {
      *
      * @param condition the condition for the {@code WHERE} clause (must not be {@code null})
      * @return a {@link Where} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public static Where where(final Condition condition) {
         return new Where(condition);
@@ -2445,7 +2451,7 @@ public final class Filters {
      *
      * @param condition the grouping condition (must not be {@code null})
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public static GroupBy groupBy(final Condition condition) {
         return new GroupBy(condition);
@@ -2463,7 +2469,7 @@ public final class Filters {
      *
      * @param condition the condition for the {@code HAVING} clause (must not be {@code null})
      * @return a {@link Having} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public static Having having(final Condition condition) {
         return new Having(condition);
@@ -2748,7 +2754,7 @@ public final class Filters {
      *
      * @param condition the ordering condition (must not be {@code null})
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public static OrderBy orderBy(final Condition condition) {
         return new OrderBy(condition);
@@ -2770,7 +2776,7 @@ public final class Filters {
      *
      * @param condition the join condition (must not be {@code null})
      * @return an {@link On} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public static On on(final Condition condition) {
         return new On(condition);
@@ -3965,10 +3971,16 @@ public final class Filters {
     /**
      * Creates a structured single-property subquery for an entity class.
      *
-     * @param entityClass the entity class
-     * @param propName the property to select
-     * @param condition the optional query condition
+     * <p>An ordinary predicate is wrapped in a {@link Where} clause. A clause or non-empty
+     * {@link com.landawn.abacus.query.condition.Criteria Criteria} is retained as supplied, and
+     * {@code null} means no trailing condition.</p>
+     *
+     * @param entityClass the entity class (must not be {@code null})
+     * @param propName the property to select (must not be {@code null}, empty, or blank)
+     * @param condition the optional query condition; may be {@code null}
      * @return a structured subquery
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, {@code propName} is
+     *         {@code null}, empty, or blank, or {@code condition} is not valid in a structured subquery
      */
     public static SubQuery subQuery(final Class<?> entityClass, final String propName, final Condition condition) {
         return new SubQuery(entityClass, propName, condition);
@@ -4037,10 +4049,16 @@ public final class Filters {
     /**
      * Creates a structured single-property subquery for an entity name.
      *
-     * @param entityName the entity/table name
-     * @param propName the property to select
-     * @param condition the optional query condition
+     * <p>An ordinary predicate is wrapped in a {@link Where} clause. A clause or non-empty
+     * {@link com.landawn.abacus.query.condition.Criteria Criteria} is retained as supplied, and
+     * {@code null} means no trailing condition.</p>
+     *
+     * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
+     * @param propName the property to select (must not be {@code null}, empty, or blank)
+     * @param condition the optional query condition; may be {@code null}
      * @return a structured subquery
+     * @throws IllegalArgumentException if {@code entityName} or {@code propName} is {@code null}, empty,
+     *         or blank, or {@code condition} is not valid in a structured subquery
      */
     public static SubQuery subQuery(final String entityName, final String propName, final Condition condition) {
         return new SubQuery(entityName, propName, condition);

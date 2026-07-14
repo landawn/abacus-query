@@ -76,6 +76,9 @@ public class Some extends ComposableCell {
     /**
      * Creates a new SOME condition with the specified subquery.
      * The SOME operator must be used with a comparison operator in the containing condition.
+     * A structured subquery must project exactly one property because a scalar comparison cannot
+     * consume a multi-column row value. Raw SQL subqueries have unknown projection arity and are
+     * accepted without inspection.
      *
      * <p>The SOME operator is typically used in scenarios where you want to find records
      * that meet a criterion compared to at least one value from another dataset. It's
@@ -97,8 +100,10 @@ public class Some extends ComposableCell {
      * // throws IllegalArgumentException
      * }</pre>
      *
-     * @param subQuery the subquery that returns values to compare against (must not be {@code null})
-     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
+     * @param subQuery the subquery that returns values to compare against (must not be {@code null});
+     *                 a structured subquery must select exactly one property
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or if it is a structured
+     *                                  subquery with a known projection arity other than one
      */
     public Some(final SubQuery subQuery) {
         super(Operator.SOME, subQuery);
@@ -120,7 +125,8 @@ public class Some extends ComposableCell {
      * // returns true
      * }</pre>
      *
-     * @return the {@link SubQuery} supplied at construction time
+     * @return the {@link SubQuery} supplied at construction time, or {@code null} for an uninitialized
+     *         serialization-framework instance
      */
     public SubQuery subQuery() {
         return (SubQuery) condition;

@@ -110,8 +110,8 @@ public class NotBetweenTest extends TestBase {
 
     @Test
     public void testParameters_WithConditionValues() {
-        Expression minExpr = new Expression("MIN(age)");
-        Expression maxExpr = new Expression("MAX(age)");
+        SqlExpression minExpr = new SqlExpression("MIN(age)");
+        SqlExpression maxExpr = new SqlExpression("MAX(age)");
         NotBetween condition = new NotBetween("score", minExpr, maxExpr);
 
         List<Object> params = condition.parameters();
@@ -328,8 +328,8 @@ public class NotBetweenTest extends TestBase {
 
     @Test
     public void testParametersWithConditionValues() {
-        Expression minExpr = Filters.expr("(SELECT MIN(salary) FROM employees)");
-        Expression maxExpr = Filters.expr("(SELECT AVG(salary) FROM employees)");
+        SqlExpression minExpr = Filters.expr("(SELECT MIN(salary) FROM employees)");
+        SqlExpression maxExpr = Filters.expr("(SELECT AVG(salary) FROM employees)");
         NotBetween notBetween = Filters.notBetween("salary", minExpr, maxExpr);
 
         List<Object> params = notBetween.parameters();

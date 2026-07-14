@@ -100,14 +100,29 @@ public class Criteria extends AbstractCondition {
      * The supplied {@code conditions} list is defensively copied so subsequent changes to the
      * caller's list cannot change this condition or invalidate its cached parameters/hash code.
      *
-     * @param selectModifier the SELECT modifier (e.g., {@code DISTINCT}), or {@code null} for none
+     * @param selectModifier the SELECT modifier (e.g., {@code DISTINCT}); {@code null}, empty, or blank means none
      * @param conditions the list of conditions representing the query clauses; defensively copied
-     * @throws IllegalArgumentException if {@code conditions} is {@code null}
+     * @throws IllegalArgumentException if {@code conditions} is {@code null}, contains {@code null},
+     *                                  contains a condition that is not a supported clause implementation,
+     *                                  or contains more than one WHERE, GROUP BY, HAVING, ORDER BY, or LIMIT clause
      */
     Criteria(String selectModifier, List<Condition> conditions) {
         super(Operator.EMPTY);
-        this.selectModifier = selectModifier;
-        this.conditions = new ArrayList<>(N.checkArgNotNull(conditions, "conditions"));
+        this.selectModifier = Strings.isBlank(selectModifier) ? null : selectModifier;
+        N.checkArgNotNull(conditions, "conditions");
+
+        final List<Condition> conditionsCopy = new ArrayList<>(conditions);
+        final Set<Operator> singletonOperators = N.newHashSet();
+
+        for (final Condition condition : conditionsCopy) {
+            validateCriteriaCondition(condition);
+
+            if (isSingletonClause(condition.operator()) && !singletonOperators.add(condition.operator())) {
+                throw new IllegalArgumentException("Duplicate " + condition.operator() + " clause in Criteria");
+            }
+        }
+
+        this.conditions = conditionsCopy;
     }
 
     /**
@@ -320,9 +335,8 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Returns all conditions whose {@link Condition#operator()} equals the given operator,
-     * in the order they were added. This includes any duplicate clauses that were added directly
-     * (the Builder normally replaces single-instance clauses like WHERE/ORDER BY, but multiple
-     * JOINs and set operations such as UNION accumulate).
+     * in the order they were added. Singleton clauses such as WHERE and ORDER BY occur at most once;
+     * multiple JOINs and set operations such as UNION accumulate.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -478,7 +492,8 @@ public class Criteria extends AbstractCondition {
      * c.toSql(NamingPolicy.SNAKE_CASE);   // returns " WHERE first_name = 'John'"
      * }</pre>
      *
-     * @param namingPolicy the naming policy to apply to property names within each clause
+     * @param namingPolicy the naming policy to apply to property names within each clause; {@code null}
+     *                     is treated as {@link NamingPolicy#NO_CHANGE} by the standard clause implementations
      * @return a SQL representation of this Criteria
      */
     @Override
@@ -605,6 +620,68 @@ public class Criteria extends AbstractCondition {
         }
 
         return null;
+    }
+
+    private static void validateCriteriaCondition(final Condition cond) {
+        N.checkArgNotNull(cond, "cond");
+        final Operator operator = cond.operator();
+
+        if (operator == null) {
+            throw new IllegalArgumentException("Invalid condition for Criteria: operator must not be null");
+        }
+
+        final Class<? extends Condition> expectedType = expectedCriteriaConditionType(operator);
+
+        if (expectedType == null) {
+            throw new IllegalArgumentException(
+                    "Invalid operator '" + operator + "' for Criteria. Expected a join, WHERE, GROUP BY, HAVING, set operation, ORDER BY, or LIMIT clause");
+        }
+
+        if (!expectedType.isInstance(cond)) {
+            final String requiredType = Clause.class.isAssignableFrom(expectedType) ? "Clause (specifically " + expectedType.getSimpleName() + ")"
+                    : expectedType.getSimpleName();
+            throw new IllegalArgumentException("Condition with operator '" + operator + "' must be an instance of " + requiredType);
+        }
+    }
+
+    private static Class<? extends Condition> expectedCriteriaConditionType(final Operator operator) {
+        switch (operator) {
+            case JOIN:
+            case LEFT_JOIN:
+            case RIGHT_JOIN:
+            case FULL_JOIN:
+            case CROSS_JOIN:
+            case INNER_JOIN:
+            case NATURAL_JOIN:
+                return Join.class;
+            case WHERE:
+                return Where.class;
+            case GROUP_BY:
+                return GroupBy.class;
+            case HAVING:
+                return Having.class;
+            case ORDER_BY:
+                return OrderBy.class;
+            case LIMIT:
+                return Limit.class;
+            case UNION:
+                return Union.class;
+            case UNION_ALL:
+                return UnionAll.class;
+            case INTERSECT:
+                return Intersect.class;
+            case EXCEPT:
+                return Except.class;
+            case MINUS:
+                return Minus.class;
+            default:
+                return null;
+        }
+    }
+
+    private static boolean isSingletonClause(final Operator operator) {
+        return operator == Operator.WHERE || operator == Operator.GROUP_BY || operator == Operator.HAVING || operator == Operator.ORDER_BY
+                || operator == Operator.LIMIT;
     }
 
     /**
@@ -1327,7 +1404,7 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
-         *                                  {@link Expression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
+         *                                  {@link SqlExpression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, or is a clause condition
          *                                  with an operator other than {@code WHERE}
          */
@@ -1519,7 +1596,7 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
-         *                                  {@link Expression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
+         *                                  {@link SqlExpression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, or is a clause condition
          *                                  with an operator other than {@code GROUP_BY}
          */
@@ -1735,7 +1812,7 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
-         *                                  {@link Expression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
+         *                                  {@link SqlExpression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, or is a clause condition
          *                                  with an operator other than {@code HAVING}
          */
@@ -1933,7 +2010,7 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
-         *                                  {@link Expression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
+         *                                  {@link SqlExpression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, or is a clause condition
          *                                  with an operator other than {@code ORDER_BY}
          */
@@ -2388,15 +2465,22 @@ public class Criteria extends AbstractCondition {
          *
          * @param condition the condition to add (must not be {@code null})
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code condition} is {@code null}, is a nested {@link Criteria}, uses an
+         * @throws IllegalArgumentException if {@code condition} is {@code null}, reports a {@code null} operator,
+         *         is a nested {@link Criteria}, uses an
          *         {@code ON}/{@code USING} operator, is an {@code ANY}/{@code ALL}/{@code SOME} quantified operand,
-         *         is an empty predicate (a blank {@link Expression} or empty {@link Junction}), or reports a routed
+         *         is an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}), or reports a routed
          *         operator without being the corresponding clause type
          */
         public Builder add(final Condition condition) {
             N.checkArgNotNull(condition, "condition");
 
-            switch (condition.operator()) {
+            final Operator conditionOperator = condition.operator();
+
+            if (conditionOperator == null) {
+                throw new IllegalArgumentException("Invalid condition for Criteria: operator must not be null");
+            }
+
+            switch (conditionOperator) {
                 case LIMIT:
                     limit(requireConditionType(condition, Limit.class));
                     break;
@@ -2534,25 +2618,7 @@ public class Criteria extends AbstractCondition {
         }
 
         private void checkCondition(final Condition cond) {
-            N.checkArgNotNull(cond, "cond");
-
-            if (!isClause(cond.operator())) {
-                throw new IllegalArgumentException(
-                        "Invalid operator '" + cond.operator() + "' for Criteria. Expected clause operators: WHERE, GROUP_BY, HAVING, ORDER_BY, LIMIT, etc.");
-            }
-
-            if ((cond.operator() == Operator.WHERE || cond.operator() == Operator.GROUP_BY || cond.operator() == Operator.HAVING
-                    || cond.operator() == Operator.ORDER_BY || cond.operator() == Operator.LIMIT || cond.operator() == Operator.UNION
-                    || cond.operator() == Operator.UNION_ALL || cond.operator() == Operator.INTERSECT || cond.operator() == Operator.EXCEPT
-                    || cond.operator() == Operator.MINUS) && !(cond instanceof Clause)) {
-                throw new IllegalArgumentException("Condition with operator '" + cond.operator() + "' must be an instance of Clause");
-            }
-
-            if ((cond.operator() == Operator.JOIN || cond.operator() == Operator.LEFT_JOIN || cond.operator() == Operator.RIGHT_JOIN
-                    || cond.operator() == Operator.FULL_JOIN || cond.operator() == Operator.CROSS_JOIN || cond.operator() == Operator.INNER_JOIN
-                    || cond.operator() == Operator.NATURAL_JOIN) && !(cond instanceof Join)) {
-                throw new IllegalArgumentException("Condition with operator '" + cond.operator() + "' must be an instance of Join");
-            }
+            validateCriteriaCondition(cond);
         }
 
         private void addCondition(final Condition cond) {
@@ -2570,17 +2636,23 @@ public class Criteria extends AbstractCondition {
         }
 
         private void addConditions(final Condition... conditions) {
-            checkConditions(conditions);
+            N.checkArgNotNull(conditions, "conditions");
 
-            for (final Condition cond : conditions) {
+            final Condition[] conditionsCopy = conditions.clone();
+            checkConditions(conditionsCopy);
+
+            for (final Condition cond : conditionsCopy) {
                 addCondition(cond);
             }
         }
 
         private void addConditions(final Collection<? extends Condition> conditions) {
-            checkConditions(conditions);
+            N.checkArgNotNull(conditions, "conditions");
 
-            for (final Condition cond : conditions) {
+            final List<? extends Condition> conditionsCopy = new ArrayList<>(conditions);
+            checkConditions(conditionsCopy);
+
+            for (final Condition cond : conditionsCopy) {
                 addCondition(cond);
             }
         }

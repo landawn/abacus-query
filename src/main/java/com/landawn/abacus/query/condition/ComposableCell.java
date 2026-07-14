@@ -83,13 +83,30 @@ public abstract class ComposableCell extends ComposableCondition {
      * }</pre>
      *
      * @param operator the operator to apply to the condition (must not be {@code null})
-     * @param condition the condition to wrap (must not be {@code null})
+     * @param condition the condition to wrap (must not be {@code null}); for an {@code ALL},
+     *                  {@code ANY}, or {@code SOME} operator this must be a {@link SubQuery} whose
+     *                  known, non-wildcard structured projection contains exactly one column
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code condition} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if a quantified
+     *                                  operator does not wrap a valid one-column subquery
      */
     protected ComposableCell(final Operator operator, final Condition condition) {
         super(operator);
-        this.condition = N.checkArgNotNull(condition, "condition");
+        this.condition = validateWrappedCondition(operator, condition);
+    }
+
+    private static Condition validateWrappedCondition(final Operator operator, final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
+
+        if (isQuantifiedSubQueryOperator(operator)) {
+            if (!(condition instanceof SubQuery)) {
+                throw new IllegalArgumentException(operator + " must wrap a SubQuery");
+            }
+
+            AbstractInSubQuery.validateSubQuerySelectArity(1, (SubQuery) condition);
+        }
+
+        return condition;
     }
 
     /**

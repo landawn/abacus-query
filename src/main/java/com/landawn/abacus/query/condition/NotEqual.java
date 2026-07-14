@@ -25,7 +25,7 @@ package com.landawn.abacus.query.condition;
  * 
  * <p>Important considerations:</p>
  * <ul>
- *   <li>Java {@code null}: passing {@code null} as the value is rewritten by {@link Binary#toString} to
+ *   <li>Java {@code null}: passing {@code null} as the value is rewritten by {@link Binary#toString()} to
  *       {@code propName IS NOT NULL}. Prefer {@link IsNotNull} for clarity</li>
  *   <li>SQL NULL semantics: {@code col != some_value} where {@code col} is NULL evaluates to UNKNOWN
  *       (treated as false in WHERE clauses), so such rows are not returned</li>

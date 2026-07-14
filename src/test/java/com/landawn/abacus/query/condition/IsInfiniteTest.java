@@ -43,7 +43,7 @@ public class IsInfiniteTest extends TestBase {
     @Test
     public void testGetPropValue() {
         IsInfinite condition = new IsInfinite("value");
-        Expression value = condition.propValue(Expression.class);
+        SqlExpression value = condition.propValue(SqlExpression.class);
         assertNotNull(value);
         assertTrue(value.toString().contains("INFINITE"));
     }
@@ -256,7 +256,7 @@ public class IsInfiniteTest extends TestBase {
     @Test
     public void testINFINITEConstant() {
         Assertions.assertNotNull(IsInfinite.INFINITE);
-        // Verify it's an Expression
+        // Verify it's an SqlExpression
         Assertions.assertTrue(IsInfinite.INFINITE.toString().contains("INFINITE"));
     }
 

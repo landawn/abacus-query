@@ -9,8 +9,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.AbstractCollection;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,10 +32,65 @@ import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class AbstractQueryBuilderTest extends TestBase {
+    private static final class ChangingCollection<E> extends AbstractCollection<E> {
+        private final Collection<E> firstIteration;
+        private final Collection<E> laterIterations;
+        private int iterationCount;
+
+        ChangingCollection(final Collection<E> firstIteration, final Collection<E> laterIterations) {
+            this.firstIteration = firstIteration;
+            this.laterIterations = laterIterations;
+        }
+
+        @Override
+        public Iterator<E> iterator() {
+            return (iterationCount++ == 0 ? firstIteration : laterIterations).iterator();
+        }
+
+        @Override
+        public int size() {
+            return firstIteration.size();
+        }
+    }
+
+    private static final class NominallyNonEmptyCollection<E> extends AbstractCollection<E> {
+        @Override
+        public Iterator<E> iterator() {
+            return Collections.emptyIterator();
+        }
+
+        @Override
+        public int size() {
+            return 1;
+        }
+    }
+
+    private static final class ChangingMap<V> extends AbstractMap<String, V> {
+        private final Entry<String, V> firstEntry;
+        private final Entry<String, V> laterEntry;
+        private int iterationCount;
+
+        ChangingMap(final String firstKey, final V firstValue, final String laterKey, final V laterValue) {
+            firstEntry = new SimpleImmutableEntry<>(firstKey, firstValue);
+            laterEntry = new SimpleImmutableEntry<>(laterKey, laterValue);
+        }
+
+        @Override
+        public Set<Entry<String, V>> entrySet() {
+            return Collections.singleton(iterationCount++ == 0 ? firstEntry : laterEntry);
+        }
+
+        @Override
+        public int size() {
+            return 1;
+        }
+    }
+
     @Test
     public void testConstants() {
         assertNotNull(AbstractQueryBuilder.ALL);
@@ -64,6 +124,98 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertNotNull(sqlPair);
         assertTrue(sqlPair.query().contains("WHERE"));
         assertEquals(1, sqlPair.parameters().size());
+    }
+
+    @Test
+    public void testBuildSnapshotsProtectedParameterBuffer() {
+        final SqlBuilder builder = Dsl.PSC.select("id").from(Account.class).where(Filters.eq("id", 1));
+        final AbstractQueryBuilder.SP sqlPair = builder.build();
+
+        builder._parameters.add(2);
+
+        assertEquals(Collections.singletonList(1), sqlPair.parameters());
+    }
+
+    @Test
+    public void testSPDefensivelyCopiesWrappedParameterList() {
+        final List<Object> source = new ArrayList<>();
+        source.add(1);
+
+        final AbstractQueryBuilder.SP sqlPair = new AbstractQueryBuilder.SP("SELECT ?", ImmutableList.wrap(source));
+        source.add(2);
+
+        assertEquals(Collections.singletonList(1), sqlPair.parameters());
+        assertThrows(IllegalArgumentException.class, () -> new AbstractQueryBuilder.SP(null, ImmutableList.empty()));
+        assertThrows(IllegalArgumentException.class, () -> new AbstractQueryBuilder.SP("SELECT 1", null));
+    }
+
+    @Test
+    public void testEmptySelectModifierRemainsNoOpAfterModifierWasSet() {
+        final SqlBuilder builder = Dsl.PSC.select("id").distinct();
+
+        builder.selectModifier(null).selectModifier("");
+
+        assertEquals("SELECT DISTINCT id FROM users", builder.from("users").build().query());
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").distinct().selectModifier("   "));
+    }
+
+    @Test
+    public void testSetApisRejectNonUpdateBuildersWithoutCorruptingThem() {
+        final SqlBuilder query = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalStateException.class, () -> query.set("name"));
+        assertEquals("SELECT id FROM users", query.build().query());
+
+        final SqlBuilder delete = Dsl.PSC.deleteFrom("users");
+        assertThrows(IllegalStateException.class, () -> delete.set(Collections.singletonMap("name", "x")));
+        assertEquals("DELETE FROM users", delete.build().query());
+
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").setEntity(Account.class));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("users").setEntity((Class<?>) null));
+    }
+
+    @Test
+    public void testJoinApisRequireFromAndPrecedeLaterClauses() {
+        final SqlBuilder stagedSelect = Dsl.PSC.select("id");
+        assertThrows(IllegalStateException.class, () -> stagedSelect.join("orders"));
+        assertEquals("SELECT id FROM users", stagedSelect.from("users").build().query());
+
+        final SqlBuilder filteredSelect = Dsl.PSC.select("id").from("users").where(Filters.eq("active", true));
+        assertThrows(IllegalStateException.class, () -> filteredSelect.leftJoin("orders"));
+        assertEquals("SELECT id FROM users WHERE active = ?", filteredSelect.build().query());
+
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.update("users").join("orders"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").orderBy("id").innerJoin(Account.class));
+    }
+
+    @Test
+    public void testOnAndUsingRequireCompatibleUnconnectedJoin() {
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").on("users.id = orders.user_id"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").using("id"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").crossJoin("orders").on("users.id = orders.user_id"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").naturalJoin("orders").using("id"));
+
+        final SqlBuilder joined = Dsl.PSC.select("id").from("users").join("orders").on("users.id = orders.user_id");
+        assertThrows(IllegalStateException.class, () -> joined.using("id"));
+        assertEquals("SELECT id FROM users JOIN orders ON users.id = orders.user_id", joined.build().query());
+    }
+
+    @Test
+    public void testRawJoinWithInlineConnectorClosesConnectorSlot() {
+        final SqlBuilder inlineOn = Dsl.PSC.select("*").from("users u").join("orders o ON u.id = o.user_id");
+        assertThrows(IllegalStateException.class, () -> inlineOn.on("o.active = 1"));
+        assertThrows(IllegalStateException.class, () -> inlineOn.using("id"));
+        assertEquals("SELECT * FROM users u JOIN orders o ON u.id = o.user_id", inlineOn.build().query());
+
+        final SqlBuilder inlineUsing = Dsl.PSC.select("*").from("users u").leftJoin("orders o USING (user_id)");
+        assertThrows(IllegalStateException.class, () -> inlineUsing.on("u.id = o.user_id"));
+        assertEquals("SELECT * FROM users u LEFT JOIN orders o USING (user_id)", inlineUsing.build().query());
+
+        final String nestedJoin = "(SELECT o.id FROM orders o JOIN order_items i ON o.id = i.order_id WHERE o.note = 'USING') nested /* ON USING */";
+        assertEquals("SELECT * FROM users u JOIN " + nestedJoin + " ON u.id = nested.id",
+                Dsl.PSC.select("*").from("users u").join(nestedJoin).on("u.id = nested.id").build().query());
+
+        assertEquals("SELECT * FROM users u INNER JOIN orders \"ON\" ON u.id = \"ON\".user_id",
+                Dsl.PSC.select("*").from("users u").innerJoin("orders \"ON\"").on("u.id = \"ON\".user_id").build().query());
     }
 
     @Test
@@ -410,6 +562,113 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    public void testAppendCriteriaPreflightsJoinAndSetOperationPlacement() {
+        final Criteria joinCriteria = Criteria.builder().join("orders", Filters.expr("users.id = orders.user_id")).build();
+        final SqlBuilder filtered = Dsl.PSC.select("id").from("users").where(Filters.eq("active", true));
+
+        assertThrows(IllegalStateException.class, () -> filtered.append(joinCriteria));
+        assertEquals("SELECT id FROM users WHERE active = ?", filtered.build().query());
+
+        final Criteria unionCriteria = Criteria.builder().union(Filters.subQuery("SELECT id FROM archived_users")).build();
+        final SqlBuilder ordered = Dsl.PSC.select("id").from("users").orderBy("id");
+
+        assertThrows(IllegalStateException.class, () -> ordered.append(unionCriteria));
+        assertEquals("SELECT id FROM users ORDER BY id", ordered.build().query());
+    }
+
+    @Test
+    public void testAppendCriteriaPreflightsRelativeClauseOrderWithoutMutation() {
+        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, Dsl.PSC.select("department").from("users").groupBy("department"),
+                Criteria.builder().where(Filters.eq("active", true)).build(), "SELECT department FROM users GROUP BY department");
+        assertCriteriaRejectedWithoutMutation(IllegalStateException.class,
+                Dsl.PSC.select("department").from("users").groupBy("department").having("COUNT(*) > 1"), Criteria.builder().groupBy("region").build(),
+                "SELECT department FROM users GROUP BY department HAVING COUNT(*) > 1");
+        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, Dsl.PSC.select("id").from("users").orderBy("id"),
+                Criteria.builder().having(Filters.gt("COUNT(*)", 1)).build(), "SELECT id FROM users ORDER BY id");
+        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, Dsl.PSC.select("id").from("users").limit(10),
+                Criteria.builder().orderBy("id").build(), "SELECT id FROM users LIMIT 10");
+        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, Dsl.PSC.select("id").from("users").forUpdate(), Criteria.builder().limit(10).build(),
+                "SELECT id FROM users FOR UPDATE");
+    }
+
+    @Test
+    public void testAppendCriteriaValidatesEverySetOperationOperandWithoutMutation() {
+        final Criteria unsafe = Criteria.builder().union(Filters.subQuery("UPDATE archived_users SET active = false")).build();
+        assertCriteriaRejectedWithoutMutation(IllegalArgumentException.class, Dsl.PSC.select("id").from("users"), unsafe, "SELECT id FROM users");
+
+        final Criteria incomplete = Criteria.builder().union(Filters.subQuery("archived_users")).build();
+        assertCriteriaRejectedWithoutMutation(IllegalArgumentException.class, Dsl.PSC.select("id").from("users"), incomplete, "SELECT id FROM users");
+
+        final Criteria unsafeSecondOperand = Criteria.builder()
+                .union(Filters.subQuery("SELECT id FROM archived_users"))
+                .unionAll(Filters.subQuery("SELECT id FROM deleted_users; DELETE FROM deleted_users"))
+                .build();
+        assertCriteriaRejectedWithoutMutation(IllegalArgumentException.class, Dsl.PSC.select("id").from("users"), unsafeSecondOperand, "SELECT id FROM users");
+    }
+
+    @Test
+    public void testCompletedCriteriaSetOperationAllowsOnlyCompoundResultClauses() {
+        final Criteria union = Criteria.builder().union(Filters.subQuery("SELECT id FROM archived_users")).build();
+        final SqlBuilder compound = Dsl.PSC.select("id").from("users").append(union);
+
+        assertThrows(IllegalStateException.class, () -> compound.where(Filters.eq("active", true)));
+        assertThrows(IllegalStateException.class, () -> compound.groupBy("id"));
+        assertThrows(IllegalStateException.class, () -> compound.having("COUNT(*) > 1"));
+        assertThrows(IllegalStateException.class, () -> compound.join("orders"));
+
+        assertEquals("SELECT id FROM users UNION SELECT id FROM archived_users ORDER BY id LIMIT 10", compound.orderBy("id").limit(10).build().query());
+    }
+
+    private static <E extends RuntimeException> void assertCriteriaRejectedWithoutMutation(final Class<E> expectedType, final SqlBuilder builder,
+            final Criteria criteria, final String expectedSql) {
+        assertThrows(expectedType, () -> builder.append(criteria));
+        assertEquals(expectedSql, builder.build().query());
+    }
+
+    @Test
+    public void testCollectionAndMapArgumentsRenderTheirValidatedSnapshots() {
+        assertEquals("SELECT * FROM users",
+                Dsl.PSC.select("*").from(new ChangingCollection<>(Collections.singletonList("users"), Collections.singletonList(" "))).build().query());
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from(new NominallyNonEmptyCollection<>()));
+
+        assertEquals("SELECT * FROM users JOIN orders USING (user_id)",
+                Dsl.PSC.select("*")
+                        .from("users")
+                        .join("orders")
+                        .using(new ChangingCollection<>(Collections.singletonList("user_id"), Collections.singletonList(" ")))
+                        .build()
+                        .query());
+        assertEquals("SELECT category FROM products GROUP BY category",
+                Dsl.PSC.select("category")
+                        .from("products")
+                        .groupBy(new ChangingCollection<>(Collections.singletonList("category"), Collections.singletonList(" ")))
+                        .build()
+                        .query());
+        assertEquals("SELECT id FROM users ORDER BY id",
+                Dsl.PSC.select("id")
+                        .from("users")
+                        .orderBy(new ChangingCollection<>(Collections.singletonList("id"), Collections.singletonList(" ")))
+                        .build()
+                        .query());
+        assertEquals("SELECT id FROM users UNION SELECT id FROM admins",
+                Dsl.PSC.select("id")
+                        .from("users")
+                        .union(new ChangingCollection<>(Collections.singletonList("id"), Collections.singletonList(" ")))
+                        .from("admins")
+                        .build()
+                        .query());
+
+        assertEquals("SELECT category FROM products GROUP BY category ASC",
+                Dsl.PSC.select("category").from("products").groupBy(new ChangingMap<>("category", SortDirection.ASC, " ", SortDirection.DESC)).build().query());
+        assertEquals("SELECT id FROM users ORDER BY id DESC",
+                Dsl.PSC.select("id").from("users").orderBy(new ChangingMap<>("id", SortDirection.DESC, " ", SortDirection.ASC)).build().query());
+
+        final AbstractQueryBuilder.SP update = Dsl.PSC.update("users").set(new ChangingMap<>("name", "Alice", " ", "corrupted")).build();
+        assertEquals("UPDATE users SET name = ?", update.query());
+        assertEquals(Collections.singletonList("Alice"), update.parameters());
+    }
+
+    @Test
     public void testAppendLimitExpressionAfterLimitThrows() {
         assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("*").from("users").limit(10).append(new Limit("5")).build().query());
     }
@@ -466,6 +725,29 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("users").set(Arrays.asList("name", "   ")));
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("users").set(Collections.emptyList()));
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("users").set(Collections.emptyMap()));
+    }
+
+    @Test
+    public void testDslSelectAndInsertRejectBlankColumnFragments() {
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("   "));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id", "   "));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(Arrays.asList("id", "   ")));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(Collections.singletonMap("   ", "alias")));
+
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert("   "));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert("id", "   "));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert(Arrays.asList("id", "   ")));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert(Collections.singletonMap("   ", 1)));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert((Object) "   "));
+
+        Map<String, Object> props = Collections.singletonMap("id", 1);
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert((Object) props, Collections.singleton("id")));
+
+        Map<String, Object> blankProps = Collections.singletonMap("   ", 1);
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert((Object) blankProps, Collections.singleton("   ")));
+
+        Map<Object, Object> nonStringProps = Collections.singletonMap(1, "invalid column");
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert((Object) nonStringProps));
     }
 
     @Test
@@ -601,6 +883,16 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         assertEquals("SELECT id FROM users UNION SELECT::1", dsl.select("id").from("users").union("SELECT::1").build().query());
         assertThrows(IllegalArgumentException.class, () -> Dsl.SCSB.select("id").from("users").union("SELECT::1"));
+    }
+
+    @Test
+    public void testDialectTokenizerConfigAlsoGovernsSetOperationReadOnlyValidation() {
+        final SqlParser.TokenizerConfig tokenizerConfig = SqlParser.tokenizerConfigBuilder().withSeparator("#foo").build();
+        final Dsl dsl = Dsl.forDialect(Dsl.SCSB.sqlDialect().toBuilder().tokenizerConfig(tokenizerConfig).build());
+
+        // Under the default tokenizer, "#foo" starts a hash comment and hides the later UPDATE.
+        // For this dialect it is a separator, so the full multi-statement input must be inspected.
+        assertThrows(IllegalArgumentException.class, () -> dsl.select("id").from("users").union("SELECT 1 #foo ; UPDATE users SET active = false"));
     }
 
     @Test

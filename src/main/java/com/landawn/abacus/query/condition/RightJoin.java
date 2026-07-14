@@ -60,7 +60,7 @@ import java.util.Collection;
  *     ));
  * // SQL: RIGHT JOIN products p ON ((order_items.product_id = p.id) AND (p.active = true))
  *
- * // Using Expression for custom join logic
+ * // Using SqlExpression for custom join logic
  * RightJoin exprJoin = new RightJoin("departments",
  *     Filters.expr("employees.dept_id = departments.id"));
  * // SQL: RIGHT JOIN departments ON employees.dept_id = departments.id
@@ -87,9 +87,8 @@ public class RightJoin extends Join {
 
     /**
      * Creates a RIGHT JOIN clause for the specified table or entity without a join condition.
-     * Most databases require an {@code ON} or {@code USING} clause for a RIGHT JOIN; supply
-     * the condition separately (for example by combining this with another clause) or use
-     * {@link #RightJoin(String, Condition)} instead.
+     * Most databases require an {@code ON} or {@code USING} clause for a RIGHT JOIN; use
+     * {@link #RightJoin(String, Condition)} when a join predicate is required.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -136,7 +135,7 @@ public class RightJoin extends Join {
      *     ));
      * // SQL: RIGHT JOIN categories c ON ((products.category_id = c.id) AND (c.active = true) AND (c.created_date > '2023-01-01'))
      *
-     * // Using Expression for custom join logic
+     * // Using SqlExpression for custom join logic
      * RightJoin exprJoin = new RightJoin("products p",
      *     Filters.expr("order_items.product_id = p.id AND p.stock > 0"));
      * // SQL: RIGHT JOIN products p ON order_items.product_id = p.id AND p.stock > 0
@@ -146,9 +145,9 @@ public class RightJoin extends Join {
      * @param joinCondition the condition appended after the join target. Use {@link On} (or the deprecated {@link Using}) when the SQL should
      *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is a
-     *                                  {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  {@link Criteria}, a SQL clause, an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public RightJoin(final String joinEntity, final Condition joinCondition) {
         super(Operator.RIGHT_JOIN, joinEntity, joinCondition);
@@ -169,7 +168,7 @@ public class RightJoin extends Join {
      *     ));
      * // SQL: RIGHT JOIN (categories c, subcategories sc) ON ((p.category_id = c.id) AND (p.subcategory_id = sc.id))
      *
-     * // Using Expression for multiple tables
+     * // Using SqlExpression for multiple tables
      * RightJoin exprJoin = new RightJoin(tables,
      *     Filters.expr("p.category_id = c.id AND p.subcategory_id = sc.id"));
      * // SQL: RIGHT JOIN (categories c, subcategories sc) ON p.category_id = c.id AND p.subcategory_id = sc.id
@@ -179,9 +178,9 @@ public class RightJoin extends Join {
      * @param joinCondition the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using}) when the SQL should
      *            include those keywords. Any non-clause {@link Condition} is allowed and can be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
-     *                                  or if {@code joinCondition} is a {@link Criteria}, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  or if {@code joinCondition} is a {@link Criteria}, a SQL clause, an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public RightJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         super(Operator.RIGHT_JOIN, joinEntities, joinCondition);

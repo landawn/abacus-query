@@ -35,6 +35,13 @@ public class AllTest extends TestBase {
     }
 
     @Test
+    public void testConstructor_RejectsKnownMultiColumnProjection() {
+        final SubQuery subQuery = Filters.subQuery("employees", Arrays.asList("salary", "bonus"), (Condition) null);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new All(subQuery));
+    }
+
+    @Test
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT score FROM tests");
         All condition = new All(subQuery);
@@ -308,7 +315,7 @@ public class AllTest extends TestBase {
 
         // Find employees earning more than all managers in their department
         SubQuery managerSalaries = Filters.subQuery("employees", Arrays.asList("salary"),
-                Filters.and(Filters.eq("is_manager", true), Filters.eq("department_id", Expression.of("e.department_id"))));
+                Filters.and(Filters.eq("is_manager", true), Filters.eq("department_id", SqlExpression.of("e.department_id"))));
         All allManagerSalaries = Filters.all(managerSalaries);
 
         Assertions.assertNotNull(allManagerSalaries);

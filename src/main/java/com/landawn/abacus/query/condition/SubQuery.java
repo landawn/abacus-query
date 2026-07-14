@@ -92,8 +92,8 @@ public class SubQuery extends AbstractCondition {
     // For Kryo
     final String sql;
 
-    /** The WHERE condition for structured subqueries; {@code null} for raw SQL subqueries or for
-     *  structured subqueries created without a condition. */
+    /** The trailing condition or clause for a structured subquery; a predicate is normalized to a
+     *  {@link Where}. {@code null} for raw SQL subqueries or structured subqueries without clauses. */
     private Condition condition;
 
     /** Lazily memoized parameters (performance only). */
@@ -194,9 +194,11 @@ public class SubQuery extends AbstractCondition {
     /**
      * Creates a structured single-property subquery for an entity name.
      *
-     * @param entityName the entity/table name
-     * @param propName the property to select
-     * @param condition the optional query condition
+     * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
+     * @param propName the property to select (must not be {@code null}, empty, or blank)
+     * @param condition the optional trailing condition or clause; a predicate is wrapped in {@link Where}
+     * @throws IllegalArgumentException if either name is {@code null}, empty, or blank, or if
+     *         {@code condition} is not valid for a structured subquery
      */
     public SubQuery(final String entityName, final String propName, final Condition condition) {
         this(entityName, java.util.Collections.singletonList(propName), condition);
@@ -206,8 +208,9 @@ public class SubQuery extends AbstractCondition {
      * Creates a structured subquery with entity name, selected properties, and condition.
      * This approach provides automatic SQL generation and name mapping.
      *
-     * <p>The generated SQL follows the pattern: SELECT [properties] FROM [entity] WHERE [condition].
-     * If the condition is not already a {@link Criteria} or a clause (like WHERE), it will be automatically wrapped in a WHERE clause.</p>
+     * <p>The generated SQL follows the pattern {@code SELECT [properties] FROM [entity] [condition-or-clauses]}.
+     * An ordinary predicate is automatically wrapped in {@link Where}; a {@link Criteria} or SQL clause is
+     * retained so it can contribute its own ordered clauses.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -223,12 +226,13 @@ public class SubQuery extends AbstractCondition {
      *
      * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
      * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
-     * @param condition the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
-     *             May be {@code null} to select without a WHERE clause.
+     * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
+     *             {@link Where}; {@code null}, a blank expression, or an empty {@code Criteria} adds no clause.
      * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank, if {@code propNames} is
      *             {@code null} or empty, if {@code propNames} contains {@code null}, empty, or blank names, if {@code condition}
-     *             uses an {@link Operator#ON ON}/{@link Operator#USING USING} operator, or if {@code condition} is a
-     *             {@link Criteria} that carries a SELECT modifier (e.g. {@code DISTINCT}) — none of which are valid here
+     *             uses an {@link Operator#ON ON}/{@link Operator#USING USING} operator, is not a complete predicate
+     *             (for example a standalone {@link SubQuery} or quantified operand), or is a {@link Criteria} that
+     *             carries a SELECT modifier (e.g. {@code DISTINCT}) — none of which are valid here
      */
     public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
@@ -248,9 +252,11 @@ public class SubQuery extends AbstractCondition {
     /**
      * Creates a structured single-property subquery for an entity class.
      *
-     * @param entityClass the entity class
-     * @param propName the property to select
-     * @param condition the optional query condition
+     * @param entityClass the entity class (must not be {@code null})
+     * @param propName the property to select (must not be {@code null}, empty, or blank)
+     * @param condition the optional trailing condition or clause; a predicate is wrapped in {@link Where}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, {@code propName} is
+     *         {@code null}, empty, or blank, or {@code condition} is not valid for a structured subquery
      */
     public SubQuery(final Class<?> entityClass, final String propName, final Condition condition) {
         this(entityClass, java.util.Collections.singletonList(propName), condition);
@@ -265,7 +271,7 @@ public class SubQuery extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Type-safe subquery construction
+     * // Class-based subquery construction
      * SubQuery subQuery = Filters.subQuery(Product.class,
      *     Arrays.asList("id", "categoryId"),
      *     Filters.like("name", "%electronics%")
@@ -287,12 +293,13 @@ public class SubQuery extends AbstractCondition {
      *
      * @param entityClass the entity class (must not be {@code null})
      * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
-     * @param condition the WHERE condition (if it's not already a {@link Criteria} or a clause, it will be wrapped in WHERE).
-     *             May be {@code null} to select without a WHERE clause.
+     * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
+     *             {@link Where}; {@code null}, a blank expression, or an empty {@code Criteria} adds no clause.
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propNames} is {@code null}
      *             or empty, if {@code propNames} contains {@code null}, empty, or blank names, if {@code condition} uses an
-     *             {@link Operator#ON ON}/{@link Operator#USING USING} operator, or if {@code condition} is a
-     *             {@link Criteria} that carries a SELECT modifier (e.g. {@code DISTINCT}) — none of which are valid here
+     *             {@link Operator#ON ON}/{@link Operator#USING USING} operator, is not a complete predicate
+     *             (for example a standalone {@link SubQuery} or quantified operand), or is a {@link Criteria} that
+     *             carries a SELECT modifier (e.g. {@code DISTINCT}) — none of which are valid here
      */
     public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition) {
         super(Operator.EMPTY);
@@ -356,7 +363,8 @@ public class SubQuery extends AbstractCondition {
      * // Returns: "" (empty string)
      * }</pre>
      *
-     * @return the entity/table name, or an empty string if not set
+     * @return the entity/table name; an empty string for an initialized raw subquery without an associated
+     *         entity, or {@code null} only for an uninitialized serialization-framework instance
      */
     public String entityName() {
         return entityName;
@@ -439,6 +447,12 @@ public class SubQuery extends AbstractCondition {
             result.add(propName);
         }
 
+        // The source may be a live/custom collection whose contents change between isEmpty() and
+        // iteration. Do not silently turn an explicitly projected subquery into SELECT *.
+        if (result.isEmpty()) {
+            throw new IllegalArgumentException("Property names must not be empty");
+        }
+
         return result;
     }
 
@@ -448,14 +462,16 @@ public class SubQuery extends AbstractCondition {
         }
 
         if (cond instanceof Criteria) {
-            if (!Strings.isBlank(((Criteria) cond).selectModifier())) {
+            final Criteria criteria = (Criteria) cond;
+
+            if (!Strings.isBlank(criteria.selectModifier())) {
                 throw new IllegalArgumentException("Subquery criteria cannot include a SELECT modifier");
             }
 
-            return cond;
+            return criteria.conditions().isEmpty() ? null : criteria;
         }
 
-        if (cond instanceof Expression && Strings.isBlank(((Expression) cond).literal())) {
+        if (cond instanceof SqlExpression && Strings.isBlank(((SqlExpression) cond).literal())) {
             return null;
         }
 
@@ -463,13 +479,14 @@ public class SubQuery extends AbstractCondition {
             throw new IllegalArgumentException("ON/USING conditions are not valid subquery filters");
         }
 
-        return Filters.where(cond);
+        return Filters.where(validateComposableOperand(cond, "subquery filter"));
     }
 
     /**
-     * Returns the WHERE condition for this subquery.
-     * This condition is applied when generating the SQL for structured subqueries.
-     * For raw SQL subqueries or subqueries without conditions, this returns {@code null}.
+     * Returns the trailing condition or clause for this structured subquery. A predicate supplied to a
+     * constructor is normalized to a {@link Where}; an explicitly supplied clause or non-empty
+     * {@link Criteria} is retained. Raw SQL subqueries and structured subqueries without clauses return
+     * {@code null}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -485,7 +502,7 @@ public class SubQuery extends AbstractCondition {
      * // Returns: null
      * }</pre>
      *
-     * @return the WHERE condition, or {@code null} if no condition or raw SQL subquery
+     * @return the normalized condition/clause, or {@code null} if none or for a raw SQL subquery
      */
     public Condition condition() {
         return condition;
@@ -536,9 +553,9 @@ public class SubQuery extends AbstractCondition {
      * Converts this subquery to its SQL representation.
      *
      * <p>For raw SQL subqueries, returns the SQL as-is (the {@code namingPolicy} is ignored).
-     * For structured subqueries, generates a {@code SELECT [props] FROM [entity] [condition]}
+     * For structured subqueries, generates a {@code SELECT [props] FROM [entity] [condition-or-clauses]}
      * statement, applying the naming policy to property names, the entity/table name, and to
-     * the inner WHERE condition.</p>
+     * the trailing condition or clauses.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -572,7 +589,7 @@ public class SubQuery extends AbstractCondition {
     public String toSql(final NamingPolicy namingPolicy) {
         if (sql == null) {
             final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-            final Map<String, String> propertyToColumnMap = entityClass == null ? null : QueryUtil.propertyToColumnMap(entityClass, effectiveNamingPolicy);
+            final Map<String, String> propToColumnNameMap = entityClass == null ? null : QueryUtil.propToColumnNameMap(entityClass, effectiveNamingPolicy);
             final StringBuilder sb = Objectory.createStringBuilder();
 
             try {
@@ -587,10 +604,10 @@ public class SubQuery extends AbstractCondition {
                             sb.append(COMMA_SPACE);
                         }
 
-                        if (propertyToColumnMap == null) {
+                        if (propToColumnNameMap == null) {
                             sb.append(effectiveNamingPolicy.convert(propName));
                         } else {
-                            sb.append(propertyToColumnMap.getOrDefault(propName, effectiveNamingPolicy.convert(propName)));
+                            sb.append(propToColumnNameMap.getOrDefault(propName, effectiveNamingPolicy.convert(propName)));
                         }
                     }
                 } else {

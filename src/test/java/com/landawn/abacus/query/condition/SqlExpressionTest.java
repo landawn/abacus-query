@@ -21,15 +21,15 @@ import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
- * Comprehensive test class for Expression.
+ * Comprehensive test class for SqlExpression.
  * Tests all public methods including constructors, factory methods, SQL functions, operators, and utilities.
  */
 @Tag("2025")
-public class ExpressionTest extends TestBase {
+public class SqlExpressionTest extends TestBase {
     @Test
     public void testConstructorWithLiteral() {
         String literal = "CURRENT_TIMESTAMP";
-        Expression expr = new Expression(literal);
+        SqlExpression expr = new SqlExpression(literal);
 
         assertNotNull(expr);
         assertEquals(literal, expr.literal());
@@ -37,23 +37,23 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLiteral() {
-        Expression expr = new Expression("price * 1.1");
+        SqlExpression expr = new SqlExpression("price * 1.1");
 
         assertEquals("price * 1.1", expr.literal());
     }
 
     @Test
     public void testOfMethodCaching() {
-        Expression expr1 = Expression.of("CURRENT_DATE");
-        Expression expr2 = Expression.of("CURRENT_DATE");
+        SqlExpression expr1 = SqlExpression.of("CURRENT_DATE");
+        SqlExpression expr2 = SqlExpression.of("CURRENT_DATE");
 
         assertSame(expr1, expr2, "Should return cached instance");
     }
 
     @Test
     public void testOfMethodDifferentLiterals() {
-        Expression expr1 = Expression.of("literal1");
-        Expression expr2 = Expression.of("literal2");
+        SqlExpression expr1 = SqlExpression.of("literal1");
+        SqlExpression expr2 = SqlExpression.of("literal2");
 
         assertNotSame(expr1, expr2);
     }
@@ -61,7 +61,7 @@ public class ExpressionTest extends TestBase {
     // Comparison operators
     @Test
     public void testEqual() {
-        String result = Expression.equal("age", 25);
+        String result = SqlExpression.equal("age", 25);
 
         assertTrue(result.contains("age"));
         assertTrue(result.contains("="));
@@ -70,13 +70,13 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testEqualWithNull() {
-        String result = Expression.equal("middleName", null);
+        String result = SqlExpression.equal("middleName", null);
         assertEquals("middleName IS NULL", result);
     }
 
     @Test
     public void testEq() {
-        String result = Expression.eq("status", "active");
+        String result = SqlExpression.eq("status", "active");
 
         assertTrue(result.contains("status"));
         assertTrue(result.contains("="));
@@ -85,7 +85,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testNotEqual() {
-        String result = Expression.notEqual("status", "inactive");
+        String result = SqlExpression.notEqual("status", "inactive");
 
         assertTrue(result.contains("status"));
         assertTrue(result.contains("!="));
@@ -94,13 +94,13 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testNotEqualWithNull() {
-        String result = Expression.notEqual("deleted", null);
+        String result = SqlExpression.notEqual("deleted", null);
         assertEquals("deleted IS NOT NULL", result);
     }
 
     @Test
     public void testNe() {
-        String result = Expression.ne("count", 0);
+        String result = SqlExpression.ne("count", 0);
 
         assertTrue(result.contains("count"));
         assertTrue(result.contains("!="));
@@ -109,7 +109,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testGreaterThan() {
-        String result = Expression.greaterThan("salary", 50000);
+        String result = SqlExpression.greaterThan("salary", 50000);
 
         assertTrue(result.contains("salary"));
         assertTrue(result.contains(">"));
@@ -118,7 +118,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testGt() {
-        String result = Expression.gt("age", 18);
+        String result = SqlExpression.gt("age", 18);
 
         assertTrue(result.contains("age"));
         assertTrue(result.contains(">"));
@@ -127,7 +127,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testGreaterThanOrEqual() {
-        String result = Expression.greaterThanOrEqual("score", 60);
+        String result = SqlExpression.greaterThanOrEqual("score", 60);
 
         assertTrue(result.contains("score"));
         assertTrue(result.contains(">="));
@@ -136,7 +136,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testGe() {
-        String result = Expression.ge("quantity", 1);
+        String result = SqlExpression.ge("quantity", 1);
 
         assertTrue(result.contains("quantity"));
         assertTrue(result.contains(">="));
@@ -145,7 +145,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLessThan() {
-        String result = Expression.lessThan("price", 100);
+        String result = SqlExpression.lessThan("price", 100);
 
         assertTrue(result.contains("price"));
         assertTrue(result.contains("<"));
@@ -154,7 +154,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLt() {
-        String result = Expression.lt("stock", 10);
+        String result = SqlExpression.lt("stock", 10);
 
         assertTrue(result.contains("stock"));
         assertTrue(result.contains("<"));
@@ -163,7 +163,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLessThanOrEqual() {
-        String result = Expression.lessThanOrEqual("discount", 50);
+        String result = SqlExpression.lessThanOrEqual("discount", 50);
 
         assertTrue(result.contains("discount"));
         assertTrue(result.contains("<="));
@@ -172,7 +172,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLe() {
-        String result = Expression.le("temperature", 32);
+        String result = SqlExpression.le("temperature", 32);
 
         assertTrue(result.contains("temperature"));
         assertTrue(result.contains("<="));
@@ -181,7 +181,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testBetween() {
-        String result = Expression.between("age", 18, 65);
+        String result = SqlExpression.between("age", 18, 65);
 
         assertTrue(result.contains("age"));
         assertTrue(result.contains("BETWEEN"));
@@ -191,7 +191,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLike() {
-        String result = Expression.like("name", "John%");
+        String result = SqlExpression.like("name", "John%");
 
         assertTrue(result.contains("name"));
         assertTrue(result.contains("LIKE"));
@@ -200,13 +200,13 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testNotBetween() {
-        assertEquals("age NOT BETWEEN 18 AND 65", Expression.notBetween("age", 18, 65));
-        assertEquals("created NOT BETWEEN '2024-01-01' AND '2024-12-31'", Expression.notBetween("created", "2024-01-01", "2024-12-31"));
+        assertEquals("age NOT BETWEEN 18 AND 65", SqlExpression.notBetween("age", 18, 65));
+        assertEquals("created NOT BETWEEN '2024-01-01' AND '2024-12-31'", SqlExpression.notBetween("created", "2024-01-01", "2024-12-31"));
     }
 
     @Test
     public void testNotLike() {
-        String result = Expression.notLike("name", "John%");
+        String result = SqlExpression.notLike("name", "John%");
 
         assertTrue(result.contains("name"));
         assertTrue(result.contains("NOT LIKE"));
@@ -215,7 +215,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testIsNull() {
-        String result = Expression.isNull("middleName");
+        String result = SqlExpression.isNull("middleName");
 
         assertTrue(result.contains("middleName"));
         assertTrue(result.contains("IS"));
@@ -224,7 +224,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testIsNotNull() {
-        String result = Expression.isNotNull("email");
+        String result = SqlExpression.isNotNull("email");
 
         assertTrue(result.contains("email"));
         assertTrue(result.contains("IS NOT"));
@@ -233,7 +233,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testIsEmpty() {
-        String result = Expression.isNullOrEmpty("description");
+        String result = SqlExpression.isNullOrEmpty("description");
 
         assertTrue(result.contains("description"));
         assertTrue(result.contains("IS"));
@@ -242,7 +242,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testIsNotEmpty() {
-        String result = Expression.isNotNullAndNotEmpty("name");
+        String result = SqlExpression.isNotNullAndNotEmpty("name");
 
         assertTrue(result.contains("name"));
         assertTrue(result.contains("IS NOT"));
@@ -252,7 +252,7 @@ public class ExpressionTest extends TestBase {
     // Composable operators
     @Test
     public void testAnd() {
-        String result = Expression.and("active = true", "age > 18");
+        String result = SqlExpression.and("active = true", "age > 18");
 
         assertTrue(result.contains("active = true"));
         assertTrue(result.contains("AND"));
@@ -261,7 +261,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testOr() {
-        String result = Expression.or("status = 'active'", "status = 'pending'");
+        String result = SqlExpression.or("status = 'active'", "status = 'pending'");
 
         assertTrue(result.contains("status = 'active'"));
         assertTrue(result.contains("OR"));
@@ -271,7 +271,7 @@ public class ExpressionTest extends TestBase {
     // Arithmetic operators
     @Test
     public void testPlus() {
-        String result = Expression.plus("price", "tax", "shipping");
+        String result = SqlExpression.plus("price", "tax", "shipping");
 
         assertTrue(result.contains("price"));
         assertTrue(result.contains("+"));
@@ -281,7 +281,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testMinus() {
-        String result = Expression.minus("total", "discount");
+        String result = SqlExpression.minus("total", "discount");
 
         assertTrue(result.contains("total"));
         assertTrue(result.contains("-"));
@@ -290,7 +290,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testMulti() {
-        String result = Expression.multiply("price", "quantity");
+        String result = SqlExpression.multiply("price", "quantity");
 
         assertTrue(result.contains("price"));
         assertTrue(result.contains("*"));
@@ -299,7 +299,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testDivision() {
-        String result = Expression.divide("total", "count");
+        String result = SqlExpression.divide("total", "count");
 
         assertTrue(result.contains("total"));
         assertTrue(result.contains("/"));
@@ -308,7 +308,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testModulus() {
-        String result = Expression.modulus("value", 10);
+        String result = SqlExpression.modulus("value", 10);
 
         assertTrue(result.contains("value"));
         assertTrue(result.contains("%"));
@@ -318,7 +318,7 @@ public class ExpressionTest extends TestBase {
     // Bitwise operators
     @Test
     public void testBitwiseAnd() {
-        String result = Expression.bitwiseAnd("flags", "mask");
+        String result = SqlExpression.bitwiseAnd("flags", "mask");
 
         assertTrue(result.contains("flags"));
         assertTrue(result.contains("&"));
@@ -327,7 +327,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testBitwiseOr() {
-        String result = Expression.bitwiseOr("flags1", "flags2");
+        String result = SqlExpression.bitwiseOr("flags1", "flags2");
 
         assertTrue(result.contains("flags1"));
         assertTrue(result.contains("|"));
@@ -336,7 +336,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testBitwiseXOr() {
-        String result = Expression.bitwiseXor("value1", "value2");
+        String result = SqlExpression.bitwiseXor("value1", "value2");
 
         assertTrue(result.contains("value1"));
         assertTrue(result.contains("^"));
@@ -345,7 +345,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLShift() {
-        String result = Expression.leftShift("flags", 2);
+        String result = SqlExpression.leftShift("flags", 2);
 
         assertTrue(result.contains("flags"));
         assertTrue(result.contains("<<"));
@@ -354,7 +354,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testRShift() {
-        String result = Expression.rightShift("value", 4);
+        String result = SqlExpression.rightShift("value", 4);
 
         assertTrue(result.contains("value"));
         assertTrue(result.contains(">>"));
@@ -364,14 +364,14 @@ public class ExpressionTest extends TestBase {
     // Aggregate functions
     @Test
     public void testCount() {
-        String result = Expression.count("*");
+        String result = SqlExpression.count("*");
 
         assertEquals("COUNT(*)", result);
     }
 
     @Test
     public void testAverage() {
-        String result = Expression.avg("salary");
+        String result = SqlExpression.avg("salary");
 
         assertTrue(result.contains("AVG"));
         assertTrue(result.contains("salary"));
@@ -379,7 +379,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testSum() {
-        String result = Expression.sum("amount");
+        String result = SqlExpression.sum("amount");
 
         assertTrue(result.contains("SUM"));
         assertTrue(result.contains("amount"));
@@ -387,7 +387,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testMin() {
-        String result = Expression.min("price");
+        String result = SqlExpression.min("price");
 
         assertTrue(result.contains("MIN"));
         assertTrue(result.contains("price"));
@@ -395,7 +395,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testMax() {
-        String result = Expression.max("score");
+        String result = SqlExpression.max("score");
 
         assertTrue(result.contains("MAX"));
         assertTrue(result.contains("score"));
@@ -404,7 +404,7 @@ public class ExpressionTest extends TestBase {
     // Mathematical functions
     @Test
     public void testAbs() {
-        String result = Expression.abs("balance");
+        String result = SqlExpression.abs("balance");
 
         assertTrue(result.contains("ABS"));
         assertTrue(result.contains("balance"));
@@ -412,7 +412,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testCeil() {
-        String result = Expression.ceil("price");
+        String result = SqlExpression.ceil("price");
 
         assertTrue(result.contains("CEIL"));
         assertTrue(result.contains("price"));
@@ -420,7 +420,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testFloor() {
-        String result = Expression.floor("average");
+        String result = SqlExpression.floor("average");
 
         assertTrue(result.contains("FLOOR"));
         assertTrue(result.contains("average"));
@@ -428,7 +428,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testSqrt() {
-        String result = Expression.sqrt("area");
+        String result = SqlExpression.sqrt("area");
 
         assertTrue(result.contains("SQRT"));
         assertTrue(result.contains("area"));
@@ -436,7 +436,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testPower() {
-        String result = Expression.power("base", "exponent");
+        String result = SqlExpression.power("base", "exponent");
 
         assertTrue(result.contains("POWER"));
         assertTrue(result.contains("base"));
@@ -445,7 +445,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testMod() {
-        String result = Expression.mod("dividend", "divisor");
+        String result = SqlExpression.mod("dividend", "divisor");
 
         assertTrue(result.contains("MOD"));
         assertTrue(result.contains("dividend"));
@@ -454,7 +454,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLog() {
-        String result = Expression.log("10", "100");
+        String result = SqlExpression.log("10", "100");
 
         assertTrue(result.contains("LOG"));
         assertTrue(result.contains("10"));
@@ -463,7 +463,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLn() {
-        String result = Expression.ln("value");
+        String result = SqlExpression.ln("value");
 
         assertTrue(result.contains("LN"));
         assertTrue(result.contains("value"));
@@ -471,7 +471,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testExp() {
-        String result = Expression.exp("rate");
+        String result = SqlExpression.exp("rate");
 
         assertTrue(result.contains("EXP"));
         assertTrue(result.contains("rate"));
@@ -479,7 +479,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testSign() {
-        String result = Expression.sign("balance");
+        String result = SqlExpression.sign("balance");
 
         assertTrue(result.contains("SIGN"));
         assertTrue(result.contains("balance"));
@@ -488,7 +488,7 @@ public class ExpressionTest extends TestBase {
     // Trigonometric functions
     @Test
     public void testSin() {
-        String result = Expression.sin("angle");
+        String result = SqlExpression.sin("angle");
 
         assertTrue(result.contains("SIN"));
         assertTrue(result.contains("angle"));
@@ -496,7 +496,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testCos() {
-        String result = Expression.cos("angle");
+        String result = SqlExpression.cos("angle");
 
         assertTrue(result.contains("COS"));
         assertTrue(result.contains("angle"));
@@ -504,7 +504,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testTan() {
-        String result = Expression.tan("angle");
+        String result = SqlExpression.tan("angle");
 
         assertTrue(result.contains("TAN"));
         assertTrue(result.contains("angle"));
@@ -512,7 +512,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testAsin() {
-        String result = Expression.asin("value");
+        String result = SqlExpression.asin("value");
 
         assertTrue(result.contains("ASIN"));
         assertTrue(result.contains("value"));
@@ -520,7 +520,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testAcos() {
-        String result = Expression.acos("value");
+        String result = SqlExpression.acos("value");
 
         assertTrue(result.contains("ACOS"));
         assertTrue(result.contains("value"));
@@ -528,7 +528,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testAtan() {
-        String result = Expression.atan("value");
+        String result = SqlExpression.atan("value");
 
         assertTrue(result.contains("ATAN"));
         assertTrue(result.contains("value"));
@@ -537,7 +537,7 @@ public class ExpressionTest extends TestBase {
     // String functions
     @Test
     public void testConcat() {
-        String result = Expression.concat("firstName", "' '");
+        String result = SqlExpression.concat("firstName", "' '");
 
         assertTrue(result.contains("CONCAT"));
         assertTrue(result.contains("firstName"));
@@ -545,7 +545,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testReplace() {
-        String result = Expression.replace("email", "'@'", "'_at_'");
+        String result = SqlExpression.replace("email", "'@'", "'_at_'");
 
         assertTrue(result.contains("REPLACE"));
         assertTrue(result.contains("email"));
@@ -553,7 +553,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testStringLength() {
-        String result = Expression.length("name");
+        String result = SqlExpression.length("name");
 
         assertTrue(result.contains("LENGTH"));
         assertTrue(result.contains("name"));
@@ -561,7 +561,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testSubStringFromIndex() {
-        String result = Expression.substr("phone", 1);
+        String result = SqlExpression.substr("phone", 1);
 
         assertTrue(result.contains("SUBSTR"));
         assertTrue(result.contains("phone"));
@@ -570,7 +570,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testSubStringWithLength() {
-        String result = Expression.substr("code", 1, 3);
+        String result = SqlExpression.substr("code", 1, 3);
 
         assertTrue(result.contains("SUBSTR"));
         assertTrue(result.contains("code"));
@@ -580,7 +580,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testTrim() {
-        String result = Expression.trim("input");
+        String result = SqlExpression.trim("input");
 
         assertTrue(result.contains("TRIM"));
         assertTrue(result.contains("input"));
@@ -588,7 +588,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLTrim() {
-        String result = Expression.ltrim("comment");
+        String result = SqlExpression.ltrim("comment");
 
         assertTrue(result.contains("LTRIM"));
         assertTrue(result.contains("comment"));
@@ -596,7 +596,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testRTrim() {
-        String result = Expression.rtrim("code");
+        String result = SqlExpression.rtrim("code");
 
         assertTrue(result.contains("RTRIM"));
         assertTrue(result.contains("code"));
@@ -604,7 +604,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLPad() {
-        String result = Expression.lpad("id", 10, "'0'");
+        String result = SqlExpression.lpad("id", 10, "'0'");
 
         assertTrue(result.contains("LPAD"));
         assertTrue(result.contains("id"));
@@ -613,7 +613,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testRPad() {
-        String result = Expression.rpad("name", 20, "' '");
+        String result = SqlExpression.rpad("name", 20, "' '");
 
         assertTrue(result.contains("RPAD"));
         assertTrue(result.contains("name"));
@@ -622,7 +622,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLower() {
-        String result = Expression.lower("email");
+        String result = SqlExpression.lower("email");
 
         assertTrue(result.contains("LOWER"));
         assertTrue(result.contains("email"));
@@ -630,7 +630,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testUpper() {
-        String result = Expression.upper("name");
+        String result = SqlExpression.upper("name");
 
         assertTrue(result.contains("UPPER"));
         assertTrue(result.contains("name"));
@@ -639,43 +639,43 @@ public class ExpressionTest extends TestBase {
     // Utility methods
     @Test
     public void testRenderValueString() {
-        String result = Expression.renderValue("text");
+        String result = SqlExpression.renderValue("text");
 
         assertEquals("'text'", result);
     }
 
     @Test
     public void testRenderValueNumber() {
-        String result = Expression.renderValue(123);
+        String result = SqlExpression.renderValue(123);
 
         assertEquals("123", result);
     }
 
     @Test
     public void testRenderValueBoolean() {
-        String result = Expression.renderValue(true);
+        String result = SqlExpression.renderValue(true);
 
         assertEquals("true", result);
     }
 
     @Test
     public void testRenderValueNull() {
-        String result = Expression.renderValue(null);
+        String result = SqlExpression.renderValue(null);
 
         assertEquals("null", result);
     }
 
     @Test
     public void testRenderValueExpression() {
-        Expression expr = new Expression("column_name");
-        String result = Expression.renderValue(expr);
+        SqlExpression expr = new SqlExpression("column_name");
+        String result = SqlExpression.renderValue(expr);
 
         assertEquals("column_name", result);
     }
 
     @Test
     public void testParameters() {
-        Expression expr = new Expression("price * 1.1");
+        SqlExpression expr = new SqlExpression("price * 1.1");
 
         List<Object> params = expr.parameters();
 
@@ -685,7 +685,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testToStringNoChange() {
-        Expression expr = new Expression("userName = 'John'");
+        SqlExpression expr = new SqlExpression("userName = 'John'");
 
         String result = expr.toSql(NamingPolicy.NO_CHANGE);
 
@@ -694,7 +694,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testToStringWithNamingPolicy() {
-        Expression expr = new Expression("firstName");
+        SqlExpression expr = new SqlExpression("firstName");
 
         String result = expr.toSql(NamingPolicy.SNAKE_CASE);
 
@@ -703,12 +703,12 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testConstructorWithNull() {
-        assertThrows(IllegalArgumentException.class, () -> new Expression(null));
+        assertThrows(IllegalArgumentException.class, () -> new SqlExpression(null));
     }
 
     @Test
     public void testToStringEmpty() {
-        Expression expr = new Expression("");
+        SqlExpression expr = new SqlExpression("");
 
         String result = expr.toSql(NamingPolicy.NO_CHANGE);
 
@@ -717,59 +717,59 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testHashCode() {
-        Expression expr1 = new Expression("test");
-        Expression expr2 = new Expression("test");
+        SqlExpression expr1 = new SqlExpression("test");
+        SqlExpression expr2 = new SqlExpression("test");
 
         assertEquals(expr1.hashCode(), expr2.hashCode());
     }
 
     @Test
     public void testHashCodeEmptyLiteral() {
-        Expression expr = new Expression("");
+        SqlExpression expr = new SqlExpression("");
 
         assertEquals("".hashCode(), expr.hashCode());
     }
 
     @Test
     public void testEquals() {
-        Expression expr1 = new Expression("test");
-        Expression expr2 = new Expression("test");
+        SqlExpression expr1 = new SqlExpression("test");
+        SqlExpression expr2 = new SqlExpression("test");
 
         assertEquals(expr1, expr2);
     }
 
     @Test
     public void testEqualsSameInstance() {
-        Expression expr = new Expression("test");
+        SqlExpression expr = new SqlExpression("test");
 
         assertEquals(expr, expr);
     }
 
     @Test
     public void testEqualsNull() {
-        Expression expr = new Expression("test");
+        SqlExpression expr = new SqlExpression("test");
 
         assertNotEquals(expr, null);
     }
 
     @Test
     public void testEqualsDifferentType() {
-        Expression expr = new Expression("test");
+        SqlExpression expr = new SqlExpression("test");
 
         assertNotEquals(expr, "not an expression");
     }
 
     @Test
     public void testEqualsDifferentLiteral() {
-        Expression expr1 = new Expression("literal1");
-        Expression expr2 = new Expression("literal2");
+        SqlExpression expr1 = new SqlExpression("literal1");
+        SqlExpression expr2 = new SqlExpression("literal2");
 
         assertNotEquals(expr1, expr2);
     }
 
     //    @Test
     //    public void testExprAlias() {
-    //        Expression.Expr expr = new Expression.Expr("test");
+    //        SqlExpression.Expr expr = new SqlExpression.Expr("test");
     //
     //        assertNotNull(expr);
     //        assertEquals("test", expr.literal());
@@ -779,7 +779,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testConcatWithTwoStrings() {
-        String result = Expression.concat("firstName", "lastName");
+        String result = SqlExpression.concat("firstName", "lastName");
 
         assertTrue(result.contains("CONCAT"));
         assertTrue(result.contains("firstName"));
@@ -788,7 +788,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testAndWithMultipleExpressions() {
-        String result = Expression.and("x > 0", "y > 0", "z > 0");
+        String result = SqlExpression.and("x > 0", "y > 0", "z > 0");
 
         assertTrue(result.contains("x > 0"));
         assertTrue(result.contains("AND"));
@@ -798,7 +798,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testOrWithMultipleExpressions() {
-        String result = Expression.or("status = 'A'", "status = 'B'", "status = 'C'");
+        String result = SqlExpression.or("status = 'A'", "status = 'B'", "status = 'C'");
 
         assertTrue(result.contains("status = 'A'"));
         assertTrue(result.contains("OR"));
@@ -808,7 +808,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testPlusWithMultipleValues() {
-        String result = Expression.plus("a", "b", "c");
+        String result = SqlExpression.plus("a", "b", "c");
 
         assertTrue(result.contains("a"));
         assertTrue(result.contains("+"));
@@ -818,7 +818,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testMinusWithMultipleValues() {
-        String result = Expression.minus("total", "tax", "discount");
+        String result = SqlExpression.minus("total", "tax", "discount");
 
         assertTrue(result.contains("total"));
         assertTrue(result.contains("-"));
@@ -828,7 +828,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testMultiWithMultipleValues() {
-        String result = Expression.multiply("price", "quantity", "rate");
+        String result = SqlExpression.multiply("price", "quantity", "rate");
 
         assertTrue(result.contains("price"));
         assertTrue(result.contains("*"));
@@ -838,7 +838,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testDivisionWithMultipleValues() {
-        String result = Expression.divide("total", "count", "factor");
+        String result = SqlExpression.divide("total", "count", "factor");
 
         assertTrue(result.contains("total"));
         assertTrue(result.contains("/"));
@@ -848,7 +848,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testModulusWithMultipleValues() {
-        String result = Expression.modulus("value", "10", "3");
+        String result = SqlExpression.modulus("value", "10", "3");
 
         assertTrue(result.contains("value"));
         assertTrue(result.contains("%"));
@@ -857,7 +857,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testLShiftWithMultipleValues() {
-        String result = Expression.leftShift("flags", "2", "1");
+        String result = SqlExpression.leftShift("flags", "2", "1");
 
         assertTrue(result.contains("flags"));
         assertTrue(result.contains("<<"));
@@ -866,7 +866,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testRShiftWithMultipleValues() {
-        String result = Expression.rightShift("value", "4", "2");
+        String result = SqlExpression.rightShift("value", "4", "2");
 
         assertTrue(result.contains("value"));
         assertTrue(result.contains(">>"));
@@ -875,7 +875,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testBitwiseAndWithMultipleValues() {
-        String result = Expression.bitwiseAnd("flags1", "flags2", "mask");
+        String result = SqlExpression.bitwiseAnd("flags1", "flags2", "mask");
 
         assertTrue(result.contains("flags1"));
         assertTrue(result.contains("&"));
@@ -885,7 +885,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testBitwiseOrWithMultipleValues() {
-        String result = Expression.bitwiseOr("flags1", "flags2", "flags3");
+        String result = SqlExpression.bitwiseOr("flags1", "flags2", "flags3");
 
         assertTrue(result.contains("flags1"));
         assertTrue(result.contains("|"));
@@ -895,7 +895,7 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testBitwiseXOrWithMultipleValues() {
-        String result = Expression.bitwiseXor("value1", "value2", "value3");
+        String result = SqlExpression.bitwiseXor("value1", "value2", "value3");
 
         assertTrue(result.contains("value1"));
         assertTrue(result.contains("^"));
@@ -905,21 +905,21 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testRenderValueCharSequence() {
-        String result = Expression.renderValue(new StringBuilder("test"));
+        String result = SqlExpression.renderValue(new StringBuilder("test"));
 
         assertEquals("'test'", result);
     }
 
     @Test
     public void testRenderValueDouble() {
-        String result = Expression.renderValue(3.14);
+        String result = SqlExpression.renderValue(3.14);
 
         assertEquals("3.14", result);
     }
 
     @Test
     public void testRenderValueLong() {
-        String result = Expression.renderValue(999L);
+        String result = SqlExpression.renderValue(999L);
 
         assertEquals("999", result);
     }
@@ -927,21 +927,21 @@ public class ExpressionTest extends TestBase {
     @Test
     public void testOfMethodWithNull() {
         assertThrows(IllegalArgumentException.class, () -> {
-            Expression.of(null);
+            SqlExpression.of(null);
         });
     }
 
     @Test
     public void testEqualsWithEmptyLiterals() {
-        Expression expr1 = new Expression("");
-        Expression expr2 = new Expression("");
+        SqlExpression expr1 = new SqlExpression("");
+        SqlExpression expr2 = new SqlExpression("");
 
         assertEquals(expr1, expr2);
     }
 
     @Test
     public void testConstructor() {
-        Expression expr = new Expression("price * 0.9");
+        SqlExpression expr = new SqlExpression("price * 0.9");
         Assertions.assertNotNull(expr);
         Assertions.assertEquals("price * 0.9", expr.literal());
         Assertions.assertEquals(Operator.EMPTY, expr.operator());
@@ -949,8 +949,8 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testOf() {
-        Expression expr1 = Expression.of("CURRENT_TIMESTAMP");
-        Expression expr2 = Expression.of("CURRENT_TIMESTAMP");
+        SqlExpression expr1 = SqlExpression.of("CURRENT_TIMESTAMP");
+        SqlExpression expr2 = SqlExpression.of("CURRENT_TIMESTAMP");
 
         Assertions.assertSame(expr1, expr2); // Should be cached
         Assertions.assertEquals("CURRENT_TIMESTAMP", expr1.literal());
@@ -958,75 +958,75 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testRenderValue() {
-        Assertions.assertEquals("'text'", Expression.renderValue("text"));
-        Assertions.assertEquals("123", Expression.renderValue(123));
-        Assertions.assertEquals("null", Expression.renderValue(null));
+        Assertions.assertEquals("'text'", SqlExpression.renderValue("text"));
+        Assertions.assertEquals("123", SqlExpression.renderValue(123));
+        Assertions.assertEquals("null", SqlExpression.renderValue(null));
 
-        Expression expr = Expression.of("CURRENT_DATE");
-        Assertions.assertEquals("CURRENT_DATE", Expression.renderValue(expr));
+        SqlExpression expr = SqlExpression.of("CURRENT_DATE");
+        Assertions.assertEquals("CURRENT_DATE", SqlExpression.renderValue(expr));
     }
 
     @Test
     public void testRenderValueSubQueryCondition() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
-        Assertions.assertEquals("(SELECT id FROM users)", Expression.renderValue(subQuery));
+        Assertions.assertEquals("(SELECT id FROM users)", SqlExpression.renderValue(subQuery));
     }
 
     @Test
     public void testEqualWithSubQueryCondition() {
-        String result = Expression.equal("id", Filters.subQuery("SELECT id FROM users"));
+        String result = SqlExpression.equal("id", Filters.subQuery("SELECT id FROM users"));
         Assertions.assertEquals("id = (SELECT id FROM users)", result);
     }
 
     @Test
     public void testSubString() {
-        String result = Expression.substr("text", 5);
+        String result = SqlExpression.substr("text", 5);
         Assertions.assertEquals("SUBSTR(text, 5)", result);
     }
 
     @Test
     public void testToString() {
-        Expression expr = Expression.of("price > 100");
+        SqlExpression expr = SqlExpression.of("price > 100");
         Assertions.assertEquals("price > 100", expr.toString());
     }
 
     //    @Test
     //    public void testExprClass() {
-    //        Expression.Expr expr = new Expression.Expr("test expression");
+    //        SqlExpression.Expr expr = new SqlExpression.Expr("test expression");
     //        Assertions.assertEquals("test expression", expr.literal());
-    //        Assertions.assertTrue(expr instanceof Expression);
+    //        Assertions.assertTrue(expr instanceof SqlExpression);
     //    }
 
     @Test
     public void testDefaultConstructor_EmptyState_Batch2() {
-        Expression expr = new Expression();
+        SqlExpression expr = new SqlExpression();
 
         Assertions.assertNull(expr.literal());
         Assertions.assertEquals("null", expr.toString());
-        Assertions.assertEquals("null", Expression.renderValue(expr));
+        Assertions.assertEquals("null", SqlExpression.renderValue(expr));
     }
 
     @Test
     public void testRenderValue_ConditionWithoutSubQuery_Batch2() {
-        String rendered = Expression.renderValue(Filters.eq("id", 1));
+        String rendered = SqlExpression.renderValue(Filters.eq("id", 1));
 
         Assertions.assertEquals("id = 1", rendered);
     }
 
     @Test
     public void testLink_NotEqualAnsiWithNull_Batch2() {
-        Assertions.assertEquals("deleted IS NOT NULL", Expression.link(Operator.NOT_EQUAL_ANSI, "deleted", null));
+        Assertions.assertEquals("deleted IS NOT NULL", SqlExpression.link(Operator.NOT_EQUAL_ANSI, "deleted", null));
     }
 
     @Test
     public void testLink_SpaceAndCommaSeparators_Batch2() {
-        Assertions.assertEquals("a b", Expression.link(" ", Expression.of("a"), Expression.of("b")));
-        Assertions.assertEquals("a, b", Expression.link(", ", Expression.of("a"), Expression.of("b")));
+        Assertions.assertEquals("a b", SqlExpression.link(" ", SqlExpression.of("a"), SqlExpression.of("b")));
+        Assertions.assertEquals("a, b", SqlExpression.link(", ", SqlExpression.of("a"), SqlExpression.of("b")));
     }
 
     @Test
     public void testToString_FunctionNameWithNamingPolicy_Batch2() {
-        Expression expr = Expression.of("SUM(totalAmount)");
+        SqlExpression expr = SqlExpression.of("SUM(totalAmount)");
 
         Assertions.assertEquals("SUM(total_amount)", expr.toSql(NamingPolicy.SNAKE_CASE));
         Assertions.assertEquals("SUM(totalAmount)", expr.toSql(null));
@@ -1034,9 +1034,9 @@ public class ExpressionTest extends TestBase {
 
     @Test
     public void testToStringDoesNotConvertSqlKeywordLiterals() {
-        assertEquals("CURRENT_DATE", Expression.of("CURRENT_DATE").toSql(NamingPolicy.CAMEL_CASE));
-        assertEquals("CURRENT_TIMESTAMP", Expression.of("CURRENT_TIMESTAMP").toSql(NamingPolicy.CAMEL_CASE));
-        assertEquals("CURRENT_DATE = created_date", Expression.of("CURRENT_DATE = createdDate").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("CURRENT_DATE", SqlExpression.of("CURRENT_DATE").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("CURRENT_TIMESTAMP", SqlExpression.of("CURRENT_TIMESTAMP").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("CURRENT_DATE = created_date", SqlExpression.of("CURRENT_DATE = createdDate").toSql(NamingPolicy.SNAKE_CASE));
     }
 
     /**
@@ -1046,11 +1046,11 @@ public class ExpressionTest extends TestBase {
      */
     @Test
     public void testToStringConvertsLowercaseKeywordLikeColumnNames() {
-        assertEquals("ORDER", Expression.of("order").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("COUNT", Expression.of("count").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("ROWNUM", Expression.of("rownum").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("ORDER", SqlExpression.of("order").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("COUNT", SqlExpression.of("count").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("ROWNUM", SqlExpression.of("rownum").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
         // The upper-case keyword form is still preserved.
-        assertEquals("CURRENT_DATE", Expression.of("CURRENT_DATE").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("CURRENT_DATE", SqlExpression.of("CURRENT_DATE").toSql(NamingPolicy.CAMEL_CASE));
     }
 
     /**
@@ -1060,23 +1060,23 @@ public class ExpressionTest extends TestBase {
      */
     @Test
     public void testComparisonOperatorTokensAreCorrect_Pass2() {
-        Assertions.assertEquals("age = 18", Expression.equal("age", 18));
-        Assertions.assertEquals("age != 18", Expression.notEqual("age", 18));
-        Assertions.assertEquals("age > 18", Expression.greaterThan("age", 18));
-        Assertions.assertEquals("age >= 18", Expression.greaterThanOrEqual("age", 18));
-        Assertions.assertEquals("age < 18", Expression.lessThan("age", 18));
-        Assertions.assertEquals("age <= 18", Expression.lessThanOrEqual("age", 18));
+        Assertions.assertEquals("age = 18", SqlExpression.equal("age", 18));
+        Assertions.assertEquals("age != 18", SqlExpression.notEqual("age", 18));
+        Assertions.assertEquals("age > 18", SqlExpression.greaterThan("age", 18));
+        Assertions.assertEquals("age >= 18", SqlExpression.greaterThanOrEqual("age", 18));
+        Assertions.assertEquals("age < 18", SqlExpression.lessThan("age", 18));
+        Assertions.assertEquals("age <= 18", SqlExpression.lessThanOrEqual("age", 18));
     }
 
     /**
-     * Regression (Pass 2): {@code Expression.between(prop, min, max)} must emit
+     * Regression (Pass 2): {@code SqlExpression.between(prop, min, max)} must emit
      * {@code prop BETWEEN min AND max} in that exact order regardless of value type,
      * not {@code prop BETWEEN max AND min}.
      */
     @Test
     public void testBetweenArgumentOrder_Pass2() {
-        Assertions.assertEquals("age BETWEEN 18 AND 65", Expression.between("age", 18, 65));
-        Assertions.assertEquals("created BETWEEN '2024-01-01' AND '2024-12-31'", Expression.between("created", "2024-01-01", "2024-12-31"));
+        Assertions.assertEquals("age BETWEEN 18 AND 65", SqlExpression.between("age", 18, 65));
+        Assertions.assertEquals("created BETWEEN '2024-01-01' AND '2024-12-31'", SqlExpression.between("created", "2024-01-01", "2024-12-31"));
     }
 
     // ---------------------------------------------------------------------
@@ -1084,17 +1084,17 @@ public class ExpressionTest extends TestBase {
     // ---------------------------------------------------------------------
 
     /**
-     * Regression (Pass 3): {@link Expression#renderValue(Object)} must reject NaN / Infinity
+     * Regression (Pass 3): {@link SqlExpression#renderValue(Object)} must reject NaN / Infinity
      * because they have no portable SQL literal form (the previous behavior emitted a bare
      * {@code NaN} or {@code Infinity} token that most dialects reject).
      */
     @Test
     public void testRenderValue_RejectsNaNAndInfinity_Pass3() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.renderValue(Double.NaN));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.renderValue(Double.POSITIVE_INFINITY));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.renderValue(Double.NEGATIVE_INFINITY));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.renderValue(Float.NaN));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Expression.renderValue(Float.POSITIVE_INFINITY));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> SqlExpression.renderValue(Double.NaN));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> SqlExpression.renderValue(Double.POSITIVE_INFINITY));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> SqlExpression.renderValue(Double.NEGATIVE_INFINITY));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> SqlExpression.renderValue(Float.NaN));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> SqlExpression.renderValue(Float.POSITIVE_INFINITY));
     }
 
     /**
@@ -1105,7 +1105,7 @@ public class ExpressionTest extends TestBase {
     @Test
     public void testRenderValue_TrailingBackslashStaysBalanced_Pass3() {
         String input = "x" + (char) 92; // x followed by one backslash
-        String result = Expression.renderValue(input);
+        String result = SqlExpression.renderValue(input);
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.startsWith("'") && result.endsWith("'"), "Output must be quoted, got: " + result);
         String body = result.substring(1, result.length() - 1);
@@ -1123,11 +1123,11 @@ public class ExpressionTest extends TestBase {
      */
     @Test
     public void testRenderValue_DateLikeValuesAreQuoted_Pass3() {
-        String dateResult = Expression.renderValue(new java.util.Date(0L));
+        String dateResult = SqlExpression.renderValue(new java.util.Date(0L));
         Assertions.assertNotNull(dateResult);
         Assertions.assertTrue(dateResult.startsWith("'") && dateResult.endsWith("'"), "Date literal must be quoted, got: " + dateResult);
 
-        String ldtResult = Expression.renderValue(java.time.LocalDateTime.of(2024, 1, 1, 0, 0));
+        String ldtResult = SqlExpression.renderValue(java.time.LocalDateTime.of(2024, 1, 1, 0, 0));
         Assertions.assertNotNull(ldtResult);
         Assertions.assertTrue(ldtResult.startsWith("'") && ldtResult.endsWith("'"), "LocalDateTime literal must be quoted, got: " + ldtResult);
         Assertions.assertTrue(ldtResult.contains("2024"));
@@ -1146,7 +1146,7 @@ public class ExpressionTest extends TestBase {
      */
     @Test
     public void testToString_ShortLiteralWithNewlineGoesThroughParser() {
-        Expression expr = Expression.of("col\n");
+        SqlExpression expr = SqlExpression.of("col\n");
 
         String result = expr.toSql(NamingPolicy.NO_CHANGE);
 
@@ -1159,15 +1159,15 @@ public class ExpressionTest extends TestBase {
 
     /**
      * {@code toSql(NamingPolicy)} must return the value rendered for the <i>requested</i> policy.
-     * {@link Expression#of} interns instances, so the same object is reused across calls and must answer
+     * {@link SqlExpression#of} interns instances, so the same object is reused across calls and must answer
      * each policy correctly even when callers alternate policies on it. (Originally guarded the
      * since-removed single-slot toString cache; kept because the contract must hold regardless of any
      * internal memoization.)
      */
     @Test
     public void testToStringReturnsValuePerNamingPolicy() {
-        Expression expr = Expression.of("firstName");
-        assertSame(expr, Expression.of("firstName"), "Expression.of must intern instances");
+        SqlExpression expr = SqlExpression.of("firstName");
+        assertSame(expr, SqlExpression.of("firstName"), "SqlExpression.of must intern instances");
 
         for (int i = 0; i < 1000; i++) {
             assertEquals("firstName", expr.toSql(NamingPolicy.NO_CHANGE));
@@ -1185,7 +1185,7 @@ public class ExpressionTest extends TestBase {
      */
     @Test
     public void testToStringThreadSafeAcrossNamingPolicies() throws InterruptedException {
-        final Expression expr = Expression.of("firstName");
+        final SqlExpression expr = SqlExpression.of("firstName");
 
         final NamingPolicy[] policies = { NamingPolicy.NO_CHANGE, NamingPolicy.SNAKE_CASE, NamingPolicy.SCREAMING_SNAKE_CASE };
         final String[] expected = { "firstName", "first_name", "FIRST_NAME" };
@@ -1235,16 +1235,59 @@ public class ExpressionTest extends TestBase {
         // "price-tax" is SQL subtraction. The short-literal fast path used to hand the whole
         // literal to NamingPolicy.convert, which swallowed the '-' (CAMEL_CASE -> "priceTax");
         // hyphen-containing literals must take the parser path, converting each operand independently.
-        assertEquals("price-tax", Expression.of("price-tax").toSql(NamingPolicy.CAMEL_CASE));
-        assertEquals("unit_price-tax", Expression.of("unitPrice-tax").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("price-tax", SqlExpression.of("price-tax").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("unit_price-tax", SqlExpression.of("unitPrice-tax").toSql(NamingPolicy.SNAKE_CASE));
 
         // Consistent with the >= 16-char parse path, which always preserved the '-'.
-        assertEquals("basePrice-salesTax", Expression.of("base_price-sales_tax").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("basePrice-salesTax", SqlExpression.of("base_price-sales_tax").toSql(NamingPolicy.CAMEL_CASE));
 
         // Hyphen-free short literals still use the fast path unchanged.
-        assertEquals("first_name", Expression.of("firstName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name", SqlExpression.of("firstName").toSql(NamingPolicy.SNAKE_CASE));
 
         // The digit-leading pass-through guard is still intact.
-        assertEquals("2faCode", Expression.of("2faCode").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("2faCode", SqlExpression.of("2faCode").toSql(NamingPolicy.SNAKE_CASE));
     }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testVariadicHelpersTreatNullArrayAsNoOperands() {
+        assertEquals("", SqlExpression.and((String[]) null));
+        assertEquals("", SqlExpression.or((String[]) null));
+        assertEquals("", SqlExpression.plus((Object[]) null));
+        assertEquals("", SqlExpression.subtract((Object[]) null));
+        assertEquals("", SqlExpression.minus((Object[]) null));
+        assertEquals("", SqlExpression.multiply((Object[]) null));
+        assertEquals("", SqlExpression.divide((Object[]) null));
+        assertEquals("", SqlExpression.modulus((Object[]) null));
+        assertEquals("", SqlExpression.leftShift((Object[]) null));
+        assertEquals("", SqlExpression.rightShift((Object[]) null));
+        assertEquals("", SqlExpression.bitwiseAnd((Object[]) null));
+        assertEquals("", SqlExpression.bitwiseOr((Object[]) null));
+        assertEquals("", SqlExpression.bitwiseXor((Object[]) null));
+    }
+
+    @Test
+    public void testNamingPolicyConvertsUnderscoreLeadingIdentifiers() {
+        assertEquals("_first_name", SqlExpression.of("_firstName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_FIRST_NAME = OTHER_VALUE", SqlExpression.of("_firstName = otherValue").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+    }
+
+    @Test
+    public void testNamingPolicyDoesNotModifyPrefixedStringLiterals() {
+        assertEquals("N'camelCase' = first_name", SqlExpression.of("N'camelCase' = firstName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_utf8mb4'camelCase' = OTHER_VALUE", SqlExpression.of("_utf8mb4'camelCase' = otherValue").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+    }
+
+    @Test
+    public void testNamingPolicyDoesNotRenameSqlVariables() {
+        assertEquals("@firstName + @@session.sqlMode + column_name",
+                SqlExpression.of("@firstName + @@session.sqlMode + columnName").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    public void testNamingPolicyPreservesPostgreSqlCastOperator() {
+        assertEquals("payload_data::jsonb", SqlExpression.of("payloadData::jsonb").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals(":payload::jsonb", SqlExpression.of(":payload::jsonb").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
 }

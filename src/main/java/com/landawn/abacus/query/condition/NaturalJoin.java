@@ -42,12 +42,8 @@ import java.util.Collection;
  *   <li>Best used when table relationships are well-defined and stable</li>
  * </ul>
  * 
- * <p>Because the join predicate is implicit, a NATURAL JOIN does <b>not</b> accept an explicit
- * {@code ON}/{@code USING} or filter condition. The condition-taking constructors are therefore
- * <b>deprecated</b>: they exist only for API symmetry with the other {@link Join} subclasses, require
- * {@code cond} to be {@code null}, and reject any non-{@code null} condition with an
- * {@link IllegalArgumentException}. Prefer the condition-less {@link #NaturalJoin(String)} /
- * {@link #NaturalJoin(Collection)} constructors, and to apply an additional filter place it in the
+ * <p>Because the join predicate is implicit, this class exposes no constructor that accepts an
+ * {@code ON}, {@code USING}, or filter condition. To apply an additional filter, place it in the
  * enclosing query's {@code WHERE} clause instead.</p>
  *
  * <p><b>Usage Examples:</b></p>

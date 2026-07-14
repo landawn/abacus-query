@@ -203,7 +203,7 @@ public class ClauseTest extends TestBase {
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.WHERE, new TestComposableWrapper(new OrderBy("name"))));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.WHERE, new TestComposableWrapper(new Any(subQuery))));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.WHERE, new TestComposableWrapper(new Expression(" "))));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.WHERE, new TestComposableWrapper(new SqlExpression(" "))));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.WHERE, new Equal()));
         Assertions.assertDoesNotThrow(() -> new TestClause(Operator.WHERE, new TestComposableWrapper(new Equal("id", 1))));
     }
@@ -222,5 +222,15 @@ public class ClauseTest extends TestBase {
     @Test
     public void testConstructorRejectsNonClauseOperator() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.EQUAL, Filters.eq("id", 1)));
+    }
+
+    @Test
+    public void testConstructorRejectsJoinOperatorsAndInvalidSetOperands() {
+        final Condition predicate = Filters.eq("id", 1);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.JOIN, predicate));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.LEFT_JOIN, predicate));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(Operator.UNION, predicate));
+        Assertions.assertDoesNotThrow(() -> new TestClause(Operator.UNION, Filters.subQuery("SELECT id FROM archived_users")));
     }
 }

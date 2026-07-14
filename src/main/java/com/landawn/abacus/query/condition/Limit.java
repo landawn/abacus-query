@@ -29,47 +29,41 @@ import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
- * Represents a LIMIT clause in SQL queries to restrict the number of rows returned.
- * This class supports a simple LIMIT (count only), LIMIT with OFFSET for pagination,
- * and a string expression form covering the standard pagination syntaxes. The LIMIT clause is essential
- * for controlling result set size and implementing efficient data retrieval strategies,
- * especially for large datasets.
+ * Models a SQL row-limiting clause.
  *
- * <p>This class provides three ways to create LIMIT clauses:
+ * <p>The numeric constructors render the portable internal form {@code LIMIT count [OFFSET offset]}.
+ * The expression constructor accepts and normalizes the following forms:</p>
  * <ul>
- *   <li>Simple limit with count only — produces {@code LIMIT n}</li>
- *   <li>Limit with count and offset for pagination — produces {@code LIMIT n OFFSET m}</li>
- *   <li>String expression via {@link #Limit(String)}, which is formatted (whitespace collapsed, keywords
- *       upper-cased) and validated against a fixed grammar — {@code LIMIT n}, {@code LIMIT n OFFSET m},
- *       MySQL's {@code LIMIT offset, count}, and the SQL:2008
- *       {@code OFFSET m ROW[S] FETCH NEXT/FIRST n ROW[S] ONLY} / {@code FETCH FIRST/NEXT n ROW[S] ONLY} forms,
- *       where each number may be an integer or a {@code ?} / {@code :name} / <code>#{name}</code> placeholder.
- *       Integer forms are parsed into concrete {@code count}/{@code offset} (the original literal is retained);
- *       placeholder forms stay opaque; any other input is rejected with an {@link IllegalArgumentException}</li>
+ *   <li>{@code LIMIT count}</li>
+ *   <li>{@code LIMIT count OFFSET offset}</li>
+ *   <li>MySQL {@code LIMIT offset, count}</li>
+ *   <li>SQL:2008 {@code [OFFSET offset ROWS] FETCH FIRST|NEXT count ROWS ONLY}</li>
  * </ul>
  *
- * <p>All numeric APIs consistently use {@code (count, offset)} parameter order:
+ * <p>A count or offset in an expression may be a non-negative integer, {@code ?}, {@code :name}, or
+ * <code>#{name}</code>. Fully numeric expressions expose their parsed values through {@link #count()} and
+ * {@link #offset()}. Expressions containing a placeholder, or an integer outside the {@code int} range,
+ * remain <em>unresolved</em>; use {@link #isResolved()}, {@link #resolvedCount()}, and
+ * {@link #resolvedOffset()} when the distinction matters.</p>
+ *
+ * <p>{@link #toSql(NamingPolicy)} returns this object's normalized representation. A query builder may
+ * translate a resolved limit to the pagination syntax required by its SQL dialect.</p>
+ *
+ * <p>All two-argument numeric APIs use {@code (count, offset)} order, including
  * {@link com.landawn.abacus.query.AbstractQueryBuilder#limit(int, int)},
  * {@link Criteria.Builder#limit(int, int)}, and
  * {@link com.landawn.abacus.query.DynamicQuery.Builder#limit(int, int)}.</p>
  *
- * <p><b>Usage Examples:</b></p>
  * <pre>{@code
- * // Limit to first 10 rows
- * Limit limit1 = new Limit(10);
- * // SQL: LIMIT 10
- *
- * // Pagination: skip 50 rows then return up to 20 (count=20, offset=50)
- * Limit limit2 = new Limit(20, 50);
- * // SQL: LIMIT 20 OFFSET 50
- *
- * // String expression (parsed into count=10, offset=20)
- * Limit limit3 = new Limit("10 OFFSET 20");
- * // SQL: LIMIT 10 OFFSET 20
+ * new Limit(10);                                      // LIMIT 10
+ * new Limit(20, 50);                                  // LIMIT 20 OFFSET 50
+ * new Limit("OFFSET 50 ROWS FETCH NEXT 20 ROWS ONLY");
  * }</pre>
  *
+ * <p><b>API note:</b> Placeholders embedded in an expression are not reported by
+ * {@link #parameters()}.</p>
+ *
  * @see Clause
- * @see AbstractCondition
  */
 public class Limit extends Clause {
 
@@ -77,42 +71,24 @@ public class Limit extends Clause {
 
     private int offset;
 
-    private String literal;
+    private String expr;
 
     private boolean isResolved;
 
     /**
-     * Default constructor for serialization frameworks like Kryo.
-     * This constructor creates an uninitialized Limit instance and should not be used
-     * directly in application code. It exists solely for serialization/deserialization purposes.
+     * Creates an uninitialized instance for serialization frameworks.
+     *
+     * <p>Application code should use one of the public constructors.</p>
      */
     Limit() {
     }
 
     /**
-     * Creates a LIMIT clause with the specified row count.
-     * This constructor creates a simple LIMIT without OFFSET, returning rows from the beginning
-     * of the result set up to the specified count.
+     * Creates {@code LIMIT count} with no offset.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Get top 5 customers
-     * Limit topFive = new Limit(5);
-     * // topFive.toString() returns "LIMIT 5"
+     * <p>A count of zero is valid and renders as {@code LIMIT 0}.</p>
      *
-     * // Limit search results to 100
-     * Limit searchLimit = new Limit(100);
-     * // searchLimit.toString() returns "LIMIT 100"
-     *
-     * // Boundary: zero is allowed
-     * Limit none = new Limit(0);
-     * // none.toString() returns "LIMIT 0"
-     *
-     * // Edge: a negative count is rejected
-     * Limit bad = new Limit(-1);   // throws IllegalArgumentException
-     * }</pre>
-     *
-     * @param count the maximum number of rows to return. Must be non-negative.
+     * @param count maximum number of rows to return; must be non-negative
      * @throws IllegalArgumentException if {@code count} is negative
      */
     public Limit(final int count) {
@@ -120,30 +96,16 @@ public class Limit extends Clause {
     }
 
     /**
-     * Creates a LIMIT clause with both count and offset.
-     * When {@code offset} is {@code 0}, the rendered SQL omits the {@code OFFSET} clause and produces
-     * {@code LIMIT count} only.
+     * Creates {@code LIMIT count OFFSET offset}.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Page 3: Results 21-30 (count=10, offset=20)
-     * Limit page3 = new Limit(10, 20);
-     * // page3.toString() returns "LIMIT 10 OFFSET 20"
+     * <p>When {@code offset} is zero, the {@code OFFSET} portion is omitted.</p>
      *
-     * // offset == 0 omits the OFFSET clause
-     * Limit firstPage = new Limit(10, 0);
-     * // firstPage.toString() returns "LIMIT 10"
-     *
-     * // Edge: a negative offset (or count) is rejected
-     * Limit bad = new Limit(10, -1);   // throws IllegalArgumentException
-     * }</pre>
-     *
-     * @param count the maximum number of rows to return. Must be non-negative.
-     * @param offset the number of rows to skip before returning results. Must be non-negative.
-     * @throws IllegalArgumentException if {@code offset} or {@code count} is negative
+     * @param count maximum number of rows to return; must be non-negative
+     * @param offset number of rows to skip; must be non-negative
+     * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
      */
     public Limit(final int count, final int offset) {
-        super(Operator.LIMIT, Expression.of(offset == 0 ? String.valueOf(N.checkArgNotNegative(count, "count"))
+        super(Operator.LIMIT, SqlExpression.of(offset == 0 ? String.valueOf(N.checkArgNotNegative(count, "count"))
                 : N.checkArgNotNegative(count, "count") + " OFFSET " + N.checkArgNotNegative(offset, "offset")));
 
         this.count = count;
@@ -152,85 +114,40 @@ public class Limit extends Clause {
     }
 
     /**
-     * Creates a LIMIT clause from a string expression, formatting and validating it against a fixed grammar.
+     * Creates a row-limiting clause from a validated SQL expression.
      *
-     * <p><b>Formatting.</b> The expression is trimmed, its internal whitespace runs are collapsed to a single
-     * space, and its SQL keywords ({@code LIMIT}, {@code OFFSET}, {@code FETCH}, {@code FIRST}, {@code NEXT},
-     * {@code ROW}/{@code ROWS}, {@code ONLY}) are upper-cased (parameter names inside {@code #{...}} or after
-     * {@code :} keep their original case). If the expression starts with a digit, {@code '?'}, {@code ':'}, or
-     * <code>"#{"</code>, a {@code "LIMIT "} prefix is added automatically; otherwise it is used as-is. This
-     * formatted string is what {@link #literal()} and {@link #toSql(NamingPolicy)} return.</p>
+     * <p>The accepted forms are listed in the class description. Leading and trailing whitespace is removed,
+     * internal whitespace is collapsed, and pagination keywords are converted to upper case. Placeholder names
+     * retain their original case. An expression beginning with a number or placeholder is interpreted as a
+     * {@code LIMIT} expression, so {@code "10 OFFSET 20"} becomes {@code "LIMIT 10 OFFSET 20"}.</p>
      *
-     * <p><b>Accepted grammar.</b> Each number slot below is either an integer literal or a {@code ?} /
-     * {@code :name} / <code>#{name}</code> placeholder:</p>
-     * <ul>
-     *   <li>{@code LIMIT count}</li>
-     *   <li>{@code LIMIT count OFFSET offset}</li>
-     *   <li>MySQL's {@code LIMIT offset, count}</li>
-     *   <li>SQL:2008 {@code OFFSET offset ROW[S] FETCH NEXT/FIRST count ROW[S] ONLY}</li>
-     *   <li>SQL:2008 {@code FETCH FIRST/NEXT count ROW[S] ONLY} (offset {@code 0})</li>
-     * </ul>
+     * <p>If every slot is an {@code int}-range integer, the count and offset are resolved. Otherwise the
+     * normalized expression is retained but its numeric values remain unresolved. Floating-point and negative
+     * numbers, misspelled keywords, and unrelated SQL are rejected.</p>
      *
-     * <p><b>Parsing.</b> When every number slot is an integer literal, {@link #count()} and
-     * {@link #offset()} return their concrete values. When a slot is a placeholder (or an integer literal
-     * that overflows {@code int}), the value stays unresolved and opaque: {@link #count()} returns
-     * {@link Integer#MAX_VALUE} and {@link #offset()} returns {@code 0}. Anything that does not match the
-     * grammar — including a float or negative number, a keyword typo, or unrelated syntax — is rejected with
-     * an {@link IllegalArgumentException}.</p>
-     *
-     * <p><b>&#9888;&#65039;</b> When this condition is rendered by a SQL builder, a parsed expression is emitted in the
-     * target dialect's pagination syntax from its {@code count}/{@code offset} (so, e.g., MySQL's comma
-     * form and the {@code FETCH} forms are re-rendered per dialect). An opaque (placeholder) expression is
-     * re-rendered in the dialect's {@code FETCH} syntax only when the dialect paginates with
-     * {@code OFFSET}/{@code FETCH} (Oracle, DB2 or SQL Server, per
-     * {@link com.landawn.abacus.query.SqlDialect.ProductInfo}) and it is a generic
-     * {@code LIMIT count [OFFSET offset]} form; otherwise it is emitted verbatim.
-     * {@link #toSql(NamingPolicy)} itself is dialect-agnostic and always returns the formatted literal.</p>
-     *
-     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Standard LIMIT with OFFSET (numeric prefix triggers automatic "LIMIT " prepend)
-     * Limit standard = new Limit("10 OFFSET 20");
-     * // toString() -> "LIMIT 10 OFFSET 20"; count() -> 10; offset() -> 20
-     *
-     * // Case-insensitive input with collapsed whitespace
-     * Limit lower = new Limit("limit 10   offset 20");
-     * // toString() -> "LIMIT 10 OFFSET 20"
-     *
-     * // MySQL-style limit (offset, count)
-     * Limit mysql = new Limit("20, 10");
-     * // toString() -> "LIMIT 20, 10"; count() -> 10; offset() -> 20
-     *
-     * // SQL:2008 FETCH form (offset and count parsed; normalized literal retained)
-     * Limit fetch = new Limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY");
-     * // toString() -> "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY"; count() -> 20; offset() -> 5
-     *
-     * // Placeholder expression stays opaque
-     * Limit ph = new Limit("? OFFSET ?");
-     * // toString() -> "LIMIT ? OFFSET ?"; count() -> Integer.MAX_VALUE; offset() -> 0
-     *
-     * // Edge: a null, empty, or blank expression is rejected
-     * Limit bad1 = new Limit((String) null);   // throws IllegalArgumentException
-     * Limit bad2 = new Limit("");              // throws IllegalArgumentException
-     *
-     * // Edge: a float, negative, or otherwise malformed expression is rejected
-     * Limit bad3 = new Limit("LIMIT 1.0");                       // throws IllegalArgumentException
-     * Limit bad4 = new Limit("LIMIT -1");                        // throws IllegalArgumentException
-     * Limit bad5 = new Limit("OFFSET 5 ROWS NEXT 20 ROWS ONLY"); // throws IllegalArgumentException (missing FETCH)
+     * new Limit("10 OFFSET 20");                         // LIMIT 10 OFFSET 20
+     * new Limit("20, 10");                              // LIMIT 20, 10
+     * new Limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY");
+     * new Limit("? OFFSET ?");                          // unresolved
      * }</pre>
      *
-     * @param expr the LIMIT expression as a string. Must not be {@code null}, empty, or blank, and must
-     *             match one of the accepted forms.
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or not an accepted limit form
+     * <p><b>API note:</b> {@link #toSql(NamingPolicy)} returns the normalized expression. SQL builders may
+     * render a resolved expression using the target dialect's pagination syntax. Opaque expressions are
+     * generally emitted verbatim; generic {@code LIMIT} expressions may be adapted to an
+     * {@code OFFSET}/{@code FETCH} dialect.</p>
+     *
+     * @param expr row-limiting expression; must be non-null, non-blank, and match a supported form
+     * @throws IllegalArgumentException if {@code expr} is null, blank, or syntactically unsupported
      */
     public Limit(final String expr) {
         this(prepare(expr));
     }
 
     private Limit(final Prepared prepared) {
-        super(Operator.LIMIT, Expression.of(prepared.conditionExpr));
+        super(Operator.LIMIT, SqlExpression.of(prepared.conditionExpr));
 
-        this.literal = prepared.literal;
+        this.expr = prepared.literal;
         this.count = prepared.count;
         this.offset = prepared.offset;
         this.isResolved = prepared.resolved;
@@ -282,174 +199,89 @@ public class Limit extends Clause {
     }
 
     /**
-     * Returns the LIMIT literal string if one was provided.
-     * This method returns the formatted literal from the string constructor — trimmed, with internal
-     * whitespace collapsed and SQL keywords upper-cased, and possibly with a {@code "LIMIT "} prefix added
-     * (when the input starts with a digit, {@code '?'}, {@code ':'}, or <code>"#{"</code>) — or {@code null}
-     * if the Limit was created with count/offset parameters. The literal is retained even when the expression
-     * was parsed into concrete {@code count}/{@code offset} values.
+     * Returns the normalized expression supplied to {@link #Limit(String)}.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Limit created with a string expression (retained even though it is parsed)
-     * Limit customLimit = new Limit("10 OFFSET 20");
-     * String literal = customLimit.literal();
-     * // Returns: "LIMIT 10 OFFSET 20"
+     * <p>The expression is retained even when its count and offset were successfully resolved. Numeric
+     * constructors do not create an expression.</p>
      *
-     * // A FETCH-style expression keeps its verbatim literal
-     * Limit fetch = new Limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY");
-     * // fetch.literal() returns: "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY"
-     *
-     * // Limit created with count/offset returns null
-     * Limit numericLimit = new Limit(20, 10);
-     * String noLiteral = numericLimit.literal();
-     * // Returns: null
-     * }</pre>
-     *
-     * @return the LIMIT literal string, or {@code null} if constructed with count/offset parameters
+     * @return the normalized expression, or {@code null} if this instance was created numerically
+     * @see #hasExpression()
      */
-    public String literal() {
-        return literal;
+    public String expression() {
+        return expr;
     }
 
     /**
-     * Checks whether this Limit was created from a string expression (see {@link #Limit(String)}).
-     * When this returns {@code true}, {@link #literal()} is non-null and is what gets rendered;
-     * {@link #count()}/{@link #offset()} may hold sentinel values ({@link Integer#MAX_VALUE}/0)
-     * if the expression stayed opaque. When it returns {@code false}, the Limit was created with
-     * numeric count/offset parameters and {@link #literal()} returns {@code null}.
+     * Tests whether this instance was created from an expression.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * new Limit("10 OFFSET 20").hasLiteral();   // true
-     * new Limit(10, 20).hasLiteral();           // false
-     * }</pre>
-     *
-     * @return {@code true} if this Limit was constructed from a string expression, {@code false} otherwise
-     * @see #literal()
+     * @return {@code true} if {@link #expression()} is non-null
+     * @see #isResolved()
      */
-    public boolean hasLiteral() {
-        return literal != null;
+    public boolean hasExpression() {
+        return expr != null;
     }
 
     /**
      * Returns the maximum number of rows to return.
-     * For a string expression that was parsed (see {@link #Limit(String)}), this returns the parsed count.
-     * For a string expression that stayed opaque (a placeholder slot, or an integer literal that overflows
-     * {@code int}), this returns {@link Integer#MAX_VALUE}.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Simple count limit
-     * Limit limit = new Limit(25);
-     * int count = limit.count();
-     * // Returns: 25
+     * <p><b>API note:</b> Prefer {@link #resolvedCount()} when {@link Integer#MAX_VALUE} could be a
+     * legitimate count.</p>
      *
-     * // Limit with offset (count=50, offset=100)
-     * Limit paged = new Limit(50, 100);
-     * int pageCount = paged.count();
-     * // Returns: 50
-     *
-     * // Parsed string expression
-     * Limit custom = new Limit("10 OFFSET 20");
-     * int customCount = custom.count();
-     * // Returns: 10
-     *
-     * // Opaque (placeholder) expression
-     * Limit opaque = new Limit("? OFFSET ?");
-     * int opaqueCount = opaque.count();
-     * // Returns: Integer.MAX_VALUE
-     * }</pre>
-     *
-     * @return the row count limit, or {@link Integer#MAX_VALUE} for an opaque (unparsed) string expression
+     * @return the resolved count, or {@link Integer#MAX_VALUE} when an expression is unresolved
      */
     public int count() {
         return count;
     }
 
     /**
-     * Returns the number of rows to skip before returning results.
-     * For Limit instances created with only a count, this returns 0.
-     * For a string expression that was parsed (see {@link #Limit(String)}), this returns the parsed offset.
-     * For a string expression that stayed opaque (a placeholder slot, or an integer literal that overflows
-     * {@code int}), this returns 0.
+     * Returns the number of rows to skip.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * // Limit with offset for pagination (count=10, offset=20)
-     * Limit page3 = new Limit(10, 20);
-     * int offset = page3.offset();
-     * // Returns: 20
+     * <p><b>API note:</b> Use {@link #resolvedOffset()} to distinguish a resolved zero from an unresolved
+     * expression.</p>
      *
-     * // Simple count-only limit
-     * Limit simple = new Limit(10);
-     * int noOffset = simple.offset();
-     * // Returns: 0
-     *
-     * // Parsed string expression
-     * Limit custom = new Limit("10 OFFSET 20");
-     * int customOffset = custom.offset();
-     * // Returns: 20
-     *
-     * // Opaque (placeholder) expression
-     * Limit opaque = new Limit("? OFFSET ?");
-     * int opaqueOffset = opaque.offset();
-     * // Returns: 0
-     * }</pre>
-     *
-     * @return the offset value, or 0 if constructed with only count or with an opaque (unparsed) string expression
+     * @return the resolved offset, or zero when no offset is specified or the expression is unresolved
      */
     public int offset() {
         return offset;
     }
 
     /**
-     * Returns whether the count and offset are resolved numeric values rather than sentinels for an opaque expression.
+     * Tests whether both the count and offset are available as {@code int} values.
      *
-     * @return {@code true} for numeric limits and parsed numeric expressions; {@code false} for opaque expressions
+     * <p>Numeric constructors and fully numeric expressions are resolved. An expression containing a
+     * placeholder or an out-of-range integer is unresolved.</p>
+     *
+     * @return {@code true} if {@link #resolvedCount()} and {@link #resolvedOffset()} are both present
      */
     public boolean isResolved() {
         return isResolved;
     }
 
     /**
-     * Returns the resolved row count when available.
+     * Returns the row count when it can be represented as an {@code int}.
      *
-     * @return the resolved count, or an empty optional for an opaque expression
+     * @return the resolved count, or an empty optional for an unresolved expression
      */
     public OptionalInt resolvedCount() {
         return isResolved() ? OptionalInt.of(count) : OptionalInt.empty();
     }
 
     /**
-     * Returns the resolved row offset when available.
+     * Returns the row offset when it can be represented as an {@code int}.
      *
-     * @return the resolved offset, or an empty optional for an opaque expression
+     * @return the resolved offset, or an empty optional for an unresolved expression
      */
     public OptionalInt resolvedOffset() {
         return isResolved() ? OptionalInt.of(offset) : OptionalInt.empty();
     }
 
     /**
-     * Returns the parameters for this LIMIT clause.
-     * LIMIT clauses do not have bindable parameters as the count and offset
-     * are typically part of the SQL structure itself, not parameterized values.
-     * This method always returns an empty list.
+     * Returns an empty parameter list.
      *
-     * <p>If the expression form ({@link #Limit(String)}) contains placeholders ({@code ?} or
-     * named parameters), this class does not track them; the caller is responsible for binding
-     * those values separately when preparing the statement.</p>
+     * <p>Placeholders embedded in an expression are raw SQL text and are not tracked by this condition.
+     * Code that uses such placeholders is responsible for supplying the corresponding bindings.</p>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * new Limit(10).parameters();              // returns [] (empty, immutable)
-     * new Limit(10, 20).parameters();          // returns []
-     *
-     * // Edge: even an expression containing a placeholder yields no bound parameters
-     * new Limit("? OFFSET ?").parameters();    // returns []
-     * }</pre>
-     *
-     * @return an empty immutable list as LIMIT has no parameters
+     * @return an empty immutable list
      */
     @Override
     public ImmutableList<Object> parameters() {
@@ -457,40 +289,25 @@ public class Limit extends Clause {
     }
 
     /**
-     * Converts this LIMIT clause to its SQL representation according to the specified naming policy.
-     * The output format depends on how the Limit was constructed:
+     * Returns the normalized, dialect-independent SQL representation.
+     *
      * <ul>
-     *   <li>String expression (non-empty {@code literal}): returns the formatted literal as-is (whitespace
-     *       collapsed and keywords upper-cased, possibly with {@code "LIMIT "} prepended, per
-     *       {@link #Limit(String)}), even when it was parsed into concrete count/offset</li>
-     *   <li>Uninitialized instance (no expression and {@code null} operator, e.g. produced by the
-     *       package-private default constructor during Kryo deserialization): returns the literal
-     *       {@code "null"} (consistent with {@link Cell#toSql(NamingPolicy)}), not {@code "LIMIT 0"}</li>
-     *   <li>Count only (offset {@code == 0}): returns {@code "LIMIT count"}</li>
-     *   <li>Count with offset ({@code offset > 0}): returns {@code "LIMIT count OFFSET offset"}</li>
+     *   <li>An expression-based instance returns its normalized {@link #expression()}.</li>
+     *   <li>A numeric instance returns {@code LIMIT count}, followed by {@code OFFSET offset} when the
+     *       offset is greater than zero.</li>
+     *   <li>An uninitialized serialization instance returns {@code "null"}.</li>
      * </ul>
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * new Limit(10).toSql(NamingPolicy.NO_CHANGE);            // returns "LIMIT 10"
-     * new Limit(10, 20).toSql(NamingPolicy.NO_CHANGE);        // returns "LIMIT 10 OFFSET 20"
+     * <p>The naming policy has no effect because a limit contains no identifiers. Dialect-specific pagination
+     * conversion is performed by SQL builders, not by this method.</p>
      *
-     * // Edge: a numeric-prefixed expression keeps its auto-prepended "LIMIT "
-     * new Limit("10 OFFSET 20").toSql(NamingPolicy.NO_CHANGE); // returns "LIMIT 10 OFFSET 20"
-     *
-     * // Edge: a non-numeric expression is rendered verbatim (no "LIMIT " prepend)
-     * new Limit("FETCH FIRST 10 ROWS ONLY").toSql(NamingPolicy.NO_CHANGE);
-     * // returns "FETCH FIRST 10 ROWS ONLY"
-     * }</pre>
-     *
-     * @param namingPolicy the naming policy parameter is currently ignored — LIMIT operates on numeric
-     *                      values or a raw expression, not property names
-     * @return the SQL representation of this LIMIT clause; {@code "null"} for an uninitialized instance
+     * @param namingPolicy naming policy; ignored and may be {@code null}
+     * @return normalized SQL for this limit, or {@code "null"} for an uninitialized instance
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
-        if (Strings.isNotEmpty(literal)) {
-            return literal;
+        if (Strings.isNotEmpty(expr)) {
+            return expr;
         }
 
         // Uninitialized instance (e.g., from Kryo default constructor): render the operator
@@ -503,29 +320,17 @@ public class Limit extends Clause {
     }
 
     /**
-     * Computes the hash code for this LIMIT clause.
-     * The hash code is calculated based on either the custom expression (if present)
-     * or the combination of count and offset values. This ensures that Limit instances
-     * with the same logical content have the same hash code.
+     * Returns a hash code based on the operator and either the normalized expression or the numeric count and offset.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * new Limit(10, 20).hashCode() == new Limit(10, 20).hashCode();                   // true
-     * new Limit("10 OFFSET 20").hashCode() == new Limit("10 OFFSET 20").hashCode();   // true
-     *
-     * // Edge: different count/offset -> different hash code
-     * new Limit(10).hashCode() == new Limit(20).hashCode();   // (typically) false
-     * }</pre>
-     *
-     * @return the hash code based on literal if present, otherwise based on count and offset
+     * @return this limit's hash code
      */
     @Override
     public int hashCode() {
         int h = 17;
         h = (h * 31) + ((operator() == null) ? 0 : operator().hashCode());
 
-        if (Strings.isNotEmpty(literal)) {
-            return (h * 31) + literal.hashCode();
+        if (Strings.isNotEmpty(expr)) {
+            return (h * 31) + expr.hashCode();
         } else {
             h = (h * 31) + count;
             return (h * 31) + offset;
@@ -533,30 +338,13 @@ public class Limit extends Clause {
     }
 
     /**
-     * Checks if this LIMIT clause is equal to another object.
-     * Two Limit instances are considered equal if either:
-     * <ul>
-     *   <li>both have a non-empty custom expression and the expressions are equal, or</li>
-     *   <li>neither has a custom expression and both have the same count and offset values.</li>
-     * </ul>
+     * Compares limits by representation and value.
      *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * new Limit(10, 20).equals(new Limit(10, 20));                   // returns true
-     * new Limit("10 OFFSET 20").equals(new Limit("10 OFFSET 20"));   // returns true
+     * <p>Expression-based limits compare their normalized expressions; numeric limits compare count and offset.
+     * The two representations are intentionally not equal even when they produce identical SQL text.</p>
      *
-     * // Edge: different count -> not equal
-     * new Limit(10).equals(new Limit(20));   // returns false
-     *
-     * // Edge: the numeric form and the expression form are never equal,
-     * // even when they render to the same SQL
-     * new Limit(10, 20).equals(new Limit("10 OFFSET 20"));   // returns false
-     *
-     * new Limit(10).equals(null);   // returns false
-     * }</pre>
-     *
-     * @param obj the object to compare with
-     * @return {@code true} if the object is of the same class with the same {@code literal} or matching count/offset values
+     * @param obj object to compare
+     * @return {@code true} if {@code obj} is a {@code Limit} with the same operator and representation
      */
     @Override
     public boolean equals(final Object obj) {
@@ -574,10 +362,10 @@ public class Limit extends Clause {
             return false;
         }
 
-        if (Strings.isNotEmpty(literal)) {
-            return Strings.isNotEmpty(other.literal) && literal.equals(other.literal);
+        if (Strings.isNotEmpty(expr)) {
+            return Strings.isNotEmpty(other.expr) && expr.equals(other.expr);
         } else {
-            return Strings.isEmpty(other.literal) && (count == other.count) && (offset == other.offset);
+            return Strings.isEmpty(other.expr) && (count == other.count) && (offset == other.offset);
         }
     }
 

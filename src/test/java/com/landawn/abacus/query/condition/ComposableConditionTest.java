@@ -115,7 +115,7 @@ public class ComposableConditionTest extends TestBase {
 
         assertThrows(IllegalArgumentException.class, () -> left.and(new TestComposableWrapper(new OrderBy("name"))));
         assertThrows(IllegalArgumentException.class, () -> left.or(new TestComposableWrapper(new Any(subQuery))));
-        assertThrows(IllegalArgumentException.class, () -> left.xor(new TestComposableWrapper(new Expression("   "))));
+        assertThrows(IllegalArgumentException.class, () -> left.xor(new TestComposableWrapper(new SqlExpression("   "))));
         assertDoesNotThrow(() -> left.and(new TestComposableWrapper(new Equal("id", 1))));
     }
 }

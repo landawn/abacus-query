@@ -28,14 +28,22 @@ import com.landawn.abacus.util.Strings;
  * Entry point for fluently creating dynamic SQL queries programmatically.
  * This utility class exposes {@link #builder()}, which returns a {@link Builder} that provides
  * a fluent and lightweight way to construct SQL SELECT statements with support for joins,
- * conditions, grouping, ordering, and set operations.
+ * conditions, grouping, ordering, set operations, pagination, and raw trailing fragments.
  *
  * <p>The {@link Builder} follows a fluent interface pattern where each method returns the builder
- * instance, allowing method chaining. The SQL components are built in a natural order:
- * SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY → LIMIT/OFFSET.</p>
+ * instance, allowing method chaining. The main SQL components are built in grammar order regardless
+ * of the order in which their typed clause builders are requested: SELECT → FROM → WHERE →
+ * GROUP BY → HAVING → set operations → ORDER BY → pagination/raw trailing fragments.
+ * Pagination methods and raw trailing fragments share the final buffer and therefore retain their
+ * relative invocation order.</p>
  *
  * <p><b>Important:</b> Always call {@link Builder#build()} to generate the final SQL string and
  * release resources. The builder uses object pooling internally for performance optimization.</p>
+ *
+ * <p>String arguments are SQL fragments and are appended verbatim after blank-input validation;
+ * this class does not quote identifiers, escape literals, or create bind parameters. Keep SQL text
+ * application-controlled and represent untrusted values with placeholders bound by the execution
+ * layer.</p>
  *
  * <h2>Example usage:</h2>
  * <pre>{@code
@@ -145,6 +153,8 @@ public final class DynamicQuery {
      * Instances and retained clause handles are mutable and are not thread-safe. A builder is
      * one-shot: invoking {@link #build()} permanently closes it and all retained clause handles,
      * including when building terminates exceptionally.
+     * String fragments are appended verbatim; this builder validates presence and clause ordering,
+     * not SQL syntax or trustworthiness.
      */
     public static class Builder {
 
@@ -658,10 +668,12 @@ public final class DynamicQuery {
          * possible only when the previously appended raw text already ends with a space and
          * {@code textToAppend} also begins with one).</p>
          *
-         * <p><b>&#9888;&#65039;</b> Like the set-operation methods, this writes into the builder's trailing buffer, which
-         * {@link #build()} appends after every clause builder regardless of invocation order — which is
-         * also why {@code append("ORDER BY ...")} placed after {@link #union(String)} (rather than
-         * {@link #orderBy()}) is the way to order a combined set-operation result.</p>
+         * <p><b>&#9888;&#65039;</b> This writes into the builder's trailing buffer, which {@link #build()}
+         * appends after the typed {@link #orderBy()} clause regardless of invocation order. Set operations
+         * use a separate buffer and are emitted before both typed ordering and this raw tail. Consequently,
+         * either {@code orderBy().append(...)} or a trailing {@code append("ORDER BY ...")} can order a
+         * combined set-operation result; prefer the typed form when it is sufficient. Multiple raw and
+         * pagination fragments retain their relative invocation order.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code

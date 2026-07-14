@@ -1263,4 +1263,15 @@ public class ParsedSqlTest extends TestBase {
         Assertions.assertEquals(3, parsed.parameterCount());
         Assertions.assertTrue(parsed.namedParameters().isEmpty());
     }
+
+    @Test
+    public void testParse_NamedParameterInsidePreservedBlockCommentIsIgnored() {
+        final ParsedSql parsed = ParsedSql.parse("-- Keep comments\nSELECT /* audit :ignored */ :actual FROM users");
+
+        Assertions.assertEquals(Arrays.asList("actual"), parsed.namedParameters());
+        Assertions.assertEquals(1, parsed.parameterCount());
+        Assertions.assertTrue(parsed.parameterizedSql().contains("/* audit :ignored */"));
+        Assertions.assertTrue(parsed.parameterizedSql().contains("SELECT"));
+        Assertions.assertTrue(parsed.parameterizedSql().contains("? FROM users"));
+    }
 }

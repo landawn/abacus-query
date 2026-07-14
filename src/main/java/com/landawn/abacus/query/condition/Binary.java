@@ -169,7 +169,7 @@ public class Binary extends ComposableCondition {
      * String likeName = like.propName();   // "email"
      * }</pre>
      *
-     * @return the property name
+     * @return the property name, or {@code null} for an uninitialized serialization-framework instance
      */
     public String propName() {
         return propName;
@@ -313,6 +313,8 @@ public class Binary extends ComposableCondition {
      * @param namingPolicy the naming policy to apply to the property name;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a SQL representation of this condition
+     * @throws IllegalArgumentException if the value (or a value in an {@code IN}/{@code NOT IN} collection)
+     *                                  is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {

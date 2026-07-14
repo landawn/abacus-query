@@ -38,8 +38,8 @@ import lombok.experimental.Accessors;
  *   <li>the {@link IdentifierQuote} used when generated aliases or identifiers must be quoted; and</li>
  *   <li>the optional {@link ProductInfo} identifying the target database product, which query builders
  *       use to emit product-specific SQL such as pagination clauses;</li>
- *   <li>the optional {@link #namedParameterHandler()} used to render named placeholders; and</li>
- *   <li>the optional {@link #tokenizerConfig()} used when builders inspect raw SQL fragments.</li>
+ *   <li>the optional named-parameter handler used to render named placeholders; and</li>
+ *   <li>the optional tokenizer configuration used when builders inspect raw SQL fragments.</li>
  * </ul>
  *
  * <p>The predefined {@link Dsl} constants, such as {@link Dsl#PSC} and
@@ -51,7 +51,7 @@ import lombok.experimental.Accessors;
  *         .sqlPolicy(SqlDialect.SqlPolicy.NAMED_SQL)
  *         .identifierQuote(SqlDialect.IdentifierQuote.DOUBLE_QUOTE)
  *         .namedParameterHandler((sql, name) -> sql.append(":").append(name))
- *         .tokenizerConfig(SqlParser.tokenizerConfigBuilder().withSeparator("::").build())
+ *         .tokenizerConfig(SqlParser.TokenizerConfig.builder().withSeparator("::").build())
  *         .build());
  * }</pre>
  *
@@ -59,7 +59,7 @@ import lombok.experimental.Accessors;
  * {@link AbstractQueryBuilder}, unset rendering choices are resolved to these defaults:
  * {@link NamingPolicy#SNAKE_CASE}, {@link SqlPolicy#RAW_SQL},
  * {@link IdentifierQuote#DOUBLE_QUOTE} (or {@link IdentifierQuote#BACKTICK} when {@code productInfo}
- * names MySQL or MariaDB), {@link #DEFAULT_NAMED_PARAMETER_HANDLER}, and
+ * names MySQL or MariaDB), {@link AbstractQueryBuilder#DEFAULT_NAMED_PARAMETER_HANDLER}, and
  * {@link SqlParser#defaultTokenizerConfig()}. When {@code productInfo} is set, query builders also adapt
  * product-specific SQL syntax such as pagination clauses; see {@link AbstractQueryBuilder#limit(int)}.
  * When it is {@code null} or its name is not recognized, builders generate the default
@@ -72,12 +72,6 @@ import lombok.experimental.Accessors;
 @Value
 @Accessors(fluent = true)
 public class SqlDialect {
-
-    /**
-     * Default renderer for {@link SqlPolicy#NAMED_SQL} placeholders. It appends a colon followed by
-     * the generated parameter name, for example {@code :customerId}.
-     */
-    public static final BiConsumer<StringBuilder, String> DEFAULT_NAMED_PARAMETER_HANDLER = (sql, name) -> sql.append(':').append(name);
 
     /**
      * Optional descriptor of the target database product. When set, query builders branch on
@@ -113,7 +107,7 @@ public class SqlDialect {
      * Optional renderer for {@link SqlPolicy#NAMED_SQL} placeholders. It is ignored by the other SQL
      * policies. The handler receives the SQL
      * buffer and generated parameter name. When {@code null}, builders use
-     * {@link #DEFAULT_NAMED_PARAMETER_HANDLER}. Keeping the handler on the immutable dialect avoids
+     * {@link AbstractQueryBuilder#DEFAULT_NAMED_PARAMETER_HANDLER}. Keeping the handler on the immutable dialect avoids
      * thread-local or process-wide rendering configuration. The handler must append a nonempty token,
      * render distinct generated names as distinct tokens, be deterministic and side-effect free, and be
      * safe for concurrent invocation because all builders created from a shared {@link Dsl} use the same
@@ -127,61 +121,6 @@ public class SqlDialect {
      * When {@code null}, builders use {@link SqlParser#defaultTokenizerConfig()}.
      */
     private SqlParser.TokenizerConfig tokenizerConfig;
-
-    /**
-     * Returns the named-parameter renderer configured for this dialect.
-     *
-     * @return the configured renderer, or {@code null} to use {@link #DEFAULT_NAMED_PARAMETER_HANDLER}
-     */
-    public BiConsumer<StringBuilder, String> namedParameterHandler() {
-        return namedParameterHandler;
-    }
-
-    /**
-     * Returns the tokenizer configuration used when builders inspect raw SQL fragments.
-     *
-     * @return the configured tokenizer settings, or {@code null} to use
-     *         {@link SqlParser#defaultTokenizerConfig()}
-     */
-    public SqlParser.TokenizerConfig tokenizerConfig() {
-        return tokenizerConfig;
-    }
-
-    /**
-     * Builder for immutable {@link SqlDialect} instances. In addition to Lombok-generated methods for
-     * the standard dialect properties, these explicit methods document the instance-scoped replacements
-     * for the former global named-parameter and separator settings.
-     */
-    public static class SqlDialectBuilder {
-
-        /**
-         * Configures the renderer used for {@link SqlPolicy#NAMED_SQL} placeholders.
-         *
-         * <p>The handler is shared by builders created from the resulting dialect and therefore must
-         * render distinct generated names as distinct tokens, be deterministic, side-effect free, and
-         * safe for concurrent invocation. Passing {@code null} selects
-         * {@link SqlDialect#DEFAULT_NAMED_PARAMETER_HANDLER}.</p>
-         *
-         * @param handler the named-parameter renderer, or {@code null} for the default renderer
-         * @return this builder
-         */
-        public SqlDialectBuilder namedParameterHandler(final BiConsumer<StringBuilder, String> handler) {
-            this.namedParameterHandler = handler;
-            return this;
-        }
-
-        /**
-         * Configures how builders tokenize raw SQL fragments during inspection and normalization.
-         * Passing {@code null} selects {@link SqlParser#defaultTokenizerConfig()}.
-         *
-         * @param config the immutable tokenizer configuration, or {@code null} for the default
-         * @return this builder
-         */
-        public SqlDialectBuilder tokenizerConfig(final SqlParser.TokenizerConfig config) {
-            this.tokenizerConfig = config;
-            return this;
-        }
-    }
 
     /**
      * Identifier quoting style used by SQL builders.
@@ -249,7 +188,7 @@ public class SqlDialect {
      *        version is normalized to an empty string, so {@link #version()} never returns {@code null}.
      *        Comparable via {@link #isVersionAtLeast(String)} / {@link #isVersionAtMost(String)}
      */
-    public record ProductInfo(String name, String version) {
+    public static final record ProductInfo(String name, String version) {
 
         /**
          * Canonical constructor that requires a nonblank product name and normalizes a {@code null} {@code version} to an empty string, so
@@ -272,6 +211,7 @@ public class SqlDialect {
          *
          * @param name the database product name, such as {@code "Oracle"} or {@code "MySQL"}
          * @return a new {@code ProductInfo} with the given name and an empty ({@code ""}) version
+         * @throws IllegalArgumentException if {@code name} is {@code null}, empty, or blank
          */
         public static ProductInfo of(final String name) {
             return new ProductInfo(name, "");
@@ -283,6 +223,7 @@ public class SqlDialect {
          * @param name the database product name, such as {@code "Oracle"} or {@code "MySQL"}
          * @param version the database product version, such as {@code "19c"} or {@code "9.7"}
          * @return a new {@code ProductInfo} with the given name and version
+         * @throws IllegalArgumentException if {@code name} is {@code null}, empty, or blank
          */
         public static ProductInfo of(final String name, final String version) {
             return new ProductInfo(name, version);

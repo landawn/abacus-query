@@ -96,7 +96,7 @@ public class IsNotNullTest extends TestBase {
     @Test
     public void testGetPropValue() {
         IsNotNull condition = new IsNotNull("field");
-        Expression value = condition.propValue(Expression.class);
+        SqlExpression value = condition.propValue(SqlExpression.class);
         assertNotNull(value);
         assertEquals(IsNull.NULL, value);
     }

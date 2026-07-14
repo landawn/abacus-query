@@ -66,7 +66,7 @@ import java.util.Collection;
  *     ));
  * // SQL: LEFT JOIN order_items oi ON ((o.id = oi.order_id) AND (oi.status = 'active') AND (oi.quantity > 0))
  *
- * // Using Expression for custom join logic
+ * // Using SqlExpression for custom join logic
  * LeftJoin exprJoin = new LeftJoin("orders o",
  *     Filters.expr("customers.id = o.customer_id"));
  * // SQL: LEFT JOIN orders o ON customers.id = o.customer_id
@@ -141,7 +141,7 @@ public class LeftJoin extends Join {
      *     ));
      * // SQL: LEFT JOIN order_items oi ON ((orders.id = oi.order_id) AND (oi.status = 'active') AND (oi.created_date > '2023-01-01'))
      *
-     * // Using Expression for custom join logic
+     * // Using SqlExpression for custom join logic
      * LeftJoin exprJoin = new LeftJoin("orders o",
      *     Filters.expr("customers.id = o.customer_id AND o.amount > 100"));
      * // SQL: LEFT JOIN orders o ON customers.id = o.customer_id AND o.amount > 100
@@ -151,9 +151,9 @@ public class LeftJoin extends Join {
      * @param joinCondition the condition appended after the join target. Use {@link On} (or the deprecated {@link Using}) when the SQL should
      *            include those keywords. A non-empty predicate is allowed; {@code joinCondition} itself may be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is or contains a
-     *                                  {@link Criteria}, a null operator, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public LeftJoin(final String joinEntity, final Condition joinCondition) {
         super(Operator.LEFT_JOIN, joinEntity, joinCondition);
@@ -174,7 +174,7 @@ public class LeftJoin extends Join {
      *     ));
      * // SQL: LEFT JOIN (orders o, order_items oi) ON ((c.id = o.customer_id) AND (o.id = oi.order_id))
      *
-     * // Using Expression for multiple tables
+     * // Using SqlExpression for multiple tables
      * LeftJoin exprJoin = new LeftJoin(tables,
      *     Filters.expr("c.id = o.customer_id AND o.id = oi.order_id"));
      * // SQL: LEFT JOIN (orders o, order_items oi) ON c.id = o.customer_id AND o.id = oi.order_id
@@ -185,9 +185,9 @@ public class LeftJoin extends Join {
      *            include those keywords. A non-empty predicate is allowed; {@code joinCondition} itself may be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
-     *                                  an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public LeftJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         super(Operator.LEFT_JOIN, joinEntities, joinCondition);

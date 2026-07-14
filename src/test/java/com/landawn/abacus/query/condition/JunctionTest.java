@@ -83,7 +83,7 @@ public class JunctionTest extends TestBase {
 
         assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, new TestComposableWrapper(new OrderBy("name"))));
         assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new TestComposableWrapper(new Any(subQuery))));
-        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, new TestComposableWrapper(new Expression(" "))));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, new TestComposableWrapper(new SqlExpression(" "))));
         assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new Equal()));
         Assertions.assertDoesNotThrow(() -> new Junction(Operator.AND, new TestComposableWrapper(new Equal("id", 1))));
     }
@@ -479,5 +479,10 @@ public class JunctionTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.some(subQuery)));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new And()));
+    }
+
+    @Test
+    public void testTrustedConstructorStillRejectsNonJunctionOperator() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.EQUAL, new java.util.ArrayList<Condition>(), true));
     }
 }

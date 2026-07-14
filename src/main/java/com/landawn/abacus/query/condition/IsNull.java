@@ -26,8 +26,9 @@ import com.landawn.abacus.query.Filters;
  * <p>In SQL, NULL has special properties:</p>
  * <ul>
  *   <li>NULL is not equal to anything, including itself (NULL = NULL evaluates to UNKNOWN, not true or false)</li>
- *   <li>Any arithmetic operation with NULL results in NULL</li>
- *   <li>NULL values are excluded from aggregate functions (except COUNT(*))</li>
+ *   <li>Ordinary arithmetic with NULL produces NULL</li>
+ *   <li>Standard aggregates such as SUM, AVG, MIN, MAX, and COUNT(expression) ignore NULL inputs,
+ *       while COUNT(*) counts rows</li>
  *   <li>NULL values require special IS NULL/IS NOT NULL operators for comparison</li>
  * </ul>
  * 
@@ -75,12 +76,12 @@ import com.landawn.abacus.query.Filters;
 public class IsNull extends Is {
 
     /**
-     * Shared Expression instance representing NULL.
+     * Shared SqlExpression instance representing NULL.
      * This constant is used internally to represent the NULL value in SQL.
      * It is shared across instances and referenced by {@link IsNotNull} to reduce
      * memory overhead and ensure consistency in SQL generation.
      */
-    static final Expression NULL = Filters.expr("NULL");
+    static final SqlExpression NULL = Filters.expr("NULL");
 
     /**
      * Default constructor for serialization frameworks like Kryo.

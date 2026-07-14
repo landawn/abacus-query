@@ -361,7 +361,7 @@ public enum Operator {
     /**
      * Empty operator (renders as an empty string).
      * Used as a placeholder by conditions that have no SQL operator token of their own,
-     * such as {@link Expression} (raw SQL fragments).
+     * such as {@link SqlExpression} (raw SQL fragments).
      */
     EMPTY(Strings.EMPTY);
 
@@ -394,7 +394,7 @@ public enum Operator {
     /**
      * Creates an Operator with the specified SQL representation.
      *
-     * @param sqlToken the SQL SQL representation of this operator
+     * @param sqlToken the SQL representation of this operator
      */
     Operator(final String sqlToken) {
         this.sqlToken = sqlToken;
@@ -431,7 +431,7 @@ public enum Operator {
      * Operator nil = Operator.of(null);             // null
      * }</pre>
      *
-     * @param name the SQL representation of the operator. May be {@code null}.
+     * @param name the SQL token or enum constant name. May be {@code null}; surrounding whitespace is not trimmed.
      * @return the corresponding Operator enum value, or {@code null} if {@code name} is {@code null} or not a known token/name
      */
     public static Operator of(final String name) {
@@ -449,7 +449,7 @@ public enum Operator {
     }
 
     /**
-     * Returns the SQL SQL representation of this operator.
+     * Returns the SQL representation of this operator.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -461,14 +461,14 @@ public enum Operator {
      * String emptyToken = Operator.EMPTY.sqlToken();        // "" (empty placeholder operator)
      * }</pre>
      *
-     * @return the SQL SQL representation of this operator (e.g., "=", "AND", "LIKE")
+     * @return the SQL representation of this operator (e.g., "=", "AND", "LIKE")
      */
     public String sqlToken() {
         return sqlToken;
     }
 
     /**
-     * Returns the SQL SQL representation of this operator.
+     * Returns the SQL representation of this operator.
      * This is equivalent to calling {@link #sqlToken()}.
      *
      * <p><b>Usage Examples:</b></p>
@@ -483,7 +483,7 @@ public enum Operator {
      * boolean same = Operator.IN.toString().equals(Operator.IN.sqlToken()); // true
      * }</pre>
      *
-     * @return the SQL SQL representation of this operator (e.g., "=", "AND", "LIKE")
+     * @return the SQL representation of this operator (e.g., "=", "AND", "LIKE")
      */
     @Override
     public String toString() {

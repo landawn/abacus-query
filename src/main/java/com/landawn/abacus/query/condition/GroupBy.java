@@ -33,7 +33,8 @@ import com.landawn.abacus.util.N;
  *   <li>Enables aggregate calculations on grouped data</li>
  *   <li>Can specify sort direction for each grouping column</li>
  *   <li>Often used with HAVING clause to filter groups</li>
- *   <li>Columns in SELECT must either be in GROUP BY or be aggregate functions</li>
+ *   <li>Selected expressions generally must be grouping expressions, aggregate expressions,
+ *       or otherwise permitted by the database's functional-dependency rules</li>
  * </ul>
  *
  * <p><b>&#9888;&#65039;</b> Sort directions in {@code GROUP BY} (e.g. {@code GROUP BY col ASC/DESC})
@@ -102,9 +103,9 @@ public class GroupBy extends Clause {
      * }</pre>
      *
      * @param condition the grouping condition or expression. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a {@link Criteria}, another clause,
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, or is a {@link Criteria}, another clause,
      *             an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *             operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which
+     *             operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which
      *             can be nested inside a clause
      * @see Filters#expr(String)
      */
@@ -170,7 +171,9 @@ public class GroupBy extends Clause {
 
     /**
      * Creates a new GROUP BY clause with a single property and sort direction.
-     * This allows grouping by a single column with explicit ordering of the groups.
+     * This emits a direction token after a single grouping column for dialects that support
+     * that non-standard syntax. It does not by itself guarantee result-row ordering; use
+     * {@link OrderBy} when ordering is required.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -185,7 +188,7 @@ public class GroupBy extends Clause {
      *
      * @param propOrColumnName the property or column name to group by. Must not be {@code null}, empty, or blank.
      * @param direction the sort direction (ASC or DESC). Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      */
     public GroupBy(final String propOrColumnName, final SortDirection direction) {
         this(Filters.expr(AbstractCondition.createSortExpression(propOrColumnName, direction)));
@@ -193,8 +196,8 @@ public class GroupBy extends Clause {
 
     /**
      * Creates a new GROUP BY clause with multiple properties and a single sort direction.
-     * All properties will use the same sort direction. This is useful when you want
-     * consistent ordering across all grouping columns.
+     * All properties will use the same direction token. This does not guarantee result-row
+     * ordering; use {@link OrderBy} when ordering is required.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -209,7 +212,8 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY type ASC, subtype ASC (order preserved)
      * }</pre>
      *
-     * @param propNames the collection of property names to group by. Must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements.
+     * @param propNames the collection of property names to group by. Must not be {@code null} or empty and must not contain
+     *                  {@code null}, empty, or blank elements.
      * @param direction the sort direction to apply to all properties. Must not be {@code null}.
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code direction} is {@code null}

@@ -34,7 +34,7 @@ import com.landawn.abacus.query.condition.Cell;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.ComposableCell;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.Expression;
+import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.Having;
 import com.landawn.abacus.query.condition.In;
 import com.landawn.abacus.query.condition.InSubQuery;
@@ -56,7 +56,7 @@ import com.landawn.abacus.util.Strings;
  * including condition rendering, operator handling, and NULL semantics.
  *
  * <p>Instances are not thread-safe; create a new builder per thread or per query.
- * Always call {@code build()} to finalize construction and release internal resources.
+ * Always call {@code build()} to finalize construction and release internal resources.</p>
  *
  * <p>Use one of the predefined {@link Dsl} constants based on the desired parameter style and naming
  * convention. The constant name encodes both the parameter style and the identifier naming policy. The
@@ -139,7 +139,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * It dispatches on the runtime type of {@code cond} and handles {@link Binary}, {@link Between},
      * {@link NotBetween}, {@link In}, {@link InSubQuery}, {@link NotIn}, {@link NotInSubQuery},
      * {@link Where}, {@link Having}, {@link Using}, {@link Cell}, {@link ComposableCell}, {@link Junction},
-     * {@link SubQuery} and {@link Expression}. Binary conditions with a {@code null} value and an
+     * {@link SubQuery} and {@link SqlExpression}. Binary conditions with a {@code null} value and an
      * {@code EQUAL}/{@code IS} (or {@code NOT_EQUAL}/{@code NOT_EQUAL_ANSI}/{@code IS_NOT}) operator
      * are rendered as {@code IS NULL}/{@code IS NOT NULL} respectively. Binary conditions whose operator is
      * {@code IN}/{@code NOT IN} and whose value is a collection are rendered as a full IN list
@@ -266,8 +266,8 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                     _parameters.addAll(subSP.parameters());
                 }
             }
-        } else if (cond instanceof Expression) {
-            appendStringExpr(((Expression) cond).literal(), false);
+        } else if (cond instanceof SqlExpression) {
+            appendStringExpr(((SqlExpression) cond).literal(), false);
         } else {
             throw new IllegalArgumentException("Unsupported condition type: " + cond.getClass().getName());
         }

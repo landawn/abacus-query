@@ -38,8 +38,9 @@ import com.landawn.abacus.annotation.Transient;
 import com.landawn.abacus.query.AbstractQueryBuilder.SP;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
-import com.landawn.abacus.query.condition.Expression;
+import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.Having;
+import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Using;
@@ -473,7 +474,7 @@ public class SqlBuilderTest extends TestBase {
         assertTrue(unionSql.contains("UNION"));
     }
 
-    // Expression tests
+    // SqlExpression tests
     @Test
     public void testExpressionInSelect() {
         String sql = Dsl.PSC.select("COUNT(*) as total").from("users").build().query();
@@ -482,7 +483,7 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testExpressionInWhere() {
-        Expression expr = Filters.expr("age > 18 AND status = 'active'");
+        SqlExpression expr = Filters.expr("age > 18 AND status = 'active'");
         String sql = Dsl.PSC.select("*").from("users").where(expr).build().query();
         assertNotNull(sql);
     }
@@ -860,7 +861,7 @@ public class SqlBuilderTest extends TestBase {
         assertThrows(IllegalStateException.class, () -> Dsl.PSC.select(aliases).into("account").build());
 
         // Same for select(List<Selection>).into().
-        List<Selection> selections = Arrays.asList(Selection.builder().entityClass(Account.class).build());
+        List<Selection> selections = Arrays.asList(Selection.builder(Account.class).build());
         assertThrows(IllegalStateException.class, () -> Dsl.PSC.select(selections).into("account").build());
 
         // Completing the INSERT ... SELECT still works.
@@ -872,7 +873,7 @@ public class SqlBuilderTest extends TestBase {
     public void testStaleMultiSelectsDoNotLeakAcrossSetOperation() {
         // The multi-select column list used to survive a verbatim union and be re-emitted by the
         // next from(), producing two juxtaposed SELECTs ("... UNION SELECT id FROM t2 SELECT ... FROM t3").
-        List<Selection> selections = Arrays.asList(Selection.builder().entityClass(Account.class).build());
+        List<Selection> selections = Arrays.asList(Selection.builder(Account.class).build());
         assertThrows(IllegalStateException.class, () -> Dsl.PSC.select(selections).from("account").union("SELECT id FROM t2").from("t3"));
 
         // The verbatim-union compound itself still builds.
@@ -1126,7 +1127,7 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testNamed() {
-        Map<String, Expression> result = AbstractQueryBuilder.namedPlaceholders("firstName", "lastName");
+        Map<String, SqlExpression> result = AbstractQueryBuilder.namedPlaceholders("firstName", "lastName");
         assertEquals(2, result.size());
         assertEquals(Filters.QME, result.get("firstName"));
         assertEquals(Filters.QME, result.get("lastName"));
@@ -1410,6 +1411,66 @@ public class SqlBuilderTest extends TestBase {
         String sql = Dsl.PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).build().query();
 
         assertEquals("SELECT * FROM users ORDER BY id FETCH FIRST 10 ROWS ONLY", sql);
+    }
+
+    @Test
+    public void testExplicitFetchCannotBeCombinedWithAnotherRowLimitOrTrailingOffset() {
+        SqlBuilder fetchFirst = Dsl.PSC.select("*").from("users").orderBy("id").fetchFirstRows(10);
+        assertThrows(IllegalStateException.class, () -> fetchFirst.limit(5));
+        assertThrows(IllegalStateException.class, () -> fetchFirst.offset(20));
+        assertEquals("SELECT * FROM users ORDER BY id FETCH FIRST 10 ROWS ONLY", fetchFirst.build().query());
+
+        SqlBuilder limit = Dsl.PSC.select("*").from("users").orderBy("id").limit(10);
+        assertThrows(IllegalStateException.class, () -> limit.fetchNextRows(5));
+        assertEquals("SELECT * FROM users ORDER BY id LIMIT 10", limit.build().query());
+
+        SqlBuilder limitStyleOffset = Dsl.PSC.select("*").from("users").orderBy("id").offset(20);
+        assertThrows(IllegalStateException.class, () -> limitStyleOffset.fetchNextRows(10));
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20", limitStyleOffset.build().query());
+
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY",
+                Dsl.PSC.select("*").from("users").orderBy("id").offsetRows(20).fetchNextRows(10).build().query());
+    }
+
+    @Test
+    public void testRejectedCombinedLimitDoesNotReserveLimitSlot() {
+        final SqlBuilder builder = Dsl.PSC.select("*").from("users").offset(20);
+
+        assertThrows(IllegalStateException.class, () -> builder.limit(10, 30));
+        assertFalse(builder.calledOpSet.contains("LIMIT"));
+        assertEquals("SELECT * FROM users OFFSET 20", builder.build().query());
+    }
+
+    @Test
+    public void testUnresolvedCommaLimitConsumesOffsetSlot() {
+        final SqlBuilder builder = Dsl.PSC.select("*").from("users").append(new Limit("?, ?"));
+
+        assertThrows(IllegalStateException.class, () -> builder.offset(20));
+        assertEquals("SELECT * FROM users LIMIT ?, ?", builder.build().query());
+    }
+
+    @Test
+    public void testUnresolvedFetchLimitClosesTrailingOffsetSlot() {
+        final SqlBuilder builder = Dsl.PSC.select("*").from("users").append(new Limit("FETCH FIRST ? ROWS ONLY"));
+
+        assertThrows(IllegalStateException.class, () -> builder.offset(20));
+        assertEquals("SELECT * FROM users FETCH FIRST ? ROWS ONLY", builder.build().query());
+    }
+
+    @Test
+    public void testUnresolvedFetchLimitCanFollowOffsetRows() {
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT ? ROWS ONLY",
+                Dsl.PSC.select("*").from("users").orderBy("id").offsetRows(20).append(new Limit("FETCH NEXT ? ROWS ONLY")).build().query());
+
+        final Criteria criteria = Criteria.builder().limit("FETCH NEXT ? ROWS ONLY").build();
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT ? ROWS ONLY",
+                Dsl.PSC.select("*").from("users").orderBy("id").offsetRows(20).append(criteria).build().query());
+    }
+
+    @Test
+    public void testUnresolvedLimitPlaceholderNamesDoNotConsumePaginationSlots() {
+        assertEquals("SELECT * FROM users LIMIT :OFFSET OFFSET 20", Dsl.PSC.select("*").from("users").append(new Limit(":OFFSET")).offset(20).build().query());
+        assertEquals("SELECT * FROM users LIMIT :FETCH OFFSET 20", Dsl.PSC.select("*").from("users").append(new Limit(":FETCH")).offset(20).build().query());
     }
 
     @Test
@@ -2212,6 +2273,18 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
+    public void testRejectedCriteriaWithLaterClauseConflictDoesNotAppendEarlierClauses() {
+        final SqlBuilder builder = Dsl.PSC.select("department").from("employees").orderBy("department");
+        final Criteria criteria = Criteria.builder().where(Filters.equal("active", true)).orderBy("id").build();
+
+        assertThrows(IllegalStateException.class, () -> builder.append(criteria));
+
+        final SP result = builder.build();
+        assertEquals("SELECT department FROM employees ORDER BY department", result.query());
+        assertTrue(result.parameters().isEmpty());
+    }
+
+    @Test
     public void testExpressionCondition() {
         String sql = Dsl.PSC.select("*").from("users").where(Filters.expr("age > 18 AND status = 'ACTIVE'")).build().query();
 
@@ -2830,7 +2903,7 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testQMEAsparameter() {
-        // Test using QME (Question Mark Expression) as parameter
+        // Test using QME (Question Mark SqlExpression) as parameter
         Map<String, Object> values = new LinkedHashMap<>();
         values.put("name", Filters.QME);
         values.put("age", 25);
@@ -2903,8 +2976,8 @@ public class SqlBuilderTest extends TestBase {
         assertTrue(sql.contains("HAVING COUNT(*) > 5"));
 
         // Where inside a Criteria (exercises AbstractQueryBuilder.append -> appendCondition path)
-        Criteria criteria = Criteria.builder().where(Filters.expr("status = 'ACTIVE'")).having(Filters.expr("COUNT(*) > 10")).build();
-        sql = Dsl.PSC.select("status", "COUNT(*)").from("users").groupBy("status").append(criteria).build().query();
+        Criteria criteria = Criteria.builder().where(Filters.expr("status = 'ACTIVE'")).groupBy("status").having(Filters.expr("COUNT(*) > 10")).build();
+        sql = Dsl.PSC.select("status", "COUNT(*)").from("users").append(criteria).build().query();
         assertTrue(sql.contains("WHERE status = 'ACTIVE'"));
         assertTrue(sql.contains("HAVING COUNT(*) > 10"));
     }
@@ -3496,8 +3569,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectMultipleSelections() {
-            List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", null, false, null),
-                    new Selection(Account.class, "b", "account2", null, false, null));
+            List<Selection> selections = Arrays.asList(selection(Account.class, "a", "account", null, false, null),
+                    selection(Account.class, "b", "account2", null, false, null));
 
             SqlBuilder sb = Dsl.SCSB.select(selections);
             Assertions.assertNotNull(sb);
@@ -3529,8 +3602,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectFromMultipleSelections() {
-            List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", null, false, null),
-                    new Selection(Account.class, "b", "account2", null, false, null));
+            List<Selection> selections = Arrays.asList(selection(Account.class, "a", "account", null, false, null),
+                    selection(Account.class, "b", "account2", null, false, null));
 
             SqlBuilder sb = Dsl.SCSB.selectFrom(selections);
             Assertions.assertNotNull(sb);
@@ -4072,8 +4145,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectMultipleSelections() {
-            List<Selection> selections = Arrays.asList(new Selection(User.class, "u1", "user1", null, false, null),
-                    new Selection(User.class, "u2", "user2", null, false, null));
+            List<Selection> selections = Arrays.asList(selection(User.class, "u1", "user1", null, false, null),
+                    selection(User.class, "u2", "user2", null, false, null));
 
             SqlBuilder sb = Dsl.ACSB.select(selections);
             Assertions.assertNotNull(sb);
@@ -4105,8 +4178,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectFromMultipleSelections() {
-            List<Selection> selections = Arrays.asList(new Selection(User.class, "u1", "user1", null, false, null),
-                    new Selection(User.class, "u2", "user2", null, false, null));
+            List<Selection> selections = Arrays.asList(selection(User.class, "u1", "user1", null, false, null),
+                    selection(User.class, "u2", "user2", null, false, null));
 
             SqlBuilder sb = Dsl.ACSB.selectFrom(selections);
             Assertions.assertNotNull(sb);
@@ -4594,8 +4667,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectMultipleSelections() {
-            List<Selection> selections = Arrays.asList(new Selection(Customer.class, "c1", "customer1", null, false, null),
-                    new Selection(Customer.class, "c2", "customer2", null, false, null), new Selection(Customer.class, "c3", "customer3", null, false, null));
+            List<Selection> selections = Arrays.asList(selection(Customer.class, "c1", "customer1", null, false, null),
+                    selection(Customer.class, "c2", "customer2", null, false, null), selection(Customer.class, "c3", "customer3", null, false, null));
 
             SqlBuilder sb = Dsl.LCSB.select(selections);
             Assertions.assertNotNull(sb);
@@ -4627,8 +4700,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectFromMultipleSelections() {
-            List<Selection> selections = Arrays.asList(new Selection(Customer.class, "c1", "customer1", null, false, null),
-                    new Selection(Customer.class, "c2", "customer2", null, false, null));
+            List<Selection> selections = Arrays.asList(selection(Customer.class, "c1", "customer1", null, false, null),
+                    selection(Customer.class, "c2", "customer2", null, false, null));
 
             SqlBuilder sb = Dsl.LCSB.selectFrom(selections);
             Assertions.assertNotNull(sb);
@@ -5358,8 +5431,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelect_MultipleSelections() {
-            List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
-                    new Selection(User.class, "u2", "user2", null, false, null));
+            List<Selection> selections = Arrays.asList(selection(User.class, "u", "user", null, false, null),
+                    selection(User.class, "u2", "user2", null, false, null));
 
             SqlBuilder builder = Dsl.PSB.select(selections);
             assertNotNull(builder);
@@ -5386,8 +5459,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectFrom_MultipleSelections() {
-            List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
-                    new Selection(User.class, "u2", "user2", null, false, null));
+            List<Selection> selections = Arrays.asList(selection(User.class, "u", "user", null, false, null),
+                    selection(User.class, "u2", "user2", null, false, null));
 
             SqlBuilder builder = Dsl.PSB.selectFrom(selections);
             assertNotNull(builder);
@@ -5861,8 +5934,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelect_MultipleSelections() {
-            List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", Arrays.asList("id", "firstName"), false, null),
-                    new Selection(Account.class, "a2", "account2", null, false, new HashSet<>(Arrays.asList("email"))));
+            List<Selection> selections = Arrays.asList(selection(Account.class, "a", "account", Arrays.asList("id", "firstName"), false, null),
+                    selection(Account.class, "a2", "account2", null, false, new HashSet<>(Arrays.asList("email"))));
 
             SqlBuilder builder = Dsl.PSC.select(selections);
             assertNotNull(builder);
@@ -6736,8 +6809,8 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testComplexQueries() {
             // Test complex query with multiple selections
-            List<Selection> selections = Arrays.asList(new Selection(UserProfile.class, "p1", "profile1", Arrays.asList("id", "firstName"), false, null),
-                    new Selection(UserProfile.class, "p2", "profile2", null, false, new HashSet<>(Arrays.asList("sessionData", "lastLoginDate"))));
+            List<Selection> selections = Arrays.asList(selection(UserProfile.class, "p1", "profile1", Arrays.asList("id", "firstName"), false, null),
+                    selection(UserProfile.class, "p2", "profile2", null, false, new HashSet<>(Arrays.asList("sessionData", "lastLoginDate"))));
 
             SqlBuilder builder = Dsl.PLC.select(selections);
             String sql = builder.from("userProfile p1, userProfile p2").build().query();
@@ -7274,8 +7347,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectWithSelectionList() {
-            List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
-                    new Selection(User.class, "m", "manager", null, false, N.asSet("password")));
+            List<Selection> selections = Arrays.asList(selection(User.class, "u", "user", null, false, null),
+                    selection(User.class, "m", "manager", null, false, N.asSet("password")));
 
             String sql = Dsl.NSB.select(selections).from("users u").join("users m").on("u.manager_id = m.id").build().query();
             Assertions.assertNotNull(sql);
@@ -7301,8 +7374,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectFromWithSelectionList() {
-            List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
-                    new Selection(User.class, "m", "manager", null, false, null));
+            List<Selection> selections = Arrays.asList(selection(User.class, "u", "user", null, false, null),
+                    selection(User.class, "m", "manager", null, false, null));
 
             String sql = Dsl.NSB.selectFrom(selections).build().query();
             Assertions.assertNotNull(sql);
@@ -8167,8 +8240,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectWithSelectionList() {
-            List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
-                    new Selection(User.class, "m", "manager", null, false, Set.of("status")));
+            List<Selection> selections = Arrays.asList(selection(User.class, "u", "user", null, false, null),
+                    selection(User.class, "m", "manager", null, false, Set.of("status")));
 
             String sql = Dsl.NSC.select(selections).from("users u").build().query();
             Assertions.assertNotNull(sql);
@@ -8194,8 +8267,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectFromWithSelectionList() {
-            List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
-                    new Selection(User.class, "m", "manager", null, false, null));
+            List<Selection> selections = Arrays.asList(selection(User.class, "u", "user", null, false, null),
+                    selection(User.class, "m", "manager", null, false, null));
 
             String sql = Dsl.NSC.selectFrom(selections).build().query();
             Assertions.assertNotNull(sql);
@@ -8868,8 +8941,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectWithSelectionList() {
-            List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", null, false, null),
-                    new Selection(Account.class, "o", "order", null, true, null));
+            List<Selection> selections = Arrays.asList(selection(Account.class, "a", "account", null, false, null),
+                    selection(Account.class, "o", "order", null, true, null));
             String sql = Dsl.NAC.select(selections).from("ACCOUNT a").build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
@@ -8900,8 +8973,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectFromWithSelectionList() {
-            List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", null, false, null),
-                    new Selection(Account.class, "o", "order", null, true, null));
+            List<Selection> selections = Arrays.asList(selection(Account.class, "a", "account", null, false, null),
+                    selection(Account.class, "o", "order", null, true, null));
             String sql = Dsl.NAC.selectFrom(selections).where(Filters.eq("a.ID", "o.ACCOUNT_ID")).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
@@ -9656,8 +9729,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectWithSelectionList() {
-            List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", null, false, null),
-                    new Selection(Account.class, "o", "order", null, true, null));
+            List<Selection> selections = Arrays.asList(selection(Account.class, "a", "account", null, false, null),
+                    selection(Account.class, "o", "order", null, true, null));
             String sql = Dsl.NLC.select(selections).from("account a").build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("SELECT"));
@@ -9688,8 +9761,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectFromWithSelectionList() {
-            List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", null, false, null),
-                    new Selection(Account.class, "o", "order", null, true, null));
+            List<Selection> selections = Arrays.asList(selection(Account.class, "a", "account", null, false, null),
+                    selection(Account.class, "o", "order", null, true, null));
             String sql = Dsl.NLC.selectFrom(selections).where(Filters.eq("a.id", "o.accountId")).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("FROM"));
@@ -10870,8 +10943,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectWithMultiSelects() {
-            List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
-                    new Selection(User.class, "u2", "user2", null, false, null));
+            List<Selection> selections = Arrays.asList(selection(User.class, "u", "user", null, false, null),
+                    selection(User.class, "u2", "user2", null, false, null));
             String sql = Dsl.MSC.select(selections).from("test_users u, test_users u2").build().query();
             Assertions.assertTrue(sql.contains("SELECT"));
             Assertions.assertTrue(sql.contains("user."));
@@ -10898,8 +10971,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectFromWithMultiSelects() {
-            List<Selection> selections = Arrays.asList(new Selection(User.class, "u", "user", null, false, null),
-                    new Selection(User.class, "u2", "user2", null, false, null));
+            List<Selection> selections = Arrays.asList(selection(User.class, "u", "user", null, false, null),
+                    selection(User.class, "u2", "user2", null, false, null));
             String sql = Dsl.MSC.selectFrom(selections).build().query();
             Assertions.assertTrue(sql.contains("FROM"));
             Assertions.assertTrue(sql.contains("user."));
@@ -11888,8 +11961,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectWithMultipleSelections() {
-            List<Selection> selections = Arrays.asList(new Selection(Account.class, "a", "account", null, true, null),
-                    new Selection(Account.class, "a2", "account2", Arrays.asList("id", "name"), false, null));
+            List<Selection> selections = Arrays.asList(selection(Account.class, "a", "account", null, true, null),
+                    selection(Account.class, "a2", "account2", Arrays.asList("id", "name"), false, null));
             String sql = Dsl.MLC.select(selections).from("account a").innerJoin("account a2").on("a.id = a2.parentId").build().query();
             Assertions.assertTrue(sql.contains("account."));
             Assertions.assertTrue(sql.contains("account2."));
@@ -11946,7 +12019,7 @@ public class SqlBuilderTest extends TestBase {
         }
 
         private List<Selection> createComplexSelections() {
-            return Arrays.asList(new Selection(Account.class, "a", "account", null, false, null));
+            return Arrays.asList(selection(Account.class, "a", "account", null, false, null));
         }
 
         @Test
@@ -12151,9 +12224,11 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
-    public void testSqlBuilder_PSC_selectWithOffsetAndLimit() {
-        String sql = Dsl.PSC.select("id", "name").from("users").offset(10).limit(5).build().query();
-        assertNotNull(sql);
+    public void testSqlBuilder_PSC_rejectsLimitAfterOffset() {
+        final SqlBuilder builder = Dsl.PSC.select("id", "name").from("users").offset(10);
+
+        assertThrows(IllegalStateException.class, () -> builder.limit(5));
+        assertEquals("SELECT id, name FROM users OFFSET 10", builder.build().query());
     }
 
     @Test
@@ -12193,8 +12268,8 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testMSB_SelectFromMultiSelectionAndBatchInsert() {
-        List<Selection> selections = Arrays.asList(new Selection(Account.class, "a1", "account1", null, false, null),
-                new Selection(Account.class, "a2", "account2", null, false, null));
+        List<Selection> selections = Arrays.asList(selection(Account.class, "a1", "account1", null, false, null),
+                selection(Account.class, "a2", "account2", null, false, null));
 
         SqlBuilder selectBuilder = Dsl.MSB.selectFrom(selections);
         List<Map<String, Object>> rows = new ArrayList<>();
@@ -12397,17 +12472,17 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testInWithExpressionValueIsEmbeddedNotDropped_Pass3() {
-        SP sp = Dsl.PSC.select("id").from("test_account").where(Filters.in("status", Arrays.asList(Expression.of("'ACTIVE'"), "PENDING"))).build();
-        assertTrue(sp.query().contains("'ACTIVE'"), "Expression literal must be embedded in IN list: " + sp.query());
-        assertTrue(sp.query().contains("?"), "Non-Expression value must still be parameterized: " + sp.query());
-        assertEquals(1, sp.parameters().size(), "Only the non-Expression value should be bound; got: " + sp.parameters());
+        SP sp = Dsl.PSC.select("id").from("test_account").where(Filters.in("status", Arrays.asList(SqlExpression.of("'ACTIVE'"), "PENDING"))).build();
+        assertTrue(sp.query().contains("'ACTIVE'"), "SqlExpression literal must be embedded in IN list: " + sp.query());
+        assertTrue(sp.query().contains("?"), "Non-SqlExpression value must still be parameterized: " + sp.query());
+        assertEquals(1, sp.parameters().size(), "Only the non-SqlExpression value should be bound; got: " + sp.parameters());
         assertEquals("PENDING", sp.parameters().get(0));
     }
 
     @Test
     public void testNotInWithExpressionValueIsEmbeddedNotDropped_Pass3() {
-        SP sp = Dsl.PSC.select("id").from("test_account").where(Filters.notIn("status", Arrays.asList(Expression.of("'DELETED'"), "ARCHIVED"))).build();
-        assertTrue(sp.query().contains("'DELETED'"), "Expression literal must be embedded in NOT IN list: " + sp.query());
+        SP sp = Dsl.PSC.select("id").from("test_account").where(Filters.notIn("status", Arrays.asList(SqlExpression.of("'DELETED'"), "ARCHIVED"))).build();
+        assertTrue(sp.query().contains("'DELETED'"), "SqlExpression literal must be embedded in NOT IN list: " + sp.query());
         assertTrue(sp.query().contains("NOT IN"));
         assertEquals(1, sp.parameters().size());
         assertEquals("ARCHIVED", sp.parameters().get(0));
@@ -12423,9 +12498,9 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testNamedInWithExpressionValue_Pass3() {
-        SP sp = Dsl.NSC.select("id").from("test_account").where(Filters.in("status", Arrays.asList(Expression.of("'ACTIVE'"), "PENDING"))).build();
-        assertTrue(sp.query().contains("'ACTIVE'"), "Expression must be embedded in named IN list: " + sp.query());
-        assertTrue(sp.query().contains(":"), "Non-Expression value must use named placeholder: " + sp.query());
+        SP sp = Dsl.NSC.select("id").from("test_account").where(Filters.in("status", Arrays.asList(SqlExpression.of("'ACTIVE'"), "PENDING"))).build();
+        assertTrue(sp.query().contains("'ACTIVE'"), "SqlExpression must be embedded in named IN list: " + sp.query());
+        assertTrue(sp.query().contains(":"), "Non-SqlExpression value must use named placeholder: " + sp.query());
         assertEquals(1, sp.parameters().size());
         assertEquals("PENDING", sp.parameters().get(0));
     }
@@ -13343,8 +13418,10 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testMultiSelectionsValidateInputs() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(new Selection(Account.class, "a", "bad\"alias", Arrays.asList("id"), false, null)));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(new Selection(Account.class, "a", "account", Arrays.asList("   "), false, null)));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(selection(Account.class, "a", "bad\"alias", Arrays.asList("id"), false, null)));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(selection(Account.class, "a", "account", Arrays.asList("   "), false, null)));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(Account.class, "a", "account", (Class<?>) null, "b", "other"));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.selectFrom(Account.class, "a", "account", (Class<?>) null, "b", "other"));
     }
 
     @Test
@@ -13400,6 +13477,45 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
+    public void testSiblingSetOperationRejectsMixedSqlPoliciesWhenNamedParametersAreGenerated() {
+        SqlBuilder left = Dsl.NSC.select("id").from("current_records");
+        SqlBuilder right = Dsl.PSC.select("id").from("archived_records").where(Filters.equal("active", true));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> left.union(right));
+        assertTrue(ex.getMessage().contains("parent's SQL policy"), ex.getMessage());
+        assertEquals("SELECT id FROM current_records", left.build().query());
+        assertEquals("SELECT id FROM archived_records WHERE active = ?", right.build().query());
+
+        assertEquals("SELECT id FROM current_records WHERE active = :active UNION SELECT id FROM archived_records",
+                Dsl.NSC.select("id")
+                        .from("current_records")
+                        .where(Filters.equal("active", true))
+                        .union(Dsl.PSC.select("id").from("archived_records"))
+                        .build()
+                        .query());
+
+        SqlBuilder questionMarkLeft = Dsl.NSC.select("id").from("current_records");
+        SqlBuilder questionMark = Dsl.PSC.select("id").from("archived_records").where(Filters.equal("active", Filters.QME));
+        assertThrows(IllegalArgumentException.class, () -> questionMarkLeft.union(questionMark));
+        assertEquals("SELECT id FROM current_records", questionMarkLeft.build().query());
+        assertEquals("SELECT id FROM archived_records WHERE active = ?", questionMark.build().query());
+    }
+
+    @Test
+    public void testSiblingSetOperationDetectsParametersGeneratedInsideStructuredSubQuery() {
+        final SqlBuilder left = Dsl.NSC.select("id").from("current_records");
+        final SubQuery activeOwners = Filters.subQuery("owners", Arrays.asList("id"), Filters.equal("active", true));
+        final SqlBuilder right = Dsl.PSC.select("id").from("archived_records").where(Filters.in("owner_id", activeOwners));
+
+        assertThrows(IllegalArgumentException.class, () -> left.union(right));
+        assertEquals("SELECT id FROM current_records", left.build().query());
+
+        final SP rightSql = right.build();
+        assertEquals("SELECT id FROM archived_records WHERE owner_id IN (SELECT id FROM owners WHERE active = ?)", rightSql.query());
+        assertEquals(Arrays.asList(true), rightSql.parameters());
+    }
+
+    @Test
     public void testCompleteLiteralSetOperandsCanBeChained() {
         String sql = Dsl.PSC.select("id")
                 .from("current_records")
@@ -13420,7 +13536,60 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testBatchInsertRejectsRowsWithNoRemainingColumns() {
+        final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
+
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.batchInsert(Arrays.asList(new AllNullBatchEntity(), new AllNullBatchEntity())));
+        assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                "Rejected input must not allocate a builder whose pooled StringBuilder cannot be released");
+    }
+
+    @Test
+    public void testCountRejectsBlankTableBeforeAllocatingBuilder() {
+        final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
+
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.count("   "));
+        assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                "Rejected input must not allocate a builder whose pooled StringBuilder cannot be released");
+    }
+
+    @Test
+    public void testBatchInsertUsesOneOuterCollectionSnapshot() {
+        final BatchEntityWithId beanRow = new BatchEntityWithId();
+        beanRow.setName("correct");
+
+        final Map<String, Object> laterMapRow = new LinkedHashMap<>();
+        laterMapRow.put("otherId", 999L);
+        laterMapRow.put("name", "wrong");
+
+        final Collection<Object> changingRows = new java.util.AbstractCollection<>() {
+            private int iteratorCalls;
+
+            @Override
+            public java.util.Iterator<Object> iterator() {
+                return Collections.<Object> singleton(iteratorCalls++ == 0 ? beanRow : laterMapRow).iterator();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        final SP result = Dsl.PSC.batchInsert(changingRows).into("batch_entity").build();
+
+        assertEquals("INSERT INTO batch_entity (other_id, name) VALUES (?, ?)", result.query());
+        assertEquals(Arrays.asList(0L, "correct"), result.parameters());
+    }
+
+    private static Selection selection(final Class<?> entityClass, final String tableAlias, final String classAlias, final Collection<String> includedPropNames,
+            final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
+        return Selection.builder(entityClass)
+                .tableAlias(tableAlias)
+                .classAlias(classAlias)
+                .includedPropNames(includedPropNames)
+                .includeSubEntityProperties(includeSubEntityProperties)
+                .excludedPropNames(excludedPropNames)
+                .build();
     }
 
     static final class AllNullBatchEntity {

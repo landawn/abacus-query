@@ -90,7 +90,7 @@ public class Using extends Cell {
 
     /**
      * The validated, unqualified column names this USING clause joins on. Stored separately from the
-     * wrapped {@link Expression} so the original column list is recoverable via {@link #columnNames()}.
+     * wrapped {@link SqlExpression} so the original column list is recoverable via {@link #columnNames()}.
      * May be {@code null} for uninitialized instances produced by the package-private default constructor
      * (e.g., during Kryo deserialization). Not part of {@link #equals(Object)}/{@link #hashCode()}, which
      * already account for these columns through the wrapped condition.

@@ -319,7 +319,7 @@ public class EqualTest extends TestBase {
 
     @Test
     public void testWithExpression() {
-        Expression expr = Expression.of("CURRENT_TIMESTAMP");
+        SqlExpression expr = SqlExpression.of("CURRENT_TIMESTAMP");
         Equal eq = new Equal("lastModified", expr);
 
         Assertions.assertEquals(expr, eq.propValue());

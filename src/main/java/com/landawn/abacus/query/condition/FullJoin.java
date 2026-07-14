@@ -20,8 +20,9 @@ import java.util.Collection;
  * Represents a FULL JOIN (a.k.a. FULL OUTER JOIN) operation in SQL queries.
  * A FULL JOIN returns all rows from both tables: matched rows are combined,
  * and unmatched rows from either side are returned with NULLs filled in for
- * the columns of the other table. It is equivalent to the union of the
- * results of a LEFT JOIN and a RIGHT JOIN on the same condition.
+ * the columns of the other table. Conceptually it combines the matched rows
+ * with the unmatched rows from each side; mechanically rewriting it as a
+ * {@code LEFT JOIN UNION RIGHT JOIN} can change duplicate (bag) semantics.
  * 
  * <p>FULL JOIN is useful when you need to see all records from both tables,
  * regardless of whether they have matching values. It's particularly valuable
@@ -128,7 +129,7 @@ public class FullJoin extends Join {
      *     ));
      * // SQL: FULL JOIN external_inventory ei ON ((internal_inventory.product_id = ei.product_id) AND (ei.active = true) AND (ei.updated_date > '2023-01-01'))
      *
-     * // Using Expression for custom join logic
+     * // Using SqlExpression for custom join logic
      * FullJoin exprJoin = new FullJoin("departments d",
      *     Filters.expr("employees.dept_id = d.id AND d.active = true"));
      * // SQL: FULL JOIN departments d ON employees.dept_id = d.id AND d.active = true
@@ -138,9 +139,10 @@ public class FullJoin extends Join {
      * @param joinCondition the condition appended after the join target. Use {@link On} (or the deprecated {@link Using}) when the SQL should
      *            include those keywords. A non-empty predicate is allowed; {@code joinCondition} itself may be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is or contains a
-     *                                  {@link Criteria}, a null operator, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
+     *                                  {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public FullJoin(final String joinEntity, final Condition joinCondition) {
         super(Operator.FULL_JOIN, joinEntity, joinCondition);
@@ -161,7 +163,7 @@ public class FullJoin extends Join {
      *     ));
      * // SQL: FULL JOIN (employees e, contractors c) ON ((d.id = e.dept_id) AND (d.id = c.dept_id))
      *
-     * // Using Expression for multiple tables
+     * // Using SqlExpression for multiple tables
      * FullJoin exprJoin = new FullJoin(tables,
      *     Filters.expr("d.id = e.dept_id AND d.id = c.dept_id"));
      * // SQL: FULL JOIN (employees e, contractors c) ON d.id = e.dept_id AND d.id = c.dept_id
@@ -172,9 +174,9 @@ public class FullJoin extends Join {
      *            include those keywords. A non-empty predicate is allowed; {@code joinCondition} itself may be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
-     *                                  an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public FullJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         super(Operator.FULL_JOIN, joinEntities, joinCondition);

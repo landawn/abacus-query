@@ -83,30 +83,30 @@ import com.landawn.abacus.util.Strings;
  * in query conditions. It also provides utility methods for building SQL expressions
  * and mathematical/string functions.
  *
- * <p>Expressions are cached for performance optimization. The same expression literal
- * will return the same Expression instance when created through {@link #of(String)}.
+ * <p>Expressions are cached for performance optimization. The same expression text
+ * will return the same {@code SqlExpression} instance when created through {@link #of(String)}.
  * This helps reduce memory usage and improves performance for frequently used expressions.</p>
  *
  * <p>The class provides numerous static helper methods for creating common SQL expression
  * strings, including arithmetic operations, string functions, mathematical functions, and
  * comparison operations. Most of these helpers return raw SQL fragments as {@link String}
  * (suitable for passing back into {@link #of(String)} or {@link Filters#expr(String)}),
- * not {@code Expression} instances.</p>
+ * not {@code SqlExpression} instances.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple expression
- * Expression expr = Expression.of("price * 0.9");
+ * SqlExpression expr = SqlExpression.of("price * 0.9");
  * 
  * // Using in a condition
  * Condition discountPrice = Filters.expr("price * 0.9 < 100");
  * 
  * // SQL functions
- * String upperName = Expression.upper("name");
- * String avgPrice = Expression.avg("price");
+ * String upperName = SqlExpression.upper("name");
+ * String avgPrice = SqlExpression.avg("price");
  * 
- * // Complex expressions (use Expression.of() for column references to avoid quoting)
- * String complex = Expression.plus(Expression.of("base_price"), Expression.of("tax"), Expression.of("shipping"));
+ * // Complex expressions (use SqlExpression.of() for column references to avoid quoting)
+ * String complex = SqlExpression.plus(SqlExpression.of("base_price"), SqlExpression.of("tax"), SqlExpression.of("shipping"));
  * // Returns: "base_price + tax + shipping"
  * }</pre>
  *
@@ -115,7 +115,7 @@ import com.landawn.abacus.util.Strings;
  * @see Filters#expr(String)
  * @see Operator#EMPTY
  */
-public class Expression extends ComposableCondition {
+public class SqlExpression extends ComposableCondition {
 
     /** Lowercase {@code "null"} literal used when rendering a null value (distinct from the {@code "NULL"} SQL keyword in {@link #NULL_KEYWORD}). */
     static final String NULL_STRING = Strings.NULL;
@@ -130,7 +130,7 @@ public class Expression extends ComposableCondition {
     /** Framework-specific sentinel rendered as the right-hand side of {@code IS BLANK} / {@code IS NOT BLANK}. */
     private static final String BLANK_KEYWORD = "BLANK";
 
-    private static final Map<String, Expression> cachedExpression = new ConcurrentHashMap<>();
+    private static final Map<String, SqlExpression> cachedExpression = new ConcurrentHashMap<>();
 
     private static final Set<String> SQL_KEY_WORDS = N.newHashSet(1024);
 
@@ -167,38 +167,39 @@ public class Expression extends ComposableCondition {
     final String literal;
 
     /** Lazily memoized {@link SqlParser#parse(String)} result for {@link #literal} (performance only). */
-    private transient List<String> cachedParsedLiteral;
+    private transient volatile List<String> cachedParsedLiteral;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * This constructor creates an uninitialized Expression instance and should not be used
+     * This constructor creates an uninitialized {@code SqlExpression} instance and should not be used
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
-    Expression() {
+    SqlExpression() {
         literal = null;
     }
 
     /**
-     * Constructs a new {@code Expression} with the specified SQL literal.
-     * The literal can contain any valid SQL expression, including functions, operators,
+     * Constructs a new {@code SqlExpression} with the specified raw SQL expression text.
+     * The text can contain any valid SQL expression, including functions, operators,
      * column references, and complex expressions.
      *
-     * <p>Note: For frequently used expressions, prefer {@link #of(String)} instead,
-     * which provides instance caching for better performance and memory efficiency.</p>
+     * <p>For a fixed expression that is reused, {@link #of(String)} can avoid repeated allocation by
+     * returning a cached instance. Prefer this constructor for one-off or dynamically generated
+     * literals because factory entries are retained for the lifetime of the class loader.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression expr1 = new Expression("CURRENT_TIMESTAMP");
-     * Expression expr2 = new Expression("price * quantity");
-     * Expression expr3 = new Expression("CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END");
-     * Expression expr4 = new Expression("COALESCE(middle_name, '')");
+     * SqlExpression expr1 = new SqlExpression("CURRENT_TIMESTAMP");
+     * SqlExpression expr2 = new SqlExpression("price * quantity");
+     * SqlExpression expr3 = new SqlExpression("CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END");
+     * SqlExpression expr4 = new SqlExpression("COALESCE(middle_name, '')");
      * // expr4.toString() returns: "COALESCE(middle_name, '')"
      * }</pre>
      *
-     * @param literal the SQL expression as a string (must not be {@code null})
+     * @param literal the raw SQL expression text (must not be {@code null})
      * @throws IllegalArgumentException if {@code literal} is {@code null}
      */
-    public Expression(final String literal) {
+    public SqlExpression(final String literal) {
         super(Operator.EMPTY);
 
         if (literal == null) {
@@ -209,14 +210,14 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Returns the SQL literal string of this expression.
+     * Returns the raw SQL text represented by this expression.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression expr = new Expression("price * quantity");
+     * SqlExpression expr = new SqlExpression("price * quantity");
      * String literal = expr.literal();   // Returns "price * quantity"
      *
-     * Expression expr2 = Expression.of("CURRENT_TIMESTAMP");
+     * SqlExpression expr2 = SqlExpression.of("CURRENT_TIMESTAMP");
      * String literal2 = expr2.literal();   // Returns "CURRENT_TIMESTAMP"
      * }</pre>
      *
@@ -229,33 +230,33 @@ public class Expression extends ComposableCondition {
     }
 
     /**
-     * Creates or retrieves a cached Expression instance for the given literal.
+     * Creates or retrieves a cached {@code SqlExpression} instance for the given expression text.
      * This method uses caching to ensure that expressions with the same literal
      * share the same instance, improving memory efficiency and performance.
      *
      * <p>Note: the cache is unbounded and retains every distinct literal for the lifetime of the
-     * JVM, so prefer the {@link #Expression(String) constructor} for dynamically-generated literals.</p>
+     * JVM, so prefer the {@link #SqlExpression(String) constructor} for dynamically-generated literals.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression expr1 = Expression.of("CURRENT_DATE");
-     * Expression expr2 = Expression.of("CURRENT_DATE");
+     * SqlExpression expr1 = SqlExpression.of("CURRENT_DATE");
+     * SqlExpression expr2 = SqlExpression.of("CURRENT_DATE");
      * // expr1 == expr2 (same instance due to caching)
      * 
-     * Expression calc = Expression.of("price * 1.1");
+     * SqlExpression calc = SqlExpression.of("price * 1.1");
      * // Reuse the same expression in multiple places
      * }</pre>
      *
-     * @param literal the SQL expression string (must not be {@code null})
-     * @return a cached or newly created Expression instance for the given literal
+     * @param literal the raw SQL expression text (must not be {@code null})
+     * @return a cached or newly created {@code SqlExpression} instance for the given text
      * @throws IllegalArgumentException if {@code literal} is {@code null}
      */
-    public static Expression of(final String literal) {
+    public static SqlExpression of(final String literal) {
         if (literal == null) {
             throw new IllegalArgumentException("literal must not be null");
         }
 
-        return cachedExpression.computeIfAbsent(literal, Expression::new);
+        return cachedExpression.computeIfAbsent(literal, SqlExpression::new);
     }
 
     /**
@@ -265,13 +266,13 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.equal("age", 25);
+     * String expr = SqlExpression.equal("age", 25);
      * // Returns: "age = 25"
      *
-     * String expr2 = Expression.equal("status", "active");
+     * String expr2 = SqlExpression.equal("status", "active");
      * // Returns: "status = 'active'"
      *
-     * String expr3 = Expression.equal("middle_name", null);
+     * String expr3 = SqlExpression.equal("middle_name", null);
      * // Returns: "middle_name IS NULL"
      * }</pre>
      *
@@ -290,7 +291,7 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.eq("user_id", 123);
+     * String expr = SqlExpression.eq("user_id", 123);
      * // Returns: "user_id = 123"
      * }</pre>
      *
@@ -310,13 +311,13 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.notEqual("status", "INACTIVE");
+     * String expr = SqlExpression.notEqual("status", "INACTIVE");
      * // Returns: "status != 'INACTIVE'"
      *
-     * String expr2 = Expression.notEqual("count", 0);
+     * String expr2 = SqlExpression.notEqual("count", 0);
      * // Returns: "count != 0"
      *
-     * String expr3 = Expression.notEqual("email", null);
+     * String expr3 = SqlExpression.notEqual("email", null);
      * // Returns: "email IS NOT NULL"
      * }</pre>
      *
@@ -335,7 +336,7 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.ne("type", "guest");
+     * String expr = SqlExpression.ne("type", "guest");
      * // Returns: "type != 'guest'"
      * }</pre>
      *
@@ -354,10 +355,10 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.greaterThan("salary", 50000);
+     * String expr = SqlExpression.greaterThan("salary", 50000);
      * // Returns: "salary > 50000"
      * 
-     * String expr2 = Expression.greaterThan("created_date", "2024-01-01");
+     * String expr2 = SqlExpression.greaterThan("created_date", "2024-01-01");
      * // Returns: "created_date > '2024-01-01'"
      * }</pre>
      *
@@ -376,7 +377,7 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.gt("age", 18);
+     * String expr = SqlExpression.gt("age", 18);
      * // Returns: "age > 18"
      * }</pre>
      *
@@ -395,7 +396,7 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.greaterThanOrEqual("score", 60);
+     * String expr = SqlExpression.greaterThanOrEqual("score", 60);
      * // Returns: "score >= 60"
      * }</pre>
      *
@@ -414,7 +415,7 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.ge("quantity", 1);
+     * String expr = SqlExpression.ge("quantity", 1);
      * // Returns: "quantity >= 1"
      * }</pre>
      *
@@ -433,7 +434,7 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.lessThan("price", 100);
+     * String expr = SqlExpression.lessThan("price", 100);
      * // Returns: "price < 100"
      * }</pre>
      *
@@ -452,7 +453,7 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.lt("stock", 10);
+     * String expr = SqlExpression.lt("stock", 10);
      * // Returns: "stock < 10"
      * }</pre>
      *
@@ -471,7 +472,7 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.lessThanOrEqual("discount", 50);
+     * String expr = SqlExpression.lessThanOrEqual("discount", 50);
      * // Returns: "discount <= 50"
      * }</pre>
      *
@@ -490,7 +491,7 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.le("temperature", 32);
+     * String expr = SqlExpression.le("temperature", 32);
      * // Returns: "temperature <= 32"
      * }</pre>
      *
@@ -510,10 +511,10 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.between("age", 18, 65);
+     * String expr = SqlExpression.between("age", 18, 65);
      * // Returns: "age BETWEEN 18 AND 65"
      * 
-     * String expr2 = Expression.between("price", 10.0, 50.0);
+     * String expr2 = SqlExpression.between("price", 10.0, 50.0);
      * // Returns: "price BETWEEN 10.0 AND 50.0"
      * }</pre>
      *
@@ -537,10 +538,10 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.notBetween("age", 18, 65);
+     * String expr = SqlExpression.notBetween("age", 18, 65);
      * // Returns: "age NOT BETWEEN 18 AND 65"
      *
-     * String expr2 = Expression.notBetween("price", 10.0, 50.0);
+     * String expr2 = SqlExpression.notBetween("price", 10.0, 50.0);
      * // Returns: "price NOT BETWEEN 10.0 AND 50.0"
      * }</pre>
      *
@@ -560,13 +561,13 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.like("name", "John%");
+     * String expr = SqlExpression.like("name", "John%");
      * // Returns: "name LIKE 'John%'"
      * 
-     * String expr2 = Expression.like("email", "%@gmail.com");
+     * String expr2 = SqlExpression.like("email", "%@gmail.com");
      * // Returns: "email LIKE '%@gmail.com'"
      * 
-     * String expr3 = Expression.like("code", "A__");
+     * String expr3 = SqlExpression.like("code", "A__");
      * // Returns: "code LIKE 'A__'" (matches 'A' followed by exactly 2 characters)
      * }</pre>
      *
@@ -585,10 +586,10 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.notLike("name", "John%");
+     * String expr = SqlExpression.notLike("name", "John%");
      * // Returns: "name NOT LIKE 'John%'"
      *
-     * String expr2 = Expression.notLike("email", "%@gmail.com");
+     * String expr2 = SqlExpression.notLike("email", "%@gmail.com");
      * // Returns: "email NOT LIKE '%@gmail.com'"
      * }</pre>
      *
@@ -606,8 +607,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.isNull("email");          // Returns: "email IS NULL"
-     * String expr2 = Expression.isNull("middle_name");   // Returns: "middle_name IS NULL"
+     * String expr = SqlExpression.isNull("email");          // Returns: "email IS NULL"
+     * String expr2 = SqlExpression.isNull("middle_name");   // Returns: "middle_name IS NULL"
      * }</pre>
      *
      * @param expr the expression to check for null
@@ -622,8 +623,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.isNotNull("email");    // Returns: "email IS NOT NULL"
-     * String expr2 = Expression.isNotNull("phone");   // Returns: "phone IS NOT NULL"
+     * String expr = SqlExpression.isNotNull("email");    // Returns: "email IS NOT NULL"
+     * String expr2 = SqlExpression.isNotNull("phone");   // Returns: "phone IS NOT NULL"
      * }</pre>
      *
      * @param expr the expression to check for not null
@@ -641,8 +642,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.isNullOrEmpty("description");   // Returns: "description IS BLANK"
-     * String expr2 = Expression.isNullOrEmpty("address");      // Returns: "address IS BLANK"
+     * String expr = SqlExpression.isNullOrEmpty("description");   // Returns: "description IS BLANK"
+     * String expr2 = SqlExpression.isNullOrEmpty("address");      // Returns: "address IS BLANK"
      * }</pre>
      *
      * @param expr the column reference or expression to check
@@ -660,8 +661,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.isNotNullAndNotEmpty("name");       // Returns: "name IS NOT BLANK"
-     * String expr2 = Expression.isNotNullAndNotEmpty("comment");   // Returns: "comment IS NOT BLANK"
+     * String expr = SqlExpression.isNotNullAndNotEmpty("name");       // Returns: "name IS NOT BLANK"
+     * String expr2 = SqlExpression.isNotNullAndNotEmpty("comment");   // Returns: "comment IS NOT BLANK"
      * }</pre>
      *
      * @param expr the column reference or expression to check
@@ -677,15 +678,15 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.and("active = true", "age > 18", "status = 'APPROVED'");
+     * String expr = SqlExpression.and("active = true", "age > 18", "status = 'APPROVED'");
      * // Returns: "active = true AND age > 18 AND status = 'APPROVED'"
      * 
-     * String expr2 = Expression.and("verified = 1", "email IS NOT NULL");
+     * String expr2 = SqlExpression.and("verified = 1", "email IS NOT NULL");
      * // Returns: "verified = 1 AND email IS NOT NULL"
      * }</pre>
      *
-     * @param exprs the expressions to combine with AND
-     * @return a SQL representation of the AND expression
+     * @param exprs the expressions to combine with AND; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the AND expression, or an empty string if no expressions are supplied
      */
     public static String and(final String... exprs) {
         return link2(Operator.AND, exprs);
@@ -697,12 +698,12 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.or("status = 'active'", "status = 'pending'", "priority = 1");
+     * String expr = SqlExpression.or("status = 'active'", "status = 'pending'", "priority = 1");
      * // Returns: "status = 'active' OR status = 'pending' OR priority = 1"
      * }</pre>
      *
-     * @param exprs the expressions to combine with OR
-     * @return a SQL representation of the OR expression
+     * @param exprs the expressions to combine with OR; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the OR expression, or an empty string if no expressions are supplied
      */
     public static String or(final String... exprs) {
         return link2(Operator.OR, exprs);
@@ -714,16 +715,16 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.plus(Expression.of("price"), Expression.of("tax"), Expression.of("shipping"));
+     * // Use SqlExpression.of() for column references to avoid single-quote wrapping
+     * String expr = SqlExpression.plus(SqlExpression.of("price"), SqlExpression.of("tax"), SqlExpression.of("shipping"));
      * // Returns: "price + tax + shipping"
      *
-     * String expr2 = Expression.plus(Expression.of("base_salary"), 5000, Expression.of("bonus"));
+     * String expr2 = SqlExpression.plus(SqlExpression.of("base_salary"), 5000, SqlExpression.of("bonus"));
      * // Returns: "base_salary + 5000 + bonus"
      * }</pre>
      *
-     * @param operands the values to add
-     * @return a SQL representation of the addition expression
+     * @param operands the values to add; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the addition expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String plus(final Object... operands) {
@@ -736,16 +737,16 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.subtract(Expression.of("total"), Expression.of("discount"), Expression.of("tax_credit"));
+     * // Use SqlExpression.of() for column references to avoid single-quote wrapping
+     * String expr = SqlExpression.subtract(SqlExpression.of("total"), SqlExpression.of("discount"), SqlExpression.of("tax_credit"));
      * // Returns: "total - discount - tax_credit"
      *
-     * String expr2 = Expression.subtract(Expression.of("price"), 10);
+     * String expr2 = SqlExpression.subtract(SqlExpression.of("price"), 10);
      * // Returns: "price - 10"
      * }</pre>
      *
-     * @param operands the values to subtract
-     * @return a SQL representation of the subtraction expression
+     * @param operands the values to subtract; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the subtraction expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String subtract(final Object... operands) {
@@ -758,22 +759,22 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.minus(Expression.of("total"), Expression.of("discount"));
+     * // Use SqlExpression.of() for column references to avoid single-quote wrapping
+     * String expr = SqlExpression.minus(SqlExpression.of("total"), SqlExpression.of("discount"));
      * // Returns: "total - discount"
      *
-     * String expr2 = Expression.minus(Expression.of("price"), 10);
+     * String expr2 = SqlExpression.minus(SqlExpression.of("price"), 10);
      * // Returns: "price - 10"
      *
-     * String none = Expression.minus();
+     * String none = SqlExpression.minus();
      * // Returns: "" (no operands)
      *
-     * Expression.minus(Expression.of("x"), Double.NaN);
+     * SqlExpression.minus(SqlExpression.of("x"), Double.NaN);
      * // throws IllegalArgumentException (NaN has no portable SQL literal)
      * }</pre>
      *
-     * @param objects the values to subtract
-     * @return a SQL representation of the subtraction expression
+     * @param objects the values to subtract; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the subtraction expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      * @deprecated Use {@link #subtract(Object...)} instead to avoid confusion with the SQL {@code MINUS} set operation.
      */
@@ -788,16 +789,16 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.multiply(Expression.of("price"), Expression.of("quantity"), Expression.of("tax_rate"));
+     * // Use SqlExpression.of() for column references to avoid single-quote wrapping
+     * String expr = SqlExpression.multiply(SqlExpression.of("price"), SqlExpression.of("quantity"), SqlExpression.of("tax_rate"));
      * // Returns: "price * quantity * tax_rate"
      *
-     * String expr2 = Expression.multiply(Expression.of("hours"), 60);
+     * String expr2 = SqlExpression.multiply(SqlExpression.of("hours"), 60);
      * // Returns: "hours * 60"
      * }</pre>
      *
-     * @param operands the values to multiply
-     * @return a SQL representation of the multiplication expression
+     * @param operands the values to multiply; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the multiplication expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String multiply(final Object... operands) {
@@ -810,16 +811,16 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.divide(Expression.of("total"), Expression.of("count"));
+     * // Use SqlExpression.of() for column references to avoid single-quote wrapping
+     * String expr = SqlExpression.divide(SqlExpression.of("total"), SqlExpression.of("count"));
      * // Returns: "total / count"
      *
-     * String expr2 = Expression.divide(Expression.of("distance"), Expression.of("time"), 60);
+     * String expr2 = SqlExpression.divide(SqlExpression.of("distance"), SqlExpression.of("time"), 60);
      * // Returns: "distance / time / 60"
      * }</pre>
      *
-     * @param objects the values to divide
-     * @return a SQL representation of the division expression
+     * @param objects the values to divide; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the division expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String divide(final Object... objects) {
@@ -832,16 +833,16 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.modulus(Expression.of("value"), 10);
+     * // Use SqlExpression.of() for column references to avoid single-quote wrapping
+     * String expr = SqlExpression.modulus(SqlExpression.of("value"), 10);
      * // Returns: "value % 10"
      *
-     * String expr2 = Expression.modulus(Expression.of("id"), Expression.of("batch_size"));
+     * String expr2 = SqlExpression.modulus(SqlExpression.of("id"), SqlExpression.of("batch_size"));
      * // Returns: "id % batch_size"
      * }</pre>
      *
-     * @param objects the values for modulus operation
-     * @return a SQL representation of the modulus expression
+     * @param objects the values for modulus operation; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the modulus expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String modulus(final Object... objects) {
@@ -854,13 +855,13 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.leftShift(Expression.of("flags"), 2);
+     * // Use SqlExpression.of() for column references to avoid single-quote wrapping
+     * String expr = SqlExpression.leftShift(SqlExpression.of("flags"), 2);
      * // Returns: "flags << 2"
      * }</pre>
      *
-     * @param objects the values for left shift operation
-     * @return a SQL representation of the left shift expression
+     * @param objects the values for left shift operation; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the left shift expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String leftShift(final Object... objects) {
@@ -873,13 +874,13 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.rightShift(Expression.of("value"), 4);
+     * // Use SqlExpression.of() for column references to avoid single-quote wrapping
+     * String expr = SqlExpression.rightShift(SqlExpression.of("value"), 4);
      * // Returns: "value >> 4"
      * }</pre>
      *
-     * @param objects the values for right shift operation
-     * @return a SQL representation of the right shift expression
+     * @param objects the values for right shift operation; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the right shift expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String rightShift(final Object... objects) {
@@ -891,16 +892,16 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.bitwiseAnd(Expression.of("permissions"), Expression.of("mask"));
+     * // Use SqlExpression.of() for column references to avoid single-quote wrapping
+     * String expr = SqlExpression.bitwiseAnd(SqlExpression.of("permissions"), SqlExpression.of("mask"));
      * // Returns: "permissions & mask"
      *
-     * String expr2 = Expression.bitwiseAnd(Expression.of("flags"), 0xFF);
+     * String expr2 = SqlExpression.bitwiseAnd(SqlExpression.of("flags"), 0xFF);
      * // Returns: "flags & 255"
      * }</pre>
      *
-     * @param objects the values for bitwise AND operation
-     * @return a SQL representation of the bitwise AND expression
+     * @param objects the values for bitwise AND operation; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the bitwise AND expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String bitwiseAnd(final Object... objects) {
@@ -912,13 +913,13 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.bitwiseOr(Expression.of("flags1"), Expression.of("flags2"));
+     * // Use SqlExpression.of() for column references to avoid single-quote wrapping
+     * String expr = SqlExpression.bitwiseOr(SqlExpression.of("flags1"), SqlExpression.of("flags2"));
      * // Returns: "flags1 | flags2"
      * }</pre>
      *
-     * @param objects the values for bitwise OR operation
-     * @return a SQL representation of the bitwise OR expression
+     * @param objects the values for bitwise OR operation; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the bitwise OR expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String bitwiseOr(final Object... objects) {
@@ -930,13 +931,13 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Use Expression.of() for column references to avoid single-quote wrapping
-     * String expr = Expression.bitwiseXor(Expression.of("value1"), Expression.of("value2"));
+     * // Use SqlExpression.of() for column references to avoid single-quote wrapping
+     * String expr = SqlExpression.bitwiseXor(SqlExpression.of("value1"), SqlExpression.of("value2"));
      * // Returns: "value1 ^ value2"
      * }</pre>
      *
-     * @param objects the values for bitwise XOR operation
-     * @return a SQL representation of the bitwise XOR expression
+     * @param objects the values for bitwise XOR operation; a {@code null} or empty array yields an empty string
+     * @return a SQL representation of the bitwise XOR expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     public static String bitwiseXor(final Object... objects) {
@@ -1047,13 +1048,17 @@ public class Expression extends ComposableCondition {
      * Joins multiple literals using the specified operator's SQL token as the separator.
      * Each separator is surrounded by spaces (e.g. {@code " AND " }). If {@code literals}
      * contains a single element, that element is returned with no operator appended; an
-     * empty array yields an empty string.
+     * {@code null} or empty array yields an empty string.
      *
      * @param operator the operator whose {@link Operator#sqlToken() sqlToken} is used as the separator
      * @param literals the literals to join
      * @return the joined string
      */
     static String link2(final Operator operator, final String... literals) {
+        if (N.isEmpty(literals)) {
+            return Strings.EMPTY;
+        }
+
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
@@ -1080,11 +1085,15 @@ public class Expression extends ComposableCondition {
      * {@link com.landawn.abacus.util.SK#SPACE} or {@link com.landawn.abacus.util.SK#COMMA_SPACE}.
      *
      * @param linkedSymbol the symbol to use for linking (e.g. {@code "+"}, {@code "*"}, {@code "&"})
-     * @param objects the objects to link
-     * @return the joined SQL expression string
+     * @param objects the objects to link; a {@code null} or empty array yields an empty string
+     * @return the joined SQL expression string, or an empty string if no objects are supplied
      * @throws IllegalArgumentException if any object is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
     static String link(String linkedSymbol, final Object... objects) {
+        if (N.isEmpty(objects)) {
+            return Strings.EMPTY;
+        }
+
         if (!(SPACE.equals(linkedSymbol) || COMMA_SPACE.equals(linkedSymbol))) {
             linkedSymbol = SK._SPACE + linkedSymbol + SK._SPACE;
         }
@@ -1118,23 +1127,23 @@ public class Expression extends ComposableCondition {
      *       guard that appends one extra backslash when the body would otherwise end in an unescaped trailing backslash</li>
      *   <li>{@link Number} and {@link Boolean} values are converted via {@code toString()} (no quoting);
      *       {@code NaN}/infinite {@link Float}/{@link Double} values are rejected</li>
-     *   <li>{@link Expression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null})</li>
+     *   <li>{@link SqlExpression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null})</li>
      *   <li>{@link SubQuery} instances render their {@code toString()} wrapped in parentheses; other {@link Condition}s use their {@code toString()} verbatim</li>
      *   <li>Other objects are converted via {@link N#stringOf(Object)}, then quoted and escaped</li>
      * </ul>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression.renderValue("text");                      // returns "'text'"
-     * Expression.renderValue("O'Brien");                   // returns "'O\'Brien'" (single quote backslash-escaped)
-     * Expression.renderValue("say \"hi\"");                // returns "'say \"hi\"'" (double quote backslash-escaped)
-     * Expression.renderValue(123);                         // returns "123"
-     * Expression.renderValue(45.67);                       // returns "45.67"
-     * Expression.renderValue(null);                        // returns "null"
-     * Expression.renderValue(true);                        // returns "true"
-     * Expression.renderValue(false);                       // returns "false"
-     * Expression.renderValue(new Expression("COUNT(*)"));  // returns "COUNT(*)" (the expression's literal)
-     * Expression.renderValue(Double.NaN);                  // throws IllegalArgumentException
+     * SqlExpression.renderValue("text");                      // returns "'text'"
+     * SqlExpression.renderValue("O'Brien");                   // returns "'O\'Brien'" (single quote backslash-escaped)
+     * SqlExpression.renderValue("say \"hi\"");                // returns "'say \"hi\"'" (double quote backslash-escaped)
+     * SqlExpression.renderValue(123);                         // returns "123"
+     * SqlExpression.renderValue(45.67);                       // returns "45.67"
+     * SqlExpression.renderValue(null);                        // returns "null"
+     * SqlExpression.renderValue(true);                        // returns "true"
+     * SqlExpression.renderValue(false);                       // returns "false"
+     * SqlExpression.renderValue(new SqlExpression("COUNT(*)"));  // returns "COUNT(*)" (the expression's literal)
+     * SqlExpression.renderValue(Double.NaN);                  // throws IllegalArgumentException
      * }</pre>
      *
      * @param value the value to render
@@ -1152,8 +1161,8 @@ public class Expression extends ComposableCondition {
         } else if (value instanceof Number || value instanceof Boolean) {
             AbstractCondition.checkFiniteNumber(value);
             return value.toString();
-        } else if (value instanceof Expression) {
-            final String exprLiteral = ((Expression) value).literal();
+        } else if (value instanceof SqlExpression) {
+            final String exprLiteral = ((SqlExpression) value).literal();
             return exprLiteral != null ? exprLiteral : NULL_STRING;
         } else if (value instanceof Condition) {
             final String conditionStr = value.toString();
@@ -1174,9 +1183,9 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.count("*");                      // Returns: "COUNT(*)"
-     * String expr2 = Expression.count("id");                    // Returns: "COUNT(id)"
-     * String expr3 = Expression.count("DISTINCT department");   // Returns: "COUNT(DISTINCT department)"
+     * String expr = SqlExpression.count("*");                      // Returns: "COUNT(*)"
+     * String expr2 = SqlExpression.count("id");                    // Returns: "COUNT(id)"
+     * String expr3 = SqlExpression.count("DISTINCT department");   // Returns: "COUNT(DISTINCT department)"
      * }</pre>
      *
      * @param expr the expression to count
@@ -1192,8 +1201,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.avg("salary");   // Returns: "AVG(salary)"
-     * String expr2 = Expression.avg("age");     // Returns: "AVG(age)"
+     * String expr = SqlExpression.avg("salary");   // Returns: "AVG(salary)"
+     * String expr2 = SqlExpression.avg("age");     // Returns: "AVG(age)"
      * }</pre>
      *
      * @param expr the expression to average
@@ -1209,8 +1218,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.sum("amount");              // Returns: "SUM(amount)"
-     * String expr2 = Expression.sum("quantity * price");   // Returns: "SUM(quantity * price)"
+     * String expr = SqlExpression.sum("amount");              // Returns: "SUM(amount)"
+     * String expr2 = SqlExpression.sum("quantity * price");   // Returns: "SUM(quantity * price)"
      * }</pre>
      *
      * @param expr the expression to sum
@@ -1226,8 +1235,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.min("price");           // Returns: "MIN(price)"
-     * String expr2 = Expression.min("created_date");   // Returns: "MIN(created_date)"
+     * String expr = SqlExpression.min("price");           // Returns: "MIN(price)"
+     * String expr2 = SqlExpression.min("created_date");   // Returns: "MIN(created_date)"
      * }</pre>
      *
      * @param expr the expression to find minimum
@@ -1243,8 +1252,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.max("score");         // Returns: "MAX(score)"
-     * String expr2 = Expression.max("last_login");   // Returns: "MAX(last_login)"
+     * String expr = SqlExpression.max("score");         // Returns: "MAX(score)"
+     * String expr2 = SqlExpression.max("last_login");   // Returns: "MAX(last_login)"
      * }</pre>
      *
      * @param expr the expression to find maximum
@@ -1260,8 +1269,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.abs("balance");        // Returns: "ABS(balance)"
-     * String expr2 = Expression.abs("temperature");   // Returns: "ABS(temperature)"
+     * String expr = SqlExpression.abs("balance");        // Returns: "ABS(balance)"
+     * String expr2 = SqlExpression.abs("temperature");   // Returns: "ABS(temperature)"
      * }</pre>
      *
      * @param expr the expression to get absolute value of
@@ -1277,8 +1286,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.acos("0.5");             // Returns: "ACOS(0.5)"
-     * String expr2 = Expression.acos("cosine_value");   // Returns: "ACOS(cosine_value)"
+     * String expr = SqlExpression.acos("0.5");             // Returns: "ACOS(0.5)"
+     * String expr2 = SqlExpression.acos("cosine_value");   // Returns: "ACOS(cosine_value)"
      * }</pre>
      *
      * @param expr the expression to calculate arc cosine of
@@ -1294,8 +1303,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.asin("0.5");           // Returns: "ASIN(0.5)"
-     * String expr2 = Expression.asin("sine_value");   // Returns: "ASIN(sine_value)"
+     * String expr = SqlExpression.asin("0.5");           // Returns: "ASIN(0.5)"
+     * String expr2 = SqlExpression.asin("sine_value");   // Returns: "ASIN(sine_value)"
      * }</pre>
      *
      * @param expr the expression to calculate arc sine of
@@ -1311,8 +1320,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.atan("1");                // Returns: "ATAN(1)"
-     * String expr2 = Expression.atan("tangent_value");   // Returns: "ATAN(tangent_value)"
+     * String expr = SqlExpression.atan("1");                // Returns: "ATAN(1)"
+     * String expr2 = SqlExpression.atan("tangent_value");   // Returns: "ATAN(tangent_value)"
      * }</pre>
      *
      * @param expr the expression to calculate arc tangent of
@@ -1328,8 +1337,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.ceil("4.2");      // Returns: "CEIL(4.2)"
-     * String expr2 = Expression.ceil("price");   // Returns: "CEIL(price)"
+     * String expr = SqlExpression.ceil("4.2");      // Returns: "CEIL(4.2)"
+     * String expr2 = SqlExpression.ceil("price");   // Returns: "CEIL(price)"
      * }</pre>
      *
      * @param expr the expression to round up
@@ -1345,8 +1354,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.cos("3.14159");   // Returns: "COS(3.14159)"
-     * String expr2 = Expression.cos("angle");    // Returns: "COS(angle)"
+     * String expr = SqlExpression.cos("3.14159");   // Returns: "COS(3.14159)"
+     * String expr2 = SqlExpression.cos("angle");    // Returns: "COS(angle)"
      * }</pre>
      *
      * @param expr the expression to calculate cosine of
@@ -1362,8 +1371,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.exp("2");              // Returns: "EXP(2)"
-     * String expr2 = Expression.exp("growth_rate");   // Returns: "EXP(growth_rate)"
+     * String expr = SqlExpression.exp("2");              // Returns: "EXP(2)"
+     * String expr2 = SqlExpression.exp("growth_rate");   // Returns: "EXP(growth_rate)"
      * }</pre>
      *
      * @param expr the expression to calculate exponential of
@@ -1379,8 +1388,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.floor("4.8");        // Returns: "FLOOR(4.8)"
-     * String expr2 = Expression.floor("average");   // Returns: "FLOOR(average)"
+     * String expr = SqlExpression.floor("4.8");        // Returns: "FLOOR(4.8)"
+     * String expr2 = SqlExpression.floor("average");   // Returns: "FLOOR(average)"
      * }</pre>
      *
      * @param expr the expression to round down
@@ -1396,8 +1405,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.log("10", "100");     // Returns: "LOG(10, 100)"
-     * String expr2 = Expression.log("2", "value");   // Returns: "LOG(2, value)"
+     * String expr = SqlExpression.log("10", "100");     // Returns: "LOG(10, 100)"
+     * String expr2 = SqlExpression.log("2", "value");   // Returns: "LOG(2, value)"
      * }</pre>
      *
      * @param base the logarithm base
@@ -1414,8 +1423,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.ln("10");       // Returns: "LN(10)"
-     * String expr2 = Expression.ln("value");   // Returns: "LN(value)"
+     * String expr = SqlExpression.ln("10");       // Returns: "LN(10)"
+     * String expr2 = SqlExpression.ln("value");   // Returns: "LN(value)"
      * }</pre>
      *
      * @param expr the expression to calculate natural logarithm of
@@ -1431,8 +1440,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.mod("10", "3");             // Returns: "MOD(10, 3)"
-     * String expr2 = Expression.mod("id", "batch_size");   // Returns: "MOD(id, batch_size)"
+     * String expr = SqlExpression.mod("10", "3");             // Returns: "MOD(10, 3)"
+     * String expr2 = SqlExpression.mod("id", "batch_size");   // Returns: "MOD(id, batch_size)"
      * }</pre>
      *
      * @param dividend the dividend
@@ -1449,8 +1458,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.power("2", "10");             // Returns: "POWER(2, 10)"
-     * String expr2 = Expression.power("base", "exponent");   // Returns: "POWER(base, exponent)"
+     * String expr = SqlExpression.power("2", "10");             // Returns: "POWER(2, 10)"
+     * String expr2 = SqlExpression.power("base", "exponent");   // Returns: "POWER(base, exponent)"
      * }</pre>
      *
      * @param base the base
@@ -1467,8 +1476,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.sign("-5");         // Returns: "SIGN(-5)"
-     * String expr2 = Expression.sign("balance");   // Returns: "SIGN(balance)"
+     * String expr = SqlExpression.sign("-5");         // Returns: "SIGN(-5)"
+     * String expr2 = SqlExpression.sign("balance");   // Returns: "SIGN(balance)"
      * }</pre>
      *
      * @param expr the expression to get sign of
@@ -1484,8 +1493,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.sin("1.5708");   // Returns: "SIN(1.5708)"
-     * String expr2 = Expression.sin("angle");   // Returns: "SIN(angle)"
+     * String expr = SqlExpression.sin("1.5708");   // Returns: "SIN(1.5708)"
+     * String expr2 = SqlExpression.sin("angle");   // Returns: "SIN(angle)"
      * }</pre>
      *
      * @param expr the expression to calculate sine of
@@ -1501,8 +1510,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.sqrt("16");      // Returns: "SQRT(16)"
-     * String expr2 = Expression.sqrt("area");   // Returns: "SQRT(area)"
+     * String expr = SqlExpression.sqrt("16");      // Returns: "SQRT(16)"
+     * String expr2 = SqlExpression.sqrt("area");   // Returns: "SQRT(area)"
      * }</pre>
      *
      * @param expr the expression to calculate square root of
@@ -1518,8 +1527,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.tan("0.7854");   // Returns: "TAN(0.7854)"
-     * String expr2 = Expression.tan("angle");   // Returns: "TAN(angle)"
+     * String expr = SqlExpression.tan("0.7854");   // Returns: "TAN(0.7854)"
+     * String expr2 = SqlExpression.tan("angle");   // Returns: "TAN(angle)"
      * }</pre>
      *
      * @param expr the expression to calculate tangent of
@@ -1536,10 +1545,10 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.concat("firstName", "' '");
+     * String expr = SqlExpression.concat("firstName", "' '");
      * // Returns: "CONCAT(firstName, ' ')"
      *
-     * String expr2 = Expression.concat("city", "', '");
+     * String expr2 = SqlExpression.concat("city", "', '");
      * // Returns: "CONCAT(city, ', ')"
      * }</pre>
      *
@@ -1557,10 +1566,10 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.replace("email", "'@'", "'_at_'");
+     * String expr = SqlExpression.replace("email", "'@'", "'_at_'");
      * // Returns: "REPLACE(email, '@', '_at_')"
      * 
-     * String expr2 = Expression.replace("phone", "'-'", "''");
+     * String expr2 = SqlExpression.replace("phone", "'-'", "''");
      * // Returns: "REPLACE(phone, '-', '')"
      * }</pre>
      *
@@ -1579,8 +1588,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.length("name");           // Returns: "LENGTH(name)"
-     * String expr2 = Expression.length("description");   // Returns: "LENGTH(description)"
+     * String expr = SqlExpression.length("name");           // Returns: "LENGTH(name)"
+     * String expr2 = SqlExpression.length("description");   // Returns: "LENGTH(description)"
      * }</pre>
      *
      * @param expr the SQL expression whose length is returned
@@ -1596,8 +1605,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.substr("phone", 1);   // Returns: "SUBSTR(phone, 1)"
-     * String expr2 = Expression.substr("code", 3);   // Returns: "SUBSTR(code, 3)"
+     * String expr = SqlExpression.substr("phone", 1);   // Returns: "SUBSTR(phone, 1)"
+     * String expr2 = SqlExpression.substr("code", 3);   // Returns: "SUBSTR(code, 3)"
      * }</pre>
      *
      * @param expr the SQL expression to extract from
@@ -1614,8 +1623,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.substr("phone", 1, 3);   // Returns: "SUBSTR(phone, 1, 3)"
-     * String expr2 = Expression.substr("zip", 1, 5);    // Returns: "SUBSTR(zip, 1, 5)"
+     * String expr = SqlExpression.substr("phone", 1, 3);   // Returns: "SUBSTR(phone, 1, 3)"
+     * String expr2 = SqlExpression.substr("zip", 1, 5);    // Returns: "SUBSTR(zip, 1, 5)"
      * }</pre>
      *
      * @param expr the SQL expression to extract from
@@ -1633,8 +1642,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.trim("input");        // Returns: "TRIM(input)"
-     * String expr2 = Expression.trim("user_name");   // Returns: "TRIM(user_name)"
+     * String expr = SqlExpression.trim("input");        // Returns: "TRIM(input)"
+     * String expr2 = SqlExpression.trim("user_name");   // Returns: "TRIM(user_name)"
      * }</pre>
      *
      * @param expr the SQL expression to trim
@@ -1650,8 +1659,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.ltrim("comment");    // Returns: "LTRIM(comment)"
-     * String expr2 = Expression.ltrim("address");   // Returns: "LTRIM(address)"
+     * String expr = SqlExpression.ltrim("comment");    // Returns: "LTRIM(comment)"
+     * String expr2 = SqlExpression.ltrim("address");   // Returns: "LTRIM(address)"
      * }</pre>
      *
      * @param expr the SQL expression to left trim
@@ -1667,8 +1676,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.rtrim("code");           // Returns: "RTRIM(code)"
-     * String expr2 = Expression.rtrim("description");   // Returns: "RTRIM(description)"
+     * String expr = SqlExpression.rtrim("code");           // Returns: "RTRIM(code)"
+     * String expr2 = SqlExpression.rtrim("description");   // Returns: "RTRIM(description)"
      * }</pre>
      *
      * @param expr the SQL expression to right trim
@@ -1684,8 +1693,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.lpad("id", 10, "'0'");     // Returns: "LPAD(id, 10, '0')"
-     * String expr2 = Expression.lpad("code", 5, "' '");   // Returns: "LPAD(code, 5, ' ')"
+     * String expr = SqlExpression.lpad("id", 10, "'0'");     // Returns: "LPAD(id, 10, '0')"
+     * String expr2 = SqlExpression.lpad("code", 5, "' '");   // Returns: "LPAD(code, 5, ' ')"
      * }</pre>
      *
      * @param expr the SQL expression to pad
@@ -1703,8 +1712,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.rpad("name", 20, "' '");    // Returns: "RPAD(name, 20, ' ')"
-     * String expr2 = Expression.rpad("code", 10, "'X'");   // Returns: "RPAD(code, 10, 'X')"
+     * String expr = SqlExpression.rpad("name", 20, "' '");    // Returns: "RPAD(name, 20, ' ')"
+     * String expr2 = SqlExpression.rpad("code", 10, "'X'");   // Returns: "RPAD(code, 10, 'X')"
      * }</pre>
      *
      * @param expr the SQL expression to pad
@@ -1722,8 +1731,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.lower("email");      // Returns: "LOWER(email)"
-     * String expr2 = Expression.lower("COUNTRY");   // Returns: "LOWER(COUNTRY)"
+     * String expr = SqlExpression.lower("email");      // Returns: "LOWER(email)"
+     * String expr2 = SqlExpression.lower("COUNTRY");   // Returns: "LOWER(COUNTRY)"
      * }</pre>
      *
      * @param expr the SQL expression to convert to lowercase
@@ -1739,8 +1748,8 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = Expression.upper("name");            // Returns: "UPPER(name)"
-     * String expr2 = Expression.upper("country_code");   // Returns: "UPPER(country_code)"
+     * String expr = SqlExpression.upper("name");            // Returns: "UPPER(name)"
+     * String expr2 = SqlExpression.upper("country_code");   // Returns: "UPPER(country_code)"
      * }</pre>
      *
      * @param expr the SQL expression to convert to uppercase
@@ -1756,9 +1765,9 @@ public class Expression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * ImmutableList<Object> params = Expression.of("price * quantity").parameters();   // returns []
+     * ImmutableList<Object> params = SqlExpression.of("price * quantity").parameters();   // returns []
      * boolean empty = params.isEmpty();                                                   // returns true
-     * Expression.of("id = 5").parameters();                                            // returns [] (value is part of the literal, not a parameter)
+     * SqlExpression.of("id = 5").parameters();                                            // returns [] (value is part of the literal, not a parameter)
      * }</pre>
      *
      * @return an empty immutable list
@@ -1819,22 +1828,28 @@ public class Expression extends ComposableCondition {
         return SQL_KEY_WORDS.contains(word);
     }
 
+    private static boolean isIdentifierStart(final char ch) {
+        return Strings.isAsciiAlpha(ch) || ch == '_';
+    }
+
     /**
      * Returns the string form of this expression, with the naming policy applied to any
      * identifiers (column or property names) that can be detected within the literal.
-     * Function names, quoted strings, and numeric literals are left unchanged. Recognized SQL
+     * Function names, quoted strings (including prefixed literals such as {@code N'text'}), SQL
+     * variables (such as {@code @name}), and numeric literals are left unchanged. Recognized SQL
      * keyword tokens are also left unchanged when written in their canonical upper-case form
      * (for example {@code CURRENT_DATE}); a lower-case token is treated as an identifier and
      * converted.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Expression.of("firstName").toSql(NamingPolicy.SNAKE_CASE);          // returns "first_name"
-     * Expression.of("firstName = 'John'").toSql(NamingPolicy.SNAKE_CASE); // returns "first_name = 'John'" (identifier converted, quoted literal kept)
-     * Expression.of("price-tax").toSql(NamingPolicy.CAMEL_CASE);          // returns "price-tax" (SQL subtraction preserved; each operand converted independently)
-     * Expression.of("firstName").toSql(NamingPolicy.NO_CHANGE);           // returns "firstName"
-     * Expression.of("firstName").toSql(null);                             // returns "firstName" (null defaults to NO_CHANGE)
-     * Expression.of("").toSql(NamingPolicy.NO_CHANGE);                    // returns "" (empty literal)
+     * SqlExpression.of("firstName").toSql(NamingPolicy.SNAKE_CASE);          // returns "first_name"
+     * SqlExpression.of("_firstName").toSql(NamingPolicy.SNAKE_CASE);         // returns "_first_name"
+     * SqlExpression.of("firstName = 'John'").toSql(NamingPolicy.SNAKE_CASE); // returns "first_name = 'John'" (identifier converted, quoted literal kept)
+     * SqlExpression.of("price-tax").toSql(NamingPolicy.CAMEL_CASE);          // returns "price-tax" (SQL subtraction preserved; each operand converted independently)
+     * SqlExpression.of("firstName").toSql(NamingPolicy.NO_CHANGE);           // returns "firstName"
+     * SqlExpression.of("firstName").toSql(null);                             // returns "firstName" (null defaults to NO_CHANGE)
+     * SqlExpression.of("").toSql(NamingPolicy.NO_CHANGE);                    // returns "" (empty literal)
      * // an uninitialized instance (null literal, only possible via deserialization) returns "null"
      * }</pre>
      *
@@ -1853,12 +1868,12 @@ public class Expression extends ComposableCondition {
         }
 
         if (literal.length() < 16 && literal.indexOf('-') < 0 && QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher(literal).matches()) {
-            // Mirror the parse path below: only tokens starting with an ASCII letter are naming-policy
-            // converted; a digit-leading token (e.g. "2faCode") passes through unchanged.
+            // Mirror the parse path below: identifiers starting with an ASCII letter or underscore are
+            // naming-policy converted; a digit-leading token (e.g. "2faCode") passes through unchanged.
             // Hyphen-containing literals (e.g. "price-tax", SQL subtraction) are excluded even though the
             // simple-column pattern accepts '-': CAMEL_CASE/SNAKE_CASE conversion would swallow the '-',
             // so they take the parser path below, which converts each operand independently.
-            if (!Strings.isAsciiAlpha(literal.charAt(0)) || isSqlKeyword(literal)) {
+            if (!isIdentifierStart(literal.charAt(0)) || isSqlKeyword(literal)) {
                 return literal;
             }
 
@@ -1879,7 +1894,8 @@ public class Expression extends ComposableCondition {
             for (int i = 0, len = words.size(); i < len; i++) {
                 word = words.get(i);
 
-                if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SqlParser.isFunctionName(words, i) || isSqlKeyword(word)) {
+                if (word.isEmpty() || !isIdentifierStart(word.charAt(0)) || SqlParser.isFunctionName(words, i) || isSqlKeyword(word)
+                        || containsQuotedLiteral(word) || isSqlVariable(words, i)) {
                     sb.append(word);
                 } else {
                     sb.append(effectiveNamingPolicy.convert(word));
@@ -1891,13 +1907,32 @@ public class Expression extends ComposableCondition {
         }
     }
 
+    private static boolean containsQuotedLiteral(final String word) {
+        // SqlParser keeps a SQL literal prefix and its quoted body in one token (for example,
+        // N'camelCase' or _utf8mb4'camelCase'). Applying a naming policy to that whole token
+        // would modify data inside the literal.
+        return word.indexOf(SK._SINGLE_QUOTE) > 0;
+    }
+
+    private static boolean isSqlVariable(final List<String> words, final int index) {
+        if (index == 0) {
+            return false;
+        }
+
+        // SQL Server/MySQL variable markers are adjacent to the variable name. Do not skip a
+        // space here: PostgreSQL also uses @ as an operator, and its following operand should
+        // still receive naming-policy conversion.
+        final String previous = words.get(index - 1);
+        return "@".equals(previous) || "@@".equals(previous);
+    }
+
     /**
      * Computes the hash code based on the literal string.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * new Expression("price * quantity").hashCode();                            // returns "price * quantity".hashCode()
-     * Expression.of("a + b").hashCode() == Expression.of("a + b").hashCode();   // true (same literal)
+     * new SqlExpression("price * quantity").hashCode();                            // returns "price * quantity".hashCode()
+     * SqlExpression.of("a + b").hashCode() == SqlExpression.of("a + b").hashCode();   // true (same literal)
      * }</pre>
      *
      * @return the hash code of the literal
@@ -1909,14 +1944,14 @@ public class Expression extends ComposableCondition {
 
     /**
      * Checks if this expression equals another object.
-     * Two expressions are equal if they are both {@code Expression} instances with the same literal string.
+     * Two expressions are equal if they are both {@code SqlExpression} instances with the same literal string.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * new Expression("a + b").equals(new Expression("a + b"));   // returns true (same literal)
-     * Expression.of("a + b").equals(Expression.of("a + b"));     // returns true (cached, same instance)
-     * new Expression("a + b").equals(new Expression("a - b"));   // returns false (different literal)
-     * new Expression("a + b").equals("a + b");                   // returns false (not an Expression)
+     * new SqlExpression("a + b").equals(new SqlExpression("a + b"));   // returns true (same literal)
+     * SqlExpression.of("a + b").equals(SqlExpression.of("a + b"));     // returns true (cached, same instance)
+     * new SqlExpression("a + b").equals(new SqlExpression("a - b"));   // returns false (different literal)
+     * new SqlExpression("a + b").equals("a + b");                   // returns false (not an SqlExpression)
      * }</pre>
      *
      * @param obj the object to compare with
@@ -1932,6 +1967,6 @@ public class Expression extends ComposableCondition {
             return false;
         }
 
-        return N.equals(literal, ((Expression) obj).literal);
+        return N.equals(literal, ((SqlExpression) obj).literal);
     }
 }

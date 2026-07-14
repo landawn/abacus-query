@@ -101,13 +101,13 @@ public class On extends Cell {
 
     /**
      * Creates an ON clause with a custom condition.
-     * This is the most flexible constructor, accepting any type of condition
-     * for maximum control over the join logic. Typically used for complex joins
-     * that go beyond simple column equality.
+     * This is the most flexible constructor, accepting any non-empty predicate that does not
+     * contain a clause, connector, or quantified-subquery operand. It is typically used for
+     * complex joins that go beyond simple column equality.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Simple equality using Expression
+     * // Simple equality using SqlExpression
      * On on1 = new On(Filters.expr("a.id = b.a_id"));
      * InnerJoin join1 = new InnerJoin("table_b b", on1);
      * // SQL: INNER JOIN table_b b ON a.id = b.a_id
@@ -133,12 +133,12 @@ public class On extends Cell {
      * }</pre>
      *
      * @param condition the join condition. Any non-clause, non-{@code null} predicate is allowed, including
-     *            {@link Expression}, {@link Equal}, {@link And}, {@link Or}, or {@link Between}.
+     *            {@link SqlExpression}, {@link Equal}, {@link And}, {@link Or}, or {@link Between}.
      *            Must not be {@code null}.
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is a {@link Criteria},
      *                                  is or contains a SQL clause, an {@code ON}/{@code USING} condition, an
-     *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate
-     *                                  (a blank {@link Expression} or empty {@link Junction})
+     *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
+     *                                  (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public On(final Condition condition) {
         super(Operator.ON, validateOnCondition(condition));
@@ -238,11 +238,11 @@ public class On extends Cell {
      * <pre>{@code
      * // Internal helper — not part of the public API
      * Condition joinCondition = On.createOnCondition("users.id", "posts.user_id");
-     * // Creates: Equal("users.id", Expression("posts.user_id"))
+     * // Creates: Equal("users.id", SqlExpression("posts.user_id"))
      * }</pre>
      *
      * @param leftPropName the first column name (used as the property side of the Equal)
-     * @param rightPropName the second column name (wrapped as an {@link Expression}, so it is rendered as a
+     * @param rightPropName the second column name (wrapped as an {@link SqlExpression}, so it is rendered as a
      *            column reference rather than a quoted literal)
      * @return an {@link Equal} condition comparing the two columns
      * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null}, empty, or blank
@@ -272,8 +272,8 @@ public class On extends Cell {
      * joinColumns.put("t1.col1", "t2.col1");
      * joinColumns.put("t1.col2", "t2.col2");
      * Condition condition = On.createOnCondition(joinColumns);
-     * // Creates: And(Equal("t1.col1", Expression("t2.col1")),
-     * //              Equal("t1.col2", Expression("t2.col2")))
+     * // Creates: And(Equal("t1.col1", SqlExpression("t2.col1")),
+     * //              Equal("t1.col2", SqlExpression("t2.col2")))
      * }</pre>
      *
      * @param propNamePairs map of column name pairs

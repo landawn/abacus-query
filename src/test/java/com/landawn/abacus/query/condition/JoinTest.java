@@ -163,7 +163,7 @@ public class JoinTest extends TestBase {
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", new TestComposableWrapper(new OrderBy("name"))));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", new TestComposableWrapper(new Any(subQuery))));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", new TestComposableWrapper(new Expression(" "))));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", new TestComposableWrapper(new SqlExpression(" "))));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", new Equal()));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", new On()));
         Assertions.assertDoesNotThrow(() -> new Join("orders", new TestComposableWrapper(new Equal("customers.id", "orders.customer_id"))));
@@ -218,6 +218,23 @@ public class JoinTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Arrays.asList("orders o", null), condition));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Arrays.asList("orders o", ""), condition));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Arrays.asList("orders o", "   "), condition));
+    }
+
+    @Test
+    public void testConstructorValidatesCopiedJoinEntitySnapshotIsNotEmpty() {
+        Collection<String> inconsistentCollection = new java.util.AbstractCollection<String>() {
+            @Override
+            public java.util.Iterator<String> iterator() {
+                return java.util.Collections.emptyIterator();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(inconsistentCollection, null));
     }
 
     @Test
@@ -454,5 +471,16 @@ public class JoinTest extends TestBase {
     @Test
     public void testConstructorRejectsNonJoinOperator() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Operator.EQUAL, "t1", null));
+    }
+
+    @Test
+    public void testProtectedConstructorRejectsConditionsForConditionlessJoinTypes() {
+        Condition condition = Filters.eq("a.id", Filters.expr("b.id"));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestJoin(Operator.CROSS_JOIN, "b", condition));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestJoin(Operator.NATURAL_JOIN, Arrays.asList("b", "c"), condition));
+
+        Assertions.assertDoesNotThrow(() -> new TestJoin(Operator.CROSS_JOIN, "b", null));
+        Assertions.assertDoesNotThrow(() -> new TestJoin(Operator.NATURAL_JOIN, Arrays.asList("b", "c"), null));
     }
 }

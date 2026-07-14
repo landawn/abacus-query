@@ -352,9 +352,9 @@ public class NamedProperty {
      * }</pre>
      *
      * @param values collection of values to check equality against. Each value will be tested with OR logic.
-     *               Must not be {@code null} or empty.
+     *               Must not be {@code null} or empty and must yield at least one value while snapshotted.
      * @return an Or condition containing multiple Equal conditions
-     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code values} is {@code null}, empty, or yields no values while snapshotted
      * @see Or
      * @see Equal
      */
@@ -366,6 +366,10 @@ public class NamedProperty {
         for (final Object propValue : values) {
             conditions.add(Filters.equal(propName, propValue));
         }
+
+        // A live/custom collection may become empty after the initial validation. Returning an
+        // empty OR would silently erase the caller's intended predicate.
+        N.checkArgNotEmpty(conditions, "values");
 
         return new Or(conditions);
     }

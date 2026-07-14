@@ -99,12 +99,14 @@ public abstract class Clause extends Cell {
      *                 {@code WHERE}, {@code GROUP_BY}, or {@code HAVING}
      * @param condition the condition to wrap (must not be {@code null})
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is not a SQL clause operator; or if {@code condition} is
-     *         {@code null}, is a {@link Criteria} or another clause
-     *         (e.g. {@code WHERE}, {@code HAVING}), is or contains an {@code ON}/{@code USING} condition or another
-     *         non-predicate component (including a null operator), is an {@code ANY}/{@code ALL}/{@code SOME}
-     *         quantified-subquery operand, or is an empty predicate
-     *         (a blank {@link Expression} or empty {@link Junction}) — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code operator} is not a SQL clause operator, is a JOIN operator
+     *         (JOINs use {@link Join} rather than this prefix-wrapper representation), or if {@code condition} is
+     *         {@code null}, is a {@link Criteria} or another clause (e.g. {@code WHERE}, {@code HAVING}), is a
+     *         standalone {@link SubQuery} except as the required operand of a set-operation clause, is not a
+     *         {@link SubQuery} when the operator is a set operation, is or contains an {@code ON}/{@code USING}
+     *         condition or another non-predicate component (including a null operator), is an
+     *         {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
+     *         (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     protected Clause(final Operator operator, final Condition condition) {
         super(operator, validateClauseOperand(operator, condition));
@@ -118,6 +120,18 @@ public abstract class Clause extends Cell {
             throw new IllegalArgumentException("Clause operator must be a SQL clause operator, but was: " + operator);
         }
 
+        if (isJoinOperation(operator)) {
+            throw new IllegalArgumentException("JOIN operators must be represented by Join, not Clause: " + operator);
+        }
+
+        if (isSetOperation(operator)) {
+            if (!(cond instanceof SubQuery)) {
+                throw new IllegalArgumentException("Set-operation clause " + operator + " requires a SubQuery operand");
+            }
+
+            return cond;
+        }
+
         final Operator condOperator = cond.operator();
 
         if (containsNonPredicateComponent(cond)) {
@@ -125,5 +139,15 @@ public abstract class Clause extends Cell {
         }
 
         return cond;
+    }
+
+    private static boolean isSetOperation(final Operator operator) {
+        return operator == Operator.UNION || operator == Operator.UNION_ALL || operator == Operator.INTERSECT || operator == Operator.EXCEPT
+                || operator == Operator.MINUS;
+    }
+
+    private static boolean isJoinOperation(final Operator operator) {
+        return operator == Operator.JOIN || operator == Operator.LEFT_JOIN || operator == Operator.RIGHT_JOIN || operator == Operator.FULL_JOIN
+                || operator == Operator.CROSS_JOIN || operator == Operator.INNER_JOIN || operator == Operator.NATURAL_JOIN;
     }
 }

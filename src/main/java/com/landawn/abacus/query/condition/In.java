@@ -108,7 +108,8 @@ public class In extends AbstractIn {
      * Creates a new row value constructor IN condition. The condition checks whether the
      * tuple of property values matches any of the supplied value rows. Each element of {@code valueRows}
      * must resolve to exactly {@code propNames.size()} values. A row may be supplied as a {@link Collection}
-     * or other {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean
+     * or other {@link Iterable}, an object array, a {@link Map} (looked up by property name, with a
+     * missing key represented as {@code null}) or a bean
      * (read by property name).
      *
      * <p><b>Usage Examples:</b></p>
@@ -133,7 +134,8 @@ public class In extends AbstractIn {
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
      * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be
      *               non-{@code null} and resolve to exactly {@code propNames.size()} values. A row may be a
-     *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
+     *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean. A missing
+     *               property-name key in a map contributes {@code null}
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},

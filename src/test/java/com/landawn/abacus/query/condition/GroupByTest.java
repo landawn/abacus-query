@@ -236,7 +236,7 @@ public class GroupByTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        Expression condition = Filters.expr("department, location");
+        SqlExpression condition = Filters.expr("department, location");
         GroupBy groupBy = new GroupBy(condition);
 
         Condition retrieved = groupBy.condition();

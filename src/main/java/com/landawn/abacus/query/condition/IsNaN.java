@@ -23,7 +23,8 @@ import com.landawn.abacus.query.Filters;
  * undefined or unrepresentable mathematical results.
  * 
  * <p>NaN (Not a Number) is a special floating-point value that represents an undefined
- * or unrepresentable value, typically resulting from invalid mathematical operations:</p>
+ * or unrepresentable value in systems using IEEE 754-style semantics. Operations that can
+ * produce it in such systems include:</p>
  * <ul>
  *   <li>0/0 (zero divided by zero)</li>
  *   <li>∞/∞ (infinity divided by infinity)</li>
@@ -82,12 +83,12 @@ import com.landawn.abacus.query.Filters;
 public class IsNaN extends Is {
 
     /**
-     * Shared Expression instance representing NAN.
+     * Shared SqlExpression instance representing NAN.
      * This constant is used internally to represent the NAN value in SQL.
      * It is shared across instances and referenced by {@link IsNotNaN} to reduce
      * memory overhead and ensure consistency in SQL generation.
      */
-    static final Expression NAN = Filters.expr("NAN");
+    static final SqlExpression NAN = Filters.expr("NAN");
 
     /**
      * Default constructor for serialization frameworks like Kryo.

@@ -295,6 +295,22 @@ public class AbstractConditionTest extends TestBase {
     }
 
     @Test
+    public void testStandaloneSubQueryIsRejectedButExistsPredicateIsAllowed() {
+        SubQuery subQuery = new SubQuery("SELECT id FROM users");
+        Equal predicate = Filters.eq("active", true);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> predicate.and(subQuery));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(subQuery));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new On(subQuery));
+
+        Exists exists = new Exists(subQuery);
+        Assertions.assertDoesNotThrow(() -> predicate.and(exists));
+        Assertions.assertDoesNotThrow(() -> new Where(exists));
+        Assertions.assertDoesNotThrow(() -> new On(exists));
+        Assertions.assertDoesNotThrow(() -> new Union(subQuery));
+    }
+
+    @Test
     public void testToString() {
         TestCondition condition = new TestCondition(Operator.IN, "list");
 
@@ -440,6 +456,16 @@ public class AbstractConditionTest extends TestBase {
     public void testIsClause_StringEdgeCases() {
         Assertions.assertFalse(AbstractCondition.isClause((String) null));
         Assertions.assertTrue(AbstractCondition.isClause("WHERE"));
+    }
+
+    @Test
+    public void testOuterJoinExpressionsAreRecognizedAsClauses() {
+        Assertions.assertTrue(AbstractCondition.isClause(Filters.expr("LEFT OUTER JOIN orders o ON o.user_id = u.id")));
+        Assertions.assertTrue(AbstractCondition.isClause(Filters.expr("right /* hint */ outer join orders o on o.user_id = u.id")));
+        Assertions.assertTrue(AbstractCondition.isClause(Filters.expr("FULL OUTER JOIN orders o ON o.user_id = u.id")));
+
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> Filters.eq("active", true).and(Filters.expr("LEFT OUTER JOIN orders o ON o.user_id = u.id")));
     }
 
     @Test

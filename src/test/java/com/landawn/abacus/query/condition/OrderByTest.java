@@ -280,7 +280,7 @@ public class OrderByTest extends TestBase {
 
     @Test
     public void testWithCaseExpression() {
-        Expression expr = Filters.expr("CASE WHEN priority=1 THEN 0 ELSE 1 END");
+        SqlExpression expr = Filters.expr("CASE WHEN priority=1 THEN 0 ELSE 1 END");
         OrderBy orderBy = new OrderBy(expr);
 
         assertNotNull(orderBy);
@@ -299,7 +299,7 @@ public class OrderByTest extends TestBase {
 
     @Test
     public void testGetCondition() {
-        Expression condition = Filters.expr("name ASC, age DESC");
+        SqlExpression condition = Filters.expr("name ASC, age DESC");
         OrderBy orderBy = new OrderBy(condition);
 
         Condition retrieved = orderBy.condition();

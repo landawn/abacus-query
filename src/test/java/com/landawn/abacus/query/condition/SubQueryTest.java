@@ -8,9 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
@@ -545,6 +548,14 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
+    public void testEmptyCriteriaIsNormalizedToNoCondition() {
+        SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Criteria.builder().build());
+
+        Assertions.assertNull(subQuery.condition());
+        Assertions.assertEquals("SELECT id FROM users", subQuery.toString());
+    }
+
+    @Test
     public void testConstructorRejectsCriteriaConditionWithSelectModifier() {
         Criteria criteria = Criteria.builder().distinct().where(Filters.eq("active", true)).build();
 
@@ -560,7 +571,7 @@ public class SubQueryTest extends TestBase {
     @Test
     public void testExpressionConditionWrappedInWhere() {
         List<String> props = Arrays.asList("id");
-        Expression expression = Filters.expr("status = 'active'");
+        SqlExpression expression = Filters.expr("status = 'active'");
         SubQuery subQuery = Filters.subQuery("users", props, expression);
 
         Assertions.assertTrue(subQuery.toString().contains("WHERE status = 'active'"));
@@ -672,6 +683,36 @@ public class SubQueryTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class,
                 () -> Filters.subQuery("users", Arrays.asList("id"), Filters.expr("ON users.id = orders.user_id")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList("id"), Filters.expr("USING (id)")));
+    }
+
+    @Test
+    public void testConstructorRejectsCollectionThatBecomesEmptyWhileSnapshotting() {
+        Collection<String> unstablePropNames = new AbstractCollection<>() {
+            @Override
+            public Iterator<String> iterator() {
+                return Collections.emptyIterator();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new SubQuery("users", unstablePropNames, null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new SubQuery(TestEntity.class, unstablePropNames, null));
+    }
+
+    @Test
+    public void testConstructorRejectsStandaloneNonPredicateOperands() {
+        SubQuery nested = new SubQuery("SELECT id FROM accounts");
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new SubQuery("users", Arrays.asList("id"), nested));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new SubQuery("users", Arrays.asList("id"), new Some(nested)));
+
+        // EXISTS is a complete predicate and remains valid even though it owns a subquery.
+        SubQuery valid = new SubQuery("users", Arrays.asList("id"), new NotExists(nested));
+        Assertions.assertEquals("SELECT id FROM users WHERE NOT EXISTS (SELECT id FROM accounts)", valid.toString());
     }
 
     @Table(name = "audit_log_entries", alias = "ale")

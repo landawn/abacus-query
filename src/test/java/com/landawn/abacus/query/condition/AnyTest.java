@@ -27,6 +27,13 @@ public class AnyTest extends TestBase {
     }
 
     @Test
+    public void testConstructor_RejectsKnownMultiColumnProjection() {
+        final SubQuery subQuery = Filters.subQuery("products", Arrays.asList("price", "tax"), (Condition) null);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Any(subQuery));
+    }
+
+    @Test
     public void testGetOperator() {
         SubQuery subQuery = Filters.subQuery("SELECT score FROM exams");
         Any condition = new Any(subQuery);

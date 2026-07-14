@@ -71,7 +71,7 @@ import com.landawn.abacus.util.Strings;
  *     new On("customers.id", "o.customer_id"));
  * // SQL: JOIN orders o ON customers.id = o.customer_id
  *
- * // Join with Expression for custom conditions
+ * // Join with SqlExpression for custom conditions
  * Join exprJoin = new Join("orders o",
  *     Filters.expr("customers.id = o.customer_id"));
  * // SQL: JOIN orders o ON customers.id = o.customer_id
@@ -168,7 +168,7 @@ public class Join extends AbstractCondition {
      *     new On("customers.id", "o.customer_id"));
      * // SQL: JOIN orders o ON customers.id = o.customer_id
      *
-     * // Join with Expression for custom condition
+     * // Join with SqlExpression for custom condition
      * Join exprJoin = new Join("orders o",
      *     Filters.expr("customers.id = o.customer_id"));
      * // SQL: JOIN orders o ON customers.id = o.customer_id
@@ -189,9 +189,9 @@ public class Join extends AbstractCondition {
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; or if {@code joinCondition} is or contains a
-     *                                  {@link Criteria}, a null operator, a SQL clause, an {@link Expression} whose text begins with
+     *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, or an empty predicate (a blank {@link Expression}
+     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression}
      *                                  or empty {@link Junction})
      */
     public Join(final String joinEntity, final Condition joinCondition) {
@@ -218,10 +218,12 @@ public class Join extends AbstractCondition {
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is or contains a
-     *                                  {@link Criteria}, a null operator, a SQL clause, an {@link Expression} whose text begins with
+     * @throws IllegalArgumentException if {@code operator} is {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} and
+     *                                  {@code joinCondition} is non-{@code null}; if {@code joinEntity} is {@code null}, empty, or blank;
+     *                                  or if {@code joinCondition} is or contains a
+     *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, or an empty predicate (a blank {@link Expression}
+     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression}
      *                                  or empty {@link Junction})
      */
     protected Join(final Operator operator, final String joinEntity, final Condition joinCondition) {
@@ -241,7 +243,7 @@ public class Join extends AbstractCondition {
      *     new On("o.customer_id", "c.id"));
      * // SQL: JOIN (orders o, customers c) ON o.customer_id = c.id
      *
-     * // Join multiple tables with Expression
+     * // Join multiple tables with SqlExpression
      * Join exprMultiJoin = new Join(tables,
      *     new And(
      *         Filters.expr("o.customer_id = c.id"),
@@ -254,9 +256,11 @@ public class Join extends AbstractCondition {
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
-     *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause, an {@link Expression} whose text begins
+     *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
+     *                                  an {@link SqlExpression} whose text begins
      *                                  with {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
+     *                                  (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public Join(final Collection<String> joinEntities, final Condition joinCondition) {
         this(Operator.JOIN, joinEntities, joinCondition);
@@ -284,10 +288,12 @@ public class Join extends AbstractCondition {
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code joinEntities} is
      *                                  {@code null} or empty, or contains {@code null}, empty, or blank elements; or
+     *                                  if {@code operator} is {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} and
+     *                                  {@code joinCondition} is non-{@code null}; or
      *                                  if {@code joinCondition} is or contains a {@link Criteria}, a null operator,
-     *                                  a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  a SQL clause, an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *                                  operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition joinCondition) {
         super(operator);
@@ -295,6 +301,10 @@ public class Join extends AbstractCondition {
         if (!isJoinOperator(operator)) {
             throw new IllegalArgumentException(
                     "Join operator must be JOIN, LEFT JOIN, RIGHT JOIN, FULL JOIN, CROSS JOIN, INNER JOIN, or NATURAL JOIN, but was: " + operator);
+        }
+
+        if ((operator == Operator.CROSS_JOIN || operator == Operator.NATURAL_JOIN) && joinCondition != null) {
+            throw new IllegalArgumentException(operator + " derives its row combinations without an explicit join condition");
         }
 
         this.joinEntities = copyAndValidateJoinEntities(joinEntities);
@@ -317,6 +327,12 @@ public class Join extends AbstractCondition {
             }
 
             copy.add(joinEntity);
+        }
+
+        // Validate the owned snapshot as well as the source. A live or otherwise inconsistent
+        // collection can report a non-zero size and still yield no elements while being copied.
+        if (copy.isEmpty()) {
+            throw new IllegalArgumentException("joinEntities must not yield an empty join-entity list");
         }
 
         return copy;
@@ -439,7 +455,7 @@ public class Join extends AbstractCondition {
      * Converts this JOIN clause to its SQL representation, propagating the specified naming policy
      * to the join condition. The output format includes the join operator, the joined entities, and
      * the optional join condition; the join operator keyword and entity strings themselves are emitted
-     * verbatim. The condition's SQL representation depends on its type (On, Using, Expression, etc.).
+     * verbatim. The condition's SQL representation depends on its type (On, Using, SqlExpression, etc.).
      * A single join entity is rendered bare while multiple entities are wrapped in parentheses
      * (e.g. {@code "JOIN (orders o, customers c) ..."}). A non-{@code On}/{@code Using} condition is
      * prepended with the {@code ON} keyword before being appended.
@@ -459,7 +475,8 @@ public class Join extends AbstractCondition {
      * new Join("products").toSql(NamingPolicy.NO_CHANGE);   // returns "JOIN products"
      * }</pre>
      *
-     * @param namingPolicy the naming policy passed through to the join condition's {@code toString}
+     * @param namingPolicy the naming policy passed through to the join condition's {@link Condition#toSql(NamingPolicy)} method;
+     *                     if {@code null}, the nested condition treats it as {@link NamingPolicy#NO_CHANGE}
      * @return the SQL representation, e.g., "JOIN orders o ON customers.id = o.customer_id"
      */
     @Override

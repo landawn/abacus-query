@@ -8,8 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractCollection;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -988,5 +992,22 @@ public class NamedPropertyTest extends TestBase {
     public void testNullEmptySymmetry() {
         assertEquals(Filters.isNullOrEmpty("name"), NamedProperty.of("name").isNullOrEmpty());
         assertEquals(Filters.isNotNullAndNotEmpty("name"), NamedProperty.of("name").isNotNullAndNotEmpty());
+    }
+
+    @Test
+    public void testEqualsAnyRejectsCollectionThatBecomesEmptyDuringIteration() {
+        Collection<Object> unstableValues = new AbstractCollection<>() {
+            @Override
+            public Iterator<Object> iterator() {
+                return Collections.emptyIterator();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        assertThrows(IllegalArgumentException.class, () -> NamedProperty.of("status").equalsAny(unstableValues));
     }
 }

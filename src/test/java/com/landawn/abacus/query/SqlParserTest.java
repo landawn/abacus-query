@@ -427,7 +427,16 @@ public class SqlParserTest extends TestBase {
             }
         }
         assertTrue(countIndex >= 0);
-        assertTrue(SqlParser.isFunctionName(tokens, tokens.size(), countIndex));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testDeprecatedBoundedIsFunctionNamePreservesUpperBound() {
+        final List<String> tokens = Arrays.asList("COUNT", " ", "(", "*");
+
+        assertFalse(SqlParser.isFunctionName(tokens, 2, 0));
+        assertTrue(SqlParser.isFunctionName(tokens, 3, 0));
+        assertTrue(SqlParser.isFunctionName(tokens, Integer.MAX_VALUE, 0));
     }
 
     @Test
@@ -441,7 +450,6 @@ public class SqlParserTest extends TestBase {
             }
         }
         assertTrue(nameIndex >= 0);
-        assertFalse(SqlParser.isFunctionName(tokens, tokens.size(), nameIndex));
     }
 
     @Test
@@ -755,19 +763,6 @@ public class SqlParserTest extends TestBase {
         final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("~~~~").build());
         List<String> tokens = tokenizer.parse("SELECT~~~~FROM~~~~users");
         assertEquals(Arrays.asList("SELECT", "~~~~", "FROM", "~~~~", "users"), tokens);
-    }
-
-    @Test
-    public void testIsFunctionNameWithSpaces() {
-        List<String> tokens = SqlParser.parse("SELECT COUNT ( * ), SUM  (  amount  ) FROM sales");
-
-        // COUNT is still a function even with spaces before (
-        int countIndex = tokens.indexOf("COUNT");
-        assertTrue(SqlParser.isFunctionName(tokens, tokens.size(), countIndex));
-
-        // SUM is still a function even with multiple spaces
-        int sumIndex = tokens.indexOf("SUM");
-        assertTrue(SqlParser.isFunctionName(tokens, tokens.size(), sumIndex));
     }
 
     // Cover comment-retention and hash-prefixed temp table parsing branches.
@@ -1298,6 +1293,21 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
+    public void testTokenizerConfigOwnsBuilderCreationAndSupportsDerivation() {
+        final SqlParser.TokenizerConfig defaults = SqlParser.TokenizerConfig.builder().build();
+        final SqlParser.TokenizerConfig base = SqlParser.TokenizerConfig.builder().withSeparator("::").build();
+        final SqlParser.TokenizerConfig derived = base.toBuilder().withSeparator("$$").withoutSeparator("::").build();
+
+        assertEquals(SqlParser.defaultTokenizerConfig(), defaults);
+        assertEquals(defaults, SqlParser.tokenizerConfigBuilder().build(), "The deprecated parser-level factory remains compatible");
+        assertTrue(base.separators().contains("::"));
+        assertFalse(base.separators().contains("$$"));
+        assertFalse(derived.separators().contains("::"));
+        assertTrue(derived.separators().contains("$$"));
+    }
+
+    @Test
     public void testTokenizerConfigWithoutSpaceTreatsCompositeTextAsOneToken() {
         final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withoutSeparator(' ').build());
 
@@ -1597,6 +1607,18 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
+    public void testTokenizerIsReadOnlyQueryUsesConfiguredHashOperator() throws NoSuchMethodException {
+        final String sql = "SELECT 1 #foo ; UPDATE t SET x=1";
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("#foo").build());
+
+        // Under the built-in configuration, #foo starts a MySQL line comment and hides the rest
+        // of this line. The custom configuration makes it an operator, exposing the later UPDATE.
+        assertTrue(SqlParser.isReadOnlyQuery(sql));
+        assertFalse(tokenizer.isReadOnlyQuery(sql));
+        assertTrue(java.lang.reflect.Modifier.isPublic(SqlParser.Tokenizer.class.getDeclaredMethod("isReadOnlyQuery", String.class).getModifiers()));
+    }
+
+    @Test
     public void testIsReadOnlyQuery_identifierKeywordPrefixesIgnored() {
         assertTrue(SqlParser.isReadOnlyQuery("SELECT update_time FROM t"));
         assertTrue(SqlParser.isReadOnlyQuery("SELECT merge_value FROM t"));
@@ -1609,50 +1631,104 @@ public class SqlParserTest extends TestBase {
     }
 
     // ----------------------------------------------------------------------------------------------
-    // isNoUpdateQuery(String)
+    // isNonUpdateQuery(String)
     // ----------------------------------------------------------------------------------------------
 
     @Test
     public void testIsNoUpdateQuery_readsAndPlainInsertsAllowed() {
-        assertTrue(SqlParser.isNoUpdateQuery("SELECT * FROM t"));
-        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1)"));
-        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t (a) SELECT a FROM u"));
-        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t (do, update) VALUES (1, 2)"));
-        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t (duplicate, key, update) VALUES (1, 2, 3)"));
+        assertTrue(SqlParser.isNonUpdateQuery("SELECT * FROM t"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES (1)"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO t (a) SELECT a FROM u"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO t (do, update) VALUES (1, 2)"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO t (duplicate, key, update) VALUES (1, 2, 3)"));
         // ON CONFLICT ... DO NOTHING never overwrites existing rows.
-        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) DO NOTHING"));
-        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT (do, update) DO NOTHING"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) DO NOTHING"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT (do, update) DO NOTHING"));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testReadOrInsertQueryHasClearPrimaryNameAndCompatibleAlias() {
+        final String read = "SELECT * FROM t";
+        final String plainInsert = "INSERT INTO t VALUES (1)";
+        final String upsert = "INSERT INTO t VALUES (1) ON CONFLICT (id) DO UPDATE SET value = 2";
+
+        assertTrue(SqlParser.isReadOrInsertQuery(read));
+        assertTrue(SqlParser.isReadOrInsertQuery(plainInsert));
+        assertFalse(SqlParser.isReadOrInsertQuery(upsert));
+        assertEquals(SqlParser.isReadOrInsertQuery(read), SqlParser.isNonUpdateQuery(read));
+        assertEquals(SqlParser.isReadOrInsertQuery(plainInsert), SqlParser.isNonUpdateQuery(plainInsert));
+        assertEquals(SqlParser.isReadOrInsertQuery(upsert), SqlParser.isNonUpdateQuery(upsert));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testOriginalNoUpdateQueryNameRemainsCompatible() {
+        final String read = "SELECT * FROM t";
+        final String plainInsert = "INSERT INTO t VALUES (1)";
+        final String upsert = "INSERT INTO t VALUES (1) ON CONFLICT (id) DO UPDATE SET value = 2";
+
+        assertEquals(SqlParser.isReadOrInsertQuery(read), SqlParser.isNoUpdateQuery(read));
+        assertEquals(SqlParser.isReadOrInsertQuery(plainInsert), SqlParser.isNoUpdateQuery(plainInsert));
+        assertEquals(SqlParser.isReadOrInsertQuery(upsert), SqlParser.isNoUpdateQuery(upsert));
+        assertEquals(SqlParser.isReadOrInsertQuery(null), SqlParser.isNoUpdateQuery(null));
+    }
+
+    @Test
+    public void testProcedureCallAfterSafeStatementIsRejected() {
+        final List<String> statements = Arrays.asList("SELECT 1; CALL refresh_materialized_view()", "SELECT 1; {call refresh_materialized_view()}",
+                "SELECT 1; {? = call refresh_materialized_view()}", "SELECT 1; EXEC refresh_materialized_view", "SELECT 1; EXECUTE refresh_materialized_view",
+                "SELECT 1; /* invoke */ { ? /* return */ = /* verb */ CALL refresh_materialized_view() }",
+                "SELECT 1; -- invoke on next line\n EXEC refresh_materialized_view");
+
+        for (final String sql : statements) {
+            assertFalse(SqlParser.isReadOnlyQuery(sql), sql);
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    @Test
+    public void testCallFunctionNameInsideSelectDoesNotTriggerProcedureGuard() {
+        final List<String> statements = Arrays.asList(
+                "SELECT CALL(value), EXEC(value), EXECUTE(value) FROM source; "
+                        + "SELECT 'CALL', '{call hidden()}', '{? = call hidden()}', [EXEC], \"EXECUTE\" /* ; EXEC hidden */",
+                "SELECT 1; -- EXEC hidden\n SELECT 2", "SELECT 1; /* {call hidden()} */ SELECT execution_time FROM audit_log");
+
+        for (final String sql : statements) {
+            assertTrue(SqlParser.isReadOnlyQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
     }
 
     @Test
     public void testIsNoUpdateQuery_upsertsAndMutationsRejected() {
-        assertFalse(SqlParser.isNoUpdateQuery("INSERT OR REPLACE INTO t VALUES (1)"));
-        assertFalse(SqlParser.isNoUpdateQuery("WITH seed AS (SELECT 1) INSERT OR REPLACE INTO t SELECT * FROM seed"));
-        assertFalse(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON DUPLICATE KEY UPDATE x = 1"));
-        assertFalse(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON /* c */ DUPLICATE KEY UPDATE x = 1"));
-        assertFalse(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) DO UPDATE SET x = 1"));
-        assertFalse(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) WHERE active DO UPDATE SET x = 1"));
-        assertFalse(SqlParser.isNoUpdateQuery("INSERT OVERWRITE TABLE t SELECT * FROM s"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT * INTO newt FROM t"));
-        assertFalse(SqlParser.isNoUpdateQuery("UPDATE t SET x = 1"));
-        assertFalse(SqlParser.isNoUpdateQuery("DELETE FROM t"));
-        assertFalse(SqlParser.isNoUpdateQuery("MERGE INTO t USING s ON (t.id = s.id) WHEN MATCHED THEN UPDATE SET t.x = s.x"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; DELETE FROM t"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT * FROM #tmp; DELETE FROM t"));
+        assertFalse(SqlParser.isNonUpdateQuery("INSERT OR REPLACE INTO t VALUES (1)"));
+        assertFalse(SqlParser.isNonUpdateQuery("WITH seed AS (SELECT 1) INSERT OR REPLACE INTO t SELECT * FROM seed"));
+        assertFalse(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES (1) ON DUPLICATE KEY UPDATE x = 1"));
+        assertFalse(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES (1) ON /* c */ DUPLICATE KEY UPDATE x = 1"));
+        assertFalse(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) DO UPDATE SET x = 1"));
+        assertFalse(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) WHERE active DO UPDATE SET x = 1"));
+        assertFalse(SqlParser.isNonUpdateQuery("INSERT OVERWRITE TABLE t SELECT * FROM s"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT * INTO newt FROM t"));
+        assertFalse(SqlParser.isNonUpdateQuery("UPDATE t SET x = 1"));
+        assertFalse(SqlParser.isNonUpdateQuery("DELETE FROM t"));
+        assertFalse(SqlParser.isNonUpdateQuery("MERGE INTO t USING s ON (t.id = s.id) WHEN MATCHED THEN UPDATE SET t.x = s.x"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT 1; DELETE FROM t"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT * FROM #tmp; DELETE FROM t"));
     }
 
     @Test
     public void testIsNoUpdateQuery_hashIdentifierAfterCommentsDoesNotHideMutation() {
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT * FROM /* temp */ #tmp; DELETE FROM users"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT * FROM -- temp\n#tmp; DELETE FROM users"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT * FROM /* temp */ #tmp; DELETE FROM users"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT * FROM -- temp\n#tmp; DELETE FROM users"));
     }
 
     @Test
     public void testIsNoUpdateQuery_nullAndEmpty() {
         // Empty/null does not lead with SELECT or INSERT, so it is not a no-update query
         // (consistent with isReadOnlyQuery/isSelectQuery/isInsertQuery).
-        assertFalse(SqlParser.isNoUpdateQuery(null));
-        assertFalse(SqlParser.isNoUpdateQuery(""));
+        assertFalse(SqlParser.isNonUpdateQuery(null));
+        assertFalse(SqlParser.isNonUpdateQuery(""));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -1687,26 +1763,6 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
-    public void testIsFunctionName_indexAtOrBeyondEnd() {
-        List<String> tokens = SqlParser.parse("SELECT COUNT(*)");
-
-        // index == len-1 with no following '(' token, and index beyond range: both false, no throw.
-        assertFalse(SqlParser.isFunctionName(tokens, tokens.size(), tokens.size() - 1));
-        assertFalse(SqlParser.isFunctionName(tokens, tokens.size(), tokens.size()));
-        assertFalse(SqlParser.isFunctionName(tokens, tokens.size(), -1));
-        assertFalse(SqlParser.isFunctionName(tokens, 1, 2));
-        assertTrue(SqlParser.isFunctionName(tokens, tokens.size() + 10, 2));
-        assertThrows(NullPointerException.class, () -> SqlParser.isFunctionName(null, 0, 0));
-    }
-
-    @Test
-    public void testIsFunctionName_spaceBeforeParenthesisIsNotFunctionName() {
-        List<String> tokens = SqlParser.parse("SELECT (1)");
-
-        assertFalse(SqlParser.isFunctionName(tokens, tokens.size(), tokens.indexOf(" ")));
-    }
-
-    @Test
     public void testIsFunctionName_twoArgOverload() {
         List<String> tokens = SqlParser.parse("SELECT COUNT(*) FROM users");
 
@@ -1729,12 +1785,24 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
+    public void testIndexOfTokenIgnoresSurroundingWhitespaceInSearchToken() {
+        final String sql = "SELECT * FROM t WHERE id = 1";
+        final int expected = sql.indexOf("WHERE");
+
+        assertEquals(expected, SqlParser.indexOfToken(sql, "  WHERE\t", 0, false));
+        assertEquals(expected, SqlParser.tokenizer().indexOfToken(sql, "  WHERE\t"));
+
+        final String orderedSql = sql + " ORDER BY id";
+        final int orderByIndex = orderedSql.indexOf("ORDER");
+        assertEquals(orderByIndex, SqlParser.indexOfToken(orderedSql, "ORDER\tBY", 0, false));
+        assertEquals(orderByIndex, SqlParser.tokenizer().indexOfToken(orderedSql, "\nORDER\r\nBY\t"));
+    }
+
+    @Test
     public void testIsFunctionName_oracleOuterJoinMarkerIsNotFunctionCall() {
         List<String> tokens = SqlParser.parse("SELECT a.id(+) FROM a");
-        int idIndex = tokens.indexOf("id");
 
         assertTrue(tokens.contains("(+)"));
-        assertFalse(SqlParser.isFunctionName(tokens, tokens.size(), idIndex));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -1958,49 +2026,49 @@ public class SqlParserTest extends TestBase {
     }
 
     // ----------------------------------------------------------------------------------------------
-    // isNoUpdateQuery -- ON CONFLICT shapes and plain-insert variants
+    // isNonUpdateQuery -- ON CONFLICT shapes and plain-insert variants
     // ----------------------------------------------------------------------------------------------
 
     @Test
     public void testIsNoUpdateQuery_onConflictNamedConstraintDoUpdateRejected() {
-        assertFalse(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT ON CONSTRAINT uq DO UPDATE SET x = 1"));
+        assertFalse(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT ON CONSTRAINT uq DO UPDATE SET x = 1"));
     }
 
     @Test
     public void testIsNoUpdateQuery_mutationAfterSemicolonWithCteRejected() {
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; WITH doomed AS (SELECT 1) UPDATE t SET x = 1"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT 1; WITH doomed AS (SELECT 1) UPDATE t SET x = 1"));
     }
 
     @Test
     public void testIsNoUpdateQuery_onConflictNoTargetDoUpdateRejected() {
-        assertFalse(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT DO UPDATE SET x = 1"));
+        assertFalse(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT DO UPDATE SET x = 1"));
     }
 
     @Test
     public void testIsNoUpdateQuery_onConflictNamedConstraintDoNothingAllowed() {
-        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT ON CONSTRAINT uq DO NOTHING"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT ON CONSTRAINT uq DO NOTHING"));
     }
 
     @Test
     public void testIsNoUpdateQuery_onConflictPredicateDoTokenWithPunctuationAllowed() {
-        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) WHERE do = update DO NOTHING"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) WHERE do = update DO NOTHING"));
     }
 
     @Test
     public void testIsNoUpdateQuery_plainInsertWithReturningAllowed() {
-        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t (a) VALUES (1) RETURNING id"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO t (a) VALUES (1) RETURNING id"));
     }
 
     @Test
     public void testIsNoUpdateQuery_selectIntoSubstringInIdentifierIsAllowed() {
-        assertTrue(SqlParser.isNoUpdateQuery("SELECT into$ FROM t"));
-        assertTrue(SqlParser.isNoUpdateQuery("SELECT $into FROM t"));
-        assertTrue(SqlParser.isNoUpdateQuery("SELECT t.into FROM t"));
-        assertTrue(SqlParser.isNoUpdateQuery("SELECT * FROM $into"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT a INTO new_table FROM t"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT t.from, a INTO new_table FROM t"));
-        assertTrue(SqlParser.isNoUpdateQuery("SELECT t. /* c */ into FROM t"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; SELECT a INTO new_table FROM t"));
+        assertTrue(SqlParser.isNonUpdateQuery("SELECT into$ FROM t"));
+        assertTrue(SqlParser.isNonUpdateQuery("SELECT $into FROM t"));
+        assertTrue(SqlParser.isNonUpdateQuery("SELECT t.into FROM t"));
+        assertTrue(SqlParser.isNonUpdateQuery("SELECT * FROM $into"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT a INTO new_table FROM t"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT t.from, a INTO new_table FROM t"));
+        assertTrue(SqlParser.isNonUpdateQuery("SELECT t. /* c */ into FROM t"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT 1; SELECT a INTO new_table FROM t"));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -2044,7 +2112,7 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testIsNoUpdateQuery_overwriteInsideStringLiteralIsAllowed() {
         // "OVERWRITE" appears only inside a string literal, so it is not an INSERT OVERWRITE clause.
-        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES ('OVERWRITE')"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES ('OVERWRITE')"));
     }
 
     @Test
@@ -2205,7 +2273,7 @@ public class SqlParserTest extends TestBase {
     public void testSelectInto_realSelectIntoIsNotReadOnly() {
         assertFalse(SqlParser.isReadOnlyQuery("SELECT * INTO newt FROM t"));
         assertFalse(SqlParser.isReadOnlyQuery("SELECT a, b INTO newt FROM t"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT * INTO newt FROM t"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT * INTO newt FROM t"));
         // Outer SELECT ... INTO even when a derived table follows.
         assertFalse(SqlParser.isReadOnlyQuery("SELECT a INTO #t1 FROM (SELECT b FROM s) x"));
     }
@@ -2228,7 +2296,7 @@ public class SqlParserTest extends TestBase {
     public void testSelectInto_inSubquerySelectListIsDetected() {
         // SELECT ... INTO inside a subquery still creates a table -> not read-only / not no-update.
         assertFalse(SqlParser.isReadOnlyQuery("SELECT a FROM t WHERE x IN (SELECT id INTO #tmp FROM s)"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT a FROM t WHERE x IN (SELECT id INTO #tmp FROM s)"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT a FROM t WHERE x IN (SELECT id INTO #tmp FROM s)"));
     }
 
     @Test
@@ -2240,7 +2308,7 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testSelectInto_insertIntoSelectStaysNoUpdate() {
         // "INSERT INTO ... SELECT ..." is a plain insert; the INTO belongs to INSERT, not a SELECT INTO.
-        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t (a) SELECT a FROM s"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO t (a) SELECT a FROM s"));
     }
 
     @Test
@@ -2279,7 +2347,7 @@ public class SqlParserTest extends TestBase {
     public void testSelectInto_secondStatementSelectIntoAfterSemicolonIsDetected() {
         // ';' resets the depth-0 select-list state; a SELECT ... INTO in the next statement counts.
         assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; SELECT a INTO #t FROM b"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; SELECT a INTO #t FROM b"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT 1; SELECT a INTO #t FROM b"));
     }
 
     @Test
@@ -2291,7 +2359,7 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testIsNoUpdateQuery_mergeAfterSemicolonRejected() {
         // Mirror of the isReadOnlyQuery MERGE-after-';' case for the no-update gate.
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; MERGE INTO t USING s ON (t.id = s.id) WHEN MATCHED THEN UPDATE SET t.x = s.x"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT 1; MERGE INTO t USING s ON (t.id = s.id) WHEN MATCHED THEN UPDATE SET t.x = s.x"));
     }
 
     @Test
@@ -2303,12 +2371,12 @@ public class SqlParserTest extends TestBase {
         assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; DROP TABLE t"));
         assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; ALTER TABLE t ADD COLUMN c INT"));
         assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; CREATE TABLE t (c INT)"));
-        assertFalse(SqlParser.isNoUpdateQuery("INSERT INTO t VALUES (1); REPLACE INTO t VALUES (2)"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; INSERT OR REPLACE INTO t VALUES (2)"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; TRUNCATE TABLE t"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; DROP TABLE t"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; ALTER TABLE t ADD COLUMN c INT"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT 1; CREATE TABLE t (c INT)"));
+        assertFalse(SqlParser.isNonUpdateQuery("INSERT INTO t VALUES (1); REPLACE INTO t VALUES (2)"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT 1; INSERT OR REPLACE INTO t VALUES (2)"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT 1; TRUNCATE TABLE t"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT 1; DROP TABLE t"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT 1; ALTER TABLE t ADD COLUMN c INT"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT 1; CREATE TABLE t (c INT)"));
     }
 
     @Test
@@ -2318,7 +2386,7 @@ public class SqlParserTest extends TestBase {
         assertTrue(SqlParser.isReadOnlyQuery("SELECT REPLACE(name, 'a', 'b') FROM t"));
         assertTrue(SqlParser.isReadOnlyQuery("SELECT TRUNCATE(1.234, 2) FROM dual"));
         assertTrue(SqlParser.isReadOnlyQuery("SELECT a, REPLACE(b, 'x', 'y') FROM t WHERE c IN (SELECT d FROM e)"));
-        assertTrue(SqlParser.isNoUpdateQuery("INSERT INTO t SELECT REPLACE(name, 'a', 'b') FROM s"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO t SELECT REPLACE(name, 'a', 'b') FROM s"));
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -2353,18 +2421,24 @@ public class SqlParserTest extends TestBase {
         // Pre-fix these returned true (fail-open): '#t2' was treated as a comment, hiding the
         // ';' and the DELETE statement from the mutation-keyword scan.
         assertFalse(SqlParser.isReadOnlyQuery("SELECT * FROM #t1, #t2; DELETE FROM users"));
-        assertFalse(SqlParser.isNoUpdateQuery("SELECT * FROM #t1, #t2; DELETE FROM users"));
+        assertFalse(SqlParser.isNonUpdateQuery("SELECT * FROM #t1, #t2; DELETE FROM users"));
     }
 
     @Test
     public void testReadOnlyAndNoUpdateGates_hashTempAfterDerivedTableDoesNotHideLaterDelete() {
         final String sql = "SELECT * FROM (SELECT 1) derived, #tmp; DELETE FROM users";
         final String quotedAndCommented = "SELECT * FROM (SELECT ')' AS value /* ) */) derived, #tmp; DELETE FROM users";
+        final String hashCommentWithParenthesis = "SELECT * FROM (SELECT 1 # ) inside comment\n) derived, #tmp; DELETE FROM users";
+        final String hashCommentWithOpeningParenthesis = "SELECT * FROM (SELECT 1 # ( inside comment\n) derived, #tmp; DELETE FROM users";
 
         assertFalse(SqlParser.isReadOnlyQuery(sql));
-        assertFalse(SqlParser.isNoUpdateQuery(sql));
+        assertFalse(SqlParser.isNonUpdateQuery(sql));
         assertFalse(SqlParser.isReadOnlyQuery(quotedAndCommented));
-        assertFalse(SqlParser.isNoUpdateQuery(quotedAndCommented));
+        assertFalse(SqlParser.isNonUpdateQuery(quotedAndCommented));
+        assertFalse(SqlParser.isReadOnlyQuery(hashCommentWithParenthesis));
+        assertFalse(SqlParser.isNonUpdateQuery(hashCommentWithParenthesis));
+        assertFalse(SqlParser.isReadOnlyQuery(hashCommentWithOpeningParenthesis));
+        assertFalse(SqlParser.isNonUpdateQuery(hashCommentWithOpeningParenthesis));
     }
 
     @Test
@@ -2455,5 +2529,30 @@ public class SqlParserTest extends TestBase {
 
         assertTrue(pathPredicateWords.contains("@?"), pathPredicateWords.toString());
         assertEquals(1, ParsedSql.parse(pathPredicate).parameterCount());
+    }
+
+    @Test
+    public void testIsNonUpdateQueryRejectsSelectIntoAfterLeadingInsert() {
+        assertFalse(SqlParser.isNonUpdateQuery("INSERT INTO audit_log VALUES (1); SELECT value INTO snapshot FROM source"));
+        assertTrue(SqlParser.isNonUpdateQuery("INSERT INTO audit_log VALUES (1); SELECT value FROM source"));
+    }
+
+    @Test
+    public void testHashTempTableAfterDoubledQuoteIdentifierDoesNotHideMutation() {
+        final String sql = "SELECT * FROM \"strange\"\"table\", #tmp; DELETE FROM users";
+        final List<String> tokens = SqlParser.parse(sql);
+
+        assertTrue(tokens.contains("#tmp"), tokens.toString());
+        assertFalse(SqlParser.isReadOnlyQuery(sql));
+        assertFalse(SqlParser.isNonUpdateQuery(sql));
+    }
+
+    @Test
+    public void testHashTempTableAfterBracketIdentifierContainingOpeningBracketDoesNotHideMutation() {
+        final String sql = "SELECT * FROM [strange[table], #tmp; DELETE FROM users";
+
+        assertTrue(SqlParser.parse(sql).contains("#tmp"));
+        assertFalse(SqlParser.isReadOnlyQuery(sql));
+        assertFalse(SqlParser.isNonUpdateQuery(sql));
     }
 }

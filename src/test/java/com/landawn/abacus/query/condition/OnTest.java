@@ -225,7 +225,7 @@ public class OnTest extends TestBase {
         Equal condition = (Equal) on.condition();
         Assertions.assertEquals("u.department_id", condition.propName());
         // The second property becomes an expression
-        Assertions.assertTrue(condition.propValue() instanceof Expression);
+        Assertions.assertTrue(condition.propValue() instanceof SqlExpression);
     }
 
     @Test
@@ -266,7 +266,7 @@ public class OnTest extends TestBase {
         Assertions.assertTrue(condition instanceof Equal);
         Equal equal = (Equal) condition;
         Assertions.assertEquals("table1.col1", equal.propName());
-        Assertions.assertTrue(equal.propValue() instanceof Expression);
+        Assertions.assertTrue(equal.propValue() instanceof SqlExpression);
     }
 
     @Test

@@ -23,6 +23,7 @@ import java.io.OutputStream;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -232,6 +233,10 @@ public final class SqlMapper {
      * @param firstFilePath the first XML mapper path; must not be {@code null} or empty
      * @param additionalFilePaths additional XML mapper paths; no element may be {@code null} or empty
      * @return a new mapper containing definitions from every supplied path
+     * @throws IllegalArgumentException if either argument is {@code null}, if the first path or any additional path is empty,
+     *         if a path cannot be found, or if a loaded SQL definition is invalid or duplicated
+     * @throws UncheckedIOException if an I/O error occurs while reading a file
+     * @throws ParsingException if any XML document is invalid or does not have {@code <sqlMapper>} as its root element
      */
     public static SqlMapper loadFrom(final String firstFilePath, final String... additionalFilePaths) {
         N.checkArgNotEmpty(firstFilePath, "firstFilePath");
@@ -387,7 +392,7 @@ public final class SqlMapper {
      * @return an immutable snapshot of all SQL identifiers in this mapper, maintaining insertion order
      */
     public ImmutableSet<String> ids() {
-        return ImmutableSet.copyOf(sqlMap.keySet());
+        return ImmutableSet.copyOf(new LinkedHashSet<>(sqlMap.keySet()));
     }
 
     /**
@@ -521,7 +526,7 @@ public final class SqlMapper {
      * @param attributes additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout);
      *              may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
      * @throws IllegalArgumentException if {@code sql} is {@code null}; if the id is {@code null}/empty, contains whitespace,
-     *                                  exceeds {@link #MAX_ID_LENGTH} characters, or already exists; or if {@code attrs}
+     *                                  exceeds {@link #MAX_ID_LENGTH} characters, or already exists; or if {@code attributes}
      *                                  contains a {@code null}/empty/invalid or namespace-qualified XML attribute name, or a {@code null} value
      */
     public void add(final String id, final ParsedSql sql, final Map<String, String> attributes) {
@@ -577,7 +582,7 @@ public final class SqlMapper {
      *              may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
      * @throws IllegalArgumentException if {@code sql} is {@code null} or blank (blank is rejected by {@link ParsedSql#parse(String)});
      *                                  if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH}
-     *                                  characters, or already exists; or if {@code attrs} contains a {@code null}/empty key
+     *                                  characters, or already exists; or if {@code attributes} contains a {@code null}/empty key
      *                                  or a {@code null} value; or an invalid/namespace-qualified XML attribute name
      */
     public void add(final String id, final String sql, final Map<String, String> attributes) {
@@ -769,6 +774,8 @@ public final class SqlMapper {
      * Writes this mapper to the specified file path.
      *
      * @param filePath the target file path; must not be {@code null} or empty
+     * @throws IllegalArgumentException if {@code filePath} is {@code null} or empty
+     * @throws UncheckedIOException if an I/O error occurs while creating or writing the file
      */
     public void saveTo(final String filePath) {
         N.checkArgNotEmpty(filePath, "filePath");

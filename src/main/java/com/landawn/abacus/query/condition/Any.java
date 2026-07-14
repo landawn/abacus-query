@@ -60,6 +60,9 @@ package com.landawn.abacus.query.condition;
  * for every operator. With returned {@code NULL} values, the result is unknown unless another
  * comparison is true.</p>
  *
+ * <p>A structured subquery with a known, non-wildcard projection must select exactly one column.
+ * Raw SQL and wildcard projections cannot be checked for arity and are left to the database.</p>
+ *
  * <p>Relationship to ALL and SOME:</p>
  * <ul>
  *   <li>ANY and SOME are functionally equivalent - both return true if condition matches at least one value</li>
@@ -110,7 +113,8 @@ public class Any extends ComposableCell {
      * }</pre>
      *
      * @param subQuery the subquery that returns values to compare against (must not be {@code null})
-     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or if it has a known,
+     *                                  non-wildcard structured projection containing other than one column
      */
     public Any(final SubQuery subQuery) {
         super(Operator.ANY, subQuery);
@@ -132,7 +136,8 @@ public class Any extends ComposableCell {
      * // returns true
      * }</pre>
      *
-     * @return the {@link SubQuery} supplied at construction time
+     * @return the {@link SubQuery} supplied at construction time, or {@code null} for an uninitialized
+     *         serialization-framework instance
      */
     public SubQuery subQuery() {
         return (SubQuery) condition;

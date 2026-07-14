@@ -1,13 +1,17 @@
 package com.landawn.abacus.query.condition;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractCollection;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -17,6 +21,18 @@ import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class AbstractInSubQueryTest extends TestBase {
+
+    private static final class NominallyNonEmptyCollection<E> extends AbstractCollection<E> {
+        @Override
+        public Iterator<E> iterator() {
+            return Collections.emptyIterator();
+        }
+
+        @Override
+        public int size() {
+            return 1;
+        }
+    }
 
     private static final class TestAbstractInSubQuery extends AbstractInSubQuery {
         TestAbstractInSubQuery() {
@@ -169,6 +185,23 @@ public class AbstractInSubQueryTest extends TestBase {
         final SubQuery subQuery = Filters.subQuery("pairs", Arrays.asList("left_id"), Filters.eq("status", "ACTIVE"));
 
         assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"), subQuery));
+    }
+
+    @Test
+    public void testConstructorValidatesDefensivePropertySnapshotIsNonEmpty() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new TestAbstractInSubQuery(new NominallyNonEmptyCollection<>(), Filters.subQuery("SELECT id FROM users")));
+    }
+
+    @Test
+    public void testConstructor_AllowsStructuredWildcardProjectionWithUnknownArity() {
+        SubQuery wildcard = new SubQuery("users", Arrays.asList("*"), null);
+        InSubQuery condition = new InSubQuery(Arrays.asList("id", "name"), wildcard);
+
+        assertEquals("(id, name) IN (SELECT * FROM users)", condition.toSql(NamingPolicy.NO_CHANGE));
+
+        SubQuery qualifiedWildcard = new SubQuery("users u", Arrays.asList("u.*"), null);
+        assertDoesNotThrow(() -> new InSubQuery(Arrays.asList("id", "name"), qualifiedWildcard));
     }
 
     @Test

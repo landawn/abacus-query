@@ -16,6 +16,8 @@ package com.landawn.abacus.query;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ import com.landawn.abacus.query.SqlDialect.SqlPolicy;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.Beans;
+import com.landawn.abacus.util.Maps;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.OperationType;
@@ -45,7 +48,7 @@ import com.landawn.abacus.util.u.Optional;
  * {@code Dsl} bound to a specific dialect. Call one of the statement methods &mdash; {@code insert},
  * {@code select}, {@code update}, {@code deleteFrom}, {@code count}, etc. &mdash; to obtain a fresh
  * {@link SqlBuilder} configured for that operation. Dsl instances are immutable and thread-safe when
- * any custom {@link SqlDialect#namedParameterHandler()} is safe for concurrent invocation; the
+ * any custom named-parameter handler configured on their {@link SqlDialect} is safe for concurrent invocation; the
  * {@link SqlBuilder} instances they produce are not.</p>
  */
 public final class Dsl {
@@ -223,6 +226,32 @@ public final class Dsl {
         return new SqlBuilder(sqlDialect);
     }
 
+    private static List<Selection> snapshotSelections(final List<Selection> selections) {
+        N.checkArgNotNull(selections, "selections");
+
+        // Snapshot the caller-owned list once. Selection descriptors are immutable, so retaining their
+        // references is safe and validation, SELECT rendering and automatic FROM generation all observe
+        // the same input even for weakly consistent or otherwise mutable caller lists.
+        final List<Selection> snapshots = new ArrayList<>(selections);
+
+        for (final Selection selection : snapshots) {
+            N.checkArgNotNull(selection, "Selection can't be null in 'multiSelects'");
+        }
+
+        SqlBuilder.checkMultiSelects(snapshots);
+        return snapshots;
+    }
+
+    private SqlBuilder createSelectBuilder(final List<Selection> selectionSnapshots) {
+        final SqlBuilder instance = createSqlBuilderInstance();
+
+        instance._op = OperationType.QUERY;
+        instance.setEntityClass(selectionSnapshots.get(0).entityClass());
+        instance._multiSelects = selectionSnapshots;
+
+        return instance;
+    }
+
     /**
      * Creates an INSERT statement for a single column.
      *
@@ -237,10 +266,10 @@ public final class Dsl {
      *
      * @param propOrColumnName the property or column name to insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if propOrColumnName is null or empty
+     * @throws IllegalArgumentException if propOrColumnName is null, empty, or blank
      */
     public SqlBuilder insert(final String propOrColumnName) {
-        N.checkArgNotEmpty(propOrColumnName, SqlBuilder.INSERTION_PART_MSG);
+        AbstractQueryBuilder.checkSqlFragmentNotBlank(propOrColumnName, "propOrColumnName");
 
         return insert(N.asArray(propOrColumnName));
     }
@@ -262,15 +291,17 @@ public final class Dsl {
      *
      * @param propOrColumnNames the property or column names to insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if propOrColumnNames is null or empty
+     * @throws IllegalArgumentException if propOrColumnNames is null or empty, or contains a null, empty, or blank element
      */
     public SqlBuilder insert(final String... propOrColumnNames) {
         N.checkArgNotEmpty(propOrColumnNames, SqlBuilder.INSERTION_PART_MSG);
+        final List<String> propOrColumnNameSnapshot = new ArrayList<>(Array.asList(propOrColumnNames));
+        AbstractQueryBuilder.checkSqlFragmentsNotBlank(propOrColumnNameSnapshot, "propOrColumnNames");
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.ADD;
-        instance._propOrColumnNames = new ArrayList<>(Array.asList(propOrColumnNames));
+        instance._propOrColumnNames = propOrColumnNameSnapshot;
 
         return instance;
     }
@@ -290,15 +321,17 @@ public final class Dsl {
      *
      * @param propOrColumnNames collection of property or column names to insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if propOrColumnNames is null or empty
+     * @throws IllegalArgumentException if propOrColumnNames is null or empty, or contains a null, empty, or blank element
      */
     public SqlBuilder insert(final Collection<String> propOrColumnNames) {
         N.checkArgNotEmpty(propOrColumnNames, SqlBuilder.INSERTION_PART_MSG);
+        final List<String> propOrColumnNameSnapshot = new ArrayList<>(propOrColumnNames);
+        AbstractQueryBuilder.checkSqlFragmentsNotBlank(propOrColumnNameSnapshot, "propOrColumnNames");
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.ADD;
-        instance._propOrColumnNames = new ArrayList<>(propOrColumnNames);
+        instance._propOrColumnNames = propOrColumnNameSnapshot;
 
         return instance;
     }
@@ -322,15 +355,17 @@ public final class Dsl {
      *
      * @param props map of property names to their values
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if props is null or empty
+     * @throws IllegalArgumentException if props is null or empty, or contains a null, empty, or blank key
      */
     public SqlBuilder insert(final Map<String, Object> props) {
         N.checkArgNotEmpty(props, SqlBuilder.INSERTION_PART_MSG);
+        final Map<String, Object> propsSnapshot = new LinkedHashMap<>(props);
+        AbstractQueryBuilder.checkSqlFragmentKeysNotBlank(propsSnapshot, "props");
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.ADD;
-        instance._props = new LinkedHashMap<>(props);
+        instance._props = propsSnapshot;
 
         return instance;
     }
@@ -358,7 +393,7 @@ public final class Dsl {
      *
      * @param entity the entity object to insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if entity is null
+     * @throws IllegalArgumentException if entity is null; if a String entity is blank; or if a Map entity is empty or has a non-String or blank key
      */
     public SqlBuilder insert(final Object entity) {
         return insert(entity, null);
@@ -390,17 +425,41 @@ public final class Dsl {
      * @param entity the entity object to insert
      * @param excludedPropNames set of property names to exclude from the insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if entity is null
+     * @throws IllegalArgumentException if entity is null; if a String entity is blank; or if a Map entity is empty,
+     *                                  has a non-String or blank key, or has no entries left after exclusions are applied
      */
     public SqlBuilder insert(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, SqlBuilder.INSERTION_PART_MSG);
+
+        final Set<String> excludedPropNameSnapshot = N.isEmpty(excludedPropNames) ? Collections.emptySet() : new HashSet<>(excludedPropNames);
+        final Object entitySnapshot;
+
+        // Validate the String/Map forms before allocating a builder backed by a pooled SQL buffer.
+        // Otherwise a rejected input abandons a builder the caller never receives and therefore
+        // cannot release that buffer via build().
+        if (entity instanceof String) {
+            AbstractQueryBuilder.checkSqlFragmentNotBlank((String) entity, "entity");
+            entitySnapshot = entity;
+        } else if (entity instanceof Map) {
+            final Map<String, Object> propsSnapshot = new LinkedHashMap<>((Map<String, Object>) entity);
+            AbstractQueryBuilder.checkSqlFragmentKeysNotBlank(propsSnapshot, "entity map");
+
+            if (N.notEmpty(excludedPropNameSnapshot)) {
+                Maps.removeKeys(propsSnapshot, excludedPropNameSnapshot);
+            }
+
+            N.checkArgument(!propsSnapshot.isEmpty(), "entity map must contain at least one non-excluded property");
+            entitySnapshot = propsSnapshot;
+        } else {
+            entitySnapshot = entity;
+        }
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.ADD;
         instance.setEntityClass(entity.getClass());
 
-        SqlBuilder.parseInsertEntity(instance, entity, excludedPropNames);
+        SqlBuilder.parseInsertEntity(instance, entitySnapshot, entitySnapshot == entity ? excludedPropNameSnapshot : Collections.emptySet());
 
         return instance;
     }
@@ -452,7 +511,7 @@ public final class Dsl {
 
         instance._op = OperationType.ADD;
         instance.setEntityClass(entityClass);
-        instance._propOrColumnNames = QueryUtil.insertPropertyNames(entityClass, excludedPropNames);
+        instance._propOrColumnNames = QueryUtil.insertPropNames(entityClass, excludedPropNames);
 
         return instance;
     }
@@ -520,6 +579,10 @@ public final class Dsl {
      * // sqlPair.parameters(): ["John", "Doe", "Jane", "Smith", "Bob", "Johnson"]
      * }</pre>
      *
+     * <p>The outer collection is snapshotted before the first non-null row determines whether the
+     * batch contains maps or beans. Row validation and conversion use that same snapshot, so a live
+     * or weakly consistent caller collection cannot supply different rows to those two phases.</p>
+     *
      * @param entitiesOrPropMaps list of entities or property maps to insert
      * @return a new SqlBuilder instance configured for batch INSERT operation
      * @throws IllegalArgumentException if {@code entitiesOrPropMaps} is null or empty, if every element is
@@ -530,18 +593,21 @@ public final class Dsl {
      */
     @Beta
     public SqlBuilder batchInsert(final Collection<?> entitiesOrPropMaps) {
-        N.checkArgNotEmpty(entitiesOrPropMaps, SqlBuilder.INSERTION_PART_MSG);
+        N.checkArgNotNull(entitiesOrPropMaps, SqlBuilder.INSERTION_PART_MSG);
+        final List<?> entitySnapshot = new ArrayList<>(entitiesOrPropMaps);
+        N.checkArgNotEmpty(entitySnapshot, SqlBuilder.INSERTION_PART_MSG);
 
+        final Optional<?> first = N.firstNonNull(entitySnapshot);
+        final List<Map<String, Object>> propsList = SqlBuilder.toInsertPropsList(entitySnapshot);
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.ADD;
-        final Optional<?> first = N.firstNonNull(entitiesOrPropMaps);
 
         if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
             instance.setEntityClass(first.get().getClass());
         }
 
-        instance._propsList = SqlBuilder.toInsertPropsList(entitiesOrPropMaps);
+        instance._propsList = propsList;
 
         return instance;
     }
@@ -667,7 +733,7 @@ public final class Dsl {
         instance._op = OperationType.UPDATE;
         instance.setEntityClass(entityClass);
         instance._tableName = SqlBuilder.getTableName(entityClass, instance._namingPolicy);
-        instance._propOrColumnNames = QueryUtil.updatePropertyNames(entityClass, excludedPropNames);
+        instance._propOrColumnNames = QueryUtil.updatePropNames(entityClass, excludedPropNames);
 
         return instance;
     }
@@ -793,10 +859,10 @@ public final class Dsl {
      *
      * @param expr the select expression
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if expr is null or empty
+     * @throws IllegalArgumentException if expr is null, empty, or blank
      */
     public SqlBuilder select(final String expr) {
-        N.checkArgNotEmpty(expr, SqlBuilder.SELECTION_PART_MSG);
+        AbstractQueryBuilder.checkSqlFragmentNotBlank(expr, "expr");
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
@@ -823,15 +889,17 @@ public final class Dsl {
      *
      * @param propOrColumnNames the property or column names to select
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if propOrColumnNames is null or empty
+     * @throws IllegalArgumentException if propOrColumnNames is null or empty, or contains a null, empty, or blank element
      */
     public SqlBuilder select(final String... propOrColumnNames) {
         N.checkArgNotEmpty(propOrColumnNames, SqlBuilder.SELECTION_PART_MSG);
+        final List<String> propOrColumnNameSnapshot = new ArrayList<>(Array.asList(propOrColumnNames));
+        AbstractQueryBuilder.checkSqlFragmentsNotBlank(propOrColumnNameSnapshot, "propOrColumnNames");
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.QUERY;
-        instance._propOrColumnNames = new ArrayList<>(Array.asList(propOrColumnNames));
+        instance._propOrColumnNames = propOrColumnNameSnapshot;
 
         return instance;
     }
@@ -853,15 +921,17 @@ public final class Dsl {
      *
      * @param propOrColumnNames collection of property or column names to select
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if propOrColumnNames is null or empty
+     * @throws IllegalArgumentException if propOrColumnNames is null or empty, or contains a null, empty, or blank element
      */
     public SqlBuilder select(final Collection<String> propOrColumnNames) {
         N.checkArgNotEmpty(propOrColumnNames, SqlBuilder.SELECTION_PART_MSG);
+        final List<String> propOrColumnNameSnapshot = new ArrayList<>(propOrColumnNames);
+        AbstractQueryBuilder.checkSqlFragmentsNotBlank(propOrColumnNameSnapshot, "propOrColumnNames");
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.QUERY;
-        instance._propOrColumnNames = new ArrayList<>(propOrColumnNames);
+        instance._propOrColumnNames = propOrColumnNameSnapshot;
 
         return instance;
     }
@@ -888,17 +958,20 @@ public final class Dsl {
      *
      * @param propOrColumnNameAliases map of property/column names to their aliases
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code propOrColumnNameAliases} is null or empty, or if any alias is
-     *                                  blank, contains a quote character, a line break, or an SQL comment token
+     * @throws IllegalArgumentException if {@code propOrColumnNameAliases} is null or empty, if any key is null,
+     *                                  empty, or blank, or if any alias is blank, contains a quote character,
+     *                                  a line break, or an SQL comment token
      */
     public SqlBuilder select(final Map<String, String> propOrColumnNameAliases) {
         N.checkArgNotEmpty(propOrColumnNameAliases, SqlBuilder.SELECTION_PART_MSG);
-        validateColumnAliases(propOrColumnNameAliases);
+        final Map<String, String> propOrColumnNameAliasSnapshot = new LinkedHashMap<>(propOrColumnNameAliases);
+        AbstractQueryBuilder.checkSqlFragmentKeysNotBlank(propOrColumnNameAliasSnapshot, "propOrColumnNameAliases");
+        validateColumnAliases(propOrColumnNameAliasSnapshot);
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         instance._op = OperationType.QUERY;
-        instance._propOrColumnNameAliases = new LinkedHashMap<>(propOrColumnNameAliases);
+        instance._propOrColumnNameAliases = propOrColumnNameAliasSnapshot;
 
         return instance;
     }
@@ -1007,7 +1080,7 @@ public final class Dsl {
 
         instance._op = OperationType.QUERY;
         instance.setEntityClass(entityClass);
-        instance._propOrColumnNames = QueryUtil.selectPropertyNames(entityClass, includeSubEntityProperties, excludedPropNames);
+        instance._propOrColumnNames = QueryUtil.selectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
 
         return instance;
     }
@@ -1247,7 +1320,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
-     *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder()})
+     *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #select(List)}, which is self-documenting and supports any
      *             number of tables.
      */
@@ -1287,7 +1360,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if entityClassA or entityClassB is null
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
-     *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder()})
+     *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #select(List)}, which is self-documenting and supports any
      *             number of tables.
      */
@@ -1295,9 +1368,11 @@ public final class Dsl {
     public SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
             final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
         N.checkArgNotNull(entityClassA, SqlBuilder.SELECTION_PART_MSG);
+        N.checkArgNotNull(entityClassB, SqlBuilder.SELECTION_PART_MSG);
 
-        final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+        final List<Selection> multiSelects = N.asList(
+                Selection.builder(entityClassA).tableAlias(tableAliasA).classAlias(classAliasA).excludedPropNames(excludedPropNamesA).build(),
+                Selection.builder(entityClassB).tableAlias(tableAliasB).classAlias(classAliasB).excludedPropNames(excludedPropNamesB).build());
 
         return select(multiSelects);
     }
@@ -1308,16 +1383,16 @@ public final class Dsl {
      * <p>This is the singular companion to {@link #select(List)}: it wraps the given {@code selection}
      * in a one-element list. Prefer it over the positional {@code select(Class, ...)} overloads when you
      * need full control (table alias, class alias, sub-entity inclusion, property exclusion) over a
-     * single entity, because each attribute is set through a named {@link Selection} setter rather than
+     * single entity, because each attribute is set through a named {@link Selection.SelectionBuilder} method rather than
      * by argument position.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlBuilder sql = PSC.select(new Selection()
-     *         .entityClass(Account.class)
+     * SqlBuilder sql = PSC.select(Selection.builder(Account.class)
      *         .tableAlias("a")
      *         .classAlias("account")
-     *         .excludedPropNames(N.asSet("password")));
+     *         .excludedPropNames(N.asSet("password"))
+     *         .build());
      * }</pre>
      *
      * @param selection the selection descriptor defining the entity, aliases, and property filtering; must not be {@code null}
@@ -1337,17 +1412,17 @@ public final class Dsl {
      *
      * <p>This is the most flexible method for multi-entity queries, allowing any number
      * of entities with full control over aliases, sub-entities, and exclusions. Each
-     * Selection object defines how to select from one entity. The descriptors and their property-name
-     * collections are snapshotted when this method returns, so later caller mutations cannot change the
-     * deferred SQL generated by the returned builder.</p>
+     * Selection object defines how to select from one entity. The input list is snapshotted before
+     * validation and building; each immutable descriptor already owns immutable property collections,
+     * so later caller mutations cannot change the deferred SQL.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Selection> selections = Arrays.asList(
-     *     Selection.builder().entityClass(Account.class).tableAlias("a").classAlias("account").build(),
-     *     Selection.builder().entityClass(Order.class).tableAlias("o").classAlias("order")
+     *     Selection.builder(Account.class).tableAlias("a").classAlias("account").build(),
+     *     Selection.builder(Order.class).tableAlias("o").classAlias("order")
      *         .includedPropNames(Arrays.asList("id", "total")).build(),
-     *     Selection.builder().entityClass(Product.class).tableAlias("p").classAlias("product")
+     *     Selection.builder(Product.class).tableAlias("p").classAlias("product")
      *         .excludedPropNames(N.asSet("description")).build()
      * );
      *
@@ -1364,20 +1439,7 @@ public final class Dsl {
      * @throws IllegalArgumentException if selections is null, empty, or contains invalid data
      */
     public SqlBuilder select(final List<Selection> selections) {
-        SqlBuilder.checkMultiSelects(selections);
-
-        final SqlBuilder instance = createSqlBuilderInstance();
-
-        instance._op = OperationType.QUERY;
-        instance.setEntityClass(selections.get(0).entityClass());
-        instance._multiSelects = new ArrayList<>(selections.size());
-
-        for (final Selection selection : selections) {
-            instance._multiSelects.add(new Selection(selection.entityClass(), selection.tableAlias(), selection.classAlias(), selection.includedPropNames(),
-                    selection.includesSubEntityProperties(), selection.excludedPropNames()));
-        }
-
-        return instance;
+        return createSelectBuilder(snapshotSelections(selections));
     }
 
     /**
@@ -1405,7 +1467,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance with SELECT and FROM configured
      * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
-     *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder()})
+     *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #selectFrom(List)}, which is self-documenting and supports any
      *             number of tables.
      */
@@ -1441,7 +1503,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance with SELECT and FROM configured
      * @throws IllegalArgumentException if entityClassA or entityClassB is null
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
-     *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder()})
+     *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #selectFrom(List)}, which is self-documenting and supports any
      *             number of tables.
      */
@@ -1449,9 +1511,11 @@ public final class Dsl {
     public SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA,
             final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB) {
         N.checkArgNotNull(entityClassA, SqlBuilder.SELECTION_PART_MSG);
+        N.checkArgNotNull(entityClassB, SqlBuilder.SELECTION_PART_MSG);
 
-        final List<Selection> multiSelects = N.asList(new Selection(entityClassA, tableAliasA, classAliasA, null, false, excludedPropNamesA),
-                new Selection(entityClassB, tableAliasB, classAliasB, null, false, excludedPropNamesB));
+        final List<Selection> multiSelects = N.asList(
+                Selection.builder(entityClassA).tableAlias(tableAliasA).classAlias(classAliasA).excludedPropNames(excludedPropNamesA).build(),
+                Selection.builder(entityClassB).tableAlias(tableAliasB).classAlias(classAliasB).excludedPropNames(excludedPropNamesB).build());
 
         return selectFrom(multiSelects);
     }
@@ -1462,15 +1526,15 @@ public final class Dsl {
      * <p>This is the singular companion to {@link #selectFrom(List)}: it wraps the given {@code selection}
      * in a one-element list and auto-generates the FROM clause. Prefer it over the positional
      * {@code selectFrom(Class, ...)} overloads when configuring a single entity, since each attribute is
-     * set through a named {@link Selection} setter rather than by argument position.</p>
+     * set through a named {@link Selection.SelectionBuilder} method rather than by argument position.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlBuilder sql = PSC.selectFrom(new Selection()
-     *         .entityClass(Account.class)
+     * SqlBuilder sql = PSC.selectFrom(Selection.builder(Account.class)
      *         .tableAlias("a")
      *         .classAlias("account")
-     *         .includeSubEntityProperties(true));
+     *         .includeSubEntityProperties(true)
+     *         .build());
      * }</pre>
      *
      * @param selection the selection descriptor defining the entity, aliases, and property filtering; must not be {@code null}
@@ -1489,15 +1553,17 @@ public final class Dsl {
      * Creates a SELECT FROM statement for multiple entity selections.
      *
      * <p>Most flexible method for multi-entity queries with automatic FROM clause generation.
-     * Each Selection object can have different configurations for its entity.</p>
+     * Each Selection object can have different configurations for its entity. The input list is
+     * snapshotted once, and each descriptor is immutable, so the generated SELECT and FROM clauses
+     * cannot observe different caller mutations.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Selection> selections = Arrays.asList(
-     *     Selection.builder().entityClass(Account.class).tableAlias("a").classAlias("account").build(),
-     *     Selection.builder().entityClass(Order.class).tableAlias("o").classAlias("order")
+     *     Selection.builder(Account.class).tableAlias("a").classAlias("account").build(),
+     *     Selection.builder(Order.class).tableAlias("o").classAlias("order")
      *         .includeSubEntityProperties(true).build(),
-     *     Selection.builder().entityClass(Product.class).tableAlias("p").classAlias("product")
+     *     Selection.builder(Product.class).tableAlias("p").classAlias("product")
      *         .excludedPropNames(N.asSet("details")).build()
      * );
      *
@@ -1511,11 +1577,11 @@ public final class Dsl {
      * @throws IllegalArgumentException if selections is null, empty, or contains invalid data
      */
     public SqlBuilder selectFrom(final List<Selection> selections) {
-        SqlBuilder.checkMultiSelects(selections);
+        final List<Selection> selectionSnapshots = snapshotSelections(selections);
 
-        final String fromClause = SqlBuilder.getFromClause(selections, namingPolicy);
+        final String fromClause = SqlBuilder.getFromClause(selectionSnapshots, namingPolicy);
 
-        return select(selections).from(fromClause);
+        return createSelectBuilder(selectionSnapshots).from(fromClause);
     }
 
     /**
@@ -1538,10 +1604,13 @@ public final class Dsl {
      *
      * @param tableName the table to count rows from
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if tableName is null or empty
+     * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank
      */
     public SqlBuilder count(final String tableName) {
-        N.checkArgNotEmpty(tableName, SqlBuilder.SELECTION_PART_MSG);
+        // Validate before select(...) allocates a builder backed by a pooled StringBuilder. If from(...)
+        // were left to reject a blank name, that newly allocated builder would never be returned to the
+        // caller and could therefore never be released through build().
+        AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
 
         return select(SqlBuilder.COUNT_ALL_LIST).from(tableName);
     }

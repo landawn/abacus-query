@@ -8,7 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractCollection;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -20,11 +24,11 @@ import com.landawn.abacus.util.NamingPolicy;
 public class AbstractInTest extends TestBase {
 
     private static final class TestAbstractIn extends AbstractIn {
-        TestAbstractIn(final String propName, final List<?> values) {
+        TestAbstractIn(final String propName, final Collection<?> values) {
             super(propName, Operator.IN, values);
         }
 
-        TestAbstractIn(final String propName, final Operator operator, final List<?> values) {
+        TestAbstractIn(final String propName, final Operator operator, final Collection<?> values) {
             super(propName, operator, values);
         }
     }
@@ -33,6 +37,22 @@ public class AbstractInTest extends TestBase {
         TestRowAbstractIn(final Operator operator) {
             super(Arrays.asList("a", "b"), operator, Arrays.asList(Arrays.asList(1, 2)));
         }
+
+        TestRowAbstractIn(final Collection<String> propNames, final Collection<?> valueRows) {
+            super(propNames, Operator.IN, valueRows);
+        }
+    }
+
+    private static final class NominallyNonEmptyCollection<E> extends AbstractCollection<E> {
+        @Override
+        public Iterator<E> iterator() {
+            return Collections.emptyIterator();
+        }
+
+        @Override
+        public int size() {
+            return 1;
+        }
     }
 
     @Test
@@ -40,6 +60,15 @@ public class AbstractInTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("status", Operator.EQUAL, Arrays.asList("A")));
         assertThrows(IllegalArgumentException.class, () -> new TestRowAbstractIn(Operator.EQUAL));
         assertThrows(NullPointerException.class, () -> new TestAbstractIn("status", null, Arrays.asList("A")));
+    }
+
+    @Test
+    public void testConstructorsValidateDefensiveSnapshotsAreNonEmpty() {
+        final NominallyNonEmptyCollection<Object> emptySnapshot = new NominallyNonEmptyCollection<>();
+
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("status", emptySnapshot));
+        assertThrows(IllegalArgumentException.class, () -> new TestRowAbstractIn(new NominallyNonEmptyCollection<>(), Arrays.asList(Arrays.asList(1))));
+        assertThrows(IllegalArgumentException.class, () -> new TestRowAbstractIn(Arrays.asList("id"), emptySnapshot));
     }
 
     private static final class EmptyAbstractIn extends AbstractIn {

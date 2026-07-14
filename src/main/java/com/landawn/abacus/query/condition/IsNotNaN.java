@@ -77,11 +77,11 @@ package com.landawn.abacus.query.condition;
 public class IsNotNaN extends IsNot {
 
     /**
-     * Shared Expression instance representing NAN.
+     * Shared SqlExpression instance representing NAN.
      * This constant mirrors {@link IsNaN#NAN} for symmetry, allowing code in this class
      * to reference its own constant rather than reaching into the positive counterpart.
      */
-    static final Expression NAN = IsNaN.NAN;
+    static final SqlExpression NAN = IsNaN.NAN;
 
     /**
      * Default constructor for serialization frameworks like Kryo.

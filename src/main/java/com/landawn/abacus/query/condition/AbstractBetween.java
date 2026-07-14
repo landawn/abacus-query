@@ -106,7 +106,7 @@ public abstract class AbstractBetween extends ComposableCondition {
      * String prop = between.propName();   // "age"
      * }</pre>
      *
-     * @return the property name
+     * @return the property name, or {@code null} for an uninitialized serialization-framework instance
      */
     public String propName() {
         return propName;
@@ -232,6 +232,7 @@ public abstract class AbstractBetween extends ComposableCondition {
      * @param namingPolicy the naming policy to apply to the property name;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a SQL representation of this condition
+     * @throws IllegalArgumentException if either bound is a {@code NaN} or infinite {@link Float}/{@link Double}
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {

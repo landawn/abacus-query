@@ -20,12 +20,13 @@ package com.landawn.abacus.query.condition;
  * floating-point values are non-infinite (not positive or negative infinity). This predicate
  * does not exclude NaN; combine it with {@link IsNotNaN} when finite numeric validation is required.
  * 
- * <p>In floating-point arithmetic, infinity values can result from various operations:</p>
+ * <p>In systems that use IEEE 754-style floating-point semantics, infinity values can result
+ * from operations such as:</p>
  * <ul>
  *   <li>Division by zero with non-zero numerator (e.g., 1.0/0.0 = Infinity, -1.0/0.0 = -Infinity)</li>
  *   <li>Operations that exceed the maximum representable value (overflow)</li>
- *   <li>Mathematical operations like log(0) or tan(π/2)</li>
- *   <li>Accumulation of rounding errors in iterative calculations</li>
+ *   <li>Mathematical operations whose result is outside the finite representable range</li>
+ *   <li>Repeated calculations whose magnitude eventually overflows</li>
  * </ul>
  *
  * <p>This condition helps filter out such infinite values to:</p>
@@ -75,11 +76,11 @@ package com.landawn.abacus.query.condition;
 public class IsNotInfinite extends IsNot {
 
     /**
-     * Shared Expression instance representing INFINITE.
+     * Shared SqlExpression instance representing INFINITE.
      * This constant mirrors {@link IsInfinite#INFINITE} for symmetry, allowing code in this class
      * to reference its own constant rather than reaching into the positive counterpart.
      */
-    static final Expression INFINITE = IsInfinite.INFINITE;
+    static final SqlExpression INFINITE = IsInfinite.INFINITE;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -95,10 +96,9 @@ public class IsNotInfinite extends IsNot {
      * numeric value is NOT infinite (neither positive infinity nor negative infinity).
      * It does not exclude NaN; combine it with {@link IsNotNaN} before relying on a value as finite.
      *
-     * <p>The generated SQL uses the {@code IS NOT INFINITE} operator to properly verify non-infinite
-     * values. Standard comparison operators cannot reliably test for the absence of
-     * infinity because infinity has special arithmetic properties. {@code IS NOT INFINITE} is
-     * the correct way to filter out infinite numeric values.</p>
+     * <p>The generated SQL uses the vendor-specific {@code IS NOT INFINITE} predicate. Standard
+     * comparison operators are not a portable substitute because infinity handling differs by
+     * database; verify that the selected dialect supports this predicate.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

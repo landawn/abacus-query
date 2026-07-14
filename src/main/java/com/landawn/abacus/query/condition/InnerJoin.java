@@ -20,14 +20,14 @@ import java.util.Collection;
  * Represents an INNER JOIN clause in SQL queries.
  * An INNER JOIN returns only the rows that have matching values in both tables.
  * Rows from either table that don't have a match in the other table are excluded
- * from the result set. This is the most restrictive type of join and ensures that
- * all returned rows have complete data from both tables.
+ * from the result set. Each returned row is formed from a matching row pair, although
+ * nullable columns in either source can of course still contain {@code NULL}.
  * 
  * <p>INNER JOIN is the most common type of join and is used when you want to:
  * <ul>
  *   <li>Combine related data from multiple tables</li>
  *   <li>Return only records that have corresponding data in both tables</li>
- *   <li>Ensure referential integrity in query results</li>
+ *   <li>Restrict results to rows satisfying the specified relationship</li>
  *   <li>Eliminate orphaned records from results</li>
  *   <li>Perform equi-joins based on matching key values</li>
  * </ul>
@@ -37,7 +37,8 @@ import java.util.Collection;
  *   <li>Returns only matching rows from both tables</li>
  *   <li>Non-matching rows are completely excluded</li>
  *   <li>Result set size depends on cardinality of the matching keys (can exceed either table for many-to-many joins)</li>
- *   <li>Order of tables doesn't affect the result (commutative)</li>
+ *   <li>Swapping the two inputs preserves the matching row pairs for a symmetric predicate,
+ *       but can change projection order, duplicate column names, and optimizer behavior</li>
  *   <li>Can be chained for multi-table joins</li>
  * </ul>
  * 
@@ -71,7 +72,7 @@ import java.util.Collection;
  *     ));
  * // SQL: INNER JOIN inventory i ON ((p.product_id = i.product_id) AND (p.warehouse_id = i.warehouse_id) AND (i.quantity > 0))
  *
- * // Using Expression for custom join logic
+ * // Using SqlExpression for custom join logic
  * InnerJoin exprJoin = new InnerJoin("customers c",
  *     Filters.expr("orders.customer_id = c.id"));
  * // SQL: INNER JOIN customers c ON orders.customer_id = c.id
@@ -149,7 +150,7 @@ public class InnerJoin extends Join {
      *     ));
      * // SQL: INNER JOIN products p ON ((order_items.product_id = p.id) AND (p.active = true) AND (p.stock > 0))
      *
-     * // Using Expression for custom join logic
+     * // Using SqlExpression for custom join logic
      * InnerJoin exprJoin = new InnerJoin("customers c",
      *     Filters.expr("orders.customer_id = c.id"));
      * // SQL: INNER JOIN customers c ON orders.customer_id = c.id
@@ -159,9 +160,10 @@ public class InnerJoin extends Join {
      * @param joinCondition the condition appended after the join target. Use {@link On} (or the deprecated {@link Using}) when the SQL should
      *            include those keywords. A non-empty predicate is allowed; {@code joinCondition} itself may be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is or contains a
-     *                                  {@link Criteria}, a null operator, a SQL clause, an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
+     *                                  {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public InnerJoin(final String joinEntity, final Condition joinCondition) {
         super(Operator.INNER_JOIN, joinEntity, joinCondition);
@@ -189,7 +191,7 @@ public class InnerJoin extends Join {
      *     ));
      * // SQL: INNER JOIN (products p, categories cat, suppliers s) ON ((p.category_id = cat.id) AND (p.supplier_id = s.id))
      *
-     * // Using Expression for multiple tables
+     * // Using SqlExpression for multiple tables
      * InnerJoin exprMulti = new InnerJoin(tables,
      *     Filters.expr("o.customer_id = c.id AND o.status = 'active'"));
      * // SQL: INNER JOIN (orders o, customers c) ON o.customer_id = c.id AND o.status = 'active'
@@ -200,9 +202,9 @@ public class InnerJoin extends Join {
      *            include those keywords. A non-empty predicate is allowed; {@code joinCondition} itself may be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
-     *                                  an {@link Expression} whose text begins with {@code ON} or {@code USING},
+     *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public InnerJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         super(Operator.INNER_JOIN, joinEntities, joinCondition);

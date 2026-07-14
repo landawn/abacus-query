@@ -126,6 +126,7 @@ public class Junction extends ComposableCondition {
     @SuppressWarnings({ "unchecked", "unused" })
     Junction(final Operator operator, final List<? extends Condition> ownedValidatedConditions, final boolean marker) {
         super(operator);
+        validateJunctionOperator(operator);
         this.conditions = (List<Condition>) ownedValidatedConditions;
     }
 
@@ -167,8 +168,8 @@ public class Junction extends ComposableCondition {
      *             or if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, or an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
-     *             (a blank {@link Expression} or empty {@link Junction})
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or is an empty predicate
+     *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
@@ -208,8 +209,8 @@ public class Junction extends ComposableCondition {
      *             or if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, or an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
-     *             (a blank {@link Expression} or empty {@link Junction})
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or is an empty predicate
+     *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);

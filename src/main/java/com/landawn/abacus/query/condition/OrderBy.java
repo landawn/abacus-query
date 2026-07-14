@@ -100,7 +100,7 @@ public class OrderBy extends Clause {
      * @param condition the ordering condition. Must not be {@code null}.
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a {@link Criteria}, another clause,
      *             an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *             operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which
+     *             operand, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which
      *             can be nested inside a clause
      * @see Filters#expr(String)
      */
@@ -180,7 +180,7 @@ public class OrderBy extends Clause {
      *
      * @param propOrColumnName the property or column name to sort by. Must not be {@code null}, empty, or blank.
      * @param direction the sort direction (ASC or DESC). Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      */
     public OrderBy(final String propOrColumnName, final SortDirection direction) {
         this(Filters.expr(AbstractCondition.createSortExpression(propOrColumnName, direction)));

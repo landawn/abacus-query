@@ -185,8 +185,8 @@ public abstract class AbstractCondition implements Condition {
             return false;
         }
 
-        if (cond instanceof Expression) {
-            final String literal = ((Expression) cond).literal();
+        if (cond instanceof SqlExpression) {
+            final String literal = ((SqlExpression) cond).literal();
 
             if (Strings.isEmpty(literal)) {
                 return false;
@@ -203,7 +203,24 @@ public abstract class AbstractCondition implements Condition {
             final int secondTokenStart = SqlParser.nextTokenEndIndex(literal, 0);
             final String secondToken = SqlParser.nextToken(literal, secondTokenStart);
 
-            return Strings.isNotEmpty(secondToken) && isClause(firstToken + SPACE + secondToken);
+            if (Strings.isEmpty(secondToken)) {
+                return false;
+            }
+
+            if (isClause(firstToken + SPACE + secondToken)) {
+                return true;
+            }
+
+            // LEFT/RIGHT/FULL OUTER JOIN uses an optional third keyword that is not present in
+            // the canonical Operator token (LEFT JOIN, RIGHT JOIN, FULL JOIN).
+            if ("OUTER".equalsIgnoreCase(secondToken)) {
+                final int thirdTokenStart = SqlParser.nextTokenEndIndex(literal, secondTokenStart);
+                final String thirdToken = SqlParser.nextToken(literal, thirdTokenStart);
+
+                return Strings.isNotEmpty(thirdToken) && isClause(firstToken + SPACE + thirdToken);
+            }
+
+            return false;
         }
 
         return isClause(cond.operator());
@@ -211,7 +228,7 @@ public abstract class AbstractCondition implements Condition {
 
     /**
      * Checks whether the given condition is an {@code ON} or {@code USING} join connector.
-     * For an {@link Expression}, the first word of its (non-empty) literal is inspected; for any
+     * For an {@link SqlExpression}, the first word of its (non-empty) literal is inspected; for any
      * other condition, its {@link Condition#operator() operator} is checked.
      *
      * @param cond the condition to check (may be {@code null})
@@ -223,8 +240,8 @@ public abstract class AbstractCondition implements Condition {
             return false;
         }
 
-        if (cond instanceof Expression) {
-            final String literal = ((Expression) cond).literal();
+        if (cond instanceof SqlExpression) {
+            final String literal = ((SqlExpression) cond).literal();
 
             if (Strings.isEmpty(literal)) {
                 return false;
@@ -323,14 +340,16 @@ public abstract class AbstractCondition implements Condition {
      * Tests whether a condition tree contains a component that cannot stand as a SQL predicate.
      * In addition to checking the root, this method descends into junctions and unary wrappers so
      * custom {@link Cell} and {@link ComposableCell} subclasses cannot hide a clause, join connector,
-     * quantified-subquery operand, empty predicate, {@link Criteria}, or null operator.
+     * quantified-subquery operand, standalone {@link SubQuery}, empty predicate, {@link Criteria},
+     * or null operator. {@link Exists} and {@link NotExists} are complete predicates, so their
+     * necessarily wrapped subqueries are not treated as standalone operands.
      *
      * @param cond the condition tree to inspect; {@code null} is invalid
      * @return {@code true} if {@code cond} or a nested component is not a valid predicate component
      */
     protected static boolean containsNonPredicateComponent(final Condition cond) {
-        if (cond == null || cond.operator() == null || cond instanceof Criteria || isClause(cond) || isOnOrUsing(cond) || isQuantifiedSubQueryOperand(cond)
-                || isEmptyPredicate(cond)) {
+        if (cond == null || cond.operator() == null || cond instanceof Criteria || cond instanceof SubQuery || isClause(cond) || isOnOrUsing(cond)
+                || isQuantifiedSubQueryOperand(cond) || isEmptyPredicate(cond)) {
             return true;
         }
 
@@ -349,6 +368,10 @@ public abstract class AbstractCondition implements Condition {
         }
 
         if (cond instanceof ComposableCell) {
+            if (cond instanceof Exists || cond instanceof NotExists) {
+                return false;
+            }
+
             return containsNonPredicateComponent(((ComposableCell) cond).condition());
         }
 
@@ -368,7 +391,7 @@ public abstract class AbstractCondition implements Condition {
      *   <li>{@code null} returns {@code null}</li>
      *   <li>Strings are wrapped in single quotes with embedded single/double quotes escaped via {@link #escapeStringLiteral(String)}
      *       (e.g., {@code John} -&gt; {@code 'John'}; {@code O'Brien} -&gt; {@code 'O\'Brien'})</li>
-     *   <li>{@link Condition} values use the recursive {@code toString(namingPolicy)}; a {@link SubQuery} is additionally
+     *   <li>{@link Condition} values use the recursive {@link Condition#toSql(NamingPolicy)} rendering; a {@link SubQuery} is additionally
      *       wrapped in parentheses, and the {@code IsNull.NULL}, {@code IsNaN.NAN}, and {@code IsInfinite.INFINITE}
      *       sentinels use their plain {@code toString()}</li>
      *   <li>{@link Number} and {@link Boolean} values use their {@code toString()} unchanged (no quoting).
@@ -427,17 +450,16 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Escapes a string for safe inclusion as the body of a single-quoted SQL string literal.
+     * Escapes a string for inclusion as the body of a single-quoted SQL string literal.
      * Single quotes and double quotes are backslash-escaped via {@link com.landawn.abacus.util.Strings#quoteEscaped},
      * and a trailing-backslash guard is applied so that the closing {@code '} quote cannot be consumed
      * as an escape sequence. This is a defense-in-depth helper used by
-     * {@link #formatParameter(Object, NamingPolicy)} and by {@link Expression#renderValue(Object)};
+     * {@link #formatParameter(Object, NamingPolicy)} and by {@link SqlExpression#renderValue(Object)};
      * callers must still emit the surrounding {@code '} quotes.
      *
-     * <p>Note: this is dialect-tolerant escaping (backslash-style, with an extra trailing-backslash
-     * guard) rather than strict SQL-standard quote doubling; the resulting literal is safe to embed
-     * even when {@code standard_conforming_strings} is off (MySQL default) and remains a valid
-     * literal under most dialects, but for fully portable SQL prefer parameterized builders.</p>
+     * <p>Note: this uses backslash-style escaping with an extra trailing-backslash guard, not
+     * SQL-standard quote doubling. Its interpretation therefore depends on the database's string-literal
+     * mode. Use parameterized builders when SQL portability or untrusted input matters.</p>
      *
      * @param str the raw string contents; {@code null} yields an empty string and an empty string
      *            is returned unchanged
@@ -774,16 +796,16 @@ public abstract class AbstractCondition implements Condition {
     /**
      * Tests whether the given condition is an "empty predicate" — a condition that carries no actual
      * filtering logic and therefore cannot meaningfully participate in composition, clauses, or joins.
-     * Specifically, this is a blank {@link Expression} (an empty or whitespace-only literal) or a
+     * Specifically, this is a blank {@link SqlExpression} (an empty or whitespace-only literal) or a
      * {@link Junction} that contains no sub-conditions.
      *
      * @param cond the condition to test (may be {@code null})
-     * @return {@code true} if {@code cond} is a blank {@link Expression} or an empty {@link Junction};
+     * @return {@code true} if {@code cond} is a blank {@link SqlExpression} or an empty {@link Junction};
      *         {@code false} otherwise (including for a {@code null} {@code cond})
      */
     protected static boolean isEmptyPredicate(final Condition cond) {
-        if (cond instanceof Expression) {
-            return Strings.isBlank(((Expression) cond).literal());
+        if (cond instanceof SqlExpression) {
+            return Strings.isBlank(((SqlExpression) cond).literal());
         }
 
         if (cond instanceof Junction) {
@@ -795,9 +817,9 @@ public abstract class AbstractCondition implements Condition {
 
     /**
      * Validates that the given condition is a valid operand for composable operations (AND, OR, NOT, XOR).
-     * Conditions that are or recursively contain a {@link Criteria}, a SQL clause (WHERE, ORDER BY, etc.), an
+     * Conditions that are or recursively contain a {@link Criteria}, a standalone {@link SubQuery}, a SQL clause (WHERE, ORDER BY, etc.), an
      * {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     * an empty predicate (a blank {@link Expression} or empty {@link Junction}), or a {@code null} operator
+     * an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}), or a {@code null} operator
      * (including a {@code null} {@code cond}) cannot participate in logical composition.
      *
      * <p><b>Usage Examples:</b></p>
@@ -815,9 +837,9 @@ public abstract class AbstractCondition implements Condition {
      * @param methodName the name of the composable method being called (for error messages)
      * @return {@code cond} unchanged, after validation succeeds
      * @throws IllegalArgumentException if {@code cond} is {@code null}, or is or recursively contains a condition
-     *                                  with a {@code null} operator, a {@link Criteria}, a SQL clause, an
+     *                                  with a {@code null} operator, a {@link Criteria}, a standalone {@link SubQuery}, a SQL clause, an
      *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  or an empty predicate (a blank {@link Expression} or empty {@link Junction})
+     *                                  or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
         N.checkArgNotNull(cond, "cond");

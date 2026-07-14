@@ -62,11 +62,11 @@ package com.landawn.abacus.query.condition;
 public class IsNotNull extends IsNot {
 
     /**
-     * Shared Expression instance representing NULL.
+     * Shared SqlExpression instance representing NULL.
      * This constant mirrors {@link IsNull#NULL} for symmetry, allowing code in this class
      * to reference its own constant rather than reaching into the positive counterpart.
      */
-    static final Expression NULL = IsNull.NULL;
+    static final SqlExpression NULL = IsNull.NULL;
 
     /**
      * Default constructor for serialization frameworks like Kryo.

@@ -337,8 +337,8 @@ public class BetweenTest extends TestBase {
         Between dateRange = Filters.between("createdDate", LocalDate.of(2023, 1, 1), LocalDate.of(2023, 12, 31));
 
         // Price range with calculations
-        Expression minPrice = Expression.of("base_price * 0.9");
-        Expression maxPrice = Expression.of("base_price * 1.1");
+        SqlExpression minPrice = SqlExpression.of("base_price * 0.9");
+        SqlExpression maxPrice = SqlExpression.of("base_price * 1.1");
         Between priceRange = new Between("offer_price", minPrice, maxPrice);
 
         // Complex condition with between

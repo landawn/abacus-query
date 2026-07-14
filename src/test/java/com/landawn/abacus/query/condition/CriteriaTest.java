@@ -7,9 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -1302,6 +1305,71 @@ public class CriteriaTest extends TestBase {
         }
     }
 
+    @Test
+    public void testPackageConstructorValidatesTheSameSnapshotItStores() {
+        final Where valid = new Where(Filters.eq("id", 1));
+        final Condition invalid = Filters.eq("unexpected", 2);
+        final List<Condition> changing = new AbstractList<>() {
+            private int iteratorCount;
+
+            @Override
+            public Iterator<Condition> iterator() {
+                return Collections.singletonList(iteratorCount++ == 0 ? valid : invalid).iterator();
+            }
+
+            @Override
+            public Condition get(final int index) {
+                if (index != 0) {
+                    throw new IndexOutOfBoundsException(index);
+                }
+
+                return iteratorCount == 0 ? valid : invalid;
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        final Criteria criteria = new Criteria(null, changing);
+
+        assertEquals(valid, criteria.where());
+        assertEquals(Collections.singletonList(valid), criteria.conditions());
+    }
+
+    @Test
+    public void testPackageConstructorNormalizesBlankSelectModifier() {
+        final Criteria criteria = new Criteria(" \t ", new ArrayList<>());
+
+        assertNull(criteria.selectModifier());
+        assertEquals(criteria, criteria.toBuilder().build());
+        assertEquals(criteria.hashCode(), criteria.toBuilder().build().hashCode());
+    }
+
+    private static final class NullOperatorCondition implements Condition {
+        @Override
+        public Operator operator() {
+            return null;
+        }
+
+        @Override
+        public com.landawn.abacus.util.ImmutableList<Object> parameters() {
+            return com.landawn.abacus.util.ImmutableList.empty();
+        }
+
+        @Override
+        public String toSql(final NamingPolicy namingPolicy) {
+            return "invalid";
+        }
+    }
+
+    private static final class WrongConcreteClause extends Clause {
+        WrongConcreteClause(final Operator operator) {
+            super(operator, Filters.expr("x"));
+        }
+    }
+
     private static void invokeCheckCondition(final Criteria.Builder builder, final Condition condition) {
         try {
             java.lang.reflect.Method method = Criteria.Builder.class.getDeclaredMethod("checkCondition", Condition.class);
@@ -1643,5 +1711,42 @@ public class CriteriaTest extends TestBase {
     @Test
     public void testAddEmptyPredicateThrows() {
         assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.expr("   ")));
+    }
+
+    @Test
+    public void testAddConditionWithNullOperatorThrowsIllegalArgumentException() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(new NullOperatorCondition()));
+
+        assertTrue(error.getMessage().contains("operator"));
+    }
+
+    @Test
+    public void testPackageConstructorRejectsNullConditionElement() {
+        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList((Condition) null)));
+        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new NullOperatorCondition())));
+    }
+
+    @Test
+    public void testPackageConstructorRejectsNonClauseCondition() {
+        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(Filters.eq("id", 1))));
+        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new FakeClauseCondition(Operator.WHERE))));
+        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new FakeClauseCondition(Operator.JOIN))));
+    }
+
+    @Test
+    public void testPackageConstructorRejectsUnsupportedAndWrongConcreteClauses() {
+        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new FakeClauseCondition(Operator.OFFSET))));
+        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new FakeClauseCondition(Operator.FOR_UPDATE))));
+        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new WrongConcreteClause(Operator.WHERE))));
+        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new WrongConcreteClause(Operator.UNION))));
+    }
+
+    @Test
+    public void testPackageConstructorRejectsDuplicateSingletonClauses() {
+        Where first = new Where(Filters.eq("a", 1));
+        Where second = new Where(Filters.eq("b", 2));
+
+        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(first, second)));
+        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new Limit(10), new Limit(20))));
     }
 }

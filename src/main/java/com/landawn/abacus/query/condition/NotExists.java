@@ -26,8 +26,8 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>Returns {@code true} when subquery returns zero rows</li>
  *   <li>Returns {@code false} when subquery returns one or more rows</li>
- *   <li>Often more efficient than NOT IN for large datasets</li>
- *   <li>Handles NULL values more predictably than NOT IN</li>
+ *   <li>Avoids the NULL-sensitive membership semantics of NOT IN</li>
+ *   <li>Relative performance versus NOT IN depends on the database and execution plan</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -108,7 +108,8 @@ public class NotExists extends ComposableCell {
      * // returns true
      * }</pre>
      *
-     * @return the {@link SubQuery} supplied at construction time
+     * @return the {@link SubQuery} supplied at construction time, or {@code null} for an uninitialized
+     *         serialization-framework instance
      */
     public SubQuery subQuery() {
         return (SubQuery) condition;

@@ -54,7 +54,7 @@ import com.landawn.abacus.query.SqlDialect.SqlPolicy;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
-import com.landawn.abacus.query.condition.Expression;
+import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.Join;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.condition.Operator;
@@ -305,7 +305,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Matches the generic {@code LIMIT count [OFFSET offset]} expressions that reach the builder as an
-     * unparsed {@link Limit#literal() literal}, where each token is an integer literal or a {@code ?} /
+     * unparsed {@link Limit#expression() literal}, where each token is an integer literal or a {@code ?} /
      * {@code :name} / <code>#{name}</code> parameter placeholder. In practice the integer-only forms are
      * parsed into concrete count/offset by {@link Limit#Limit(String)} and rendered via {@link #limit(int)} /
      * {@link #limit(int, int)}, so this pattern normally handles the placeholder-bearing forms. Deliberately
@@ -315,6 +315,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private static final String LIMIT_SLOT_PATTERN = "(\\d+|\\?|:\\w+|#\\{[^}]+\\})";
     private static final Pattern GENERIC_LIMIT_EXPRESSION_PATTERN = Pattern.compile(
             "LIMIT\\s+" + LIMIT_SLOT_PATTERN + "(?:\\s+OFFSET\\s+" + LIMIT_SLOT_PATTERN + "|\\s*,\\s*" + LIMIT_SLOT_PATTERN + ")?", Pattern.CASE_INSENSITIVE);
+
+    /** Internal clause-state marker distinguishing {@code OFFSET n ROWS} from limit-style {@code OFFSET n}. */
+    private static final String OFFSET_ROWS_SLOT = "OFFSET ROWS syntax";
 
     /** Char array for the "AND" keyword. */
     protected static final char[] _AND = SK.AND.toCharArray();
@@ -445,6 +448,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     protected final Map<String, Integer> _namedParameterNameOccurrences = new HashMap<>(); //NOSONAR
 
+    // Tracks placeholders emitted by builder APIs (including QME placeholders that have no entry in
+    // _parameters). This lets sibling set operations validate policy compatibility without consuming
+    // the child builder first or mistaking SQL operators such as PostgreSQL's JSON '?' for parameters.
+    protected boolean _hasGeneratedParameterPlaceholder = false; //NOSONAR
+
     // Every named-parameter name emitted into the SQL so far. Needed in addition to the occurrence
     // counts because a generated "<base>_<n>" may collide with a property literally named "<base>_<n>".
     protected final Set<String> _generatedNamedParameterNames = new HashSet<>(); //NOSONAR
@@ -488,6 +496,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected boolean _hasFromBeenSet = false; //NOSONAR
     protected boolean _isForConditionOnly = false; //NOSONAR
 
+    // True only after a JOIN form that may accept ON/USING, until that connector is emitted.
+    protected boolean _joinConditionAllowed = false; //NOSONAR
+
+    // True after a set operation has appended a complete right-hand query. At that point only
+    // compound-result clauses (another set operation, ORDER BY, pagination, FOR UPDATE) may follow.
+    protected boolean _hasCompletedSetOperation = false; //NOSONAR
+
     // Whether a set(...) call has already written assignments, so chained set(...) calls know a
     // leading comma is required (sniffing the buffer's last char breaks on trailing whitespace).
     protected boolean _setListStarted = false; //NOSONAR
@@ -497,6 +512,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected final SqlParser.Tokenizer _tokenizer; //NOSONAR
 
     protected final Set<String> calledOpSet = new HashSet<>(); //NOSONAR
+
+    /**
+     * Default renderer for {@link SqlDialect.SqlPolicy#NAMED_SQL} placeholders. It appends a colon followed by
+     * the generated parameter name, for example {@code :customerId}.
+     */
+    public static final BiConsumer<StringBuilder, String> DEFAULT_NAMED_PARAMETER_HANDLER = (sql, name) -> sql.append(':').append(name);
 
     /**
      * Constructs a new AbstractQueryBuilder with the specified SQL dialect.
@@ -529,7 +550,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 ? (_dialectFamily == DialectFamily.MYSQL ? SK._BACKTICK : SK._DOUBLE_QUOTE)
                 : (this.sqlDialect.identifierQuote() == IdentifierQuote.BACKTICK ? SK._BACKTICK : SK._DOUBLE_QUOTE);
 
-        _handlerForNamedParameter = this.sqlDialect.namedParameterHandler() == null ? SqlDialect.DEFAULT_NAMED_PARAMETER_HANDLER
+        _handlerForNamedParameter = this.sqlDialect.namedParameterHandler() == null ? AbstractQueryBuilder.DEFAULT_NAMED_PARAMETER_HANDLER
                 : this.sqlDialect.namedParameterHandler();
         _tokenizer = this.sqlDialect.tokenizerConfig() == null ? SqlParser.tokenizer() : SqlParser.tokenizer(this.sqlDialect.tokenizerConfig());
 
@@ -847,7 +868,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 val[3].removeAll(nonUpdatableNonWritablePropNames);
                 val[4].removeAll(nonUpdatablePropNames);
 
-                for (final String idPropName : QueryUtil.idPropertyNames(entityClass)) {
+                for (final String idPropName : QueryUtil.idPropNames(entityClass)) {
                     val[3].remove(idPropName);
 
                     final java.lang.reflect.Method getter = Beans.getPropGetter(entityClass, idPropName);
@@ -962,15 +983,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Within a subclass of AbstractQueryBuilder:
-     * Map<String, Expression> params = namedPlaceholders("firstName", "lastName");
+     * Map<String, SqlExpression> params = namedPlaceholders("firstName", "lastName");
      * }</pre>
      *
      * @param propNames the property names
      * @return a map with property names mapped to {@code Filters.QME}
      */
     @Beta
-    protected static Map<String, Expression> namedPlaceholders(final String... propNames) {
-        final Map<String, Expression> m = N.newLinkedHashMap(propNames.length);
+    protected static Map<String, SqlExpression> namedPlaceholders(final String... propNames) {
+        final Map<String, SqlExpression> m = N.newLinkedHashMap(propNames.length);
 
         for (final String propName : propNames) {
             m.put(propName, Filters.QME);
@@ -989,15 +1010,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Within a subclass of AbstractQueryBuilder:
-     * Map<String, Expression> params = namedPlaceholders(Arrays.asList("firstName", "lastName"));
+     * Map<String, SqlExpression> params = namedPlaceholders(Arrays.asList("firstName", "lastName"));
      * }</pre>
      *
      * @param propNames the collection of property names
      * @return a map with property names mapped to {@code Filters.QME}
      */
     @Beta
-    protected static Map<String, Expression> namedPlaceholders(final Collection<String> propNames) {
-        final Map<String, Expression> m = N.newLinkedHashMap(propNames.size());
+    protected static Map<String, SqlExpression> namedPlaceholders(final Collection<String> propNames) {
+        final Map<String, SqlExpression> m = N.newLinkedHashMap(propNames.size());
 
         for (final String propName : propNames) {
             m.put(propName, Filters.QME);
@@ -1006,13 +1027,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return m;
     }
 
-    private static void checkSqlFragmentNotBlank(final String value, final String argName) {
+    static void checkSqlFragmentNotBlank(final String value, final String argName) {
         if (Strings.isBlank(value)) {
             throw new IllegalArgumentException(argName + " must not be null, empty, or blank");
         }
     }
 
-    private static void checkSqlFragmentsNotBlank(final String[] values, final String argName) {
+    static void checkSqlFragmentsNotBlank(final String[] values, final String argName) {
         N.checkArgNotEmpty(values, argName);
 
         for (int i = 0; i < values.length; i++) {
@@ -1020,7 +1041,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
-    private static void checkSqlFragmentsNotBlank(final Collection<String> values, final String argName) {
+    static void checkSqlFragmentsNotBlank(final Collection<String> values, final String argName) {
         N.checkArgNotEmpty(values, argName);
 
         int i = 0;
@@ -1030,12 +1051,43 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
-    private static void checkSqlFragmentKeysNotBlank(final Map<String, ?> values, final String argName) {
+    /**
+     * Takes one stable snapshot of a caller-owned collection and validates the same elements that
+     * the builder will subsequently render. This also rejects collections whose reported size is
+     * non-zero but whose iterator is empty.
+     */
+    private static List<String> copyAndValidateSqlFragments(final Collection<String> values, final String argName) {
+        N.checkArgNotNull(values, argName);
+
+        final List<String> copy = new ArrayList<>(values);
+        checkSqlFragmentsNotBlank(copy, argName);
+
+        return copy;
+    }
+
+    static void checkSqlFragmentKeysNotBlank(final Map<?, ?> values, final String argName) {
         N.checkArgNotEmpty(values, argName);
 
-        for (final Map.Entry<String, ?> entry : values.entrySet()) {
-            checkSqlFragmentNotBlank(entry.getKey(), "Key in " + argName);
+        for (final Map.Entry<?, ?> entry : values.entrySet()) {
+            if (!(entry.getKey() instanceof String)) {
+                throw new IllegalArgumentException(argName + " keys must be non-blank strings, but found: " + entry.getKey());
+            }
+
+            checkSqlFragmentNotBlank((String) entry.getKey(), "Key in " + argName);
         }
+    }
+
+    /**
+     * Takes one insertion-order-preserving snapshot of a caller-owned map and validates the same
+     * keys that the builder will subsequently render.
+     */
+    private static <V> Map<String, V> copyAndValidateSqlFragmentMap(final Map<String, V> values, final String argName) {
+        N.checkArgNotNull(values, argName);
+
+        final Map<String, V> copy = new LinkedHashMap<>(values);
+        checkSqlFragmentKeysNotBlank(copy, argName);
+
+        return copy;
     }
 
     /**
@@ -1043,6 +1095,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * ({@code union}/{@code unionAll}/{@code intersect}/{@code except}/{@code minus} taking a single query
      * string, or the SQL built by the sibling-builder overloads). These overloads are dedicated to appending
      * a complete sub-query, so the argument must satisfy the {@link #isSubQuery(String...)} heuristic.
+     * The same validation is applied to every set-operation operand carried by a {@link Criteria}.
      *
      * @param query the query string to validate
      * @param operationName the set-operation method name (e.g. {@code "union"}) used in the error message
@@ -1051,7 +1104,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private void checkSetOperationSubQuery(final String query, final String operationName) {
         checkSqlFragmentNotBlank(query, "query");
 
-        if (!isSubQuery(_tokenizer, query) || !SqlParser.isReadOnlyQuery(query)) {
+        if (!isSubQuery(_tokenizer, query) || !_tokenizer.isReadOnlyQuery(query)) {
             throw new IllegalArgumentException("The query argument to " + operationName
                     + " must be a complete SELECT sub-query (starting with 'SELECT', or containing 'SELECT ... FROM'), but was: \"" + query
                     + "\". To start a new SELECT from a column list, use " + operationName + "(Collection) followed by from(...).");
@@ -1133,7 +1186,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             for (final Selection selection : _multiSelects) {
                 final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
-                        : QueryUtil.selectPropertyNames(selection.entityClass(), selection.includesSubEntityProperties(), selection.excludedPropNames());
+                        : QueryUtil.selectPropNames(selection.entityClass(), selection.includesSubEntityProperties(), selection.excludedPropNames());
                 allPropNames.addAll(selectPropNames);
             }
 
@@ -1163,6 +1216,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 switch (_sqlPolicy) {
                     case RAW_SQL:
                     case PARAMETERIZED_SQL: {
+                        _hasGeneratedParameterPlaceholder = true;
+
                         for (int i = 0, size = insertColumnNames.size(); i < size; i++) {
                             if (i > 0) {
                                 _sb.append(_COMMA_SPACE);
@@ -1316,15 +1371,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code selectModifier} is non-empty but blank (whitespace only)
      */
     public This selectModifier(final String selectModifier) {
-        if (Strings.isNotEmpty(_selectModifier)) {
-            throw new IllegalStateException("selectModifier has already been set and cannot be set again");
-        }
-
         if (Strings.isEmpty(selectModifier)) {
             return (This) this;
         }
 
         checkSqlFragmentNotBlank(selectModifier, "selectModifier");
+
+        if (Strings.isNotEmpty(_selectModifier)) {
+            throw new IllegalStateException("selectModifier has already been set and cannot be set again");
+        }
 
         _selectModifier = selectModifier;
 
@@ -1402,13 +1457,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final Collection<String> tableNames) {
-        N.checkArgNotEmpty(tableNames, "tableNames");
+        final List<String> tableNamesSnapshot = copyAndValidateSqlFragments(tableNames, "tableNames");
 
-        final List<String> normalizedTableNames = new ArrayList<>(tableNames.size());
+        final List<String> normalizedTableNames = new ArrayList<>(tableNamesSnapshot.size());
         int idx = 0;
 
-        for (final String tableName : tableNames) {
-            N.checkArgNotEmpty(tableName, "tableNames[" + idx + "]");
+        for (final String tableName : tableNamesSnapshot) {
             final String normalizedTableName = tableName.trim();
             N.checkArgNotEmpty(normalizedTableName, "tableNames[" + idx + "]");
             normalizedTableNames.add(normalizedTableName);
@@ -1512,6 +1566,38 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Reports whether a raw JOIN expression already supplies its top-level {@code ON} or {@code USING}
+     * connector. Nested subqueries, quoted regions and comments are ignored; connector-looking text
+     * there must not close the outer join's still-available connector slot.
+     */
+    private static boolean containsTopLevelJoinCondition(final String joinExpr) {
+        int depth = 0;
+
+        for (int i = 0, len = joinExpr.length(); i < len; i++) {
+            final int next = skipSqlQuotedOrComment(joinExpr, i);
+
+            if (next != i) {
+                i = next - 1;
+                continue;
+            }
+
+            final char ch = joinExpr.charAt(i);
+
+            if (ch == '(') {
+                depth++;
+            } else if (ch == ')') {
+                if (depth > 0) {
+                    depth--;
+                }
+            } else if (depth == 0 && isAliasKeywordBoundary(joinExpr, i - 1) && (isSqlWordAt(joinExpr, i, SK.ON) || isSqlWordAt(joinExpr, i, SK.USING))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Sets the FROM clause with an expression and associates it with an entity class.
      *
      * <p><b>Usage Examples:</b></p>
@@ -1606,7 +1692,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final boolean isForSelect = _op == OperationType.QUERY;
 
         if (N.notEmpty(_propOrColumnNames)) {
-            if (_entityClass != null && !withAlias && _propOrColumnNames == QueryUtil.selectPropertyNames(_entityClass, false, null)) { // NOSONAR
+            if (_entityClass != null && !withAlias && _propOrColumnNames == QueryUtil.selectPropNames(_entityClass, false, null)) { // NOSONAR
                 final Map<Class<?>, String> fullSelectPartsCache = (_identifierQuote == SK._BACKTICK ? fullSelectPartsPoolForBacktick : fullSelectPartsPool)
                         .get(_namingPolicy);
                 String fullSelectParts = fullSelectPartsCache.get(_entityClass);
@@ -1680,7 +1766,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 selectionWithClassAlias = Strings.isNotEmpty(selectionClassAlias);
 
                 final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
-                        : QueryUtil.selectPropertyNames(selectionEntityClass, selection.includesSubEntityProperties(), selection.excludedPropNames());
+                        : QueryUtil.selectPropNames(selectionEntityClass, selection.includesSubEntityProperties(), selection.excludedPropNames());
 
                 for (final String propName : selectPropNames) {
                     if (i++ > 0) {
@@ -1982,13 +2068,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param joinExpr the full join expression, including the {@code ON} clause if present, e.g. {@code "orders o ON u.id = o.user_id"} (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
      */
     public This join(final String joinExpr) {
         checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+        checkCanAppendJoin();
 
         _sb.append(_SPACE_JOIN_SPACE);
 
         _sb.append(joinExpr);
+        _joinConditionAllowed = !containsTopLevelJoinCondition(joinExpr);
 
         return (This) this;
     }
@@ -2024,6 +2113,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @SuppressWarnings("unchecked")
     private This appendJoin(final char[] joinKeyword, final Class<?> entityClass, final String alias) {
+        checkCanAppendJoin();
+
         if (Strings.isNotEmpty(alias)) {
             addPropColumnMapForAlias(entityClass, alias);
         }
@@ -2035,6 +2126,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         } else {
             _sb.append(getTableName(entityClass, _namingPolicy));
         }
+
+        _joinConditionAllowed = joinKeyword != _SPACE_CROSS_JOIN_SPACE && joinKeyword != _SPACE_NATURAL_JOIN_SPACE;
 
         return (This) this;
     }
@@ -2074,13 +2167,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param joinExpr the full join expression, including the {@code ON} clause if present (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
      */
     public This innerJoin(final String joinExpr) {
         checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+        checkCanAppendJoin();
 
         _sb.append(_SPACE_INNER_JOIN_SPACE);
 
         _sb.append(joinExpr);
+        _joinConditionAllowed = !containsTopLevelJoinCondition(joinExpr);
 
         return (This) this;
     }
@@ -2133,13 +2229,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param joinExpr the full join expression, including the {@code ON} clause if present (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
      */
     public This leftJoin(final String joinExpr) {
         checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+        checkCanAppendJoin();
 
         _sb.append(_SPACE_LEFT_JOIN_SPACE);
 
         _sb.append(joinExpr);
+        _joinConditionAllowed = !containsTopLevelJoinCondition(joinExpr);
 
         return (This) this;
     }
@@ -2192,13 +2291,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param joinExpr the full join expression, including the {@code ON} clause if present (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
      */
     public This rightJoin(final String joinExpr) {
         checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+        checkCanAppendJoin();
 
         _sb.append(_SPACE_RIGHT_JOIN_SPACE);
 
         _sb.append(joinExpr);
+        _joinConditionAllowed = !containsTopLevelJoinCondition(joinExpr);
 
         return (This) this;
     }
@@ -2251,13 +2353,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param joinExpr the full join expression, including the {@code ON} clause if present (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
      */
     public This fullJoin(final String joinExpr) {
         checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+        checkCanAppendJoin();
 
         _sb.append(_SPACE_FULL_JOIN_SPACE);
 
         _sb.append(joinExpr);
+        _joinConditionAllowed = !containsTopLevelJoinCondition(joinExpr);
 
         return (This) this;
     }
@@ -2310,13 +2415,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param joinExpr the join expression (a table reference, optionally with alias; a {@code CROSS JOIN} takes no {@code ON} clause) (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
      */
     public This crossJoin(final String joinExpr) {
         checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+        checkCanAppendJoin();
 
         _sb.append(_SPACE_CROSS_JOIN_SPACE);
 
         _sb.append(joinExpr);
+        _joinConditionAllowed = false;
 
         return (This) this;
     }
@@ -2369,13 +2477,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param joinExpr the join expression (a table reference, optionally with alias; a {@code NATURAL JOIN} takes no {@code ON} clause) (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
      */
     public This naturalJoin(final String joinExpr) {
         checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+        checkCanAppendJoin();
 
         _sb.append(_SPACE_NATURAL_JOIN_SPACE);
 
         _sb.append(joinExpr);
+        _joinConditionAllowed = false;
 
         return (This) this;
     }
@@ -2429,13 +2540,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr the join condition expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
      */
     public This on(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
+        checkCanAppendJoinCondition();
 
         _sb.append(_SPACE_ON_SPACE);
 
         appendStringExpr(expr, false);
+        _joinConditionAllowed = false;
 
         return (This) this;
     }
@@ -2464,9 +2578,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param exprs the join condition expressions (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code exprs} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
      */
     public This on(final String... exprs) {
         checkSqlFragmentsNotBlank(exprs, "exprs");
+        checkCanAppendJoinCondition();
 
         _sb.append(_SPACE_ON_SPACE);
 
@@ -2477,6 +2593,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             appendStringExpr(exprs[i], false);
         }
+
+        _joinConditionAllowed = false;
 
         return (This) this;
     }
@@ -2497,13 +2615,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param condition the join condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code condition} is {@code null}
+     * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
      */
     public This on(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
+        checkCanAppendJoinCondition();
 
         _sb.append(_SPACE_ON_SPACE);
 
         appendCondition(condition);
+        _joinConditionAllowed = false;
 
         return (This) this;
     }
@@ -2524,6 +2645,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr the column name(s) for the USING clause
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or contains a SQL comment token
+     * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
      */
     public This using(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -2531,6 +2653,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (containsSqlCommentToken(expr)) {
             throw new IllegalArgumentException("SQL comment token is not allowed in column expression: " + expr);
         }
+
+        checkCanAppendJoinCondition();
 
         _sb.append(_SPACE_USING_SPACE);
 
@@ -2543,6 +2667,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             appendColumnName(trimmedExpr);
             _sb.append(SK._PARENTHESIS_R);
         }
+
+        _joinConditionAllowed = false;
 
         return (This) this;
     }
@@ -2563,6 +2689,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the property or column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
      */
     public This using(final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -2587,16 +2714,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the collection of property or column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
      */
     public This using(final Collection<String> propOrColumnNames) {
-        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+        final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
+        checkCanAppendJoinCondition();
 
         _sb.append(_SPACE_USING_SPACE);
 
         _sb.append(SK._PARENTHESIS_L);
 
         int i = 0;
-        for (final String propOrColumnName : propOrColumnNames) {
+        for (final String propOrColumnName : propOrColumnNamesSnapshot) {
             if (i++ > 0) {
                 _sb.append(_COMMA_SPACE);
             }
@@ -2605,6 +2734,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         _sb.append(SK._PARENTHESIS_R);
+        _joinConditionAllowed = false;
 
         return (This) this;
     }
@@ -2924,14 +3054,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     public This groupBy(final Collection<String> propOrColumnNames) {
-        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+        final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
 
         checkIfAlreadyCalled(SK.GROUP_BY);
 
         _sb.append(_SPACE_GROUP_BY_SPACE);
 
         int i = 0;
-        for (final String columnName : propOrColumnNames) {
+        for (final String columnName : propOrColumnNamesSnapshot) {
             if (i++ > 0) {
                 _sb.append(_COMMA_SPACE);
             }
@@ -2962,7 +3092,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     public This groupBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
-        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+        final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
         N.checkArgNotNull(direction, "direction");
 
         checkIfAlreadyCalled(SK.GROUP_BY);
@@ -2970,7 +3100,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(_SPACE_GROUP_BY_SPACE);
 
         int i = 0;
-        for (final String columnName : propOrColumnNames) {
+        for (final String columnName : propOrColumnNamesSnapshot) {
             if (i++ > 0) {
                 _sb.append(_COMMA_SPACE);
             }
@@ -3008,9 +3138,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
      */
     public This groupBy(final Map<String, SortDirection> groupings) {
-        checkSqlFragmentKeysNotBlank(groupings, "groupings");
+        final Map<String, SortDirection> groupingsSnapshot = copyAndValidateSqlFragmentMap(groupings, "groupings");
 
-        for (final Map.Entry<String, SortDirection> entry : groupings.entrySet()) {
+        for (final Map.Entry<String, SortDirection> entry : groupingsSnapshot.entrySet()) {
             N.checkArgNotNull(entry.getValue(), "Value in groupings");
         }
 
@@ -3019,7 +3149,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(_SPACE_GROUP_BY_SPACE);
 
         int i = 0;
-        for (final Map.Entry<String, SortDirection> entry : groupings.entrySet()) {
+        for (final Map.Entry<String, SortDirection> entry : groupingsSnapshot.entrySet()) {
             if (i++ > 0) {
 
                 _sb.append(_COMMA_SPACE);
@@ -3347,14 +3477,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     public This orderBy(final Collection<String> propOrColumnNames) {
-        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+        final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
 
         checkIfAlreadyCalled(SK.ORDER_BY);
 
         _sb.append(_SPACE_ORDER_BY_SPACE);
 
         int i = 0;
-        for (final String columnName : propOrColumnNames) {
+        for (final String columnName : propOrColumnNamesSnapshot) {
             if (i++ > 0) {
                 _sb.append(_COMMA_SPACE);
             }
@@ -3385,7 +3515,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     public This orderBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
-        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+        final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
         N.checkArgNotNull(direction, "direction");
 
         checkIfAlreadyCalled(SK.ORDER_BY);
@@ -3393,7 +3523,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(_SPACE_ORDER_BY_SPACE);
 
         int i = 0;
-        for (final String columnName : propOrColumnNames) {
+        for (final String columnName : propOrColumnNamesSnapshot) {
             if (i++ > 0) {
                 _sb.append(_COMMA_SPACE);
             }
@@ -3432,9 +3562,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
      */
     public This orderBy(final Map<String, SortDirection> orders) {
-        checkSqlFragmentKeysNotBlank(orders, "orders");
+        final Map<String, SortDirection> ordersSnapshot = copyAndValidateSqlFragmentMap(orders, "orders");
 
-        for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
+        for (final Map.Entry<String, SortDirection> entry : ordersSnapshot.entrySet()) {
             N.checkArgNotNull(entry.getValue(), "Value in orders");
         }
 
@@ -3444,7 +3574,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         int i = 0;
 
-        for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
+        for (final Map.Entry<String, SortDirection> entry : ordersSnapshot.entrySet()) {
             if (i++ > 0) {
                 _sb.append(_COMMA_SPACE);
             }
@@ -3495,10 +3625,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code count} is negative
      * @throws IllegalStateException if {@code LIMIT} has already been set on this builder, or on a
-     *         {@code FETCH}-style dialect if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set
+     *         {@code FETCH}-style dialect if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set,
+     *         or if {@code OFFSET} was already emitted on a limit-style dialect where {@code LIMIT}
+     *         must precede {@code OFFSET}
      */
     public This limit(final int count) {
         N.checkArgNotNegative(count, "count");
+
+        if (!usesFetchPagination() && calledOpSet.contains(SK.OFFSET)) {
+            throw new IllegalStateException("'" + SK.LIMIT + "' must be added before '" + SK.OFFSET + "' for this SQL dialect");
+        }
+
         checkIfAlreadyCalled(SK.LIMIT);
 
         if (usesFetchPagination()) {
@@ -3597,8 +3734,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This limit(final int count, final int offset) {
         N.checkArgNotNegative(count, "count");
         N.checkArgNotNegative(offset, "offset");
-        checkIfAlreadyCalled(SK.LIMIT);
-        checkIfAlreadyCalled(SK.OFFSET);
+        claimClauseSlots(SK.LIMIT, SK.OFFSET);
 
         if (usesFetchPagination()) {
             appendOffsetFetchNext(String.valueOf(count), String.valueOf(offset));
@@ -3634,24 +3770,34 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // the sentinel count == MAX_VALUE / offset == 0; render it from its literal. Everything else —
         // the numeric constructors and string expressions parsed into concrete count/offset — is emitted
         // in the dialect's pagination syntax via limit(int) / limit(int, int).
-        if (Strings.isNotEmpty(limit.literal()) && !limit.isResolved()) {
-            if (usesFetchPagination() && appendLimitExpressionInFetchSyntax(limit.literal())) {
+        if (Strings.isNotEmpty(limit.expression()) && !limit.isResolved()) {
+            if (usesFetchPagination() && appendLimitExpressionInFetchSyntax(limit.expression())) {
                 return;
             }
 
-            checkIfAlreadyCalled(SK.LIMIT);
+            if (!usesFetchPagination() && calledOpSet.contains(SK.OFFSET)
+                    && (!isFetchLimitExpression(limit.expression()) || !calledOpSet.contains(OFFSET_ROWS_SLOT))) {
+                throw new IllegalStateException("'" + SK.LIMIT + "' must be added before '" + SK.OFFSET + "' for this SQL dialect");
+            }
 
             // The verbatim literal may itself carry an OFFSET portion (e.g. "LIMIT ? OFFSET ?"); consume the
             // OFFSET slot too so a follow-up offset(...) call is rejected instead of silently emitting a
-            // second OFFSET clause. Matched as a whole, case-sensitive token: Limit's normalization
-            // upper-cases the OFFSET keyword only outside placeholders, so ":offset" / "#{ offset }" do not
-            // misfire, and the whole-token match (unlike a raw substring test) keeps a placeholder name such
-            // as ":rowOFFSETCount" from spuriously consuming the slot.
-            if (_tokenizer.indexOfToken(limit.literal(), SK.OFFSET, 0, true) >= 0) {
-                checkIfAlreadyCalled(SK.OFFSET);
+            // second OFFSET clause. Limit has already normalized and validated the full expression, so the
+            // grammar's structural slots can be inspected without mistaking placeholder names such as
+            // ":OFFSET" or "#{ offset }" for pagination keywords.
+            if (limitExpressionHasOffset(limit.expression())) {
+                claimClauseSlots(SK.LIMIT, SK.OFFSET);
+            } else {
+                checkIfAlreadyCalled(SK.LIMIT);
+
+                // A FETCH clause is terminal with respect to OFFSET: an existing OFFSET may legally
+                // precede it, but a later offset(...) call must not be allowed after it.
+                if (isFetchLimitExpression(limit.expression())) {
+                    calledOpSet.add(SK.OFFSET);
+                }
             }
 
-            _sb.append(_SPACE).append(limit.literal());
+            _sb.append(_SPACE).append(limit.expression());
         } else if (limit.offset() > 0) {
             limit(limit.count(), limit.offset());
         } else {
@@ -3667,7 +3813,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * does not match {@link #GENERIC_LIMIT_EXPRESSION_PATTERN}, in which case the caller emits it
      * verbatim.
      *
-     * @param expression the normalized limit expression from {@link Limit#literal()}
+     * @param expression the normalized limit expression from {@link Limit#expression()}
      * @return {@code true} if the expression was rendered in FETCH pagination syntax
      */
     private boolean appendLimitExpressionInFetchSyntax(final String expression) {
@@ -3681,16 +3827,37 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final String countToken = commaCountToken == null ? matcher.group(1) : commaCountToken;
         final String offsetToken = commaCountToken == null ? matcher.group(2) : matcher.group(1);
 
-        checkIfAlreadyCalled(SK.LIMIT);
-
         if (offsetToken == null) {
+            checkIfAlreadyCalled(SK.LIMIT);
             appendFetchFirst(countToken);
         } else {
-            checkIfAlreadyCalled(SK.OFFSET);
+            claimClauseSlots(SK.LIMIT, SK.OFFSET);
             appendOffsetFetchNext(countToken, offsetToken);
         }
 
         return true;
+    }
+
+    /** Returns whether an unresolved LIMIT/FETCH literal contains a semantic offset slot. */
+    private boolean limitExpressionHasOffset(final String expression) {
+        final Matcher matcher = GENERIC_LIMIT_EXPRESSION_PATTERN.matcher(expression);
+
+        if (matcher.matches()) {
+            return matcher.group(2) != null || matcher.group(3) != null;
+        }
+
+        // Limit normalizes and validates every accepted expression. The only other family is
+        // [OFFSET slot ROWS] FETCH ..., whose semantic offset is therefore unambiguously the prefix.
+        // Do not token-scan the whole expression: an uppercase placeholder such as :OFFSET is data,
+        // not an OFFSET clause.
+        return expression.startsWith(SK.OFFSET + SK.SPACE);
+    }
+
+    /** Returns whether an unresolved pagination literal starts with FETCH FIRST/NEXT syntax. */
+    private boolean isFetchLimitExpression(final String expression) {
+        // Expressions with their own leading OFFSET take the offset-aware branch above. Restrict this
+        // check to the normalized FETCH prefix so a placeholder named :FETCH is not mistaken for syntax.
+        return expression.startsWith("FETCH ");
     }
 
     /**
@@ -3723,6 +3890,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(_SPACE_OFFSET_SPACE).append(offset);
 
         if (usesFetchPagination()) {
+            calledOpSet.add(OFFSET_ROWS_SLOT);
             _sb.append(_SPACE_ROWS);
         }
 
@@ -3753,6 +3921,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This offsetRows(final int offset) {
         N.checkArgNotNegative(offset, "offset");
         checkIfAlreadyCalled(SK.OFFSET);
+        calledOpSet.add(OFFSET_ROWS_SLOT);
 
         _sb.append(_SPACE_OFFSET_SPACE).append(offset).append(_SPACE_ROWS);
 
@@ -3762,7 +3931,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a FETCH NEXT N ROWS ONLY clause (SQL:2008 standard syntax).
      * Calling either {@link #fetchNextRows(int)} or {@link #fetchFirstRows(int)} consumes both
-     * slots; you may not also call the other after this method.
+     * FETCH slots and the general row-limit slot; it also closes the OFFSET slot because SQL
+     * requires OFFSET to precede FETCH. Call {@link #offsetRows(int)} first when an offset is needed;
+     * {@link #offset(int)} is also compatible when this builder uses a FETCH-style dialect.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3778,14 +3949,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param count the number of rows to fetch
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code count} is negative
-     * @throws IllegalStateException if {@code FETCH NEXT} or {@code FETCH FIRST} has already been set
+     * @throws IllegalStateException if {@code LIMIT}, {@code FETCH NEXT}, or {@code FETCH FIRST} has already been set,
+     *                               or if a prior offset used limit-style {@code OFFSET n} rather than {@code OFFSET n ROWS}
      * @see #limit(int)
      * @see #limit(int, int)
      */
     public This fetchNextRows(final int count) {
         N.checkArgNotNegative(count, "count");
-        checkIfAlreadyCalled(SK.FETCH_NEXT);
+        checkExplicitFetchSlotsAvailable(SK.FETCH_NEXT);
+        calledOpSet.add(SK.LIMIT);
+        calledOpSet.add(SK.FETCH_NEXT);
         calledOpSet.add(SK.FETCH_FIRST);
+        calledOpSet.add(SK.OFFSET);
 
         _sb.append(" FETCH NEXT ").append(count).append(" ROWS ONLY");
 
@@ -3795,7 +3970,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a FETCH FIRST N ROWS ONLY clause (SQL standard syntax).
      * Calling either {@link #fetchFirstRows(int)} or {@link #fetchNextRows(int)} consumes both
-     * slots; you may not also call the other after this method.
+     * FETCH slots and the general row-limit slot; it also closes the OFFSET slot because SQL
+     * requires OFFSET to precede FETCH. Call {@link #offsetRows(int)} first when an offset is needed;
+     * {@link #offset(int)} is also compatible when this builder uses a FETCH-style dialect.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3810,18 +3987,86 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param count the number of rows to fetch
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code count} is negative
-     * @throws IllegalStateException if {@code FETCH FIRST} or {@code FETCH NEXT} has already been set
+     * @throws IllegalStateException if {@code LIMIT}, {@code FETCH FIRST}, or {@code FETCH NEXT} has already been set,
+     *                               or if a prior offset used limit-style {@code OFFSET n} rather than {@code OFFSET n ROWS}
      * @see #limit(int)
      * @see #limit(int, int)
      */
     public This fetchFirstRows(final int count) {
         N.checkArgNotNegative(count, "count");
-        checkIfAlreadyCalled(SK.FETCH_FIRST);
+        checkExplicitFetchSlotsAvailable(SK.FETCH_FIRST);
+        calledOpSet.add(SK.LIMIT);
+        calledOpSet.add(SK.FETCH_FIRST);
         calledOpSet.add(SK.FETCH_NEXT);
+        calledOpSet.add(SK.OFFSET);
 
         _sb.append(" FETCH FIRST ").append(count).append(" ROWS ONLY");
 
         return (This) this;
+    }
+
+    /**
+     * Ensures a JOIN is appended to the FROM portion of a live SELECT segment, before filtering,
+     * grouping, ordering, pagination, or row-locking clauses.
+     */
+    private void checkCanAppendJoin() {
+        checkOpen();
+
+        if (_hasCompletedSetOperation) {
+            throw new IllegalStateException("JOIN clauses cannot be added after a completed set-operation operand");
+        }
+
+        if (_op != OperationType.QUERY || _isForConditionOnly || !_hasFromBeenSet) {
+            throw new IllegalStateException("A JOIN requires a current SELECT segment with a completed FROM clause");
+        }
+
+        if (calledOpSet.contains(SK.WHERE) || calledOpSet.contains(SK.GROUP_BY) || calledOpSet.contains(SK.HAVING) || calledOpSet.contains(SK.ORDER_BY)
+                || calledOpSet.contains(SK.LIMIT) || calledOpSet.contains(SK.OFFSET) || calledOpSet.contains(SK.FETCH_FIRST)
+                || calledOpSet.contains(SK.FETCH_NEXT) || calledOpSet.contains(SK.FOR_UPDATE)) {
+            throw new IllegalStateException("JOIN clauses must be added before WHERE, GROUP BY, HAVING, ORDER BY, pagination, and FOR UPDATE clauses");
+        }
+    }
+
+    /** Ensures ON/USING is attached once, directly after a JOIN form that supports it. */
+    private void checkCanAppendJoinCondition() {
+        checkOpen();
+
+        if (_hasCompletedSetOperation) {
+            throw new IllegalStateException("ON/USING cannot be added after a completed set-operation operand");
+        }
+
+        if (!_joinConditionAllowed) {
+            throw new IllegalStateException("ON/USING requires an immediately preceding JOIN that has no connector yet");
+        }
+
+        if (calledOpSet.contains(SK.WHERE) || calledOpSet.contains(SK.GROUP_BY) || calledOpSet.contains(SK.HAVING) || calledOpSet.contains(SK.ORDER_BY)
+                || calledOpSet.contains(SK.LIMIT) || calledOpSet.contains(SK.OFFSET) || calledOpSet.contains(SK.FETCH_FIRST)
+                || calledOpSet.contains(SK.FETCH_NEXT) || calledOpSet.contains(SK.FOR_UPDATE)) {
+            throw new IllegalStateException("ON/USING must be added before WHERE, GROUP BY, HAVING, ORDER BY, pagination, and FOR UPDATE clauses");
+        }
+    }
+
+    /**
+     * Validates the mutually exclusive row-limit slots without changing builder state. Keeping this
+     * check side-effect free ensures that a rejected pagination call does not poison an otherwise
+     * valid builder that the caller may still finish or build.
+     *
+     * @param requestedFetchSlot the explicit FETCH slot requested by the caller
+     * @throws IllegalStateException if a LIMIT or either FETCH form has already been emitted, or if a prior
+     *                               offset did not use {@code OFFSET n ROWS} syntax
+     */
+    private void checkExplicitFetchSlotsAvailable(final String requestedFetchSlot) {
+        if (calledOpSet.contains(SK.LIMIT)) {
+            throw new IllegalStateException("'" + SK.LIMIT + "' has already been set and cannot be combined with '" + requestedFetchSlot + "'");
+        }
+
+        if (calledOpSet.contains(SK.FETCH_FIRST) || calledOpSet.contains(SK.FETCH_NEXT)) {
+            throw new IllegalStateException("A FETCH row-limit clause has already been set and cannot be set again");
+        }
+
+        if (calledOpSet.contains(SK.OFFSET) && !calledOpSet.contains(OFFSET_ROWS_SLOT)) {
+            throw new IllegalStateException("'" + requestedFetchSlot + "' requires OFFSET ROWS syntax; use offsetRows(...) before FETCH");
+        }
     }
 
     /**
@@ -3830,12 +4075,35 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@code LIMIT}, {@code OFFSET}) that may appear at most once per built statement.
      *
      * @param op the clause keyword that is being emitted (e.g. {@link SK#WHERE}, {@link SK#GROUP_BY})
-     * @throws IllegalStateException if {@code op} has already been recorded for this builder
+     * @throws IllegalStateException if {@code op} has already been recorded for this builder, or if it is
+     *                               a segment-level clause requested after a completed set-operation operand
      */
     protected void checkIfAlreadyCalled(final String op) {
+        if (_hasCompletedSetOperation && (SK.WHERE.equals(op) || SK.GROUP_BY.equals(op) || SK.HAVING.equals(op))) {
+            throw new IllegalStateException("'" + op + "' cannot be added after a completed set-operation operand");
+        }
+
         if (!calledOpSet.add(op)) {
             throw new IllegalStateException("'" + op + "' has already been set and cannot be set again");
         }
+    }
+
+    /**
+     * Atomically reserves clause slots that must be emitted together. All conflicts are checked before
+     * any slot is added, so a rejected combined clause does not leave the builder in a partially changed
+     * state.
+     *
+     * @param ops the clause keywords to reserve
+     * @throws IllegalStateException if any requested clause has already been emitted
+     */
+    private void claimClauseSlots(final String... ops) {
+        for (final String op : ops) {
+            if (calledOpSet.contains(op)) {
+                throw new IllegalStateException("'" + op + "' has already been set and cannot be set again");
+            }
+        }
+
+        Collections.addAll(calledOpSet, ops);
     }
 
     /**
@@ -3859,20 +4127,28 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param condition the condition to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code condition} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if a Criteria set-operation
+     *                                  operand is not a complete read-only {@code SELECT} query
      * @throws IllegalStateException if there is no current SELECT segment, if that segment already
-     *                               has a select modifier, or if a clause emitted by the criteria has already been set
+     *                               has a select modifier, if a clause emitted by the criteria has already been set,
+     *                               or if any Criteria clause would be emitted after a clause that must follow it
      * @see Filters
      */
     @Beta
     public This append(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
 
-        init(true);
-
         if (condition instanceof final Criteria criteria) {
-            final Collection<Join> joins = criteria.joins();
             final String criteriaSelectModifier = criteria.selectModifier();
+
+            if (N.notEmpty(criteria.joins())) {
+                checkCanAppendJoin();
+            }
+
+            if (N.notEmpty(criteria.setOperations())) {
+                checkCanAppendSetOperation("A Criteria set operation");
+                checkCriteriaSetOperationOperands(criteria);
+            }
 
             if (Strings.isNotEmpty(criteriaSelectModifier)) {
                 if (_op != OperationType.QUERY || _isForConditionOnly || _selectKeywordEndIdx < 0) {
@@ -3883,6 +4159,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     throw new IllegalStateException("selectModifier has already been set and cannot be set again");
                 }
             }
+
+            // Keep all Criteria validation before init(true): init may emit an UPDATE/DELETE prefix,
+            // so a rejected Criteria must not be able to leave even that partial mutation behind.
+            checkCriteriaClauseSlotsAvailable(criteria);
+        }
+
+        init(true);
+
+        if (condition instanceof final Criteria criteria) {
+            final Collection<Join> joins = criteria.joins();
+            final String criteriaSelectModifier = criteria.selectModifier();
 
             if (N.notEmpty(joins)) {
                 for (final Join join : joins) {
@@ -3908,7 +4195,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     final Condition joinCond = join.condition();
 
                     if (joinCond != null) {
-                        // Mirror Join.toString(): a raw join condition (e.g. an Expression or Binary) needs an
+                        // Mirror Join.toString(): a raw join condition (e.g. an SqlExpression or Binary) needs an
                         // explicit ON keyword and a separating space; an On/Using condition renders its own keyword.
                         if (joinCond.operator() != Operator.ON && joinCond.operator() != Operator.USING) {
                             _sb.append(_SPACE_ON_SPACE);
@@ -3949,6 +4236,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 for (final Clause aggregation : aggregations) {
                     _sb.append(_SPACE).append(aggregation.operator()).append(_SPACE);
                     appendCondition(aggregation.condition());
+                    _hasCompletedSetOperation = true;
                 }
             }
 
@@ -3998,6 +4286,76 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return (This) this;
+    }
+
+    private void checkCriteriaClauseSlotsAvailable(final Criteria criteria) {
+        checkCriteriaClauseOrderAvailable(criteria.where(), SK.WHERE, SK.GROUP_BY, SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT,
+                SK.FOR_UPDATE);
+        checkCriteriaClauseOrderAvailable(criteria.groupBy(), SK.GROUP_BY, SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT,
+                SK.FOR_UPDATE);
+        checkCriteriaClauseOrderAvailable(criteria.having(), SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT, SK.FOR_UPDATE);
+        checkCriteriaClauseOrderAvailable(criteria.orderBy(), SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT, SK.FOR_UPDATE);
+        checkCriteriaClauseOrderAvailable(criteria.limit(), SK.LIMIT, SK.FOR_UPDATE);
+
+        checkClauseSlotAvailable(criteria.where(), SK.WHERE);
+        checkClauseSlotAvailable(criteria.groupBy(), SK.GROUP_BY);
+        checkClauseSlotAvailable(criteria.having(), SK.HAVING);
+        checkClauseSlotAvailable(criteria.orderBy(), SK.ORDER_BY);
+
+        final Limit limit = criteria.limit();
+
+        if (limit != null) {
+            checkClauseSlotAvailable(SK.LIMIT);
+
+            final boolean opaqueFetchCanFollowOffsetRows = !limit.isResolved() && Strings.isNotEmpty(limit.expression())
+                    && isFetchLimitExpression(limit.expression()) && calledOpSet.contains(OFFSET_ROWS_SLOT);
+
+            if (!usesFetchPagination() && calledOpSet.contains(SK.OFFSET) && !opaqueFetchCanFollowOffsetRows) {
+                throw new IllegalStateException("'" + SK.LIMIT + "' must be added before '" + SK.OFFSET + "' for this SQL dialect");
+            }
+
+            if ((limit.isResolved() && limit.offset() > 0)
+                    || (!limit.isResolved() && Strings.isNotEmpty(limit.expression()) && limitExpressionHasOffset(limit.expression()))) {
+                checkClauseSlotAvailable(SK.OFFSET);
+            }
+        }
+    }
+
+    /** Ensures a Criteria clause is not appended after a clause that must follow it in SQL grammar. */
+    private void checkCriteriaClauseOrderAvailable(final Object clause, final String clauseName, final String... laterClauseNames) {
+        if (clause == null) {
+            return;
+        }
+
+        if (_hasCompletedSetOperation && (SK.WHERE.equals(clauseName) || SK.GROUP_BY.equals(clauseName) || SK.HAVING.equals(clauseName))) {
+            throw new IllegalStateException("'" + clauseName + "' cannot be added after a completed set-operation operand");
+        }
+
+        for (final String laterClauseName : laterClauseNames) {
+            if (calledOpSet.contains(laterClauseName)) {
+                throw new IllegalStateException("'" + clauseName + "' must be added before '" + laterClauseName + "'");
+            }
+        }
+    }
+
+    /** Validates every complete right-hand query in a Criteria set operation before any SQL is emitted. */
+    private void checkCriteriaSetOperationOperands(final Criteria criteria) {
+        for (final Clause aggregation : criteria.setOperations()) {
+            final SubQuery subQuery = (SubQuery) aggregation.condition();
+            checkSetOperationSubQuery(subQuery.toSql(_namingPolicy), aggregation.operator().toString());
+        }
+    }
+
+    private void checkClauseSlotAvailable(final Object clause, final String op) {
+        if (clause != null) {
+            checkClauseSlotAvailable(op);
+        }
+    }
+
+    private void checkClauseSlotAvailable(final String op) {
+        if (calledOpSet.contains(op)) {
+            throw new IllegalStateException("'" + op + "' has already been set and cannot be set again");
+        }
     }
 
     /**
@@ -4182,7 +4540,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to union (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         or generated named parameters with a different SQL policy
+     *         or generated parameter placeholders with a different SQL policy
      */
     public This union(final This sqlBuilder) {
         return appendSetOperation(_SPACE_UNION_SPACE, sqlBuilder, "UNION");
@@ -4251,7 +4609,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to union all (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         or generated named parameters with a different SQL policy
+     *         or generated parameter placeholders with a different SQL policy
      */
     public This unionAll(final This sqlBuilder) {
         return appendSetOperation(_SPACE_UNION_ALL_SPACE, sqlBuilder, "UNION ALL");
@@ -4320,7 +4678,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to intersect (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         or generated named parameters with a different SQL policy
+     *         or generated parameter placeholders with a different SQL policy
      */
     public This intersect(final This sqlBuilder) {
         return appendSetOperation(_SPACE_INTERSECT_SPACE, sqlBuilder, "INTERSECT");
@@ -4389,7 +4747,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to except (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         or generated named parameters with a different SQL policy
+     *         or generated parameter placeholders with a different SQL policy
      */
     public This except(final This sqlBuilder) {
         return appendSetOperation(_SPACE_EXCEPT_SPACE, sqlBuilder, "EXCEPT");
@@ -4459,7 +4817,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to minus (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         or generated named parameters with a different SQL policy
+     *         or generated parameter placeholders with a different SQL policy
      */
     public This minus(final This sqlBuilder) {
         return appendSetOperation(_SPACE_EXCEPT_MINUS_SPACE, sqlBuilder, "MINUS");
@@ -4536,8 +4894,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _tableAlias = null;
         _selectModifier = null;
         _selectKeywordEndIdx = -1;
+        _joinConditionAllowed = false;
 
         _sb.append(keyword).append(query);
+        _hasCompletedSetOperation = true;
 
         return (This) this;
     }
@@ -4553,12 +4913,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @SuppressWarnings("unchecked")
     private This appendSetOperation(final char[] keyword, final Collection<String> propOrColumnNames) {
-        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+        final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
         checkCanAppendSetOperation(new String(keyword).trim());
 
         _op = OperationType.QUERY;
 
-        _propOrColumnNames = new ArrayList<>(propOrColumnNames);
+        _propOrColumnNames = propOrColumnNamesSnapshot;
         _propOrColumnNameAliases = null;
         _multiSelects = null;
 
@@ -4567,6 +4927,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _tableAlias = null;
         _selectModifier = null;
         _selectKeywordEndIdx = -1;
+        _joinConditionAllowed = false;
+        _hasCompletedSetOperation = false;
 
         _sb.append(keyword);
 
@@ -4581,6 +4943,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
         N.checkArgument(sqlBuilder != this, "Cannot apply " + operationName + " with the same SqlBuilder instance");
         checkCanAppendSetOperation(operationName);
+        N.checkArgument(_sqlPolicy == sqlBuilder._sqlPolicy || !sqlBuilder._hasGeneratedParameterPlaceholder,
+                "A set-operation child with generated parameter placeholders must use the parent's SQL policy: parent=" + _sqlPolicy + ", child="
+                        + sqlBuilder._sqlPolicy);
         final Map<String, Integer> parentOccurrences = N.isEmpty(_namedParameterNameOccurrences) ? Collections.emptyMap()
                 : new HashMap<>(_namedParameterNameOccurrences);
 
@@ -4602,6 +4967,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (N.notEmpty(sp.parameters())) {
             _parameters.addAll(sp.parameters());
         }
+
+        _hasGeneratedParameterPlaceholder |= sqlBuilder._hasGeneratedParameterPlaceholder;
 
         return appendSetOperation(keyword, operationName, sql);
     }
@@ -4974,6 +5341,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr a column name (placeholder will be appended) or a complete {@code col = value} assignment
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
      */
     public This set(final String expr) {
         return set(Array.asList(expr));
@@ -4996,6 +5364,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the columns to update
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
      */
     public This set(final String... propOrColumnNames) {
         return set(Array.asList(propOrColumnNames));
@@ -5019,9 +5388,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the collection of columns to update
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
      */
     public This set(final Collection<String> propOrColumnNames) {
-        checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
+        final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
+        checkUpdateOperation();
 
         init(false);
 
@@ -5033,8 +5404,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         switch (_sqlPolicy) {
             case RAW_SQL:
             case PARAMETERIZED_SQL: {
+                _hasGeneratedParameterPlaceholder = true;
+
                 int i = needsLeadingComma ? 1 : 0;
-                for (final String columnName : propOrColumnNames) {
+                for (final String columnName : propOrColumnNamesSnapshot) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -5051,7 +5424,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             case NAMED_SQL: {
                 int i = needsLeadingComma ? 1 : 0;
-                for (final String columnName : propOrColumnNames) {
+                for (final String columnName : propOrColumnNamesSnapshot) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -5070,7 +5443,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             case IBATIS_SQL: {
                 int i = needsLeadingComma ? 1 : 0;
-                for (final String columnName : propOrColumnNames) {
+                for (final String columnName : propOrColumnNamesSnapshot) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -5114,9 +5487,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param props map of column names to values
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or contains a {@code null}, empty, or blank key
+     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
      */
     public This set(final Map<String, Object> props) {
-        checkSqlFragmentKeysNotBlank(props, "props");
+        final Map<String, Object> propsSnapshot = copyAndValidateSqlFragmentMap(props, "props");
+        checkUpdateOperation();
 
         init(false);
 
@@ -5128,7 +5503,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         switch (_sqlPolicy) {
             case RAW_SQL: {
                 int i = needsLeadingComma ? 1 : 0;
-                for (final Map.Entry<String, Object> entry : props.entrySet()) {
+                for (final Map.Entry<String, Object> entry : propsSnapshot.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -5145,7 +5520,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             case PARAMETERIZED_SQL: {
                 int i = needsLeadingComma ? 1 : 0;
-                for (final Map.Entry<String, Object> entry : props.entrySet()) {
+                for (final Map.Entry<String, Object> entry : propsSnapshot.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -5162,7 +5537,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             case NAMED_SQL: {
                 int i = needsLeadingComma ? 1 : 0;
-                for (final Map.Entry<String, Object> entry : props.entrySet()) {
+                for (final Map.Entry<String, Object> entry : propsSnapshot.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -5179,7 +5554,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             case IBATIS_SQL: {
                 int i = needsLeadingComma ? 1 : 0;
-                for (final Map.Entry<String, Object> entry : props.entrySet()) {
+                for (final Map.Entry<String, Object> entry : propsSnapshot.entrySet()) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
                     }
@@ -5220,6 +5595,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entity} is {@code null}, or if {@code entity} is a {@code Collection} or array
      *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists)
+     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
      */
     public This setEntity(final Object entity) {
         return setEntity(entity, null);
@@ -5258,9 +5634,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entity} is {@code null}, or if {@code entity} is a {@code Collection} or array
      *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists)
+     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
      */
     public This setEntity(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, "entity");
+        checkUpdateOperation();
 
         if (entity instanceof String) {
             return set(N.asArray((String) entity));
@@ -5281,7 +5659,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         final Class<?> entityClass = entity.getClass();
         setEntityClass(entityClass);
-        final Collection<String> propNames = QueryUtil.updatePropertyNames(entityClass, excludedPropNames);
+        final Collection<String> propNames = QueryUtil.updatePropNames(entityClass, excludedPropNames);
         final Map<String, Object> localProps = N.newLinkedHashMap(propNames.size());
 
         for (final String propName : propNames) {
@@ -5323,6 +5701,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class to get properties from
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
      */
     public This setEntity(final Class<?> entityClass) {
         return setEntity(entityClass, (Set<String>) null);
@@ -5359,11 +5738,21 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param excludedPropNames additional properties to exclude from the update
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
      */
     public This setEntity(final Class<?> entityClass, final Set<String> excludedPropNames) {
+        N.checkArgNotNull(entityClass, "entityClass");
+        checkUpdateOperation();
         setEntityClass(entityClass);
 
-        return set(QueryUtil.updatePropertyNames(entityClass, excludedPropNames));
+        return set(QueryUtil.updatePropNames(entityClass, excludedPropNames));
+    }
+
+    /** Ensures that a SET assignment API is used only with an UPDATE builder. */
+    private void checkUpdateOperation() {
+        if (_op != OperationType.UPDATE) {
+            throw new IllegalStateException("set()/setEntity() requires an UPDATE builder, but current operation is: " + _op);
+        }
     }
 
     /**
@@ -5447,6 +5836,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             logger.debug("Built SQL metadata. Operation: {}, policy: {}, length: {}, parameter count: {}", _op, _sqlPolicy, sql.length(), _parameters.size());
         }
 
+        // SP's canonical constructor snapshots even a wrapped list, so a subclass retaining access to
+        // this protected buffer cannot mutate an already built result.
         return new SP(sql, ImmutableList.wrap(_parameters));
     }
 
@@ -5676,11 +6067,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected void setParameterForRawSQL(final Object propValue) {
         if (Filters.QME.equals(propValue)) {
+            _hasGeneratedParameterPlaceholder = true;
             _sb.append(SK._QUESTION_MARK);
         } else if (propValue instanceof Condition) {
             appendConditionAsParameter((Condition) propValue);
         } else {
-            _sb.append(Expression.renderValue(propValue));
+            _sb.append(SqlExpression.renderValue(propValue));
         }
     }
 
@@ -5691,10 +6083,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected void setParameterForSQL(final Object propValue) {
         if (Filters.QME.equals(propValue)) {
+            _hasGeneratedParameterPlaceholder = true;
             _sb.append(SK._QUESTION_MARK);
         } else if (propValue instanceof Condition) {
             appendConditionAsParameter((Condition) propValue);
         } else {
+            _hasGeneratedParameterPlaceholder = true;
             _sb.append(SK._QUESTION_MARK);
 
             _parameters.add(propValue);
@@ -5771,6 +6165,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return the unique named parameter name
      */
     protected String nextNamedParameterName(final String propName) {
+        _hasGeneratedParameterPlaceholder = true;
+
         final String sanitized = sanitizeNamedParameterName(propName);
         int occurrence = _namedParameterNameOccurrences.compute(sanitized, (k, v) -> v == null ? 1 : v + 1);
         String result = indexedNamedParameterName(sanitized, occurrence);
@@ -5816,6 +6212,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _renderedNamedParameterTokens.clear();
         _renderedNamedParameterTokens.putAll(childBuilder._renderedNamedParameterTokens);
+
+        // A structured sub-query is rendered by a child builder and then embedded in this builder.
+        // Preserve its placeholder state so a later sibling set operation cannot combine the resulting
+        // query with an incompatible parameter policy.
+        _hasGeneratedParameterPlaceholder |= childBuilder._hasGeneratedParameterPlaceholder;
     }
 
     /**
@@ -6001,7 +6402,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Appends the given condition to the SQL string builder.
      *
-     * @param condition the condition to append
+     * @param cond the condition to append
      */
     protected abstract void appendCondition(final Condition cond);
 
@@ -6009,7 +6410,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Appends the given condition as a parameter value expression. If the condition is a {@code SubQuery},
      * it is wrapped in parentheses; otherwise, it is appended directly.
      *
-     * @param condition the condition to append
+     * @param cond the condition to append
      */
     protected void appendConditionAsParameter(final Condition cond) {
         if (cond instanceof SubQuery) {
@@ -6219,7 +6620,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 final ImmutableMap<String, ColumnInfo> subPropColumnNameMap = propToColumnInfoMap(propEntityClass, _namingPolicy);
 
-                final Collection<String> subSelectPropNames = QueryUtil.selectPropertyNames(propEntityClass, false, null);
+                final Collection<String> subSelectPropNames = QueryUtil.selectPropNames(propEntityClass, false, null);
                 int i = 0;
 
                 for (final String subPropName : subSelectPropNames) {
@@ -6471,22 +6872,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param instance the query builder instance to populate
      * @param entity the entity to parse (a column name String, a Map of properties, or a bean object)
      * @param excludedPropNames property names to exclude from the insert, or {@code null}
-     * @throws IllegalArgumentException if {@code entity} is an empty Map and no {@code excludedPropNames} are given
+     * @throws IllegalArgumentException if {@code entity} is a Map that is empty, has a non-String/null/empty/blank key,
+     *                                  or has no entries left after exclusions are applied; or if a String entity is blank
      */
     protected static void parseInsertEntity(@SuppressWarnings("rawtypes") final AbstractQueryBuilder instance, final Object entity,
             final Set<String> excludedPropNames) {
         if (entity instanceof String) {
+            checkSqlFragmentNotBlank((String) entity, "entity");
             instance._propOrColumnNames = Array.asList((String) entity);
         } else if (entity instanceof Map) {
             instance._props = new LinkedHashMap<>((Map<String, Object>) entity);
+            checkSqlFragmentKeysNotBlank(instance._props, "entity map");
 
-            if (N.isEmpty(excludedPropNames)) {
-                N.checkArgument(!instance._props.isEmpty(), "entity map must not be empty");
-            } else {
+            if (N.notEmpty(excludedPropNames)) {
                 Maps.removeKeys(instance._props, excludedPropNames);
             }
+
+            N.checkArgument(!instance._props.isEmpty(), "entity map must contain at least one non-excluded property");
         } else {
-            final Collection<String> propNames = QueryUtil.insertPropertyNames(entity, excludedPropNames);
+            final Collection<String> propNames = QueryUtil.insertPropNames(entity, excludedPropNames);
             final Map<String, Object> map = N.newLinkedHashMap(propNames.size());
             final BeanInfo beanInfo = ParserUtil.getBeanInfo(entity.getClass());
             final ImmutableList<String> idPropNameList = beanInfo.idPropNameList;
@@ -6582,7 +6986,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgument(first.isPresent(), "All elements in propsList are null");
 
         final Class<?> entityClass = first.get().getClass();
-        final Collection<String> propNames = QueryUtil.insertPropertyNames(entityClass, null);
+        final Collection<String> propNames = QueryUtil.insertPropNames(entityClass, null);
         final BeanInfo firstEntityBeanInfo = ParserUtil.getBeanInfo(entityClass);
         final List<Map<String, Object>> newPropsList = new ArrayList<>(propsList.size());
 
@@ -6688,7 +7092,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 if (N.notEmpty(selection.includedPropNames()) || selection.includesSubEntityProperties()) {
                     final Class<?> entityClass = selection.entityClass();
                     final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
-                            : QueryUtil.selectPropertyNames(entityClass, selection.includesSubEntityProperties(), selection.excludedPropNames());
+                            : QueryUtil.selectPropNames(entityClass, selection.includesSubEntityProperties(), selection.excludedPropNames());
                     final Set<String> excludedPropNames = selection.excludedPropNames();
                     final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 
@@ -6796,8 +7200,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param query the generated SQL query string
-     * @param parameters the immutable list of parameter values corresponding to placeholders in the SQL
+     * @param parameters the parameter values corresponding to placeholders in the SQL; defensively copied
      */
     public record SP(String query, ImmutableList<Object> parameters) {
+
+        /**
+         * Creates an immutable SQL/parameter pair. The parameter list is copied even when the supplied
+         * {@link ImmutableList} wraps another collection, so later changes to that backing collection cannot
+         * alter this value.
+         *
+         * @throws IllegalArgumentException if {@code query} or {@code parameters} is {@code null}
+         */
+        public SP {
+            N.checkArgNotNull(query, "query");
+            N.checkArgNotNull(parameters, "parameters");
+            // ImmutableList.copyOf may return its argument unchanged. Force a fresh backing list because
+            // callers can supply an ImmutableList created with wrap(mutableList).
+            parameters = ImmutableList.wrap(new ArrayList<>(parameters));
+        }
     }
 }

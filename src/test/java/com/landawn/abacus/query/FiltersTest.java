@@ -31,7 +31,7 @@ import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.CrossJoin;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Exists;
-import com.landawn.abacus.query.condition.Expression;
+import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.FullJoin;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.GreaterThanOrEqual;
@@ -78,13 +78,13 @@ import com.landawn.abacus.util.EntityId;
 public class FiltersTest extends TestBase {
     @Test
     public void testAlwaysTrue() {
-        Expression expr = Filters.alwaysTrue();
+        SqlExpression expr = Filters.alwaysTrue();
         assertNotNull(expr);
     }
 
     @Test
     public void testAlwaysFalse() {
-        Expression expr = Filters.alwaysFalse();
+        SqlExpression expr = Filters.alwaysFalse();
         assertNotNull(expr);
     }
 
@@ -105,7 +105,7 @@ public class FiltersTest extends TestBase {
 
     @Test
     public void testExpr() {
-        Expression expr = Filters.expr("age > 18");
+        SqlExpression expr = Filters.expr("age > 18");
         assertNotNull(expr);
     }
 
@@ -115,6 +115,17 @@ public class FiltersTest extends TestBase {
         assertNotNull(binary);
         assertEquals("age", binary.propName());
         assertEquals(Operator.GREATER_THAN, binary.operator());
+    }
+
+    @Test
+    public void testBinaryWithMembershipOperatorAndValues() {
+        Binary in = Filters.binary("status", Operator.IN, Arrays.asList("NEW", "OPEN"));
+        assertEquals(Operator.IN, in.operator());
+        assertEquals(Arrays.asList("NEW", "OPEN"), in.parameters());
+
+        Binary notIn = Filters.binary("status", Operator.NOT_IN, new String[] { "CLOSED", "DELETED" });
+        assertEquals(Operator.NOT_IN, notIn.operator());
+        assertEquals(Arrays.asList("CLOSED", "DELETED"), notIn.parameters());
     }
 
     @Test
@@ -1304,7 +1315,7 @@ public class FiltersTest extends TestBase {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery(Account.class, Arrays.asList("id", "name"), "active = true");
         assertNotNull(subQuery);
         assertEquals(Account.class, subQuery.entityClass());
-        // Mirrors the entityName-based overload: the raw string becomes an Expression condition.
+        // Mirrors the entityName-based overload: the raw string becomes an SqlExpression condition.
         assertEquals(Filters.subQuery("Account", Arrays.asList("id", "name"), "active = true").condition().toString(), subQuery.condition().toString());
     }
 
@@ -1393,7 +1404,7 @@ public class FiltersTest extends TestBase {
         Limit limit = Filters.limit(literal);
 
         // The SQL:2008 FETCH form is parsed into concrete count/offset while its literal is retained.
-        assertEquals(literal, limit.literal());
+        assertEquals(literal, limit.expression());
         assertEquals(20, limit.count());
         assertEquals(5, limit.offset());
     }
@@ -2206,7 +2217,7 @@ public class FiltersTest extends TestBase {
 
     @Test
     public void testFilters_expr() {
-        Expression expr = Filters.expr("UPPER(name) = 'JOHN'");
+        SqlExpression expr = Filters.expr("UPPER(name) = 'JOHN'");
         assertNotNull(expr);
         assertEquals("UPPER(name) = 'JOHN'", expr.literal());
     }
@@ -2792,7 +2803,7 @@ public class FiltersTest extends TestBase {
     public void testLikeObjectOperandsAndVarargsIn() {
         SubQuery subQuery = Filters.subQuery("SELECT pattern FROM patterns");
         assertEquals(subQuery, Filters.like("name", (Object) subQuery).propValue());
-        Expression expression = Filters.expr("LOWER(pattern)");
+        SqlExpression expression = Filters.expr("LOWER(pattern)");
         assertEquals(expression, Filters.notLike("name", (Object) expression).propValue());
         assertEquals(Arrays.asList("NEW", "OPEN"), Filters.in("status", "NEW", "OPEN").parameters());
         assertEquals(Arrays.asList("CLOSED", "DELETED"), Filters.notIn("status", "CLOSED", "DELETED").parameters());

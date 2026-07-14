@@ -23,11 +23,12 @@ import com.landawn.abacus.query.Filters;
  * This condition is useful for identifying numeric overflow conditions and special
  * calculation results.
  * 
- * <p>In floating-point arithmetic, infinity can result from various operations:</p>
+ * <p>In systems that use IEEE 754-style floating-point semantics, infinity can result from
+ * operations such as:</p>
  * <ul>
  *   <li>Division by zero with non-zero numerator (e.g., 1.0/0.0 = Infinity, -1.0/0.0 = -Infinity)</li>
  *   <li>Operations that exceed the maximum representable value (overflow)</li>
- *   <li>Mathematical operations like log(0), exp(very_large_number)</li>
+ *   <li>Mathematical operations whose result is outside the finite representable range</li>
  *   <li>Accumulation in iterative calculations that grow without bound</li>
  * </ul>
  * 
@@ -79,12 +80,12 @@ import com.landawn.abacus.query.Filters;
 public class IsInfinite extends Is {
 
     /**
-     * Shared Expression instance representing INFINITE.
+     * Shared SqlExpression instance representing INFINITE.
      * This constant is used internally to represent the INFINITE value in SQL.
      * It is shared across instances and referenced by {@link IsNotInfinite} to reduce
      * memory overhead and ensure consistency in SQL generation.
      */
-    static final Expression INFINITE = Filters.expr("INFINITE");
+    static final SqlExpression INFINITE = Filters.expr("INFINITE");
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -101,12 +102,9 @@ public class IsInfinite extends Is {
      * This is particularly useful for identifying numeric overflow conditions,
      * division by zero results, and other exceptional calculation outcomes.
      *
-     * <p>The generated SQL uses the {@code IS INFINITE} operator to properly detect both
-     * positive and negative infinity values in a single check. Plain comparison operators
-     * are not a portable way to test for infinity: there is no standard SQL literal that
-     * matches "either positive or negative infinity", and infinity participates in special
-     * arithmetic (for example, {@code infinity - infinity} is NaN), so {@code IS INFINITE}
-     * is the reliable way to identify such values.</p>
+     * <p>The generated SQL uses the vendor-specific {@code IS INFINITE} predicate to express
+     * a test for either positive or negative infinity. Plain comparison operators are not a
+     * portable substitute, and the selected database must itself support this predicate.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

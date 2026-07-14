@@ -39,7 +39,7 @@ package com.landawn.abacus.query.condition;
  * // SQL: email IS NOT NULL
  *
  * // Check if not a specific expression value
- * Expression unknownExpr = Filters.expr("UNKNOWN");
+ * SqlExpression unknownExpr = Filters.expr("UNKNOWN");
  * IsNot notUnknown = new IsNot("status", unknownExpr);
  * // SQL: status IS NOT UNKNOWN
  * }</pre>
@@ -67,7 +67,7 @@ public class IsNot extends Binary {
     /**
      * Creates a new {@code IS NOT} condition with the specified property name and right-hand value.
      * The generated SQL takes the form {@code propName IS NOT propValue}, where {@code propValue}
-     * is typically an {@link Expression} representing a special SQL keyword such as {@code NULL}
+     * is typically an {@link SqlExpression} representing a special SQL keyword such as {@code NULL}
      * or a custom expression like {@code UNKNOWN}.
      *
      * <p>If {@code propValue} is the Java {@code null} reference, the generated SQL collapses to
@@ -80,14 +80,15 @@ public class IsNot extends Binary {
      * // SQL: phone_number IS NOT NULL
      *
      * // Check if not a custom value
-     * Expression unknownExpr = Filters.expr("UNKNOWN");
+     * SqlExpression unknownExpr = Filters.expr("UNKNOWN");
      * IsNot notUnknown = new IsNot("verification_status", unknownExpr);
      * // SQL: verification_status IS NOT UNKNOWN
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
      * @param propValue the right-hand value of the IS NOT predicate; may be {@code null} (renders as
-     *            {@code IS NOT NULL}) or an {@link Expression} for a SQL keyword
+     *            {@code IS NOT NULL}), an {@link SqlExpression} for a SQL keyword, or another value
+     *            rendered by {@link Binary}; whether that value is valid with {@code IS NOT} is dialect-specific
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public IsNot(final String propName, final Object propValue) {

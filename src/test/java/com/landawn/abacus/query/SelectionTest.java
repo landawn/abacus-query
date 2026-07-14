@@ -21,8 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,185 +37,28 @@ import com.landawn.abacus.query.entity.Account;
 
 public class SelectionTest extends TestBase {
 
-    // ------------------------------------------------------------------------
-    // No-arg constructor + fluent accessors
-    // ------------------------------------------------------------------------
-
     @Test
-    public void testNoArgConstructorDefaults() {
-        Selection s = new Selection();
-
-        assertNull(s.entityClass());
-        assertNull(s.tableAlias());
-        assertNull(s.classAlias());
-        assertNull(s.includedPropNames());
-        assertNull(s.excludedPropNames());
-        assertFalse(s.includesSubEntityProperties());
+    public void testBuilderRequiresEntityClassAtCreation() throws NoSuchMethodException {
+        assertThrows(NullPointerException.class, () -> Selection.builder(null));
+        assertThrows(NoSuchMethodException.class, () -> Selection.class.getMethod("builder"));
+        assertEquals(0, Selection.class.getConstructors().length);
     }
 
     @Test
-    public void testFluentSettersAndGetters() {
-        Selection s = new Selection().entityClass(Account.class).tableAlias("a").classAlias("account").includeSubEntityProperties(true);
+    public void testBuilderDefaults() {
+        final Selection selection = Selection.builder(Account.class).build();
 
-        assertEquals(Account.class, s.entityClass());
-        assertEquals("a", s.tableAlias());
-        assertEquals("account", s.classAlias());
-        assertTrue(s.includesSubEntityProperties());
+        assertEquals(Account.class, selection.entityClass());
+        assertNull(selection.tableAlias());
+        assertNull(selection.classAlias());
+        assertNull(selection.includedPropNames());
+        assertNull(selection.excludedPropNames());
+        assertFalse(selection.includesSubEntityProperties());
     }
-
-    @Test
-    public void testFluentSettersReturnSameInstanceForChaining() {
-        Selection s = new Selection();
-        // @Accessors(fluent = true) implies chain = true, so each setter returns the same instance.
-        assertTrue(s == s.entityClass(Account.class));
-        assertTrue(s == s.tableAlias("a"));
-        assertTrue(s == s.classAlias("account"));
-        assertTrue(s == s.includeSubEntityProperties(true));
-        assertTrue(s == s.includedPropNames(List.of("id")));
-        assertTrue(s == s.excludedPropNames(Set.of("status")));
-    }
-
-    @Test
-    public void testIncludesSubEntityPropertiesIsAHardGetterRename() throws NoSuchMethodException {
-        assertEquals(boolean.class, Selection.class.getMethod("includesSubEntityProperties").getReturnType());
-        assertEquals(Selection.class, Selection.class.getMethod("includeSubEntityProperties", boolean.class).getReturnType());
-        assertThrows(NoSuchMethodException.class, () -> Selection.class.getMethod("includeSubEntityProperties"));
-    }
-
-    // ------------------------------------------------------------------------
-    // includedPropNames: defensive copy on write, immutable view on read
-    // ------------------------------------------------------------------------
-
-    @Test
-    public void testIncludedPropNamesStoresContent() {
-        Selection s = new Selection().includedPropNames(Arrays.asList("id", "firstName"));
-
-        assertEquals(2, s.includedPropNames().size());
-        assertTrue(s.includedPropNames().contains("id"));
-        assertTrue(s.includedPropNames().contains("firstName"));
-    }
-
-    @Test
-    public void testIncludedPropNamesDefensiveCopyOnWrite() {
-        List<String> input = new ArrayList<>(Arrays.asList("id", "firstName"));
-        Selection s = new Selection().includedPropNames(input);
-
-        // Mutating the caller's collection after the set must not affect the Selection.
-        input.add("lastName");
-        input.clear();
-
-        assertEquals(2, s.includedPropNames().size());
-        assertTrue(s.includedPropNames().contains("id"));
-        assertTrue(s.includedPropNames().contains("firstName"));
-    }
-
-    @Test
-    public void testIncludedPropNamesReturnsImmutableView() {
-        Selection s = new Selection().includedPropNames(Arrays.asList("id", "firstName"));
-
-        assertThrows(UnsupportedOperationException.class, () -> s.includedPropNames().add("lastName"));
-    }
-
-    @Test
-    public void testIncludedPropNamesNullClearsSelection() {
-        Selection s = new Selection().includedPropNames(Arrays.asList("id"));
-        assertNotNull(s.includedPropNames());
-
-        s.includedPropNames(null);
-        assertNull(s.includedPropNames());
-    }
-
-    // ------------------------------------------------------------------------
-    // excludedPropNames: defensive copy on write, immutable view on read
-    // ------------------------------------------------------------------------
-
-    @Test
-    public void testExcludedPropNamesStoresContent() {
-        Selection s = new Selection().excludedPropNames(new LinkedHashSet<>(Arrays.asList("status", "createTime")));
-
-        assertEquals(2, s.excludedPropNames().size());
-        assertTrue(s.excludedPropNames().contains("status"));
-        assertTrue(s.excludedPropNames().contains("createTime"));
-    }
-
-    @Test
-    public void testExcludedPropNamesDefensiveCopyOnWrite() {
-        Set<String> input = new LinkedHashSet<>(Arrays.asList("status"));
-        Selection s = new Selection().excludedPropNames(input);
-
-        input.add("createTime");
-        input.clear();
-
-        assertEquals(1, s.excludedPropNames().size());
-        assertTrue(s.excludedPropNames().contains("status"));
-    }
-
-    @Test
-    public void testExcludedPropNamesReturnsImmutableView() {
-        Selection s = new Selection().excludedPropNames(new LinkedHashSet<>(Arrays.asList("status")));
-
-        assertThrows(UnsupportedOperationException.class, () -> s.excludedPropNames().add("createTime"));
-    }
-
-    @Test
-    public void testExcludedPropNamesNullClearsExclusion() {
-        Selection s = new Selection().excludedPropNames(new LinkedHashSet<>(Arrays.asList("status")));
-        assertNotNull(s.excludedPropNames());
-
-        s.excludedPropNames(null);
-        assertNull(s.excludedPropNames());
-    }
-
-    // ------------------------------------------------------------------------
-    // Package-private all-args constructor (used by SqlBuilder/Dsl and the builder)
-    // ------------------------------------------------------------------------
-
-    @Test
-    public void testAllArgsConstructor() {
-        Selection s = new Selection(Account.class, "a", "account", Arrays.asList("id", "firstName"), true, new LinkedHashSet<>(Arrays.asList("status")));
-
-        assertEquals(Account.class, s.entityClass());
-        assertEquals("a", s.tableAlias());
-        assertEquals("account", s.classAlias());
-        assertEquals(2, s.includedPropNames().size());
-        assertTrue(s.includesSubEntityProperties());
-        assertEquals(1, s.excludedPropNames().size());
-    }
-
-    @Test
-    public void testAllArgsConstructorDefensiveCopy() {
-        List<String> props = new ArrayList<>(Arrays.asList("id", "firstName"));
-        Set<String> excluded = new LinkedHashSet<>(Arrays.asList("status"));
-
-        Selection s = new Selection(Account.class, "a", "account", props, false, excluded);
-
-        props.add("lastName");
-        excluded.add("createTime");
-
-        assertEquals(2, s.includedPropNames().size());
-        assertEquals(1, s.excludedPropNames().size());
-    }
-
-    @Test
-    public void testAllArgsConstructorPreservesNullCollections() {
-        Selection s = new Selection(Account.class, null, null, null, false, null);
-
-        assertEquals(Account.class, s.entityClass());
-        assertNull(s.tableAlias());
-        assertNull(s.classAlias());
-        assertNull(s.includedPropNames());
-        assertNull(s.excludedPropNames());
-        assertFalse(s.includesSubEntityProperties());
-    }
-
-    // ------------------------------------------------------------------------
-    // Lombok @Builder
-    // ------------------------------------------------------------------------
 
     @Test
     public void testBuilderFullyPopulated() {
-        Selection s = Selection.builder()
-                .entityClass(Account.class)
+        final Selection selection = Selection.builder(Account.class)
                 .tableAlias("a")
                 .classAlias("account")
                 .includedPropNames(Arrays.asList("id", "firstName"))
@@ -220,83 +66,92 @@ public class SelectionTest extends TestBase {
                 .excludedPropNames(new LinkedHashSet<>(Arrays.asList("status")))
                 .build();
 
-        assertEquals(Account.class, s.entityClass());
-        assertEquals("a", s.tableAlias());
-        assertEquals("account", s.classAlias());
-        assertEquals(2, s.includedPropNames().size());
-        assertTrue(s.includesSubEntityProperties());
-        assertEquals(1, s.excludedPropNames().size());
+        assertEquals(Account.class, selection.entityClass());
+        assertEquals("a", selection.tableAlias());
+        assertEquals("account", selection.classAlias());
+        assertEquals(Arrays.asList("id", "firstName"), selection.includedPropNames());
+        assertTrue(selection.includesSubEntityProperties());
+        assertEquals(Set.of("status"), selection.excludedPropNames());
     }
 
     @Test
-    public void testBuilderEmptyUsesDefaults() {
-        Selection s = Selection.builder().build();
+    public void testBuilderMethodsChainOnBuilder() {
+        final Selection.SelectionBuilder builder = Selection.builder(Account.class);
 
-        assertNull(s.entityClass());
-        assertNull(s.tableAlias());
-        assertNull(s.classAlias());
-        assertNull(s.includedPropNames());
-        assertNull(s.excludedPropNames());
-        assertFalse(s.includesSubEntityProperties());
+        assertTrue(builder == builder.tableAlias("a"));
+        assertTrue(builder == builder.classAlias("account"));
+        assertTrue(builder == builder.includeSubEntityProperties(true));
+        assertTrue(builder == builder.includedPropNames(List.of("id")));
+        assertTrue(builder == builder.excludedPropNames(Set.of("status")));
     }
 
     @Test
-    public void testBuilderDefensiveCopyThroughBuild() {
-        List<String> props = new ArrayList<>(Arrays.asList("id", "firstName"));
-        Selection s = Selection.builder().entityClass(Account.class).includedPropNames(props).build();
-
-        // build() delegates to the all-args constructor, which copies defensively.
-        props.add("lastName");
-
-        assertEquals(2, s.includedPropNames().size());
-        assertThrows(UnsupportedOperationException.class, () -> s.includedPropNames().add("x"));
+    public void testSelectionDeclaresExplicitReadOnlyAccessors() throws NoSuchMethodException {
+        assertEquals(Class.class, Selection.class.getMethod("entityClass").getReturnType());
+        assertEquals(String.class, Selection.class.getMethod("tableAlias").getReturnType());
+        assertEquals(String.class, Selection.class.getMethod("classAlias").getReturnType());
+        assertEquals(boolean.class, Selection.class.getMethod("includesSubEntityProperties").getReturnType());
+        assertThrows(NoSuchMethodException.class, () -> Selection.class.getMethod("entityClass", Class.class));
+        assertThrows(NoSuchMethodException.class, () -> Selection.class.getMethod("tableAlias", String.class));
+        assertThrows(NoSuchMethodException.class, () -> Selection.class.getMethod("classAlias", String.class));
+        assertThrows(NoSuchMethodException.class, () -> Selection.class.getMethod("includeSubEntityProperties", boolean.class));
+        assertThrows(NoSuchMethodException.class, () -> Selection.class.getMethod("includedPropNames", Collection.class));
+        assertThrows(NoSuchMethodException.class, () -> Selection.class.getMethod("excludedPropNames", Set.class));
     }
 
-    // ------------------------------------------------------------------------
-    // @Data: equals / hashCode / toString
-    // ------------------------------------------------------------------------
+    @Test
+    public void testPropertyCollectionsAreDefensivelyCopiedAndImmutable() {
+        final List<String> included = new ArrayList<>(Arrays.asList("id", "firstName"));
+        final Set<String> excluded = new LinkedHashSet<>(Arrays.asList("status"));
+        final Selection.SelectionBuilder builder = Selection.builder(Account.class).includedPropNames(included).excludedPropNames(excluded);
+        final Selection selection = builder.build();
+
+        included.add("lastName");
+        excluded.add("createTime");
+        builder.includedPropNames(List.of("changed")).excludedPropNames(Set.of("changed"));
+
+        assertEquals(Arrays.asList("id", "firstName"), selection.includedPropNames());
+        assertEquals(Set.of("status"), selection.excludedPropNames());
+        assertThrows(UnsupportedOperationException.class, () -> selection.includedPropNames().add("other"));
+        assertThrows(UnsupportedOperationException.class, () -> selection.excludedPropNames().add("other"));
+    }
 
     @Test
-    public void testEqualsAndHashCode_sameViaFluentAndBuilder() {
-        Selection viaFluent = new Selection().entityClass(Account.class)
+    public void testNullPropertyCollectionsPreserveDefaultSemantics() {
+        final Selection selection = Selection.builder(Account.class).includedPropNames(null).excludedPropNames(null).build();
+
+        assertNull(selection.includedPropNames());
+        assertNull(selection.excludedPropNames());
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        final Selection first = Selection.builder(Account.class)
                 .tableAlias("a")
                 .classAlias("account")
                 .includedPropNames(Arrays.asList("id", "firstName"))
-                .excludedPropNames(new LinkedHashSet<>(Arrays.asList("status")));
-
-        Selection viaBuilder = Selection.builder()
-                .entityClass(Account.class)
+                .excludedPropNames(Set.of("status"))
+                .build();
+        final Selection equal = Selection.builder(Account.class)
                 .tableAlias("a")
                 .classAlias("account")
                 .includedPropNames(Arrays.asList("id", "firstName"))
-                .excludedPropNames(new LinkedHashSet<>(Arrays.asList("status")))
+                .excludedPropNames(Set.of("status"))
                 .build();
 
-        assertEquals(viaFluent, viaBuilder);
-        assertEquals(viaFluent.hashCode(), viaBuilder.hashCode());
-    }
-
-    @Test
-    public void testEquals_reflexiveAndNullAndOtherType() {
-        Selection s = new Selection().entityClass(Account.class).tableAlias("a");
-
-        assertEquals(s, s);
-        assertNotEquals(s, null);
-        assertNotEquals(s, "not a selection");
-    }
-
-    @Test
-    public void testEquals_differingFields() {
-        Selection base = new Selection().entityClass(Account.class).tableAlias("a").classAlias("account");
-
-        assertNotEquals(base, new Selection().entityClass(Account.class).tableAlias("b").classAlias("account"));
-        assertNotEquals(base, new Selection().entityClass(Account.class).tableAlias("a").classAlias("acct"));
-        assertNotEquals(base, new Selection().entityClass(Account.class).tableAlias("a").classAlias("account").includeSubEntityProperties(true));
+        assertEquals(first, first);
+        assertEquals(first, equal);
+        assertEquals(first.hashCode(), equal.hashCode());
+        assertNotEquals(first, null);
+        assertNotEquals(first, "not a selection");
+        assertNotEquals(first, Selection.builder(Account.class).tableAlias("b").classAlias("account").build());
+        assertNotEquals(first, Selection.builder(Account.class).tableAlias("a").classAlias("acct").build());
+        assertNotEquals(first, Selection.builder(Account.class).tableAlias("a").classAlias("account").includeSubEntityProperties(true).build());
     }
 
     @Test
     public void testToStringContainsFieldValues() {
-        String str = new Selection().entityClass(Account.class).tableAlias("a").classAlias("account").toString();
+        final String str = Selection.builder(Account.class).tableAlias("a").classAlias("account").build().toString();
 
         assertNotNull(str);
         assertTrue(str.contains("Selection("));
@@ -304,13 +159,10 @@ public class SelectionTest extends TestBase {
         assertTrue(str.contains("classAlias=account"));
     }
 
-    // ------------------------------------------------------------------------
-    // Integration: Selection -> Dsl SQL generation
-    // ------------------------------------------------------------------------
-
     @Test
     public void testDslSelectFromSingleSelection() {
-        String sql = Dsl.PSC.selectFrom(new Selection().entityClass(Account.class).tableAlias("a").classAlias("account")).build().query();
+        final Selection selection = Selection.builder(Account.class).tableAlias("a").classAlias("account").build();
+        final String sql = Dsl.PSC.selectFrom(selection).build().query();
 
         assertNotNull(sql);
         assertTrue(sql.startsWith("SELECT"));
@@ -319,7 +171,8 @@ public class SelectionTest extends TestBase {
 
     @Test
     public void testDslSelectSingleSelectionThenFrom() {
-        String sql = Dsl.PSC.select(new Selection().entityClass(Account.class).tableAlias("a").classAlias("account")).from("account a").build().query();
+        final Selection selection = Selection.builder(Account.class).tableAlias("a").classAlias("account").build();
+        final String sql = Dsl.PSC.select(selection).from("account a").build().query();
 
         assertNotNull(sql);
         assertTrue(sql.startsWith("SELECT"));
@@ -327,10 +180,9 @@ public class SelectionTest extends TestBase {
 
     @Test
     public void testDslSelectFromMultipleSelections() {
-        List<Selection> selections = List.of(new Selection().entityClass(Account.class).tableAlias("a").classAlias("account"),
-                new Selection().entityClass(Account.class).tableAlias("b").classAlias("account2"));
-
-        String sql = Dsl.PSC.selectFrom(selections).build().query();
+        final List<Selection> selections = List.of(Selection.builder(Account.class).tableAlias("a").classAlias("account").build(),
+                Selection.builder(Account.class).tableAlias("b").classAlias("account2").build());
+        final String sql = Dsl.PSC.selectFrom(selections).build().query();
 
         assertNotNull(sql);
         assertTrue(sql.startsWith("SELECT"));
@@ -338,13 +190,38 @@ public class SelectionTest extends TestBase {
     }
 
     @Test
-    public void testDslSelectSnapshotsMutableSelectionDescriptors() {
-        final Selection selection = new Selection().entityClass(Account.class).tableAlias("a").classAlias("account").includedPropNames(Arrays.asList("id"));
-        final SqlBuilder builder = Dsl.PSC.select(selection).from("account a");
+    public void testDslSelectUsesOneListSnapshotForValidationAndRendering() {
+        final Selection firstPass = Selection.builder(Account.class).tableAlias("a").classAlias("account").includedPropNames(List.of("id")).build();
+        final Selection laterPass = Selection.builder(Account.class).tableAlias("a").classAlias("account").includedPropNames(List.of("firstName")).build();
 
-        selection.tableAlias("changed").classAlias("changed").includedPropNames(Arrays.asList("firstName"));
+        assertEquals("SELECT a.id AS \"account.id\" FROM account a",
+                Dsl.PSC.select(changingSelectionList(firstPass, laterPass)).from("account a").build().query());
+        assertEquals("SELECT a.id AS \"account.id\" FROM account a", Dsl.PSC.selectFrom(changingSelectionList(firstPass, laterPass)).build().query());
+    }
 
-        assertEquals("SELECT a.id AS \"account.id\" FROM account a", builder.build().query());
+    private static List<Selection> changingSelectionList(final Selection firstPass, final Selection laterPass) {
+        return new AbstractList<>() {
+            private int iteratorCount;
+
+            @Override
+            public Iterator<Selection> iterator() {
+                return List.of(++iteratorCount == 1 ? firstPass : laterPass).iterator();
+            }
+
+            @Override
+            public Selection get(final int index) {
+                if (index != 0) {
+                    throw new IndexOutOfBoundsException(index);
+                }
+
+                return firstPass;
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
     }
 
     @Test
@@ -353,10 +230,20 @@ public class SelectionTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.selectFrom((Selection) null));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
-    public void testRequiredEntityBuilderEntryPoint() {
-        Selection selection = Selection.builder(Account.class).tableAlias("a").build();
-        assertEquals(Account.class, selection.entityClass());
-        assertThrows(NullPointerException.class, () -> Selection.builder(null));
+    public void testDeprecatedTwoEntitySelectionValidatesBothEntityClassesConsistently() {
+        final IllegalArgumentException selectFirst = assertThrows(IllegalArgumentException.class,
+                () -> Dsl.PSC.select(null, "a", "first", null, Account.class, "b", "second", null));
+        final IllegalArgumentException selectSecond = assertThrows(IllegalArgumentException.class,
+                () -> Dsl.PSC.select(Account.class, "a", "first", null, null, "b", "second", null));
+        final IllegalArgumentException selectFromFirst = assertThrows(IllegalArgumentException.class,
+                () -> Dsl.PSC.selectFrom(null, "a", "first", null, Account.class, "b", "second", null));
+        final IllegalArgumentException selectFromSecond = assertThrows(IllegalArgumentException.class,
+                () -> Dsl.PSC.selectFrom(Account.class, "a", "first", null, null, "b", "second", null));
+
+        assertEquals(selectFirst.getMessage(), selectSecond.getMessage());
+        assertEquals(selectFirst.getMessage(), selectFromFirst.getMessage());
+        assertEquals(selectFirst.getMessage(), selectFromSecond.getMessage());
     }
 }

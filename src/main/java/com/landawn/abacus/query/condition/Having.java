@@ -16,15 +16,16 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents a HAVING clause in SQL queries.
- * The HAVING clause is used to filter grouped results based on conditions applied to aggregated data.
- * It is typically used with GROUP BY clauses to filter groups based on aggregate functions.
+ * The HAVING clause filters grouped or aggregate results based on grouping expressions, aggregate
+ * expressions, or both. It is typically used with GROUP BY, but SQL also permits HAVING without
+ * GROUP BY, in which case the qualifying input is treated as a single group.
  * Unlike WHERE, which filters individual rows before grouping, HAVING filters entire groups after
  * aggregation has been performed.
  *
  * <p>Key differences between WHERE and HAVING:</p>
  * <ul>
  *   <li>WHERE filters rows before grouping; HAVING filters groups after aggregation</li>
- *   <li>WHERE cannot use aggregate functions; HAVING is designed for aggregate function conditions</li>
+ *   <li>WHERE cannot directly filter on aggregate results; HAVING can</li>
  *   <li>WHERE is processed earlier in query execution; HAVING is processed after GROUP BY</li>
  *   <li>WHERE is more efficient for filtering individual rows; HAVING for filtering aggregated results</li>
  * </ul>
@@ -87,7 +88,7 @@ public class Having extends Clause {
 
     /**
      * Creates a new HAVING clause with the specified condition.
-     * The condition is applied to the aggregated groups after GROUP BY processing.
+     * The condition is applied after grouping/aggregation.
      * This allows filtering based on aggregate function results such as COUNT, SUM,
      * AVG, MIN, and MAX.
      *
@@ -131,9 +132,9 @@ public class Having extends Clause {
      * }</pre>
      *
      * @param condition the condition to apply in the HAVING clause. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a {@link Criteria}, another clause,
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, or is a {@link Criteria}, another clause,
      *             an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *             operand, or an empty predicate (a blank {@link Expression} or empty {@link Junction}) — none of which
+     *             operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which
      *             can be nested inside a clause
      */
     public Having(final Condition condition) {

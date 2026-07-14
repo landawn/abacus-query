@@ -57,6 +57,10 @@ import com.landawn.abacus.util.Strings;
  * {@code "SELECT * FROM x;"}, {@code "SELECT * FROM x;;"} and {@code "SELECT * FROM x ; ;"}
  * all produce {@code "SELECT * FROM x"}.</p>
  *
+ * <p>Markers inside quoted literals, quoted identifiers, and SQL comments are not parameters.
+ * Comments are normally removed by {@link SqlParser}; this rule also applies to block comments
+ * retained by its keep-comments directive.</p>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
@@ -478,7 +482,7 @@ public final class ParsedSql {
     }
 
     private static boolean mayContainNamedParameter(final String token) {
-        return token.length() >= 2 && token.indexOf(_PREFIX_OF_NAMED_PARAMETER) >= 0 && !isQuotedToken(token);
+        return token.length() >= 2 && token.indexOf(_PREFIX_OF_NAMED_PARAMETER) >= 0 && !isQuotedToken(token) && !isCommentOrSpaceToken(token);
     }
 
     private static boolean mayContainIbatisParameter(final String token) {

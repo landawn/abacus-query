@@ -50,7 +50,7 @@ public class IsNotNaNTest extends TestBase {
     @Test
     public void testGetPropValue() {
         IsNotNaN condition = new IsNotNaN("calculatedValue");
-        Expression value = condition.propValue(Expression.class);
+        SqlExpression value = condition.propValue(SqlExpression.class);
         assertNotNull(value);
     }
 

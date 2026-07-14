@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -427,7 +429,7 @@ public class SqlMapperTest extends TestBase {
         mapper.add("query2", ParsedSql.parse("SELECT * FROM products"));
 
         // LinkedHashMap preserves insertion order
-        assertEquals(3, mapper.ids().size());
+        assertEquals(Arrays.asList("query3", "query1", "query2"), new ArrayList<>(mapper.ids()));
     }
 
     @Test

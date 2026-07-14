@@ -24,7 +24,7 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>Setting exclusive lower bounds on numeric values</li>
  *   <li>Date comparisons (after a certain date)</li>
- *   <li>String comparisons using lexicographical ordering</li>
+ *   <li>String comparisons using the database column's collation</li>
  *   <li>Implementing exclusive range queries when combined with LessThan</li>
  *   <li>Age requirements, threshold checks, and minimum validations</li>
  * </ul>
@@ -33,8 +33,8 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>Numbers: Natural numeric comparison</li>
  *   <li>Dates/Times: Chronological comparison</li>
- *   <li>Strings: Lexicographical (dictionary) order</li>
- *   <li>Any Comparable type supported by the database</li>
+ *   <li>Strings: Order determined by the database collation</li>
+ *   <li>Other SQL types for which the selected database defines ordering</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -96,7 +96,8 @@ public class GreaterThan extends Binary {
      * }</pre>
      * 
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
-     * @param propValue the value to compare against (a literal value or a {@link SubQuery}); passing
+     * @param propValue the value to compare against (a literal value or a {@link Condition}, such as
+     *                  a {@link SubQuery} or {@link SqlExpression}); passing
      *                  {@code null} renders as {@code prop > null}, which is not a meaningful SQL
      *                  comparison; do not pass {@code null} to this operator
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
