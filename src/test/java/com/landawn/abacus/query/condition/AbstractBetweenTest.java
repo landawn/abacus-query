@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -32,6 +33,26 @@ public class AbstractBetweenTest extends TestBase {
     public void testRejectsUnsupportedOperator() {
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("age", Operator.EQUAL, 18, 65));
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () -> new TestAbstractBetween("age", null, 18, 65));
+    }
+
+    @Test
+    public void testRejectsQueryStructuralBounds() {
+        final Where where = new Where(Filters.eq("y", 1));
+        final Criteria criteria = Criteria.builder().where(Filters.eq("y", 1)).build();
+
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("x", where, 10));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("x", 1, criteria));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("x", new On("a", "b"), 10));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("x", 1, new OrderBy("y")));
+    }
+
+    @Test
+    public void testRejectsQuantifiedBounds() {
+        final SubQuery subQuery = Filters.subQuery("SELECT score FROM results");
+
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("x", new All(subQuery), 10));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("x", 1, new Any(subQuery)));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("x", new Some(subQuery), 10));
     }
 
     private static final class EmptyAbstractBetween extends AbstractBetween {

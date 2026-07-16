@@ -38,8 +38,9 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Performance considerations:</p>
  * <ul>
- *   <li>Patterns starting with % prevent index usage (full table scan)</li>
- *   <li>Patterns starting with literal characters can use indexes more efficiently</li>
+ *   <li>Index use for {@code NOT LIKE} is database- and index-specific; do not assume that a
+ *       literal prefix makes the exclusion predicate index-efficient</li>
+ *   <li>A leading {@code %} usually prevents a range scan on an ordinary B-tree index</li>
  *   <li>Consider alternative approaches for complex exclusion patterns</li>
  *   <li>Case sensitivity depends on database collation settings</li>
  * </ul>
@@ -101,7 +102,9 @@ public class NotLike extends Binary {
      *                  Use {@code %} to match any sequence of characters and {@code _} to match
      *                  a single character. Passing {@code null} renders as {@code prop NOT LIKE null},
      *                  which is not a meaningful SQL comparison; do not pass {@code null} to this operator.
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if a
+     *                                  condition-valued operand is or contains a query-structural component;
+     *                                  or if it is or contains an {@link All}, {@link Any}, or {@link Some} operand
      */
     public NotLike(final String propName, final Object propValue) {
         super(propName, Operator.NOT_LIKE, propValue);

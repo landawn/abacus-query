@@ -154,8 +154,7 @@ public final class ParsedSql {
                             final int rightBracketIndex = ibatisToken.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER);
 
                             if (rightBracketIndex < 0) {
-                                throw new IllegalArgumentException(
-                                        "Malformed iBatis/MyBatis parameter: missing closing '}' for token starting at character offset " + i);
+                                throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' near token index " + i);
                             }
 
                             if (rightBracketIndex > 2) {
@@ -168,7 +167,7 @@ public final class ParsedSql {
                                     paramCount++;
                                     type |= IBATIS_PARAMETER_TYPE;
                                 } else {
-                                    // empty/blank #{...} content — keep verbatim, no parameter.
+                                    // Empty/blank #{...} content: keep it verbatim and do not create a parameter.
                                     // 'word' strictly shrinks (substring starts at rightBracketIndex + 1 >= 3),
                                     // so continuing the loop cannot spin forever and lets us still extract
                                     // any subsequent "#{...}" markers in the same token (e.g. "#{ }#{a}").

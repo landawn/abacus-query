@@ -18,6 +18,8 @@ package com.landawn.abacus.query.condition;
  * Represents a MINUS clause in SQL queries (also known as EXCEPT in some databases).
  * This class implements the set difference operation, returning rows from the first query
  * that are not present in the second query (subquery).
+ * This type always renders the {@code MINUS} keyword; it does not translate the operation by
+ * dialect. Use {@link Except} when the target database requires {@code EXCEPT}.
  *
  * <p>Key characteristics of MINUS/EXCEPT:</p>
  * <ul>
@@ -48,7 +50,7 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Performance considerations:
  * <ul>
- *   <li>MINUS requires duplicate elimination, which involves sorting or hashing</li>
+ *   <li>Set difference includes duplicate elimination, commonly implemented with sorting or hashing</li>
  *   <li>Performance depends on result set sizes and database optimization</li>
  *   <li>Indexes on columns used in both queries can significantly improve performance</li>
  *   <li>For large datasets, NOT EXISTS may outperform MINUS in some databases</li>
@@ -57,10 +59,11 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Database support:
  * <ul>
- *   <li>Oracle, DB2: Use MINUS keyword</li>
- *   <li>PostgreSQL, SQL Server, SQLite, MySQL 8.0.31+: Use EXCEPT keyword</li>
- *   <li>MySQL before 8.0.31: Does not support MINUS/EXCEPT (use NOT IN or LEFT JOIN with NULL check)</li>
- *   <li>Part of SQL standard as EXCEPT; MINUS is the Oracle/DB2 keyword but widely recognized</li>
+ *   <li>Oracle supports the MINUS keyword emitted by this class</li>
+ *   <li>Many other databases expose set difference through EXCEPT; use {@link Except} for those targets</li>
+ *   <li>Support varies by database and version; when neither operator is available, rewrite with
+ *       {@code NOT EXISTS} or an outer join</li>
+ *   <li>The SQL-standard keyword is EXCEPT; this class specifically emits MINUS</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>

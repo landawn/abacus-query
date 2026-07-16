@@ -153,7 +153,7 @@ public class LeftJoin extends Join {
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *                                  a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public LeftJoin(final String joinEntity, final Condition joinCondition) {
         super(Operator.LEFT_JOIN, joinEntity, joinCondition);
@@ -187,7 +187,7 @@ public class LeftJoin extends Join {
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *                                  a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public LeftJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         super(Operator.LEFT_JOIN, joinEntities, joinCondition);

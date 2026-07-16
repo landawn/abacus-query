@@ -88,6 +88,10 @@ public class Binary extends ComposableCondition {
             Operator.GREATER_THAN_OR_EQUAL, Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL, Operator.LIKE, Operator.NOT_LIKE, Operator.IS, Operator.IS_NOT,
             Operator.IN, Operator.NOT_IN);
 
+    /** SQL operators that may take a direct ALL/ANY/SOME right-hand operand. */
+    private static final Set<Operator> QUANTIFIED_COMPARISON_OPERATORS = EnumSet.of(Operator.EQUAL, Operator.NOT_EQUAL, Operator.NOT_EQUAL_ANSI,
+            Operator.GREATER_THAN, Operator.GREATER_THAN_OR_EQUAL, Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL);
+
     // For Kryo
     final String propName;
 
@@ -134,12 +138,19 @@ public class Binary extends ComposableCondition {
      *                 {@link Operator#IS}, {@link Operator#IS_NOT}, {@link Operator#IN}, or {@link Operator#NOT_IN}
      * @param propValue the value to compare against; may be a literal value, {@code null}
      *                  (for equality operators, renders as {@code IS NULL} / {@code IS NOT NULL}),
-     *                  or a {@link Condition} such as a {@link SubQuery}. For an {@code IN}/{@code NOT_IN}
-     *                  operator, a {@link Collection} or array value is copied defensively and must be non-empty.
+     *                  or a non-structural {@link Condition} such as a {@link SqlExpression} or
+     *                  {@link SubQuery}. An {@link All}, {@link Any}, or {@link Some} operand is accepted
+     *                  only as the direct right-hand side of {@code =}, {@code !=}, {@code <>}, {@code <},
+     *                  {@code <=}, {@code >}, or {@code >=}. For an {@code IN}/{@code NOT_IN} operator, a
+     *                  {@link Collection} or array value is copied defensively and must be non-empty;
+     *                  condition-valued elements are subject to the same structural restriction.
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if {@code operator}
      *                                  is not one of the operators listed above; or if, for an {@code IN}/{@code NOT_IN}
      *                                  operator, {@code propValue} is not a non-empty {@link Collection}, a non-empty
-     *                                  array, or a {@link Condition}
+     *                                  array, or a {@link Condition}; or if a condition-valued operand is or contains
+     *                                  a {@link Criteria}, SQL clause, JOIN, or {@code ON}/{@code USING} connector;
+     *                                  or if an {@link All}/{@link Any}/{@link Some} operand is used anywhere
+     *                                  other than the direct RHS of a compatible scalar comparison
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     public Binary(final String propName, final Operator operator, final Object propValue) {
@@ -344,18 +355,21 @@ public class Binary extends ComposableCondition {
 
     private static Object normalizePropValue(final Operator op, final Object propValue) {
         if (!isCollectionOperator(op)) {
-            return propValue;
+            return validateScalarValueOperand(op, propValue);
         }
 
         if (propValue instanceof Condition) {
-            return propValue;
+            return validateNonQuantifiedValueOperand(propValue, "propValue");
         }
 
         // The copies are wrapped unmodifiable so propValue() cannot leak a mutable view of the
         // internal membership list (mutation would silently desync the memoized parameters/hashCode).
         if (propValue instanceof final Collection<?> values) {
             N.checkArgNotEmpty(values, "propValue");
-            return Collections.unmodifiableList(new ArrayList<>(values));
+            final List<?> valuesCopy = new ArrayList<>(values);
+            N.checkArgNotEmpty(valuesCopy, "propValue");
+            validateValueElements(valuesCopy, "propValue");
+            return Collections.unmodifiableList(valuesCopy);
         }
 
         if (propValue != null && propValue.getClass().isArray()) {
@@ -368,13 +382,33 @@ public class Binary extends ComposableCondition {
             final List<Object> values = new ArrayList<>(len);
 
             for (int i = 0; i < len; i++) {
-                values.add(Array.get(propValue, i));
+                values.add(validateNonQuantifiedValueOperand(Array.get(propValue, i), "propValue[" + i + "]"));
             }
 
             return Collections.unmodifiableList(values);
         }
 
         throw new IllegalArgumentException("IN/NOT IN operator requires a non-empty collection, array, or condition value");
+    }
+
+    private static Object validateScalarValueOperand(final Operator op, final Object propValue) {
+        if (propValue instanceof Condition && isQuantifiedSubQueryOperand((Condition) propValue)) {
+            if (!QUANTIFIED_COMPARISON_OPERATORS.contains(op)) {
+                throw new IllegalArgumentException(op + " does not support an ALL/ANY/SOME right-hand operand");
+            }
+
+            return validateValueOperand(propValue, "propValue");
+        }
+
+        return validateNonQuantifiedValueOperand(propValue, "propValue");
+    }
+
+    private static void validateValueElements(final Collection<?> values, final String argumentName) {
+        int index = 0;
+
+        for (final Object value : values) {
+            validateNonQuantifiedValueOperand(value, argumentName + "[" + index++ + "]");
+        }
     }
 
     private static String formatCollection(final Collection<?> values, final NamingPolicy namingPolicy) {

@@ -29,7 +29,7 @@ package com.landawn.abacus.query.condition;
  *   <li>All SELECT statements must have the same number of columns</li>
  *   <li>Corresponding columns must have compatible data types</li>
  *   <li>Column names from the first SELECT are used in the result</li>
- *   <li>Slower than UNION ALL due to duplicate elimination overhead</li>
+ *   <li>Usually costs more than UNION ALL because duplicate elimination requires additional work</li>
  *   <li>Result order is not guaranteed unless ORDER BY is specified</li>
  *   <li>For row comparison purposes, two {@code NULL} values in the same column position are
  *       treated as equal (SQL set-operation semantics, unlike regular {@code =} comparisons)</li>
@@ -53,7 +53,7 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Performance considerations:
  * <ul>
- *   <li>UNION performs an implicit DISTINCT operation, which requires sorting or hashing</li>
+ *   <li>UNION performs an implicit DISTINCT operation, commonly implemented with sorting or hashing</li>
  *   <li>For large result sets, UNION can be significantly slower than UNION ALL</li>
  *   <li>If you know there are no duplicates, use UNION ALL for better performance</li>
  *   <li>Consider adding indexes on columns used in UNION queries</li>
@@ -83,17 +83,17 @@ package com.landawn.abacus.query.condition;
  * // SQL: SELECT id, name FROM customers WHERE city='NY'
  * //             UNION
  * //             SELECT id, name FROM customers WHERE city='LA'
- * // If a customer appears in both result sets, they will appear only once
+ * // An identical (id, name) row from both result sets appears only once
  *
  * // Combine active and inactive users, ensuring no duplicates
  * SubQuery inactiveUsers = Filters.subQuery("SELECT user_id, email FROM inactive_users");
  * Union allUsers = new Union(inactiveUsers);
- * // Combined with active users query, if a user appears in both tables, only one instance is returned
+ * // Combined with an active-users query, an identical (user_id, email) row is returned once
  *
  * // Merge current and historical data
  * SubQuery pastOrders = Filters.subQuery("SELECT order_id, customer_id FROM orders WHERE year = 2023");
  * Union allOrders = new Union(pastOrders);
- * // When combined with current orders query, duplicates are removed if an order appears in both years
+ * // When combined with current orders, only completely identical (order_id, customer_id) rows are deduplicated
  * }</pre>
  *
  * @see UnionAll
@@ -142,7 +142,8 @@ public class Union extends Clause {
      * // Combine current and historical orders
      * SubQuery historicalOrders = Filters.subQuery("SELECT order_id, total FROM archived_orders");
      * Union allOrders = new Union(historicalOrders);
-     * // When combined with current orders query, removes any duplicate order_id entries
+     * // When combined with current orders, removes duplicate (order_id, total) rows; rows with
+     * // the same order_id but a different total remain distinct
      * }</pre>
      *
      * @param subQuery the subquery to perform the UNION operation with (must not be {@code null}). The subquery must

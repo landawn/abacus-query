@@ -24,7 +24,7 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>Setting exclusive upper bounds on numeric values</li>
  *   <li>Date comparisons (before a certain date)</li>
- *   <li>String comparisons using lexicographical ordering</li>
+ *   <li>String comparisons using the database's configured collation</li>
  *   <li>Implementing exclusive range queries when combined with GreaterThan</li>
  *   <li>Age restrictions, expiration checks, and limit validations</li>
  * </ul>
@@ -33,8 +33,8 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>Numbers: Natural numeric comparison</li>
  *   <li>Dates/Times: Chronological comparison</li>
- *   <li>Strings: Lexicographical (dictionary) order</li>
- *   <li>Any Comparable type supported by the database</li>
+ *   <li>Strings: Ordering defined by the database collation</li>
+ *   <li>Any ordered SQL type supported by the database</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -104,10 +104,13 @@ public class LessThan extends Binary {
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
-     * @param propValue the value to compare against (a literal value or a {@link SubQuery}); passing
+     * @param propValue the value to compare against (a literal value, {@link SqlExpression}, {@link SubQuery},
+     *                  another non-structural {@link Condition}, or direct {@link All}, {@link Any}, or {@link Some} operand); passing
      *                  {@code null} renders as {@code prop < null}, which is not a meaningful SQL
      *                  comparison; do not pass {@code null} to this operator
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if a
+     *                                  condition-valued operand is or contains a query-structural component;
+     *                                  or if an {@code ALL}/{@code ANY}/{@code SOME} operand is not the direct RHS
      */
     public LessThan(final String propName, final Object propValue) {
         super(propName, Operator.LESS_THAN, propValue);

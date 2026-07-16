@@ -88,15 +88,18 @@ public abstract class AbstractIn extends ComposableCondition {
     /**
      * Creates a new single-column IN or NOT IN condition. The given values are copied into an internal
      * {@link ArrayList}, so later mutations to the supplied collection do not affect this
-     * condition. Individual elements may be literal values or {@link Condition} instances; the
-     * latter have their parameters spliced into {@link #parameters()}.
+     * condition. Individual elements may be literal values or non-structural, non-quantified
+     * {@link Condition} instances; the latter have their parameters spliced into {@link #parameters()}.
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param values the collection of values to check membership against (must not be {@code null} or empty);
      *               elements may be {@code null}
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, {@code values} is {@code null}/empty,
-     *                                  or {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN}
+     *                                  or {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
+     *                                  or a condition-valued element is or contains a {@link Criteria}, SQL clause,
+     *                                  JOIN, or {@code ON}/{@code USING} connector, or is/contains an
+     *                                  {@link All}, {@link Any}, or {@link Some} quantified operand
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final String propName, final Operator operator, final Collection<?> values) {
@@ -107,6 +110,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
         final List<?> valuesCopy = new ArrayList<>(values);
         N.checkArgNotEmpty(valuesCopy, "values");
+        validateValueElements(valuesCopy, "values");
 
         this.propNames = ImmutableList.wrap(Collections.singletonList(propName));
         this.rowValueConstructor = false;
@@ -129,7 +133,8 @@ public abstract class AbstractIn extends ComposableCondition {
      * </ul>
      * Both the property names and each row are copied internally, so later mutations to the supplied
      * collections do not affect this condition. Individual row values may be literal values or
-     * {@link Condition} instances; the latter have their parameters spliced into {@link #parameters()}.
+     * non-structural, non-quantified {@link Condition} instances; the latter have their parameters
+     * spliced into {@link #parameters()}.
      *
      * <p><b>&#9888;&#65039;</b> A missing property-name key in a map row is represented as {@code null}; a bean
      * row that does not expose a requested property is rejected.</p>
@@ -145,7 +150,10 @@ public abstract class AbstractIn extends ComposableCondition {
      *                                  if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
-     *                                  or if a bean row does not expose a requested property
+     *                                  or if a bean row does not expose a requested property, or if a condition-valued
+     *                                  row element is or contains a {@link Criteria}, SQL clause, JOIN, or
+     *                                  {@code ON}/{@code USING} connector, or is/contains an {@link All},
+     *                                  {@link Any}, or {@link Some} quantified operand
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final Collection<String> propNames, final Operator operator, final Collection<?> valueRows) {
@@ -161,12 +169,16 @@ public abstract class AbstractIn extends ComposableCondition {
         final int arity = this.propNames.size();
         final List<List<Object>> copy = new ArrayList<>(valueRowsCopy.size());
 
+        int rowIndex = 0;
+
         for (final Object row : valueRowsCopy) {
             N.checkArgNotNull(row, "value row");
 
             // Each tuple is wrapped unmodifiable so values() is immutable in depth, not just at the
             // outer ImmutableList level (a mutated tuple would silently desync the memoized parameters).
-            copy.add(Collections.unmodifiableList(toRowTuple(row, this.propNames, arity)));
+            final List<Object> tuple = toRowTuple(row, this.propNames, arity);
+            validateValueElements(tuple, "valueRows[" + rowIndex++ + "]");
+            copy.add(Collections.unmodifiableList(tuple));
         }
 
         this.values = copy;
@@ -235,6 +247,14 @@ public abstract class AbstractIn extends ComposableCondition {
         if (actual != arity) {
             throw new IllegalArgumentException(
                     "Each value row must have exactly " + arity + " element(s) to match the number of property names, but found " + actual);
+        }
+    }
+
+    private static void validateValueElements(final Collection<?> values, final String argumentName) {
+        int index = 0;
+
+        for (final Object value : values) {
+            validateNonQuantifiedValueOperand(value, argumentName + "[" + index++ + "]");
         }
     }
 

@@ -52,6 +52,22 @@ public class NotInTest extends TestBase {
     }
 
     @Test
+    public void testConstructors_RejectStructuralConditionValues() {
+        assertThrows(IllegalArgumentException.class, () -> new NotIn("id", Arrays.asList(new Where(Filters.eq("active", true)))));
+        assertThrows(IllegalArgumentException.class,
+                () -> new NotIn(Arrays.asList("id", "tenant"), Arrays.asList(Arrays.asList(1, new On("a.tenant", "b.tenant")))));
+    }
+
+    @Test
+    public void testConstructors_RejectQuantifiedConditionValues() {
+        final SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+
+        assertThrows(IllegalArgumentException.class, () -> new NotIn("id", Arrays.asList(new All(subQuery))));
+        assertThrows(IllegalArgumentException.class, () -> new NotIn("id", Arrays.asList(1, new Any(subQuery))));
+        assertThrows(IllegalArgumentException.class, () -> new NotIn(Arrays.asList("id", "tenant"), Arrays.asList(Arrays.asList(1, new Some(subQuery)))));
+    }
+
+    @Test
     public void testConstructor_Set() {
         Set<Integer> excludedDepts = new HashSet<>(Arrays.asList(10, 20, 30));
         NotIn condition = new NotIn("department_id", excludedDepts);

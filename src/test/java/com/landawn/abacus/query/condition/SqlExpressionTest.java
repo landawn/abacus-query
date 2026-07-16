@@ -26,6 +26,36 @@ import com.landawn.abacus.util.NamingPolicy;
  */
 @Tag("2025")
 public class SqlExpressionTest extends TestBase {
+
+    private static Number customNumber(final String literal) {
+        return new Number() {
+            @Override
+            public int intValue() {
+                return 0;
+            }
+
+            @Override
+            public long longValue() {
+                return 0;
+            }
+
+            @Override
+            public float floatValue() {
+                return 0;
+            }
+
+            @Override
+            public double doubleValue() {
+                return 0;
+            }
+
+            @Override
+            public String toString() {
+                return literal;
+            }
+        };
+    }
+
     @Test
     public void testConstructorWithLiteral() {
         String literal = "CURRENT_TIMESTAMP";
@@ -945,6 +975,12 @@ public class SqlExpressionTest extends TestBase {
         Assertions.assertNotNull(expr);
         Assertions.assertEquals("price * 0.9", expr.literal());
         Assertions.assertEquals(Operator.EMPTY, expr.operator());
+    }
+
+    @Test
+    public void testRenderValueRejectsNonNumericNumberText() {
+        assertEquals("-6.02E23", SqlExpression.renderValue(customNumber("-6.02E23")));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.renderValue(customNumber("1 UNION SELECT password FROM users")));
     }
 
     @Test

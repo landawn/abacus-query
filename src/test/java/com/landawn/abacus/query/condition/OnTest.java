@@ -6,9 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -159,6 +163,27 @@ public class OnTest extends TestBase {
         Condition condition = On.createOnCondition(map);
         assertNotNull(condition);
         assertTrue(condition instanceof And);
+    }
+
+    @Test
+    public void testCreateOnConditionSnapshotsEveryEntryWhenReportedSizeIsStale() {
+        final Map<String, String> liveMap = new AbstractMap<>() {
+            @Override
+            public Set<Entry<String, String>> entrySet() {
+                return new LinkedHashSet<>(
+                        Arrays.asList(new AbstractMap.SimpleImmutableEntry<>("a.id", "b.id"), new AbstractMap.SimpleImmutableEntry<>("a.tenant", "b.tenant")));
+            }
+
+            @Override
+            public int size() {
+                // Models a concurrent/live map that gained an entry after size() was observed.
+                return 1;
+            }
+        };
+
+        final On on = new On(liveMap);
+
+        assertEquals("ON ((a.id = b.id) AND (a.tenant = b.tenant))", on.toString());
     }
 
     @Test

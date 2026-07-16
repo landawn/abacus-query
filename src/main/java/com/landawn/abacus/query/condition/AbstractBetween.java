@@ -65,14 +65,19 @@ public abstract class AbstractBetween extends ComposableCondition {
      * @param operator the operator ({@link Operator#BETWEEN} or {@link Operator#NOT_BETWEEN})
      * @param minValue the lower bound of the range; inclusive for {@code BETWEEN}, and the lower edge of the
      *                 excluded range for {@code NOT_BETWEEN} (values strictly below it match); may be a
-     *                 literal value, a {@link SubQuery}, or any other {@link Condition} whose
-     *                 parameters will be spliced into {@link #parameters()}; may be {@code null}
+     *                 literal value, a {@link SqlExpression}, a {@link SubQuery}, or another
+     *                 non-structural, non-quantified {@link Condition} whose parameters will be
+     *                 spliced into {@link #parameters()}; may be {@code null}
      * @param maxValue the upper bound of the range; inclusive for {@code BETWEEN}, and the upper edge of the
      *                 excluded range for {@code NOT_BETWEEN} (values strictly above it match); may be a
-     *                 literal value, a {@link SubQuery}, or any other {@link Condition} whose
-     *                 parameters will be spliced into {@link #parameters()}; may be {@code null}
+     *                 literal value, a {@link SqlExpression}, a {@link SubQuery}, or another
+     *                 non-structural, non-quantified {@link Condition} whose parameters will be
+     *                 spliced into {@link #parameters()}; may be {@code null}
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or {@code operator}
-     *                                  is neither {@link Operator#BETWEEN} nor {@link Operator#NOT_BETWEEN}
+     *                                  is neither {@link Operator#BETWEEN} nor {@link Operator#NOT_BETWEEN},
+     *                                  or either condition-valued bound is or contains a {@link Criteria},
+     *                                  SQL clause, JOIN, or {@code ON}/{@code USING} connector, or is/contains
+     *                                  an {@link All}, {@link Any}, or {@link Some} quantified operand
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractBetween(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
@@ -81,8 +86,8 @@ public abstract class AbstractBetween extends ComposableCondition {
         checkPropName(propName);
 
         this.propName = propName;
-        this.minValue = minValue;
-        this.maxValue = maxValue;
+        this.minValue = validateNonQuantifiedValueOperand(minValue, "minValue");
+        this.maxValue = validateNonQuantifiedValueOperand(maxValue, "maxValue");
     }
 
     private static Operator validateOperator(final Operator operator) {

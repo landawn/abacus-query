@@ -86,9 +86,16 @@ public class Between extends AbstractBetween {
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
-     * @param minValue the minimum value (inclusive); may be a literal value, a {@link SubQuery}, or any other {@link Condition} (may be {@code null})
-     * @param maxValue the maximum value (inclusive); may be a literal value, a {@link SubQuery}, or any other {@link Condition} (may be {@code null})
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     * @param minValue the minimum value (inclusive); may be a literal value, {@link SqlExpression},
+     *                 {@link SubQuery}, or another non-structural, non-quantified {@link Condition}
+     *                 (may be {@code null})
+     * @param maxValue the maximum value (inclusive); may be a literal value, {@link SqlExpression},
+     *                 {@link SubQuery}, or another non-structural, non-quantified {@link Condition}
+     *                 (may be {@code null})
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if either
+     *                                  condition-valued bound is or contains a {@link Criteria}, SQL clause,
+     *                                  JOIN, or {@code ON}/{@code USING} connector, or is/contains an
+     *                                  {@link All}, {@link Any}, or {@link Some} quantified operand
      */
     public Between(final String propName, final Object minValue, final Object maxValue) {
         super(propName, Operator.BETWEEN, minValue, maxValue);

@@ -87,7 +87,8 @@ public class Not extends ComposableCell {
     /**
      * Creates a new NOT condition that negates the specified condition.
      * The resulting condition will be true when the input condition is false,
-     * and false when the input condition is true.
+     * and false when the input condition is true. Under SQL three-valued logic, an
+     * {@code UNKNOWN} input remains {@code UNKNOWN}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

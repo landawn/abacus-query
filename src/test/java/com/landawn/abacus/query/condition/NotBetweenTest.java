@@ -45,6 +45,21 @@ public class NotBetweenTest extends TestBase {
     }
 
     @Test
+    public void testConstructor_RejectsStructuralConditionBounds() {
+        assertThrows(IllegalArgumentException.class, () -> new NotBetween("score", new Where(Filters.eq("active", true)), 100));
+        assertThrows(IllegalArgumentException.class, () -> new NotBetween("score", 0, new On("a.id", "b.id")));
+    }
+
+    @Test
+    public void testConstructor_RejectsQuantifiedBounds() {
+        final SubQuery subQuery = Filters.subQuery("SELECT score FROM results");
+
+        assertThrows(IllegalArgumentException.class, () -> new NotBetween("score", new All(subQuery), 100));
+        assertThrows(IllegalArgumentException.class, () -> new NotBetween("score", 0, new Any(subQuery)));
+        assertThrows(IllegalArgumentException.class, () -> new NotBetween("score", new Some(subQuery), 100));
+    }
+
+    @Test
     public void testConstructor_NumericRange() {
         NotBetween condition = new NotBetween("price", 10.0, 100.0);
 

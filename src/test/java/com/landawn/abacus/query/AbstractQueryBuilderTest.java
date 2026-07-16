@@ -3,6 +3,7 @@ package com.landawn.abacus.query;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,6 +32,7 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Limit;
+import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
@@ -88,6 +90,16 @@ public class AbstractQueryBuilderTest extends TestBase {
         @Override
         public int size() {
             return 1;
+        }
+    }
+
+    public static final class ThrowingUpdateEntity {
+        public String getValue() {
+            throw new IllegalStateException("getter failed");
+        }
+
+        public void setValue(final String value) {
+            // Bean setter supplied so the property is considered updatable.
         }
     }
 
@@ -160,6 +172,55 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    public void testSelectModifierRejectsNonSelectBuildersWithoutChangingThem() {
+        final SqlBuilder update = Dsl.PSC.update("users");
+        assertThrows(IllegalStateException.class, () -> update.selectModifier("DISTINCT"));
+        assertEquals("UPDATE users SET name = ?", update.set("name").build().query());
+
+        final SqlBuilder delete = Dsl.PSC.deleteFrom("users");
+        assertThrows(IllegalStateException.class, () -> delete.distinct());
+        assertEquals("DELETE FROM users", delete.build().query());
+    }
+
+    @Test
+    public void testClosedBuilderMutationApisConsistentlyThrowIllegalStateException() {
+        final SqlBuilder rawAppend = Dsl.PSC.select("id").from("users");
+        rawAppend.build();
+        assertThrows(IllegalStateException.class, () -> rawAppend.append("FOR UPDATE"));
+
+        final SqlBuilder modifier = Dsl.PSC.select("id").from("users");
+        modifier.build();
+        assertThrows(IllegalStateException.class, () -> modifier.selectModifier("DISTINCT"));
+
+        final SqlBuilder condition = Dsl.PSC.select("id").from("users");
+        condition.build();
+        assertThrows(IllegalStateException.class, () -> condition.append(Filters.eq("id", 1)));
+
+        final SqlBuilder setOperation = Dsl.PSC.select("id").from("users");
+        setOperation.build();
+        assertThrows(IllegalStateException.class, () -> setOperation.union("SELECT id FROM archived_users"));
+    }
+
+    @Test
+    public void testRejectedEntityOverloadsPreserveExistingMappingState() {
+        final SqlBuilder query = Dsl.PSC.select("id").from(Account.class);
+        assertSame(Account.class, query._entityClass);
+        assertThrows(IllegalStateException.class, () -> query.from(String.class, "s"));
+        assertSame(Account.class, query._entityClass);
+        assertEquals("SELECT acc.id AS \"id\" FROM account acc", query.build().query());
+
+        final SqlBuilder update = Dsl.PSC.update("users", Account.class);
+        assertSame(Account.class, update._entityClass);
+        assertThrows(IllegalStateException.class, () -> update.into(String.class));
+        assertSame(Account.class, update._entityClass);
+        assertEquals("UPDATE users SET first_name = ?", update.set("firstName").build().query());
+
+        final SqlBuilder joined = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> joined.join((Class<?>) null, "n"));
+        assertEquals("SELECT id FROM users", joined.build().query());
+    }
+
+    @Test
     public void testSetApisRejectNonUpdateBuildersWithoutCorruptingThem() {
         final SqlBuilder query = Dsl.PSC.select("id").from("users");
         assertThrows(IllegalStateException.class, () -> query.set("name"));
@@ -174,6 +235,172 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    public void testLazyDmlInitializationPrecedesClauseReservation() {
+        final SqlBuilder incompleteUpdate = Dsl.PSC.update("users");
+        assertThrows(IllegalStateException.class, () -> incompleteUpdate.where("id = 1"));
+        assertEquals("UPDATE users SET name = ? WHERE id = 1", incompleteUpdate.set("name").where("id = 1").build().query());
+
+        assertEquals("DELETE FROM users ORDER BY id LIMIT 1", Dsl.PSC.deleteFrom("users").orderBy("id").limit(1).build().query());
+
+        final SqlBuilder insert = Dsl.PSC.insert("name").into("users");
+        assertThrows(IllegalStateException.class, () -> insert.where("id = 1"));
+        assertEquals("INSERT INTO users (name) VALUES (?)", insert.build().query());
+    }
+
+    @Test
+    public void testOperationSpecificClausesRejectInvalidDmlWithoutChangingTheBuilder() {
+        final SqlBuilder update = Dsl.PSC.update("users");
+        assertThrows(IllegalStateException.class, () -> update.groupBy("id"));
+        assertEquals("UPDATE users SET name = ?", update.set("name").build().query());
+
+        final SqlBuilder deleteWithHaving = Dsl.PSC.deleteFrom("users");
+        assertThrows(IllegalStateException.class, () -> deleteWithHaving.having("COUNT(*) > 0"));
+        assertEquals("DELETE FROM users", deleteWithHaving.build().query());
+
+        final SqlBuilder deleteWithOffset = Dsl.PSC.deleteFrom("users");
+        assertThrows(IllegalStateException.class, () -> deleteWithOffset.offset(1));
+        assertEquals("DELETE FROM users", deleteWithOffset.build().query());
+
+        final Dsl sqlServerDsl = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+        final SqlBuilder sqlServerUpdate = sqlServerDsl.update("users");
+        assertThrows(IllegalStateException.class, () -> sqlServerUpdate.limit(1));
+        assertEquals("UPDATE users SET name = ?", sqlServerUpdate.set("name").build().query());
+    }
+
+    @Test
+    public void testSqlServerPaginationRequiresOrderByAndUsesValidOffsetFetchGrammar() {
+        final Dsl sqlServerDsl = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+
+        final SqlBuilder countOnly = sqlServerDsl.select("id").from("users");
+        assertThrows(IllegalStateException.class, () -> countOnly.limit(10));
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", countOnly.orderBy("id").limit(10).build().query());
+
+        final SqlBuilder countAndOffset = sqlServerDsl.select("id").from("users");
+        assertThrows(IllegalStateException.class, () -> countAndOffset.limit(10, 5));
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY", countAndOffset.orderBy("id").limit(10, 5).build().query());
+
+        final SqlBuilder offset = sqlServerDsl.select("id").from("users");
+        assertThrows(IllegalStateException.class, () -> offset.offset(5));
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 5 ROWS", offset.orderBy("id").offset(5).build().query());
+
+        final SqlBuilder offsetRows = sqlServerDsl.select("id").from("users");
+        assertThrows(IllegalStateException.class, () -> offsetRows.offsetRows(6));
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 6 ROWS", offsetRows.orderBy("id").offsetRows(6).build().query());
+
+        final SqlBuilder explicitNext = sqlServerDsl.select("id").from("users");
+        assertThrows(IllegalStateException.class, () -> explicitNext.fetchNextRows(3));
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 3 ROWS ONLY", explicitNext.orderBy("id").fetchNextRows(3).build().query());
+
+        final SqlBuilder explicitFirst = sqlServerDsl.select("id").from("users");
+        assertThrows(IllegalStateException.class, () -> explicitFirst.fetchFirstRows(4));
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 4 ROWS ONLY", explicitFirst.orderBy("id").fetchFirstRows(4).build().query());
+
+        final SqlBuilder unresolvedFetch = sqlServerDsl.select("id").from("users");
+        assertThrows(IllegalStateException.class, () -> unresolvedFetch.append(new Limit("FETCH FIRST ? ROWS ONLY")));
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY",
+                unresolvedFetch.orderBy("id").append(new Limit("FETCH FIRST ? ROWS ONLY")).build().query());
+
+        final Dsl oracleDsl = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Oracle")).build());
+        assertEquals("SELECT id FROM users FETCH FIRST 2 ROWS ONLY", oracleDsl.select("id").from("users").limit(2).build().query());
+
+        final Dsl db2Dsl = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("DB2")).build());
+        assertEquals("SELECT id FROM users FETCH FIRST 2 ROWS ONLY", db2Dsl.select("id").from("users").limit(2).build().query());
+    }
+
+    @Test
+    public void testStructuredClauseRenderingFailuresAreAtomic() {
+        final SqlBuilder grouped = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> grouped.groupBy("id -- unsafe"));
+        assertEquals("SELECT id FROM users GROUP BY id", grouped.groupBy("id").build().query());
+
+        final SqlBuilder ordered = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> ordered.orderBy("id", "name /* unsafe */"));
+        assertEquals("SELECT id FROM users ORDER BY id", ordered.orderBy("id").build().query());
+
+        final Condition unsupported = new Condition() {
+            @Override
+            public Operator operator() {
+                return Operator.EQUAL;
+            }
+
+            @Override
+            public ImmutableList<Object> parameters() {
+                return ImmutableList.empty();
+            }
+
+            @Override
+            public String toSql(final NamingPolicy namingPolicy) {
+                return "unsupported";
+            }
+        };
+
+        final SqlBuilder filtered = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> filtered.where(unsupported));
+        assertEquals("SELECT id FROM users WHERE id = 1", filtered.where("id = 1").build().query());
+
+        final SqlBuilder joined = Dsl.PSC.select("u.id").from("users u").join("accounts a");
+        assertThrows(IllegalArgumentException.class, () -> joined.using(Arrays.asList("id", "tenant_id -- unsafe")));
+        assertEquals("SELECT u.id FROM users u JOIN accounts a USING (id)", joined.using("id").build().query());
+
+        final SqlBuilder joinedWithCondition = Dsl.PSC.select("u.id").from("users u").join("accounts a");
+        assertThrows(IllegalArgumentException.class, () -> joinedWithCondition.on(unsupported));
+        assertEquals("SELECT u.id FROM users u JOIN accounts a ON u.id = a.id", joinedWithCondition.on("u.id = a.id").build().query());
+    }
+
+    @Test
+    public void testSetRenderingFailuresAndLateSetCallsAreAtomic() {
+        final SqlBuilder partialSet = Dsl.PSC.update("users");
+        assertThrows(IllegalArgumentException.class, () -> partialSet.set(Arrays.asList("name", "age -- unsafe")));
+        assertEquals("UPDATE users SET name = ?", partialSet.set("name").build().query());
+
+        final SqlBuilder lateSet = Dsl.PSC.update("users").set("name").where("id = 1");
+        assertThrows(IllegalStateException.class, () -> lateSet.set("age"));
+        assertEquals("UPDATE users SET name = ? WHERE id = 1", lateSet.build().query());
+
+        final Dsl sqlServerDsl = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+        final SqlBuilder stagedUpdate = sqlServerDsl.update(Account.class);
+        final Collection<String> stagedPropNames = stagedUpdate._propOrColumnNames;
+        assertThrows(IllegalArgumentException.class, () -> stagedUpdate.where("#stage.id /* unsafe */ = 1"));
+        assertSame(stagedPropNames, stagedUpdate._propOrColumnNames);
+        assertTrue(stagedUpdate.where("id = 1").build().query().endsWith(" WHERE id = 1"));
+    }
+
+    @Test
+    public void testSetEntityGetterAndRendererFailuresRestoreAllBuilderMetadata() {
+        final SqlBuilder getterFailure = Dsl.PSC.update("users");
+        final Class<?> initialGetterEntityClass = getterFailure._entityClass;
+        final Object initialGetterEntityInfo = getterFailure._entityInfo;
+        final Object initialGetterColumnMap = getterFailure._propColumnNameMap;
+        assertThrows(RuntimeException.class, () -> getterFailure.setEntity(new ThrowingUpdateEntity()));
+        assertSame(initialGetterEntityClass, getterFailure._entityClass);
+        assertSame(initialGetterEntityInfo, getterFailure._entityInfo);
+        assertSame(initialGetterColumnMap, getterFailure._propColumnNameMap);
+        assertEquals("UPDATE users SET value = ?", getterFailure.set(Collections.singletonMap("value", "ok")).build().query());
+
+        final boolean[] failFirstRender = { true };
+        final Dsl throwingNamedDsl = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+            if (failFirstRender[0]) {
+                failFirstRender[0] = false;
+                throw new IllegalStateException("named renderer failed");
+            }
+
+            sb.append(':').append(name);
+        }).build());
+        final SqlBuilder rendererFailure = throwingNamedDsl.update("users");
+        final Class<?> initialRendererEntityClass = rendererFailure._entityClass;
+        final Object initialRendererEntityInfo = rendererFailure._entityInfo;
+        final Object initialRendererColumnMap = rendererFailure._propColumnNameMap;
+        assertThrows(IllegalStateException.class, () -> rendererFailure.setEntity(Account.class));
+        assertSame(initialRendererEntityClass, rendererFailure._entityClass);
+        assertSame(initialRendererEntityInfo, rendererFailure._entityInfo);
+        assertSame(initialRendererColumnMap, rendererFailure._propColumnNameMap);
+        assertTrue(rendererFailure._namedParameterNameOccurrences.isEmpty());
+        assertTrue(rendererFailure._generatedNamedParameterNames.isEmpty());
+        assertTrue(rendererFailure._renderedNamedParameterTokens.isEmpty());
+        assertEquals("UPDATE users SET status = :status", rendererFailure.set(Collections.singletonMap("status", "ACTIVE")).build().query());
+    }
+
+    @Test
     public void testJoinApisRequireFromAndPrecedeLaterClauses() {
         final SqlBuilder stagedSelect = Dsl.PSC.select("id");
         assertThrows(IllegalStateException.class, () -> stagedSelect.join("orders"));
@@ -185,6 +412,59 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         assertThrows(IllegalStateException.class, () -> Dsl.PSC.update("users").join("orders"));
         assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").orderBy("id").innerJoin(Account.class));
+    }
+
+    @Test
+    public void testStandaloneClausesRequireFromAndPreserveSqlClauseOrder() {
+        final SqlBuilder stagedSelect = Dsl.PSC.select("id");
+        assertThrows(IllegalStateException.class, () -> stagedSelect.where("active = 1"));
+        assertEquals("SELECT id FROM users WHERE active = 1", stagedSelect.from("users").where("active = 1").build().query());
+
+        final SqlBuilder ordered = Dsl.PSC.select("id").from("users").orderBy("id");
+        assertThrows(IllegalStateException.class, () -> ordered.where("active = 1"));
+        assertEquals("SELECT id FROM users ORDER BY id", ordered.build().query());
+
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").groupBy("id"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").having("COUNT(*) > 0").groupBy("id"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").orderBy("id").having("COUNT(*) > 0"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").limit(5).orderBy("id"));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").forUpdate().limit(5));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").forUpdate().fetchFirstRows(5));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.update("users").set("active = true").forUpdate());
+
+        // Pagination before the terminal locking clause is valid for the supported LIMIT-style syntax.
+        assertEquals("SELECT id FROM users LIMIT 5 FOR UPDATE", Dsl.PSC.select("id").from("users").limit(5).forUpdate().build().query());
+    }
+
+    @Test
+    public void testTopLevelTableAliasDetectionIgnoresNonAliasSyntaxAndTrailingComments() {
+        final SqlBuilder tableFunction = Dsl.PSC.select("firstName").from("unnest (items)", Account.class);
+        assertNull(tableFunction._tableAlias);
+        assertFalse(tableFunction.build().query().contains("(items).first_name"));
+
+        final SqlBuilder spacedQualification = Dsl.PSC.select("firstName").from("catalog . account", Account.class);
+        assertNull(spacedQualification._tableAlias);
+        assertFalse(spacedQualification.build().query().contains("account.first_name"));
+
+        final SqlBuilder tableHint = Dsl.PSC.select("firstName").from("account WITH (NOLOCK)", Account.class);
+        assertNull(tableHint._tableAlias);
+        assertFalse(tableHint.build().query().contains("(NOLOCK).first_name"));
+
+        final SqlBuilder implicitAlias = Dsl.PSC.select("firstName").from("account a /* shard hint */", Account.class);
+        assertEquals("a", implicitAlias._tableAlias);
+        final String implicitSql = implicitAlias.build().query();
+        assertTrue(implicitSql.contains("a.first_name"));
+        assertTrue(implicitSql.endsWith("FROM account a /* shard hint */"));
+
+        final SqlBuilder explicitAlias = Dsl.PSC.select("firstName").from("account AS a /* shard hint */", Account.class);
+        assertEquals("a", explicitAlias._tableAlias);
+        final String explicitSql = explicitAlias.build().query();
+        assertTrue(explicitSql.contains("a.first_name"));
+        assertTrue(explicitSql.endsWith("FROM account AS a /* shard hint */"));
+
+        final SqlBuilder temporalAlias = Dsl.PSC.select("firstName").from("account FOR SYSTEM_TIME AS OF '2026-01-01' AS a", Account.class);
+        assertEquals("a", temporalAlias._tableAlias);
+        assertTrue(temporalAlias.build().query().contains("a.first_name"));
     }
 
     @Test
@@ -391,6 +671,32 @@ public class AbstractQueryBuilderTest extends TestBase {
         final String sql = Dsl.PSB.select("payload #- '{address,city}'").from("events").build().query();
 
         assertEquals("SELECT payload #- '{address,city}' FROM events", sql);
+    }
+
+    @Test
+    public void testQuestionHashOperatorIsNotAHashComment() {
+        assertEquals("SELECT payload ?# path FROM events", Dsl.PSB.select("payload ?# path").from("events").build().query());
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSB.select("payload ?#/* comment */ path").from("events"));
+    }
+
+    @Test
+    public void testSqlServerTemporaryTableIdentifiersRemainIntactInExpressions() {
+        final Dsl sqlServerDsl = Dsl.forDialect(Dsl.PSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+
+        final String localTempSql = sqlServerDsl.select("#stage.id").from("#stage").where("#stage.id = 1").build().query();
+        assertTrue(localTempSql.startsWith("SELECT #stage.id"));
+        assertTrue(localTempSql.contains("FROM #stage WHERE #stage.id = 1"));
+
+        final String globalTempSql = sqlServerDsl.select("##stage.id").from("##stage").where("##stage.id = 1").build().query();
+        assertTrue(globalTempSql.startsWith("SELECT ##stage.id"));
+        assertTrue(globalTempSql.contains("FROM ##stage WHERE ##stage.id = 1"));
+
+        final SqlBuilder aliasedGlobalTemp = sqlServerDsl.select("firstName").from("##stage s", Account.class);
+        assertEquals("s", aliasedGlobalTemp._tableAlias);
+        final String aliasedGlobalTempSql = aliasedGlobalTemp.build().query();
+        assertTrue(aliasedGlobalTempSql.contains("s.firstName"), aliasedGlobalTempSql);
+        assertTrue(aliasedGlobalTempSql.endsWith("FROM ##stage s"));
+        assertThrows(IllegalArgumentException.class, () -> sqlServerDsl.select("#stage.id /* comment */").from("#stage"));
     }
 
     @Test

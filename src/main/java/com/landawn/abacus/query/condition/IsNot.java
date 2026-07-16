@@ -87,9 +87,12 @@ public class IsNot extends Binary {
      *
      * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
      * @param propValue the right-hand value of the IS NOT predicate; may be {@code null} (renders as
-     *            {@code IS NOT NULL}), an {@link SqlExpression} for a SQL keyword, or another value
-     *            rendered by {@link Binary}; whether that value is valid with {@code IS NOT} is dialect-specific
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     *            {@code IS NOT NULL}), an {@link SqlExpression} for a SQL keyword, or another non-structural
+     *            value rendered by {@link Binary}; whether that value is valid with {@code IS NOT} is dialect-specific
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
+     *                                  {@code propValue} is or contains a {@link Criteria}, SQL clause,
+     *                                  JOIN, or {@code ON}/{@code USING} connector, or is/contains an
+     *                                  {@link All}, {@link Any}, or {@link Some} quantified operand
      */
     public IsNot(final String propName, final Object propValue) {
         super(propName, Operator.IS_NOT, propValue);

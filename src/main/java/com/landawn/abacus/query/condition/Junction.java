@@ -20,7 +20,6 @@ import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import com.landawn.abacus.util.ImmutableList;
@@ -259,11 +258,13 @@ public class Junction extends ComposableCondition {
             return;
         }
 
+        final List<Condition> snapshot = new ArrayList<>(conditions.length);
+
         for (final Condition condition : conditions) {
-            validateConstructorOperand(condition);
+            snapshot.add(validateConstructorOperand(condition));
         }
 
-        Collections.addAll(this.conditions, conditions);
+        this.conditions.addAll(snapshot);
     }
 
     private void appendConditions(final Collection<? extends Condition> conditions) {
@@ -271,11 +272,13 @@ public class Junction extends ComposableCondition {
             return;
         }
 
+        final List<Condition> snapshot = new ArrayList<>(conditions.size());
+
         for (final Condition condition : conditions) {
-            validateConstructorOperand(condition);
+            snapshot.add(validateConstructorOperand(condition));
         }
 
-        this.conditions.addAll(conditions);
+        this.conditions.addAll(snapshot);
     }
 
     private static void validateJunctionOperator(final Operator operator) {

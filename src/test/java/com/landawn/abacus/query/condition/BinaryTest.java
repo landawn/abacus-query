@@ -7,8 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
@@ -37,6 +40,69 @@ public class BinaryTest extends TestBase {
     @Test
     public void testConstructor_EmptyPropertyName() {
         assertThrows(IllegalArgumentException.class, () -> new Binary("", Operator.EQUAL, 25));
+    }
+
+    @Test
+    public void testConstructorRejectsQueryStructuralValueConditions() {
+        final Where where = new Where(Filters.eq("y", 1));
+        final Criteria criteria = Criteria.builder().where(Filters.eq("y", 1)).build();
+
+        assertThrows(IllegalArgumentException.class, () -> new Equal("x", where));
+        assertThrows(IllegalArgumentException.class, () -> new Equal("x", criteria));
+        assertThrows(IllegalArgumentException.class, () -> new Equal("x", new Join("t")));
+        assertThrows(IllegalArgumentException.class, () -> new Equal("x", new On("a", "b")));
+        assertThrows(IllegalArgumentException.class, () -> new Binary("x", Operator.IN, new OrderBy("y")));
+        assertThrows(IllegalArgumentException.class, () -> new Binary("x", Operator.IN, Arrays.asList(1, criteria)));
+        assertThrows(IllegalArgumentException.class, () -> new Binary("x", Operator.NOT_IN, new Object[] { 1, new Using("id") }));
+
+        final ComposableCell wrappedClause = new ComposableCell(Operator.NOT, where) {
+            // Verifies recursive structural validation for custom wrappers.
+        };
+        assertThrows(IllegalArgumentException.class, () -> new Equal("x", wrappedClause));
+    }
+
+    @Test
+    public void testConstructorPreservesNonStructuralConditionValues() {
+        final SubQuery subQuery = Filters.subQuery("SELECT score FROM results");
+        final SqlExpression expression = Filters.expr("CURRENT_TIMESTAMP");
+        final All quantified = new All(subQuery);
+        final Exists booleanExpression = new Exists(Filters.subQuery("SELECT 1"));
+
+        assertEquals(expression, new Equal("createdAt", expression).propValue());
+        assertEquals(subQuery, new Equal("score", subQuery).propValue());
+        assertEquals(quantified, new GreaterThan("score", quantified).propValue());
+        assertEquals(booleanExpression, new Equal("flag", booleanExpression).propValue());
+        assertEquals(IsNull.NULL, new Is("deletedAt", IsNull.NULL).propValue());
+    }
+
+    @Test
+    public void testQuantifiedOperandsRequireDirectCompatibleComparisonRhs() {
+        final SubQuery subQuery = Filters.subQuery("SELECT score FROM results");
+        final Any any = new Any(subQuery);
+
+        final Operator[] compatibleOperators = { Operator.EQUAL, Operator.NOT_EQUAL, Operator.NOT_EQUAL_ANSI, Operator.GREATER_THAN,
+                Operator.GREATER_THAN_OR_EQUAL, Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL };
+
+        for (final Operator operator : compatibleOperators) {
+            assertEquals(any, new Binary("score", operator, any).propValue());
+        }
+
+        assertEquals(new All(subQuery), new GreaterThan("score", new All(subQuery)).propValue());
+        assertEquals(new Some(subQuery), new LessThan("score", new Some(subQuery)).propValue());
+
+        final Operator[] incompatibleOperators = { Operator.LIKE, Operator.NOT_LIKE, Operator.IS, Operator.IS_NOT, Operator.IN, Operator.NOT_IN };
+
+        for (final Operator operator : incompatibleOperators) {
+            assertThrows(IllegalArgumentException.class, () -> new Binary("score", operator, any));
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> new Binary("score", Operator.IN, Arrays.asList(1, new All(subQuery))));
+        assertThrows(IllegalArgumentException.class, () -> new Binary("score", Operator.NOT_IN, new Object[] { 1, new Some(subQuery) }));
+
+        final ComposableCell wrappedQuantifier = new ComposableCell(Operator.NOT, new All(subQuery)) {
+            // A quantified operand is valid only when it is the direct comparison RHS.
+        };
+        assertThrows(IllegalArgumentException.class, () -> new GreaterThan("score", wrappedQuantifier));
     }
 
     @Test
@@ -440,6 +506,23 @@ public class BinaryTest extends TestBase {
         assertEquals("id IN (1)", in.toString());
         assertEquals(Arrays.asList(1), in.parameters());
         assertEquals(hash, in.hashCode());
+    }
+
+    @Test
+    public void testInCollectionValidatesTheDefensiveSnapshotIsNonEmpty() {
+        final AbstractCollection<Integer> liveValues = new AbstractCollection<>() {
+            @Override
+            public Iterator<Integer> iterator() {
+                return Collections.emptyIterator();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("id", Operator.IN, liveValues));
     }
 
     @Test

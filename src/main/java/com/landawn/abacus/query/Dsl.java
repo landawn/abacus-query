@@ -25,10 +25,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.annotation.Beta;
+import com.landawn.abacus.parser.ParserUtil;
+import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.query.SqlDialect.SqlPolicy;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.Beans;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.Maps;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -239,17 +242,33 @@ public final class Dsl {
         }
 
         SqlBuilder.checkMultiSelects(snapshots);
+
+        boolean hasSelectedProperty = false;
+
+        for (final Selection selection : snapshots) {
+            final Collection<String> selectedPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
+                    : QueryUtil.selectPropNames(selection.entityClass(), selection.includesSubEntityProperties(), selection.excludedPropNames());
+            hasSelectedProperty |= !selectedPropNames.isEmpty();
+        }
+
+        N.checkArgument(hasSelectedProperty, "Selections must resolve to at least one property in total");
+
         return snapshots;
     }
 
     private SqlBuilder createSelectBuilder(final List<Selection> selectionSnapshots) {
         final SqlBuilder instance = createSqlBuilderInstance();
 
-        instance._op = OperationType.QUERY;
-        instance.setEntityClass(selectionSnapshots.get(0).entityClass());
-        instance._multiSelects = selectionSnapshots;
+        try {
+            instance._op = OperationType.QUERY;
+            instance.setEntityClass(selectionSnapshots.get(0).entityClass());
+            instance._multiSelects = selectionSnapshots;
 
-        return instance;
+            return instance;
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(instance, e);
+            throw e;
+        }
     }
 
     /**
@@ -393,7 +412,8 @@ public final class Dsl {
      *
      * @param entity the entity object to insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if entity is null; if a String entity is blank; or if a Map entity is empty or has a non-String or blank key
+     * @throws IllegalArgumentException if entity is null; if a String entity is blank; if a Map entity is empty or has a non-String or blank key;
+     *                                  or if a bean has no non-null, non-default insertable values
      */
     public SqlBuilder insert(final Object entity) {
         return insert(entity, null);
@@ -425,8 +445,9 @@ public final class Dsl {
      * @param entity the entity object to insert
      * @param excludedPropNames set of property names to exclude from the insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if entity is null; if a String entity is blank; or if a Map entity is empty,
-     *                                  has a non-String or blank key, or has no entries left after exclusions are applied
+     * @throws IllegalArgumentException if entity is null; if a String entity is blank; if a Map entity is empty,
+     *                                  has a non-String or blank key, or has no entries left after exclusions are applied;
+     *                                  or if a bean has no non-null, non-default insertable values after exclusions are applied
      */
     public SqlBuilder insert(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, SqlBuilder.INSERTION_PART_MSG);
@@ -434,7 +455,7 @@ public final class Dsl {
         final Set<String> excludedPropNameSnapshot = N.isEmpty(excludedPropNames) ? Collections.emptySet() : new HashSet<>(excludedPropNames);
         final Object entitySnapshot;
 
-        // Validate the String/Map forms before allocating a builder backed by a pooled SQL buffer.
+        // Validate and snapshot every form before allocating a builder backed by a pooled SQL buffer.
         // Otherwise a rejected input abandons a builder the caller never receives and therefore
         // cannot release that buffer via build().
         if (entity instanceof String) {
@@ -451,17 +472,64 @@ public final class Dsl {
             N.checkArgument(!propsSnapshot.isEmpty(), "entity map must contain at least one non-excluded property");
             entitySnapshot = propsSnapshot;
         } else {
-            entitySnapshot = entity;
+            entitySnapshot = snapshotInsertBean(entity, excludedPropNameSnapshot);
         }
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
-        instance._op = OperationType.ADD;
-        instance.setEntityClass(entity.getClass());
+        try {
+            instance._op = OperationType.ADD;
+            instance.setEntityClass(entity.getClass());
 
-        SqlBuilder.parseInsertEntity(instance, entitySnapshot, entitySnapshot == entity ? excludedPropNameSnapshot : Collections.emptySet());
+            // Map and bean inputs were already defensively snapshotted and filtered above.
+            SqlBuilder.parseInsertEntity(instance, entitySnapshot, Collections.emptySet());
 
-        return instance;
+            return instance;
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(instance, e);
+            throw e;
+        }
+    }
+
+    /**
+     * Materializes the insertable values of a bean before a pooled SQL buffer is allocated. This
+     * mirrors the single-row bean rules used by {@link AbstractQueryBuilder#parseInsertEntity}:
+     * null values are omitted, and default-valued IDs are omitted only while the whole ID is default.
+     */
+    private static Map<String, Object> snapshotInsertBean(final Object entity, final Set<String> excludedPropNames) {
+        final Collection<String> propNames = QueryUtil.insertPropNames(entity, excludedPropNames);
+        final Map<String, Object> propsSnapshot = N.newLinkedHashMap(propNames.size());
+        final BeanInfo beanInfo = ParserUtil.getBeanInfo(entity.getClass());
+        final ImmutableList<String> idPropNameList = beanInfo.idPropNameList;
+        boolean allIdPropsWithDefaultValue = true;
+        Object propValue;
+
+        // For a composite ID, assigning any component retains every non-null ID component.
+        if (N.size(idPropNameList) > 1) {
+            for (final String idPropName : idPropNameList) {
+                propValue = beanInfo.getPropValue(entity, idPropName);
+
+                if (!SqlBuilder.isDefaultIdPropValue(propValue)) {
+                    allIdPropsWithDefaultValue = false;
+                    break;
+                }
+            }
+        }
+
+        for (final String propName : propNames) {
+            propValue = beanInfo.getPropValue(entity, propName);
+
+            if (propValue == null || (allIdPropsWithDefaultValue && !idPropNameList.isEmpty() && idPropNameList.contains(propName)
+                    && SqlBuilder.isDefaultIdPropValue(propValue))) {
+                continue;
+            }
+
+            propsSnapshot.put(propName, propValue);
+        }
+
+        N.checkArgument(!propsSnapshot.isEmpty(), "No insertable values remain after removing null/default bean properties");
+
+        return propsSnapshot;
     }
 
     /**
@@ -479,7 +547,7 @@ public final class Dsl {
      *
      * @param entityClass the entity class to generate INSERT for
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if entityClass is null or declares no insertable property
      */
     public SqlBuilder insert(final Class<?> entityClass) {
         return insert(entityClass, null);
@@ -502,18 +570,25 @@ public final class Dsl {
      * @param entityClass the entity class to generate INSERT for
      * @param excludedPropNames set of property names to exclude from the insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if entityClass is null or no insertable property remains after exclusions are applied
      */
     public SqlBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, SqlBuilder.INSERTION_PART_MSG);
+        final Collection<String> propOrColumnNames = QueryUtil.insertPropNames(entityClass, excludedPropNames);
+        N.checkArgNotEmpty(propOrColumnNames, "No insertable properties remain after exclusions are applied");
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
-        instance._op = OperationType.ADD;
-        instance.setEntityClass(entityClass);
-        instance._propOrColumnNames = QueryUtil.insertPropNames(entityClass, excludedPropNames);
+        try {
+            instance._op = OperationType.ADD;
+            instance.setEntityClass(entityClass);
+            instance._propOrColumnNames = propOrColumnNames;
 
-        return instance;
+            return instance;
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(instance, e);
+            throw e;
+        }
     }
 
     /**
@@ -531,7 +606,7 @@ public final class Dsl {
      *
      * @param entityClass the entity class to generate INSERT INTO for
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if entityClass is null or declares no insertable property
      */
     public SqlBuilder insertInto(final Class<?> entityClass) {
         return insertInto(entityClass, null);
@@ -553,7 +628,7 @@ public final class Dsl {
      * @param entityClass the entity class to generate INSERT INTO for
      * @param excludedPropNames set of property names to exclude from the insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if entityClass is null or no insertable property remains after exclusions are applied
      */
     public SqlBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
         return insert(entityClass, excludedPropNames).into(entityClass);
@@ -698,7 +773,7 @@ public final class Dsl {
      *
      * @param entityClass the entity class to update
      * @return a new SqlBuilder instance configured for UPDATE operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if entityClass is null or declares no updatable property
      */
     public SqlBuilder update(final Class<?> entityClass) {
         return update(entityClass, null);
@@ -723,19 +798,27 @@ public final class Dsl {
      * @param entityClass the entity class to update
      * @param excludedPropNames set of property names to exclude from the update
      * @return a new SqlBuilder instance configured for UPDATE operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if entityClass is null or no updatable property remains after exclusions are applied
      */
     public SqlBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, SqlBuilder.UPDATE_PART_MSG);
+        final Collection<String> propOrColumnNames = QueryUtil.updatePropNames(entityClass, excludedPropNames);
+        N.checkArgNotEmpty(propOrColumnNames, "No updatable properties remain after exclusions are applied");
+        final String tableName = SqlBuilder.getTableName(entityClass, namingPolicy);
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
-        instance._op = OperationType.UPDATE;
-        instance.setEntityClass(entityClass);
-        instance._tableName = SqlBuilder.getTableName(entityClass, instance._namingPolicy);
-        instance._propOrColumnNames = QueryUtil.updatePropNames(entityClass, excludedPropNames);
+        try {
+            instance._op = OperationType.UPDATE;
+            instance.setEntityClass(entityClass);
+            instance._tableName = tableName;
+            instance._propOrColumnNames = propOrColumnNames;
 
-        return instance;
+            return instance;
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(instance, e);
+            throw e;
+        }
     }
 
     /**
@@ -993,7 +1076,7 @@ public final class Dsl {
      *
      * @param entityClass the entity class to select properties from
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if entityClass is null or declares no selectable property
      */
     public SqlBuilder select(final Class<?> entityClass) {
         return select(entityClass, false);
@@ -1022,7 +1105,7 @@ public final class Dsl {
      * @param entityClass the entity class to select properties from
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if entityClass is null or declares no selectable property
      */
     public SqlBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
         return select(entityClass, includeSubEntityProperties, null);
@@ -1046,7 +1129,7 @@ public final class Dsl {
      * @param entityClass the entity class to select properties from
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if entityClass is null or no selectable property remains after exclusions are applied
      */
     public SqlBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
         return select(entityClass, false, excludedPropNames);
@@ -1071,18 +1154,25 @@ public final class Dsl {
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if entityClass is null or no selectable property remains after exclusions are applied
      */
     public SqlBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, SqlBuilder.SELECTION_PART_MSG);
+        final Collection<String> propOrColumnNames = QueryUtil.selectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+        N.checkArgNotEmpty(propOrColumnNames, "No selectable properties remain after exclusions are applied");
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
-        instance._op = OperationType.QUERY;
-        instance.setEntityClass(entityClass);
-        instance._propOrColumnNames = QueryUtil.selectPropNames(entityClass, includeSubEntityProperties, excludedPropNames);
+        try {
+            instance._op = OperationType.QUERY;
+            instance.setEntityClass(entityClass);
+            instance._propOrColumnNames = propOrColumnNames;
 
-        return instance;
+            return instance;
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(instance, e);
+            throw e;
+        }
     }
 
     /**
@@ -1436,7 +1526,7 @@ public final class Dsl {
      *
      * @param selections list of Selection objects defining what to select from each entity
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if selections is null, empty, or contains invalid data
+     * @throws IllegalArgumentException if selections is null or empty, contains invalid data, or the combined selections resolve to no properties
      */
     public SqlBuilder select(final List<Selection> selections) {
         return createSelectBuilder(snapshotSelections(selections));
@@ -1574,14 +1664,20 @@ public final class Dsl {
      *
      * @param selections list of Selection objects defining what to select from each entity
      * @return a new SqlBuilder instance with SELECT and FROM configured
-     * @throws IllegalArgumentException if selections is null, empty, or contains invalid data
+     * @throws IllegalArgumentException if selections is null or empty, contains invalid data, or the combined selections resolve to no properties
      */
     public SqlBuilder selectFrom(final List<Selection> selections) {
         final List<Selection> selectionSnapshots = snapshotSelections(selections);
 
         final String fromClause = SqlBuilder.getFromClause(selectionSnapshots, namingPolicy);
+        final SqlBuilder builder = createSelectBuilder(selectionSnapshots);
 
-        return createSelectBuilder(selectionSnapshots).from(fromClause);
+        try {
+            return builder.from(fromClause);
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(builder, e);
+            throw e;
+        }
     }
 
     /**
@@ -1661,19 +1757,24 @@ public final class Dsl {
      * @param condition the condition to render (must not be {@code null})
      * @param entityClass the entity class used for property-to-column mapping (may be {@code null})
      * @return a new SqlBuilder instance containing the rendered condition SQL
-     * @throws IllegalArgumentException if {@code condition} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code null} or contains a condition type that cannot be rendered
      */
     public SqlBuilder renderCondition(final Condition condition, final Class<?> entityClass) {
         N.checkArgNotNull(condition, "condition");
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
-        instance.setEntityClass(entityClass);
-        instance._op = OperationType.QUERY;
-        instance._isForConditionOnly = true;
-        instance.append(condition);
+        try {
+            instance.setEntityClass(entityClass);
+            instance._op = OperationType.QUERY;
+            instance._isForConditionOnly = true;
+            instance.append(condition);
 
-        return instance;
+            return instance;
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(instance, e);
+            throw e;
+        }
     }
 
     /**
@@ -1690,11 +1791,23 @@ public final class Dsl {
      *
      * @param condition the condition to render (must not be {@code null})
      * @return a new SqlBuilder instance containing the rendered condition SQL
-     * @throws IllegalArgumentException if {@code condition} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code null} or contains a condition type that cannot be rendered
      * @see #renderCondition(Condition, Class)
      */
     public SqlBuilder renderCondition(final Condition condition) {
         return renderCondition(condition, null);
+    }
+
+    /**
+     * Closes a builder that cannot be returned to the caller, preserving the original failure if
+     * finalization itself also fails.
+     */
+    private static void releaseFailedBuilder(final SqlBuilder builder, final Throwable failure) {
+        try {
+            builder.build();
+        } catch (final RuntimeException | Error cleanupFailure) {
+            failure.addSuppressed(cleanupFailure);
+        }
     }
 
     static void validateColumnAliases(final Map<String, String> propOrColumnNameAliases) {

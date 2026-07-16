@@ -251,19 +251,25 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                 _sb.append(subQuery.rawSql());
             } else {
                 final SqlBuilder subBuilder = newSubQueryBuilder(subQuery);
-                seedNamedParameterOccurrences(subBuilder);
 
-                if (subCond != null) {
-                    subBuilder.append(subCond);
-                }
+                try {
+                    seedNamedParameterOccurrences(subBuilder);
 
-                final SP subSP = subBuilder.build();
-                adoptNamedParameterOccurrences(subBuilder);
+                    if (subCond != null) {
+                        subBuilder.append(subCond);
+                    }
 
-                _sb.append(subSP.query());
+                    final SP subSP = subBuilder.build();
+                    adoptNamedParameterOccurrences(subBuilder);
 
-                if (N.notEmpty(subSP.parameters())) {
-                    _parameters.addAll(subSP.parameters());
+                    _sb.append(subSP.query());
+
+                    if (N.notEmpty(subSP.parameters())) {
+                        _parameters.addAll(subSP.parameters());
+                    }
+                } catch (final RuntimeException | Error e) {
+                    releaseFailedSubQueryBuilder(subBuilder, e);
+                    throw e;
                 }
             }
         } else if (cond instanceof SqlExpression) {
@@ -441,14 +447,36 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         N.checkArgNotEmpty(selectPropNames, SELECTION_PART_MSG);
 
         final SqlBuilder subBuilder = new SqlBuilder(sqlDialect);
-        subBuilder._op = OperationType.QUERY;
-        subBuilder._propOrColumnNames = selectPropNames;
 
-        if (subQuery.entityClass() != null) {
-            return subBuilder.from(subQuery.entityClass());
+        try {
+            subBuilder._op = OperationType.QUERY;
+            subBuilder._propOrColumnNames = selectPropNames;
+
+            if (subQuery.entityClass() != null) {
+                return subBuilder.from(subQuery.entityClass());
+            }
+
+            return subBuilder.from(subQuery.entityName());
+        } catch (final RuntimeException | Error e) {
+            releaseFailedSubQueryBuilder(subBuilder, e);
+            throw e;
+        }
+    }
+
+    /**
+     * Releases a structured sub-query builder that cannot be returned or built successfully. A
+     * cleanup failure is suppressed so the rendering failure remains the primary exception.
+     */
+    private static void releaseFailedSubQueryBuilder(final SqlBuilder subBuilder, final Throwable failure) {
+        if (subBuilder._sb == null) {
+            return; // build() already released the pooled buffer, even when finalization failed.
         }
 
-        return subBuilder.from(subQuery.entityName());
+        try {
+            subBuilder.build();
+        } catch (final RuntimeException | Error cleanupFailure) {
+            failure.addSuppressed(cleanupFailure);
+        }
     }
 
 }

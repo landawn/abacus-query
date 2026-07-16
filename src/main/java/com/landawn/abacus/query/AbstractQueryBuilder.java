@@ -96,6 +96,11 @@ import com.landawn.abacus.util.stream.Stream;
  * the builder is closed and must not be reused; calling {@code build()} again throws
  * {@link IllegalStateException}.</p>
  *
+ * <p>SELECT clauses are order-checked as they are added: {@code from(...)} must precede JOIN,
+ * WHERE, GROUP BY, HAVING, ORDER BY, pagination, and FOR UPDATE; each later clause prevents an
+ * earlier clause from being appended afterward. Invalid calls fail before changing builder state,
+ * so the caller may still complete or build the statement.</p>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple SELECT
@@ -315,6 +320,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private static final String LIMIT_SLOT_PATTERN = "(\\d+|\\?|:\\w+|#\\{[^}]+\\})";
     private static final Pattern GENERIC_LIMIT_EXPRESSION_PATTERN = Pattern.compile(
             "LIMIT\\s+" + LIMIT_SLOT_PATTERN + "(?:\\s+OFFSET\\s+" + LIMIT_SLOT_PATTERN + "|\\s*,\\s*" + LIMIT_SLOT_PATTERN + ")?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern FETCH_LIMIT_EXPRESSION_PATTERN = Pattern.compile(
+            "(?:OFFSET\\s+" + LIMIT_SLOT_PATTERN + "\\s+ROWS?\\s+)?FETCH\\s+(?:FIRST|NEXT)\\s+" + LIMIT_SLOT_PATTERN + "\\s+ROWS?\\s+ONLY",
+            Pattern.CASE_INSENSITIVE);
 
     /** Internal clause-state marker distinguishing {@code OFFSET n ROWS} from limit-style {@code OFFSET n}. */
     private static final String OFFSET_ROWS_SLOT = "OFFSET ROWS syntax";
@@ -1145,25 +1153,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         checkSqlFragmentNotBlank(tableName, "tableName");
         final String normalizedTableName = tableName.trim();
 
-        if (!(_op == OperationType.ADD || _op == OperationType.QUERY)) {
-            throw new IllegalStateException("Invalid operation for into(): " + _op + ". Expected ADD or QUERY");
-        }
-
-        if (_op == OperationType.QUERY) {
-            if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_propOrColumnNameAliases) && N.isEmpty(_multiSelects)) {
-                throw new IllegalStateException("Column names must be set by select() before calling into()");
-            }
-        } else {
-            if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_props) && N.isEmpty(_propsList)) {
-                throw new IllegalStateException("Column names must be set by insert() before calling into()");
-            }
-        }
-
-        // Guard against calling into() after SQL has already been emitted (e.g. after from(), or a second
-        // into()), which would blindly concatenate a new INSERT fragment onto the existing statement.
-        if (!_sb.isEmpty()) {
-            throw new IllegalStateException("into() must be called before from() and any other SQL-emitting method, and can only be called once");
-        }
+        checkCanAppendInto();
 
         _tableName = normalizedTableName;
 
@@ -1284,6 +1274,29 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return (This) this;
     }
 
+    /** Validates the structural preconditions shared by all {@code into(...)} overloads. */
+    private void checkCanAppendInto() {
+        checkOpen();
+
+        if (!(_op == OperationType.ADD || _op == OperationType.QUERY)) {
+            throw new IllegalStateException("Invalid operation for into(): " + _op + ". Expected ADD or QUERY");
+        }
+
+        if (_op == OperationType.QUERY) {
+            if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_propOrColumnNameAliases) && N.isEmpty(_multiSelects)) {
+                throw new IllegalStateException("Column names must be set by select() before calling into()");
+            }
+        } else if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_props) && N.isEmpty(_propsList)) {
+            throw new IllegalStateException("Column names must be set by insert() before calling into()");
+        }
+
+        // Guard against calling into() after SQL has already been emitted (e.g. after from(), or a second
+        // into()), which would blindly concatenate a new INSERT fragment onto the existing statement.
+        if (!_sb.isEmpty()) {
+            throw new IllegalStateException("into() must be called before from() and any other SQL-emitting method, and can only be called once");
+        }
+    }
+
     /**
      * Specifies the target table for an {@code INSERT} or {@code INSERT ... SELECT} operation using an entity class.
      * <p>The table name will be derived from the entity class based on the naming policy.</p>
@@ -1294,12 +1307,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Table name derived from Account class based on naming policy
      * }</pre>
      *
-     * @param entityClass the entity class representing the target table
+     * @param entityClass the entity class representing the target table (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      * @throws IllegalStateException if the current operation is neither {@code ADD} nor {@code QUERY}, if columns/values
      *             have not been set, or if it is called after SQL has already been emitted (e.g., after {@code from()} or a second {@code into()})
      */
     public This into(final Class<?> entityClass) {
+        N.checkArgNotNull(entityClass, "entityClass");
+        checkCanAppendInto();
         setEntityClass(entityClass);
 
         return into(getTableName(entityClass, _namingPolicy));
@@ -1322,6 +1338,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *             have not been set, or if it is called after SQL has already been emitted (e.g., after {@code from()} or a second {@code into()})
      */
     public This into(final String tableName, final Class<?> entityClass) {
+        checkSqlFragmentNotBlank(tableName, "tableName");
+        checkCanAppendInto();
+
         if (entityClass != null) {
             setEntityClass(entityClass);
         }
@@ -1367,7 +1386,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param selectModifier modifiers like {@code ALL}, {@code DISTINCT}, {@code DISTINCTROW},
      *                       {@code TOP}, etc.; may be {@code null} or empty (no-op)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if a select modifier has already been set for the current SELECT segment
+     * @throws IllegalStateException if this builder is closed, does not represent a SELECT query, or a select
+     *                               modifier has already been set for the current SELECT segment
      * @throws IllegalArgumentException if {@code selectModifier} is non-empty but blank (whitespace only)
      */
     public This selectModifier(final String selectModifier) {
@@ -1376,6 +1396,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         checkSqlFragmentNotBlank(selectModifier, "selectModifier");
+        checkOpen();
+
+        if (_op != OperationType.QUERY || _isForConditionOnly) {
+            throw new IllegalStateException("selectModifier() is only valid for SELECT queries");
+        }
 
         if (Strings.isNotEmpty(_selectModifier)) {
             throw new IllegalStateException("selectModifier has already been set and cannot be set again");
@@ -1418,7 +1443,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param tableNames the table names to use in the FROM clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code tableNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
+     * @throws IllegalStateException if the current operation is not {@code QUERY}, no columns have been set by
+     *                               {@code select()}, or {@code from(...)} was already called for this query segment
      */
     public This from(final String... tableNames) {
         N.checkArgNotEmpty(tableNames, "tableNames");
@@ -1613,6 +1639,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final String expr, final Class<?> entityClass) {
+        checkSqlFragmentNotBlank(expr, "expr");
+        checkCanAppendFrom();
+
         if (entityClass != null) {
             setEntityClass(entityClass);
         }
@@ -1647,12 +1676,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users u (table name based on naming policy)
      * }</pre>
      *
-     * @param entityClass the entity class representing the table
+     * @param entityClass the entity class representing the table (must not be {@code null})
      * @param alias the table alias
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     public This from(final Class<?> entityClass, final String alias) {
+        N.checkArgNotNull(entityClass, "entityClass");
+        checkCanAppendFrom();
         setEntityClass(entityClass);
 
         if (Strings.isEmpty(alias)) {
@@ -1670,6 +1702,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this builder instance for method chaining
      */
     protected This from(final Class<?> entityClass, final Collection<String> tableNames) {
+        N.checkArgNotNull(entityClass, "entityClass");
+        checkCanAppendFrom();
         setEntityClass(entityClass);
 
         return from(tableNames);
@@ -1798,27 +1832,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if the current operation is not {@code QUERY}, or if no columns have been set by {@code select()}
      */
     protected void appendOperationBeforeFrom(final String tableName) {
-        if (_op != OperationType.QUERY) {
-            throw new IllegalStateException("Invalid operation for from(): " + _op + ". Expected QUERY");
-        }
-
-        // Guard against a second from() in the same query segment, which would silently emit a second
-        // "SELECT ... FROM ..." fragment. Set operations (union/intersect/...) reset this flag when they
-        // start a new segment, so multi-segment queries are unaffected.
-        if (_hasFromBeenSet) {
-            throw new IllegalStateException("from() has already been called for the current query segment");
-        }
-
-        if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_propOrColumnNameAliases) && N.isEmpty(_multiSelects)) {
-            throw new IllegalStateException("Column names must be set by select() before calling from()");
-        }
+        checkCanAppendFrom();
 
         final String trimmedTableName = tableName.trim();
         final TopLevelAlias tableAlias = findTopLevelAlias(trimmedTableName, false);
 
         if (tableAlias != null) {
             _tableName = trimmedTableName.substring(0, tableAlias.expressionEnd()).trim();
-            _tableAlias = normalizeTableAlias(trimmedTableName.substring(tableAlias.aliasStart()).trim());
+            _tableAlias = normalizeTableAlias(trimmedTableName.substring(tableAlias.aliasStart(), tableAlias.aliasEnd()).trim());
         } else {
             _tableName = trimmedTableName;
         }
@@ -1840,6 +1861,26 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             _sb.append(_selectModifier);
 
             _sb.append(_SPACE);
+        }
+    }
+
+    /** Validates the structural preconditions shared by all {@code from(...)} overloads. */
+    private void checkCanAppendFrom() {
+        checkOpen();
+
+        if (_op != OperationType.QUERY) {
+            throw new IllegalStateException("Invalid operation for from(): " + _op + ". Expected QUERY");
+        }
+
+        // Guard against a second from() in the same query segment, which would silently emit a second
+        // "SELECT ... FROM ..." fragment. Set operations (union/intersect/...) reset this flag when they
+        // start a new segment, so multi-segment queries are unaffected.
+        if (_hasFromBeenSet) {
+            throw new IllegalStateException("from() has already been called for the current query segment");
+        }
+
+        if (N.isEmpty(_propOrColumnNames) && N.isEmpty(_propOrColumnNameAliases) && N.isEmpty(_multiSelects)) {
+            throw new IllegalStateException("Column names must be set by select() before calling from()");
         }
     }
 
@@ -1875,14 +1916,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Finds an alias separator at SQL nesting depth zero. Quoted strings/identifiers, line, hash
-     * and block comments, and parenthesized regions are skipped, so their whitespace, parentheses and
-     * {@code AS} text cannot be mistaken for the outer alias boundary.
+     * Finds an alias boundary at SQL nesting depth zero. Quoted strings/identifiers, line, hash and
+     * block comments, and parenthesized regions are skipped, so their whitespace, parentheses and
+     * {@code AS} text cannot be mistaken for the outer alias boundary. Table aliases must be final
+     * non-comment tokens and must not follow a qualification dot; this prevents fragments such as
+     * {@code unnest (items)} and {@code schema . table} from being misclassified, while excluding
+     * trailing comments from the alias span. For a SELECT expression, the first explicit top-level
+     * {@code AS} boundary is retained because one {@code select(String)} argument may contain a complete
+     * comma-separated expression list whose suffix must be rendered and validated intact.
      *
      * @param sqlFragment the table or select-expression fragment to scan
      * @param explicitAsRequired whether only an explicit top-level {@code AS} is accepted; if
      *        {@code false}, the last top-level trivia boundary is accepted as an implicit table-alias separator
-     * @return the expression end and alias start, or {@code null} when no qualifying alias is present
+     * @return the expression end and alias token span, or {@code null} when no qualifying alias is present
      */
     private static TopLevelAlias findTopLevelAlias(final String sqlFragment, final boolean explicitAsRequired) {
         final int len = sqlFragment.length();
@@ -1893,6 +1939,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         int pendingImplicitExpressionEnd = -1;
         TopLevelAlias explicitAlias = null;
         TopLevelAlias implicitAlias = null;
+        boolean explicitAliasKeywordSeen = false;
 
         for (int i = 0; i < len; i++) {
             final char ch = sqlFragment.charAt(i);
@@ -1977,7 +2024,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (depth == 0 && pendingImplicitExpressionEnd >= 0) {
                 if (pendingImplicitExpressionEnd > 0) {
-                    implicitAlias = new TopLevelAlias(pendingImplicitExpressionEnd, i);
+                    implicitAlias = new TopLevelAlias(pendingImplicitExpressionEnd, i, findAliasTokenEnd(sqlFragment, i));
                 }
 
                 pendingImplicitExpressionEnd = -1;
@@ -2007,21 +2054,115 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if ((ch == 'A' || ch == 'a') && i < len - 1 && (sqlFragment.charAt(i + 1) == 'S' || sqlFragment.charAt(i + 1) == 's')
                     && isAliasKeywordBoundary(sqlFragment, i - 1) && isAliasKeywordBoundary(sqlFragment, i + 2)) {
-                int aliasStart = i + 2;
+                if (i > 0) {
+                    explicitAliasKeywordSeen = true;
 
-                while (aliasStart < len && Character.isWhitespace(sqlFragment.charAt(aliasStart))) {
-                    aliasStart++;
-                }
+                    final int aliasStart = skipAliasTrivia(sqlFragment, i + 2);
 
-                if (explicitAlias == null && i > 0 && aliasStart < len) {
-                    explicitAlias = new TopLevelAlias(i, aliasStart);
+                    if ((explicitAlias == null || !explicitAsRequired) && aliasStart >= 0 && aliasStart < len) {
+                        // SELECT accepts a complete comma-separated expression string, so it preserves the
+                        // first boundary. A table fragment keeps the last boundary because an earlier AS may
+                        // belong to temporal-table AS OF syntax rather than to its optional final alias.
+                        explicitAlias = new TopLevelAlias(i, aliasStart, findAliasTokenEnd(sqlFragment, aliasStart));
+                    }
                 }
 
                 i++;
             }
         }
 
-        return explicitAlias != null ? explicitAlias : explicitAsRequired ? null : implicitAlias;
+        if (explicitAsRequired) {
+            return explicitAlias;
+        }
+
+        if (isValidTopLevelAlias(sqlFragment, explicitAlias)) {
+            return explicitAlias;
+        }
+
+        if (explicitAliasKeywordSeen) {
+            return null;
+        }
+
+        return isValidTopLevelAlias(sqlFragment, implicitAlias) ? implicitAlias : null;
+    }
+
+    private static int findAliasTokenEnd(final String sqlFragment, final int aliasStart) {
+        final int len = sqlFragment.length();
+
+        if (aliasStart < 0 || aliasStart >= len) {
+            return -1;
+        }
+
+        final char first = sqlFragment.charAt(aliasStart);
+
+        if (first == SK._SINGLE_QUOTE || first == SK._DOUBLE_QUOTE || first == SK._BACKTICK || first == '[') {
+            return skipSqlQuotedOrComment(sqlFragment, aliasStart);
+        }
+
+        if (!isAliasIdentifierChar(first)) {
+            return -1;
+        }
+
+        int end = aliasStart + 1;
+
+        while (end < len && isAliasIdentifierChar(sqlFragment.charAt(end))) {
+            end++;
+        }
+
+        return end;
+    }
+
+    private static boolean isValidTopLevelAlias(final String sqlFragment, final TopLevelAlias alias) {
+        if (alias == null || alias.aliasEnd() <= alias.aliasStart() || skipAliasTrivia(sqlFragment, alias.aliasEnd()) != sqlFragment.length()) {
+            return false;
+        }
+
+        int expressionEnd = alias.expressionEnd() - 1;
+
+        while (expressionEnd >= 0 && Character.isWhitespace(sqlFragment.charAt(expressionEnd))) {
+            expressionEnd--;
+        }
+
+        return expressionEnd >= 0 && sqlFragment.charAt(expressionEnd) != SK._PERIOD;
+    }
+
+    /** Skips whitespace and SQL comments, returning {@code -1} for an unterminated block comment. */
+    private static int skipAliasTrivia(final String sqlFragment, int index) {
+        final int len = sqlFragment.length();
+
+        while (index < len) {
+            final char ch = sqlFragment.charAt(index);
+
+            if (Character.isWhitespace(ch)) {
+                index++;
+            } else if (ch == '-' && index < len - 1 && sqlFragment.charAt(index + 1) == '-') {
+                index += 2;
+
+                while (index < len && sqlFragment.charAt(index) != '\n' && sqlFragment.charAt(index) != '\r') {
+                    index++;
+                }
+            } else if (ch == '#' && isAliasScannerHashCommentStart(sqlFragment, index)) {
+                while (++index < len && sqlFragment.charAt(index) != '\n' && sqlFragment.charAt(index) != '\r') {
+                    // Skip MySQL hash comment.
+                }
+            } else if (ch == '/' && index < len - 1 && sqlFragment.charAt(index + 1) == '*') {
+                final int commentEnd = sqlFragment.indexOf("*/", index + 2);
+
+                if (commentEnd < 0) {
+                    return -1;
+                }
+
+                index = commentEnd + 2;
+            } else {
+                break;
+            }
+        }
+
+        return index;
+    }
+
+    private static boolean isAliasIdentifierChar(final char ch) {
+        return ch == '_' || ch == '$' || ch == '#' || ch == '@' || Character.isLetterOrDigit(ch);
     }
 
     private static boolean isAliasKeywordBoundary(final String sqlFragment, final int index) {
@@ -2041,6 +2182,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 return false;
             }
 
+            // The second '#' in a SQL Server global temporary-table identifier (##name) is part
+            // of the identifier, not the start of a MySQL hash comment. The first '#' is already
+            // excluded by the next == '#' branch above; explicitly excluding the second keeps the
+            // alias scanner running so a trailing alias in "##stage s" is still discovered.
+            if (index > 0 && sqlFragment.charAt(index - 1) == '#' && (index == 1 || !isAliasIdentifierChar(sqlFragment.charAt(index - 2)))
+                    && (next == '_' || next == '$' || Character.isLetterOrDigit(next))) {
+                return false;
+            }
+
             if ((index == 0 || sqlFragment.charAt(index - 1) == '.') && (next == '_' || next == '$' || Character.isLetterOrDigit(next))) {
                 return false;
             }
@@ -2049,7 +2199,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return true;
     }
 
-    private record TopLevelAlias(int expressionEnd, int aliasStart) {
+    private record TopLevelAlias(int expressionEnd, int aliasStart, int aliasEnd) {
         // Compact scan result shared by FROM-table and SELECT-expression alias parsing.
     }
 
@@ -2113,6 +2263,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @SuppressWarnings("unchecked")
     private This appendJoin(final char[] joinKeyword, final Class<?> entityClass, final String alias) {
+        N.checkArgNotNull(entityClass, "entityClass");
         checkCanAppendJoin();
 
         if (Strings.isNotEmpty(alias)) {
@@ -2144,9 +2295,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .build().query();
      * }</pre>
      *
-     * @param entityClass the entity class to join
+     * @param entityClass the entity class to join (must not be {@code null})
      * @param alias the table alias
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
      */
     public This join(final Class<?> entityClass, final String alias) {
         return appendJoin(_SPACE_JOIN_SPACE, entityClass, alias);
@@ -2544,14 +2697,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This on(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
-        checkCanAppendJoinCondition();
 
-        _sb.append(_SPACE_ON_SPACE);
+        return mutateAtomically(() -> {
+            checkCanAppendJoinCondition();
 
-        appendStringExpr(expr, false);
-        _joinConditionAllowed = false;
+            _sb.append(_SPACE_ON_SPACE);
 
-        return (This) this;
+            appendStringExpr(expr, false);
+            _joinConditionAllowed = false;
+        });
     }
 
     /**
@@ -2582,21 +2736,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This on(final String... exprs) {
         checkSqlFragmentsNotBlank(exprs, "exprs");
-        checkCanAppendJoinCondition();
 
-        _sb.append(_SPACE_ON_SPACE);
+        return mutateAtomically(() -> {
+            checkCanAppendJoinCondition();
 
-        for (int i = 0, len = exprs.length; i < len; i++) {
-            if (i > 0) {
-                _sb.append(_SPACE_AND_SPACE);
+            _sb.append(_SPACE_ON_SPACE);
+
+            for (int i = 0, len = exprs.length; i < len; i++) {
+                if (i > 0) {
+                    _sb.append(_SPACE_AND_SPACE);
+                }
+
+                appendStringExpr(exprs[i], false);
             }
 
-            appendStringExpr(exprs[i], false);
-        }
-
-        _joinConditionAllowed = false;
-
-        return (This) this;
+            _joinConditionAllowed = false;
+        });
     }
 
     /**
@@ -2619,14 +2774,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This on(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
-        checkCanAppendJoinCondition();
 
-        _sb.append(_SPACE_ON_SPACE);
+        return mutateAtomically(() -> {
+            checkCanAppendJoinCondition();
 
-        appendCondition(condition);
-        _joinConditionAllowed = false;
+            _sb.append(_SPACE_ON_SPACE);
 
-        return (This) this;
+            appendCondition(condition);
+            _joinConditionAllowed = false;
+        });
     }
 
     /**
@@ -2654,23 +2810,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             throw new IllegalArgumentException("SQL comment token is not allowed in column expression: " + expr);
         }
 
-        checkCanAppendJoinCondition();
-
-        _sb.append(_SPACE_USING_SPACE);
-
         final String trimmedExpr = expr.trim();
 
-        if (Strings.isNotEmpty(trimmedExpr) && trimmedExpr.startsWith(SK.PARENTHESIS_L) && trimmedExpr.endsWith(SK.PARENTHESIS_R)) {
-            appendStringExpr(trimmedExpr, false);
-        } else {
-            _sb.append(SK._PARENTHESIS_L);
-            appendColumnName(trimmedExpr);
-            _sb.append(SK._PARENTHESIS_R);
-        }
+        return mutateAtomically(() -> {
+            checkCanAppendJoinCondition();
 
-        _joinConditionAllowed = false;
+            _sb.append(_SPACE_USING_SPACE);
 
-        return (This) this;
+            if (Strings.isNotEmpty(trimmedExpr) && trimmedExpr.startsWith(SK.PARENTHESIS_L) && trimmedExpr.endsWith(SK.PARENTHESIS_R)) {
+                appendStringExpr(trimmedExpr, false);
+            } else {
+                _sb.append(SK._PARENTHESIS_L);
+                appendColumnName(trimmedExpr);
+                _sb.append(SK._PARENTHESIS_R);
+            }
+
+            _joinConditionAllowed = false;
+        });
     }
 
     /**
@@ -2718,25 +2874,26 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This using(final Collection<String> propOrColumnNames) {
         final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
-        checkCanAppendJoinCondition();
 
-        _sb.append(_SPACE_USING_SPACE);
+        return mutateAtomically(() -> {
+            checkCanAppendJoinCondition();
 
-        _sb.append(SK._PARENTHESIS_L);
+            _sb.append(_SPACE_USING_SPACE);
 
-        int i = 0;
-        for (final String propOrColumnName : propOrColumnNamesSnapshot) {
-            if (i++ > 0) {
-                _sb.append(_COMMA_SPACE);
+            _sb.append(SK._PARENTHESIS_L);
+
+            int i = 0;
+            for (final String propOrColumnName : propOrColumnNamesSnapshot) {
+                if (i++ > 0) {
+                    _sb.append(_COMMA_SPACE);
+                }
+
+                appendColumnName(propOrColumnName);
             }
 
-            appendColumnName(propOrColumnName);
-        }
-
-        _sb.append(SK._PARENTHESIS_R);
-        _joinConditionAllowed = false;
-
-        return (This) this;
+            _sb.append(SK._PARENTHESIS_R);
+            _joinConditionAllowed = false;
+        });
     }
 
     /**
@@ -2759,15 +2916,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This where(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
 
-        checkIfAlreadyCalled(SK.WHERE);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.WHERE);
 
-        init(true);
+            _sb.append(_SPACE_WHERE_SPACE);
 
-        _sb.append(_SPACE_WHERE_SPACE);
-
-        appendStringExpr(expr, false);
-
-        return (This) this;
+            appendStringExpr(expr, false);
+        });
     }
 
     /**
@@ -2791,15 +2946,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This where(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
 
-        checkIfAlreadyCalled(SK.WHERE);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.WHERE);
 
-        init(true);
+            _sb.append(_SPACE_WHERE_SPACE);
 
-        _sb.append(_SPACE_WHERE_SPACE);
-
-        appendCondition(condition);
-
-        return (This) this;
+            appendCondition(condition);
+        });
     }
 
     /**
@@ -2962,13 +3115,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This groupBy(final String propOrColumnName) {
         checkSqlFragmentNotBlank(propOrColumnName, "propOrColumnName");
 
-        checkIfAlreadyCalled(SK.GROUP_BY);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.GROUP_BY);
 
-        _sb.append(_SPACE_GROUP_BY_SPACE);
+            _sb.append(_SPACE_GROUP_BY_SPACE);
 
-        appendColumnName(propOrColumnName);
-
-        return (This) this;
+            appendColumnName(propOrColumnName);
+        });
     }
 
     /**
@@ -2991,19 +3144,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This groupBy(final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
 
-        checkIfAlreadyCalled(SK.GROUP_BY);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.GROUP_BY);
 
-        _sb.append(_SPACE_GROUP_BY_SPACE);
+            _sb.append(_SPACE_GROUP_BY_SPACE);
 
-        for (int i = 0, len = propOrColumnNames.length; i < len; i++) {
-            if (i > 0) {
-                _sb.append(_COMMA_SPACE);
+            for (int i = 0, len = propOrColumnNames.length; i < len; i++) {
+                if (i > 0) {
+                    _sb.append(_COMMA_SPACE);
+                }
+
+                appendColumnName(propOrColumnNames[i]);
             }
-
-            appendColumnName(propOrColumnNames[i]);
-        }
-
-        return (This) this;
+        });
     }
 
     /**
@@ -3056,20 +3209,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This groupBy(final Collection<String> propOrColumnNames) {
         final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
 
-        checkIfAlreadyCalled(SK.GROUP_BY);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.GROUP_BY);
 
-        _sb.append(_SPACE_GROUP_BY_SPACE);
+            _sb.append(_SPACE_GROUP_BY_SPACE);
 
-        int i = 0;
-        for (final String columnName : propOrColumnNamesSnapshot) {
-            if (i++ > 0) {
-                _sb.append(_COMMA_SPACE);
+            int i = 0;
+            for (final String columnName : propOrColumnNamesSnapshot) {
+                if (i++ > 0) {
+                    _sb.append(_COMMA_SPACE);
+                }
+
+                appendColumnName(columnName);
             }
-
-            appendColumnName(columnName);
-        }
-
-        return (This) this;
+        });
     }
 
     /**
@@ -3095,22 +3248,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
         N.checkArgNotNull(direction, "direction");
 
-        checkIfAlreadyCalled(SK.GROUP_BY);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.GROUP_BY);
 
-        _sb.append(_SPACE_GROUP_BY_SPACE);
+            _sb.append(_SPACE_GROUP_BY_SPACE);
 
-        int i = 0;
-        for (final String columnName : propOrColumnNamesSnapshot) {
-            if (i++ > 0) {
-                _sb.append(_COMMA_SPACE);
+            int i = 0;
+            for (final String columnName : propOrColumnNamesSnapshot) {
+                if (i++ > 0) {
+                    _sb.append(_COMMA_SPACE);
+                }
+
+                appendColumnName(columnName);
+                _sb.append(_SPACE);
+                _sb.append(direction.toString());
             }
-
-            appendColumnName(columnName);
-            _sb.append(_SPACE);
-            _sb.append(direction.toString());
-        }
-
-        return (This) this;
+        });
     }
 
     /**
@@ -3144,24 +3297,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             N.checkArgNotNull(entry.getValue(), "Value in groupings");
         }
 
-        checkIfAlreadyCalled(SK.GROUP_BY);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.GROUP_BY);
 
-        _sb.append(_SPACE_GROUP_BY_SPACE);
+            _sb.append(_SPACE_GROUP_BY_SPACE);
 
-        int i = 0;
-        for (final Map.Entry<String, SortDirection> entry : groupingsSnapshot.entrySet()) {
-            if (i++ > 0) {
+            int i = 0;
+            for (final Map.Entry<String, SortDirection> entry : groupingsSnapshot.entrySet()) {
+                if (i++ > 0) {
+                    _sb.append(_COMMA_SPACE);
+                }
 
-                _sb.append(_COMMA_SPACE);
+                appendColumnName(entry.getKey());
+
+                _sb.append(_SPACE);
+                _sb.append(entry.getValue().toString());
             }
-
-            appendColumnName(entry.getKey());
-
-            _sb.append(_SPACE);
-            _sb.append(entry.getValue().toString());
-        }
-
-        return (This) this;
+        });
     }
 
     /**
@@ -3185,13 +3337,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This having(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
 
-        checkIfAlreadyCalled(SK.HAVING);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.HAVING);
 
-        _sb.append(_SPACE_HAVING_SPACE);
+            _sb.append(_SPACE_HAVING_SPACE);
 
-        appendStringExpr(expr, false);
-
-        return (This) this;
+            appendStringExpr(expr, false);
+        });
     }
 
     /**
@@ -3216,13 +3368,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This having(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
 
-        checkIfAlreadyCalled(SK.HAVING);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.HAVING);
 
-        _sb.append(_SPACE_HAVING_SPACE);
+            _sb.append(_SPACE_HAVING_SPACE);
 
-        appendCondition(condition);
-
-        return (This) this;
+            appendCondition(condition);
+        });
     }
 
     /**
@@ -3385,13 +3537,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This orderBy(final String propOrColumnName) {
         checkSqlFragmentNotBlank(propOrColumnName, "propOrColumnName");
 
-        checkIfAlreadyCalled(SK.ORDER_BY);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.ORDER_BY);
 
-        _sb.append(_SPACE_ORDER_BY_SPACE);
+            _sb.append(_SPACE_ORDER_BY_SPACE);
 
-        appendColumnName(propOrColumnName);
-
-        return (This) this;
+            appendColumnName(propOrColumnName);
+        });
     }
 
     /**
@@ -3414,19 +3566,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This orderBy(final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
 
-        checkIfAlreadyCalled(SK.ORDER_BY);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.ORDER_BY);
 
-        _sb.append(_SPACE_ORDER_BY_SPACE);
+            _sb.append(_SPACE_ORDER_BY_SPACE);
 
-        for (int i = 0, len = propOrColumnNames.length; i < len; i++) {
-            if (i > 0) {
-                _sb.append(_COMMA_SPACE);
+            for (int i = 0, len = propOrColumnNames.length; i < len; i++) {
+                if (i > 0) {
+                    _sb.append(_COMMA_SPACE);
+                }
+
+                appendColumnName(propOrColumnNames[i]);
             }
-
-            appendColumnName(propOrColumnNames[i]);
-        }
-
-        return (This) this;
+        });
     }
 
     /**
@@ -3479,20 +3631,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This orderBy(final Collection<String> propOrColumnNames) {
         final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
 
-        checkIfAlreadyCalled(SK.ORDER_BY);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.ORDER_BY);
 
-        _sb.append(_SPACE_ORDER_BY_SPACE);
+            _sb.append(_SPACE_ORDER_BY_SPACE);
 
-        int i = 0;
-        for (final String columnName : propOrColumnNamesSnapshot) {
-            if (i++ > 0) {
-                _sb.append(_COMMA_SPACE);
+            int i = 0;
+            for (final String columnName : propOrColumnNamesSnapshot) {
+                if (i++ > 0) {
+                    _sb.append(_COMMA_SPACE);
+                }
+
+                appendColumnName(columnName);
             }
-
-            appendColumnName(columnName);
-        }
-
-        return (This) this;
+        });
     }
 
     /**
@@ -3518,23 +3670,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
         N.checkArgNotNull(direction, "direction");
 
-        checkIfAlreadyCalled(SK.ORDER_BY);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.ORDER_BY);
 
-        _sb.append(_SPACE_ORDER_BY_SPACE);
+            _sb.append(_SPACE_ORDER_BY_SPACE);
 
-        int i = 0;
-        for (final String columnName : propOrColumnNamesSnapshot) {
-            if (i++ > 0) {
-                _sb.append(_COMMA_SPACE);
+            int i = 0;
+            for (final String columnName : propOrColumnNamesSnapshot) {
+                if (i++ > 0) {
+                    _sb.append(_COMMA_SPACE);
+                }
+
+                appendColumnName(columnName);
+
+                _sb.append(_SPACE);
+                _sb.append(direction.toString());
             }
-
-            appendColumnName(columnName);
-
-            _sb.append(_SPACE);
-            _sb.append(direction.toString());
-        }
-
-        return (This) this;
+        });
     }
 
     /**
@@ -3568,24 +3720,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             N.checkArgNotNull(entry.getValue(), "Value in orders");
         }
 
-        checkIfAlreadyCalled(SK.ORDER_BY);
+        return mutateAtomically(() -> {
+            checkIfAlreadyCalled(SK.ORDER_BY);
 
-        _sb.append(_SPACE_ORDER_BY_SPACE);
+            _sb.append(_SPACE_ORDER_BY_SPACE);
 
-        int i = 0;
+            int i = 0;
 
-        for (final Map.Entry<String, SortDirection> entry : ordersSnapshot.entrySet()) {
-            if (i++ > 0) {
-                _sb.append(_COMMA_SPACE);
+            for (final Map.Entry<String, SortDirection> entry : ordersSnapshot.entrySet()) {
+                if (i++ > 0) {
+                    _sb.append(_COMMA_SPACE);
+                }
+
+                appendColumnName(entry.getKey());
+
+                _sb.append(_SPACE);
+                _sb.append(entry.getValue().toString());
             }
-
-            appendColumnName(entry.getKey());
-
-            _sb.append(_SPACE);
-            _sb.append(entry.getValue().toString());
-        }
-
-        return (This) this;
+        });
     }
 
     /**
@@ -3627,7 +3779,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if {@code LIMIT} has already been set on this builder, or on a
      *         {@code FETCH}-style dialect if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set,
      *         or if {@code OFFSET} was already emitted on a limit-style dialect where {@code LIMIT}
-     *         must precede {@code OFFSET}
+     *         must precede {@code OFFSET}, or for SQL Server if {@code ORDER BY} has not been set
      */
     public This limit(final int count) {
         N.checkArgNotNegative(count, "count");
@@ -3729,7 +3881,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
      * @throws IllegalStateException if {@code LIMIT} or {@code OFFSET} has already been set on this builder,
-     *         or on a {@code FETCH}-style dialect if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set
+     *         on a {@code FETCH}-style dialect if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set,
+     *         or for SQL Server if {@code ORDER BY} has not been set
      */
     public This limit(final int count, final int offset) {
         N.checkArgNotNegative(count, "count");
@@ -3807,11 +3960,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Attempts to re-render a generic {@code LIMIT count [OFFSET offset]} or {@code LIMIT offset, count}
-     * expression in the dialect's
-     * FETCH pagination syntax, consuming the same clause slots as {@link #limit(int)} /
-     * {@link #limit(int, int)}. Returns {@code false} without emitting anything when the expression
-     * does not match {@link #GENERIC_LIMIT_EXPRESSION_PATTERN}, in which case the caller emits it
-     * verbatim.
+     * expression in the dialect's FETCH pagination syntax, consuming the same clause slots as
+     * {@link #limit(int)} / {@link #limit(int, int)}. On SQL Server, an unresolved SQL-standard
+     * {@code [OFFSET ...] FETCH FIRST|NEXT ...} expression is normalized to the SQL Server-required
+     * {@code OFFSET ... FETCH NEXT ...} form as well. Returns {@code false} without emitting anything
+     * when no translatable form matches, in which case the caller emits the expression verbatim.
      *
      * @param expression the normalized limit expression from {@link Limit#expression()}
      * @return {@code true} if the expression was rendered in FETCH pagination syntax
@@ -3819,14 +3972,29 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private boolean appendLimitExpressionInFetchSyntax(final String expression) {
         final Matcher matcher = GENERIC_LIMIT_EXPRESSION_PATTERN.matcher(expression);
 
-        if (!matcher.matches()) {
-            return false;
+        if (matcher.matches()) {
+            final String commaCountToken = matcher.group(3);
+            final String countToken = commaCountToken == null ? matcher.group(1) : commaCountToken;
+            final String offsetToken = commaCountToken == null ? matcher.group(2) : matcher.group(1);
+
+            appendFetchTokens(countToken, offsetToken);
+            return true;
         }
 
-        final String commaCountToken = matcher.group(3);
-        final String countToken = commaCountToken == null ? matcher.group(1) : commaCountToken;
-        final String offsetToken = commaCountToken == null ? matcher.group(2) : matcher.group(1);
+        if (_dialectFamily == DialectFamily.SQL_SERVER) {
+            final Matcher fetchMatcher = FETCH_LIMIT_EXPRESSION_PATTERN.matcher(expression);
 
+            if (fetchMatcher.matches()) {
+                appendFetchTokens(fetchMatcher.group(2), fetchMatcher.group(1));
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Claims the appropriate pagination slots and renders count/optional-offset FETCH tokens. */
+    private void appendFetchTokens(final String countToken, final String offsetToken) {
         if (offsetToken == null) {
             checkIfAlreadyCalled(SK.LIMIT);
             appendFetchFirst(countToken);
@@ -3834,8 +4002,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             claimClauseSlots(SK.LIMIT, SK.OFFSET);
             appendOffsetFetchNext(countToken, offsetToken);
         }
-
-        return true;
     }
 
     /** Returns whether an unresolved LIMIT/FETCH literal contains a semantic offset slot. */
@@ -3881,7 +4047,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code offset} is negative
-     * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
+     * @throws IllegalStateException if {@code OFFSET} has already been set on this builder, or for SQL Server
+     *                               if {@code ORDER BY} has not been set
      */
     public This offset(final int offset) {
         N.checkArgNotNegative(offset, "offset");
@@ -3914,7 +4081,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code offset} is negative
-     * @throws IllegalStateException if {@code OFFSET} has already been set on this builder
+     * @throws IllegalStateException if {@code OFFSET} has already been set on this builder, or for SQL Server
+     *                               if {@code ORDER BY} has not been set
      * @see #offset(int)
      * @see #limit(int, int)
      */
@@ -3933,7 +4101,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Calling either {@link #fetchNextRows(int)} or {@link #fetchFirstRows(int)} consumes both
      * FETCH slots and the general row-limit slot; it also closes the OFFSET slot because SQL
      * requires OFFSET to precede FETCH. Call {@link #offsetRows(int)} first when an offset is needed;
-     * {@link #offset(int)} is also compatible when this builder uses a FETCH-style dialect.
+     * {@link #offset(int)} is also compatible when this builder uses a FETCH-style dialect. On SQL
+     * Server, an omitted offset is rendered as {@code OFFSET 0 ROWS} automatically.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3950,17 +4119,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code count} is negative
      * @throws IllegalStateException if {@code LIMIT}, {@code FETCH NEXT}, or {@code FETCH FIRST} has already been set,
-     *                               or if a prior offset used limit-style {@code OFFSET n} rather than {@code OFFSET n ROWS}
+     *                               if a prior offset used limit-style {@code OFFSET n} rather than {@code OFFSET n ROWS},
+     *                               or for SQL Server if {@code ORDER BY} has not been set
      * @see #limit(int)
      * @see #limit(int, int)
      */
     public This fetchNextRows(final int count) {
         N.checkArgNotNegative(count, "count");
+        final boolean offsetAlreadySet = calledOpSet.contains(SK.OFFSET);
         checkExplicitFetchSlotsAvailable(SK.FETCH_NEXT);
         calledOpSet.add(SK.LIMIT);
         calledOpSet.add(SK.FETCH_NEXT);
         calledOpSet.add(SK.FETCH_FIRST);
         calledOpSet.add(SK.OFFSET);
+
+        if (_dialectFamily == DialectFamily.SQL_SERVER && !offsetAlreadySet) {
+            calledOpSet.add(OFFSET_ROWS_SLOT);
+            _sb.append(" OFFSET 0 ROWS");
+        }
 
         _sb.append(" FETCH NEXT ").append(count).append(" ROWS ONLY");
 
@@ -3972,7 +4148,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Calling either {@link #fetchFirstRows(int)} or {@link #fetchNextRows(int)} consumes both
      * FETCH slots and the general row-limit slot; it also closes the OFFSET slot because SQL
      * requires OFFSET to precede FETCH. Call {@link #offsetRows(int)} first when an offset is needed;
-     * {@link #offset(int)} is also compatible when this builder uses a FETCH-style dialect.
+     * {@link #offset(int)} is also compatible when this builder uses a FETCH-style dialect. SQL Server
+     * renders this request as {@code OFFSET 0 ROWS FETCH NEXT ...} (or reuses an existing offset),
+     * because it supports neither a standalone {@code FETCH FIRST} nor FETCH without OFFSET.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3988,19 +4166,30 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code count} is negative
      * @throws IllegalStateException if {@code LIMIT}, {@code FETCH FIRST}, or {@code FETCH NEXT} has already been set,
-     *                               or if a prior offset used limit-style {@code OFFSET n} rather than {@code OFFSET n ROWS}
+     *                               if a prior offset used limit-style {@code OFFSET n} rather than {@code OFFSET n ROWS},
+     *                               or for SQL Server if {@code ORDER BY} has not been set
      * @see #limit(int)
      * @see #limit(int, int)
      */
     public This fetchFirstRows(final int count) {
         N.checkArgNotNegative(count, "count");
+        final boolean offsetAlreadySet = calledOpSet.contains(SK.OFFSET);
         checkExplicitFetchSlotsAvailable(SK.FETCH_FIRST);
         calledOpSet.add(SK.LIMIT);
         calledOpSet.add(SK.FETCH_FIRST);
         calledOpSet.add(SK.FETCH_NEXT);
         calledOpSet.add(SK.OFFSET);
 
-        _sb.append(" FETCH FIRST ").append(count).append(" ROWS ONLY");
+        if (_dialectFamily == DialectFamily.SQL_SERVER) {
+            if (!offsetAlreadySet) {
+                calledOpSet.add(OFFSET_ROWS_SLOT);
+                _sb.append(" OFFSET 0 ROWS");
+            }
+
+            _sb.append(" FETCH NEXT ").append(count).append(" ROWS ONLY");
+        } else {
+            _sb.append(" FETCH FIRST ").append(count).append(" ROWS ONLY");
+        }
 
         return (This) this;
     }
@@ -4056,6 +4245,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                               offset did not use {@code OFFSET n ROWS} syntax
      */
     private void checkExplicitFetchSlotsAvailable(final String requestedFetchSlot) {
+        checkClauseCanBeAppended(requestedFetchSlot);
+
         if (calledOpSet.contains(SK.LIMIT)) {
             throw new IllegalStateException("'" + SK.LIMIT + "' has already been set and cannot be combined with '" + requestedFetchSlot + "'");
         }
@@ -4067,25 +4258,224 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (calledOpSet.contains(SK.OFFSET) && !calledOpSet.contains(OFFSET_ROWS_SLOT)) {
             throw new IllegalStateException("'" + requestedFetchSlot + "' requires OFFSET ROWS syntax; use offsetRows(...) before FETCH");
         }
+
+        init(true);
     }
 
     /**
-     * Records that the given clause keyword has been emitted, and throws if it was already recorded.
+     * Runs a structured-clause mutation transactionally. Rendering a column or condition can still
+     * reject an unsafe fragment after the clause prefix has been selected, and named-parameter
+     * rendering can update several correlated collections. If rendering fails, restore all builder
+     * state that such a mutation can change so the caller may retry with a valid clause. Raw
+     * {@link #append(String)} deliberately remains an unstructured escape hatch and is not wrapped.
+     */
+    @SuppressWarnings("unchecked")
+    private This mutateAtomically(final Runnable mutation) {
+        checkOpen();
+
+        final MutationCheckpoint checkpoint = new MutationCheckpoint(this);
+
+        try {
+            mutation.run();
+            return (This) this;
+        } catch (final RuntimeException | Error e) {
+            checkpoint.restore(this);
+            throw e;
+        }
+    }
+
+    /** Snapshot of the mutable state touched while initializing or rendering a structured clause. */
+    private static final class MutationCheckpoint {
+        private final String sql;
+        private final List<Object> parameters;
+        private final Map<String, Integer> namedParameterNameOccurrences;
+        private final Set<String> generatedNamedParameterNames;
+        private final Map<String, String> renderedNamedParameterTokens;
+        private final Set<String> calledOperations;
+        private final Map<String, Map<String, ColumnInfo>> aliasPropColumnNameMap;
+        private final OperationType operation;
+        private final Class<?> entityClass;
+        private final BeanInfo entityInfo;
+        private final ImmutableMap<String, ColumnInfo> propColumnNameMap;
+        private final Collection<String> propOrColumnNames;
+        private final Map<String, String> propOrColumnNameAliases;
+        private final List<Selection> multiSelects;
+        private final Map<String, Object> props;
+        private final Collection<Map<String, Object>> propsList;
+        private final String tableName;
+        private final String tableAlias;
+        private final String selectModifier;
+        private final int selectKeywordEndIdx;
+        private final boolean hasGeneratedParameterPlaceholder;
+        private final boolean hasFromBeenSet;
+        private final boolean joinConditionAllowed;
+        private final boolean hasCompletedSetOperation;
+        private final boolean setListStarted;
+
+        MutationCheckpoint(final AbstractQueryBuilder<?> builder) {
+            sql = builder._sb.toString();
+            parameters = new ArrayList<>(builder._parameters);
+            namedParameterNameOccurrences = new HashMap<>(builder._namedParameterNameOccurrences);
+            generatedNamedParameterNames = new HashSet<>(builder._generatedNamedParameterNames);
+            renderedNamedParameterTokens = new HashMap<>(builder._renderedNamedParameterTokens);
+            calledOperations = new HashSet<>(builder.calledOpSet);
+            aliasPropColumnNameMap = builder._aliasPropColumnNameMap == null ? null : new HashMap<>(builder._aliasPropColumnNameMap);
+            operation = builder._op;
+            entityClass = builder._entityClass;
+            entityInfo = builder._entityInfo;
+            propColumnNameMap = builder._propColumnNameMap;
+            propOrColumnNames = builder._propOrColumnNames;
+            propOrColumnNameAliases = builder._propOrColumnNameAliases;
+            multiSelects = builder._multiSelects;
+            props = builder._props;
+            propsList = builder._propsList;
+            tableName = builder._tableName;
+            tableAlias = builder._tableAlias;
+            selectModifier = builder._selectModifier;
+            selectKeywordEndIdx = builder._selectKeywordEndIdx;
+            hasGeneratedParameterPlaceholder = builder._hasGeneratedParameterPlaceholder;
+            hasFromBeenSet = builder._hasFromBeenSet;
+            joinConditionAllowed = builder._joinConditionAllowed;
+            hasCompletedSetOperation = builder._hasCompletedSetOperation;
+            setListStarted = builder._setListStarted;
+        }
+
+        void restore(final AbstractQueryBuilder<?> builder) {
+            builder._sb.setLength(0);
+            builder._sb.append(sql);
+
+            builder._parameters.clear();
+            builder._parameters.addAll(parameters);
+            builder._namedParameterNameOccurrences.clear();
+            builder._namedParameterNameOccurrences.putAll(namedParameterNameOccurrences);
+            builder._generatedNamedParameterNames.clear();
+            builder._generatedNamedParameterNames.addAll(generatedNamedParameterNames);
+            builder._renderedNamedParameterTokens.clear();
+            builder._renderedNamedParameterTokens.putAll(renderedNamedParameterTokens);
+            builder.calledOpSet.clear();
+            builder.calledOpSet.addAll(calledOperations);
+
+            builder._aliasPropColumnNameMap = aliasPropColumnNameMap == null ? null : new HashMap<>(aliasPropColumnNameMap);
+            builder._op = operation;
+            builder._entityClass = entityClass;
+            builder._entityInfo = entityInfo;
+            builder._propColumnNameMap = propColumnNameMap;
+            builder._propOrColumnNames = propOrColumnNames;
+            builder._propOrColumnNameAliases = propOrColumnNameAliases;
+            builder._multiSelects = multiSelects;
+            builder._props = props;
+            builder._propsList = propsList;
+            builder._tableName = tableName;
+            builder._tableAlias = tableAlias;
+            builder._selectModifier = selectModifier;
+            builder._selectKeywordEndIdx = selectKeywordEndIdx;
+            builder._hasGeneratedParameterPlaceholder = hasGeneratedParameterPlaceholder;
+            builder._hasFromBeenSet = hasFromBeenSet;
+            builder._joinConditionAllowed = joinConditionAllowed;
+            builder._hasCompletedSetOperation = hasCompletedSetOperation;
+            builder._setListStarted = setListStarted;
+        }
+    }
+
+    /**
+     * Validates and records that the given clause keyword has been emitted, and throws if it was
+     * already recorded or would be emitted outside SQL clause order. Validation is performed before
+     * mutating the recorded-clause set, so a rejected call does not poison the builder.
      * Used by clause methods (e.g. {@code WHERE}, {@code GROUP BY}, {@code HAVING}, {@code ORDER BY},
      * {@code LIMIT}, {@code OFFSET}) that may appear at most once per built statement.
      *
      * @param op the clause keyword that is being emitted (e.g. {@link SK#WHERE}, {@link SK#GROUP_BY})
-     * @throws IllegalStateException if {@code op} has already been recorded for this builder, or if it is
-     *                               a segment-level clause requested after a completed set-operation operand
+     * @throws IllegalStateException if the builder is closed, {@code op} has already been recorded, a
+     *                               SELECT clause is requested before FROM, or an earlier SQL clause is
+     *                               requested after a later one
      */
     protected void checkIfAlreadyCalled(final String op) {
+        checkClauseCanBeAppended(op);
+
+        if (calledOpSet.contains(op)) {
+            throw new IllegalStateException("'" + op + "' has already been set and cannot be set again");
+        }
+
+        // UPDATE and DELETE prefixes are emitted lazily. Initialize only after every side-effect-free
+        // placement/duplicate check, and reserve the slot only after initialization succeeds.
+        init(true);
+        calledOpSet.add(op);
+    }
+
+    /**
+     * Checks the structural position of a clause without changing builder state. SQL pagination has
+     * dialect-dependent internal ordering, so LIMIT/OFFSET/FETCH are treated as one terminal family;
+     * their mutual-exclusion and ordering rules remain with the pagination methods themselves.
+     */
+    private void checkClauseCanBeAppended(final String op) {
+        checkOpen();
+
+        if (_op == OperationType.ADD) {
+            throw new IllegalStateException("'" + op + "' cannot be added to an INSERT VALUES statement");
+        }
+
+        if (_op == OperationType.UPDATE || _op == OperationType.DELETE) {
+            if (SK.GROUP_BY.equals(op) || SK.HAVING.equals(op)) {
+                throw new IllegalStateException("'" + op + "' is only valid for SELECT queries");
+            }
+
+            if (SK.OFFSET.equals(op) || SK.FETCH_FIRST.equals(op) || SK.FETCH_NEXT.equals(op) || (SK.LIMIT.equals(op) && usesFetchPagination())) {
+                throw new IllegalStateException("'" + op + "' pagination is not valid for " + _op + " statements in this SQL dialect");
+            }
+        }
+
+        // SQL Server's OFFSET/FETCH grammar is part of ORDER BY. Enforce that prerequisite for
+        // every public route into the pagination renderer: LIMIT is translated to OFFSET/FETCH for
+        // this dialect, while OFFSET and the explicit FETCH methods arrive under their own slots.
+        // Oracle and DB2 also use FETCH syntax but do not share this SQL Server-only restriction.
+        if (_dialectFamily == DialectFamily.SQL_SERVER && (SK.LIMIT.equals(op) || SK.OFFSET.equals(op) || SK.FETCH_FIRST.equals(op) || SK.FETCH_NEXT.equals(op))
+                && !calledOpSet.contains(SK.ORDER_BY)) {
+            throw new IllegalStateException("SQL Server OFFSET/FETCH pagination requires an ORDER BY clause");
+        }
+
+        if (SK.FOR_UPDATE.equals(op) && (_op != OperationType.QUERY || _isForConditionOnly)) {
+            throw new IllegalStateException("'" + SK.FOR_UPDATE + "' is only valid for SELECT queries");
+        }
+
         if (_hasCompletedSetOperation && (SK.WHERE.equals(op) || SK.GROUP_BY.equals(op) || SK.HAVING.equals(op))) {
             throw new IllegalStateException("'" + op + "' cannot be added after a completed set-operation operand");
         }
 
-        if (!calledOpSet.add(op)) {
-            throw new IllegalStateException("'" + op + "' has already been set and cannot be set again");
+        if (_op == OperationType.QUERY && !_isForConditionOnly && !_hasFromBeenSet && !_hasCompletedSetOperation) {
+            throw new IllegalStateException("'" + op + "' requires a current SELECT segment with a completed FROM clause");
         }
+
+        final String laterClause = findAlreadyEmittedLaterClause(op);
+
+        if (laterClause != null) {
+            throw new IllegalStateException("'" + op + "' must be added before '" + laterClause + "'");
+        }
+    }
+
+    private String findAlreadyEmittedLaterClause(final String op) {
+        if (SK.WHERE.equals(op)) {
+            return firstCalledClause(SK.GROUP_BY, SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT, SK.FOR_UPDATE);
+        } else if (SK.GROUP_BY.equals(op)) {
+            return firstCalledClause(SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT, SK.FOR_UPDATE);
+        } else if (SK.HAVING.equals(op)) {
+            return firstCalledClause(SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT, SK.FOR_UPDATE);
+        } else if (SK.ORDER_BY.equals(op)) {
+            return firstCalledClause(SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT, SK.FOR_UPDATE);
+        } else if (SK.LIMIT.equals(op) || SK.OFFSET.equals(op) || SK.FETCH_FIRST.equals(op) || SK.FETCH_NEXT.equals(op)) {
+            return calledOpSet.contains(SK.FOR_UPDATE) ? SK.FOR_UPDATE : null;
+        }
+
+        return null;
+    }
+
+    private String firstCalledClause(final String... clauses) {
+        for (final String clause : clauses) {
+            if (calledOpSet.contains(clause)) {
+                return clause;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -4094,15 +4484,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * state.
      *
      * @param ops the clause keywords to reserve
-     * @throws IllegalStateException if any requested clause has already been emitted
+     * @throws IllegalStateException if any requested clause has already been emitted or cannot be
+     *                               emitted at the builder's current structural position
      */
     private void claimClauseSlots(final String... ops) {
         for (final String op : ops) {
+            checkClauseCanBeAppended(op);
+
             if (calledOpSet.contains(op)) {
                 throw new IllegalStateException("'" + op + "' has already been set and cannot be set again");
             }
         }
 
+        init(true);
         Collections.addAll(calledOpSet, ops);
     }
 
@@ -4137,6 +4531,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     @Beta
     public This append(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
+
+        return mutateAtomically(() -> appendConditionObject(condition));
+    }
+
+    /** Renders a condition after the public entry point has installed its mutation checkpoint. */
+    private void appendConditionObject(final Condition condition) {
 
         if (condition instanceof final Criteria criteria) {
             final String criteriaSelectModifier = criteria.selectModifier();
@@ -4285,7 +4685,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             appendCondition(condition);
         }
 
-        return (This) this;
     }
 
     private void checkCriteriaClauseSlotsAvailable(final Criteria criteria) {
@@ -4326,6 +4725,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (clause == null) {
             return;
         }
+
+        checkClauseCanBeAppended(clauseName);
 
         if (_hasCompletedSetOperation && (SK.WHERE.equals(clauseName) || SK.GROUP_BY.equals(clauseName) || SK.HAVING.equals(clauseName))) {
             throw new IllegalStateException("'" + clauseName + "' cannot be added after a completed set-operation operand");
@@ -4381,9 +4782,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalStateException if this builder has already been closed by {@link #build()}
      */
     public This append(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
+        checkOpen();
 
         if (_sb.length() > 0 && _sb.charAt(_sb.length() - 1) != ' ' && expr.charAt(0) != ' ') {
             _sb.append(_SPACE);
@@ -4988,6 +5391,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         segment has not been completed
      */
     private void checkCanAppendSetOperation(final String operationName) {
+        checkOpen();
+
         if (_op != OperationType.QUERY || _isForConditionOnly) {
             throw new IllegalStateException(operationName + " requires a complete SELECT query on its left-hand side");
         }
@@ -5303,7 +5708,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if {@code FOR UPDATE} has already been set on this builder
+     * @throws IllegalStateException if this is not a SELECT query, FROM has not been completed, or
+     *                               {@code FOR UPDATE} has already been set on this builder
      */
     public This forUpdate() {
         checkIfAlreadyCalled(SK.FOR_UPDATE);
@@ -5341,7 +5747,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr a column name (placeholder will be appended) or a complete {@code col = value} assignment
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
-     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
+     * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
+     *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
     public This set(final String expr) {
         return set(Array.asList(expr));
@@ -5364,7 +5771,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the columns to update
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
+     * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
+     *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
     public This set(final String... propOrColumnNames) {
         return set(Array.asList(propOrColumnNames));
@@ -5388,12 +5796,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the collection of columns to update
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
+     * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
+     *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
     public This set(final Collection<String> propOrColumnNames) {
         final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
         checkUpdateOperation();
 
+        return mutateAtomically(() -> appendSetColumns(propOrColumnNamesSnapshot));
+    }
+
+    /** Renders a validated SET column list after the public entry point has installed its checkpoint. */
+    private void appendSetColumns(final List<String> propOrColumnNamesSnapshot) {
         init(false);
 
         // When set() is chained (called more than once), _sb already has SET content and
@@ -5465,8 +5879,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         _propOrColumnNames = null;
-
-        return (This) this;
     }
 
     /**
@@ -5487,12 +5899,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param props map of column names to values
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or contains a {@code null}, empty, or blank key
-     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
+     * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
+     *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
     public This set(final Map<String, Object> props) {
         final Map<String, Object> propsSnapshot = copyAndValidateSqlFragmentMap(props, "props");
         checkUpdateOperation();
 
+        return mutateAtomically(() -> appendSetProperties(propsSnapshot));
+    }
+
+    /** Renders a validated SET property map after the public entry point has installed its checkpoint. */
+    private void appendSetProperties(final Map<String, Object> propsSnapshot) {
         init(false);
 
         // When set() is chained (called more than once), _sb already has SET content and
@@ -5574,8 +5992,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         _propOrColumnNames = null;
-
-        return (This) this;
     }
 
     /**
@@ -5593,9 +6009,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entity} is {@code null}, or if {@code entity} is a {@code Collection} or array
-     *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists)
-     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, if a bean has no updatable property,
+     *         or if {@code entity} is a {@code Collection} or array (use {@link #set(Collection)} or
+     *         {@link #set(String...)} for column lists)
+     * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
+     *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
     public This setEntity(final Object entity) {
         return setEntity(entity, null);
@@ -5606,8 +6024,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entity} is {@code null}, or if {@code entity} is a {@code Collection} or array
-     *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists)
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, if a bean has no updatable property
+     *         after exclusions are applied, or if {@code entity} is a {@code Collection} or array (use
+     *         {@link #set(Collection)} or {@link #set(String...)} for column lists)
      * @deprecated use {@link #setEntity(Object)}
      */
     @Deprecated
@@ -5619,6 +6038,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Sets properties to update from an entity object, a {@code Map}, or a single column-name {@code String},
      * excluding the specified properties. For bean entities, properties annotated as {@code @NonUpdatable},
      * {@code @ReadOnly}, {@code @ReadOnlyId}, or {@code @Transient} are also excluded.
+     * Entity metadata selection, bean-property extraction, and SET rendering are atomic: if a getter or
+     * parameter renderer fails, this builder is restored to the state it had before this call.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -5634,39 +6055,48 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entity} is {@code null}, or if {@code entity} is a {@code Collection} or array
      *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists)
-     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
+     * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
+     *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
     public This setEntity(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, "entity");
         checkUpdateOperation();
 
-        if (entity instanceof String) {
-            return set(N.asArray((String) entity));
-        }
-        if (entity instanceof Map) {
-            if (N.isEmpty(excludedPropNames)) {
-                return set((Map<String, Object>) entity);
+        return mutateAtomically(() -> {
+            if (entity instanceof String) {
+                set(N.asArray((String) entity));
+                return;
             }
-            final Map<String, Object> localProps = new LinkedHashMap<>((Map<String, Object>) entity); //NOSONAR
-            Maps.removeKeys(localProps, excludedPropNames);
-            return set(localProps);
-        }
 
-        if (entity instanceof Collection || entity.getClass().isArray()) {
-            throw new IllegalArgumentException(
-                    "A Collection or array is not a valid entity for setEntity(...). Use set(Collection<String>) or set(String...) for column lists.");
-        }
+            if (entity instanceof Map) {
+                if (N.isEmpty(excludedPropNames)) {
+                    set((Map<String, Object>) entity);
+                } else {
+                    final Map<String, Object> localProps = new LinkedHashMap<>((Map<String, Object>) entity); //NOSONAR
+                    Maps.removeKeys(localProps, excludedPropNames);
+                    set(localProps);
+                }
 
-        final Class<?> entityClass = entity.getClass();
-        setEntityClass(entityClass);
-        final Collection<String> propNames = QueryUtil.updatePropNames(entityClass, excludedPropNames);
-        final Map<String, Object> localProps = N.newLinkedHashMap(propNames.size());
+                return;
+            }
 
-        for (final String propName : propNames) {
-            localProps.put(propName, _entityInfo.getPropValue(entity, propName));
-        }
+            if (entity instanceof Collection || entity.getClass().isArray()) {
+                throw new IllegalArgumentException(
+                        "A Collection or array is not a valid entity for setEntity(...). Use set(Collection<String>) or set(String...) for column lists.");
+            }
 
-        return set(localProps);
+            final Class<?> entityClass = entity.getClass();
+            final Collection<String> propNames = QueryUtil.updatePropNames(entityClass, excludedPropNames);
+            N.checkArgNotEmpty(propNames, "No updatable properties remain after exclusions are applied");
+            setEntityClass(entityClass);
+            final Map<String, Object> localProps = N.newLinkedHashMap(propNames.size());
+
+            for (final String propName : propNames) {
+                localProps.put(propName, _entityInfo.getPropValue(entity, propName));
+            }
+
+            set(localProps);
+        });
     }
 
     /**
@@ -5700,8 +6130,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class to get properties from
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or declares no updatable property
+     * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
+     *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
     public This setEntity(final Class<?> entityClass) {
         return setEntity(entityClass, (Set<String>) null);
@@ -5723,6 +6154,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.
      * Properties marked with {@code @NonUpdatable}, {@code @ReadOnly}, {@code @ReadOnlyId}, or {@code @Transient} annotations are automatically excluded.
+     * Entity metadata selection and SET rendering are atomic: if parameter rendering fails, this builder
+     * is restored to the state it had before this call.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -5737,21 +6170,35 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class to get properties from
      * @param excludedPropNames additional properties to exclude from the update
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if this builder does not represent an {@code UPDATE}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or no updatable property remains after exclusions are applied
+     * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
+     *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
     public This setEntity(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, "entityClass");
         checkUpdateOperation();
-        setEntityClass(entityClass);
+        final Collection<String> propNames = QueryUtil.updatePropNames(entityClass, excludedPropNames);
+        N.checkArgNotEmpty(propNames, "No updatable properties remain after exclusions are applied");
 
-        return set(QueryUtil.updatePropNames(entityClass, excludedPropNames));
+        return mutateAtomically(() -> {
+            setEntityClass(entityClass);
+            set(propNames);
+        });
     }
 
-    /** Ensures that a SET assignment API is used only with an UPDATE builder. */
+    /** Ensures that a SET assignment API is used only in the SET-list portion of a live UPDATE builder. */
     private void checkUpdateOperation() {
+        checkOpen();
+
         if (_op != OperationType.UPDATE) {
             throw new IllegalStateException("set()/setEntity() requires an UPDATE builder, but current operation is: " + _op);
+        }
+
+        final String laterClause = firstCalledClause(SK.WHERE, SK.GROUP_BY, SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT,
+                SK.FOR_UPDATE);
+
+        if (laterClause != null) {
+            throw new IllegalStateException("set()/setEntity() must be called before the '" + laterClause + "' clause");
         }
     }
 
@@ -5978,6 +6425,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected void init(final boolean setForUpdate) {
         // Note: any change, please take a look at: Dsl.renderCondition(final Condition cond, final Class<?> entityClass) first.
+
+        checkOpen();
 
         if (_op == OperationType.ADD && Strings.isEmpty(_tableName)) {
             throw new IllegalStateException("into() must be called to specify the target table before building an INSERT statement");
@@ -6425,6 +6874,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Appends a string expression to the SQL string builder, normalizing column names according to the current naming policy.
      * Simple alphanumeric column names are normalized directly; complex expressions are parsed and each identifier is normalized individually.
+     * A SQL Server expression containing a local or global temporary-table identifier ({@code #name} or
+     * {@code ##name}) is emitted verbatim after comment validation, because a dialect-neutral tokenizer
+     * otherwise has to interpret a context-free {@code #name} as a MySQL hash comment.
      *
      * @param expr the string expression to append (must not be {@code null}, empty, or blank)
      * @param isFromAppendColumn {@code true} if the expression originates from an append-column call (applies stricter validation and naming policy conversion),
@@ -6434,8 +6886,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected void appendStringExpr(final String expr, final boolean isFromAppendColumn) {
         checkSqlFragmentNotBlank(expr, "expr");
 
-        if (isFromAppendColumn && containsSqlCommentToken(expr)) {
-            throw new IllegalArgumentException("SQL comment token is not allowed in column expression: " + expr);
+        final boolean containsSqlServerTempIdentifier = _dialectFamily == DialectFamily.SQL_SERVER && containsSqlServerTempIdentifier(expr);
+
+        if ((isFromAppendColumn || containsSqlServerTempIdentifier) && containsSqlCommentToken(expr)) {
+            throw new IllegalArgumentException("SQL comment token is not allowed in SQL expression: " + expr);
+        }
+
+        if (containsSqlServerTempIdentifier) {
+            _sb.append(expr);
+            return;
         }
 
         if (expr.length() < 16) {
@@ -6482,7 +6941,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         appendColumnName(_entityClass, _entityInfo, _propColumnNameMap, _tableAlias, propName, null, false, null, false, true);
     }
 
-    private static boolean containsSqlCommentToken(final String expr) {
+    /**
+     * Detects SQL comment openers outside quoted regions. Hash-prefixed operators, MyBatis markers,
+     * and SQL Server temporary identifiers are data tokens rather than hash comments.
+     */
+    private boolean containsSqlCommentToken(final String expr) {
         char quoteChar = 0;
 
         for (int i = 0, len = expr.length(); i < len; i++) {
@@ -6547,6 +7010,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             if (ch == '#') {
+                if (_dialectFamily == DialectFamily.SQL_SERVER && isSqlServerTempIdentifierAt(expr, i)) {
+                    if (i < len - 1 && expr.charAt(i + 1) == '#') {
+                        i++;
+                    }
+
+                    continue;
+                }
+
+                if (i > 0 && expr.charAt(i - 1) == '?') {
+                    // The '#' is the second character of a configured ?# operator. Do not advance
+                    // past the following character; it may itself open a real comment token.
+                    continue;
+                }
+
                 if (i < len - 1) {
                     final char nextChar = expr.charAt(i + 1);
 
@@ -6561,6 +7038,42 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return false;
+    }
+
+    private static boolean containsSqlServerTempIdentifier(final String expr) {
+        for (int i = 0, len = expr.length(); i < len; i++) {
+            if (isSqlServerTempIdentifierAt(expr, i)) {
+                return true;
+            }
+
+            final int next = skipSqlQuotedOrComment(expr, i);
+
+            if (next != i) {
+                i = next - 1;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean isSqlServerTempIdentifierAt(final String expr, final int index) {
+        final int len = expr.length();
+
+        if (index < 0 || index >= len - 1 || expr.charAt(index) != '#') {
+            return false;
+        }
+
+        int nameStart = index + 1;
+
+        if (expr.charAt(nameStart) == '#') {
+            nameStart++;
+        }
+
+        if (nameStart >= len || !isAliasIdentifierChar(expr.charAt(nameStart))) {
+            return false;
+        }
+
+        return index == 0 || !isAliasIdentifierChar(expr.charAt(index - 1));
     }
 
     /**
@@ -6719,6 +7232,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (selectAlias != null) {
                 final String expression = propName.substring(0, selectAlias.expressionEnd()).trim();
+                // A single select(String) may contain a comma-separated expression list. Preserve the
+                // complete suffix after the first top-level AS for backward-compatible raw rendering and
+                // to ensure validateColumnAlias sees any unsafe quote/comment token in that suffix.
                 final String alias = propName.substring(selectAlias.aliasStart()).trim();
                 Dsl.validateColumnAlias(expression, alias);
                 //noinspection ConstantValue

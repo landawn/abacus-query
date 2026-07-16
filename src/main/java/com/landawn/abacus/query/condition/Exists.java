@@ -111,7 +111,8 @@ public class Exists extends ComposableCell {
      * // returns true
      * }</pre>
      *
-     * @return the {@link SubQuery} supplied at construction time
+     * @return the {@link SubQuery} supplied at construction time, or {@code null} for an uninitialized
+     *         serialization-framework instance
      */
     public SubQuery subQuery() {
         return (SubQuery) condition;

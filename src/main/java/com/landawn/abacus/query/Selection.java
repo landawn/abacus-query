@@ -23,6 +23,8 @@ import com.landawn.abacus.util.ImmutableSet;
 /**
  * Immutable selection specification for SQL queries, particularly useful for complex multi-table selections.
  * This class encapsulates information about which entity fields to select, table aliases, and property filtering.
+ * A non-empty explicit inclusion list defines the projection directly; exclusions are consulted when
+ * the inclusion list is {@code null} or empty and the projection is derived from the entity class.
  *
  * <p>The {@code Selection} class is designed to work with {@link SqlBuilder} to generate SELECT clauses with support for:</p>
  * <ul>
@@ -112,8 +114,10 @@ public final class Selection {
 
     /**
      * Returns the property names to include in this selection.
+     * A non-empty collection takes precedence over {@link #excludedPropNames()}.
      *
-     * @return the immutable included property names, or {@code null} if all properties are included
+     * @return the immutable included property names; {@code null} or an empty collection means the
+     *         projection is derived from the entity class
      */
     public Collection<String> includedPropNames() {
         return includedPropNames;
@@ -212,7 +216,9 @@ public final class Selection {
         }
 
         /**
-         * Sets the property names to include. Passing {@code null} means all properties.
+         * Sets the property names to include. Passing {@code null} or an empty collection derives the
+         * projection from the entity class and applies exclusions; a non-empty collection defines the
+         * projection directly and takes precedence over exclusions.
          *
          * @param includedPropNames the included property names
          * @return this builder

@@ -19,12 +19,12 @@ package com.landawn.abacus.query.condition;
  * 
  * <p>The UNION ALL operator is used to combine the result sets of two or more SELECT statements.
  * Unlike UNION, UNION ALL includes all rows from all queries, including duplicates.
- * This makes UNION ALL faster than UNION as it doesn't need to remove duplicates.</p>
+ * Avoiding duplicate elimination generally makes UNION ALL cheaper than UNION.</p>
  * 
  * <p>Key characteristics:</p>
  * <ul>
  *   <li>Preserves all rows from all queries, including duplicates</li>
- *   <li>Faster performance than UNION (no duplicate elimination)</li>
+ *   <li>No duplicate-elimination work; actual performance remains plan- and database-dependent</li>
  *   <li>Does not impose an ordering on the combined result (use ORDER BY if a specific order is needed)</li>
  *   <li>Requires same number of columns with compatible types</li>
  *   <li>Column names from the first query are used in the result</li>
@@ -40,8 +40,9 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Performance considerations:</p>
  * <ul>
- *   <li>UNION ALL is significantly faster than UNION as it skips duplicate elimination</li>
- *   <li>No sorting or hashing required, making it ideal for large result sets</li>
+ *   <li>UNION ALL skips the duplicate-elimination step required by UNION</li>
+ *   <li>The set operation itself needs no deduplication sort/hash, although surrounding query
+ *       operations may still sort, hash, or materialize rows</li>
  *   <li>Preserves all rows (including duplicates) without ordering guarantees</li>
  *   <li>Use UNION ALL whenever duplicates are acceptable or known to be impossible</li>
  *   <li>Consider UNION ALL when combining partitioned or non-overlapping data</li>
@@ -51,7 +52,7 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>All major databases support UNION ALL: MySQL, PostgreSQL, Oracle, SQL Server, SQLite, DB2</li>
  *   <li>UNION ALL is part of the SQL standard and widely portable</li>
- *   <li>Consistently offers better performance than UNION across all database systems</li>
+ *   <li>Execution costs and optimizer choices vary by database, query shape, and downstream operations</li>
  * </ul>
  *
  * <p>Relationship to other set operations:</p>
@@ -98,16 +99,15 @@ public class UnionAll extends Clause {
     /**
      * Creates a new UNION ALL clause with the specified subquery.
      * The UNION ALL operation will combine results from the main query and this subquery,
-     * keeping all rows including duplicates. This provides better performance than UNION
-     * since it skips the duplicate elimination step.
+     * keeping all rows including duplicates. It skips UNION's duplicate-elimination step.
      *
      * <p>The subquery must return the same number of columns as the main query,
      * and the data types must be compatible. The column names from the first query
      * in the UNION ALL operation will be used for the final result set.</p>
      *
      * <p>Use UNION ALL when you know there are no duplicates in the combined result,
-     * or when you want to preserve all rows regardless of duplication. This is
-     * significantly faster than UNION for large datasets.</p>
+     * or when you want to preserve all rows regardless of duplication. It is commonly cheaper than
+     * UNION for large result sets, but actual performance depends on the database and query plan.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

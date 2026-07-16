@@ -38,8 +38,9 @@ package com.landawn.abacus.query.condition;
  * 
  * <p>Performance considerations:</p>
  * <ul>
- *   <li>Patterns starting with {@code %} prevent index usage (full table scan)</li>
- *   <li>Patterns starting with literal characters can use indexes efficiently</li>
+ *   <li>With ordinary B-tree indexes, a leading {@code %} generally prevents an index range scan;
+ *       database-specific text or expression indexes may behave differently</li>
+ *   <li>Patterns starting with literal characters are more likely to benefit from an index</li>
  *   <li>Consider full-text search for complex text searching needs</li>
  *   <li>Case sensitivity depends on database collation settings</li>
  * </ul>
@@ -85,11 +86,11 @@ public class Like extends Binary {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Starts with pattern - can use indexes efficiently
+     * // Starts with pattern - may permit an index range scan
      * Like startsWith = new Like("title", "The%");
      * // Matches: "The Great Gatsby", "The Lord of the Rings", "The", etc.
      *
-     * // Contains pattern - requires full table scan
+     * // Contains pattern - an ordinary B-tree index usually cannot provide a range scan
      * Like contains = new Like("description", "%important%");
      * // Matches: "This is important", "unimportant details", etc.
      *
@@ -109,7 +110,9 @@ public class Like extends Binary {
      *                  any sequence of characters and {@code _} to match a single character. Passing
      *                  {@code null} renders as {@code prop LIKE null}, which is not a meaningful SQL
      *                  comparison; do not pass {@code null} to this operator.
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if a
+     *                                  condition-valued operand is or contains a query-structural component;
+     *                                  or if it is or contains an {@link All}, {@link Any}, or {@link Some} operand
      */
     public Like(final String propName, final Object propValue) {
         super(propName, Operator.LIKE, propValue);

@@ -97,8 +97,12 @@ public class In extends AbstractIn {
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param values the collection of values to check against (must not be {@code null} or empty);
-     *               the collection is copied internally to prevent external modifications
-     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, or if {@code values} is {@code null}/empty
+     *               the collection is copied internally to prevent external modifications. A
+     *               condition-valued element must not be query-structural or quantified
+     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, if {@code values}
+     *                                  is {@code null}/empty, or if a condition-valued element is or contains
+     *                                  a {@link Criteria}, SQL clause, JOIN, or {@code ON}/{@code USING} connector,
+     *                                  or is/contains an {@link All}, {@link Any}, or {@link Some} operand
      */
     public In(final String propName, final Collection<?> values) {
         super(propName, Operator.IN, values);
@@ -135,11 +139,15 @@ public class In extends AbstractIn {
      * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be
      *               non-{@code null} and resolve to exactly {@code propNames.size()} values. A row may be a
      *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean. A missing
-     *               property-name key in a map contributes {@code null}
+     *               property-name key in a map contributes {@code null}; condition-valued elements
+     *               must not be query-structural or quantified
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
-     *                                  or if a bean row does not expose a requested property
+     *                                  or if a bean row does not expose a requested property, or if a condition-valued
+     *                                  row element is or contains a {@link Criteria}, SQL clause, JOIN, or
+     *                                  {@code ON}/{@code USING} connector, or is/contains an {@link All},
+     *                                  {@link Any}, or {@link Some} quantified operand
      */
     public In(final Collection<String> propNames, final Collection<?> valueRows) {
         super(propNames, Operator.IN, valueRows);

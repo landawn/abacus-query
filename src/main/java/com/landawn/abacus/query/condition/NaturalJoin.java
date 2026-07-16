@@ -22,13 +22,14 @@ import java.util.Collection;
  * <p>A NATURAL JOIN automatically joins tables based on all columns with the same names 
  * in both tables. It's a special type of equi-join where the join predicate arises 
  * implicitly by comparing all columns in both tables that have the same column names.
- * The result set contains only one column for each pair of equally named columns.</p>
+ * Under standard joined-table semantics, the joined table exposes one unqualified join column for
+ * each common name; explicit qualified projections remain under the query author's control.</p>
  * 
  * <p>Key characteristics:</p>
  * <ul>
  *   <li>Automatically identifies common column names</li>
  *   <li>Performs equality comparison on all matching columns</li>
- *   <li>Eliminates duplicate columns in the result</li>
+ *   <li>Coalesces each same-named pair in the joined table's unqualified output</li>
  *   <li>No explicit join condition needed for matching columns</li>
  *   <li>Does not accept an explicit {@code ON}/{@code USING} or filter condition</li>
  * </ul>

@@ -24,6 +24,35 @@ import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class AbstractConditionTest extends TestBase {
+    private static Number customNumber(final String literal) {
+        return new Number() {
+            @Override
+            public int intValue() {
+                return 0;
+            }
+
+            @Override
+            public long longValue() {
+                return 0;
+            }
+
+            @Override
+            public float floatValue() {
+                return 0;
+            }
+
+            @Override
+            public double doubleValue() {
+                return 0;
+            }
+
+            @Override
+            public String toString() {
+                return literal;
+            }
+        };
+    }
+
     @Test
     public void testGetOperator() {
         AbstractCondition condition = new Equal("name", "John");
@@ -31,6 +60,14 @@ public class AbstractConditionTest extends TestBase {
 
         AbstractCondition and = new And(new Equal("a", 1));
         assertEquals(Operator.AND, and.operator());
+    }
+
+    @Test
+    public void testCustomNumberMustRenderAsNumericLiteral() {
+        assertEquals("amount = 1.25e+2", new Equal("amount", customNumber("1.25e+2")).toString());
+
+        final Number unsafe = customNumber("0); DROP TABLE users; --");
+        assertThrows(IllegalArgumentException.class, () -> new Equal("amount", unsafe).toString());
     }
 
     @Test

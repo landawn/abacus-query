@@ -26,13 +26,14 @@ import com.landawn.abacus.util.Strings;
 /**
  * Represents a USING clause in SQL JOIN operations.
  * The USING clause provides a concise way to join tables when they share columns with identical names.
- * It automatically performs an equi-join on the specified columns and eliminates duplicate columns
- * from the result set, unlike the ON clause.
+ * It automatically performs an equi-join on the specified columns and, under standard SQL joined-table
+ * semantics, exposes a single unqualified join column for each name. Explicit qualified projections remain
+ * under the query author's control.
  * 
  * <p>Key advantages of USING over ON:
  * <ul>
  *   <li>Cleaner, more readable syntax for common column names</li>
- *   <li>Automatically removes duplicate join columns from the result</li>
+ *   <li>Coalesces each pair of same-named join columns in the joined table's unqualified output</li>
  *   <li>Reduces redundancy when joining on identically named columns</li>
  *   <li>Particularly useful for natural key joins and standardized schemas</li>
  * </ul>
@@ -55,7 +56,7 @@ import com.landawn.abacus.util.Strings;
  * InnerJoin join1 = new InnerJoin("departments", using1);
  * // SQL: INNER JOIN departments USING (department_id)
  * // Equivalent to: INNER JOIN departments ON employees.department_id = departments.department_id
- * // But returns only one department_id column instead of two
+ * // The joined table's unqualified output exposes one department_id join column
  *
  * // Multiple column join - composite key join
  * Using using2 = new Using("company_id", "branch_id");

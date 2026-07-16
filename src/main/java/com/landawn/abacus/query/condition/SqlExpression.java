@@ -1125,8 +1125,9 @@ public class SqlExpression extends ComposableCondition {
      *       a backslash shields the character that follows it, so any existing {@code \x} pair — including an
      *       already-escaped quote such as {@code \'} — is copied verbatim rather than escaped again, plus a defensive
      *       guard that appends one extra backslash when the body would otherwise end in an unescaped trailing backslash</li>
-     *   <li>{@link Number} and {@link Boolean} values are converted via {@code toString()} (no quoting);
-     *       {@code NaN}/infinite {@link Float}/{@link Double} values are rejected</li>
+     *   <li>{@link Number} values must render as decimal, integer, or scientific-notation literals;
+     *       {@code NaN}/infinite {@link Float}/{@link Double} values and non-numeric custom text are rejected.
+     *       {@link Boolean} values are converted via {@code toString()} without quoting.</li>
      *   <li>{@link SqlExpression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null})</li>
      *   <li>{@link SubQuery} instances render their {@code toString()} wrapped in parentheses; other {@link Condition}s use their {@code toString()} verbatim</li>
      *   <li>Other objects are converted via {@link N#stringOf(Object)}, then quoted and escaped</li>
@@ -1149,7 +1150,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the value to render
      * @return the SQL representation of the value
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
-     *             (these have no portable SQL literal form; use {@link IsNaN}/{@link IsInfinite} instead)
+     *             (these have no portable SQL literal form; use {@link IsNaN}/{@link IsInfinite} instead), or a
+     *             {@link Number} whose text is not a valid numeric literal
      */
     public static String renderValue(final Object value) {
         if (value == null) {
@@ -1158,8 +1160,9 @@ public class SqlExpression extends ComposableCondition {
 
         if (value instanceof String) {
             return (_SINGLE_QUOTE + AbstractCondition.escapeStringLiteral((String) value) + _SINGLE_QUOTE);
-        } else if (value instanceof Number || value instanceof Boolean) {
-            AbstractCondition.checkFiniteNumber(value);
+        } else if (value instanceof Number) {
+            return AbstractCondition.formatNumberLiteral((Number) value);
+        } else if (value instanceof Boolean) {
             return value.toString();
         } else if (value instanceof SqlExpression) {
             final String exprLiteral = ((SqlExpression) value).literal();

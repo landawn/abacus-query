@@ -90,9 +90,12 @@ public class Is extends Binary {
      *
      * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
      * @param propValue the right-hand value of the IS predicate; may be {@code null} (renders as
-     *            {@code IS NULL}), an {@link SqlExpression} for a SQL keyword, or another value
-     *            rendered by {@link Binary}; whether that value is valid with {@code IS} is dialect-specific
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     *            {@code IS NULL}), an {@link SqlExpression} for a SQL keyword, or another non-structural
+     *            value rendered by {@link Binary}; whether that value is valid with {@code IS} is dialect-specific
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
+     *                                  {@code propValue} is or contains a {@link Criteria}, SQL clause,
+     *                                  JOIN, or {@code ON}/{@code USING} connector, or is/contains an
+     *                                  {@link All}, {@link Any}, or {@link Some} quantified operand
      */
     public Is(final String propName, final Object propValue) {
         super(propName, Operator.IS, propValue);

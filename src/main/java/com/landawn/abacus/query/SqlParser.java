@@ -57,12 +57,13 @@ import com.landawn.abacus.util.Strings;
  *       {@link TokenizerConfig#builder()} and an instance-scoped {@link Tokenizer}.</li>
  *   <li>iBatis/MyBatis {@code #{...}} markers and configured PostgreSQL hash operators are
  *       not mistaken for hash comments.</li>
- *   <li>{@code #} that opens a hash-prefixed identifier (e.g. a temp table name appearing
+ *   <li>{@code #} or {@code ##} that opens a hash-prefixed identifier (e.g. a SQL Server
+ *       local or global temp-table name appearing
  *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE}, or in the
  *       target position after {@code INSERT}, {@code DELETE} or {@code MERGE} and an optional
  *       {@code TOP} clause,
  *       allowing intervening whitespace or comments, including as a later element of a
- *       comma-separated list governed by one of those keywords, e.g. {@code "FROM #t1, #t2"})
+ *       comma-separated list governed by one of those keywords, e.g. {@code "FROM #t1, ##t2"})
  *       is treated as part of the identifier, not as a hash comment or separator.</li>
  * </ul>
  *
@@ -1482,7 +1483,8 @@ public final class SqlParser {
      * <p>Special handling:</p>
      * <ul>
      *   <li>{@code #} followed by <code>{</code> is not considered a separator (MyBatis/iBatis {@code #{...}} syntax)</li>
-     *   <li>{@code #} that starts a hash-prefixed identifier (e.g. a temp table name appearing
+     *   <li>{@code #} or {@code ##} that starts a hash-prefixed identifier (e.g. a SQL Server
+     *       local or global temp-table name appearing
      *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE}, or as
      *       an {@code INSERT}, {@code DELETE} or {@code MERGE} target after an optional {@code TOP} clause,
      *       with optional whitespace/comments in between, including as a later element of a
@@ -1549,6 +1551,10 @@ public final class SqlParser {
             return false;
         }
 
+        if (isInsideMultiCharSeparator(str, len, index, tokenizerConfig)) {
+            return false;
+        }
+
         final String multiCharSeparator = matchMultiCharSeparator(str, len, index, tokenizerConfig);
         if (multiCharSeparator != null && multiCharSeparator.length() > 1) {
             return false;
@@ -1558,10 +1564,12 @@ public final class SqlParser {
     }
 
     /**
-     * Decides whether the {@code '#'} at {@code index} starts a hash-prefixed identifier (e.g. a
-     * SQL Server temp table) rather than a MySQL hash comment. The character following the
-     * {@code '#'} must be an identifier character, and scanning backward (skipping whitespace and
-     * comments) must reach one of the {@link #hashIdentifierContextKeywords} ({@code FROM},
+     * Decides whether the {@code '#'} at {@code index} starts, or is the second character of, a
+     * hash-prefixed identifier (e.g. a SQL Server local {@code #temp} or global {@code ##temp}
+     * table) rather than a MySQL hash comment or a configured hash operator. The character following
+     * the one- or two-character hash prefix must be an identifier character, and scanning backward
+     * (skipping whitespace and comments) must reach one of the
+     * {@link #hashIdentifierContextKeywords} ({@code FROM},
      * {@code JOIN}, {@code INTO}, {@code UPDATE}, {@code TABLE}), or the hash must be exactly where
      * an {@code INSERT}, {@code DELETE} or {@code MERGE} target is expected, including after an
      * optional {@code TOP} clause.
@@ -1580,13 +1588,30 @@ public final class SqlParser {
             return false;
         }
 
-        final char next = str.charAt(index + 1);
+        int prefixStart = index;
+        int identifierStart = index + 1;
 
-        if (!isIdentifierChar(next)) {
+        if (str.charAt(identifierStart) == '#') {
+            // SQL Server global temp tables use a two-character prefix (##name). The prefix is an
+            // identifier only in the same table/target contexts as #name; elsewhere the configured
+            // ## operator must retain precedence.
+            identifierStart++;
+        } else if (index > 0 && str.charAt(index - 1) == '#') {
+            // The forward scanners visit both '#' characters separately after the first one has
+            // been classified as identifier text. Re-evaluate the pair from its real start so the
+            // second '#' is appended instead of being mistaken for a new hash comment.
+            if (index > 1 && str.charAt(index - 2) == '#') {
+                return false;
+            }
+
+            prefixStart--;
+        }
+
+        if (identifierStart >= len || !isIdentifierChar(str.charAt(identifierStart))) {
             return false;
         }
 
-        int left = skipBackwardWhitespaceAndComments(str, index - 1, tokenizerConfig);
+        int left = skipBackwardWhitespaceAndComments(str, prefixStart - 1, tokenizerConfig);
 
         if (isHashIdentifierDmlTargetContext(str, left, true, tokenizerConfig)) {
             return true;
@@ -1716,8 +1741,8 @@ public final class SqlParser {
      * {@link #isLikelyHashPrefixedIdentifier}. An element is at most two whitespace-separated
      * units (a name plus an optional trailing alias, with a free {@code AS} between them) where
      * each unit is a dot-qualified chain of segments and each segment is an identifier token
-     * (optionally '#'-prefixed), a quoted/bracket-quoted identifier, or a balanced parenthesized
-     * derived-table expression.
+     * (optionally prefixed with {@code #} or {@code ##}), a quoted/bracket-quoted identifier, or a
+     * balanced parenthesized derived-table expression.
      *
      * <p>Returns the index of the first character before the consumed element (possibly
      * {@code -1}), or {@code start} unchanged if no element was recognized there. A hash-identifier
@@ -1781,6 +1806,10 @@ public final class SqlParser {
 
                     if (left >= 0 && str.charAt(left) == '#') {
                         left--; // '#'-prefixed segment: the '#' belongs to the identifier
+
+                        if (left >= 0 && str.charAt(left) == '#') {
+                            left--; // SQL Server global-temp prefix (##)
+                        }
                     }
                 } else {
                     break outer; // e.g. '(' or '=' -> not part of a list element
@@ -2152,6 +2181,14 @@ public final class SqlParser {
             return false;
         }
 
+        // The forward scanner consumes a configured multi-character separator as a unit, but this
+        // backward-context scan visits every character. Do not reinterpret a later '#' within an
+        // operator such as ## or ?# as the start of a line comment; doing so can hide the FROM/TABLE
+        // context of a following #temp identifier (and everything later on the same line).
+        if (isInsideMultiCharSeparator(str, str.length(), index, tokenizerConfig)) {
+            return false;
+        }
+
         final String multiCharSeparator = matchMultiCharSeparator(str, str.length(), index, tokenizerConfig);
         if (multiCharSeparator != null && multiCharSeparator.length() > 1) {
             return false;
@@ -2160,19 +2197,44 @@ public final class SqlParser {
         return !isLikelyHashPrefixedIdentifierAfterWhitespaceAndBlockComments(str, str.length(), index, tokenizerConfig);
     }
 
+    private static boolean isInsideMultiCharSeparator(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig) {
+        final int earliestSeparatorStart = Math.max(0, index - tokenizerConfig.maxSeparatorLength + 1);
+
+        for (int separatorStart = earliestSeparatorStart; separatorStart < index; separatorStart++) {
+            final String separator = matchMultiCharSeparator(str, len, separatorStart, tokenizerConfig);
+
+            if (separator != null && separatorStart + separator.length() > index) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static boolean isLikelyHashPrefixedIdentifierAfterWhitespaceAndBlockComments(final String str, final int len, final int index,
             final TokenizerConfig tokenizerConfig) {
         if (index >= len - 1) {
             return false;
         }
 
-        final char next = str.charAt(index + 1);
+        int prefixStart = index;
+        int identifierStart = index + 1;
 
-        if (!isIdentifierChar(next)) {
+        if (str.charAt(identifierStart) == '#') {
+            identifierStart++;
+        } else if (index > 0 && str.charAt(index - 1) == '#') {
+            if (index > 1 && str.charAt(index - 2) == '#') {
+                return false;
+            }
+
+            prefixStart--;
+        }
+
+        if (identifierStart >= len || !isIdentifierChar(str.charAt(identifierStart))) {
             return false;
         }
 
-        int left = skipBackwardWhitespaceAndBlockComments(str, index - 1);
+        int left = skipBackwardWhitespaceAndBlockComments(str, prefixStart - 1);
 
         if (left < 0) {
             return false;
@@ -2385,10 +2447,11 @@ public final class SqlParser {
      * occurrences inside quoted string literals, quoted identifiers, SQL comments and larger
      * identifier tokens, so a SELECT that merely returns the literal text {@code 'DELETE'} or a
      * column named {@code into$} is still treated as read-only, whereas a data-changing CTE such as
-     * {@code WITH t AS (...) DELETE ...} is not. For multi-statement SQL, a later statement that
-     * starts with one of the mutation, DDL, or procedure-invocation keywords listed above also makes the SQL
-     * non-read-only, including when that later statement starts with a {@code WITH} clause or
-     * leading parentheses. The keyword scan matches only statement-start positions, so the
+     * {@code WITH t AS (...) DELETE ...} is not. For multi-statement SQL, a later statement is
+     * permitted only when it also resolves to a {@code SELECT}; a later statement with any other
+     * leading verb (including an unrecognized or vendor-specific command) makes the SQL non-read-only.
+     * This includes statements that start with a {@code WITH} clause or leading parentheses. The
+     * mutation-keyword scan matches only statement-start positions, so the
      * {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL <i>functions</i> inside a SELECT do not
      * affect the classification.
      * </p>
@@ -2415,7 +2478,8 @@ public final class SqlParser {
             return false;
         }
 
-        return isSelectQuery(sql, tokenizerConfig) && !containsMutationQueryKeyword(sql, tokenizerConfig) && !containsSelectIntoClause(sql, tokenizerConfig);
+        return isSelectQuery(sql, tokenizerConfig) && hasOnlyAllowedTopLevelStatements(sql, tokenizerConfig, false)
+                && !containsMutationQueryKeyword(sql, tokenizerConfig) && !containsSelectIntoClause(sql, tokenizerConfig);
     }
 
     private static boolean isSelectQuery(final String sql, final TokenizerConfig tokenizerConfig) {
@@ -2665,7 +2729,9 @@ public final class SqlParser {
      * returns {@code false}. For multi-statement SQL, a later top-level {@code UPDATE},
      * {@code DELETE}, {@code MERGE}, {@code REPLACE}, {@code TRUNCATE}, {@code CREATE}, {@code DROP},
      * {@code ALTER}, {@code CALL}, JDBC {@code {call ...}} / {@code {? = call ...}}, {@code EXEC} or
-     * {@code EXECUTE} statement makes this method return {@code false}. Procedure calls are
+     * {@code EXECUTE} statement makes this method return {@code false}. More generally, every
+     * top-level statement must resolve to either {@code SELECT} or {@code INSERT}; an unrecognized
+     * or vendor-specific command is rejected rather than assumed to be safe. Procedure calls are
      * conservatively rejected because their effects cannot be determined from the SQL text; the keyword scan matches
      * only statement-start positions, so the {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL
      * <i>functions</i> do not affect the classification.
@@ -2697,10 +2763,11 @@ public final class SqlParser {
 
         // See the note in containsMutationQueryKeyword: statement-start-only matching keeps the
         // REPLACE(...)/TRUNCATE(...) functions from false-positiving.
-        return !containsQueryKeyword(sql, "UPDATE") && !containsQueryKeyword(sql, "DELETE") && !containsQueryKeyword(sql, "MERGE")
-                && !containsQueryKeyword(sql, "REPLACE") && !containsQueryKeyword(sql, "TRUNCATE") && !containsQueryKeyword(sql, "DROP")
-                && !containsQueryKeyword(sql, "ALTER") && !containsQueryKeyword(sql, "CREATE") && !containsProcedureInvocation(sql, DEFAULT_TOKENIZER_CONFIG)
-                && !containsInsertUpdateClause(sql) && !containsSelectIntoClause(sql) && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
+        return hasOnlyAllowedTopLevelStatements(sql, DEFAULT_TOKENIZER_CONFIG, true) && !containsQueryKeyword(sql, "UPDATE")
+                && !containsQueryKeyword(sql, "DELETE") && !containsQueryKeyword(sql, "MERGE") && !containsQueryKeyword(sql, "REPLACE")
+                && !containsQueryKeyword(sql, "TRUNCATE") && !containsQueryKeyword(sql, "DROP") && !containsQueryKeyword(sql, "ALTER")
+                && !containsQueryKeyword(sql, "CREATE") && !containsProcedureInvocation(sql, DEFAULT_TOKENIZER_CONFIG) && !containsInsertUpdateClause(sql)
+                && !containsSelectIntoClause(sql) && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
     }
 
     /**
@@ -2727,6 +2794,83 @@ public final class SqlParser {
     @Deprecated
     public static boolean isNoUpdateQuery(final String sql) {
         return isReadOrInsertQuery(sql);
+    }
+
+    /**
+     * Verifies the leading verb of every semicolon-delimited top-level statement. This is an
+     * allowlist complement to the more detailed mutation/clause scanners: an unknown command must
+     * not become "safe" merely because its verb is absent from their finite mutation keyword list.
+     * Semicolons inside quoted regions, comments, bracket identifiers, or parentheses do not split
+     * a statement.
+     */
+    private static boolean hasOnlyAllowedTopLevelStatements(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert) {
+        final int sqlLength = sql.length();
+        int statementStart = 0;
+        int depth = 0;
+        int index = 0;
+
+        while (index < sqlLength) {
+            final char ch = sql.charAt(index);
+
+            if (ch == '\'' || ch == '"' || ch == '`') {
+                index = skipQuotedLiteral(sql, index, ch);
+                continue;
+            } else if (ch == '[') {
+                index = skipBracketQuotedIdentifier(sql, index);
+                continue;
+            } else if (ch == '-' && index + 1 < sqlLength && sql.charAt(index + 1) == '-') {
+                index += 2;
+
+                while (index < sqlLength && sql.charAt(index) != ENTER && sql.charAt(index) != ENTER_2) {
+                    index++;
+                }
+
+                continue;
+            } else if (ch == '#' && isHashCommentStart(sql, sqlLength, index, tokenizerConfig)) {
+                do {
+                    index++;
+                } while (index < sqlLength && sql.charAt(index) != ENTER && sql.charAt(index) != ENTER_2);
+
+                continue;
+            } else if (ch == '/' && index + 1 < sqlLength && sql.charAt(index + 1) == '*') {
+                index += 2;
+
+                while (index + 1 < sqlLength && !(sql.charAt(index) == '*' && sql.charAt(index + 1) == '/')) {
+                    index++;
+                }
+
+                index = Math.min(index + 2, sqlLength);
+                continue;
+            }
+
+            if (ch == '(') {
+                depth++;
+            } else if (ch == ')' && depth > 0) {
+                depth--;
+            } else if (ch == ';' && depth == 0) {
+                if (!isAllowedTopLevelStatement(sql, statementStart, index, tokenizerConfig, allowInsert)) {
+                    return false;
+                }
+
+                statementStart = index + 1;
+            }
+
+            index++;
+        }
+
+        return isAllowedTopLevelStatement(sql, statementStart, sqlLength, tokenizerConfig, allowInsert);
+    }
+
+    private static boolean isAllowedTopLevelStatement(final String sql, final int fromIndex, final int toIndex, final TokenizerConfig tokenizerConfig,
+            final boolean allowInsert) {
+        final String statement = sql.substring(fromIndex, toIndex);
+
+        if (skipLeadingWhitespaceAndComments(statement, 0, tokenizerConfig) >= statement.length()) {
+            return true; // Empty statement (including comments only), e.g. a trailing semicolon.
+        }
+
+        final String keyword = getLeadingQueryKeyword(statement, tokenizerConfig);
+        return "SELECT".equalsIgnoreCase(keyword) || allowInsert && "INSERT".equalsIgnoreCase(keyword);
     }
 
     private static boolean containsMutationQueryKeyword(final String sql, final TokenizerConfig tokenizerConfig) {

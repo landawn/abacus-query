@@ -967,7 +967,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param joinCondition the join condition
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code condition}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
          *                                  is not valid for a JOIN
          */
         public Builder join(final String joinEntity, final Condition joinCondition) {
@@ -997,7 +997,7 @@ public class Criteria extends AbstractCondition {
          * @param joinCondition the join condition
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code condition} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
          */
         public Builder join(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new Join(joinEntities, joinCondition));
@@ -1048,7 +1048,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param joinCondition the join condition
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code condition}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
          *                                  is not valid for a JOIN
          */
         public Builder innerJoin(final String joinEntity, final Condition joinCondition) {
@@ -1077,7 +1077,7 @@ public class Criteria extends AbstractCondition {
          * @param joinCondition the join condition
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code condition} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
          */
         public Builder innerJoin(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new InnerJoin(joinEntities, joinCondition));
@@ -1124,7 +1124,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param joinCondition the join condition
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code condition}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
          *                                  is not valid for a JOIN
          */
         public Builder leftJoin(final String joinEntity, final Condition joinCondition) {
@@ -1153,7 +1153,7 @@ public class Criteria extends AbstractCondition {
          * @param joinCondition the join condition
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code condition} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
          */
         public Builder leftJoin(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new LeftJoin(joinEntities, joinCondition));
@@ -1200,7 +1200,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param joinCondition the join condition
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code condition}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
          *                                  is not valid for a JOIN
          */
         public Builder rightJoin(final String joinEntity, final Condition joinCondition) {
@@ -1229,7 +1229,7 @@ public class Criteria extends AbstractCondition {
          * @param joinCondition the join condition
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code condition} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
          */
         public Builder rightJoin(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new RightJoin(joinEntities, joinCondition));
@@ -1276,7 +1276,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param joinCondition the join condition
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code condition}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
          *                                  is not valid for a JOIN
          */
         public Builder fullJoin(final String joinEntity, final Condition joinCondition) {
@@ -1305,7 +1305,7 @@ public class Criteria extends AbstractCondition {
          * @param joinCondition the join condition
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code condition} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
          */
         public Builder fullJoin(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new FullJoin(joinEntities, joinCondition));
@@ -1462,7 +1462,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propOrColumnName the property or column name to group by ascending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
          */
         public Builder groupByAsc(final String propOrColumnName) {
             addConditions(Filters.groupByAsc(propOrColumnName));
@@ -1527,7 +1527,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propOrColumnName the property or column name to group by descending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
          */
         public Builder groupByDesc(final String propOrColumnName) {
             addConditions(Filters.groupByDesc(propOrColumnName));
@@ -1872,7 +1872,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propOrColumnName the property or column name to order by ascending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
          */
         public Builder orderByAsc(final String propOrColumnName) {
             addConditions(Filters.orderByAsc(propOrColumnName));
@@ -1939,7 +1939,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propOrColumnName the property or column name to order by descending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
          */
         public Builder orderByDesc(final String propOrColumnName) {
             addConditions(Filters.orderByDesc(propOrColumnName));

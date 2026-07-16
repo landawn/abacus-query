@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.query.SqlParser;
@@ -56,6 +57,9 @@ import com.landawn.abacus.util.Strings;
  * @see Operator
  */
 public abstract class AbstractCondition implements Condition {
+
+    /** Portable decimal/integer literal syntax accepted when a {@link Number} is rendered inline. */
+    private static final Pattern SQL_NUMBER_LITERAL_PATTERN = Pattern.compile("[+-]?(?:(?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))(?:[eE][+-]?\\d+)?");
 
     private static final ImmutableSet<Operator> clauseOperators;
 
@@ -379,6 +383,119 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
+     * Validates a value that will be rendered in a scalar/value position. Query-structural conditions
+     * ({@link Criteria}, clauses, joins, and {@code ON}/{@code USING} connectors) cannot be used as
+     * comparison values, range bounds, or members of an {@code IN} value list: rendering one there
+     * would produce malformed SQL such as {@code x = WHERE y = 1}.
+     *
+     * <p>This check is deliberately a structural blacklist rather than a concrete-class whitelist.
+     * It therefore preserves explicit {@link SqlExpression} escape hatches, {@link SubQuery} values,
+     * the shared special-value sentinels, boolean-valued predicates, and custom non-structural
+     * {@link Condition} implementations. Quantified {@link All}/{@link Any}/{@link Some} operands
+     * require additional context-specific validation by the caller. A raw
+     * {@code SqlExpression} is accepted verbatim even if its text resembles a clause; callers choosing
+     * the raw-expression escape hatch remain responsible for that SQL.</p>
+     *
+     * @param <T> the operand type
+     * @param operand the value-position operand to validate; may be {@code null} or a non-condition value
+     * @param argumentName the argument name used in an exception message
+     * @return {@code operand}, unchanged
+     * @throws IllegalArgumentException if the operand is or recursively contains a query-structural condition
+     */
+    protected static <T> T validateValueOperand(final T operand, final String argumentName) {
+        if (operand instanceof Condition && containsStructuralQueryComponent((Condition) operand)) {
+            final Condition condition = (Condition) operand;
+            throw new IllegalArgumentException(
+                    argumentName + " must not be or contain Criteria, a SQL clause, a JOIN, or an ON/USING connector: " + condition.getClass().getName());
+        }
+
+        return operand;
+    }
+
+    /**
+     * Validates a value-position operand and additionally rejects an {@code ALL}/{@code ANY}/{@code SOME}
+     * quantified operand. Quantifiers are incomplete SQL fragments that are valid only as the direct
+     * right-hand side of a compatible scalar comparison; they are not scalar values for BETWEEN bounds
+     * or IN/NOT IN value lists.
+     *
+     * @param <T> the operand type
+     * @param operand the operand to validate
+     * @param argumentName the argument name used in an exception message
+     * @return {@code operand}, unchanged
+     * @throws IllegalArgumentException if the operand is query-structural or is/contains a quantified operand
+     */
+    protected static <T> T validateNonQuantifiedValueOperand(final T operand, final String argumentName) {
+        validateValueOperand(operand, argumentName);
+
+        if (operand instanceof Condition && containsQuantifiedSubQueryOperand((Condition) operand)) {
+            throw new IllegalArgumentException(
+                    argumentName + " must not be or contain an ALL/ANY/SOME operand; quantified operands require a direct scalar-comparison RHS");
+        }
+
+        return operand;
+    }
+
+    private static boolean containsQuantifiedSubQueryOperand(final Condition cond) {
+        if (cond == null || cond instanceof SqlExpression || cond instanceof SubQuery) {
+            return false;
+        }
+
+        if (isQuantifiedSubQueryOperand(cond)) {
+            return true;
+        }
+
+        if (cond instanceof Junction) {
+            for (final Condition child : ((Junction) cond).conditions()) {
+                if (containsQuantifiedSubQueryOperand(child)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (cond instanceof Cell) {
+            return containsQuantifiedSubQueryOperand(((Cell) cond).condition());
+        }
+
+        if (cond instanceof ComposableCell) {
+            return containsQuantifiedSubQueryOperand(((ComposableCell) cond).condition());
+        }
+
+        return false;
+    }
+
+    private static boolean containsStructuralQueryComponent(final Condition cond) {
+        if (cond == null || cond instanceof SqlExpression || cond instanceof SubQuery || isQuantifiedSubQueryOperand(cond)) {
+            return false;
+        }
+
+        if (cond instanceof Criteria || cond instanceof Clause || cond instanceof Join || isClause(cond.operator()) || isOnOrUsing(cond.operator())) {
+            return true;
+        }
+
+        if (cond instanceof Junction) {
+            for (final Condition child : ((Junction) cond).conditions()) {
+                if (containsStructuralQueryComponent(child)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (cond instanceof Cell) {
+            return containsStructuralQueryComponent(((Cell) cond).condition());
+        }
+
+        if (cond instanceof ComposableCell) {
+            return containsStructuralQueryComponent(((ComposableCell) cond).condition());
+        }
+
+        return false;
+    }
+
+    /**
      * Converts a parameter value to its SQL representation for use in condition strings.
      * Handles special cases like strings (adds quotes) and conditions (recursive SQL rendering).
      * Returns Java {@code null} when the parameter is {@code null}.
@@ -394,7 +511,8 @@ public abstract class AbstractCondition implements Condition {
      *   <li>{@link Condition} values use the recursive {@link Condition#toSql(NamingPolicy)} rendering; a {@link SubQuery} is additionally
      *       wrapped in parentheses, and the {@code IsNull.NULL}, {@code IsNaN.NAN}, and {@code IsInfinite.INFINITE}
      *       sentinels use their plain {@code toString()}</li>
-     *   <li>{@link Number} and {@link Boolean} values use their {@code toString()} unchanged (no quoting).
+     *   <li>{@link Number} values must produce a decimal, integer, or scientific-notation literal from
+     *       {@code toString()}, and {@link Boolean} values are emitted without quoting.
      *       {@link Float#NaN}/{@link Double#NaN}/infinity values cause an {@link IllegalArgumentException} because
      *       they have no portable SQL literal form; use {@link IsNaN}/{@link IsInfinite} instead.</li>
      *   <li>Any other object (dates, characters, byte[], etc.) is converted via {@link N#stringOf(Object)} and
@@ -415,7 +533,8 @@ public abstract class AbstractCondition implements Condition {
      *                     May be {@code null}; nested {@code Condition} implementations treat a
      *                     {@code null} policy as {@link NamingPolicy#NO_CHANGE}.
      * @return the SQL representation of the parameter, or {@code null} if {@code parameter} is {@code null}
-     * @throws IllegalArgumentException if {@code parameter} is a {@code NaN} or infinite {@link Float}/{@link Double}
+     * @throws IllegalArgumentException if {@code parameter} is a {@code NaN} or infinite {@link Float}/{@link Double},
+     *                                  or a {@link Number} whose text is not a valid numeric literal
      */
     protected static String formatParameter(final Object parameter, final NamingPolicy namingPolicy) {
         if (parameter == null) {
@@ -440,8 +559,11 @@ public abstract class AbstractCondition implements Condition {
             }
         }
 
-        if (parameter instanceof Number || parameter instanceof Boolean) {
-            checkFiniteNumber(parameter);
+        if (parameter instanceof Number) {
+            return formatNumberLiteral((Number) parameter);
+        }
+
+        if (parameter instanceof Boolean) {
             return parameter.toString();
         }
 
@@ -508,6 +630,28 @@ public abstract class AbstractCondition implements Condition {
                 throw new IllegalArgumentException("NaN/Infinity has no portable SQL literal; use IsNaN / IsInfinite condition instead. Got: " + f);
             }
         }
+    }
+
+    /**
+     * Returns a validated portable SQL numeric literal. A custom {@link Number} implementation is
+     * not allowed to smuggle arbitrary SQL through its {@link Number#toString()} implementation;
+     * expressions must be supplied explicitly as {@link SqlExpression}s instead.
+     *
+     * @param value the number to render
+     * @return the validated numeric literal
+     * @throws IllegalArgumentException if the value is non-finite or its text is not a decimal,
+     *                                  integer, or scientific-notation literal
+     */
+    protected static String formatNumberLiteral(final Number value) {
+        checkFiniteNumber(value);
+
+        final String literal = value.toString();
+
+        if (literal == null || !SQL_NUMBER_LITERAL_PATTERN.matcher(literal).matches()) {
+            throw new IllegalArgumentException("Number.toString() did not produce a valid SQL numeric literal: " + literal);
+        }
+
+        return literal;
     }
 
     /**

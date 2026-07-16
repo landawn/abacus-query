@@ -96,11 +96,15 @@ public class GreaterThan extends Binary {
      * }</pre>
      * 
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
-     * @param propValue the value to compare against (a literal value or a {@link Condition}, such as
+     * @param propValue the value to compare against (a literal value or a non-structural {@link Condition}, such as
      *                  a {@link SubQuery} or {@link SqlExpression}); passing
      *                  {@code null} renders as {@code prop > null}, which is not a meaningful SQL
-     *                  comparison; do not pass {@code null} to this operator
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     *                  comparison; do not pass {@code null} to this operator. A direct {@link All},
+     *                  {@link Any}, or {@link Some} right-hand operand is supported
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
+     *                                  {@code propValue} is or contains a {@link Criteria}, SQL clause,
+     *                                  JOIN, or {@code ON}/{@code USING} connector, or contains a
+     *                                  non-direct {@link All}/{@link Any}/{@link Some} operand
      */
     public GreaterThan(final String propName, final Object propValue) {
         super(propName, Operator.GREATER_THAN, propValue);

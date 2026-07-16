@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13307,27 +13308,7 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testUnsupportedConditionMessageUsesConditionClass() {
-        final Condition unsupported = new Condition() {
-            @Override
-            public Operator operator() {
-                return Operator.EQUAL;
-            }
-
-            @Override
-            public ImmutableList<Object> parameters() {
-                return ImmutableList.empty();
-            }
-
-            @Override
-            public String toSql(final NamingPolicy namingPolicy) {
-                throw new AssertionError("toSql(NamingPolicy) should not be used for unsupported condition messages");
-            }
-
-            @Override
-            public String toString() {
-                throw new AssertionError("toString() should not be used for unsupported condition messages");
-            }
-        };
+        final Condition unsupported = unsupportedCondition();
 
         final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").where(unsupported).build());
 
@@ -13544,6 +13525,65 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
+    public void testSingleBeanInsertRejectsNoRemainingValuesBeforeAllocatingBuilder() {
+        final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
+
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert(new AllNullBatchEntity()));
+
+        assertTrue(ex.getMessage().contains("No insertable values remain"), ex.getMessage());
+        assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                "Rejected input must not allocate a builder whose pooled StringBuilder cannot be released");
+    }
+
+    @Test
+    public void testMetadataFactoriesRejectEmptyColumnSetsBeforeAllocatingBuilder() {
+        final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
+        final Set<String> allProperties = Collections.singleton("value");
+        final Selection emptySelection = Selection.builder(AllNullBatchEntity.class).excludedPropNames(allProperties).build();
+
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert(AllNullBatchEntity.class, allProperties));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(AllNullBatchEntity.class, allProperties));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update(AllNullBatchEntity.class, allProperties));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(emptySelection));
+        assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                "Factories that cannot produce a column must reject before allocating pooled buffers");
+    }
+
+    @Test
+    public void testSelectFromRenderingFailureReleasesAllocatedBuilder() {
+        final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
+        final Selection unsafeSelection = Selection.builder(AllNullBatchEntity.class).includedPropNames(Collections.singletonList("value -- unsafe")).build();
+
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.selectFrom(unsafeSelection));
+        assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                "A SELECT FROM factory that fails during projection rendering must release its pooled buffer");
+    }
+
+    @Test
+    public void testSetEntityRejectsAnEmptyUpdatableProjectionWithoutChangingMapping() {
+        final SqlBuilder builder = Dsl.PSC.update("users");
+
+        assertThrows(IllegalArgumentException.class, () -> builder.setEntity(AllNullBatchEntity.class, Collections.singleton("value")));
+        assertNull(builder._entityClass);
+        assertEquals("UPDATE users SET name = ?", builder.set("name").build().query());
+
+        final SqlBuilder objectBuilder = Dsl.PSC.update("users");
+        assertThrows(IllegalArgumentException.class, () -> objectBuilder.setEntity(new AllNullBatchEntity(), Collections.singleton("value")));
+        assertNull(objectBuilder._entityClass);
+        assertEquals("UPDATE users SET name = ?", objectBuilder.set("name").build().query());
+    }
+
+    @Test
+    public void testFailedStructuredSubQueryRenderingReleasesNestedAndOuterBuilders() {
+        final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
+        final SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), unsupportedCondition());
+
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.renderCondition(Filters.in("id", subQuery)));
+        assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                "A failed condition factory must release both its outer and structured-subquery buffers");
+    }
+
+    @Test
     public void testCountRejectsBlankTableBeforeAllocatingBuilder() {
         final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
 
@@ -13590,6 +13630,30 @@ public class SqlBuilderTest extends TestBase {
                 .includeSubEntityProperties(includeSubEntityProperties)
                 .excludedPropNames(excludedPropNames)
                 .build();
+    }
+
+    private static Condition unsupportedCondition() {
+        return new Condition() {
+            @Override
+            public Operator operator() {
+                return Operator.EQUAL;
+            }
+
+            @Override
+            public ImmutableList<Object> parameters() {
+                return ImmutableList.empty();
+            }
+
+            @Override
+            public String toSql(final NamingPolicy namingPolicy) {
+                throw new AssertionError("toSql(NamingPolicy) should not be used for unsupported condition messages");
+            }
+
+            @Override
+            public String toString() {
+                throw new AssertionError("toString() should not be used for unsupported condition messages");
+            }
+        };
     }
 
     static final class AllNullBatchEntity {

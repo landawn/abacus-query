@@ -34,7 +34,7 @@ package com.landawn.abacus.query.condition;
  *       treated as equal (SQL set-operation semantics, unlike regular {@code =} comparisons)</li>
  * </ul>
  *
- * <p>When to use EXCEPT vs other approaches:
+ * <p>When to use EXCEPT vs other approaches:</p>
  * <ul>
  *   <li>Use EXCEPT for clean, declarative set difference operations</li>
  *   <li>Use EXCEPT when comparing entire row structures (multiple columns)</li>
@@ -43,7 +43,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Use NOT IN for simple single-column exclusions (but beware of NULL values)</li>
  * </ul>
  *
- * <p>Performance considerations:
+ * <p>Performance considerations:</p>
  * <ul>
  *   <li>EXCEPT requires duplicate elimination, which involves sorting or hashing</li>
  *   <li>Performance depends on result set sizes and database optimization</li>
@@ -52,7 +52,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Consider the cardinality of both result sets when choosing an approach</li>
  * </ul>
  *
- * <p>Database support:
+ * <p>Database support:</p>
  * <ul>
  *   <li>Supported by: PostgreSQL, SQL Server, SQLite, DB2, MySQL 8.0.31+</li>
  *   <li>Part of SQL standard but not universally implemented</li>
@@ -180,7 +180,8 @@ public class Except extends Clause {
      * // returns true
      * }</pre>
      *
-     * @return the {@link SubQuery} supplied at construction time
+     * @return the {@link SubQuery} supplied at construction time, or {@code null} for an uninitialized
+     *         serialization-framework instance
      */
     public SubQuery subQuery() {
         return (SubQuery) condition();

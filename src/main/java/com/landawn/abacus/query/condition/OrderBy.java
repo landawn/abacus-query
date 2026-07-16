@@ -98,10 +98,11 @@ public class OrderBy extends Clause {
      * }</pre>
      *
      * @param condition the ordering condition. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a {@link Criteria}, another clause,
-     *             an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *             operand, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which
-     *             can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a
+     *             {@link Criteria}, is a standalone {@link SubQuery} or another clause, contains an
+     *             {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
+     *             operand, or is an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of
+     *             which can be nested inside a clause
      * @see Filters#expr(String)
      */
     public OrderBy(final Condition condition) {

@@ -20,7 +20,7 @@ package com.landawn.abacus.query.condition;
  * of two queries, effectively finding the intersection of two query results. The INTERSECT operator
  * is a set operation that combines results from multiple SELECT statements.
  * 
- * <p>Key characteristics of INTERSECT:
+ * <p>Key characteristics of INTERSECT:</p>
  * <ul>
  *   <li>Returns only rows that exist in both query results</li>
  *   <li>Automatically removes duplicate rows from the final result</li>
@@ -31,7 +31,7 @@ package com.landawn.abacus.query.condition;
  *       treated as equal (SQL set-operation semantics, unlike regular {@code =} comparisons)</li>
  * </ul>
  * 
- * <p>The INTERSECT operator is useful for:
+ * <p>The INTERSECT operator is useful for:</p>
  * <ul>
  *   <li>Finding common elements between two datasets</li>
  *   <li>Identifying records that meet multiple complex criteria</li>
@@ -39,7 +39,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Set-based analysis and reporting</li>
  * </ul>
  *
- * <p>When to use INTERSECT vs other approaches:
+ * <p>When to use INTERSECT vs other approaches:</p>
  * <ul>
  *   <li>Use INTERSECT when you need rows that satisfy multiple independent conditions</li>
  *   <li>Use INTERSECT for readable, declarative set-based logic</li>
@@ -48,7 +48,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Use IN clause for simple single-column membership tests</li>
  * </ul>
  *
- * <p>Performance considerations:
+ * <p>Performance considerations:</p>
  * <ul>
  *   <li>INTERSECT requires duplicate elimination, similar to UNION</li>
  *   <li>Performance depends on result set size and database optimization</li>
@@ -57,7 +57,7 @@ package com.landawn.abacus.query.condition;
  *   <li>For large datasets, consider alternative approaches like INNER JOIN or EXISTS</li>
  * </ul>
  *
- * <p>Database support:
+ * <p>Database support:</p>
  * <ul>
  *   <li>Supported by: PostgreSQL, Oracle, SQL Server, SQLite, DB2, MySQL 8.0.31+</li>
  *   <li>Not supported by MySQL before 8.0.31 (use IN with subquery or INNER JOIN instead)</li>
@@ -174,7 +174,8 @@ public class Intersect extends Clause {
      * // returns true
      * }</pre>
      *
-     * @return the {@link SubQuery} supplied at construction time
+     * @return the {@link SubQuery} supplied at construction time, or {@code null} for an uninitialized
+     *         serialization-framework instance
      */
     public SubQuery subQuery() {
         return (SubQuery) condition();

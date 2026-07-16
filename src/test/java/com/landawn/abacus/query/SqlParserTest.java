@@ -2555,4 +2555,65 @@ public class SqlParserTest extends TestBase {
         assertFalse(SqlParser.isReadOnlyQuery(sql));
         assertFalse(SqlParser.isNonUpdateQuery(sql));
     }
+
+    @Test
+    public void testGlobalHashTempTableIsOneIdentifierWhileDoubleHashOperatorRemainsAnOperator() {
+        final String sql = "SELECT * FROM ##global_temp, #local_temp";
+        final List<String> tokens = SqlParser.parse(sql);
+
+        assertTrue(tokens.contains("##global_temp"), tokens.toString());
+        assertTrue(tokens.contains("#local_temp"), tokens.toString());
+        assertFalse(tokens.contains("##"), tokens.toString());
+        assertEquals(sql.indexOf("##global_temp"), SqlParser.indexOfToken(sql, "##global_temp"));
+        assertEquals("##global_temp", SqlParser.nextToken(sql, sql.indexOf("##global_temp")));
+        assertFalse(SqlParser.isSeparator(sql, sql.length(), sql.indexOf("##global_temp"), '#'));
+        assertFalse(SqlParser.isSeparator(sql, sql.length(), sql.indexOf("##global_temp") + 1, '#'));
+
+        final List<String> operatorTokens = SqlParser.parse("SELECT 1 ## 2");
+        assertTrue(operatorTokens.contains("##"), operatorTokens.toString());
+        assertFalse(operatorTokens.contains("## 2"), operatorTokens.toString());
+    }
+
+    @Test
+    public void testGlobalHashTempTablesRemainIdentifiersInDmlTargetsAndFromLists() {
+        assertTrue(SqlParser.parse("INSERT ##target VALUES (1)").contains("##target"));
+        assertTrue(SqlParser.parse("DELETE ##target WHERE id = 1").contains("##target"));
+        assertTrue(SqlParser.parse("MERGE TOP (1) ##target USING source ON 1 = 1").contains("##target"));
+        assertTrue(SqlParser.parse("SELECT * FROM schema.table t, ##global_temp").contains("##global_temp"));
+        assertTrue(SqlParser.parse("SELECT * INTO ##global_temp FROM source").contains("##global_temp"));
+    }
+
+    @Test
+    public void testDoubleHashOperatorDoesNotHideFollowingHashTempTablesOrStatements() {
+        final String sql = "SELECT 1 ## 2 FROM #local_temp, ##global_temp; DELETE FROM users";
+        final List<String> tokens = SqlParser.parse(sql);
+
+        assertTrue(tokens.contains("##"), tokens.toString());
+        assertTrue(tokens.contains("#local_temp"), tokens.toString());
+        assertTrue(tokens.contains("##global_temp"), tokens.toString());
+        assertTrue(tokens.contains("DELETE"), tokens.toString());
+        assertEquals(sql.indexOf("#local_temp"), SqlParser.indexOfToken(sql, "#local_temp"));
+        assertEquals(sql.indexOf("##global_temp"), SqlParser.indexOfToken(sql, "##global_temp"));
+        assertFalse(SqlParser.isReadOnlyQuery(sql));
+        assertFalse(SqlParser.isReadOrInsertQuery(sql));
+
+        final String trailingHashOperator = "SELECT payload ?# path FROM #local_temp; DELETE FROM users";
+        final List<String> trailingHashOperatorTokens = SqlParser.parse(trailingHashOperator);
+        assertTrue(trailingHashOperatorTokens.contains("?#"), trailingHashOperatorTokens.toString());
+        assertTrue(trailingHashOperatorTokens.contains("#local_temp"), trailingHashOperatorTokens.toString());
+        assertTrue(trailingHashOperatorTokens.contains("DELETE"), trailingHashOperatorTokens.toString());
+    }
+
+    @Test
+    public void testReadSafetyGatesRejectUnknownTopLevelStatementVerbs() {
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; VACUUM"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; GRANT SELECT ON users TO app_user"));
+        assertFalse(SqlParser.isReadOrInsertQuery("SELECT 1; PRAGMA journal_mode = WAL"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO audit_log VALUES (1); ANALYZE users"));
+
+        final String safeReads = "SELECT '; VACUUM' AS text /* ; ANALYZE */; -- ; DROP\n" + "WITH c AS (SELECT 2) SELECT * FROM c; ;";
+        assertTrue(SqlParser.isReadOnlyQuery(safeReads));
+        assertTrue(SqlParser.isReadOrInsertQuery(safeReads));
+        assertTrue(SqlParser.isReadOrInsertQuery("SELECT 1; INSERT INTO audit_log VALUES (1);"));
+    }
 }

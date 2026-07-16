@@ -7,7 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractCollection;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
@@ -51,6 +54,29 @@ public class JunctionTest extends TestBase {
         assertNotNull(junction);
         assertEquals(Operator.OR, junction.operator());
         assertEquals(3, junction.conditions().size());
+    }
+
+    @Test
+    public void testCollectionConstructorValidatesAndStoresOneSnapshot() {
+        final Condition validated = Filters.eq("status", "active");
+        final Condition laterUnsafeValue = Filters.where(Filters.eq("id", 1));
+        final int[] iterationCount = { 0 };
+        final Collection<Condition> changingConditions = new AbstractCollection<>() {
+            @Override
+            public Iterator<Condition> iterator() {
+                return List.of(iterationCount[0]++ == 0 ? validated : laterUnsafeValue).iterator();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        final Junction junction = new Junction(Operator.AND, changingConditions);
+
+        assertEquals(1, iterationCount[0]);
+        assertEquals(List.of(validated), junction.conditions());
     }
 
     @Test

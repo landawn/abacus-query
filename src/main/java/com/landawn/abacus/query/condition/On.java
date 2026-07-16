@@ -222,8 +222,10 @@ public class On extends Cell {
      * }</pre>
      *
      * @param propNamePairs map of column pairs where the key is from the first table and the value is from the second
-     *            table. Order is preserved if a {@code LinkedHashMap} is used.
-     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains {@code null}, empty, or blank keys or values
+     *            table. The entries are validated and snapshotted in one iteration. Order is preserved if a
+     *            {@code LinkedHashMap} is used.
+     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains a null entry or
+     *                                  {@code null}, empty, or blank keys or values
      */
     public On(final Map<String, String> propNamePairs) {
         this(createOnCondition(propNamePairs));
@@ -276,25 +278,34 @@ public class On extends Cell {
      * //              Equal("t1.col2", SqlExpression("t2.col2")))
      * }</pre>
      *
-     * @param propNamePairs map of column name pairs
+     * @param propNamePairs map of column name pairs. Its entries are validated and snapshotted in one
+     *            iteration, so the returned condition is internally consistent even for a live map
      * @return a single Equal condition or an And condition combining multiple equalities
-     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains {@code null}, empty, or blank keys or values
+     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains a null entry or
+     *                                  {@code null}, empty, or blank keys or values
      */
     static Condition createOnCondition(final Map<String, String> propNamePairs) {
-        N.checkArgNotEmpty(propNamePairs, "propNamePairs");
+        if (propNamePairs == null) {
+            throw new IllegalArgumentException("propNamePairs must not be null or empty");
+        }
 
-        if (propNamePairs.size() == 1) {
-            final Map.Entry<String, String> entry = propNamePairs.entrySet().iterator().next();
+        final List<Condition> conds = new ArrayList<>();
 
-            return createOnCondition(entry.getKey(), entry.getValue());
-        } else {
-            final List<Condition> conds = new ArrayList<>(propNamePairs.size());
-
-            for (final Map.Entry<String, String> entry : propNamePairs.entrySet()) {
-                conds.add(createOnCondition(entry.getKey(), entry.getValue()));
+        // Do not branch on Map.size(): a live/concurrent map can change between the size read and
+        // entry iteration. Reading one entry in the reported-singleton case would then silently
+        // discard additional join columns (or throw NoSuchElementException if the map became empty).
+        for (final Map.Entry<String, String> entry : propNamePairs.entrySet()) {
+            if (entry == null) {
+                throw new IllegalArgumentException("propNamePairs must not contain a null entry");
             }
 
-            return Filters.and(conds);
+            conds.add(createOnCondition(entry.getKey(), entry.getValue()));
         }
+
+        if (conds.isEmpty()) {
+            throw new IllegalArgumentException("propNamePairs must not be null or empty");
+        }
+
+        return conds.size() == 1 ? conds.get(0) : Filters.and(conds);
     }
 }

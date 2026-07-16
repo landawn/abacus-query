@@ -2176,6 +2176,10 @@ public final class Filters {
      * Creates a {@link Where} clause from a raw SQL expression string.
      * Useful for custom SQL expressions.
      *
+     * <p><b>Warning:</b> {@code expr} is SQL text, not a bind value, and is included verbatim in
+     * the generated clause. Do not build it from untrusted input; prefer {@link #where(Condition)}
+     * with parameterized conditions.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Where where = Filters.where("YEAR(created_date) = 2023");
@@ -2478,6 +2482,10 @@ public final class Filters {
     /**
      * Creates a {@link Having} clause from a raw SQL expression string.
      * Useful for aggregate function conditions.
+     *
+     * <p><b>Warning:</b> {@code expr} is SQL text, not a bind value, and is included verbatim in
+     * the generated clause. Do not build it from untrusted input; prefer {@link #having(Condition)}
+     * with parameterized conditions.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

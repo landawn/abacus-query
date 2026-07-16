@@ -92,8 +92,12 @@ public class NotIn extends AbstractIn {
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param values the collection of values that the property should NOT match
-     *               (must not be {@code null} or empty); the collection is copied internally to ensure immutability
-     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, or if {@code values} is {@code null}/empty
+     *               (must not be {@code null} or empty); the collection is copied internally to ensure immutability.
+     *               A condition-valued element must be a non-structural, non-quantified value expression
+     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, if {@code values} is
+     *                                  {@code null}/empty, or if a condition-valued element is or contains a
+     *                                  {@link Criteria}, SQL clause, JOIN, {@code ON}/{@code USING} connector,
+     *                                  or an {@link All}, {@link Any}, or {@link Some} operand
      */
     public NotIn(final String propName, final Collection<?> values) {
         super(propName, Operator.NOT_IN, values);
@@ -129,7 +133,10 @@ public class NotIn extends AbstractIn {
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
-     *                                  or if a bean row does not expose a requested property
+     *                                  if a bean row does not expose a requested property, or if a condition-valued row
+     *                                  element is or contains a {@link Criteria}, SQL clause, JOIN,
+     *                                  {@code ON}/{@code USING} connector, or an {@link All}, {@link Any},
+     *                                  or {@link Some} operand
      */
     public NotIn(final Collection<String> propNames, final Collection<?> valueRows) {
         super(propNames, Operator.NOT_IN, valueRows);

@@ -27,7 +27,7 @@ import com.landawn.abacus.util.N;
  * It's typically used with aggregate functions (COUNT, MAX, MIN, SUM, AVG) to perform calculations
  * on each group of rows. This class supports grouping with optional sort directions for each column.
  * 
- * <p>Key features of GROUP BY:
+ * <p>Key features of GROUP BY:</p>
  * <ul>
  *   <li>Groups rows with identical values in specified columns</li>
  *   <li>Enables aggregate calculations on grouped data</li>
@@ -41,7 +41,7 @@ import com.landawn.abacus.util.N;
  * are non-standard SQL and not supported by all databases. Use them only when targeting
  * a database that explicitly supports this syntax.</p>
  * 
- * <p>Common use cases:
+ * <p>Common use cases:</p>
  * <ul>
  *   <li>Calculating totals by category (sales by region, count by status)</li>
  *   <li>Finding unique combinations of column values</li>

@@ -63,6 +63,25 @@ public class AbstractInTest extends TestBase {
     }
 
     @Test
+    public void testRejectsQueryStructuralValueElements() {
+        final Criteria criteria = Criteria.builder().where(Filters.eq("y", 1)).build();
+
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("x", Arrays.asList(1, new Where(Filters.eq("y", 1)))));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("x", Arrays.asList(1, criteria)));
+        assertThrows(IllegalArgumentException.class, () -> new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, new On("a", "b")))));
+        assertThrows(IllegalArgumentException.class, () -> new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(new OrderBy("y"), 2))));
+    }
+
+    @Test
+    public void testRejectsQuantifiedValueElements() {
+        final SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("x", Arrays.asList(1, new All(subQuery))));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("x", Arrays.asList(new Any(subQuery))));
+        assertThrows(IllegalArgumentException.class, () -> new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, new Some(subQuery)))));
+    }
+
+    @Test
     public void testConstructorsValidateDefensiveSnapshotsAreNonEmpty() {
         final NominallyNonEmptyCollection<Object> emptySnapshot = new NominallyNonEmptyCollection<>();
 
