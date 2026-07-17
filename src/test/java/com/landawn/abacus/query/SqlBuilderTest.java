@@ -901,6 +901,65 @@ public class SqlBuilderTest extends TestBase {
                 Dsl.PSC.select("firstName || ' ' || lastName AS fullName").from("account").build().query());
     }
 
+    @Test
+    public void testEntityClassSelectAliasesEveryColumnBackToItsPropertyName() {
+        // Pins the Dsl Javadoc examples for select(Class), selectFrom(Class) and selectFrom(Class, alias):
+        // with a naming policy other than NO_CHANGE, EVERY selected column of an entity-class SELECT is
+        // aliased back to its property name - including columns like id/email whose rendered column name
+        // already equals the property name. (The string-based select(String...) overload, by contrast,
+        // only aliases names the naming policy actually changed.)
+        assertEquals("SELECT id AS \"id\", first_name AS \"firstName\", last_name AS \"lastName\", email AS \"email\" FROM account",
+                Dsl.PSC.select(JavadocAccount.class).from("account").build().query());
+
+        assertEquals("SELECT id AS \"id\", first_name AS \"firstName\", last_name AS \"lastName\", email AS \"email\" FROM account WHERE email = ?",
+                Dsl.PSC.selectFrom(JavadocAccount.class).where(Filters.eq("email", "john.doe@example.com")).build().query());
+
+        assertEquals(
+                "SELECT a.id AS \"id\", a.first_name AS \"firstName\", a.last_name AS \"lastName\", a.email AS \"email\" FROM account a WHERE a.email = ?",
+                Dsl.PSC.selectFrom(JavadocAccount.class, "a").where(Filters.eq("a.email", "john.doe@example.com")).build().query());
+    }
+
+    /** Minimal entity mirroring the Account shape used by the Dsl entity-class SELECT Javadoc examples. */
+    @Table(name = "account")
+    public static class JavadocAccount {
+        private long id;
+        private String firstName;
+        private String lastName;
+        private String email;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(long id) {
+            this.id = id;
+        }
+
+        public String getFirstName() {
+            return firstName;
+        }
+
+        public void setFirstName(String firstName) {
+            this.firstName = firstName;
+        }
+
+        public String getLastName() {
+            return lastName;
+        }
+
+        public void setLastName(String lastName) {
+            this.lastName = lastName;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+    }
+
     // Test entity classes
     @Table(name = "test_account")
     public static class Account {
@@ -13110,6 +13169,67 @@ public class SqlBuilderTest extends TestBase {
         assertTrue(sp.query().contains("b = `y``:id`"), sp.query());
         assertTrue(sp.query().contains("c = ':id'"), sp.query());
         assertFalse(sp.query().contains(":id_2\""), sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+    }
+
+    /**
+     * Bug: during set-operation named-parameter uniquify, the token-replacement scanner treated a
+     * SQL Server temporary-table identifier ({@code #tmp}) in the child operand as a MySQL hash
+     * comment and skipped the rest of the line, so the child's colliding {@code :id} was silently
+     * left un-renamed (both legs bound the same placeholder). On a SQL Server dialect,
+     * {@code #name}/{@code ##name} are data tokens, never comments.
+     */
+    @Test
+    public void testUnionNamedParameterRenameHandlesSqlServerTempTableInChild() {
+        final Dsl mssqlNamed = Dsl.forDialect(SqlDialect.builder()
+                .namingPolicy(NamingPolicy.NO_CHANGE)
+                .sqlPolicy(SqlDialect.SqlPolicy.NAMED_SQL)
+                .productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server"))
+                .build());
+
+        SP sp = mssqlNamed.select("id")
+                .from("t")
+                .where(Filters.eq("id", 1))
+                .union(mssqlNamed.select("id").from("#tmp").where(Filters.eq("id", 2)))
+                .build();
+
+        assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM #tmp WHERE id = :id_2", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+
+        // Global temporary table (##name): already safe before the fix via the ##-specific carve-out,
+        // pinned here so both temp-identifier forms stay covered.
+        sp = mssqlNamed.select("id")
+                .from("t")
+                .where(Filters.eq("id", 1))
+                .union(mssqlNamed.select("id").from("##tmp").where(Filters.eq("id", 2)))
+                .build();
+
+        assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM ##tmp WHERE id = :id_2", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+    }
+
+    /**
+     * Guard for the fix above: on a MySQL dialect a genuine hash comment in the child operand still
+     * stops the uniquify scanner, so a {@code :id} inside the comment text is left untouched while
+     * the genuine parameter before it is renamed.
+     */
+    @Test
+    public void testUnionNamedParameterRenameStillSkipsMySqlHashComment() {
+        final Dsl mysqlNamed = Dsl.forDialect(SqlDialect.builder()
+                .namingPolicy(NamingPolicy.NO_CHANGE)
+                .sqlPolicy(SqlDialect.SqlPolicy.NAMED_SQL)
+                .productInfo(SqlDialect.ProductInfo.of("MySQL"))
+                .build());
+
+        final SP sp = mysqlNamed.select("id")
+                .from("users")
+                .where(Filters.eq("id", 1))
+                .union(mysqlNamed.select("id").from("archive").where(Filters.eq("id", 2)).append(" # note :id"))
+                .build();
+
+        assertTrue(sp.query().contains("archive WHERE id = :id_2"), sp.query());
+        assertTrue(sp.query().endsWith("# note :id"), sp.query());
+        assertFalse(sp.query().contains("# note :id_2"), sp.query());
         assertEquals(Arrays.asList(1, 2), sp.parameters());
     }
 

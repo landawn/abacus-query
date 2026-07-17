@@ -69,23 +69,29 @@ import com.landawn.abacus.util.Strings;
  * = snake_case + raw, {@code ACSB} = SCREAMING_SNAKE_CASE + raw, {@code LCSB} = lowerCamelCase + raw).
  * The raw-SQL ({@code *CSB}) family is deprecated due to SQL-injection risk; the MyBatis-style ({@code M*})
  * family is also deprecated &mdash; prefer the named ({@code N*}) family instead.
+ *
+ * <p>Each Example cell below is the literal output of
+ * {@code select("firstName").from("account").where(Filters.eq("id", 1)).build().query()} under that
+ * constant. A selected column gains an {@code AS "firstName"} alias exactly when the naming policy
+ * changes the rendered column text (so the no-change and camelCase policies emit no alias here), and
+ * a table name passed to {@code from} as a string is always used as-is, regardless of naming policy.
  * <table border="1">
  *   <caption>Predefined Dsl constants</caption>
  *   <tr><th>Constant</th><th>Parameters</th><th>Naming</th><th>Example</th></tr>
- *   <tr><td>{@link Dsl#SCSB}</td><td>inlined values (deprecated)</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = 1}</td></tr>
- *   <tr><td>{@link Dsl#ACSB}</td><td>inlined values (deprecated)</td><td>SCREAMING_SNAKE_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = 1}</td></tr>
+ *   <tr><td>{@link Dsl#SCSB}</td><td>inlined values (deprecated)</td><td>snake_case</td><td>{@code SELECT first_name AS "firstName" FROM account WHERE id = 1}</td></tr>
+ *   <tr><td>{@link Dsl#ACSB}</td><td>inlined values (deprecated)</td><td>SCREAMING_SNAKE_CASE</td><td>{@code SELECT FIRST_NAME AS "firstName" FROM account WHERE ID = 1}</td></tr>
  *   <tr><td>{@link Dsl#LCSB}</td><td>inlined values (deprecated)</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = 1}</td></tr>
  *   <tr><td>{@link Dsl#PSB}</td><td>{@code ?}</td><td>no change</td><td>{@code SELECT firstName FROM account WHERE id = ?}</td></tr>
- *   <tr><td>{@link Dsl#PSC}</td><td>{@code ?}</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = ?}</td></tr>
- *   <tr><td>{@link Dsl#PAC}</td><td>{@code ?}</td><td>SCREAMING_SNAKE_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = ?}</td></tr>
+ *   <tr><td>{@link Dsl#PSC}</td><td>{@code ?}</td><td>snake_case</td><td>{@code SELECT first_name AS "firstName" FROM account WHERE id = ?}</td></tr>
+ *   <tr><td>{@link Dsl#PAC}</td><td>{@code ?}</td><td>SCREAMING_SNAKE_CASE</td><td>{@code SELECT FIRST_NAME AS "firstName" FROM account WHERE ID = ?}</td></tr>
  *   <tr><td>{@link Dsl#PLC}</td><td>{@code ?}</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = ?}</td></tr>
  *   <tr><td>{@link Dsl#NSB}</td><td>{@code :name}</td><td>no change</td><td>{@code SELECT firstName FROM account WHERE id = :id}</td></tr>
- *   <tr><td>{@link Dsl#NSC}</td><td>{@code :name}</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = :id}</td></tr>
- *   <tr><td>{@link Dsl#NAC}</td><td>{@code :name}</td><td>SCREAMING_SNAKE_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = :id}</td></tr>
+ *   <tr><td>{@link Dsl#NSC}</td><td>{@code :name}</td><td>snake_case</td><td>{@code SELECT first_name AS "firstName" FROM account WHERE id = :id}</td></tr>
+ *   <tr><td>{@link Dsl#NAC}</td><td>{@code :name}</td><td>SCREAMING_SNAKE_CASE</td><td>{@code SELECT FIRST_NAME AS "firstName" FROM account WHERE ID = :id}</td></tr>
  *   <tr><td>{@link Dsl#NLC}</td><td>{@code :name}</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = :id}</td></tr>
  *   <tr><td>{@link Dsl#MSB}</td><td>{@code #{name}} (deprecated)</td><td>no change</td><td>{@code SELECT firstName FROM account WHERE id = #{id}}</td></tr>
- *   <tr><td>{@link Dsl#MSC}</td><td>{@code #{name}} (deprecated)</td><td>snake_case</td><td>{@code SELECT first_name FROM account WHERE id = #{id}}</td></tr>
- *   <tr><td>{@link Dsl#MAC}</td><td>{@code #{name}} (deprecated)</td><td>SCREAMING_SNAKE_CASE</td><td>{@code SELECT FIRST_NAME FROM ACCOUNT WHERE ID = #{id}}</td></tr>
+ *   <tr><td>{@link Dsl#MSC}</td><td>{@code #{name}} (deprecated)</td><td>snake_case</td><td>{@code SELECT first_name AS "firstName" FROM account WHERE id = #{id}}</td></tr>
+ *   <tr><td>{@link Dsl#MAC}</td><td>{@code #{name}} (deprecated)</td><td>SCREAMING_SNAKE_CASE</td><td>{@code SELECT FIRST_NAME AS "firstName" FROM account WHERE ID = #{id}}</td></tr>
  *   <tr><td>{@link Dsl#MLC}</td><td>{@code #{name}} (deprecated)</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = #{id}}</td></tr>
  * </table>
  *

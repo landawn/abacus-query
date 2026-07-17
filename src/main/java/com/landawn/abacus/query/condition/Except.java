@@ -54,9 +54,10 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Database support:</p>
  * <ul>
- *   <li>Supported by: PostgreSQL, SQL Server, SQLite, DB2, MySQL 8.0.31+</li>
+ *   <li>Supported by: PostgreSQL, SQL Server, SQLite, DB2, MySQL 8.0.31+, Oracle 21c+</li>
  *   <li>Part of SQL standard but not universally implemented</li>
- *   <li>Functionally equivalent to Oracle's MINUS operator</li>
+ *   <li>Functionally equivalent to MINUS, the traditional Oracle spelling; on Oracle versions before 21c
+ *       (or when the MINUS keyword is preferred), use {@link Minus} instead</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -83,7 +84,8 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Relationship to other set operations:</p>
  * <ul>
- *   <li>EXCEPT and MINUS are functionally equivalent (EXCEPT in PostgreSQL/SQL Server, MINUS in Oracle)</li>
+ *   <li>EXCEPT and MINUS are functionally equivalent (EXCEPT is the SQL-standard spelling; MINUS is the
+ *       traditional Oracle spelling, though Oracle 21c+ accepts EXCEPT as well)</li>
  *   <li>UNION combines rows from both queries, removing duplicates</li>
  *   <li>UNION ALL combines rows from both queries, keeping duplicates</li>
  *   <li>INTERSECT returns only rows that appear in both queries</li>

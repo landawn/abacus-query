@@ -103,10 +103,11 @@ public class GroupBy extends Clause {
      * }</pre>
      *
      * @param condition the grouping condition or expression. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, or is a {@link Criteria}, another clause,
-     *             an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *             operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which
-     *             can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a
+     *             {@link Criteria}, is a standalone {@link SubQuery} or another clause, contains an
+     *             {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
+     *             operand, or is an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of
+     *             which can be nested inside a clause
      * @see Filters#expr(String)
      */
     public GroupBy(final Condition condition) {

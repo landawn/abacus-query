@@ -237,8 +237,10 @@ public final class Dsl {
         // the same input even for weakly consistent or otherwise mutable caller lists.
         final List<Selection> snapshots = new ArrayList<>(selections);
 
+        // checkMultiSelects repeats this null-element check, but with a message naming its own
+        // 'multiSelects' parameter; checking here first keeps the message aligned with 'selections'.
         for (final Selection selection : snapshots) {
-            N.checkArgNotNull(selection, "Selection can't be null in 'multiSelects'");
+            N.checkArgNotNull(selection, "Selection can't be null in 'selections'");
         }
 
         SqlBuilder.checkMultiSelects(snapshots);
@@ -676,15 +678,20 @@ public final class Dsl {
         final List<Map<String, Object>> propsList = SqlBuilder.toInsertPropsList(entitySnapshot);
         final SqlBuilder instance = createSqlBuilderInstance();
 
-        instance._op = OperationType.ADD;
+        try {
+            instance._op = OperationType.ADD;
 
-        if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
-            instance.setEntityClass(first.get().getClass());
+            if (first.isPresent() && Beans.isBeanClass(first.get().getClass())) {
+                instance.setEntityClass(first.get().getClass());
+            }
+
+            instance._propsList = propsList;
+
+            return instance;
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(instance, e);
+            throw e;
         }
-
-        instance._propsList = propsList;
-
-        return instance;
     }
 
     /**
@@ -748,11 +755,16 @@ public final class Dsl {
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
-        instance._op = OperationType.UPDATE;
-        instance._tableName = tableName;
-        instance.setEntityClass(entityClass);
+        try {
+            instance._op = OperationType.UPDATE;
+            instance._tableName = tableName;
+            instance.setEntityClass(entityClass);
 
-        return instance;
+            return instance;
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(instance, e);
+            throw e;
+        }
     }
 
     /**
@@ -877,11 +889,16 @@ public final class Dsl {
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
-        instance._op = OperationType.DELETE;
-        instance._tableName = tableName;
-        instance.setEntityClass(entityClass);
+        try {
+            instance._op = OperationType.DELETE;
+            instance._tableName = tableName;
+            instance.setEntityClass(entityClass);
 
-        return instance;
+            return instance;
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(instance, e);
+            throw e;
+        }
     }
 
     /**
@@ -908,11 +925,16 @@ public final class Dsl {
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
-        instance._op = OperationType.DELETE;
-        instance.setEntityClass(entityClass);
-        instance._tableName = SqlBuilder.getTableName(entityClass, instance._namingPolicy);
+        try {
+            instance._op = OperationType.DELETE;
+            instance.setEntityClass(entityClass);
+            instance._tableName = SqlBuilder.getTableName(entityClass, instance._namingPolicy);
 
-        return instance;
+            return instance;
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(instance, e);
+            throw e;
+        }
     }
 
     /**
@@ -1071,7 +1093,7 @@ public final class Dsl {
      * String sql = PSC.select(Account.class)
      *                 .from("account")
      *                 .build().query();
-     * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email, created_date AS "createdDate" FROM account
+     * // Output: SELECT id AS "id", first_name AS "firstName", last_name AS "lastName", email AS "email", created_date AS "createdDate" FROM account
      * }</pre>
      *
      * @param entityClass the entity class to select properties from
@@ -1187,7 +1209,7 @@ public final class Dsl {
      * String sql = PSC.selectFrom(Account.class)
      *                 .where(Filters.equal("status", "active"))
      *                 .build().query();
-     * // Output: SELECT id, first_name AS "firstName", last_name AS "lastName", email FROM account WHERE status = ?
+     * // Output: SELECT id AS "id", first_name AS "firstName", last_name AS "lastName", email AS "email" FROM account WHERE status = ?
      * }</pre>
      *
      * @param entityClass the entity class to select from
@@ -1209,7 +1231,7 @@ public final class Dsl {
      * String sql = PSC.selectFrom(Account.class, "a")
      *                 .where(Filters.equal("a.status", "active"))
      *                 .build().query();
-     * // Output: SELECT a.id, a.first_name AS "firstName", a.last_name AS "lastName", a.email FROM account a WHERE a.status = ?
+     * // Output: SELECT a.id AS "id", a.first_name AS "firstName", a.last_name AS "lastName", a.email AS "email" FROM account a WHERE a.status = ?
      * }</pre>
      *
      * @param entityClass the entity class to select from

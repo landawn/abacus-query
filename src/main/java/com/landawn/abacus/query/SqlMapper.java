@@ -348,6 +348,8 @@ public final class SqlMapper {
      * @param sqlMapper the mapper to populate
      * @param inputStream the input stream to read
      * @param sourceLabel a human-readable label identifying the source, used in log and error messages
+     *        (an {@code IllegalArgumentException} raised by an invalid {@code <sql>} definition is
+     *        rethrown with this label prepended to its message)
      */
     private static void loadStream(final SqlMapper sqlMapper, final InputStream inputStream, final String sourceLabel) {
         try {
@@ -363,7 +365,13 @@ public final class SqlMapper {
             for (final Element sqlElement : sqlElementList) {
                 final Map<String, String> attrMap = XmlUtil.readAttributes(sqlElement);
 
-                sqlMapper.add(attrMap.remove(ID), XmlUtil.getTextContent(sqlElement), attrMap);
+                try {
+                    sqlMapper.add(attrMap.remove(ID), XmlUtil.getTextContent(sqlElement), attrMap);
+                } catch (final IllegalArgumentException e) {
+                    // Name the offending source so a failure while loading multiple files/streams
+                    // is diagnosable (the id/body validation in add(...) knows nothing about it).
+                    throw new IllegalArgumentException("Invalid <sql> definition in " + sourceLabel + ": " + e.getMessage(), e);
+                }
             }
 
             if (logger.isDebugEnabled()) {
@@ -392,7 +400,11 @@ public final class SqlMapper {
      * @return an immutable snapshot of all SQL identifiers in this mapper, maintaining insertion order
      */
     public ImmutableSet<String> ids() {
-        return ImmutableSet.copyOf(new LinkedHashSet<>(sqlMap.keySet()));
+        // The LinkedHashSet copy is load-bearing: ImmutableSet.copyOf only preserves iteration
+        // order for List/LinkedHashSet/SortedSet sources, and a raw LinkedHashMap keySet() view
+        // is none of those. Wrapping the private copy keeps the documented insertion order
+        // without paying for a second defensive copy inside copyOf.
+        return ImmutableSet.wrap(new LinkedHashSet<>(sqlMap.keySet()));
     }
 
     /**

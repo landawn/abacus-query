@@ -39,7 +39,7 @@ public class SelectionTest extends TestBase {
 
     @Test
     public void testBuilderRequiresEntityClassAtCreation() throws NoSuchMethodException {
-        assertThrows(NullPointerException.class, () -> Selection.builder(null));
+        assertThrows(IllegalArgumentException.class, () -> Selection.builder(null));
         assertThrows(NoSuchMethodException.class, () -> Selection.class.getMethod("builder"));
         assertEquals(0, Selection.class.getConstructors().length);
     }

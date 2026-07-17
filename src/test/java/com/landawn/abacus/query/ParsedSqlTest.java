@@ -105,21 +105,63 @@ public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testParse_BracketQuotedIdentifiersDoNotCreateParameters() {
-        ParsedSql named = ParsedSql.parse("SELECT [:identifier] FROM users");
-        assertEquals("SELECT [:identifier] FROM users", named.parameterizedSql());
-        assertEquals(0, named.parameterCount());
+        ParsedSql plain = ParsedSql.parse("SELECT [column] FROM users");
+        assertEquals("SELECT [column] FROM users", plain.parameterizedSql());
+        assertEquals(0, plain.parameterCount());
+
+        // ':' not at position 1 inside the brackets: bracket-quoted identifier, not a subscript binding.
+        ParsedSql colonInside = ParsedSql.parse("SELECT [weird:name] FROM users");
+        assertEquals("SELECT [weird:name] FROM users", colonInside.parameterizedSql());
+        assertEquals(0, colonInside.parameterCount());
 
         ParsedSql ibatis = ParsedSql.parse("SELECT [#{identifier}] FROM users");
         assertEquals("SELECT [#{identifier}] FROM users", ibatis.parameterizedSql());
         assertEquals(0, ibatis.parameterCount());
 
+        // '[' immediately after a qualification dot is always SQL Server qualified quoting; a
+        // subscript can never directly follow '.', so ".[:identifier]" keeps its literal meaning.
         ParsedSql qualified = ParsedSql.parse("SELECT users.[:identifier] FROM users");
         assertEquals("SELECT users.[:identifier] FROM users", qualified.parameterizedSql());
         assertEquals(0, qualified.parameterCount());
 
+        ParsedSql qualifiedPlain = ParsedSql.parse("SELECT db.[col] FROM db");
+        assertEquals("SELECT db.[col] FROM db", qualifiedPlain.parameterizedSql());
+        assertEquals(0, qualifiedPlain.parameterCount());
+
+        // "[:]" has no valid parameter-name character after the ':' so it is not a named binding.
+        ParsedSql emptySlice = ParsedSql.parse("SELECT arr [:] FROM t");
+        assertEquals("SELECT arr [:] FROM t", emptySlice.parameterizedSql());
+        assertEquals(0, emptySlice.parameterCount());
+
         ParsedSql arraySubscript = ParsedSql.parse("SELECT values_array[:index] FROM users");
         assertEquals("SELECT values_array[?] FROM users", arraySubscript.parameterizedSql());
         assertEquals(1, arraySubscript.parameterCount());
+    }
+
+    @Test
+    public void testParse_StandaloneBracketSubscriptWithNamedParameterBinds() {
+        // Whitespace before '[' makes the tokenizer emit "[:ids]" as a standalone token; the leading
+        // "[:name" shape is recognized as a PostgreSQL-style subscript binding, not a bracket-quoted
+        // identifier, so the named parameter is extracted instead of passing through as literal SQL.
+        ParsedSql spaced = ParsedSql.parse("SELECT * FROM t WHERE arr = array [:ids]");
+        assertEquals("SELECT * FROM t WHERE arr = array [?]", spaced.parameterizedSql());
+        assertEquals(1, spaced.parameterCount());
+        assertEquals(List.of("ids"), spaced.namedParameters());
+
+        ParsedSql standalone = ParsedSql.parse("SELECT [:identifier] FROM users");
+        assertEquals("SELECT [?] FROM users", standalone.parameterizedSql());
+        assertEquals(1, standalone.parameterCount());
+        assertEquals(List.of("identifier"), standalone.namedParameters());
+
+        // Digits are valid parameter-name characters (Oracle-style ordinal ":2"), so the spaced and
+        // unspaced forms bind consistently.
+        ParsedSql ordinalSpaced = ParsedSql.parse("SELECT * FROM t WHERE a = arr [:2]");
+        assertEquals("SELECT * FROM t WHERE a = arr [?]", ordinalSpaced.parameterizedSql());
+        assertEquals(List.of("2"), ordinalSpaced.namedParameters());
+
+        ParsedSql ordinalUnspaced = ParsedSql.parse("SELECT * FROM t WHERE a = arr[:2]");
+        assertEquals("SELECT * FROM t WHERE a = arr[?]", ordinalUnspaced.parameterizedSql());
+        assertEquals(List.of("2"), ordinalUnspaced.namedParameters());
     }
 
     @Test
@@ -1051,6 +1093,43 @@ public class ParsedSqlTest extends TestBase {
         Assertions.assertEquals("INSERT INTO t (id) VALUES (?)", parsed.parameterizedSql());
         Assertions.assertEquals(1, parsed.parameterCount());
         Assertions.assertEquals("id", parsed.namedParameters().get(0));
+    }
+
+    // --- Bug fix: "#{ id }" (whitespace immediately after the "#{" opener) must bind as a
+    // parameter. The tokenizer emits a standalone 2-char "#{" token in that case; the old
+    // "length >= 3" gate skipped the marker-assembly loop and left the marker as literal text. ---
+
+    @Test
+    public void testParse_IbatisParameterWithWhitespaceAfterOpener_binds() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = #{ id }");
+        Assertions.assertEquals("SELECT * FROM users WHERE id = ?", parsed.parameterizedSql());
+        Assertions.assertEquals(1, parsed.parameterCount());
+        Assertions.assertEquals(Arrays.asList("id"), parsed.namedParameters());
+    }
+
+    @Test
+    public void testParse_IbatisParameterWithLeadingWhitespaceOnly_binds() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = #{ id}");
+        Assertions.assertEquals("SELECT * FROM users WHERE id = ?", parsed.parameterizedSql());
+        Assertions.assertEquals(1, parsed.parameterCount());
+        Assertions.assertEquals(Arrays.asList("id"), parsed.namedParameters());
+    }
+
+    @Test
+    public void testParse_LimitOffsetPaddedIbatisMarkers_bindBoth() {
+        // Limit.toString() renders "LIMIT #{ maxRows } OFFSET #{ startRow }" — both padded
+        // markers must bind instead of surviving as literal SQL text.
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM t LIMIT #{ maxRows } OFFSET #{ startRow }");
+        Assertions.assertEquals("SELECT * FROM t LIMIT ? OFFSET ?", parsed.parameterizedSql());
+        Assertions.assertEquals(2, parsed.parameterCount());
+        Assertions.assertEquals(Arrays.asList("maxRows", "startRow"), parsed.namedParameters());
+    }
+
+    @Test
+    public void testParse_DanglingIbatisOpenerAtEnd_throws() {
+        // A standalone "#{" with no closing '}' anywhere now fails fast with the documented
+        // IllegalArgumentException instead of silently passing through as literal text.
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT #{"));
     }
 
     // --- Bug fix: trailing-semicolon strip must also remove residual whitespace before the ';' ---

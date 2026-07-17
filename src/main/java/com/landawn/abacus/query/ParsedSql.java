@@ -39,7 +39,8 @@ import com.landawn.abacus.util.Strings;
  * typically return the same cached instance (subject to pool eviction after prolonged inactivity). Supported parameter formats include:</p>
  * <ul>
  *   <li>Named parameters: {@code :paramName}</li>
- *   <li>iBatis/MyBatis style: {@code #{paramName}}</li>
+ *   <li>iBatis/MyBatis style: {@code #{paramName}} (whitespace inside the braces is tolerated,
+ *       e.g. {@code #{ paramName }})</li>
  *   <li>Standard JDBC placeholders: {@code ?}</li>
  * </ul>
  *
@@ -261,7 +262,8 @@ public final class ParsedSql {
      * <p>The parser automatically detects and converts different parameter styles:</p>
      * <ul>
      *   <li>Named parameters starting with {@code ':'} (e.g., {@code :userId})</li>
-     *   <li>iBatis/MyBatis style parameters enclosed in {@code #{}} (e.g., {@code #{userName}})</li>
+     *   <li>iBatis/MyBatis style parameters enclosed in {@code #{}} (e.g., {@code #{userName}};
+     *       whitespace inside the braces is tolerated, e.g. {@code #{ userName }})</li>
      *   <li>Standard JDBC placeholders ({@code ?})</li>
      * </ul>
      *
@@ -485,17 +487,37 @@ public final class ParsedSql {
     }
 
     private static boolean mayContainIbatisParameter(final String token) {
-        return token.length() >= 3 && token.indexOf(LEFT_OF_IBATIS_NAMED_PARAMETER) >= 0 && !isQuotedToken(token) && !isCommentOrSpaceToken(token);
+        // The minimum length of 2 admits the standalone "#{" token the tokenizer emits when
+        // whitespace immediately follows the opener (e.g. "#{ id }"); the marker-assembly loop
+        // in the constructor then joins subsequent tokens until the closing '}' is found. Any
+        // 2-char token containing LEFT_OF_IBATIS_NAMED_PARAMETER is exactly "#{".
+        return token.length() >= 2 && token.indexOf(LEFT_OF_IBATIS_NAMED_PARAMETER) >= 0 && !isQuotedToken(token) && !isCommentOrSpaceToken(token);
     }
 
     private static boolean isQuotedToken(final String token) {
         // A token that starts with '[' (or has '[' immediately after a qualification dot) is a
-        // SQL Server bracket-quoted identifier. Do not treat every token containing '[' as quoted:
-        // PostgreSQL-style array subscripts such as "array[:ids]" deliberately support a named
-        // binding inside the brackets.
+        // SQL Server bracket-quoted identifier, with one exception: a leading "[:name" is a
+        // PostgreSQL-style array subscript holding a named binding. Whitespace before the bracket
+        // makes the tokenizer emit the subscript as its own token (e.g. "array [:ids]" yields the
+        // standalone token "[:ids]"), and without the exception that binding would silently pass
+        // through as literal SQL. The exception is not applied after a qualification dot because
+        // a subscript can never directly follow '.' in SQL, so "db.[col]" is only valid as
+        // SQL Server qualified quoting. Do not treat every token containing '[' as quoted:
+        // subscripts such as "array[:ids]" deliberately support a named binding inside the brackets.
         final int bracketIndex = token.indexOf('[');
-        return token.indexOf('\'') >= 0 || token.indexOf('"') >= 0 || token.indexOf('`') >= 0 || bracketIndex == 0
-                || (bracketIndex > 0 && token.charAt(bracketIndex - 1) == '.');
+        return token.indexOf('\'') >= 0 || token.indexOf('"') >= 0 || token.indexOf('`') >= 0
+                || (bracketIndex == 0 && !isNamedParameterSubscript(token, bracketIndex)) || (bracketIndex > 0 && token.charAt(bracketIndex - 1) == '.');
+    }
+
+    /**
+     * Returns {@code true} if the {@code '['} at {@code bracketIndex} opens a PostgreSQL-style
+     * subscript whose content starts with a named binding: the named-parameter prefix {@code ':'}
+     * immediately followed by a valid parameter-name character. Shapes such as {@code "[:]"},
+     * {@code "[::int]"} or {@code "[column]"} do not qualify and remain bracket-quoted identifiers.
+     */
+    private static boolean isNamedParameterSubscript(final String token, final int bracketIndex) {
+        return bracketIndex + 2 < token.length() && token.charAt(bracketIndex + 1) == _PREFIX_OF_NAMED_PARAMETER
+                && isValidNamedParameterChar(token.charAt(bracketIndex + 2));
     }
 
     private static int findNextNamedParameterStartIndex(final String token, final int fromIndex) {

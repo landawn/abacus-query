@@ -85,9 +85,10 @@ public class InSubQuery extends AbstractInSubQuery {
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param subQuery the subquery that returns the values to check against (must not be {@code null});
-     *            if it is a structured subquery, it must select exactly one column
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code subQuery} is
-     *             {@code null}, or if the subquery is structured and selects a number of columns other than 1
+     *            if it has an explicit structured projection without {@code *} or {@code qualifier.*}, it must select
+     *            exactly one column; raw SQL and wildcard projections cannot be arity-checked here
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code subQuery} is {@code null},
+     *             or if the subquery has a known, non-wildcard structured projection whose column count is not 1
      */
     public InSubQuery(final String propName, final SubQuery subQuery) {
         super(propName, Operator.IN, subQuery);
@@ -112,10 +113,11 @@ public class InSubQuery extends AbstractInSubQuery {
      * @param propNames the property names to check (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements).
      *            Their order must match the column order in the subquery.
      * @param subQuery the subquery that returns the value combinations to check against (must not be {@code null}).
-     *            If it is a structured subquery, it must select exactly {@code propNames.size()} columns.
+     *            If it has an explicit structured projection without {@code *} or {@code qualifier.*}, it must select
+     *            exactly {@code propNames.size()} columns. Raw SQL and wildcard projections cannot be arity-checked here.
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is {@code null}, empty, or blank,
-     *             if {@code subQuery} is {@code null}, or if the subquery is structured and its number of selected
-     *             columns does not match {@code propNames.size()}
+     *             if {@code subQuery} is {@code null}, or if the subquery has a known, non-wildcard structured projection
+     *             whose number of selected columns does not match {@code propNames.size()}
      */
     public InSubQuery(final Collection<String> propNames, final SubQuery subQuery) {
         super(propNames, Operator.IN, subQuery);

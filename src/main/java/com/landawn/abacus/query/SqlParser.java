@@ -60,8 +60,8 @@ import com.landawn.abacus.util.Strings;
  *   <li>{@code #} or {@code ##} that opens a hash-prefixed identifier (e.g. a SQL Server
  *       local or global temp-table name appearing
  *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE}, or in the
- *       target position after {@code INSERT}, {@code DELETE} or {@code MERGE} and an optional
- *       {@code TOP} clause,
+ *       target position after {@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE} and
+ *       an optional {@code TOP} clause,
  *       allowing intervening whitespace or comments, including as a later element of a
  *       comma-separated list governed by one of those keywords, e.g. {@code "FROM #t1, ##t2"})
  *       is treated as part of the identifier, not as a hash comment or separator.</li>
@@ -123,7 +123,7 @@ public final class SqlParser {
     private static final char ENTER_2 = '\r';
 
     private static final Set<String> hashIdentifierContextKeywords = N.asSet(SK.FROM, SK.JOIN, SK.INTO, SK.UPDATE, "TABLE");
-    private static final Set<String> hashIdentifierDmlTargetKeywords = N.asSet("INSERT", "DELETE", "MERGE");
+    private static final Set<String> hashIdentifierDmlTargetKeywords = N.asSet("INSERT", "UPDATE", "DELETE", "MERGE");
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
@@ -1486,7 +1486,7 @@ public final class SqlParser {
      *   <li>{@code #} or {@code ##} that starts a hash-prefixed identifier (e.g. a SQL Server
      *       local or global temp-table name appearing
      *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE}, or as
-     *       an {@code INSERT}, {@code DELETE} or {@code MERGE} target after an optional {@code TOP} clause,
+     *       an {@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE} target after an optional {@code TOP} clause,
      *       with optional whitespace/comments in between, including as a later element of a
      *       comma-separated list such as {@code "FROM #t1, #t2"}) is not considered a separator</li>
      *   <li>All configured single-character and multi-character separators are checked</li>
@@ -1571,8 +1571,8 @@ public final class SqlParser {
      * (skipping whitespace and comments) must reach one of the
      * {@link #hashIdentifierContextKeywords} ({@code FROM},
      * {@code JOIN}, {@code INTO}, {@code UPDATE}, {@code TABLE}), or the hash must be exactly where
-     * an {@code INSERT}, {@code DELETE} or {@code MERGE} target is expected, including after an
-     * optional {@code TOP} clause.
+     * an {@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE} target is expected,
+     * including after an optional {@code TOP} clause.
      *
      * <p>A comma is treated as a list continuation: for {@code "FROM #t1, #t2"} the backward walk
      * skips the comma plus the single list element before it (a possibly qualified, quoted,
@@ -1584,6 +1584,21 @@ public final class SqlParser {
      * classification.</p>
      */
     private static boolean isLikelyHashPrefixedIdentifier(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig) {
+        return isLikelyHashPrefixedIdentifier(str, len, index, tokenizerConfig, true);
+    }
+
+    /**
+     * Implementation shared by {@link #isLikelyHashPrefixedIdentifier(String, int, int, TokenizerConfig)}
+     * and {@link #isLikelyHashPrefixedIdentifierAfterWhitespaceAndBlockComments}. When
+     * {@code lineCommentAware} is {@code false}, the initial backward skip and the DML-target
+     * check cross whitespace and block comments only -- the flavor used while deciding whether a
+     * {@code '#'} itself starts a line comment, which must not re-enter line-comment detection at
+     * the same position. The comma-separated-list walk is identical in both flavors (its
+     * per-element steps are block-comment-only in either case), keeping the forward and backward
+     * classifications of e.g. {@code "FROM #t1, #t2"} consistent.
+     */
+    private static boolean isLikelyHashPrefixedIdentifier(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig,
+            final boolean lineCommentAware) {
         if (index >= len - 1) {
             return false;
         }
@@ -1611,18 +1626,19 @@ public final class SqlParser {
             return false;
         }
 
-        int left = skipBackwardWhitespaceAndComments(str, prefixStart - 1, tokenizerConfig);
+        int left = lineCommentAware ? skipBackwardWhitespaceAndComments(str, prefixStart - 1, tokenizerConfig)
+                : skipBackwardWhitespaceAndBlockComments(str, prefixStart - 1);
 
-        if (isHashIdentifierDmlTargetContext(str, left, true, tokenizerConfig)) {
+        if (isHashIdentifierDmlTargetContext(str, left, lineCommentAware, tokenizerConfig)) {
             return true;
         }
 
         // Walk backward over ","-separated list elements until something other than a list
-        // continuation anchors the decision. Only the first skip above is line-comment-aware;
-        // the per-element steps skip whitespace and block comments only (a line comment between
-        // list elements conservatively yields the comment classification, as before this walk
-        // existed). Each iteration consumes at least the comma (progress is checked), so the
-        // loop terminates.
+        // continuation anchors the decision. Only the first skip above is (in the line-comment-aware
+        // flavor) line-comment-aware; the per-element steps skip whitespace and block comments only
+        // (a line comment between list elements conservatively yields the comment classification,
+        // as before this walk existed). Each iteration consumes at least the comma (progress is
+        // checked), so the loop terminates.
         while (left >= 0) {
             final char ch = str.charAt(left);
 
@@ -1657,10 +1673,11 @@ public final class SqlParser {
     }
 
     /**
-     * Returns whether {@code left} is immediately after an INSERT/DELETE/MERGE target introducer.
+     * Returns whether {@code left} is immediately after an INSERT/UPDATE/DELETE/MERGE target introducer.
      * Unlike {@link #hashIdentifierContextKeywords}, these operation tokens are deliberately not
-     * general identifier anchors: they are accepted only directly before the target, optionally
-     * with a SQL Server {@code TOP [ ( expression ) ] [ PERCENT ]} clause between them.
+     * general identifier anchors ({@code UPDATE} additionally is one): they are accepted only
+     * directly before the target, optionally with a SQL Server
+     * {@code TOP [ ( expression ) ] [ PERCENT ]} clause between them.
      */
     private static boolean isHashIdentifierDmlTargetContext(final String str, int left, final boolean skipLineComments, final TokenizerConfig tokenizerConfig) {
         left = skipBackwardHashContextTrivia(str, left, skipLineComments, tokenizerConfig);
@@ -2213,49 +2230,7 @@ public final class SqlParser {
 
     private static boolean isLikelyHashPrefixedIdentifierAfterWhitespaceAndBlockComments(final String str, final int len, final int index,
             final TokenizerConfig tokenizerConfig) {
-        if (index >= len - 1) {
-            return false;
-        }
-
-        int prefixStart = index;
-        int identifierStart = index + 1;
-
-        if (str.charAt(identifierStart) == '#') {
-            identifierStart++;
-        } else if (index > 0 && str.charAt(index - 1) == '#') {
-            if (index > 1 && str.charAt(index - 2) == '#') {
-                return false;
-            }
-
-            prefixStart--;
-        }
-
-        if (identifierStart >= len || !isIdentifierChar(str.charAt(identifierStart))) {
-            return false;
-        }
-
-        int left = skipBackwardWhitespaceAndBlockComments(str, prefixStart - 1);
-
-        if (left < 0) {
-            return false;
-        }
-
-        if (isHashIdentifierDmlTargetContext(str, left, false, tokenizerConfig)) {
-            return true;
-        }
-
-        int end = left;
-
-        while (left >= 0 && isIdentifierChar(str.charAt(left))) {
-            left--;
-        }
-
-        if (end < left + 1) {
-            return false;
-        }
-
-        final String prevWord = str.substring(left + 1, end + 1).toUpperCase(Locale.ROOT);
-        return hashIdentifierContextKeywords.contains(prevWord);
+        return isLikelyHashPrefixedIdentifier(str, len, index, tokenizerConfig, false);
     }
 
     private static boolean isIdentifierChar(final char ch) {
@@ -3348,6 +3323,12 @@ public final class SqlParser {
 
     private static int findKeywordIndexAfterWithClause(final String sql, int fromIndex, final TokenizerConfig tokenizerConfig) {
         int depth = 0;
+        // The identifier right after WITH [RECURSIVE] -- and after each top-level ',' separating
+        // CTE definitions -- is a CTE name, never the statement verb. Dialects such as PostgreSQL
+        // and SQL Server accept unquoted verb-like CTE names ("WITH delete AS (SELECT 1) ..."),
+        // so the name slot must be consumed before isQueryKeyword may claim a token.
+        boolean expectCteName = true;
+        boolean atFirstToken = true;
 
         while (fromIndex < sql.length()) {
             fromIndex = skipLeadingWhitespaceAndComments(sql, fromIndex, tokenizerConfig);
@@ -3360,9 +3341,19 @@ public final class SqlParser {
 
             if (ch == '\'' || ch == '"' || ch == '`') {
                 fromIndex = skipQuotedLiteral(sql, fromIndex, ch);
+
+                if (depth == 0) {
+                    expectCteName = false; // a quoted CTE name fills the name slot
+                }
+
                 continue;
             } else if (ch == '[') {
                 fromIndex = skipBracketQuotedIdentifier(sql, fromIndex);
+
+                if (depth == 0) {
+                    expectCteName = false; // a bracket-quoted CTE name fills the name slot
+                }
+
                 continue;
             }
 
@@ -3381,13 +3372,32 @@ public final class SqlParser {
                 continue;
             }
 
+            if (ch == ',') {
+                if (depth == 0) {
+                    // Next CTE definition in the list: ", name [(columns)] AS (...)".
+                    expectCteName = true;
+                }
+
+                fromIndex++;
+                continue;
+            }
+
             if (Character.isLetter(ch)) {
                 final String token = readKeyword(sql, fromIndex, tokenizerConfig);
 
-                if (depth == 0 && isQueryKeyword(token)) {
-                    return fromIndex;
+                if (depth == 0) {
+                    if (expectCteName) {
+                        // A leading RECURSIVE modifier keeps the name slot open for the token
+                        // after it (the caller may or may not have consumed RECURSIVE already).
+                        if (!(atFirstToken && "RECURSIVE".equalsIgnoreCase(token))) {
+                            expectCteName = false;
+                        }
+                    } else if (isQueryKeyword(token)) {
+                        return fromIndex;
+                    }
                 }
 
+                atFirstToken = false;
                 fromIndex += token.length();
                 continue;
             }

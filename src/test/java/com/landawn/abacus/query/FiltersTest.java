@@ -2640,6 +2640,25 @@ public class FiltersTest extends TestBase {
         assertTrue(h.toString().contains("SUM(amount) > 1000"));
     }
 
+    // --- Guard: on(String) must reject null/empty (matching where(String)/having(String) contract) ---
+
+    @Test
+    public void testOnString_NullExpr_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.on((String) null));
+    }
+
+    @Test
+    public void testOnString_EmptyExpr_ThrowsIAE() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.on(""));
+    }
+
+    @Test
+    public void testOnString_NonEmptyExpr_StillWorks() {
+        On on = Filters.on("users.id = orders.user_id");
+        assertNotNull(on);
+        assertTrue(on.toString().contains("users.id = orders.user_id"));
+    }
+
     // --- 2nd-pass review verification tests ---
     // These confirm that operator-pair factory methods do NOT have copy/paste inversions,
     // that LIKE wildcards are placed on the correct side, and that null-value handling is correct.

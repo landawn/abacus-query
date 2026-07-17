@@ -106,9 +106,9 @@ public class And extends Junction {
      *
      * @param conditions the conditions to combine with AND logic; may be {@code null} or empty
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
-     *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             is an {@code ON}/{@code USING} connector, is an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
+     *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
+     *             an {@code ON}/{@code USING} connector, or an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or is an empty predicate
      *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public And(final Condition... conditions) {
@@ -137,9 +137,9 @@ public class And extends Junction {
      *
      * @param conditions the collection of conditions to combine with AND logic; may be {@code null} or empty
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
-     *             element is a {@link Criteria}, has a clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             is an {@code ON}/{@code USING} connector, is an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
+     *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
+     *             an {@code ON}/{@code USING} connector, or an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or is an empty predicate
      *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public And(final Collection<? extends Condition> conditions) {
@@ -185,13 +185,13 @@ public class And extends Junction {
      * }</pre>
      *
      * @param condition the condition to add to this AND. Must not be {@code null} and must be
-     *             composable (i.e. not a {@link Criteria}, a {@link Clause}, an {@code ON}/{@code USING} connector,
-     *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or an empty predicate).
+     *             composable (i.e. must not be or contain a {@link Criteria}, a {@link Clause}, an {@code ON}/{@code USING} connector,
+     *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate).
      * @return a new {@link And} condition containing all existing conditions plus the new one
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is non-composable —
-     *             a {@link Criteria}, a {@link Clause} condition (such as {@link Where} or {@link OrderBy}),
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is or contains a
+     *             non-composable component — a {@link Criteria}, a {@link Clause} condition (such as {@link Where} or {@link OrderBy}),
      *             an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *             operand, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *             operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     @Override
     public And and(final Condition condition) {

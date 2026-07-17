@@ -143,11 +143,6 @@ public final class DynamicQuery {
         }
     }
 
-    private static void startClauseFragment(final ClauseBuilder clause, final String keyword, final String separator) {
-        clause.checkOpen();
-        startClauseFragment(clause.sb, keyword, separator);
-    }
-
     /**
      * Builder for constructing dynamic SQL queries clause by clause.
      * Instances and retained clause handles are mutable and are not thread-safe. A builder is
@@ -949,24 +944,57 @@ public final class DynamicQuery {
     static abstract class ClauseBuilder {
         final StringBuilder sb;
 
-        private boolean closed;
+        private boolean isClosed;
 
         ClauseBuilder(final StringBuilder sb) {
             this.sb = sb;
         }
 
-        final void checkOpen() {
-            if (closed) {
+        final void assertNotClosed() {
+            if (isClosed) {
                 throw new IllegalStateException("Clause builder has already been closed by build()");
             }
         }
 
+        /**
+         * Appends {@code placeholderCount} comma-separated {@code ?} placeholders, with no surrounding
+         * prefix/postfix. Shared by the {@code appendPlaceholders(...)} overloads of the clause
+         * builders that support placeholders.
+         *
+         * @param placeholderCount the number of {@code ?} placeholders to append
+         */
+        final void appendPlaceholderSequence(final int placeholderCount) {
+            for (int i = 0; i < placeholderCount; i++) {
+                if (i > 0) {
+                    sb.append(", ?");
+                } else {
+                    sb.append('?');
+                }
+            }
+        }
+
+        /**
+         * Verifies this clause already holds a first fragment before {@code ?} placeholders are
+         * appended, throwing otherwise. Shared by the {@code appendPlaceholders(...)} overloads of the
+         * clause builders that support placeholders; {@code clauseName} customizes the error message.
+         *
+         * @param clauseName the clause keyword used in the error message (e.g. {@code "WHERE"} or {@code "HAVING"})
+         * @throws IllegalStateException if this clause has not been initialized by a prior call that
+         *         actually appended a condition (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)})
+         */
+        final void requireInitializedForPlaceholders(final String clauseName) {
+            if (sb.isEmpty()) {
+                throw new IllegalStateException(
+                        clauseName + " clause must be initialized by append(...), and(...), or or(...) before placeholders can be appended");
+            }
+        }
+
         final void close() {
-            if (closed) {
+            if (isClosed) {
                 return; // idempotent: never recycle the same buffer into the pool twice
             }
 
-            closed = true;
+            isClosed = true;
             Objectory.recycle(sb);
         }
     }
@@ -1011,10 +1039,10 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code column} is {@code null}, empty, or blank
          */
         public SelectClause append(final String column) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(column, "column");
 
-            startClauseFragment(this, "SELECT ", ", ");
+            startClauseFragment(sb, "SELECT ", ", ");
 
             sb.append(column);
 
@@ -1037,11 +1065,11 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code column} or {@code alias} is {@code null}, empty, or blank
          */
         public SelectClause append(final String column, final String alias) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(column, "column");
             checkSqlFragmentNotBlank(alias, "alias");
 
-            startClauseFragment(this, "SELECT ", ", ");
+            startClauseFragment(sb, "SELECT ", ", ");
 
             sb.append(column).append(" AS ").append(alias);
 
@@ -1067,16 +1095,15 @@ public final class DynamicQuery {
          *                                  snapshotted element is {@code null}, empty, or blank
          */
         public SelectClause append(final Collection<String> columns) {
-            checkOpen();
+            assertNotClosed();
 
             if (N.isEmpty(columns)) {
-                checkOpen();
                 return this;
             }
 
             final Collection<String> columnsSnapshot = copyAndCheckSqlFragmentsNotBlank(columns, "columns");
 
-            startClauseFragment(this, "SELECT ", ", ");
+            startClauseFragment(sb, "SELECT ", ", ");
 
             sb.append(Strings.join(columnsSnapshot, ", "));
 
@@ -1106,16 +1133,15 @@ public final class DynamicQuery {
          *                                  snapshotted key or value is {@code null}, empty, or blank
          */
         public SelectClause append(final Map<String, String> columnAliases) {
-            checkOpen();
+            assertNotClosed();
 
             if (N.isEmpty(columnAliases)) {
-                checkOpen();
                 return this;
             }
 
             final Map<String, String> columnAliasesSnapshot = copyAndCheckSqlFragmentMapNotBlank(columnAliases, "columnAliases");
 
-            startClauseFragment(this, "SELECT ", ", ");
+            startClauseFragment(sb, "SELECT ", ", ");
 
             sb.append(Strings.joinEntries(columnAliasesSnapshot, ", ", " AS "));
 
@@ -1138,16 +1164,14 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public SelectClause appendIf(final boolean b, final String textToAppend) {
-            checkOpen();
+            assertNotClosed();
 
             if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                startClauseFragment(this, "SELECT ", ", ");
+                startClauseFragment(sb, "SELECT ", ", ");
 
                 sb.append(textToAppend);
-            } else {
-                checkOpen();
             }
 
             return this;
@@ -1171,11 +1195,11 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public SelectClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            startClauseFragment(this, "SELECT ", ", ");
+            startClauseFragment(sb, "SELECT ", ", ");
 
             if (b) {
                 sb.append(textToAppendWhenTrue);
@@ -1226,10 +1250,10 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code table} is {@code null}, empty, or blank
          */
         public FromClause append(final String table) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(table, "table");
 
-            startClauseFragment(this, "FROM ", ", ");
+            startClauseFragment(sb, "FROM ", ", ");
 
             sb.append(table);
 
@@ -1252,11 +1276,11 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code table} or {@code alias} is {@code null}, empty, or blank
          */
         public FromClause append(final String table, final String alias) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(table, "table");
             checkSqlFragmentNotBlank(alias, "alias");
 
-            startClauseFragment(this, "FROM ", ", ");
+            startClauseFragment(sb, "FROM ", ", ");
 
             sb.append(table).append(" ").append(alias);
 
@@ -1281,16 +1305,15 @@ public final class DynamicQuery {
          *                                  snapshotted element is {@code null}, empty, or blank
          */
         public FromClause append(final Collection<String> tables) {
-            checkOpen();
+            assertNotClosed();
 
             if (N.isEmpty(tables)) {
-                checkOpen();
                 return this;
             }
 
             final Collection<String> tablesSnapshot = copyAndCheckSqlFragmentsNotBlank(tables, "tables");
 
-            startClauseFragment(this, "FROM ", ", ");
+            startClauseFragment(sb, "FROM ", ", ");
 
             sb.append(Strings.join(tablesSnapshot, ", "));
 
@@ -1315,7 +1338,7 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause join(final String joinExpr, final String expr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
             requireFromInitialized();
@@ -1343,7 +1366,7 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause innerJoin(final String joinExpr, final String expr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
             requireFromInitialized();
@@ -1371,7 +1394,7 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause leftJoin(final String joinExpr, final String expr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
             requireFromInitialized();
@@ -1399,7 +1422,7 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause rightJoin(final String joinExpr, final String expr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
             requireFromInitialized();
@@ -1428,7 +1451,7 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause fullJoin(final String joinExpr, final String expr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
             requireFromInitialized();
@@ -1456,7 +1479,7 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause join(final String joinExpr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
             sb.append(" JOIN ").append(joinExpr);
@@ -1483,7 +1506,7 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause innerJoin(final String joinExpr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
             sb.append(" INNER JOIN ").append(joinExpr);
@@ -1510,7 +1533,7 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause leftJoin(final String joinExpr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
             sb.append(" LEFT JOIN ").append(joinExpr);
@@ -1537,7 +1560,7 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause rightJoin(final String joinExpr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
             sb.append(" RIGHT JOIN ").append(joinExpr);
@@ -1564,7 +1587,7 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause fullJoin(final String joinExpr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
             sb.append(" FULL JOIN ").append(joinExpr);
@@ -1590,7 +1613,7 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause crossJoin(final String joinExpr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
             sb.append(" CROSS JOIN ").append(joinExpr);
@@ -1616,7 +1639,7 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause naturalJoin(final String joinExpr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
             sb.append(" NATURAL JOIN ").append(joinExpr);
@@ -1625,7 +1648,6 @@ public final class DynamicQuery {
         }
 
         private void requireFromInitialized() {
-            checkOpen();
             if (sb.isEmpty()) {
                 throw new IllegalStateException("FROM clause must be initialized by append(...) before join operations");
             }
@@ -1646,16 +1668,14 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public FromClause appendIf(final boolean b, final String textToAppend) {
-            checkOpen();
+            assertNotClosed();
 
             if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                startClauseFragment(this, "FROM ", ", ");
+                startClauseFragment(sb, "FROM ", ", ");
 
                 sb.append(textToAppend);
-            } else {
-                checkOpen();
             }
 
             return this;
@@ -1677,11 +1697,11 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public FromClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            startClauseFragment(this, "FROM ", ", ");
+            startClauseFragment(sb, "FROM ", ", ");
 
             if (b) {
                 sb.append(textToAppendWhenTrue);
@@ -1737,10 +1757,10 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public WhereClause append(final String expr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(expr, "expr");
 
-            startClauseFragment(this, "WHERE ", " ");
+            startClauseFragment(sb, "WHERE ", " ");
 
             sb.append(expr);
 
@@ -1773,9 +1793,9 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public WhereClause appendPlaceholders(final int placeholderCount) {
-            checkOpen();
+            assertNotClosed();
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
-            requireWhereInitialized();
+            requireInitializedForPlaceholders("WHERE");
 
             appendPlaceholderSequence(placeholderCount);
 
@@ -1804,11 +1824,11 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public WhereClause appendPlaceholders(final int placeholderCount, final String prefix, final String postfix) {
-            checkOpen();
+            assertNotClosed();
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
             N.checkArgNotNull(prefix, "prefix");
             N.checkArgNotNull(postfix, "postfix");
-            requireWhereInitialized();
+            requireInitializedForPlaceholders("WHERE");
 
             if (placeholderCount > 0) {
                 sb.append(prefix);
@@ -1817,28 +1837,6 @@ public final class DynamicQuery {
             }
 
             return this;
-        }
-
-        /**
-         * Appends {@code placeholderCount} comma-separated {@code ?} placeholders, with no surrounding
-         * prefix/postfix. Shared by the {@code appendPlaceholders(...)} overloads.
-         *
-         * @param placeholderCount the number of {@code ?} placeholders to append
-         */
-        private void appendPlaceholderSequence(final int placeholderCount) {
-            for (int i = 0; i < placeholderCount; i++) {
-                if (i > 0) {
-                    sb.append(", ?");
-                } else {
-                    sb.append('?');
-                }
-            }
-        }
-
-        private void requireWhereInitialized() {
-            if (sb.isEmpty()) {
-                throw new IllegalStateException("WHERE clause must be initialized by append(...), and(...), or or(...) before placeholders can be appended");
-            }
         }
 
         /**
@@ -1857,7 +1855,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public WhereClause and(final String expr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(expr, "expr");
 
             if (sb.isEmpty()) {
@@ -1887,7 +1885,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public WhereClause or(final String expr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(expr, "expr");
 
             if (sb.isEmpty()) {
@@ -1917,16 +1915,14 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public WhereClause appendIf(final boolean b, final String textToAppend) {
-            checkOpen();
+            assertNotClosed();
 
             if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                startClauseFragment(this, "WHERE ", " ");
+                startClauseFragment(sb, "WHERE ", " ");
 
                 sb.append(textToAppend);
-            } else {
-                checkOpen();
             }
 
             return this;
@@ -1950,11 +1946,11 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public WhereClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            startClauseFragment(this, "WHERE ", " ");
+            startClauseFragment(sb, "WHERE ", " ");
 
             if (b) {
                 sb.append(textToAppendWhenTrue);
@@ -2006,10 +2002,10 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
          */
         public GroupByClause append(final String propOrColumnName) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(propOrColumnName, "propOrColumnName");
 
-            startClauseFragment(this, "GROUP BY ", ", ");
+            startClauseFragment(sb, "GROUP BY ", ", ");
 
             sb.append(propOrColumnName);
 
@@ -2034,16 +2030,15 @@ public final class DynamicQuery {
          *                                  snapshotted element is {@code null}, empty, or blank
          */
         public GroupByClause append(final Collection<String> columns) {
-            checkOpen();
+            assertNotClosed();
 
             if (N.isEmpty(columns)) {
-                checkOpen();
                 return this;
             }
 
             final Collection<String> columnsSnapshot = copyAndCheckSqlFragmentsNotBlank(columns, "columns");
 
-            startClauseFragment(this, "GROUP BY ", ", ");
+            startClauseFragment(sb, "GROUP BY ", ", ");
 
             sb.append(Strings.join(columnsSnapshot, ", "));
 
@@ -2066,16 +2061,14 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public GroupByClause appendIf(final boolean b, final String textToAppend) {
-            checkOpen();
+            assertNotClosed();
 
             if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                startClauseFragment(this, "GROUP BY ", ", ");
+                startClauseFragment(sb, "GROUP BY ", ", ");
 
                 sb.append(textToAppend);
-            } else {
-                checkOpen();
             }
 
             return this;
@@ -2099,11 +2092,11 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public GroupByClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            startClauseFragment(this, "GROUP BY ", ", ");
+            startClauseFragment(sb, "GROUP BY ", ", ");
 
             if (b) {
                 sb.append(textToAppendWhenTrue);
@@ -2157,10 +2150,10 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public HavingClause append(final String expr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(expr, "expr");
 
-            startClauseFragment(this, "HAVING ", " ");
+            startClauseFragment(sb, "HAVING ", " ");
 
             sb.append(expr);
 
@@ -2193,9 +2186,9 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public HavingClause appendPlaceholders(final int placeholderCount) {
-            checkOpen();
+            assertNotClosed();
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
-            requireHavingInitialized();
+            requireInitializedForPlaceholders("HAVING");
 
             appendPlaceholderSequence(placeholderCount);
 
@@ -2224,11 +2217,11 @@ public final class DynamicQuery {
          *         or if this clause builder has already been closed by {@code build()}
          */
         public HavingClause appendPlaceholders(final int placeholderCount, final String prefix, final String postfix) {
-            checkOpen();
+            assertNotClosed();
             N.checkArgNotNegative(placeholderCount, "placeholderCount");
             N.checkArgNotNull(prefix, "prefix");
             N.checkArgNotNull(postfix, "postfix");
-            requireHavingInitialized();
+            requireInitializedForPlaceholders("HAVING");
 
             if (placeholderCount > 0) {
                 sb.append(prefix);
@@ -2237,28 +2230,6 @@ public final class DynamicQuery {
             }
 
             return this;
-        }
-
-        /**
-         * Appends {@code placeholderCount} comma-separated {@code ?} placeholders, with no surrounding
-         * prefix/postfix. Shared by the {@code appendPlaceholders(...)} overloads.
-         *
-         * @param placeholderCount the number of {@code ?} placeholders to append
-         */
-        private void appendPlaceholderSequence(final int placeholderCount) {
-            for (int i = 0; i < placeholderCount; i++) {
-                if (i > 0) {
-                    sb.append(", ?");
-                } else {
-                    sb.append('?');
-                }
-            }
-        }
-
-        private void requireHavingInitialized() {
-            if (sb.isEmpty()) {
-                throw new IllegalStateException("HAVING clause must be initialized by append(...), and(...), or or(...) before placeholders can be appended");
-            }
         }
 
         /**
@@ -2277,7 +2248,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public HavingClause and(final String expr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(expr, "expr");
 
             if (sb.isEmpty()) {
@@ -2307,7 +2278,7 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public HavingClause or(final String expr) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(expr, "expr");
 
             if (sb.isEmpty()) {
@@ -2337,16 +2308,14 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public HavingClause appendIf(final boolean b, final String textToAppend) {
-            checkOpen();
+            assertNotClosed();
 
             if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                startClauseFragment(this, "HAVING ", " ");
+                startClauseFragment(sb, "HAVING ", " ");
 
                 sb.append(textToAppend);
-            } else {
-                checkOpen();
             }
 
             return this;
@@ -2370,11 +2339,11 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public HavingClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            startClauseFragment(this, "HAVING ", " ");
+            startClauseFragment(sb, "HAVING ", " ");
 
             if (b) {
                 sb.append(textToAppendWhenTrue);
@@ -2426,10 +2395,10 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
          */
         public OrderByClause append(final String propOrColumnName) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(propOrColumnName, "propOrColumnName");
 
-            startClauseFragment(this, "ORDER BY ", ", ");
+            startClauseFragment(sb, "ORDER BY ", ", ");
 
             sb.append(propOrColumnName);
 
@@ -2455,16 +2424,15 @@ public final class DynamicQuery {
          *                                  snapshotted element is {@code null}, empty, or blank
          */
         public OrderByClause append(final Collection<String> columns) {
-            checkOpen();
+            assertNotClosed();
 
             if (N.isEmpty(columns)) {
-                checkOpen();
                 return this;
             }
 
             final Collection<String> columnsSnapshot = copyAndCheckSqlFragmentsNotBlank(columns, "columns");
 
-            startClauseFragment(this, "ORDER BY ", ", ");
+            startClauseFragment(sb, "ORDER BY ", ", ");
 
             sb.append(Strings.join(columnsSnapshot, ", "));
 
@@ -2487,16 +2455,14 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public OrderByClause appendIf(final boolean b, final String textToAppend) {
-            checkOpen();
+            assertNotClosed();
 
             if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
 
-                startClauseFragment(this, "ORDER BY ", ", ");
+                startClauseFragment(sb, "ORDER BY ", ", ");
 
                 sb.append(textToAppend);
-            } else {
-                checkOpen();
             }
 
             return this;
@@ -2520,11 +2486,11 @@ public final class DynamicQuery {
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public OrderByClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
-            checkOpen();
+            assertNotClosed();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
 
-            startClauseFragment(this, "ORDER BY ", ", ");
+            startClauseFragment(sb, "ORDER BY ", ", ");
 
             if (b) {
                 sb.append(textToAppendWhenTrue);

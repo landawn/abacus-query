@@ -806,6 +806,35 @@ public class SqlMapperTest extends TestBase {
     }
 
     @Test
+    public void testLoadFrom_invalidSqlIdNamesOffendingSourceInMessage() throws IOException {
+        // A <sql> element with an invalid id must fail with an IAE whose message names the
+        // offending source file, so multi-file loadFrom(...) failures are diagnosable.
+        File badIdFile = new File(tempDir, "bad-id-mapper.xml");
+
+        try (FileWriter writer = new FileWriter(badIdFile)) {
+            writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+            writer.write("<sqlMapper>\n");
+            writer.write("  <sql id=\"bad id\">SELECT 1</sql>\n");
+            writer.write("</sqlMapper>\n");
+        }
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> SqlMapper.loadFrom(badIdFile.getAbsolutePath()));
+        assertTrue(e.getMessage().contains("bad-id-mapper.xml"), "message should name the offending source file but was: " + e.getMessage());
+        assertNotNull(e.getCause());
+    }
+
+    @Test
+    public void testLoadFrom_missingSqlIdNamesOffendingSourceInMessage() {
+        // The same source-labeling applies to the stream path ("input stream" label) when the
+        // id attribute is missing entirely.
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><sqlMapper><sql>SELECT 1</sql></sqlMapper>";
+        InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> SqlMapper.loadFrom(is));
+        assertTrue(e.getMessage().contains("input stream"), "message should name the offending source but was: " + e.getMessage());
+    }
+
+    @Test
     public void testSaveTo_TargetIsDirectory() {
         SqlMapper mapper = new SqlMapper();
         mapper.add("query1", ParsedSql.parse("SELECT 1"));

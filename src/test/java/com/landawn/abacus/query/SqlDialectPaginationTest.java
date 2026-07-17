@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.SqlDialect.IdentifierQuote;
+import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.SqlDialect.ProductInfo;
 import com.landawn.abacus.query.SqlDialect.SqlPolicy;
 import com.landawn.abacus.util.NamingPolicy;
@@ -211,6 +212,22 @@ public class SqlDialectPaginationTest extends TestBase {
         // SQL Server has no FETCH FIRST without OFFSET, so a lone limit() emits OFFSET 0 ROWS.
         final String sql = dslFor("Microsoft SQL Server").select("*").from("users").orderBy("id").limit(10).build().query();
         assertEquals("SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+    }
+
+    @Test
+    public void testSqlServerAppendCriteriaOrderByWithLimit() {
+        // The criteria's own ORDER BY renders before its LIMIT, so it satisfies SQL Server's
+        // OFFSET/FETCH ORDER BY prerequisite during the side-effect-free pre-validation.
+        String sql = dslFor("Microsoft SQL Server").select("id").from("users").append(Criteria.builder().orderBy("id").limit(10).build()).build().query();
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+
+        sql = dslFor("Microsoft SQL Server").select("id").from("users").append(Criteria.builder().orderBy("id").limit(10, 20).build()).build().query();
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+
+        // A criteria LIMIT without any ORDER BY (neither on the builder nor in the criteria) is still rejected.
+        final SqlBuilder noOrderBy = dslFor("Microsoft SQL Server").select("id").from("users");
+        assertThrows(IllegalStateException.class, () -> noOrderBy.append(Criteria.builder().limit(10).build()));
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", noOrderBy.orderBy("id").limit(10).build().query());
     }
 
     @Test

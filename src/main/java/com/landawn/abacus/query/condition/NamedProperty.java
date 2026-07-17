@@ -26,9 +26,11 @@ import com.landawn.abacus.util.Strings;
 
 /**
  * A utility class that provides a fluent API for creating SQL conditions based on a property name.
- * The {@link #of(String)} factory uses a bounded cache to reuse recently requested property names.
- * Direct construction bypasses that cache. Cache insertion is coordinated so concurrent calls for the
- * same previously unseen name return the same instance while that entry remains cached.
+ * The {@link #of(String)} factory caches instances by property name. The cache is unbounded and
+ * retains every distinct name for the lifetime of the class loader, so prefer
+ * {@code new NamedProperty(name)} for dynamically-generated names. Direct construction bypasses
+ * the cache. Concurrent {@code of(String)} calls for the same previously unseen name return the
+ * same instance.
  *
  * <p>NamedProperty simplifies the creation of various SQL conditions by providing convenient
  * methods that automatically include the property name. Instead of repeatedly specifying the
@@ -37,7 +39,7 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>Key features:</p>
  * <ul>
- *   <li>Bounded instance reuse for property names (using {@link #of(String)})</li>
+ *   <li>Instance reuse for a fixed set of property names (using {@link #of(String)})</li>
  *   <li>Fluent API for creating various SQL conditions</li>
  *   <li>Support for comparison operators (equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual)</li>
  *   <li>Support for pattern matching (like, notLike, startsWith, notStartsWith, endsWith, notEndsWith, contains, notContains)</li>
@@ -113,8 +115,9 @@ public class NamedProperty {
 
     /**
      * Returns or atomically creates a cached NamedProperty instance for the specified property name.
-     * Concurrent first access is coordinated, so racing callers receive the same instance. The cache is
-     * bounded and entries may later be evicted; reference identity is therefore not a permanent API guarantee.
+     * Racing callers for the same previously unseen name receive the same instance. Note that the cache
+     * is unbounded and retains every distinct name for the lifetime of the class loader, so prefer
+     * {@link #NamedProperty(String) new NamedProperty(name)} for dynamically-generated names.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -140,20 +143,17 @@ public class NamedProperty {
             throw new IllegalArgumentException("Property name must not be null, empty, or blank");
         }
 
-        // ObjectPool's inherited putIfAbsent is not atomic with the preceding get. Coordinate every
-        // factory access so concurrent first callers cannot receive a losing instance while retaining
-        // the pool's bounded eviction behavior.
-        synchronized (instancePool) {
-            NamedProperty cached = instancePool.get(propName);
+        // ObjectPool.putIfAbsent delegates to ConcurrentHashMap.putIfAbsent and is genuinely atomic,
+        // so no external lock is needed: racing first callers all converge on the single pool winner.
+        NamedProperty cached = instancePool.get(propName);
 
-            if (cached == null) {
-                final NamedProperty created = new NamedProperty(propName);
-                final NamedProperty raced = instancePool.putIfAbsent(propName, created);
-                cached = raced == null ? created : raced;
-            }
-
-            return cached;
+        if (cached == null) {
+            final NamedProperty created = new NamedProperty(propName);
+            final NamedProperty raced = instancePool.putIfAbsent(propName, created);
+            cached = raced == null ? created : raced;
         }
+
+        return cached;
     }
 
     /**

@@ -135,7 +135,7 @@ public class On extends Cell {
      * @param condition the join condition. Any non-clause, non-{@code null} predicate is allowed, including
      *            {@link SqlExpression}, {@link Equal}, {@link And}, {@link Or}, or {@link Between}.
      *            Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is a {@link Criteria},
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or is a {@link Criteria},
      *                                  is or contains a SQL clause, an {@code ON}/{@code USING} condition, an
      *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
      *                                  (a blank {@link SqlExpression} or empty {@link Junction})

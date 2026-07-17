@@ -1427,6 +1427,64 @@ public class SqlParserTest extends TestBase {
     }
 
     // ----------------------------------------------------------------------------------------------
+    // A CTE literally named after a statement verb (valid unquoted in e.g. PostgreSQL/SQL Server)
+    // must not be mistaken for the statement verb that follows the WITH clause.
+    // ----------------------------------------------------------------------------------------------
+
+    @Test
+    public void testWithClause_cteNamedDeleteIsNotTheStatementVerb() {
+        final String sql = "WITH delete AS (SELECT 1) SELECT * FROM delete";
+
+        assertTrue(SqlParser.isSelectQuery(sql));
+        assertFalse(SqlParser.isDeleteQuery(sql));
+        assertTrue(SqlParser.isReadOnlyQuery(sql));
+    }
+
+    @Test
+    public void testWithClause_cteNamedUpdateBeforeInsertStatement() {
+        final String sql = "WITH update AS (SELECT 1) INSERT INTO t SELECT * FROM update";
+
+        assertTrue(SqlParser.isInsertQuery(sql));
+        assertFalse(SqlParser.isUpdateQuery(sql));
+    }
+
+    @Test
+    public void testWithClause_verbNamedCteVariants() {
+        // RECURSIVE modifier before the verb-named CTE.
+        assertTrue(SqlParser.isSelectQuery("WITH RECURSIVE delete AS (SELECT 1) SELECT * FROM delete"));
+        assertFalse(SqlParser.isDeleteQuery("WITH RECURSIVE delete AS (SELECT 1) SELECT * FROM delete"));
+        // Verb-named CTE with a column list.
+        assertTrue(SqlParser.isSelectQuery("WITH delete (a) AS (SELECT 1) SELECT * FROM delete"));
+        assertFalse(SqlParser.isDeleteQuery("WITH delete (a) AS (SELECT 1) SELECT * FROM delete"));
+        // Verb-named CTE as a later element of the CTE list.
+        assertTrue(SqlParser.isSelectQuery("WITH a AS (SELECT 1), update AS (SELECT 2) SELECT * FROM a"));
+        assertFalse(SqlParser.isUpdateQuery("WITH a AS (SELECT 1), update AS (SELECT 2) SELECT * FROM a"));
+    }
+
+    @Test
+    public void testWithClause_quotedCteNamesStaySafe() {
+        assertTrue(SqlParser.isSelectQuery("WITH \"delete\" AS (SELECT 1) SELECT * FROM \"delete\""));
+        assertFalse(SqlParser.isDeleteQuery("WITH \"delete\" AS (SELECT 1) SELECT * FROM \"delete\""));
+        assertTrue(SqlParser.isSelectQuery("WITH [delete] AS (SELECT 1) SELECT * FROM [delete]"));
+        assertFalse(SqlParser.isDeleteQuery("WITH [delete] AS (SELECT 1) SELECT * FROM [delete]"));
+    }
+
+    @Test
+    public void testWithClause_verbNamedCteInLaterStatementStaysReadOnly() {
+        // Exercises the containsQueryKeyword WITH look-ahead: the CTE name "delete" must not be
+        // reported as a top-level DELETE of the second statement.
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT 1; WITH delete AS (SELECT 1) SELECT * FROM delete"));
+    }
+
+    @Test
+    public void testWithClause_realVerbAfterCteStillClassified() {
+        // Existing behavior pinned: the statement verb after the CTE definitions is still found.
+        assertTrue(SqlParser.isDeleteQuery("WITH x AS (SELECT 1) DELETE FROM t"));
+        assertFalse(SqlParser.isReadOnlyQuery("WITH x AS (SELECT 1) DELETE FROM t"));
+        assertTrue(SqlParser.isDeleteQuery("WITH delete AS (SELECT 1) DELETE FROM t WHERE id IN (SELECT 1 FROM delete)"));
+    }
+
+    // ----------------------------------------------------------------------------------------------
     // isInsertQuery(String)
     // ----------------------------------------------------------------------------------------------
 
@@ -2222,6 +2280,42 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
+    public void testParse_hashCommentAfterCommaSeparatedTempTablesIsStripped() {
+        // The backward line-comment scan must classify "#t2" in "FROM #t1, #t2" as an identifier
+        // (same comma-list walk as the forward scan), so the genuine trailing hash comment is
+        // still recognized and stripped instead of being kept as tokens.
+        final List<String> tokens = SqlParser.parse("SELECT * FROM #t1, #t2 WHERE x = (SELECT 1) #note rest");
+
+        assertTrue(tokens.contains("#t1"), tokens.toString());
+        assertTrue(tokens.contains("#t2"), tokens.toString());
+        assertTrue(tokens.contains("WHERE"), tokens.toString());
+        assertTrue(tokens.stream().noneMatch(w -> w.contains("note")), tokens.toString());
+        assertTrue(tokens.stream().noneMatch(w -> w.contains("rest")), tokens.toString());
+    }
+
+    @Test
+    public void testParse_hashCommentDirectlyAfterCommaSeparatedTempTablesEndsAtNewline() {
+        // Same asymmetry, comment directly after the temp-table list: "#note" is a comment ending
+        // at the newline, and the next line's WHERE clause must survive.
+        final List<String> tokens = SqlParser.parse("SELECT * FROM #t1, #t2 #note\nWHERE x = 1");
+
+        assertTrue(tokens.contains("#t1"), tokens.toString());
+        assertTrue(tokens.contains("#t2"), tokens.toString());
+        assertTrue(tokens.contains("WHERE"), tokens.toString());
+        assertTrue(tokens.stream().noneMatch(w -> w.contains("note")), tokens.toString());
+    }
+
+    @Test
+    public void testParse_hashCommentAfterCommaWithoutIdentifierContextStillStripped() {
+        // Regression guard: a comma whose backward walk anchors at a non-context keyword (SELECT)
+        // still yields the comment classification.
+        final List<String> tokens = SqlParser.parse("SELECT a, #comment\nFROM t");
+
+        assertTrue(tokens.contains("FROM"), tokens.toString());
+        assertTrue(tokens.stream().noneMatch(w -> w.contains("comment")), tokens.toString());
+    }
+
+    @Test
     public void testParse_hashTempTableAsImplicitDmlTargetIsKept() {
         final List<String> insertWords = SqlParser.parse("INSERT #stage (id) VALUES (1)");
         final List<String> deleteWords = SqlParser.parse("DELETE #stage WHERE id = 1");
@@ -2244,6 +2338,35 @@ public class SqlParserTest extends TestBase {
         assertTrue(insertWords.contains("#stage"), insertWords.toString());
         assertTrue(deleteWords.contains("#stage"), deleteWords.toString());
         assertTrue(mergeWords.contains("#stage"), mergeWords.toString());
+    }
+
+    @Test
+    public void testParse_hashTempTableAfterUpdateTopClauseIsKept() {
+        // "UPDATE TOP (n) #tmp SET ..." is idiomatic T-SQL; #stage and the SET clause must survive.
+        final List<String> updateWords = SqlParser.parse("UPDATE TOP (10) #stage SET x = 1");
+        final List<String> percentWords = SqlParser.parse("UPDATE TOP (25) PERCENT #stage SET x = 1");
+
+        assertTrue(updateWords.contains("#stage"), updateWords.toString());
+        assertTrue(updateWords.contains("SET"), updateWords.toString());
+        assertTrue(percentWords.contains("#stage"), percentWords.toString());
+        assertTrue(percentWords.contains("SET"), percentWords.toString());
+    }
+
+    @Test
+    public void testParse_hashTempTableAfterForUpdateIsKept() {
+        // Pre-existing behavior pinned: UPDATE is a general context keyword, so a '#' right after
+        // a locking "FOR UPDATE" clause is classified as an identifier, not a MySQL comment.
+        assertTrue(SqlParser.parse("SELECT * FROM t WHERE id = 1 FOR UPDATE #lock").contains("#lock"));
+    }
+
+    @Test
+    public void testParse_hashCommentAfterUpdateSetClauseRemainsComment() {
+        // Only the target position directly after UPDATE [TOP (n)] is identifier context; a '#'
+        // later in the statement is still a MySQL hash comment.
+        final List<String> tokens = SqlParser.parse("UPDATE stage SET x = 1 #comment\nWHERE id = 1");
+
+        assertFalse(tokens.contains("#comment"), tokens.toString());
+        assertTrue(tokens.contains("WHERE"), tokens.toString());
     }
 
     @Test

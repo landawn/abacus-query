@@ -19,6 +19,7 @@ import java.util.Set;
 
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableSet;
+import com.landawn.abacus.util.N;
 
 /**
  * Immutable selection specification for SQL queries, particularly useful for complex multi-table selections.
@@ -146,10 +147,12 @@ public final class Selection {
      *
      * @param entityClass the entity class to select; must not be {@code null}
      * @return a new selection builder
-     * @throws NullPointerException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     public static SelectionBuilder builder(final Class<?> entityClass) {
-        return new SelectionBuilder(Objects.requireNonNull(entityClass, "entityClass"));
+        N.checkArgNotNull(entityClass, "entityClass");
+
+        return new SelectionBuilder(entityClass);
     }
 
     @Override

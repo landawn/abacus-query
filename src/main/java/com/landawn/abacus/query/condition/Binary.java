@@ -325,7 +325,8 @@ public class Binary extends ComposableCondition {
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a SQL representation of this condition
      * @throws IllegalArgumentException if the value (or a value in an {@code IN}/{@code NOT IN} collection)
-     *                                  is a {@code NaN} or infinite {@link Float}/{@link Double}
+     *                                  is a {@code NaN} or infinite {@link Float}/{@link Double}, or a
+     *                                  {@link Number} whose text is not a valid numeric literal
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {

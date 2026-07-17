@@ -36,10 +36,10 @@ import com.landawn.abacus.util.Strings;
  *   <li><b>Composable:</b> AND, OR, NOT, XOR</li>
  *   <li><b>Range/Set:</b> BETWEEN, IN, NOT_IN, LIKE</li>
  *   <li><b>Null checks:</b> IS, IS_NOT</li>
- *   <li><b>Subquery:</b> EXISTS, ANY, SOME, ALL</li>
+ *   <li><b>Subquery:</b> EXISTS, NOT_EXISTS, ANY, SOME, ALL</li>
  *   <li><b>Join types:</b> JOIN, LEFT_JOIN, RIGHT_JOIN, FULL_JOIN, etc.</li>
  *   <li><b>Clauses:</b> WHERE, HAVING, GROUP_BY, ORDER_BY, etc.</li>
- *   <li><b>Set operations:</b> UNION, UNION_ALL, INTERSECT, EXCEPT</li>
+ *   <li><b>Set operations:</b> UNION, UNION_ALL, INTERSECT, EXCEPT, MINUS</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>

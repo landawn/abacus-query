@@ -1541,7 +1541,18 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testBuilderRejectsClauseLikeConnectorAndEmptyWhereExpressions() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("WHERE active = true")));
+        // An SqlExpression whose literal starts with a clause keyword reports Operator.EMPTY (rendered
+        // as ""), so the mismatch message must describe the expression itself instead of trailing off
+        // with nothing after "but got".
+        IllegalArgumentException whereEx = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("WHERE active = true")));
+        assertTrue(whereEx.getMessage().contains("expected WHERE or non-clause condition, but got SqlExpression \"WHERE active = true\""),
+                "was: " + whereEx.getMessage());
+
+        IllegalArgumentException orderByEx = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("ORDER BY x")));
+        assertTrue(orderByEx.getMessage().contains("expected WHERE or non-clause condition, but got SqlExpression \"ORDER BY x\""),
+                "was: " + orderByEx.getMessage());
+        assertFalse(orderByEx.getMessage().trim().endsWith("but got"));
+
         assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where("WHERE active = true"));
         assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("ON users.id = orders.user_id")));
         assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("   ")));

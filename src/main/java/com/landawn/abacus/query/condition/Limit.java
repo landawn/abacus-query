@@ -105,7 +105,9 @@ public class Limit extends Clause {
      * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
      */
     public Limit(final int count, final int offset) {
-        super(Operator.LIMIT, SqlExpression.of(offset == 0 ? String.valueOf(N.checkArgNotNegative(count, "count"))
+        // Deliberately NOT SqlExpression.of(...): that factory's cache is unbounded, so interning every
+        // distinct (count, offset) pair would grow without limit under dynamic pagination values.
+        super(Operator.LIMIT, new SqlExpression(offset == 0 ? String.valueOf(N.checkArgNotNegative(count, "count"))
                 : N.checkArgNotNegative(count, "count") + " OFFSET " + N.checkArgNotNegative(offset, "offset")));
 
         this.count = count;
@@ -135,7 +137,10 @@ public class Limit extends Clause {
      * <p><b>API note:</b> {@link #toSql(NamingPolicy)} returns the normalized expression. SQL builders may
      * render a resolved expression using the target dialect's pagination syntax. Opaque expressions are
      * generally emitted verbatim; generic {@code LIMIT} expressions may be adapted to an
-     * {@code OFFSET}/{@code FETCH} dialect.</p>
+     * {@code OFFSET}/{@code FETCH} dialect. Note that adapting a placeholder-bearing
+     * {@code LIMIT count OFFSET offset} form to an {@code OFFSET}/{@code FETCH} dialect reverses the
+     * positional order of its {@code ?} placeholders (the offset placeholder is emitted before the count
+     * placeholder); prefer named placeholders when the target dialect may vary.</p>
      *
      * @param expr row-limiting expression; must be non-null, non-blank, and match a supported form
      * @throws IllegalArgumentException if {@code expr} is null, blank, or syntactically unsupported
@@ -145,7 +150,9 @@ public class Limit extends Clause {
     }
 
     private Limit(final Prepared prepared) {
-        super(Operator.LIMIT, SqlExpression.of(prepared.conditionExpr));
+        // Deliberately NOT SqlExpression.of(...): expressions carry dynamic count/offset values, and the
+        // factory's unbounded cache would retain every distinct pair for the classloader lifetime.
+        super(Operator.LIMIT, new SqlExpression(prepared.conditionExpr));
 
         this.expr = prepared.literal;
         this.count = prepared.count;
@@ -227,7 +234,8 @@ public class Limit extends Clause {
      * <p><b>API note:</b> Prefer {@link #resolvedCount()} when {@link Integer#MAX_VALUE} could be a
      * legitimate count.</p>
      *
-     * @return the resolved count, or {@link Integer#MAX_VALUE} when an expression is unresolved
+     * @return the resolved count, {@link Integer#MAX_VALUE} when an expression is unresolved,
+     *         or zero for an uninitialized serialization instance
      */
     public int count() {
         return count;
@@ -239,7 +247,8 @@ public class Limit extends Clause {
      * <p><b>API note:</b> Use {@link #resolvedOffset()} to distinguish a resolved zero from an unresolved
      * expression.</p>
      *
-     * @return the resolved offset, or zero when no offset is specified or the expression is unresolved
+     * @return the resolved offset, or zero when no offset is specified, the expression is unresolved,
+     *         or this is an uninitialized serialization instance
      */
     public int offset() {
         return offset;

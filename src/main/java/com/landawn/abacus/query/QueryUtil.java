@@ -41,7 +41,6 @@ import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.InternalUtil;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.ObjectPool;
 import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
@@ -93,9 +92,9 @@ public final class QueryUtil {
 
     private static final Map<Class<?>, ImmutableMap<String, String>> column2PropNameMapPool = new ConcurrentHashMap<>();
 
-    private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, String>>> entityTablePropColumnNameMap = new ObjectPool<>(POOL_SIZE);
+    private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, String>>> entityTablePropColumnNameMap = new ConcurrentHashMap<>();
 
-    private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, ColumnInfo>>> entityPropColumnInfoMap = new ObjectPool<>(POOL_SIZE);
+    private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, ColumnInfo>>> entityPropColumnInfoMap = new ConcurrentHashMap<>();
 
     /**
      * Caches, per entity class, the {@link PropInfo} objects resolved for that class's ID

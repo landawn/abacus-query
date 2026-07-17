@@ -33,6 +33,7 @@ import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.condition.Operator;
+import com.landawn.abacus.query.condition.Union;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
@@ -401,6 +402,54 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    public void testIntoRenderingFailuresAreAtomic() {
+        // A comment-token column is rejected while the INSERT text is being emitted; the failed into()
+        // must not leave a partial "INSERT INTO account (first_name, " behind nor keep _tableName set,
+        // otherwise a later build() would silently return the truncated statement.
+        final SqlBuilder unsafeInsert = Dsl.PSC.insert("firstName", "bad--name");
+        assertThrows(IllegalArgumentException.class, () -> unsafeInsert.into("account"));
+        assertNull(unsafeInsert._tableName);
+        assertEquals(0, unsafeInsert._sb.length());
+        assertThrows(IllegalStateException.class, unsafeInsert::build);
+
+        // The NAMED_SQL VALUES path also mutates the named-parameter registries; a failed render must
+        // restore them so a retried into() behaves as if the first call never happened.
+        final boolean[] failFirstRender = { true };
+        final Dsl throwingNamedDsl = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+            if (failFirstRender[0]) {
+                failFirstRender[0] = false;
+                throw new IllegalStateException("named renderer failed");
+            }
+
+            sb.append(':').append(name);
+        }).build());
+        final SqlBuilder namedInsert = throwingNamedDsl.insert("firstName", "lastName");
+        assertThrows(IllegalStateException.class, () -> namedInsert.into("account"));
+        assertNull(namedInsert._tableName);
+        assertEquals(0, namedInsert._sb.length());
+        assertTrue(namedInsert._namedParameterNameOccurrences.isEmpty());
+        assertTrue(namedInsert._generatedNamedParameterNames.isEmpty());
+        assertTrue(namedInsert._renderedNamedParameterTokens.isEmpty());
+        assertEquals("INSERT INTO account (first_name, last_name) VALUES (:firstName, :lastName)", namedInsert.into("account").build().query());
+    }
+
+    @Test
+    public void testFromRenderingFailuresAreAtomic() {
+        // Rendering the staged select list is part of from(); a rejected column must roll back the
+        // emitted SELECT prefix so a retried from() cannot emit a second "SELECT ..." fragment.
+        final SqlBuilder unsafeSelect = Dsl.PSC.select("name", "a--b");
+        assertThrows(IllegalArgumentException.class, () -> unsafeSelect.from("t"));
+        assertEquals(0, unsafeSelect._sb.length());
+        assertFalse(unsafeSelect._hasFromBeenSet);
+        assertNull(unsafeSelect._tableName);
+
+        // A retry fails the same way and still leaves no partial SQL behind (no doubled SELECT).
+        assertThrows(IllegalArgumentException.class, () -> unsafeSelect.from("t"));
+        assertEquals(0, unsafeSelect._sb.length());
+        assertThrows(IllegalStateException.class, unsafeSelect::build);
+    }
+
+    @Test
     public void testJoinApisRequireFromAndPrecedeLaterClauses() {
         final SqlBuilder stagedSelect = Dsl.PSC.select("id");
         assertThrows(IllegalStateException.class, () -> stagedSelect.join("orders"));
@@ -465,6 +514,22 @@ public class AbstractQueryBuilderTest extends TestBase {
         final SqlBuilder temporalAlias = Dsl.PSC.select("firstName").from("account FOR SYSTEM_TIME AS OF '2026-01-01' AS a", Account.class);
         assertEquals("a", temporalAlias._tableAlias);
         assertTrue(temporalAlias.build().query().contains("a.first_name"));
+    }
+
+    @Test
+    public void testTopLevelAliasScannerBackslashEscapesOnlyInSingleQuotedLiterals() {
+        // A backslash before the closing quote of a double-quoted or backtick-quoted identifier does NOT
+        // escape that quote (backslash escaping applies only inside single-quoted string literals), so the
+        // identifier ends at that quote and the trailing token is a real top-level table alias.
+        final SqlBuilder doubleQuoted = Dsl.PSC.select("firstName").from("\"a\\\" t", Account.class);
+        assertEquals("t", doubleQuoted._tableAlias);
+        final String doubleQuotedSql = doubleQuoted.build().query();
+        assertTrue(doubleQuotedSql.contains("t.first_name"), doubleQuotedSql);
+        assertTrue(doubleQuotedSql.endsWith("FROM \"a\\\" t"), doubleQuotedSql);
+
+        final SqlBuilder backtickQuoted = Dsl.PSC.select("firstName").from("`a\\` t", Account.class);
+        assertEquals("t", backtickQuoted._tableAlias);
+        assertTrue(backtickQuoted.build().query().contains("t.first_name"));
     }
 
     @Test
@@ -932,6 +997,64 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    public void testAppendStandaloneSetOperationClauseValidatesLikeSetOperationMethods() {
+        // The operand must be a complete read-only SELECT sub-query, exactly as on the
+        // union(String)/union(builder)/Criteria set-operation routes.
+        final SqlBuilder unsafeOperand = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> unsafeOperand.append(new Union(Filters.subQuery("UPDATE archived_users SET active = false"))));
+        assertEquals("SELECT id FROM users", unsafeOperand.build().query());
+
+        // Position rules: a set operator cannot follow ORDER BY (or pagination/FOR UPDATE) ...
+        final SqlBuilder ordered = Dsl.PSC.select("id").from("users").orderBy("id");
+        assertThrows(IllegalStateException.class, () -> ordered.append(new Union(Filters.subQuery("SELECT id FROM archived_users"))));
+        assertEquals("SELECT id FROM users ORDER BY id", ordered.build().query());
+
+        // ... and requires a SELECT segment completed by from(...) on its left-hand side.
+        final SqlBuilder staged = Dsl.PSC.select("id");
+        assertThrows(IllegalStateException.class, () -> staged.append(new Union(Filters.subQuery("SELECT id FROM archived_users"))));
+        assertEquals("SELECT id FROM users", staged.from("users").build().query());
+
+        // A valid standalone Union still renders and completes the set operation: WHERE may no longer
+        // follow, exactly as on the other set-operation routes.
+        final SqlBuilder compound = Dsl.PSC.select("id").from("users").append(new Union(Filters.subQuery("SELECT id FROM archived_users")));
+        assertThrows(IllegalStateException.class, () -> compound.where(Filters.eq("active", true)));
+        assertEquals("SELECT id FROM users UNION SELECT id FROM archived_users", compound.build().query());
+    }
+
+    @Test
+    public void testAppendCriteriaJoinTracksFollowUpOnUsingEligibility() {
+        // A criteria join that carries its own ON condition closes the connector slot, even though the
+        // preceding standalone join had left it open: a follow-up on() must not emit a second ON.
+        final SqlBuilder conditionedJoin = Dsl.PSC.select("u.id")
+                .from("users u")
+                .join("orders o")
+                .append(Criteria.builder().join("payments p", Filters.expr("p.order_id = o.id")).build());
+        assertThrows(IllegalStateException.class, () -> conditionedJoin.on("u.id = o.user_id"));
+        assertEquals("SELECT u.id FROM users u JOIN orders o JOIN payments p ON p.order_id = o.id", conditionedJoin.build().query());
+
+        // A condition-less criteria join re-opens the slot: a follow-up on() is accepted and renders.
+        final String openJoinSql = Dsl.PSC.select("u.id")
+                .from("users u")
+                .join("orders o")
+                .on("u.id = o.user_id")
+                .append(Criteria.builder().join("payments p").build())
+                .on("p.order_id = o.id")
+                .build()
+                .query();
+        assertEquals("SELECT u.id FROM users u JOIN orders o ON u.id = o.user_id JOIN payments p ON p.order_id = o.id", openJoinSql);
+
+        // A single raw criteria join entity that already supplies its ON inline closes the slot too.
+        final SqlBuilder inlineOnJoin = Dsl.PSC.select("u.id").from("users u").append(Criteria.builder().join("payments p ON p.user_id = u.id").build());
+        assertThrows(IllegalStateException.class, () -> inlineOnJoin.on("p.status = 'OPEN'"));
+        assertEquals("SELECT u.id FROM users u JOIN payments p ON p.user_id = u.id", inlineOnJoin.build().query());
+
+        // A CROSS JOIN never accepts a connector, no matter how it is appended.
+        final SqlBuilder crossJoined = Dsl.PSC.select("u.id").from("users u").append(Criteria.builder().join(Filters.crossJoin("payments")).build());
+        assertThrows(IllegalStateException.class, () -> crossJoined.on("payments.user_id = u.id"));
+        assertEquals("SELECT u.id FROM users u CROSS JOIN payments", crossJoined.build().query());
+    }
+
+    @Test
     public void testCollectionAndMapArgumentsRenderTheirValidatedSnapshots() {
         assertEquals("SELECT * FROM users",
                 Dsl.PSC.select("*").from(new ChangingCollection<>(Collections.singletonList("users"), Collections.singletonList(" "))).build().query());
@@ -1362,6 +1485,33 @@ public class AbstractQueryBuilderTest extends TestBase {
         // union(String) is reserved for a complete SELECT sub-query; a bare column name is rejected up front
         // instead of silently becoming a column list that fails later with an unrelated "from() must be called" error.
         final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").union("id"));
+        assertTrue(ex.getMessage().contains("SELECT sub-query"));
+    }
+
+    @Test
+    public void testUnion_ParenthesizedFromLessQueryAccepted() {
+        // "UNION (SELECT 1)" is valid SQL: a FROM-less query wrapped in balanced parentheses is as
+        // complete an operand as the already-accepted unparenthesized union("SELECT 1").
+        assertEquals("SELECT id FROM users UNION (SELECT 1)", Dsl.PSC.select("id").from("users").union("(SELECT 1)").build().query());
+        assertEquals("SELECT id FROM users UNION ((SELECT 1))", Dsl.PSC.select("id").from("users").union("((SELECT 1))").build().query());
+
+        // All five set operations (union/unionAll/intersect/except/minus) share the same operand check
+        // (checkSetOperationSubQuery -> isSubQuery), so a second operation pins the shared path.
+        assertEquals("SELECT id FROM users INTERSECT (SELECT id FROM t)",
+                Dsl.PSC.select("id").from("users").intersect("(SELECT id FROM t)").build().query());
+    }
+
+    @Test
+    public void testUnion_ParenthesizedNonSelectStillRejected() {
+        // A parenthesized column list, an unbalanced non-SELECT fragment, and an unbalanced
+        // parenthesized SELECT all remain rejected with the pointed message.
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").union("(id, name)"));
+        assertTrue(ex.getMessage().contains("SELECT sub-query"));
+
+        ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").union("(name"));
+        assertTrue(ex.getMessage().contains("SELECT sub-query"));
+
+        ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").union("(SELECT 1"));
         assertTrue(ex.getMessage().contains("SELECT sub-query"));
     }
 

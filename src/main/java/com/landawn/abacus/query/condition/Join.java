@@ -150,7 +150,8 @@ public class Join extends AbstractCondition {
      * @param operator the join operator (e.g. {@code INNER_JOIN}, {@code LEFT_JOIN})
      * @param joinEntity the table or entity to join with
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code operator} is not a JOIN operator, or if {@code joinEntity} is
+     *                                  {@code null}, empty, or blank
      */
     protected Join(final Operator operator, final String joinEntity) {
         this(operator, joinEntity, null);
@@ -218,7 +219,8 @@ public class Join extends AbstractCondition {
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} and
+     * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code operator} is
+     *                                  {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} and
      *                                  {@code joinCondition} is non-{@code null}; if {@code joinEntity} is {@code null}, empty, or blank;
      *                                  or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with

@@ -547,6 +547,25 @@ public class LimitTest extends TestBase {
     }
 
     @Test
+    public void testNumericConstructorInstancesEqualAndRenderIdentically() {
+        // Regression: the numeric constructors must not intern their derived "count OFFSET offset"
+        // expression through SqlExpression.of(...) — that cache is unbounded, so every distinct
+        // (count, offset) pair from dynamic pagination would be retained forever. Fresh instances
+        // must still compare equal and render identically without any shared interned instance.
+        Limit limit1 = new Limit(10, 20);
+        Limit limit2 = new Limit(10, 20);
+
+        assertEquals(limit1, limit2);
+        assertEquals(limit1.hashCode(), limit2.hashCode());
+        assertEquals("LIMIT 10 OFFSET 20", limit1.toSql(NamingPolicy.NO_CHANGE));
+        assertEquals(limit1.toSql(NamingPolicy.NO_CHANGE), limit2.toSql(NamingPolicy.NO_CHANGE));
+
+        // Wrapped conditions are structurally equal but deliberately not the same interned object.
+        assertEquals(limit1.condition(), limit2.condition());
+        Assertions.assertNotSame(limit1.condition(), limit2.condition());
+    }
+
+    @Test
     public void testDefaultConstructor_EmptyState() {
         Limit limit = new Limit();
         Limit same = new Limit();

@@ -1405,7 +1405,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
          *                                  {@link SqlExpression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
-         *                                  quantified operand, or is a clause condition
+         *                                  quantified operand, is a standalone {@link SubQuery}, or is a clause condition
          *                                  with an operator other than {@code WHERE}
          */
         public Builder where(final Condition condition) {
@@ -1597,7 +1597,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
          *                                  {@link SqlExpression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
-         *                                  quantified operand, or is a clause condition
+         *                                  quantified operand, is a standalone {@link SubQuery}, or is a clause condition
          *                                  with an operator other than {@code GROUP_BY}
          */
         public Builder groupBy(final Condition condition) {
@@ -1813,7 +1813,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
          *                                  {@link SqlExpression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
-         *                                  quantified operand, or is a clause condition
+         *                                  quantified operand, is a standalone {@link SubQuery}, or is a clause condition
          *                                  with an operator other than {@code HAVING}
          */
         public Builder having(final Condition condition) {
@@ -2011,7 +2011,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
          *                                  {@link SqlExpression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
-         *                                  quantified operand, or is a clause condition
+         *                                  quantified operand, is a standalone {@link SubQuery}, or is a clause condition
          *                                  with an operator other than {@code ORDER_BY}
          */
         public Builder orderBy(final Condition condition) {
@@ -2468,6 +2468,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code condition} is {@code null}, reports a {@code null} operator,
          *         is a nested {@link Criteria}, uses an
          *         {@code ON}/{@code USING} operator, is an {@code ANY}/{@code ALL}/{@code SOME} quantified operand,
+         *         is a standalone {@link SubQuery},
          *         is an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}), or reports a routed
          *         operator without being the corresponding clause type
          */
@@ -2556,8 +2557,14 @@ public class Criteria extends AbstractCondition {
 
             if (isClause(cond)) {
                 if (cond.operator() != expectedOperator) {
+                    // An SqlExpression whose literal begins with a clause keyword is treated as a clause, but its
+                    // operator is Operator.EMPTY (which renders as ""); describe the condition itself so the
+                    // message never trails off with nothing after "but got".
+                    final String actual = cond instanceof SqlExpression ? cond.getClass().getSimpleName() + " \"" + ((SqlExpression) cond).literal() + "\""
+                            : cond.getClass().getSimpleName() + " with operator " + cond.operator();
+
                     throw new IllegalArgumentException(
-                            "Invalid condition for " + methodName + ": expected " + expectedOperator + " or non-clause condition, but got " + cond.operator());
+                            "Invalid condition for " + methodName + ": expected " + expectedOperator + " or non-clause condition, but got " + actual);
                 }
 
                 if (!(cond instanceof Clause)) {

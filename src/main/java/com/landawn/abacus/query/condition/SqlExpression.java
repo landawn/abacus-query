@@ -1047,7 +1047,7 @@ public class SqlExpression extends ComposableCondition {
     /**
      * Joins multiple literals using the specified operator's SQL token as the separator.
      * Each separator is surrounded by spaces (e.g. {@code " AND " }). If {@code literals}
-     * contains a single element, that element is returned with no operator appended; an
+     * contains a single element, that element is returned with no operator appended; a
      * {@code null} or empty array yields an empty string.
      *
      * @param operator the operator whose {@link Operator#sqlToken() sqlToken} is used as the separator
