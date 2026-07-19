@@ -15,7 +15,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,9 +34,13 @@ import org.w3c.dom.NodeList;
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.EndElementTree;
+import com.sun.source.doctree.LinkTree;
+import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
+import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.AssignmentTree;
@@ -172,6 +175,8 @@ public final class ApiDocGenerator {
         List<String> seeAlso = new ArrayList<>();
         List<String> contract = new ArrayList<>();
         String performance;
+        String threadSafety = "unspecified";
+        List<String> examples = new ArrayList<>();
     }
 
     private static int methodOrder;
@@ -198,13 +203,11 @@ public final class ApiDocGenerator {
         final Iterable<? extends JavaFileObject> files = fileManager.getJavaFileObjectsFromPaths(javaFiles);
         final JavacTask task = (JavacTask) compiler.getTask(new StringWriter(), fileManager, diagnostics, List.of("-proc:none", "-Xlint:none"), null, files);
 
+        // Parse only. Running analyze() would inject synthetic members (default and record
+        // canonical constructors) whose source positions do not map to real declarations.
         final List<CompilationUnitTree> parsedUnits = new ArrayList<>();
         for (final CompilationUnitTree unit : task.parse()) {
             parsedUnits.add(unit);
-        }
-        try {
-            task.analyze();
-        } catch (final Throwable ignored) {
         }
         fileManager.close();
 
@@ -321,6 +324,7 @@ public final class ApiDocGenerator {
         if (typeDoc != null) {
             type.javadocSummary = typeDoc.summary;
             type.since = typeDoc.since;
+            type.threadSafety = typeDoc.threadSafety;
         }
         type.deprecated = readDeprecated(classTree.getModifiers(), typeDoc);
 
@@ -342,7 +346,7 @@ public final class ApiDocGenerator {
                 }
                 type.fields.add(field);
             } else if (member instanceof MethodTree methodTree) {
-                if (isConstructor(methodTree, classTree)) {
+                if (isConstructor(methodTree)) {
                     if (!isPublicConstructor(methodTree, classTree)) {
                         continue;
                     }
@@ -376,6 +380,7 @@ public final class ApiDocGenerator {
                         method.since = methodDoc.since;
                         method.contract = methodDoc.contract;
                         method.performance = methodDoc.performance;
+                        method.examples = methodDoc.examples;
                         method.seeAlso = methodDoc.seeAlso;
                     }
                     method.deprecated = readDeprecated(methodTree.getModifiers(), methodDoc);
@@ -405,8 +410,9 @@ public final class ApiDocGenerator {
         return false;
     }
 
-    private static boolean isConstructor(final MethodTree methodTree, final ClassTree owner) {
-        return methodTree.getReturnType() == null && methodTree.getName().contentEquals(owner.getSimpleName());
+    private static boolean isConstructor(final MethodTree methodTree) {
+        // javac parse trees name every constructor "<init>", never the class's simple name.
+        return methodTree.getReturnType() == null && methodTree.getName().contentEquals("<init>");
     }
 
     private static boolean isPublicConstructor(final MethodTree methodTree, final ClassTree owner) {
@@ -508,9 +514,11 @@ public final class ApiDocGenerator {
 
         final DocInfo doc = new DocInfo();
         doc.summary = normalizeDocText(comment.getFirstSentence());
-        final String body = normalizeDocText(comment.getFullBody());
-        if (!isBlank(body)) {
-            for (final String sentence : body.split("(?<=[.!?])\\s+")) {
+        final String prose = proseText(comment.getFullBody());
+        doc.threadSafety = inferThreadSafety((doc.summary == null ? "" : doc.summary) + " " + (prose == null ? "" : prose));
+        doc.examples = readExamples(comment.getFullBody());
+        if (!isBlank(prose)) {
+            for (final String sentence : prose.split("(?<=[.!?])\\s+")) {
                 final String s = sentence.trim();
                 if (s.isEmpty()) {
                     continue;
@@ -544,7 +552,7 @@ public final class ApiDocGenerator {
                 }
                 case SEE -> {
                     final SeeTree s = (SeeTree) tag;
-                    final String ref = normalize(s.getReference().toString());
+                    final String ref = normalizeDocText(s.getReference());
                     if (!isBlank(ref)) {
                         doc.seeAlso.add(ref);
                     }
@@ -564,8 +572,131 @@ public final class ApiDocGenerator {
         if (trees == null || trees.isEmpty()) {
             return null;
         }
-        final String raw = trees.stream().map(Objects::toString).collect(Collectors.joining(" "));
-        return normalize(raw);
+        final StringBuilder sb = new StringBuilder();
+        for (final DocTree tree : trees) {
+            appendDocText(tree, sb);
+        }
+        return normalize(sb.toString());
+    }
+
+    /**
+     * Renders doc trees to plain prose: HTML element tags are dropped and everything inside
+     * {@code <pre>} blocks is skipped (those are captured separately as examples).
+     */
+    private static String proseText(final List<? extends DocTree> trees) {
+        if (trees == null || trees.isEmpty()) {
+            return null;
+        }
+        final StringBuilder sb = new StringBuilder();
+        int preDepth = 0;
+        for (final DocTree tree : trees) {
+            if (tree.getKind() == DocTree.Kind.START_ELEMENT) {
+                if ("pre".equalsIgnoreCase(((StartElementTree) tree).getName().toString())) {
+                    preDepth++;
+                }
+                sb.append(' ');
+            } else if (tree.getKind() == DocTree.Kind.END_ELEMENT) {
+                if ("pre".equalsIgnoreCase(((EndElementTree) tree).getName().toString()) && preDepth > 0) {
+                    preDepth--;
+                }
+                sb.append(' ');
+            } else if (preDepth == 0) {
+                appendDocText(tree, sb);
+            }
+        }
+        return normalize(sb.toString());
+    }
+
+    private static void appendDocText(final DocTree tree, final StringBuilder sb) {
+        switch (tree.getKind()) {
+            case CODE, LITERAL -> sb.append(((LiteralTree) tree).getBody().getBody());
+            case LINK, LINK_PLAIN -> {
+                final LinkTree link = (LinkTree) tree;
+                if (link.getLabel().isEmpty()) {
+                    sb.append(link.getReference().getSignature());
+                } else {
+                    for (final DocTree label : link.getLabel()) {
+                        appendDocText(label, sb);
+                    }
+                }
+            }
+            default -> sb.append(tree);
+        }
+    }
+
+    private static String inferThreadSafety(final String docText) {
+        final String lower = docText.toLowerCase(Locale.ROOT);
+        if (lower.contains("not thread-safe") || lower.contains("not thread safe")) {
+            return "not-thread-safe";
+        }
+        if (lower.contains("conditionally thread-safe") || lower.contains("conditionally thread safe")) {
+            return "conditional";
+        }
+        if (lower.contains("thread-safe") || lower.contains("thread safe")) {
+            return "thread-safe";
+        }
+        if (lower.contains("is immutable") || lower.contains("are immutable")) {
+            return "thread-safe";
+        }
+        return "unspecified";
+    }
+
+    private static List<String> readExamples(final List<? extends DocTree> body) {
+        final List<String> out = new ArrayList<>();
+        if (body == null) {
+            return out;
+        }
+        boolean inPre = false;
+        for (final DocTree tree : body) {
+            if (tree.getKind() == DocTree.Kind.START_ELEMENT && "pre".equalsIgnoreCase(((StartElementTree) tree).getName().toString())) {
+                inPre = true;
+            } else if (tree.getKind() == DocTree.Kind.END_ELEMENT && "pre".equalsIgnoreCase(((EndElementTree) tree).getName().toString())) {
+                inPre = false;
+            } else if (inPre && (tree.getKind() == DocTree.Kind.CODE || tree.getKind() == DocTree.Kind.LITERAL)) {
+                final String example = dedent(((LiteralTree) tree).getBody().getBody());
+                if (!isBlank(example)) {
+                    out.add(example);
+                }
+            }
+        }
+        return out;
+    }
+
+    private static String dedent(final String text) {
+        if (text == null) {
+            return null;
+        }
+        final String[] lines = text.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+        int start = 0;
+        int end = lines.length;
+        while (start < end && lines[start].isBlank()) {
+            start++;
+        }
+        while (end > start && lines[end - 1].isBlank()) {
+            end--;
+        }
+        int minIndent = Integer.MAX_VALUE;
+        for (int i = start; i < end; i++) {
+            if (lines[i].isBlank()) {
+                continue;
+            }
+            int indent = 0;
+            while (indent < lines[i].length() && lines[i].charAt(indent) == ' ') {
+                indent++;
+            }
+            minIndent = Math.min(minIndent, indent);
+        }
+        if (minIndent == Integer.MAX_VALUE) {
+            minIndent = 0;
+        }
+        final StringBuilder sb = new StringBuilder();
+        for (int i = start; i < end; i++) {
+            sb.append(lines[i].length() >= minIndent ? lines[i].substring(minIndent) : lines[i]);
+            if (i < end - 1) {
+                sb.append('\n');
+            }
+        }
+        return sb.toString();
     }
 
     private static List<ParamInfo> readParams(final MethodTree methodTree, final DocInfo doc) {
@@ -684,6 +815,10 @@ public final class ApiDocGenerator {
 
     private static LibraryInfo readLibraryInfo(final Path pomPath) {
         final LibraryInfo out = new LibraryInfo();
+        final String gitSha = readGitSha(pomPath.toAbsolutePath().getParent());
+        if (!isBlank(gitSha)) {
+            out.gitSha = gitSha;
+        }
         if (!Files.exists(pomPath)) {
             return out;
         }
@@ -715,6 +850,41 @@ public final class ApiDocGenerator {
         } catch (final Exception ignored) {
         }
         return out;
+    }
+
+    private static String readGitSha(final Path repoRoot) {
+        try {
+            Path gitDir = (repoRoot == null ? Path.of(".git") : repoRoot.resolve(".git"));
+            if (Files.isRegularFile(gitDir)) {
+                final String content = Files.readString(gitDir, StandardCharsets.UTF_8).trim();
+                if (content.startsWith("gitdir:")) {
+                    gitDir = gitDir.getParent().resolve(content.substring("gitdir:".length()).trim()).normalize();
+                }
+            }
+            final Path headFile = gitDir.resolve("HEAD");
+            if (!Files.exists(headFile)) {
+                return null;
+            }
+            final String head = Files.readString(headFile, StandardCharsets.UTF_8).trim();
+            if (!head.startsWith("ref:")) {
+                return head;
+            }
+            final String ref = head.substring(4).trim();
+            final Path refFile = gitDir.resolve(ref);
+            if (Files.exists(refFile)) {
+                return Files.readString(refFile, StandardCharsets.UTF_8).trim();
+            }
+            final Path packedRefs = gitDir.resolve("packed-refs");
+            if (Files.exists(packedRefs)) {
+                for (final String line : Files.readAllLines(packedRefs, StandardCharsets.UTF_8)) {
+                    if (line.endsWith(" " + ref)) {
+                        return line.substring(0, line.indexOf(' '));
+                    }
+                }
+            }
+        } catch (final Exception ignored) {
+        }
+        return null;
     }
 
     private static String readProjectElement(final Document doc, final String key) {
@@ -859,6 +1029,16 @@ public final class ApiDocGenerator {
                 }
                 if (!isBlank(m.performance)) {
                     sb.append("- **Performance:** ").append(md(m.performance)).append('\n');
+                }
+                if (!m.examples.isEmpty()) {
+                    sb.append("- **Examples:**\n");
+                    for (final String example : m.examples) {
+                        sb.append("  - ```java\n");
+                        for (final String line : example.split("\n", -1)) {
+                            sb.append("    ").append(line).append('\n');
+                        }
+                        sb.append("    ```\n");
+                    }
                 }
                 if (!m.seeAlso.isEmpty()) {
                     sb.append("- **See also:** ").append(md(String.join(", ", m.seeAlso))).append('\n');
