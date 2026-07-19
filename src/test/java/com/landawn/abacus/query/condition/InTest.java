@@ -591,6 +591,12 @@ public class InTest extends TestBase {
     }
 
     @Test
+    public void testMultiColumn_RejectsPrimitiveArrayRow() {
+        // A primitive int[] is not a supported row form (only Collection, Iterable, Object[], Map or bean).
+        assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "b"), Arrays.asList(new int[] { 1, 2 })));
+    }
+
+    @Test
     public void testMultiColumn_RejectsArrayWidthMismatch() {
         assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "b"), Arrays.asList(new Object[] { 1, 2 }, new Object[] { 3 })));
     }

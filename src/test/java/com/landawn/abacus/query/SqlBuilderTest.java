@@ -41,6 +41,7 @@ import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.Having;
+import com.landawn.abacus.query.condition.Junction;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.SubQuery;
@@ -1423,6 +1424,28 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
+    public void testBinaryWithInOperatorAndSubQueryRendersAsInSubQuery() {
+        // A Binary built via Filters.binary(prop, IN, subQuery) must render the sub-query inline in
+        // parentheses -- "col IN (SELECT ...)" -- rather than binding the sub-query as a parameter.
+        final SP binaryIn = Dsl.PSC.select("*")
+                .from("users")
+                .where(Filters.binary("userId", Operator.IN, Filters.subQuery("SELECT id FROM x")))
+                .build();
+
+        assertEquals("SELECT * FROM users WHERE user_id IN (SELECT id FROM x)", binaryIn.query());
+        assertTrue(binaryIn.parameters().isEmpty());
+
+        // NOT IN behaves the same way.
+        final SP binaryNotIn = Dsl.PSC.select("*")
+                .from("users")
+                .where(Filters.binary("userId", Operator.NOT_IN, Filters.subQuery("SELECT id FROM x")))
+                .build();
+
+        assertEquals("SELECT * FROM users WHERE user_id NOT IN (SELECT id FROM x)", binaryNotIn.query());
+        assertTrue(binaryNotIn.parameters().isEmpty());
+    }
+
+    @Test
     public void testGroupByAsc() {
         String sql = Dsl.PSC.select("category", "COUNT(*)").from("products").groupByAsc("category").build().query();
 
@@ -1554,6 +1577,15 @@ public class SqlBuilderTest extends TestBase {
         sql = Dsl.PSC.select("*").from("users").append("WHERE 1=1").append(" AND status = 'x'").append("ORDER BY name").build().query();
 
         assertEquals("SELECT * FROM users WHERE 1=1 AND status = 'x' ORDER BY name", sql);
+    }
+
+    @Test
+    public void testAppendRejectsEmptyJunction() {
+        // A junction without sub-conditions cannot be rendered as SQL.
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Dsl.PSC.select("*").from("users").append(new Junction(Operator.OR)));
+
+        assertTrue(ex.getMessage().contains("must contain at least one element"), ex.getMessage());
     }
 
     @Test
@@ -13670,6 +13702,30 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
+    public void testSelectionsResolvingToNoPropertiesInTotalAreRejected() {
+        final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
+        final Selection emptySelection = Selection.builder(AllNullBatchEntity.class).excludedPropNames(Collections.singleton("value")).build();
+
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(Arrays.asList(emptySelection)));
+
+        assertTrue(ex.getMessage().contains("Selections must resolve to at least one property in total"), ex.getMessage());
+        assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                "Rejected input must not allocate a builder whose pooled StringBuilder cannot be released");
+    }
+
+    @Test
+    public void testInsertMapRejectsAllKeysExcludedBeforeAllocatingBuilder() {
+        final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
+
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Dsl.PSC.insert((Object) N.asMap("a", 1), N.asSet("a")));
+
+        assertTrue(ex.getMessage().contains("entity map must contain at least one non-excluded property"), ex.getMessage());
+        assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                "Rejected input must not allocate a builder whose pooled StringBuilder cannot be released");
+    }
+
+    @Test
     public void testSelectFromRenderingFailureReleasesAllocatedBuilder() {
         final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
         final Selection unsafeSelection = Selection.builder(AllNullBatchEntity.class).includedPropNames(Collections.singletonList("value -- unsafe")).build();
@@ -13710,6 +13766,18 @@ public class SqlBuilderTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.count("   "));
         assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
                 "Rejected input must not allocate a builder whose pooled StringBuilder cannot be released");
+    }
+
+    @Test
+    public void testCountByNonBeanClassReleasesAllocatedBuilder() {
+        final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
+
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.count(String.class));
+        assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                "A count factory whose FROM rejects the entity class must release its pooled buffer");
+
+        // The pool must remain usable: a subsequent normal count build still succeeds.
+        assertEquals("SELECT count(*) FROM test_account", Dsl.PSC.count(Account.class).build().query());
     }
 
     @Test

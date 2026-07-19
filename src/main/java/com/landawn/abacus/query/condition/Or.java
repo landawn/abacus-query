@@ -154,7 +154,7 @@ public class Or extends Junction {
     /**
      * Trusted private constructor used by fluent chaining ({@link #or(Condition)}) to avoid
      * re-validating already-validated conditions. Behavior is identical to the public
-     * collection constructor; only the redundant per-element null check is skipped.
+     * collection constructor; only the redundant per-element re-validation is skipped.
      * The supplied list is taken over directly (not copied), so callers must pass a private,
      * freshly created list that they will not retain or mutate afterwards.
      *

@@ -3,6 +3,8 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -206,5 +208,19 @@ public class IntersectTest extends TestBase {
 
         Assertions.assertNotNull(params);
         Assertions.assertTrue(params.isEmpty());
+    }
+
+    @Test
+    public void testSubQueryAccessor() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Intersect intersect = new Intersect(subQuery);
+        assertSame(subQuery, intersect.subQuery());
+    }
+
+    @Test
+    public void testSubQueryAccessor_DefaultConstructor_ReturnsNull() {
+        // Uninitialized (Kryo) instance: subQuery() must return null without a ClassCastException.
+        Intersect intersect = new Intersect();
+        assertNull(intersect.subQuery());
     }
 }

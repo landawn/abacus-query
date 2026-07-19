@@ -120,7 +120,7 @@ public abstract class Clause extends Cell {
             throw new IllegalArgumentException("Clause operator must be a SQL clause operator, but was: " + operator);
         }
 
-        if (isJoinOperation(operator)) {
+        if (isJoinOperator(operator)) {
             throw new IllegalArgumentException("JOIN operators must be represented by Join, not Clause: " + operator);
         }
 
@@ -144,10 +144,5 @@ public abstract class Clause extends Cell {
     private static boolean isSetOperation(final Operator operator) {
         return operator == Operator.UNION || operator == Operator.UNION_ALL || operator == Operator.INTERSECT || operator == Operator.EXCEPT
                 || operator == Operator.MINUS;
-    }
-
-    private static boolean isJoinOperation(final Operator operator) {
-        return operator == Operator.JOIN || operator == Operator.LEFT_JOIN || operator == Operator.RIGHT_JOIN || operator == Operator.FULL_JOIN
-                || operator == Operator.CROSS_JOIN || operator == Operator.INNER_JOIN || operator == Operator.NATURAL_JOIN;
     }
 }

@@ -201,11 +201,13 @@ public class Binary extends ComposableCondition {
      * @param <T> the requested value type
      * @param valueType the requested value type; must not be {@code null}
      * @return the property value cast to {@code valueType}, or {@code null} when the stored value is {@code null}
-     * @throws NullPointerException if {@code valueType} is {@code null}
+     * @throws IllegalArgumentException if {@code valueType} is {@code null}
      * @throws ClassCastException if the stored value is not assignable to {@code valueType}
      */
     public <T> T propValue(final Class<T> valueType) {
-        return java.util.Objects.requireNonNull(valueType, "valueType").cast(propValue);
+        N.checkArgNotNull(valueType, "valueType");
+
+        return valueType.cast(propValue);
     }
 
     /**

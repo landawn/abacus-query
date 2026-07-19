@@ -76,7 +76,8 @@ public abstract class ComposableCondition extends AbstractCondition {
      *                                  or empty {@link Junction})
      */
     public Not not() {
-        validateComposableOperand(this, "not");
+        // No pre-validation needed: the Not constructor runs the identical
+        // validateComposableOperand(this, "not") check on its operand.
         return new Not(this);
     }
 

@@ -593,7 +593,7 @@ public final class Filters {
         // Read each entry once so live maps cannot desynchronize branch selection, allocation and iteration.
         for (final Map.Entry<?, ?> prop : props.entrySet()) {
             final Object propName = prop.getKey();
-            N.checkArgument(propName instanceof String, "Map keys must be non-null String values: " + propName);
+            N.checkArgument(propName instanceof String, "Map keys must be non-null String values: %s", propName);
             conditions.add(equal((String) propName, prop.getValue()));
         }
 
@@ -732,14 +732,14 @@ public final class Filters {
      * propsSet.add(Map.of("status", "active", "type", "premium"));
      * propsSet.add(Map.of("status", "trial", "verified", true));
      * Or mapCondition = Filters.anyOfAllEqual(propsSet);
-     * // Results in: (status='active' AND type='premium') OR (status='trial' AND verified=true)
+     * // Results in: (status = 'active' AND type = 'premium') OR (status = 'trial' AND verified = true)
      *
      * List<User> users = Arrays.asList(
      *     new User("John", "john@example.com"),
      *     new User("Jane", "jane@example.com")
      * );
      * Or entityCondition = Filters.anyOfAllEqual(users);
-     * // Results in: (name='John' AND email='john@example.com') OR (name='Jane' AND email='jane@example.com')
+     * // Results in: (name = 'John' AND email = 'john@example.com') OR (name = 'Jane' AND email = 'jane@example.com')
      * }</pre>
      *
      * @param entitiesOrPropMaps collection of property maps or entity objects (must not be empty)
@@ -1531,9 +1531,6 @@ public final class Filters {
         return new Between(propName, QME, QME);
     }
 
-    // Removed: bt(String, Object, Object) and bt(String) - non-standard abbreviations.
-    // Use between(String, Object, Object) or between(String) instead.
-
     /**
      * Creates a {@link NotBetween} condition for the specified property and range values.
      *
@@ -2107,7 +2104,7 @@ public final class Filters {
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with {@code OR}; {@code null} or
-     *                   empty is permitted and yields an empty junction
+     *                   empty is permitted and yields an empty junction (which renders as an empty string)
      * @return an {@link Or} junction
      * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
      *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
@@ -2159,7 +2156,7 @@ public final class Filters {
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with {@code AND}; {@code null} or
-     *                   empty is permitted and yields an empty junction
+     *                   empty is permitted and yields an empty junction (which renders as an empty string)
      * @return an {@link And} junction
      * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
      *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
@@ -2408,8 +2405,6 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
      */
     public static GroupBy groupBy(final Collection<String> propNames) {
-        N.checkArgNotEmpty(propNames, "propNames");
-
         return new GroupBy(propNames);
     }
 
@@ -3574,7 +3569,8 @@ public final class Filters {
      * }</pre>
      *
      * <p><b>Portability note:</b> the row value-list form is supported by MySQL, PostgreSQL,
-     * Oracle and DB2, but <i>not</i> by SQL Server (use {@link #in(Collection, SubQuery)} there).</p>
+     * Oracle and DB2, but <i>not</i> by SQL Server (rewrite the composite comparison with
+     * {@code EXISTS} or a join there).</p>
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}/blank names)
      * @param valueRows collection of value rows; each row must resolve to exactly {@code propNames.size()} values.
@@ -3838,7 +3834,8 @@ public final class Filters {
      * }</pre>
      *
      * <p><b>Portability note:</b> the row value-list form is supported by MySQL, PostgreSQL,
-     * Oracle and DB2, but <i>not</i> by SQL Server (use {@link #notIn(Collection, SubQuery)} there).</p>
+     * Oracle and DB2, but <i>not</i> by SQL Server (rewrite the composite comparison with
+     * {@code NOT EXISTS} or a join there).</p>
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}/blank names)
      * @param valueRows collection of value rows to exclude; each row must resolve to exactly {@code propNames.size()}

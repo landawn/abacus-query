@@ -3,6 +3,7 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -110,5 +111,11 @@ public class ComposableCellTest extends TestBase {
         // Also verify the no-arg toString() variant and a null NamingPolicy both work.
         assertNotNull(cell.toString());
         assertNotNull(cell.toSql(null));
+    }
+
+    @Test
+    public void testQuantifiedOperatorRequiresSubQuery() {
+        // A quantified operator (ANY/ALL/SOME) must wrap a SubQuery; any other condition is rejected.
+        assertThrows(IllegalArgumentException.class, () -> new TestComposableCell(Operator.ANY, Filters.eq("a", 1)));
     }
 }

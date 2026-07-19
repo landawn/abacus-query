@@ -108,7 +108,7 @@ public final class QueryUtil {
     /**
      * Caches, per entity class, the immutable {@code ImmutableList} returned for the
      * no-exclusion ({@code excludedPropNames} null/empty) paths of the {@code get*PropNames}
-     * methods. Index by the column slot of {@code SqlBuilder.loadPropNamesByClass(Class)}
+     * methods. Indexed by the array slot of {@code SqlBuilder.loadPropNamesByClass(Class)}
      * ({@code 0}: select incl. sub-entities, {@code 1}: select top-level only, {@code 2}: insert with id,
      * {@code 3}: insert without id, {@code 4}: update). Returning a single stable instance per (class, slot) preserves the
      * reference-identity fast paths in the builders (which compare the stored prop-name list with

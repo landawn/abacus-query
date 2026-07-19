@@ -1010,4 +1010,25 @@ public class NamedPropertyTest extends TestBase {
 
         assertThrows(IllegalArgumentException.class, () -> NamedProperty.of("status").equalsAny(unstableValues));
     }
+
+    @Test
+    public void testNaNAndInfinityFactories() {
+        NamedProperty prop = NamedProperty.of("ratio");
+
+        assertEquals("ratio IS NAN", prop.isNaN().toString());
+        assertEquals("ratio IS NOT NAN", prop.isNotNaN().toString());
+        assertEquals("ratio IS INFINITE", prop.isInfinite().toString());
+        assertEquals("ratio IS NOT INFINITE", prop.isNotInfinite().toString());
+    }
+
+    @Test
+    public void testInAndNotInWithSubQuery() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
+
+        InSubQuery inCondition = NamedProperty.of("user_id").in(subQuery);
+        assertEquals("user_id IN (SELECT id FROM active_users)", inCondition.toString());
+
+        NotInSubQuery notInCondition = NamedProperty.of("user_id").notIn(subQuery);
+        assertEquals("user_id NOT IN (SELECT id FROM active_users)", notInCondition.toString());
+    }
 }

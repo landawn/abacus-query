@@ -3,6 +3,8 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -169,5 +171,19 @@ public class UnionTest extends TestBase {
         Assertions.assertFalse(union1.equals(union3));
         Assertions.assertFalse(union1.equals(null));
         Assertions.assertFalse(union1.equals("not a union"));
+    }
+
+    @Test
+    public void testSubQueryAccessor() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Union union = new Union(subQuery);
+        assertSame(subQuery, union.subQuery());
+    }
+
+    @Test
+    public void testSubQueryAccessor_DefaultConstructor_ReturnsNull() {
+        // Uninitialized (Kryo) instance: subQuery() must return null without a ClassCastException.
+        Union union = new Union();
+        assertNull(union.subQuery());
     }
 }

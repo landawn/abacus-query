@@ -3,6 +3,8 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -202,5 +204,19 @@ public class MinusTest extends TestBase {
 
         Assertions.assertEquals(1, minus.parameters().size());
         Assertions.assertEquals("2023-01-01", minus.parameters().get(0));
+    }
+
+    @Test
+    public void testSubQueryAccessor() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Minus minus = new Minus(subQuery);
+        assertSame(subQuery, minus.subQuery());
+    }
+
+    @Test
+    public void testSubQueryAccessor_DefaultConstructor_ReturnsNull() {
+        // Uninitialized (Kryo) instance: subQuery() must return null without a ClassCastException.
+        Minus minus = new Minus();
+        assertNull(minus.subQuery());
     }
 }

@@ -791,7 +791,7 @@ public class SqlMapperTest extends TestBase {
     public void testLoad_MissingFileWrapsIOException() {
         File directoryPath = tempDir;
 
-        assertThrows(com.landawn.abacus.exception.UncheckedIOException.class, () -> SqlMapper.loadFrom(directoryPath.getAbsolutePath()));
+        assertThrows(IllegalArgumentException.class, () -> SqlMapper.loadFrom(directoryPath.getAbsolutePath()));
     }
 
     @Test

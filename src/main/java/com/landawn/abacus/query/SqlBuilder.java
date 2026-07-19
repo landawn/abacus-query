@@ -31,7 +31,6 @@ import com.landawn.abacus.query.condition.AbstractInSubQuery;
 import com.landawn.abacus.query.condition.Between;
 import com.landawn.abacus.query.condition.Binary;
 import com.landawn.abacus.query.condition.Cell;
-import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.ComposableCell;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.SqlExpression;
@@ -204,22 +203,18 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         } else if (cond instanceof final AbstractInSubQuery anyInSubQuery) {
             // Handles both InSubQuery and NotInSubQuery; the IN / NOT IN operator is carried by anyInSubQuery.operator().
             appendInSubQueryClause(anyInSubQuery.propNames(), anyInSubQuery.operator(), anyInSubQuery.subQuery());
-        } else if (cond instanceof Where || cond instanceof Having) {
-            final Clause clause = (Clause) cond;
+        } else if (cond instanceof Where || cond instanceof Having || cond instanceof Using) {
+            // These cells render as "KEYWORD condition" without the wrapping parentheses added by the
+            // generic Cell branch below. In particular, the inner expression of a Using condition already
+            // carries the required parentheses, e.g. "(employee_id)"; wrapping it again would produce
+            // invalid SQL like "USING ((employee_id))".
+            final Cell cell = (Cell) cond;
 
             _sb.append(_SPACE);
-            _sb.append(clause.operator().toString());
+            _sb.append(cell.operator().toString());
             _sb.append(_SPACE);
 
-            appendCondition(clause.condition());
-        } else if (cond instanceof final Using using) {
-            // The inner expression of a Using condition already carries the required parentheses,
-            // e.g. "(employee_id)"; wrapping it again would produce invalid SQL like "USING ((employee_id))".
-            _sb.append(_SPACE);
-            _sb.append(using.operator().toString());
-            _sb.append(_SPACE);
-
-            appendCondition(using.condition());
+            appendCondition(cell.condition());
         } else if (cond instanceof final Cell cell) {
             appendParenthesizedCondition(cell.operator(), cell.condition());
         } else if (cond instanceof final ComposableCell cell) {

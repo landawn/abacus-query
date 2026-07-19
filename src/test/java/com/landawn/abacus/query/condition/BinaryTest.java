@@ -137,7 +137,7 @@ public class BinaryTest extends TestBase {
         assertEquals(30, condition.propValue());
         assertEquals(Integer.valueOf(30), condition.propValue(Integer.class));
         assertThrows(ClassCastException.class, () -> condition.propValue(String.class));
-        assertThrows(NullPointerException.class, () -> condition.propValue(null));
+        assertThrows(IllegalArgumentException.class, () -> condition.propValue(null));
         assertNull(new Binary("age", Operator.EQUAL, null).propValue(Integer.class));
     }
 
@@ -639,6 +639,26 @@ public class BinaryTest extends TestBase {
         List<Object> params = binary.parameters();
 
         // SubQuery's condition has one parameter (true). Binary must surface that, not the SubQuery itself.
+        assertEquals(1, params.size());
+        assertEquals(true, params.get(0));
+    }
+
+    /**
+     * Operator.IN with a Condition propValue is supported: the subquery renders parenthesized
+     * after IN, and parameters() delegates to the subquery's own parameters (mirrors
+     * testParametersDelegatesToSubQueryPropValue, which covers EQUAL).
+     */
+    @Test
+    public void testInOperatorWithSubQueryPropValue() {
+        Binary rendered = Filters.binary("id", Operator.IN, Filters.subQuery("SELECT id FROM x"));
+
+        assertEquals("id IN (SELECT id FROM x)", rendered.toSql(NamingPolicy.NO_CHANGE));
+
+        SubQuery sub = new SubQuery("users", Arrays.asList("id"), Filters.eq("active", true));
+        Binary binary = Filters.binary("userId", Operator.IN, sub);
+
+        List<Object> params = binary.parameters();
+
         assertEquals(1, params.size());
         assertEquals(true, params.get(0));
     }

@@ -586,7 +586,14 @@ public class NamedProperty {
     /**
      * Creates a condition matching {@code null} or empty values for this property.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("email").isNullOrEmpty();         // ((email IS NULL) OR (email = ''))
+     * NamedProperty.of("description").isNullOrEmpty();   // ((description IS NULL) OR (description = ''))
+     * }</pre>
+     *
      * @return an OR condition combining null and empty checks
+     * @see Filters#isNullOrEmpty(String)
      */
     public Or isNullOrEmpty() {
         return Filters.isNullOrEmpty(propName);
@@ -614,7 +621,14 @@ public class NamedProperty {
     /**
      * Creates a condition requiring this property to be both non-null and non-empty.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("email").isNotNullAndNotEmpty();   // ((email IS NOT NULL) AND (email != ''))
+     * NamedProperty.of("phone").isNotNullAndNotEmpty();   // ((phone IS NOT NULL) AND (phone != ''))
+     * }</pre>
+     *
      * @return an AND condition combining non-null and non-empty checks
+     * @see Filters#isNotNullAndNotEmpty(String)
      */
     public And isNotNullAndNotEmpty() {
         return Filters.isNotNullAndNotEmpty(propName);
@@ -715,9 +729,6 @@ public class NamedProperty {
     public Between between(final Object minValue, final Object maxValue) {
         return Filters.between(propName, minValue, maxValue);
     }
-
-    // Removed: bt(Object, Object) - non-standard abbreviation.
-    // Use between(Object, Object) instead.
 
     /**
      * Creates a NOT BETWEEN condition for this property.

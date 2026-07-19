@@ -569,6 +569,12 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
+    public void testJunctionRejectsNonComposableOperator() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.junction(Operator.WHERE, Filters.eq("a", 1)));
+        assertThrows(IllegalArgumentException.class, () -> Filters.junction(Operator.WHERE, Arrays.asList(Filters.eq("a", 1))));
+    }
+
+    @Test
     public void testWhereCondition() {
         Condition condition = Filters.equal("status", "active");
         Where where = Filters.where(condition);
@@ -671,6 +677,7 @@ public class FiltersTest extends TestBase {
     public void testGroupByTwoColumns() {
         GroupBy groupBy = Filters.groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
         assertNotNull(groupBy);
+        assertEquals("GROUP BY year DESC, month ASC", groupBy.toString());
     }
 
     @Test
@@ -861,8 +868,9 @@ public class FiltersTest extends TestBase {
 
     @Test
     public void testOrderByTwoColumns() {
-        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", SortDirection.ASC, "age", SortDirection.DESC);
+        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("year", SortDirection.DESC, "month", SortDirection.ASC);
         assertNotNull(orderBy);
+        assertEquals("ORDER BY year DESC, month ASC", orderBy.toString());
     }
 
     @Test

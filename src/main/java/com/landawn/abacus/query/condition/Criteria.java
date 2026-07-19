@@ -1337,10 +1337,21 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a conditionless CROSS JOIN for multiple entities.
+         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria c = Criteria.builder().crossJoin(Arrays.asList("colors", "sizes")).build();
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN (colors, sizes)"
+         *
+         * // A single-element collection is rendered without parentheses.
+         * Criteria c2 = Criteria.builder().crossJoin(Arrays.asList("colors")).build();
+         * c2.toSql(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors"
+         * }</pre>
          *
          * @param joinEntities the entity/table names to cross join
          * @return this builder
-         * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a null, empty, or blank name
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements
          */
         public Builder crossJoin(final Collection<String> joinEntities) {
             addConditions(new CrossJoin(joinEntities));
@@ -1372,10 +1383,21 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a conditionless NATURAL JOIN for multiple entities.
+         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * Criteria c = Criteria.builder().naturalJoin(Arrays.asList("employees", "departments")).build();
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN (employees, departments)"
+         *
+         * // A single-element collection is rendered without parentheses.
+         * Criteria c2 = Criteria.builder().naturalJoin(Arrays.asList("employees")).build();
+         * c2.toSql(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees"
+         * }</pre>
          *
          * @param joinEntities the entity/table names to natural join
          * @return this builder
-         * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a null, empty, or blank name
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements
          */
         public Builder naturalJoin(final Collection<String> joinEntities) {
             addConditions(new NaturalJoin(joinEntities));
@@ -2629,9 +2651,7 @@ public class Criteria extends AbstractCondition {
         }
 
         private void addCondition(final Condition cond) {
-            if (cond.operator() == Operator.WHERE || cond.operator() == Operator.ORDER_BY || cond.operator() == Operator.GROUP_BY
-                    || cond.operator() == Operator.HAVING || cond.operator() == Operator.LIMIT) {
-
+            if (isSingletonClause(cond.operator())) {
                 final Condition clause = findConditionByOperator(this.conditions, cond.operator());
 
                 if (clause != null) {

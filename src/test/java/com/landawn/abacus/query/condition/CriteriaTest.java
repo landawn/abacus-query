@@ -110,6 +110,12 @@ public class CriteriaTest extends TestBase {
         assertNotNull(whereConditions);
     }
 
+    @Test
+    public void testFindConditionsNullOperatorReturnsEmpty() {
+        Criteria criteria = Criteria.builder().join("orders").where(Filters.equal("status", "active")).build();
+        assertTrue(criteria.findConditions(null).isEmpty());
+    }
+
     // testClear removed - Criteria is now immutable
 
     @Test
@@ -353,6 +359,11 @@ public class CriteriaTest extends TestBase {
         Criteria criteria = Criteria.builder().limit(limit).build();
         assertNotNull(criteria);
         assertEquals(limit, criteria.limit());
+    }
+
+    @Test
+    public void testLimitNullConditionThrows() {
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().limit((Limit) null));
     }
 
     @Test
@@ -1722,6 +1733,16 @@ public class CriteriaTest extends TestBase {
     @Test
     public void testAddEmptyPredicateThrows() {
         assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.expr("   ")));
+    }
+
+    @Test
+    public void testAddStandaloneSubQueryThrows() {
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.subQuery("SELECT 1")));
+    }
+
+    @Test
+    public void testAddQuantifiedOperandThrows() {
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.any(Filters.subQuery("SELECT 1"))));
     }
 
     @Test

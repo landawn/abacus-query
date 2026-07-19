@@ -56,9 +56,6 @@ public enum SortDirection {
      */
     DESC;
 
-    SortDirection() {
-    }
-
     /**
      * Checks if this sort direction is ascending.
      *

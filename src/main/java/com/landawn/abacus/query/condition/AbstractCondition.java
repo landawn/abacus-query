@@ -140,6 +140,20 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
+     * Checks if the given operator is a JOIN operator: {@code JOIN}, {@code LEFT JOIN},
+     * {@code RIGHT JOIN}, {@code FULL JOIN}, {@code CROSS JOIN}, {@code INNER JOIN}, or
+     * {@code NATURAL JOIN}. Shared by {@link Join} (which requires such an operator) and
+     * {@link Clause} (which rejects it).
+     *
+     * @param operator the operator to check (may be {@code null})
+     * @return {@code true} if the operator is a JOIN operator, {@code false} otherwise
+     */
+    protected static boolean isJoinOperator(final Operator operator) {
+        return operator == Operator.JOIN || operator == Operator.LEFT_JOIN || operator == Operator.RIGHT_JOIN || operator == Operator.FULL_JOIN
+                || operator == Operator.CROSS_JOIN || operator == Operator.INNER_JOIN || operator == Operator.NATURAL_JOIN;
+    }
+
+    /**
      * Checks if the given operator string represents a valid clause operator.
      * This method converts the string to an Operator and checks if it's a clause.
      *

@@ -19,6 +19,7 @@ import static com.landawn.abacus.util.SK._PARENTHESIS_R;
 import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -111,7 +112,7 @@ public class Junction extends ComposableCondition {
 
     /**
      * Trusted package-private constructor that adopts an already-validated, freshly-allocated and
-     * non-leaked condition list without re-running per-element null checks. Used by fluent
+     * non-leaked condition list without re-running per-element validation. Used by fluent
      * {@code and()}/{@code or()} chaining in subclasses to avoid a second defensive copy on each
      * call. The {@code marker} parameter only serves to distinguish this constructor's signature.
      *
@@ -173,8 +174,7 @@ public class Junction extends ComposableCondition {
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
         validateJunctionOperator(operator);
-        this.conditions = new ArrayList<>();
-        appendConditions(conditions);
+        this.conditions = validateAndCopy(conditions == null ? null : Arrays.asList(conditions));
     }
 
     /**
@@ -214,8 +214,7 @@ public class Junction extends ComposableCondition {
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);
         validateJunctionOperator(operator);
-        this.conditions = new ArrayList<>();
-        appendConditions(conditions); // NOSONAR
+        this.conditions = validateAndCopy(conditions);
     }
 
     /**
@@ -253,23 +252,14 @@ public class Junction extends ComposableCondition {
         return view;
     }
 
-    private void appendConditions(final Condition... conditions) {
+    /**
+     * Validates each element via {@code validateConstructorOperand} (in iteration order) and returns a
+     * freshly allocated snapshot list for the {@link #conditions} field. A {@code null} or empty input
+     * yields an empty list (treated as no conditions).
+     */
+    private static List<Condition> validateAndCopy(final Collection<? extends Condition> conditions) {
         if (N.isEmpty(conditions)) {
-            return;
-        }
-
-        final List<Condition> snapshot = new ArrayList<>(conditions.length);
-
-        for (final Condition condition : conditions) {
-            snapshot.add(validateConstructorOperand(condition));
-        }
-
-        this.conditions.addAll(snapshot);
-    }
-
-    private void appendConditions(final Collection<? extends Condition> conditions) {
-        if (N.isEmpty(conditions)) {
-            return;
+            return new ArrayList<>();
         }
 
         final List<Condition> snapshot = new ArrayList<>(conditions.size());
@@ -278,7 +268,7 @@ public class Junction extends ComposableCondition {
             snapshot.add(validateConstructorOperand(condition));
         }
 
-        this.conditions.addAll(snapshot);
+        return snapshot;
     }
 
     private static void validateJunctionOperator(final Operator operator) {

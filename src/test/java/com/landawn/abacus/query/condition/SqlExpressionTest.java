@@ -1326,4 +1326,24 @@ public class SqlExpressionTest extends TestBase {
         assertEquals(":payload::jsonb", SqlExpression.of(":payload::jsonb").toSql(NamingPolicy.SNAKE_CASE));
     }
 
+    @Test
+    public void testRenderValue_QuoteEscaping() {
+        // Javadoc contract: embedded unescaped single and double quotes are backslash-escaped.
+        assertEquals("'O\\'Brien'", SqlExpression.renderValue("O'Brien"));
+        assertEquals("'say \\\"hi\\\"'", SqlExpression.renderValue("say \"hi\""));
+
+        // An already-escaped quote (backslash shields the char that follows it) is copied
+        // verbatim rather than escaped again.
+        assertEquals("'a\\'b'", SqlExpression.renderValue("a\\'b"));
+    }
+
+    @Test
+    public void testNullValueRendersAsLiteralNullForNonEqualityOperators() {
+        // Only EQUAL and NOT_EQUAL substitute the IS [NOT] NULL form for a null value;
+        // every other operator renders it via renderValue(null) as the literal "null".
+        assertEquals("name LIKE null", SqlExpression.like("name", null));
+        assertEquals("age > null", SqlExpression.greaterThan("age", null));
+        assertEquals("age BETWEEN null AND 65", SqlExpression.between("age", null, 65));
+    }
+
 }

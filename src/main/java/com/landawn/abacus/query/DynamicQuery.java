@@ -646,7 +646,7 @@ public final class DynamicQuery {
 
         /**
          * Appends a raw, database-specific SQL clause or fragment verbatim to the end of the query.
-         * The supplied text is emitted unchanged (preceded by a single space) and is <em>not</em>
+         * The supplied text is emitted unchanged (preceded by a separating space when needed; see below) and is <em>not</em>
          * validated, escaped, or interpreted in any way — whatever you pass becomes the literal tail
          * of the generated SQL. Use it for any trailing clause that has no typed builder method, such
          * as pagination/row-limiting syntax (for example {@code "LIMIT 10 OFFSET 20"} or a SQL:2008
@@ -659,9 +659,9 @@ public final class DynamicQuery {
          * <p>A single separating space is inserted before {@code textToAppend} when, and only when, it is
          * needed: that is, when the text built so far does not already end with a space and
          * {@code textToAppend} does not already begin with one. As a result both {@code .append("LIMIT 10")}
-         * and {@code .append(" LIMIT 10")} produce the same, correctly spaced output (a doubled space is
-         * possible only when the previously appended raw text already ends with a space and
-         * {@code textToAppend} also begins with one).</p>
+         * and {@code .append(" LIMIT 10")} produce the same, correctly spaced output. The inserted-space
+         * logic itself never creates a doubled space; one can only arise from whitespace already present
+         * in the appended text or at the end of a previously appended fragment.</p>
          *
          * <p><b>&#9888;&#65039;</b> This writes into the builder's trailing buffer, which {@link #build()}
          * appends after the typed {@link #orderBy()} clause regardless of invocation order. Set operations
@@ -892,7 +892,7 @@ public final class DynamicQuery {
                 final String sql = selectClause.sb.toString();
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Built dynamic SQL metadata. Length: {}", sql.length());
+                    logger.debug("Built dynamic SQL (length: {})", sql.length());
                 }
 
                 return sql;
@@ -1785,6 +1785,8 @@ public final class DynamicQuery {
          * // Prefer appendPlaceholders(int, String, String) when you want the parentheses tightly attached.
          * }</pre>
          *
+         * <p>If {@code placeholderCount} is {@code 0}, nothing is appended.</p>
+         *
          * @param placeholderCount the number of question marks to append (must not be negative)
          * @return this {@link WhereClause} instance for method chaining
          * @throws IllegalArgumentException if {@code placeholderCount} is negative
@@ -2177,6 +2179,8 @@ public final class DynamicQuery {
          * // inserts a single space before each fragment, so a manual close paren is preceded by a space.
          * // Prefer appendPlaceholders(int, String, String) when you want the parentheses tightly attached.
          * }</pre>
+         *
+         * <p>If {@code placeholderCount} is {@code 0}, nothing is appended.</p>
          *
          * @param placeholderCount the number of question marks to append (must not be negative)
          * @return this {@link HavingClause} instance for method chaining

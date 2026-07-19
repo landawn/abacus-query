@@ -16,12 +16,12 @@ package com.landawn.abacus.query;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Objectory;
@@ -221,49 +221,53 @@ public final class SqlParser {
         return separators;
     }
 
-    private static final Map<String, String[]> compositeTokens = new ConcurrentHashMap<>(64);
+    private static final Map<String, String[]> compositeTokens = buildCompositeTokens();
 
-    static {
-        compositeTokens.put(SK.LEFT_JOIN, new String[] { "LEFT", "JOIN" });
-        compositeTokens.put(SK.RIGHT_JOIN, new String[] { "RIGHT", "JOIN" });
-        compositeTokens.put(SK.FULL_JOIN, new String[] { "FULL", "JOIN" });
-        compositeTokens.put(SK.CROSS_JOIN, new String[] { "CROSS", "JOIN" });
-        compositeTokens.put(SK.NATURAL_JOIN, new String[] { "NATURAL", "JOIN" });
-        compositeTokens.put(SK.INNER_JOIN, new String[] { "INNER", "JOIN" });
-        compositeTokens.put(SK.GROUP_BY, new String[] { "GROUP", "BY" });
-        compositeTokens.put(SK.ORDER_BY, new String[] { "ORDER", "BY" });
-        compositeTokens.put(SK.FOR_UPDATE, new String[] { "FOR", "UPDATE" });
-        compositeTokens.put(SK.FETCH_FIRST, new String[] { "FETCH", "FIRST" });
-        compositeTokens.put(SK.FETCH_NEXT, new String[] { "FETCH", "NEXT" });
-        compositeTokens.put(SK.ROWS_ONLY, new String[] { "ROWS", "ONLY" });
-        compositeTokens.put(SK.UNION_ALL, new String[] { "UNION", "ALL" });
-        compositeTokens.put(SK.IS_NOT, new String[] { "IS", "NOT" });
-        compositeTokens.put(SK.IS_NULL, new String[] { "IS", "NULL" });
-        compositeTokens.put(SK.IS_NOT_NULL, new String[] { "IS", "NOT", "NULL" });
-        compositeTokens.put(SK.IS_EMPTY, new String[] { "IS", "EMPTY" });
-        compositeTokens.put(SK.IS_NOT_EMPTY, new String[] { "IS", "NOT", "EMPTY" });
-        compositeTokens.put(SK.IS_BLANK, new String[] { "IS", "BLANK" });
-        compositeTokens.put(SK.IS_NOT_BLANK, new String[] { "IS", "NOT", "BLANK" });
-        compositeTokens.put(SK.NOT_IN, new String[] { "NOT", "IN" });
-        compositeTokens.put(SK.NOT_EXISTS, new String[] { "NOT", "EXISTS" });
-        compositeTokens.put(SK.NOT_LIKE, new String[] { "NOT", "LIKE" });
-        compositeTokens.put(SK.PARTITION_BY, new String[] { "PARTITION", "BY" });
+    private static Map<String, String[]> buildCompositeTokens() {
+        final Map<String, String[]> tokens = new HashMap<>(64);
 
-        final List<String> list = new ArrayList<>(compositeTokens.keySet());
+        tokens.put(SK.LEFT_JOIN, new String[] { "LEFT", "JOIN" });
+        tokens.put(SK.RIGHT_JOIN, new String[] { "RIGHT", "JOIN" });
+        tokens.put(SK.FULL_JOIN, new String[] { "FULL", "JOIN" });
+        tokens.put(SK.CROSS_JOIN, new String[] { "CROSS", "JOIN" });
+        tokens.put(SK.NATURAL_JOIN, new String[] { "NATURAL", "JOIN" });
+        tokens.put(SK.INNER_JOIN, new String[] { "INNER", "JOIN" });
+        tokens.put(SK.GROUP_BY, new String[] { "GROUP", "BY" });
+        tokens.put(SK.ORDER_BY, new String[] { "ORDER", "BY" });
+        tokens.put(SK.FOR_UPDATE, new String[] { "FOR", "UPDATE" });
+        tokens.put(SK.FETCH_FIRST, new String[] { "FETCH", "FIRST" });
+        tokens.put(SK.FETCH_NEXT, new String[] { "FETCH", "NEXT" });
+        tokens.put(SK.ROWS_ONLY, new String[] { "ROWS", "ONLY" });
+        tokens.put(SK.UNION_ALL, new String[] { "UNION", "ALL" });
+        tokens.put(SK.IS_NOT, new String[] { "IS", "NOT" });
+        tokens.put(SK.IS_NULL, new String[] { "IS", "NULL" });
+        tokens.put(SK.IS_NOT_NULL, new String[] { "IS", "NOT", "NULL" });
+        tokens.put(SK.IS_EMPTY, new String[] { "IS", "EMPTY" });
+        tokens.put(SK.IS_NOT_EMPTY, new String[] { "IS", "NOT", "EMPTY" });
+        tokens.put(SK.IS_BLANK, new String[] { "IS", "BLANK" });
+        tokens.put(SK.IS_NOT_BLANK, new String[] { "IS", "NOT", "BLANK" });
+        tokens.put(SK.NOT_IN, new String[] { "NOT", "IN" });
+        tokens.put(SK.NOT_EXISTS, new String[] { "NOT", "EXISTS" });
+        tokens.put(SK.NOT_LIKE, new String[] { "NOT", "LIKE" });
+        tokens.put(SK.PARTITION_BY, new String[] { "PARTITION", "BY" });
+
+        final List<String> list = new ArrayList<>(tokens.keySet());
 
         for (String e : list) {
             e = e.toLowerCase(Locale.ROOT);
 
-            if (!compositeTokens.containsKey(e)) {
-                compositeTokens.put(e, splitTokenComponents(e));
+            if (!tokens.containsKey(e)) {
+                tokens.put(e, splitTokenComponents(e));
             }
 
             e = e.toUpperCase(Locale.ROOT);
 
-            if (!compositeTokens.containsKey(e)) {
-                compositeTokens.put(e, splitTokenComponents(e));
+            if (!tokens.containsKey(e)) {
+                tokens.put(e, splitTokenComponents(e));
             }
         }
+
+        return Map.copyOf(tokens);
     }
 
     private static final TokenizerConfig DEFAULT_TOKENIZER_CONFIG = new TokenizerConfig(defaultSeparators());
@@ -2738,11 +2742,11 @@ public final class SqlParser {
 
         // See the note in containsMutationQueryKeyword: statement-start-only matching keeps the
         // REPLACE(...)/TRUNCATE(...) functions from false-positiving.
-        return hasOnlyAllowedTopLevelStatements(sql, DEFAULT_TOKENIZER_CONFIG, true) && !containsQueryKeyword(sql, "UPDATE")
-                && !containsQueryKeyword(sql, "DELETE") && !containsQueryKeyword(sql, "MERGE") && !containsQueryKeyword(sql, "REPLACE")
-                && !containsQueryKeyword(sql, "TRUNCATE") && !containsQueryKeyword(sql, "DROP") && !containsQueryKeyword(sql, "ALTER")
-                && !containsQueryKeyword(sql, "CREATE") && !containsProcedureInvocation(sql, DEFAULT_TOKENIZER_CONFIG) && !containsInsertUpdateClause(sql)
-                && !containsSelectIntoClause(sql) && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
+        return hasOnlyAllowedTopLevelStatements(sql, DEFAULT_TOKENIZER_CONFIG, true)
+                && !containsAnyQueryKeyword(collectQueryStartKeywords(sql, DEFAULT_TOKENIZER_CONFIG), "UPDATE", "DELETE", "MERGE", "REPLACE", "TRUNCATE",
+                        "DROP", "ALTER", "CREATE")
+                && !containsProcedureInvocation(sql, DEFAULT_TOKENIZER_CONFIG) && !containsInsertUpdateClause(sql) && !containsSelectIntoClause(sql)
+                && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
     }
 
     /**
@@ -2849,14 +2853,11 @@ public final class SqlParser {
     }
 
     private static boolean containsMutationQueryKeyword(final String sql, final TokenizerConfig tokenizerConfig) {
-        // containsQueryKeyword matches only at statement-start positions (start of SQL, after ';', or a CTE
-        // body's "AS ("), so the REPLACE(...)/TRUNCATE(...) string/numeric FUNCTIONS -- which always appear
-        // mid-statement -- cannot false-positive here.
-        return containsQueryKeyword(sql, "INSERT", tokenizerConfig) || containsQueryKeyword(sql, "UPDATE", tokenizerConfig)
-                || containsQueryKeyword(sql, "DELETE", tokenizerConfig) || containsQueryKeyword(sql, "MERGE", tokenizerConfig)
-                || containsQueryKeyword(sql, "REPLACE", tokenizerConfig) || containsQueryKeyword(sql, "TRUNCATE", tokenizerConfig)
-                || containsQueryKeyword(sql, "DROP", tokenizerConfig) || containsQueryKeyword(sql, "ALTER", tokenizerConfig)
-                || containsQueryKeyword(sql, "CREATE", tokenizerConfig) || containsProcedureInvocation(sql, tokenizerConfig);
+        // collectQueryStartKeywords matches only at statement-start positions (start of SQL, after ';', or a
+        // CTE body's "AS ("), so the REPLACE(...)/TRUNCATE(...) string/numeric FUNCTIONS -- which always
+        // appear mid-statement -- cannot false-positive here.
+        return containsAnyQueryKeyword(collectQueryStartKeywords(sql, tokenizerConfig), "INSERT", "UPDATE", "DELETE", "MERGE", "REPLACE", "TRUNCATE", "DROP",
+                "ALTER", "CREATE") || containsProcedureInvocation(sql, tokenizerConfig);
     }
 
     /**
@@ -3201,13 +3202,18 @@ public final class SqlParser {
         return false;
     }
 
-    private static boolean containsQueryKeyword(final String sql, final String keywordToFind) {
-        return containsQueryKeyword(sql, keywordToFind, DEFAULT_TOKENIZER_CONFIG);
-    }
+    /**
+     * Collects, in a single scan, every keyword found at a statement-start position: the start of
+     * the SQL, after a top-level {@code ;}, or a CTE body opened by {@code AS (}. For a {@code WITH}
+     * clause the statement verb that follows the CTE definitions is collected as well. Quoted
+     * string literals, quoted identifiers and comments are ignored. The callers test the returned
+     * keywords for membership instead of re-scanning the SQL once per keyword.
+     */
+    private static List<String> collectQueryStartKeywords(final String sql, final TokenizerConfig tokenizerConfig) {
+        final List<String> statementStartKeywords = new ArrayList<>();
 
-    private static boolean containsQueryKeyword(final String sql, final String keywordToFind, final TokenizerConfig tokenizerConfig) {
         if (Strings.isEmpty(sql)) {
-            return false;
+            return statementStartKeywords;
         }
 
         int index = 0;
@@ -3236,16 +3242,16 @@ public final class SqlParser {
             if (Character.isLetter(ch)) {
                 final String token = readKeyword(sql, index, tokenizerConfig);
 
-                if (canStartQueryKeyword && "WITH".equalsIgnoreCase(token)) {
-                    final int queryKeywordIndex = findKeywordIndexAfterWithClause(sql, index + token.length(), tokenizerConfig);
+                if (canStartQueryKeyword) {
+                    statementStartKeywords.add(token);
 
-                    if (queryKeywordIndex >= 0 && keywordToFind.equalsIgnoreCase(readKeyword(sql, queryKeywordIndex, tokenizerConfig))) {
-                        return true;
+                    if ("WITH".equalsIgnoreCase(token)) {
+                        final int queryKeywordIndex = findKeywordIndexAfterWithClause(sql, index + token.length(), tokenizerConfig);
+
+                        if (queryKeywordIndex >= 0) {
+                            statementStartKeywords.add(readKeyword(sql, queryKeywordIndex, tokenizerConfig));
+                        }
                     }
-                }
-
-                if (canStartQueryKeyword && keywordToFind.equalsIgnoreCase(token)) {
-                    return true;
                 }
 
                 previousKeyword = token;
@@ -3263,6 +3269,18 @@ public final class SqlParser {
             }
 
             index++;
+        }
+
+        return statementStartKeywords;
+    }
+
+    private static boolean containsAnyQueryKeyword(final List<String> statementStartKeywords, final String... keywordsToFind) {
+        for (final String statementStartKeyword : statementStartKeywords) {
+            for (final String keywordToFind : keywordsToFind) {
+                if (keywordToFind.equalsIgnoreCase(statementStartKeyword)) {
+                    return true;
+                }
+            }
         }
 
         return false;
@@ -3329,6 +3347,14 @@ public final class SqlParser {
         // so the name slot must be consumed before isQueryKeyword may claim a token.
         boolean expectCteName = true;
         boolean atFirstToken = true;
+        // The last keyword read at depth 0. A top-level "(...)" group is a CTE body only when it
+        // directly follows AS or [NOT] MATERIALIZED; otherwise it is a CTE column list.
+        String previousKeyword = "";
+        boolean groupIsCteBody = false;
+        // Once a CTE body has closed at the top level, the CTE list can only continue with ','; a
+        // top-level '(' there instead opens a parenthesized main statement, e.g.
+        // "WITH t AS (SELECT 1) (SELECT * FROM t) UNION (SELECT * FROM t)".
+        boolean cteBodyClosed = false;
 
         while (fromIndex < sql.length()) {
             fromIndex = skipLeadingWhitespaceAndComments(sql, fromIndex, tokenizerConfig);
@@ -3344,6 +3370,8 @@ public final class SqlParser {
 
                 if (depth == 0) {
                     expectCteName = false; // a quoted CTE name fills the name slot
+                    previousKeyword = "";
+                    cteBodyClosed = false;
                 }
 
                 continue;
@@ -3352,12 +3380,29 @@ public final class SqlParser {
 
                 if (depth == 0) {
                     expectCteName = false; // a bracket-quoted CTE name fills the name slot
+                    previousKeyword = "";
+                    cteBodyClosed = false;
                 }
 
                 continue;
             }
 
             if (ch == '(') {
+                if (depth == 0) {
+                    if (cteBodyClosed) {
+                        // The CTE list is complete, so this parenthesis wraps the main statement
+                        // itself. Skip the leading parenthesis/parentheses the same way
+                        // getLeadingQueryKeywordIndex does and report the keyword inside them.
+                        do {
+                            fromIndex = skipLeadingWhitespaceAndComments(sql, fromIndex + 1, tokenizerConfig);
+                        } while (fromIndex < sql.length() && sql.charAt(fromIndex) == '(');
+
+                        return (fromIndex < sql.length() && Character.isLetter(sql.charAt(fromIndex))) ? fromIndex : -1;
+                    }
+
+                    groupIsCteBody = "AS".equalsIgnoreCase(previousKeyword) || "MATERIALIZED".equalsIgnoreCase(previousKeyword);
+                }
+
                 depth++;
                 fromIndex++;
                 continue;
@@ -3366,6 +3411,10 @@ public final class SqlParser {
             if (ch == ')') {
                 if (depth > 0) {
                     depth--;
+
+                    if (depth == 0) {
+                        cteBodyClosed = groupIsCteBody;
+                    }
                 }
 
                 fromIndex++;
@@ -3376,6 +3425,8 @@ public final class SqlParser {
                 if (depth == 0) {
                     // Next CTE definition in the list: ", name [(columns)] AS (...)".
                     expectCteName = true;
+                    previousKeyword = "";
+                    cteBodyClosed = false;
                 }
 
                 fromIndex++;
@@ -3395,11 +3446,21 @@ public final class SqlParser {
                     } else if (isQueryKeyword(token)) {
                         return fromIndex;
                     }
+
+                    previousKeyword = token;
+                    cteBodyClosed = false;
                 }
 
                 atFirstToken = false;
                 fromIndex += token.length();
                 continue;
+            }
+
+            if (depth == 0) {
+                // Any other top-level character is not valid between CTE definitions and the main
+                // statement; stay conservative and treat what follows as unresolved.
+                previousKeyword = "";
+                cteBodyClosed = false;
             }
 
             fromIndex++;
@@ -3526,7 +3587,8 @@ public final class SqlParser {
             fromIndex++;
         }
 
-        return fromIndex > startIndex ? sql.substring(startIndex, fromIndex) : "";
+        // The leading-letter guard above ensures the loop consumed at least one character.
+        return sql.substring(startIndex, fromIndex);
     }
 
     private static String readIdentifierToken(final String sql, int fromIndex) {

@@ -528,9 +528,6 @@ public class SqlExpression extends ComposableCondition {
         return link(Operator.BETWEEN, expr, minValue, maxValue);
     }
 
-    // Removed: bt(String, Object, Object) - non-standard abbreviation.
-    // Use between(String, Object, Object) instead.
-
     /**
      * Creates a NOT BETWEEN expression for a literal with min and max values.
      * A value satisfies {@code NOT BETWEEN min AND max} when it is strictly less than {@code min}
@@ -773,14 +770,14 @@ public class SqlExpression extends ComposableCondition {
      * // throws IllegalArgumentException (NaN has no portable SQL literal)
      * }</pre>
      *
-     * @param objects the values to subtract; a {@code null} or empty array yields an empty string
+     * @param operands the values to subtract; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the subtraction expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      * @deprecated Use {@link #subtract(Object...)} instead to avoid confusion with the SQL {@code MINUS} set operation.
      */
     @Deprecated
-    public static String minus(final Object... objects) {
-        return subtract(objects);
+    public static String minus(final Object... operands) {
+        return subtract(operands);
     }
 
     /**
@@ -819,12 +816,12 @@ public class SqlExpression extends ComposableCondition {
      * // Returns: "distance / time / 60"
      * }</pre>
      *
-     * @param objects the values to divide; a {@code null} or empty array yields an empty string
+     * @param operands the values to divide; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the division expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String divide(final Object... objects) {
-        return link(SLASH, objects);
+    public static String divide(final Object... operands) {
+        return link(SLASH, operands);
     }
 
     /**
@@ -841,12 +838,12 @@ public class SqlExpression extends ComposableCondition {
      * // Returns: "id % batch_size"
      * }</pre>
      *
-     * @param objects the values for modulus operation; a {@code null} or empty array yields an empty string
+     * @param operands the values for modulus operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the modulus expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String modulus(final Object... objects) {
-        return link(PERCENT, objects);
+    public static String modulus(final Object... operands) {
+        return link(PERCENT, operands);
     }
 
     /**
@@ -860,12 +857,12 @@ public class SqlExpression extends ComposableCondition {
      * // Returns: "flags << 2"
      * }</pre>
      *
-     * @param objects the values for left shift operation; a {@code null} or empty array yields an empty string
+     * @param operands the values for left shift operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the left shift expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String leftShift(final Object... objects) {
-        return link(LEFT_SHIFT, objects);
+    public static String leftShift(final Object... operands) {
+        return link(LEFT_SHIFT, operands);
     }
 
     /**
@@ -879,12 +876,12 @@ public class SqlExpression extends ComposableCondition {
      * // Returns: "value >> 4"
      * }</pre>
      *
-     * @param objects the values for right shift operation; a {@code null} or empty array yields an empty string
+     * @param operands the values for right shift operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the right shift expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String rightShift(final Object... objects) {
-        return link(RIGHT_SHIFT, objects);
+    public static String rightShift(final Object... operands) {
+        return link(RIGHT_SHIFT, operands);
     }
 
     /**
@@ -900,12 +897,12 @@ public class SqlExpression extends ComposableCondition {
      * // Returns: "flags & 255"
      * }</pre>
      *
-     * @param objects the values for bitwise AND operation; a {@code null} or empty array yields an empty string
+     * @param operands the values for bitwise AND operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the bitwise AND expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String bitwiseAnd(final Object... objects) {
-        return link(AMPERSAND, objects);
+    public static String bitwiseAnd(final Object... operands) {
+        return link(AMPERSAND, operands);
     }
 
     /**
@@ -918,12 +915,12 @@ public class SqlExpression extends ComposableCondition {
      * // Returns: "flags1 | flags2"
      * }</pre>
      *
-     * @param objects the values for bitwise OR operation; a {@code null} or empty array yields an empty string
+     * @param operands the values for bitwise OR operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the bitwise OR expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String bitwiseOr(final Object... objects) {
-        return link(VERTICAL_BAR, objects);
+    public static String bitwiseOr(final Object... operands) {
+        return link(VERTICAL_BAR, operands);
     }
 
     /**
@@ -936,12 +933,12 @@ public class SqlExpression extends ComposableCondition {
      * // Returns: "value1 ^ value2"
      * }</pre>
      *
-     * @param objects the values for bitwise XOR operation; a {@code null} or empty array yields an empty string
+     * @param operands the values for bitwise XOR operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the bitwise XOR expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
-    public static String bitwiseXor(final Object... objects) {
-        return link(CIRCUMFLEX, objects);
+    public static String bitwiseXor(final Object... operands) {
+        return link(CIRCUMFLEX, operands);
     }
 
     /**
@@ -1842,7 +1839,9 @@ public class SqlExpression extends ComposableCondition {
      * variables (such as {@code @name}), and numeric literals are left unchanged. Recognized SQL
      * keyword tokens are also left unchanged when written in their canonical upper-case form
      * (for example {@code CURRENT_DATE}); a lower-case token is treated as an identifier and
-     * converted.
+     * converted. A literal that is not a single simple identifier is tokenized by
+     * {@link SqlParser#parse(String)} and reassembled from its tokens, which normalizes the text:
+     * runs of whitespace collapse to a single space and SQL comments are stripped.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1850,6 +1849,7 @@ public class SqlExpression extends ComposableCondition {
      * SqlExpression.of("_firstName").toSql(NamingPolicy.SNAKE_CASE);         // returns "_first_name"
      * SqlExpression.of("firstName = 'John'").toSql(NamingPolicy.SNAKE_CASE); // returns "first_name = 'John'" (identifier converted, quoted literal kept)
      * SqlExpression.of("price-tax").toSql(NamingPolicy.CAMEL_CASE);          // returns "price-tax" (SQL subtraction preserved; each operand converted independently)
+     * SqlExpression.of("price  *  2").toSql(NamingPolicy.NO_CHANGE);         // returns "price * 2" (parser path collapses whitespace runs)
      * SqlExpression.of("firstName").toSql(NamingPolicy.NO_CHANGE);           // returns "firstName"
      * SqlExpression.of("firstName").toSql(null);                             // returns "firstName" (null defaults to NO_CHANGE)
      * SqlExpression.of("").toSql(NamingPolicy.NO_CHANGE);                    // returns "" (empty literal)

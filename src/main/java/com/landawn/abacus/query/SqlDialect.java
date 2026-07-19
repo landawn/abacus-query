@@ -128,7 +128,7 @@ public class SqlDialect {
      * <p>The enum currently distinguishes the two quote characters supported by this builder:
      * ANSI double quotes and MySQL-style backticks.</p>
      */
-    public static enum IdentifierQuote {
+    public enum IdentifierQuote {
         /**
          * ANSI/standard SQL double quote ({@code "}). This is the effective default when
          * {@code identifierQuote} is {@code null}, except when {@code productInfo} names MySQL or
@@ -148,7 +148,7 @@ public class SqlDialect {
      * <p>This setting controls value placeholders only. It does not change table/column naming,
      * identifier quoting, or database-specific SQL syntax.</p>
      */
-    public static enum SqlPolicy {
+    public enum SqlPolicy {
         /**
          * Inline values directly into the SQL string as literals.
          *
@@ -188,7 +188,7 @@ public class SqlDialect {
      *        version is normalized to an empty string, so {@link #version()} never returns {@code null}.
      *        Comparable via {@link #isVersionAtLeast(String)} / {@link #isVersionAtMost(String)}
      */
-    public static final record ProductInfo(String name, String version) {
+    public record ProductInfo(String name, String version) {
 
         /**
          * Canonical constructor that requires a nonblank product name and normalizes a {@code null} {@code version} to an empty string, so

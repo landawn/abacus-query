@@ -767,6 +767,17 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
+    public void testLimitWithZeroOffsetOmitsOffset() {
+        Builder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.limit(10, 0);
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users LIMIT 10", sql);
+        assertFalse(sql.contains("OFFSET"));
+    }
+
+    @Test
     public void testOffsetRows() {
         Builder builder = DynamicQuery.builder();
         builder.select().append("*");
@@ -800,6 +811,16 @@ public class DynamicQueryTest extends TestBase {
     public void testOffsetNegativeThrows() {
         Builder builder = DynamicQuery.builder();
         assertThrows(IllegalArgumentException.class, () -> builder.offset(-1));
+    }
+
+    @Test
+    public void testOffsetZeroIsNoOp() {
+        Builder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.offset(0).offsetRows(0);
+        String sql = builder.build();
+        assertEquals("SELECT * FROM users", sql);
     }
 
     @Test
@@ -936,6 +957,11 @@ public class DynamicQueryTest extends TestBase {
         assertTrue(sql.contains("UNION"));
         assertTrue(sql.contains("active_users"));
         assertTrue(sql.contains("inactive_users"));
+    }
+
+    @Test
+    public void testSetOperationsOnlyBuild() {
+        assertEquals("UNION SELECT 1", DynamicQuery.builder().union("SELECT 1").build());
     }
 
     @Test

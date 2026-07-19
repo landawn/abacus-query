@@ -237,7 +237,8 @@ public abstract class AbstractBetween extends ComposableCondition {
      * @param namingPolicy the naming policy to apply to the property name;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a SQL representation of this condition
-     * @throws IllegalArgumentException if either bound is a {@code NaN} or infinite {@link Float}/{@link Double}
+     * @throws IllegalArgumentException if either bound is a {@code NaN} or infinite {@link Float}/{@link Double},
+     *                                  or a {@link Number} whose text is not a valid numeric literal
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {

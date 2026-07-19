@@ -125,7 +125,9 @@ public class Limit extends Clause {
      *
      * <p>If every slot is an {@code int}-range integer, the count and offset are resolved. Otherwise the
      * normalized expression is retained but its numeric values remain unresolved. Floating-point and negative
-     * numbers, misspelled keywords, and unrelated SQL are rejected.</p>
+     * numbers, misspelled keywords, and unrelated SQL are rejected. Named placeholders are restricted to
+     * word characters ({@code [A-Za-z0-9_]}); dotted or otherwise exotic parameter names accepted elsewhere
+     * (for example, {@code ParsedSql}-style {@code :page.size}) are not valid here.</p>
      *
      * <pre>{@code
      * new Limit("10 OFFSET 20");                         // LIMIT 10 OFFSET 20
@@ -388,6 +390,9 @@ public class Limit extends Clause {
      */
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("#\\{[^}]*\\}");
 
+    /** A run of one or more whitespace characters, collapsed to a single space during normalization. */
+    private static final Pattern WHITESPACE_RUN = Pattern.compile("\\s+");
+
     /** A number slot: an integer literal, or a {@code ?} / {@code :name} / <code>#{name}</code> parameter placeholder. */
     private static final String SLOT = "(?:\\d+|\\?|:\\w+|#\\{[^}]+\\})";
 
@@ -530,7 +535,7 @@ public class Limit extends Clause {
             return segment;
         }
 
-        final String collapsed = segment.replaceAll("\\s+", " ");
+        final String collapsed = WHITESPACE_RUN.matcher(segment).replaceAll(" ");
         final boolean leadingSpace = collapsed.charAt(0) == ' ';
         final boolean trailingSpace = collapsed.length() > 1 && collapsed.charAt(collapsed.length() - 1) == ' ';
         final String[] tokens = collapsed.trim().split(" ");

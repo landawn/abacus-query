@@ -250,7 +250,11 @@ public final class Dsl {
         for (final Selection selection : snapshots) {
             final Collection<String> selectedPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
                     : QueryUtil.selectPropNames(selection.entityClass(), selection.includesSubEntityProperties(), selection.excludedPropNames());
-            hasSelectedProperty |= !selectedPropNames.isEmpty();
+
+            if (!selectedPropNames.isEmpty()) {
+                hasSelectedProperty = true;
+                break;
+            }
         }
 
         N.checkArgument(hasSelectedProperty, "Selections must resolve to at least one property in total");
@@ -428,7 +432,8 @@ public final class Dsl {
      * statement. Properties in the exclusion set will not be included even if they have values
      * and are normally insertable. Properties whose value is {@code null} are also skipped, as are
      * ID properties still holding their default value (for a composite ID, only when every ID
-     * property holds its default value).</p>
+     * property holds its default value). When {@code entity} is a {@code String} column name,
+     * {@code excludedPropNames} is ignored and the named column is always inserted.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1750,12 +1755,22 @@ public final class Dsl {
      *
      * @param entityClass the entity class to count
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if entityClass is null or is not a valid entity bean class
      */
     public SqlBuilder count(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, SqlBuilder.SELECTION_PART_MSG);
 
-        return select(SqlBuilder.COUNT_ALL_LIST).from(entityClass);
+        final SqlBuilder builder = select(SqlBuilder.COUNT_ALL_LIST);
+
+        try {
+            // from(...) rejects a class without bean properties, but only after select(...) has already
+            // allocated a builder backed by a pooled StringBuilder; release that builder on failure so
+            // the rejected call cannot leak the pooled buffer.
+            return builder.from(entityClass);
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(builder, e);
+            throw e;
+        }
     }
 
     /**

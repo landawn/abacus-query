@@ -3,6 +3,8 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -222,5 +224,19 @@ public class UnionAllTest extends TestBase {
         // The operator should be UNION_ALL, not UNION
         Assertions.assertEquals(Operator.UNION_ALL, unionAll.operator());
         Assertions.assertNotEquals(Operator.UNION, unionAll.operator());
+    }
+
+    @Test
+    public void testSubQueryAccessor() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        UnionAll unionAll = new UnionAll(subQuery);
+        assertSame(subQuery, unionAll.subQuery());
+    }
+
+    @Test
+    public void testSubQueryAccessor_DefaultConstructor_ReturnsNull() {
+        // Uninitialized (Kryo) instance: subQuery() must return null without a ClassCastException.
+        UnionAll unionAll = new UnionAll();
+        assertNull(unionAll.subQuery());
     }
 }

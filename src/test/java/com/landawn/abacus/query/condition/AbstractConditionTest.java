@@ -506,6 +506,15 @@ public class AbstractConditionTest extends TestBase {
     }
 
     @Test
+    public void testIsClause_LeadingCommentContainingClauseToken() {
+        // Regression: the second-token scan must locate the token boundary via the comment-aware
+        // nextTokenEndIndex. A raw indexOf(firstToken) would bind to the token's earlier occurrence
+        // inside the leading comment and misread the second token, so these would return false.
+        Assertions.assertTrue(AbstractCondition.isClause(Filters.expr("/* GROUP */ GROUP BY x")));
+        Assertions.assertTrue(AbstractCondition.isClause(Filters.expr("/* ORDER */ ORDER BY name")));
+    }
+
+    @Test
     public void testCreateSortExpression_StringArrayRejectsEmptyProperty() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression("id", ""));
     }

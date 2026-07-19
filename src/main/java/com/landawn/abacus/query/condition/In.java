@@ -133,7 +133,8 @@ public class In extends AbstractIn {
      * }</pre>
      *
      * <p><b>&#9888;&#65039;</b> The row value-list form is supported by MySQL, PostgreSQL,
-     * Oracle and DB2, but <i>not</i> by SQL Server (use {@link InSubQuery} there).</p>
+     * Oracle and DB2, but <i>not</i> by SQL Server (rewrite the composite comparison with
+     * {@code EXISTS} or a join there).</p>
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
      * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be

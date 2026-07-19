@@ -47,8 +47,8 @@ import com.landawn.abacus.util.Strings;
  * </ul>
  *
  * <p><b>&#9888;&#65039;</b> The row value-list form is supported by MySQL, PostgreSQL,
- * Oracle and DB2, but <i>not</i> by SQL Server (which only supports the {@code (a, b) IN (subquery)}
- * form — see {@link InSubQuery}).</p>
+ * Oracle and DB2, but <i>not</i> by SQL Server (rewrite the composite comparison with
+ * {@code EXISTS}/{@code NOT EXISTS} or a join there).</p>
  *
  * <p>The only difference between {@link In} and {@link NotIn} is the operator
  * ({@code IN} vs {@code NOT IN}). All fields, getters, and methods
@@ -450,7 +450,8 @@ public abstract class AbstractIn extends ComposableCondition {
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return the SQL representation, e.g., {@code "status IN ('active', 'pending')"} or, for a
      *         multi-column condition, {@code "(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))"}
-     * @throws IllegalArgumentException if a scalar or row value is a {@code NaN} or infinite {@link Float}/{@link Double}
+     * @throws IllegalArgumentException if a scalar or row value is a {@code NaN} or infinite {@link Float}/{@link Double},
+     *                                  or a {@link Number} whose text is not a valid numeric literal
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {

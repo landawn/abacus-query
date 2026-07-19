@@ -2182,6 +2182,10 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals("", AbstractQueryBuilder.sanitizeNamedParameterName(""));
         assertEquals(null, AbstractQueryBuilder.sanitizeNamedParameterName(null));
         assertEquals("ord", AbstractQueryBuilder.sanitizeNamedParameterName("ord."));
+        // All-punctuation input collapses to the fixed fallback placeholder name.
+        assertEquals("param", AbstractQueryBuilder.sanitizeNamedParameterName("??"));
+        // A leading digit is prefixed so the placeholder remains a legal identifier.
+        assertEquals("p123col", AbstractQueryBuilder.sanitizeNamedParameterName("123col"));
     }
 
     /**
@@ -2261,5 +2265,64 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy("id").having((Condition) null).build().query());
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users u").join("orders o").on((Condition) null).build().query());
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").append((Condition) null).build().query());
+    }
+
+    @com.landawn.abacus.annotation.Table(name = "profile")
+    public static class DivergentColumnProfile {
+        private long id;
+
+        @com.landawn.abacus.annotation.Column("f_name")
+        private String fullName;
+
+        public long getId() {
+            return id;
+        }
+
+        public DivergentColumnProfile setId(long id) {
+            this.id = id;
+            return this;
+        }
+
+        public String getFullName() {
+            return fullName;
+        }
+
+        public DivergentColumnProfile setFullName(String fullName) {
+            this.fullName = fullName;
+            return this;
+        }
+    }
+
+    /**
+     * Regression test: the multi-select branch of {@code appendSelectListAndFromClause} used to
+     * replace {@code _aliasPropColumnNameMap} wholesale, discarding the main-table alias mapping that
+     * {@code appendOperationBeforeFrom} had registered moments earlier for the first selection's entity
+     * class. An aliased reference to a property whose {@code @Column} name diverges from the naming
+     * policy then fell back to naming-policy conversion instead of the annotated column name.
+     */
+    @Test
+    public void testMultiSelectFromKeepsMainTableAliasRegistration() {
+        final List<Selection> selections = Arrays.asList(Selection.builder(DivergentColumnProfile.class).build(),
+                Selection.builder(Account.class).tableAlias("o").build());
+
+        final String sql = Dsl.PSC.select(selections).from("profile a, account o").where(Filters.eq("a.fullName", "X")).build().query();
+
+        assertTrue(sql.contains("WHERE a.f_name = ?"), "aliased @Column name must resolve via the main-table registration: " + sql);
+        assertFalse(sql.contains("a.full_name"), "naming-policy fallback indicates the main-table alias registration was dropped: " + sql);
+    }
+
+    @Test
+    public void testFromVarargsMultiTableKeepsInlineAliasesFromFirstElement() {
+        // Mirrors the single-string comma form: from("users u, orders o"). A bare two-String call from
+        // this package binds to the protected from(tableName, fromClause) overload instead of the public
+        // varargs, so an explicit array is required to exercise the path production callers get.
+        assertEquals("SELECT * FROM users u, orders o", Dsl.PSC.select("*").from(new String[] { "users u", "orders o" }).build().query());
+
+        // The first element carries the primary table alias used for entity-property resolution.
+        final SqlBuilder aliased = Dsl.PSC.select(Account.class).from(new String[] { "account u", "orders o" });
+        assertEquals("u", aliased._tableAlias);
+        final String sql = aliased.build().query();
+        assertTrue(sql.contains("u.first_name"), "properties must resolve against the first element's inline alias: " + sql);
+        assertTrue(sql.endsWith("FROM account u, orders o"), sql);
     }
 }

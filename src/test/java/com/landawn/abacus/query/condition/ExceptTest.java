@@ -3,6 +3,8 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -227,5 +229,19 @@ public class ExceptTest extends TestBase {
         Assertions.assertTrue(params.contains("contractor"));
         Assertions.assertTrue(params.contains("2020-01-01"));
         Assertions.assertTrue(params.contains("active"));
+    }
+
+    @Test
+    public void testSubQueryAccessor() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
+        Except except = new Except(subQuery);
+        assertSame(subQuery, except.subQuery());
+    }
+
+    @Test
+    public void testSubQueryAccessor_DefaultConstructor_ReturnsNull() {
+        // Uninitialized (Kryo) instance: subQuery() must return null without a ClassCastException.
+        Except except = new Except();
+        assertNull(except.subQuery());
     }
 }

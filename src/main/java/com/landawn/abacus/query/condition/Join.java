@@ -313,11 +313,6 @@ public class Join extends AbstractCondition {
         this.condition = validateJoinCondition(joinCondition);
     }
 
-    private static boolean isJoinOperator(final Operator operator) {
-        return operator == Operator.JOIN || operator == Operator.LEFT_JOIN || operator == Operator.RIGHT_JOIN || operator == Operator.FULL_JOIN
-                || operator == Operator.CROSS_JOIN || operator == Operator.INNER_JOIN || operator == Operator.NATURAL_JOIN;
-    }
-
     private static List<String> copyAndValidateJoinEntities(final Collection<String> joinEntities) {
         N.checkArgNotEmpty(joinEntities, "joinEntities");
 

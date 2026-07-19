@@ -248,7 +248,8 @@ public class Using extends Cell {
             copy.add(columnName);
         }
 
-        N.checkArgNotEmpty(copy, "columnNames");
+        // No re-check of the snapshot: the array's length is fixed, so the first check guarantees
+        // at least one (validated) element was copied.
         return new Prepared(copy, createUsingConditionFromSnapshot(copy));
     }
 
@@ -264,6 +265,8 @@ public class Using extends Cell {
             copy.add(columnName);
         }
 
+        // Re-check the snapshot: a live collection can report a non-zero size yet yield no elements
+        // while being copied.
         N.checkArgNotEmpty(copy, "columnNames");
         return new Prepared(copy, createUsingConditionFromSnapshot(copy));
     }

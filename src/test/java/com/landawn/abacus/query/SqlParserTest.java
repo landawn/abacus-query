@@ -1420,6 +1420,35 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
+    public void testIsSelectQuery_withCteAndParenthesizedMainStatement() {
+        // PostgreSQL and MySQL 8 accept a parenthesized main statement after the CTE list,
+        // e.g. to combine set operations: "WITH ... (SELECT ...) UNION (SELECT ...)".
+        assertTrue(SqlParser.isSelectQuery("WITH t AS (SELECT 1) (SELECT * FROM t)"));
+        assertTrue(SqlParser.isSelectQuery("WITH a AS (SELECT 1), b AS (SELECT 2) (SELECT * FROM a)"));
+        assertTrue(SqlParser.isSelectQuery("WITH t AS (SELECT 1) ((SELECT * FROM t))"));
+        assertTrue(SqlParser.isSelectQuery("WITH t AS MATERIALIZED (SELECT 1) (SELECT * FROM t)"));
+        assertTrue(SqlParser.isSelectQuery("WITH t AS (SELECT 1) (SELECT a FROM t) UNION ALL (SELECT a FROM t)"));
+        assertTrue(SqlParser.isReadOnlyQuery("WITH t AS (SELECT 1) (SELECT a FROM t) UNION ALL (SELECT a FROM t)"));
+
+        // A CTE column list is not a CTE body; only the paren after "AS (...)" starts the main statement.
+        assertTrue(SqlParser.isSelectQuery("WITH t (a, b) AS (SELECT 1, 2) (SELECT a FROM t)"));
+
+        // A parenthesized non-SELECT main statement classifies by its real verb, exactly like the
+        // unparenthesized form -- never as SELECT.
+        assertFalse(SqlParser.isSelectQuery("WITH t AS (SELECT 1) (DELETE FROM t)"));
+        assertTrue(SqlParser.isDeleteQuery("WITH t AS (SELECT 1) (DELETE FROM t)"));
+        assertFalse(SqlParser.isReadOnlyQuery("WITH t AS (SELECT 1) (DELETE FROM t)"));
+
+        // Multi-statement: the parenthesized post-CTE verb of a later statement is still honored.
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT 1; WITH t AS (SELECT 1) (SELECT 2)"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; WITH t AS (SELECT 1) (DELETE FROM t)"));
+
+        // Controls: the pre-existing accepted forms keep working.
+        assertTrue(SqlParser.isSelectQuery("(SELECT * FROM t)"));
+        assertTrue(SqlParser.isSelectQuery("WITH t AS (SELECT 1) SELECT * FROM t"));
+    }
+
+    @Test
     public void testIsSelectQuery_keywordPrefixIsNotAKeyword() {
         assertFalse(SqlParser.isSelectQuery("SELECT1 * FROM t"));
         assertFalse(SqlParser.isSelectQuery("select_value FROM t"));
@@ -1471,7 +1500,7 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testWithClause_verbNamedCteInLaterStatementStaysReadOnly() {
-        // Exercises the containsQueryKeyword WITH look-ahead: the CTE name "delete" must not be
+        // Exercises the collectQueryStartKeywords WITH look-ahead: the CTE name "delete" must not be
         // reported as a top-level DELETE of the second statement.
         assertTrue(SqlParser.isReadOnlyQuery("SELECT 1; WITH delete AS (SELECT 1) SELECT * FROM delete"));
     }
@@ -2158,7 +2187,7 @@ public class SqlParserTest extends TestBase {
     // ----------------------------------------------------------------------------------------------
     // keyword detection ignores bracket-quoted identifiers, quoted literals, and finds post-CTE
     // mutations after a statement separator (exercises the skip-bracket / token-sequence / WITH
-    // look-ahead branches of containsQueryKeyword / containsTokenSequence)
+    // look-ahead branches of collectQueryStartKeywords / containsTokenSequence)
     // ----------------------------------------------------------------------------------------------
 
     @Test
