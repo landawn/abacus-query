@@ -125,9 +125,10 @@ public class Limit extends Clause {
      *
      * <p>If every slot is an {@code int}-range integer, the count and offset are resolved. Otherwise the
      * normalized expression is retained but its numeric values remain unresolved. Floating-point and negative
-     * numbers, misspelled keywords, and unrelated SQL are rejected. Named placeholders are restricted to
-     * word characters ({@code [A-Za-z0-9_]}); dotted or otherwise exotic parameter names accepted elsewhere
-     * (for example, {@code ParsedSql}-style {@code :page.size}) are not valid here.</p>
+     * numbers, misspelled keywords, and unrelated SQL are rejected. Colon-style placeholders ({@code :name})
+     * are restricted to word characters ({@code [A-Za-z0-9_]}), so dotted or otherwise exotic parameter names
+     * accepted elsewhere (for example, {@code ParsedSql}-style {@code :page.size}) are not valid in that form;
+     * a {@code #{...}} body may contain any characters except {@code }}.</p>
      *
      * <pre>{@code
      * new Limit("10 OFFSET 20");                         // LIMIT 10 OFFSET 20

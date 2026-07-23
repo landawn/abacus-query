@@ -99,6 +99,11 @@ public class CrossJoin extends Join {
      * {@code CROSS JOIN (t1, t2, ...)}. The collection is copied by the base class, so later
      * changes to the supplied collection do not affect the join.
      *
+     * <p>Note: the comma-separated parenthesized form is rarely directly executable on most databases
+     * (which expect {@code CROSS JOIN t1 CROSS JOIN t2 ...}); this overload is provided mainly for
+     * symmetry with the other multi-table join constructors. Prefer a separate {@code CrossJoin} per
+     * table for portable SQL.
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // All combinations of sizes, colors, and styles

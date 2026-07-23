@@ -1922,9 +1922,11 @@ public class SqlExpression extends ComposableCondition {
             return false;
         }
 
-        // SQL Server/MySQL variable markers are adjacent to the variable name. Do not skip a
-        // space here: PostgreSQL also uses @ as an operator, and its following operand should
-        // still receive naming-policy conversion.
+        // SQL Server/MySQL variable markers (@name, @@name) sit immediately before the variable
+        // name, so any token following a bare "@"/"@@" token is treated as a variable name and left
+        // unconverted. Whitespace is dropped during tokenization, so a PostgreSQL "@" operator whose
+        // operand is a plain identifier is indistinguishable here and is likewise left unchanged;
+        // this only affects naming-policy rewriting of that identifier, not SQL correctness.
         final String previous = words.get(index - 1);
         return "@".equals(previous) || "@@".equals(previous);
     }

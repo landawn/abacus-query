@@ -6220,8 +6220,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
      * @param excludedPropNames property names to exclude from the update (may be {@code null})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entity} is {@code null}, or if {@code entity} is a {@code Collection} or array
-     *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists)
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, if {@code entity} is a {@code Collection} or array
+     *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists), or if a bean {@code entity}
+     *         has no updatable property remaining after exclusions are applied
      * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
      *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
@@ -6273,8 +6274,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
      * @param excludedPropNames property names to exclude from the update (may be {@code null})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entity} is {@code null}, or if {@code entity} is a {@code Collection} or array
-     *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists)
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, if {@code entity} is a {@code Collection} or array
+     *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists), or if a bean {@code entity}
+     *         has no updatable property remaining after exclusions are applied
      * @deprecated use {@link #setEntity(Object, Set)}
      */
     @Deprecated

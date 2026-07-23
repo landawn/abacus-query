@@ -2185,8 +2185,13 @@ public final class SqlParser {
                 while (i < toIndex && !(str.charAt(i) == '*' && str.charAt(i + 1) == '/')) {
                     i++;
                 }
-                // i now rests on the '*' of the closing "*/" (or at toIndex if unclosed);
-                // the for-loop's i++ advances past it.
+                // i now rests on the '*' of the closing "*/" (or at toIndex if unclosed). Consume the '/'
+                // too (mirroring the other block-comment skippers) so a '*' immediately following the
+                // close is not re-read as the start of a phantom "/*" comment; the for-loop's i++ then
+                // advances past it.
+                if (i < toIndex) {
+                    i++;
+                }
             } else if (ch == '-' && i < toIndex && str.charAt(i + 1) == '-') {
                 return i;
             } else if (ch == '#' && isHashLineCommentStartForBackwardScan(str, i, tokenizerConfig)) {

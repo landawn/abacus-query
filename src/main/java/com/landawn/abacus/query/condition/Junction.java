@@ -336,8 +336,8 @@ public class Junction extends ComposableCondition {
      * Each contained condition is wrapped in parentheses, joined by the junction operator, and the
      * entire result is itself wrapped in an outer pair of parentheses (e.g.
      * {@code "((cond1) AND (cond2) AND (cond3))"}). This ensures proper precedence in nested
-     * composable expressions. Any {@code null} entries in the conditions list are skipped, and an
-     * empty string is returned if the junction has no conditions or every condition is {@code null}.
+     * composable expressions. An empty string is returned if the junction has no conditions. (The
+     * public API rejects {@code null} conditions at construction, so none can appear in the list.)
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -362,7 +362,7 @@ public class Junction extends ComposableCondition {
      * @param namingPolicy the naming policy to apply to property names within each condition;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return the SQL representation with proper parentheses and spacing, or an empty string if
-     *         no non-{@code null} conditions are present
+     *         the junction has no conditions
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
