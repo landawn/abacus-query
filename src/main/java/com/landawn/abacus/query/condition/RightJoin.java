@@ -142,8 +142,9 @@ public class RightJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param joinCondition the condition appended after the join target. Use {@link On} (or the deprecated {@link Using}) when the SQL should
-     *            include those keywords. A non-empty predicate is allowed; {@code joinCondition} itself may be {@code null}.
+     * @param joinCondition the join condition. A plain non-empty predicate is automatically prefixed with
+     *            {@code ON}; an explicit {@link On} (or deprecated {@link Using}) renders its own keyword.
+     *            May be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
@@ -175,8 +176,9 @@ public class RightJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param joinCondition the condition appended after the joined table list. Use {@link On} (or the deprecated {@link Using}) when the SQL should
-     *            include those keywords. A non-empty predicate is allowed; {@code joinCondition} itself may be {@code null}.
+     * @param joinCondition the join condition. A plain non-empty predicate is automatically prefixed with
+     *            {@code ON}; an explicit {@link On} (or deprecated {@link Using}) renders its own keyword.
+     *            May be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},

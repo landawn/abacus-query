@@ -175,6 +175,11 @@ public class SubQuery extends AbstractCondition {
      *            stored as the empty string
      * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
+     * @deprecated the entity name is unused when rendering raw query-expression text; it only
+     *             participates in {@link #equals(Object)}/{@link #hashCode()}. Use
+     *             {@link #SubQuery(String)} for raw text, or
+     *             {@link #SubQuery(String, java.util.Collection, Condition)} when an
+     *             entity-name-based structured subquery is actually wanted.
      */
     @Deprecated
     public SubQuery(final String entityName, final String sql) {
@@ -629,9 +634,15 @@ public class SubQuery extends AbstractCondition {
                 }
 
                 if (condition != null) {
-                    sb.append(_SPACE);
+                    // A Criteria already emits a leading space before each of its clauses, so only add
+                    // the separator when the rendered condition does not start with one.
+                    final String conditionSql = condition.toSql(effectiveNamingPolicy);
 
-                    sb.append(condition.toSql(effectiveNamingPolicy));
+                    if (!conditionSql.isEmpty() && conditionSql.charAt(0) != _SPACE) {
+                        sb.append(_SPACE);
+                    }
+
+                    sb.append(conditionSql);
                 }
 
                 return sb.toString();
@@ -656,11 +667,6 @@ public class SubQuery extends AbstractCondition {
      * SubQuery a = Filters.subQuery("SELECT id FROM users");
      * SubQuery b = Filters.subQuery("SELECT id FROM users");
      * boolean sameHash = a.hashCode() == b.hashCode();
-     * // returns true
-     *
-     * // Different SQL typically produces different hash codes
-     * SubQuery c = Filters.subQuery("SELECT id FROM customers");
-     * boolean differentHash = a.hashCode() != c.hashCode();
      * // returns true
      * }</pre>
      *
@@ -690,7 +696,8 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Checks if this subquery is equal to another object.
-     * Two subqueries are equal only when all of their identity fields are equal: the entity name, the
+     * Two subqueries are equal only when they have the exact same runtime class and all of their identity
+     * fields are equal: the entity name, the
      * entity class, the selected properties, the raw SQL string, and the condition. The entity name
      * participates even for raw-SQL subqueries, so two raw subqueries are equal only when both their
      * SQL and their entity name match.
@@ -721,7 +728,7 @@ public class SubQuery extends AbstractCondition {
      * }</pre>
      *
      * @param obj the object to compare with
-     * @return {@code true} if the objects are equal, {@code false} otherwise
+     * @return {@code true} if the objects have the same runtime class and identity fields, {@code false} otherwise
      */
     @Override
     public boolean equals(final Object obj) {

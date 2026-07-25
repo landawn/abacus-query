@@ -74,6 +74,7 @@ public final class QueryUtil {
      * <pre>{@code
      * boolean isValid = SIMPLE_COLUMN_NAME_PATTERN.matcher("column_name").matches();
      * }</pre>
+     *
      */
     public static final Pattern SIMPLE_COLUMN_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
 
@@ -729,10 +730,12 @@ public final class QueryUtil {
 
     /**
      * Returns the ID property names for the specified entity class.
-     * ID fields are identified by {@code @Id} annotations on the entity properties.
+     * ID properties are those annotated with {@code @Id} or {@code @ReadOnlyId}; if the class declares
+     * neither, a property named exactly {@code "id"} is treated as the ID by convention (an explicit
+     * {@code @Id} elsewhere suppresses that convention).
      *
-     * <p>This method returns all properties annotated with {@code @Id}. For entities without
-     * explicit ID fields, an empty list is returned.</p>
+     * <p>For entities that declare no ID annotation and have no property named {@code "id"},
+     * an empty list is returned.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -746,7 +749,7 @@ public final class QueryUtil {
      *
      * // Entity without @Id returns empty list
      * List<String> noIds = QueryUtil.idPropNames(LogEntry.class);
-     * // Returns: []
+     * // Returns: [] (no @Id/@ReadOnlyId and no property named "id")
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be {@code null})

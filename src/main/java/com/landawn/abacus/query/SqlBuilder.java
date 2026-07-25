@@ -33,7 +33,6 @@ import com.landawn.abacus.query.condition.Binary;
 import com.landawn.abacus.query.condition.Cell;
 import com.landawn.abacus.query.condition.ComposableCell;
 import com.landawn.abacus.query.condition.Condition;
-import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.Having;
 import com.landawn.abacus.query.condition.In;
 import com.landawn.abacus.query.condition.InSubQuery;
@@ -42,6 +41,7 @@ import com.landawn.abacus.query.condition.NotBetween;
 import com.landawn.abacus.query.condition.NotIn;
 import com.landawn.abacus.query.condition.NotInSubQuery;
 import com.landawn.abacus.query.condition.Operator;
+import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
@@ -54,8 +54,9 @@ import com.landawn.abacus.util.Strings;
  * A fluent SQL builder that extends {@link AbstractQueryBuilder} with concrete SQL generation,
  * including condition rendering, operator handling, and NULL semantics.
  *
- * <p>Instances are not thread-safe; create a new builder per thread or per query.
- * Always call {@code build()} to finalize construction and release internal resources.</p>
+ * <p>Instances are not thread-safe; create a new builder per thread or per query. Finish it with
+ * {@code build()} or one of the terminal helpers ({@code apply(...)}, {@code accept(...)}, or
+ * {@code debugPrint()}) to finalize construction and release internal resources.</p>
  *
  * <p>Use one of the predefined {@link Dsl} constants based on the desired parameter style and naming
  * convention. The constant name encodes both the parameter style and the identifier naming policy. The
@@ -476,7 +477,9 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         try {
             subBuilder.build();
         } catch (final RuntimeException | Error cleanupFailure) {
-            failure.addSuppressed(cleanupFailure);
+            if (cleanupFailure != failure) {
+                failure.addSuppressed(cleanupFailure);
+            }
         }
     }
 

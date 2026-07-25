@@ -94,9 +94,10 @@ public class NotEqual extends Binary {
      * @param propValue the value to compare against; may be {@code null} (renders as {@code IS NOT NULL}),
      *                  a literal value, a {@link SqlExpression}, a {@link SubQuery}, another non-structural
      *                  {@link Condition}, or a direct {@link All}, {@link Any}, or {@link Some} operand
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if a
-     *                                  condition-valued operand is or contains a query-structural component;
-     *                                  or if an {@code ALL}/{@code ANY}/{@code SOME} operand is not the direct RHS
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
+     *                                  {@code propValue} is or contains a {@link Criteria}, SQL clause,
+     *                                  JOIN, or {@code ON}/{@code USING} connector, or contains a
+     *                                  non-direct {@link All}/{@link Any}/{@link Some} operand
      */
     public NotEqual(final String propName, final Object propValue) {
         super(propName, Operator.NOT_EQUAL, propValue);

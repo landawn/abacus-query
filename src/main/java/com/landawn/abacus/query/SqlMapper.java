@@ -64,9 +64,10 @@ import com.landawn.abacus.util.XmlUtil;
  * </sqlMapper>
  * }</pre>
  * 
- * <p>Recognized XML attributes on {@code <sql>} elements are copied after basic structural validation
- * (attribute names must be nonempty and values non-null). This class interprets only the {@code id}
- * contract; remaining attributes are stored verbatim for downstream callers such as JDBC executors:</p>
+ * <p>Recognized XML attributes on {@code <sql>} elements are copied after structural validation:
+ * names must be nonempty, valid non-namespace XML attribute names (and not {@code xmlns}), and
+ * values must be non-null. This class interprets only the {@code id} contract; remaining attributes
+ * are stored verbatim for downstream callers such as JDBC executors:</p>
  * <ul>
  *   <li>{@code id} - unique identifier for the SQL (required, max {@value #MAX_ID_LENGTH} characters,
  *       must not contain whitespace)</li>
@@ -95,6 +96,7 @@ import com.landawn.abacus.util.XmlUtil;
  * ImmutableMap<String, String> attrs = mapper.attributes("batchInsertAccounts");
  * String batchSize = attrs.get("batchSize");
  * }</pre>
+ *
  */
 public final class SqlMapper {
 
@@ -190,8 +192,10 @@ public final class SqlMapper {
      * @return a new SqlMapper instance loaded with SQL definitions from the specified files
      * @throws IllegalArgumentException if {@code filePaths} is {@code null}, empty, or resolves to no non-empty paths
      *         after splitting, if no file can be found for one of the paths, or if a loaded {@code <sql>} element has
-     *         an invalid id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated)
-     *         or a blank SQL body
+     *         an invalid id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated),
+     *         a SQL body that {@link ParsedSql#parse(String)} rejects (blank, mixed parameter styles, or a malformed
+     *         {@code #{...}} marker), or a {@code <sql>} attribute whose name is not a valid non-namespace XML name
+     *         or whose value is {@code null}
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid, or if any loaded document does not have {@code <sqlMapper>} as its root element
      */
@@ -234,7 +238,9 @@ public final class SqlMapper {
      * @param additionalFilePaths additional XML mapper paths; no element may be {@code null} or empty
      * @return a new mapper containing definitions from every supplied path
      * @throws IllegalArgumentException if either argument is {@code null}, if the first path or any additional path is empty,
-     *         if a path cannot be found, or if a loaded SQL definition is invalid or duplicated
+     *         if a path cannot be found, if a loaded SQL definition is invalid or duplicated, if a SQL body is one that
+     *         {@link ParsedSql#parse(String)} rejects (blank, mixed parameter styles, or a malformed {@code #{...}} marker),
+     *         or if a {@code <sql>} attribute has a name that is not a valid non-namespace XML name or a {@code null} value
      * @throws UncheckedIOException if an I/O error occurs while reading a file
      * @throws ParsingException if any XML document is invalid or does not have {@code <sqlMapper>} as its root element
      */
@@ -277,7 +283,10 @@ public final class SqlMapper {
      * @return a new SqlMapper instance loaded with SQL definitions from the specified files
      * @throws IllegalArgumentException if {@code files} is {@code null} or empty, if any element of {@code files} is
      *         {@code null}, or if a loaded {@code <sql>} element has an invalid id (empty, containing whitespace,
-     *         exceeding {@link #MAX_ID_LENGTH} characters, or duplicated) or a blank SQL body
+     *         exceeding {@link #MAX_ID_LENGTH} characters, or duplicated), a SQL body that
+     *         {@link ParsedSql#parse(String)} rejects (blank, mixed parameter styles, or a malformed
+     *         {@code #{...}} marker), or an attribute whose name is not a valid non-namespace XML name
+     *         or whose value is {@code null}
      * @throws UncheckedIOException if an I/O error occurs reading the files
      * @throws ParsingException if the XML content is invalid, or if any loaded document does not have {@code <sqlMapper>} as its root element
      */
@@ -296,9 +305,11 @@ public final class SqlMapper {
 
     /**
      * Creates a SqlMapper instance by loading SQL definitions from the supplied input stream.
-     * The stream content must contain a {@code <sqlMapper>} root element. The caller opens the stream
-     * and remains responsible for closing it (typically via try-with-resources); this method does not
-     * call {@code close()}.
+     * The stream content must contain a {@code <sqlMapper>} root element.
+     *
+     * <p>The caller opens the stream and remains responsible for closing it (typically via
+     * try-with-resources). Note that the underlying XML parser consumes and closes the stream,
+     * so it must not be reused after this call returns.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -310,7 +321,9 @@ public final class SqlMapper {
      * @param inputStream the input stream to read the XML SQL definitions from (must not be {@code null})
      * @return a new SqlMapper instance loaded with SQL definitions from the stream
      * @throws IllegalArgumentException if {@code inputStream} is {@code null}, or if a loaded {@code <sql>} element has an invalid
-     *         id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated) or a blank SQL body
+     *         id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated), a SQL body that
+     *         {@link ParsedSql#parse(String)} rejects (blank, mixed parameter styles, or a malformed {@code #{...}} marker),
+     *         or an attribute whose name is not a valid non-namespace XML name or whose value is {@code null}
      * @throws UncheckedIOException if an I/O error occurs reading the stream
      * @throws ParsingException if the XML content is invalid, or does not have {@code <sqlMapper>} as its root element
      */
@@ -343,7 +356,8 @@ public final class SqlMapper {
 
     /**
      * Parses the XML from {@code inputStream} and merges its {@code <sql>} definitions into {@code sqlMapper}.
-     * The stream is not closed by this method.
+     * This method does not close the stream itself, but the underlying XML parser consumes and closes it,
+     * so it must not be reused after this call returns.
      *
      * @param sqlMapper the mapper to populate
      * @param inputStream the input stream to read
@@ -650,8 +664,8 @@ public final class SqlMapper {
         final Document validationDocument = XmlUtil.createDOMParser(true, true).newDocument();
 
         for (final Map.Entry<String, String> entry : snapshot.entrySet()) {
-            N.checkArgNotEmpty(entry.getKey(), "attribute name");
-            N.checkArgNotNull(entry.getValue(), "attribute value for '" + entry.getKey() + "'");
+            N.checkArgNotEmpty(entry.getKey(), "XML attribute name must not be null or empty");
+            N.checkArgNotNull(entry.getValue(), "XML attribute value for '" + entry.getKey() + "' must not be null");
 
             if (entry.getKey().indexOf(':') >= 0 || "xmlns".equals(entry.getKey())) {
                 throw new IllegalArgumentException("Namespace-qualified XML attributes are not supported: " + entry.getKey());
@@ -744,7 +758,8 @@ public final class SqlMapper {
      * {@code id} attribute and is protected from being overridden: any stray {@code id}
      * entry in a SQL's attributes map is ignored when emitting attributes.</p>
      *
-     * <p>Example output:</p>
+     * <p>Structure of the output (the actual output is written on a single line, prefixed by an XML declaration,
+     * with attributes in name order):</p>
      * <pre>{@code
      * <sqlMapper>
      *     <sql id="findUser" fetchSize="100">select * from users where id = ?</sql>
@@ -762,6 +777,8 @@ public final class SqlMapper {
      * @param file the file to write to (will be created if it doesn't exist; parent directories will be created if needed)
      * @throws IllegalArgumentException if {@code file} is {@code null}
      * @throws UncheckedIOException if an I/O error occurs while creating or writing to the file
+     * @throws com.landawn.abacus.exception.UncheckedException if a stored SQL body or identifier contains a character
+     *         that is not legal in XML
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void saveTo(final File file) {
@@ -788,6 +805,8 @@ public final class SqlMapper {
      * @param filePath the target file path; must not be {@code null} or empty
      * @throws IllegalArgumentException if {@code filePath} is {@code null} or empty
      * @throws UncheckedIOException if an I/O error occurs while creating or writing the file
+     * @throws com.landawn.abacus.exception.UncheckedException if a stored SQL body or identifier contains a character
+     *         that is not legal in XML
      */
     public void saveTo(final String filePath) {
         N.checkArgNotEmpty(filePath, "filePath");
@@ -816,6 +835,8 @@ public final class SqlMapper {
      * @param outputStream the output stream to write to (not closed by this method)
      * @throws IllegalArgumentException if {@code outputStream} is {@code null}
      * @throws UncheckedIOException if an I/O error occurs while writing to the stream
+     * @throws com.landawn.abacus.exception.UncheckedException if a stored SQL body or identifier contains a character
+     *         that is not legal in XML
      */
     public void saveTo(final OutputStream outputStream) {
         N.checkArgNotNull(outputStream, "outputStream");

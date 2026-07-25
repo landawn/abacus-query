@@ -46,6 +46,9 @@ package com.landawn.abacus.query.condition;
  * for every operator. With returned {@code NULL} values, the result is unknown unless another
  * comparison is true.</p>
  *
+ * <p>A structured subquery with a known, non-wildcard projection must select exactly one column.
+ * Raw SQL and wildcard projections cannot be checked for arity and are left to the database.</p>
+ *
  * <p>Relationship to ANY and ALL:</p>
  * <ul>
  *   <li>SOME and ANY are functionally equivalent - both return true if condition matches at least one value</li>

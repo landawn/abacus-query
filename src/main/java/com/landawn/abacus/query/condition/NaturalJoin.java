@@ -85,7 +85,7 @@ public class NaturalJoin extends Join {
      *
      * <p>This constructor creates a pure natural join without additional conditions.
      * The database engine will identify all columns with identical names in both tables
-     * and create an implicit equality condition for each pair.
+     * and create an implicit equality condition for each pair.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -104,13 +104,14 @@ public class NaturalJoin extends Join {
 
     /**
      * Creates a NATURAL JOIN clause with multiple tables/entities.
-     * The rendered SQL is {@code NATURAL JOIN (t1, t2, ...)};
-     * because most databases do not accept a comma-separated list after {@code NATURAL JOIN}, this
+     * The rendered SQL is {@code NATURAL JOIN (t1, t2, ...)}; a single-element collection renders
+     * bare, without the parentheses.
+     * Because most databases do not accept a comma-separated list after {@code NATURAL JOIN}, this
      * form is rarely directly executable and is provided mainly for symmetry with the other join
      * subclasses. Prefer chaining individual {@link NaturalJoin} clauses for portable SQL.
      *
      * <p>Because a NATURAL JOIN derives its join predicate implicitly, no condition is needed; this is
-     * a convenience for joining the supplied entities without an explicit condition.
+     * a convenience for joining the supplied entities without an explicit condition.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

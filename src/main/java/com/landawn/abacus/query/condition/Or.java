@@ -125,12 +125,13 @@ public class Or extends Junction {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Dynamic condition building
+     * List<String> searchNames = Arrays.asList("name1", "name2");
      * List<Condition> conditions = new ArrayList<>();
      * for (String name : searchNames) {
      *     conditions.add(Filters.like("name", "%" + name + "%"));
      * }
      * Or or = new Or(conditions);
-     * // SQL: ((name LIKE '%name1%') OR (name LIKE '%name2%') OR ...)
+     * // SQL: ((name LIKE '%name1%') OR (name LIKE '%name2%'))
      *
      * // Combining existing conditions (use an ordered collection to preserve iteration order)
      * List<Condition> statusConditions = new ArrayList<>();
@@ -187,13 +188,16 @@ public class Or extends Junction {
      *
      * // Add conditions conditionally
      * Or baseOr = new Or(Filters.equal("status", "active"));
+     * boolean includeInactive = true;
+     * boolean includePending = false;
      * if (includeInactive) {
      *     baseOr = baseOr.or(Filters.equal("status", "inactive"));
      * }
      * if (includePending) {
      *     baseOr = baseOr.or(Filters.equal("status", "pending"));
      * }
-     * // Results vary based on flags
+     * // With these flag values, SQL is:
+     * // ((status = 'active') OR (status = 'inactive'))
      * }</pre>
      *
      * @param condition the condition to add to this OR. Must not be {@code null} and must be

@@ -48,9 +48,11 @@ import com.landawn.abacus.util.Strings;
  *       comments are always discarded regardless of this marker.
  *       Nested block comments and PostgreSQL dollar-quoting ({@code $$...$$}) are NOT
  *       supported.</li>
- *   <li>With the built-in separator configuration, runs of whitespace between emitted tokens are collapsed into a single space token
- *       ({@code " "}); leading whitespace before the very first emitted token is dropped, while
- *       trailing whitespace after the last non-space token yields a final {@code " "} token.</li>
+ *   <li>With the built-in separator configuration, ASCII space, horizontal tab, line feed,
+ *       carriage return, and form feed are whitespace separators. Runs of those characters between
+ *       emitted tokens are collapsed into a single space token ({@code " "}); leading whitespace
+ *       before the very first emitted token is dropped, while trailing whitespace after the last
+ *       non-space token yields a final {@code " "} token.</li>
  *   <li>Multi-character operators (e.g. {@code >=}, {@code <>}, {@code ->>}, PostgreSQL
  *       {@code #-} and {@code @?}) are emitted
  *       as single tokens. Additional separators can be configured without global mutation by using
@@ -122,6 +124,8 @@ public final class SqlParser {
 
     private static final char ENTER_2 = '\r';
 
+    private static final char FORM_FEED = '\f';
+
     private static final Set<String> hashIdentifierContextKeywords = N.asSet(SK.FROM, SK.JOIN, SK.INTO, SK.UPDATE, "TABLE");
     private static final Set<String> hashIdentifierDmlTargetKeywords = N.asSet("INSERT", "UPDATE", "DELETE", "MERGE");
 
@@ -133,6 +137,7 @@ public final class SqlParser {
         separators.add(String.valueOf(TAB));
         separators.add(String.valueOf(ENTER));
         separators.add(String.valueOf(ENTER_2));
+        separators.add(String.valueOf(FORM_FEED));
         separators.add(" ");
         separators.add("?");
         separators.add(",");
@@ -668,7 +673,8 @@ public final class SqlParser {
      *
      * <p>Comments are stripped (line and hash comments are always stripped; block comments are
      * stripped unless the SQL begins case-insensitively with {@code "-- Keep comments"}, in which
-     * case each block comment is emitted as its own token) and runs of whitespace are collapsed
+     * case each block comment is emitted as its own token) and runs of built-in whitespace
+     * separators (space, horizontal tab, line feed, carriage return, and form feed) are collapsed
      * into a single space token (see the class-level documentation for full tokenization rules).
      * Composite keywords are <em>not</em> merged: e.g. {@code "ORDER BY"} is returned as the
      * separate tokens {@code "ORDER"}, {@code " "}, {@code "BY"}.</p>
@@ -851,7 +857,7 @@ public final class SqlParser {
                         sb.setLength(0);
                     }
 
-                    if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
+                    if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
                         if (!tokens.isEmpty() && !tokens.get(tokens.size() - 1).equals(SK.SPACE)) {
                             tokens.add(SK.SPACE);
                         }
@@ -1124,7 +1130,7 @@ public final class SqlParser {
                             }
 
                             sb.setLength(0);
-                        } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
+                        } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
                             // skip white char
                             continue;
                         }
@@ -1210,8 +1216,10 @@ public final class SqlParser {
 
     /**
      * Extracts the next token from a SQL statement starting at the specified index.
-     * This method skips leading whitespace and returns the next meaningful token,
-     * which could be a keyword, identifier, operator, or separator.
+     * This method skips leading whitespace separators and returns the next meaningful token,
+     * which could be a keyword, identifier, operator, or separator. With the built-in
+     * configuration, the whitespace separators are space, horizontal tab, line feed, carriage
+     * return, and form feed.
      *
      * <p>The method handles:</p>
      * <ul>
@@ -1319,7 +1327,7 @@ public final class SqlParser {
                 } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig)) {
                     if (!sb.isEmpty()) {
                         break;
-                    } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
+                    } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
                         // skip white char
                         continue;
                     }
@@ -1353,10 +1361,11 @@ public final class SqlParser {
      * Returns the position just past the next token in a SQL statement, scanning from
      * the specified index. This is the position-returning companion to
      * {@link #nextToken(String, int)}: it applies the identical scanning rules (skipping leading
-     * whitespace and comments, treating a quoted region or multi-character operator as one token)
-     * but returns the end index of that token instead of its text. A caller can therefore obtain
-     * the next token together with its bounds without re-scanning the string with
-     * {@link String#indexOf(int)}.
+     * whitespace separators and comments, treating a quoted region or multi-character operator as
+     * one token) but returns the end index of that token instead of its text. With the built-in
+     * configuration, the whitespace separators are space, horizontal tab, line feed, carriage
+     * return, and form feed. A caller can therefore obtain the next token together with its bounds
+     * without re-scanning the string with {@link String#indexOf(int)}.
      *
      * <p>The returned index is the offset of the first character <em>after</em> the next token,
      * suitable for passing back as the {@code fromIndex} of a subsequent call to advance through
@@ -1458,7 +1467,7 @@ public final class SqlParser {
             } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig)) {
                 if (started) {
                     return index;
-                } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2) {
+                } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
                     // skip white char
                     continue;
                 }
@@ -1777,8 +1786,11 @@ public final class SqlParser {
         outer: while (left >= 0 && units < 2) {
             final int unitStart = left;
 
-            // Consume one unit: dot-joined segments, scanned backward.
-            while (true) {
+            // Consume one unit: dot-joined segments, scanned backward. The guard matters for the
+            // dot-qualification "continue" below: a leading '.' (e.g. ".a, #tmp") decrements left to -1,
+            // and falling out of the loop lets the caller resolve the unanchored shape to "not an
+            // identifier" instead of indexing past the start of the string.
+            while (left >= 0) {
                 final char ch = str.charAt(left);
 
                 if (ch == ')') {
@@ -2797,6 +2809,15 @@ public final class SqlParser {
             final char ch = sql.charAt(index);
 
             if (ch == '\'' || ch == '"' || ch == '`') {
+                // Fail closed on an unterminated quoted region: everything after the opening quote is
+                // swallowed, which would hide a trailing "; DELETE ..." from the statement split below.
+                // That happens for text this scanner reads as code but the database reads as a comment
+                // (e.g. a MySQL "## don't ..." comment, whose leading "##" matches a configured operator).
+                // Such SQL cannot execute anyway, so rejecting it costs nothing.
+                if (!isQuotedLiteralTerminated(sql, index, ch)) {
+                    return false;
+                }
+
                 index = skipQuotedLiteral(sql, index, ch);
                 continue;
             } else if (ch == '[') {
@@ -3526,6 +3547,40 @@ public final class SqlParser {
         }
 
         return fromIndex;
+    }
+
+    /**
+     * Checks whether the quoted region opened at {@code fromIndex} is actually closed before the end of
+     * {@code sql}. Applies the same escaping rules as {@link #skipQuotedLiteral(String, int, char)}
+     * (backslash escapes and doubled quotes), which cannot report termination itself because it returns
+     * the same end-of-input index for a region closed by the last character and for one never closed.
+     *
+     * @param sql the SQL to inspect
+     * @param fromIndex the index of the opening quote character
+     * @param quoteChar the quote character that opened the region
+     * @return {@code true} if a matching closing quote was found
+     */
+    private static boolean isQuotedLiteralTerminated(final String sql, final int fromIndex, final char quoteChar) {
+        final int sqlLength = sql.length();
+        int index = fromIndex + 1;
+
+        while (index < sqlLength) {
+            final char ch = sql.charAt(index);
+
+            if (ch == '\\') {
+                index += 2;
+            } else if (ch == quoteChar) {
+                if (index + 1 < sqlLength && sql.charAt(index + 1) == quoteChar) {
+                    index += 2; // doubled-quote escape
+                } else {
+                    return true;
+                }
+            } else {
+                index++;
+            }
+        }
+
+        return false;
     }
 
     private static int skipQuotedLiteral(final String sql, int fromIndex, final char quoteChar) {

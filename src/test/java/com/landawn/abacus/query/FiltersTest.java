@@ -825,6 +825,24 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
+    public void testAnyOfAllEqualJavadocRenderingIncludesNestedJunctionParentheses() {
+        final Map<String, Object> activePremium = new LinkedHashMap<>();
+        activePremium.put("status", "active");
+        activePremium.put("type", "premium");
+        final Map<String, Object> verifiedTrial = new LinkedHashMap<>();
+        verifiedTrial.put("status", "trial");
+        verifiedTrial.put("verified", true);
+
+        assertEquals("((((status = 'active') AND (type = 'premium'))) OR (((status = 'trial') AND (verified = true))))",
+                Filters.anyOfAllEqual(Arrays.asList(activePremium, verifiedTrial)).toString());
+
+        final Account john = new Account().setFirstName("John").setStatus(1);
+        final Account jane = new Account().setFirstName("Jane").setStatus(2);
+        assertEquals("((((firstName = 'John') AND (status = 1))) OR (((firstName = 'Jane') AND (status = 2))))",
+                Filters.anyOfAllEqual(Arrays.asList(john, jane), Arrays.asList("firstName", "status")).toString());
+    }
+
+    @Test
     public void testAnyOfAllEqualEntities() {
         Account account1 = new Account();
         Account account2 = new Account();

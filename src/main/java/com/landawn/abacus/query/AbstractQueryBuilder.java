@@ -91,10 +91,10 @@ import com.landawn.abacus.util.stream.Stream;
  * <p>Concrete subclasses live in {@link com.landawn.abacus.query.SqlBuilder}. Pick a subclass
  * by parameter style and naming policy (see {@link com.landawn.abacus.query.SqlBuilder} for the full table).</p>
  *
- * <p>Instances are <b>not thread-safe</b>; build one per thread or per query and always call
- * {@link #build()} to obtain the {@link SP} pair and release pooled resources. After {@code build()}
- * the builder is closed and must not be reused; calling {@code build()} again throws
- * {@link IllegalStateException}.</p>
+ * <p>Instances are <b>not thread-safe</b>; build one per thread or per query and finish it with
+ * {@link #build()} or a terminal helper such as {@code apply(...)}, {@code accept(...)}, or
+ * {@link #debugPrint()} to release pooled resources. After any terminal operation, the builder is
+ * closed and must not be reused; attempting to build it again throws {@link IllegalStateException}.</p>
  *
  * <p>SELECT clauses are order-checked as they are added: {@code from(...)} must precede JOIN,
  * WHERE, GROUP BY, HAVING, ORDER BY, pagination, and FOR UPDATE; each later clause prevents an
@@ -414,6 +414,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     // ignore, should never happen.
                 }
             }
+        }
+
+        // Niladic (no-parentheses) keyword functions that SK does not contribute. Those containing an
+        // underscore are indistinguishable from a snake_case column name, so without registration a naming
+        // policy rewrites them into an identifier (CURRENT_USER -> currentUser under CAMEL_CASE, and the
+        // un-parseable current-user under KEBAB_CASE). Registered UPPER-case only, so a real column
+        // genuinely named e.g. "current_user" is still converted; this mirrors SqlExpression's own registry,
+        // which these must stay in sync with -- SqlExpression.toSql and this builder are two independent
+        // rendering paths for the same expression text.
+        for (final String keyword : new String[] { "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_PATH", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME",
+                "CURRENT_TIMESTAMP", "CURRENT_USER", "LOCALTIME", "LOCALTIMESTAMP", "SESSION_USER", "SYSTEM_USER", "UTC_DATE", "UTC_TIME", "UTC_TIMESTAMP",
+                "NAN", "INFINITE", "UNKNOWN" }) {
+            sqlKeyWords.add(keyword);
         }
     }
 
@@ -1104,7 +1117,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * The same validation is applied to every set-operation operand carried by a {@link Criteria}.
      *
      * @param query the query string to validate
-     * @param operationName the set-operation method name (e.g. {@code "union"}) used in the error message
+     * @param operationName the set-operation SQL keyword (e.g. {@code "UNION"}) used in the error message
      * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or does not appear to be a {@code SELECT} sub-query
      */
     private void checkSetOperationSubQuery(final String query, final String operationName) {
@@ -1400,12 +1413,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code selectModifier} is non-empty but blank (whitespace only)
      */
     public This selectModifier(final String selectModifier) {
+        checkOpen();
+
         if (Strings.isEmpty(selectModifier)) {
             return (This) this;
         }
 
         checkSqlFragmentNotBlank(selectModifier, "selectModifier");
-        checkOpen();
 
         if (_op != OperationType.QUERY || _isForConditionOnly) {
             throw new IllegalStateException("selectModifier() is only valid for SELECT queries");
@@ -1659,8 +1673,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Table name derived from User class based on naming policy
      * }</pre>
      *
-     * @param entityClass the entity class representing the table
+     * @param entityClass the entity class representing the table (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      * @throws IllegalStateException if the current operation is not {@code QUERY}, no columns have been set by
      *                               {@code select()}, or {@code from(...)} was already called for this query segment
      */
@@ -2371,6 +2386,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).innerJoin(Order.class).on("users.id = orders.user_id").build().query();
      * // Output: SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2389,6 +2406,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class, "u").innerJoin(Order.class, "o").on("u.id = o.user_id").build().query();
      * // Output: SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2429,6 +2448,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).leftJoin(Order.class).on("users.id = orders.user_id").build().query();
      * // Output: SELECT * FROM users LEFT JOIN orders ON users.id = orders.user_id
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2447,6 +2468,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class, "u").leftJoin(Order.class, "o").on("u.id = o.user_id").build().query();
      * // Output: SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2487,6 +2510,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).rightJoin(Order.class).on("users.id = orders.user_id").build().query();
      * // Output: SELECT * FROM users RIGHT JOIN orders ON users.id = orders.user_id
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2505,6 +2530,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class, "u").rightJoin(Order.class, "o").on("u.id = o.user_id").build().query();
      * // Output: SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2545,6 +2572,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).fullJoin(Order.class).on("users.id = orders.user_id").build().query();
      * // Output: SELECT * FROM users FULL JOIN orders ON users.id = orders.user_id
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2563,6 +2592,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class, "u").fullJoin(Order.class, "o").on("u.id = o.user_id").build().query();
      * // Output: SELECT * FROM users u FULL JOIN orders o ON u.id = o.user_id
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2603,6 +2634,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).crossJoin(Order.class).build().query();
      * // Output: SELECT * FROM users CROSS JOIN orders
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2621,6 +2654,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class, "u").crossJoin(Order.class, "o").build().query();
      * // Output: SELECT * FROM users u CROSS JOIN orders o
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2661,6 +2696,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).naturalJoin(Order.class).build().query();
      * // Output: SELECT * FROM users NATURAL JOIN orders
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2679,6 +2716,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class, "u").naturalJoin(Order.class, "o").build().query();
      * // Output: SELECT * FROM users u NATURAL JOIN orders o
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2792,7 +2831,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return mutateAtomically(() -> {
             checkCanAppendJoinCondition();
 
-            _sb.append(_SPACE_ON_SPACE);
+            // Mirror Join.toString() and the append(Criteria) join path: a raw predicate needs an explicit
+            // ON keyword, while an On/Using condition renders its own keyword. Emitting ON unconditionally
+            // would produce "ON ON (...)" or the impossible "ON USING (...)".
+            if (condition.operator() != Operator.ON && condition.operator() != Operator.USING) {
+                _sb.append(_SPACE_ON_SPACE);
+            }
 
             appendCondition(condition);
             _joinConditionAllowed = false;
@@ -3797,6 +3841,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This limit(final int count) {
         N.checkArgNotNegative(count, "count");
+        // Report the "closed builder" state before the dialect-ordering check: calledOpSet survives
+        // build(), so a closed builder that had offset(...) would otherwise report a misleading
+        // pagination-ordering error instead of the closed error every sibling clause method reports.
+        checkOpen();
 
         if (!usesFetchPagination() && calledOpSet.contains(SK.OFFSET)) {
             throw new IllegalStateException("'" + SK.LIMIT + "' must be added before '" + SK.OFFSET + "' for this SQL dialect");
@@ -4684,8 +4732,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 for (final Clause aggregation : aggregations) {
                     _sb.append(_SPACE).append(aggregation.operator()).append(_SPACE);
                     appendCondition(aggregation.condition());
-                    _hasCompletedSetOperation = true;
                 }
+
+                // Same per-segment reset the union(...)/intersect(...)/... methods perform, so a trailing
+                // ORDER BY sorts the combined result unqualified rather than inheriting the left operand's
+                // table alias.
+                closeSetOperationSegment();
             }
 
             final Clause orderBy = criteria.orderBy();
@@ -4715,7 +4767,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 // close the segment against further WHERE/GROUP BY/HAVING/JOIN clauses.
                 _sb.append(_SPACE).append(condition.operator()).append(_SPACE);
                 appendCondition(((Clause) condition).condition());
-                _hasCompletedSetOperation = true;
+                closeSetOperationSegment();
             } else {
                 if (condition.operator() == Operator.WHERE) {
                     checkIfAlreadyCalled(SK.WHERE);
@@ -4822,13 +4874,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Appends a string expression to the SQL statement.
      *
-     * <p>A single separating space is inserted before {@code expr} when, and only when, it is
-     * needed: that is, when the statement built so far does not already end with a space and
-     * {@code expr} does not already begin with one. As a result both {@code .append("FOR UPDATE")}
-     * and {@code .append(" FOR UPDATE")} produce the same, correctly spaced output (a doubled space
-     * is possible only when the statement built so far already ends with a space and {@code expr}
-     * also begins with one). The rest of {@code expr} is emitted verbatim and is not validated,
-     * escaped, or interpreted in any way.</p>
+     * <p>When the statement built so far is nonempty, a separating space is inserted before
+     * {@code expr} if the statement does not already end with a space and {@code expr} does not
+     * already begin with one. Caller-supplied edge whitespace is otherwise preserved; if the
+     * statement ends with a space and {@code expr} begins with one, both spaces remain. The rest of
+     * {@code expr} is emitted verbatim and is not validated, escaped, or interpreted in any way.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4847,6 +4897,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This append(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
         checkOpen();
+
+        // Mirror append(Condition): emit any not-yet-rendered statement prefix first. Without this, an
+        // append(...) that is the first write into the buffer permanently suppresses the lazily-emitted
+        // "UPDATE t SET " / "DELETE FROM t" prefix, and build() then returns the bare fragment as the
+        // whole statement.
+        init(true);
 
         if (_sb.length() > 0 && _sb.charAt(_sb.length() - 1) != ' ' && expr.charAt(0) != ' ') {
             _sb.append(_SPACE);
@@ -5037,7 +5093,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
     public This union(final String query) {
-        return appendSetOperation(_SPACE_UNION_SPACE, "union", query);
+        return appendSetOperation(_SPACE_UNION_SPACE, "UNION", query);
     }
 
     /**
@@ -5114,7 +5170,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
     public This unionAll(final String query) {
-        return appendSetOperation(_SPACE_UNION_ALL_SPACE, "unionAll", query);
+        return appendSetOperation(_SPACE_UNION_ALL_SPACE, "UNION ALL", query);
     }
 
     /**
@@ -5191,7 +5247,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
     public This intersect(final String query) {
-        return appendSetOperation(_SPACE_INTERSECT_SPACE, "intersect", query);
+        return appendSetOperation(_SPACE_INTERSECT_SPACE, "INTERSECT", query);
     }
 
     /**
@@ -5268,7 +5324,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
     public This except(final String query) {
-        return appendSetOperation(_SPACE_EXCEPT_SPACE, "except", query);
+        return appendSetOperation(_SPACE_EXCEPT_SPACE, "EXCEPT", query);
     }
 
     /**
@@ -5346,7 +5402,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
     public This minus(final String query) {
-        return appendSetOperation(_SPACE_EXCEPT_MINUS_SPACE, "minus", query);
+        return appendSetOperation(_SPACE_EXCEPT_MINUS_SPACE, "MINUS", query);
     }
 
     /**
@@ -5403,6 +5459,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private This appendCheckedSetOperation(final char[] keyword, final String query) {
         _op = OperationType.QUERY;
 
+        closeSetOperationSegment();
+
+        _sb.append(keyword).append(query);
+
+        return (This) this;
+    }
+
+    /**
+     * Discards the per-segment SELECT state once a complete set-operation operand has been emitted, so
+     * that nothing from the finished left-hand SELECT leaks into the clauses that may still follow.
+     *
+     * <p>In particular the table alias must be dropped: a trailing {@code ORDER BY} after a set operation
+     * sorts the combined result, where an alias-qualified column (e.g. {@code ORDER BY acc.first_name})
+     * is rejected by PostgreSQL, MySQL, Oracle and SQL Server. Clearing {@code _selectModifier} and
+     * {@code _selectKeywordEndIdx} likewise prevents a later {@code distinct()}/{@code selectModifier(...)}
+     * from being spliced retro-actively into the already-finished left operand.</p>
+     */
+    private void closeSetOperationSegment() {
         _propOrColumnNames = null;
         _propOrColumnNameAliases = null;
         _multiSelects = null;
@@ -5414,10 +5488,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _selectKeywordEndIdx = -1;
         _joinConditionAllowed = false;
 
-        _sb.append(keyword).append(query);
         _hasCompletedSetOperation = true;
-
-        return (This) this;
     }
 
     /**
@@ -5478,6 +5549,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final Map<String, String> childParameterTokens = new HashMap<>(sqlBuilder._renderedNamedParameterTokens);
         final String sql = uniquifySetOperationNamedParameters(sp.query(), sqlBuilder._namedParameterNameOccurrences, parentOccurrences, childParameterNames,
                 childParameterTokens, sqlBuilder._sqlPolicy);
+
+        // A custom named-parameter handler can make the rewritten operand structurally different
+        // from the child SQL validated above. Validate that final text before merging any child
+        // metadata into the parent so a rejected operand leaves the parent reusable.
+        if (!sql.equals(sp.query())) {
+            checkSetOperationSubQuery(sql, operationName);
+        }
+
         mergeNamedParameterOccurrences(sqlBuilder._namedParameterNameOccurrences);
         _generatedNamedParameterNames.addAll(childParameterNames);
         _renderedNamedParameterTokens.putAll(childParameterTokens);
@@ -5488,14 +5567,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _hasGeneratedParameterPlaceholder |= sqlBuilder._hasGeneratedParameterPlaceholder;
 
-        // When uniquification changed nothing, the operand is byte-identical to the SQL already validated
-        // above and the structural position cannot have changed since checkCanAppendSetOperation ran, so
-        // the second full tokenizer pass is skipped. A rewritten operand is re-validated as before.
-        if (sql.equals(sp.query())) {
-            return appendCheckedSetOperation(keyword, sql);
-        }
-
-        return appendSetOperation(keyword, operationName, sql);
+        // Both the operand and its structural position were validated before parent state was changed.
+        return appendCheckedSetOperation(keyword, sql);
     }
 
     /**
@@ -6472,17 +6545,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * List<Account> accounts = PSC.select("*")
      *     .from("account")
      *     .where(Filters.equal("status", "ACTIVE"))
-     *     .apply(sp -> jdbcTemplate.query(sp.query(), sp.parameters(), accountRowMapper));
+     *     .apply(sp -> jdbcTemplate.query(sp.query(), accountRowMapper, sp.parameters().toArray()));
      * }</pre>
      *
      * @param <T> the return type of the function
      * @param <E> the exception type that may be thrown
-     * @param function the function to apply to the SP pair
+     * @param function the function to apply to the SP pair; must not be {@code null}
      * @return the result of applying the function
+     * @throws IllegalArgumentException if {@code function} is {@code null}
      * @throws E if the function throws an exception
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> function) throws E {
+        N.checkArgNotNull(function, "function");
+
         return function.apply(build());
     }
 
@@ -6492,20 +6568,26 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * Map<String, Object> updates = new LinkedHashMap<>();
+     * updates.put("status", "INACTIVE");
+     *
      * int count = PSC.update("account")
-     *     .set("status", "lastLogin")
-     *     .where(Filters.lessThan("lastLogin", oneYearAgo))
+     *     .set(updates)
+     *     .where(Filters.lessThan("lastLogin", "2025-01-01"))
      *     .apply((sql, params) -> jdbcTemplate.update(sql, params.toArray()));
      * }</pre>
      *
      * @param <T> the return type of the function
      * @param <E> the exception type that may be thrown
-     * @param function the bi-function to apply to the SQL and parameters
+     * @param function the bi-function to apply to the SQL and parameters; must not be {@code null}
      * @return the result of applying the function
+     * @throws IllegalArgumentException if {@code function} is {@code null}
      * @throws E if the function throws an exception
      */
     @Beta
     public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> function) throws E {
+        N.checkArgNotNull(function, "function");
+
         final SP sP = build();
 
         return function.apply(sP.query, sP.parameters);
@@ -6517,17 +6599,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * PSC.insert("name", "email", "status")
+     * Map<String, Object> account = new LinkedHashMap<>();
+     * account.put("name", "Alice");
+     * account.put("email", "alice@example.com");
+     * account.put("status", "ACTIVE");
+     *
+     * PSC.insert(account)
      *    .into("account")
      *    .accept(sp -> jdbcTemplate.update(sp.query(), sp.parameters().toArray()));
      * }</pre>
      *
      * @param <E> the exception type that may be thrown
-     * @param consumer the consumer to accept the SP pair
+     * @param consumer the consumer to accept the SP pair; must not be {@code null}
+     * @throws IllegalArgumentException if {@code consumer} is {@code null}
      * @throws E if the consumer throws an exception
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E {
+        N.checkArgNotNull(consumer, "consumer");
+
         consumer.accept(build());
     }
 
@@ -6546,11 +6636,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param <E> the exception type that may be thrown
-     * @param consumer the bi-consumer to accept the SQL and parameters
+     * @param consumer the bi-consumer to accept the SQL and parameters; must not be {@code null}
+     * @throws IllegalArgumentException if {@code consumer} is {@code null}
      * @throws E if the consumer throws an exception
      */
     @Beta
     public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E {
+        N.checkArgNotNull(consumer, "consumer");
+
         final SP sP = build();
 
         consumer.accept(sP.query, sP.parameters);
@@ -6840,7 +6933,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Normalizes {@code propName} so the remaining text is a valid named-parameter identifier.
      * {@code "u.id"} becomes {@code "id"}, {@code "COUNT(*)"} becomes {@code "COUNT"}, and
      * invalid identifier characters are converted to underscores. {@code null} and empty strings
-     * are returned unchanged.
+     * are returned unchanged. Runs of invalid identifier characters collapse into a single underscore,
+     * leading invalid characters are dropped and trailing underscores trimmed; a name that starts with
+     * a digit is prefixed with {@code p} (e.g. {@code "1abc"} becomes {@code "p1abc"}), and a name with
+     * no usable characters becomes {@code "param"}.
      *
      * @param propName the property name (may include table-alias prefix)
      * @return the sanitized identifier suitable for use after {@code :} or inside {@code #{}}
@@ -7612,7 +7708,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Parses an entity (String, Map, or bean) for an INSERT operation and populates the builder's
-     * property names or property-value map. Null values are skipped for bean entities.
+     * property names or property-value map. Null values are skipped for bean entities, as are ID
+     * properties still holding their type's default value (for a composite ID, only when every ID
+     * component is still default).
      *
      * @param instance the query builder instance to populate
      * @param entity the entity to parse (a column name String, a Map of properties, or a bean object)

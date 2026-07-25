@@ -652,8 +652,8 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testParseWhitespace() {
-        // Test multiple spaces, tabs, and newlines
-        String sql = "SELECT   *\t\tFROM\nusers\r\nWHERE\t id = 1";
+        // Test multiple spaces, tabs, line endings, and form feeds
+        String sql = "SELECT   *\t\tFROM\nusers\r\nWHERE\f\t id = 1";
         List<String> tokens = SqlParser.parse(sql);
 
         // Should normalize whitespace to single spaces
@@ -666,6 +666,43 @@ public class SqlParserTest extends TestBase {
         assertEquals("users", tokens.get(6));
         assertEquals(" ", tokens.get(7));
         assertEquals("WHERE", tokens.get(8));
+    }
+
+    @Test
+    public void testDefaultTokenizerWhitespaceSetIsConsistentAcrossApis() {
+        final SqlParser.TokenizerConfig defaults = SqlParser.defaultTokenizerConfig();
+        final char[] supportedWhitespace = { ' ', '\t', '\r', '\n', '\f' };
+
+        for (final char whitespace : supportedWhitespace) {
+            final String sql = "SELECT" + whitespace + "FROM";
+            final String message = "whitespace U+" + String.format("%04X", (int) whitespace);
+
+            assertTrue(defaults.separators().contains(String.valueOf(whitespace)), message);
+            assertEquals(Arrays.asList("SELECT", " ", "FROM"), SqlParser.parse(sql), message);
+            assertEquals(7, SqlParser.indexOfToken(sql, "FROM"), message);
+            assertEquals("FROM", SqlParser.nextToken(sql, 6), message);
+            assertEquals(sql.length(), SqlParser.nextTokenEndIndex(sql, 6), message);
+        }
+
+        final String combined = "SELECT \t\r\n\fvalue";
+        assertEquals(Arrays.asList("SELECT", " ", "value"), SqlParser.parse(combined));
+        assertEquals(combined.indexOf("value"), SqlParser.indexOfToken(combined, "value"));
+        assertNextTokenConsistency(combined);
+
+        final String formFeedSql = "SELECT\fFROM";
+        final SqlParser.Tokenizer withoutFormFeed = SqlParser
+                .tokenizer(defaults.toBuilder().withoutSeparator('\f').build());
+        assertEquals(Arrays.asList(formFeedSql), withoutFormFeed.parse(formFeedSql));
+        assertEquals(-1, withoutFormFeed.indexOfToken(formFeedSql, "FROM"));
+        assertEquals(formFeedSql, withoutFormFeed.nextToken(formFeedSql, 0));
+        assertEquals(formFeedSql.length(), withoutFormFeed.nextTokenEndIndex(formFeedSql, 0));
+
+        final String verticalTabSql = "SELECT\u000BFROM";
+        assertFalse(defaults.separators().contains("\u000B"));
+        assertEquals(Arrays.asList(verticalTabSql), SqlParser.parse(verticalTabSql));
+        assertEquals(-1, SqlParser.indexOfToken(verticalTabSql, "FROM"));
+        assertEquals(verticalTabSql, SqlParser.nextToken(verticalTabSql, 0));
+        assertEquals(verticalTabSql.length(), SqlParser.nextTokenEndIndex(verticalTabSql, 0));
     }
 
     @Test
@@ -2767,5 +2804,43 @@ public class SqlParserTest extends TestBase {
         assertTrue(SqlParser.isReadOnlyQuery(safeReads));
         assertTrue(SqlParser.isReadOrInsertQuery(safeReads));
         assertTrue(SqlParser.isReadOrInsertQuery("SELECT 1; INSERT INTO audit_log VALUES (1);"));
+    }
+
+    // The backward hash-identifier walk consumed a dot-qualifier without re-checking the lower bound, so a
+    // leading '.' drove the index to -1 and threw StringIndexOutOfBoundsException out of parse()/nextToken()
+    // and everything layered on them (ParsedSql.parse, Filters.expr).
+    @Test
+    public void testLeadingDotBeforeHashIdentifierDoesNotThrow() {
+        for (final String sql : new String[] { ".a, #t", ".a,#a", ".dbo.t1, #tmp", ".t1.a, #t2", ".'a', #t", ".a, ##t" }) {
+            assertNotNull(SqlParser.parse(sql), sql);
+            assertNotNull(SqlParser.nextToken(sql, 3), sql);
+            assertNotNull(ParsedSql.parse(sql), sql);
+        }
+
+        // The anchored form is unaffected.
+        assertTrue(SqlParser.parse("SELECT * FROM .a, #t").contains("SELECT"));
+    }
+
+    // "##"/"#>"/"#-" match configured multi-character operators, so the gate scanners read a MySQL hash
+    // comment as code. An apostrophe in that comment then opened a phantom string literal that swallowed a
+    // following ";  DELETE ...", making the read-only gate fail OPEN. An unterminated literal now fails closed.
+    @Test
+    public void testHashOperatorCommentCannotHideATrailingStatementFromTheReadOnlyGate() {
+        for (final String lead : new String[] { "#", "##", "###", "#>", "#-", "#>>" }) {
+            final String sql = "SELECT * FROM t " + lead + " don't delete\n; DELETE FROM t";
+            assertFalse(SqlParser.isReadOnlyQuery(sql), "read-only gate must not accept: " + sql);
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), "read-or-insert gate must not accept: " + sql);
+        }
+
+        // Well-formed SQL is still accepted: doubled quotes, backslash escapes and quoted identifiers.
+        final char quote = (char) 39;
+        final char backslash = (char) 92;
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT * FROM t WHERE n = " + quote + "it" + quote + quote + "s" + quote));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT * FROM t WHERE n = " + quote + "a" + backslash + quote + "b" + quote));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT * FROM t WHERE n = " + quote + "a" + backslash + backslash + quote));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT 'x' FROM t; SELECT 'y' FROM u"));
+
+        // Genuinely unterminated SQL cannot execute anyway, so the gate rejects it.
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT * FROM t WHERE n = " + quote + "a" + backslash + quote));
     }
 }

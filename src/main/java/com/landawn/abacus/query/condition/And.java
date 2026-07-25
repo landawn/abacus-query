@@ -127,12 +127,14 @@ public class And extends Junction {
      * List<Condition> conditions = new ArrayList<>();
      * conditions.add(Filters.equal("status", "active"));
      * conditions.add(Filters.isNotNull("email"));
+     * boolean includeAgeFilter = false;
      * if (includeAgeFilter) {
      *     conditions.add(Filters.greaterThan("age", 21));
      * }
      *
      * And and = new And(conditions);
-     * // Results in dynamic AND condition based on the list
+     * // With includeAgeFilter == false, SQL is:
+     * // ((status = 'active') AND (email IS NOT NULL))
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with AND logic; may be {@code null} or empty

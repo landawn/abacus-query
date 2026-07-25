@@ -176,7 +176,7 @@ public class Join extends AbstractCondition {
      *
      * // Join with complex condition using And
      * // Note: an And/Or that wraps an On/Using instance is rejected; combine plain
-     * // predicates with Filters.expr(...) instead.
+     * // predicates with Filters.expr(String) instead.
      * Join complexJoin = new Join("products p",
      *     new And(
      *         Filters.expr("categories.id = p.category_id"),
@@ -509,10 +509,6 @@ public class Join extends AbstractCondition {
      * Join a = new Join("orders o", new On("a.id", "b.id"));
      * Join b = new Join("orders o", new On("a.id", "b.id"));
      * a.hashCode() == b.hashCode();   // true (same operator, entities, and condition)
-     *
-     * // Edge: a different join entity produces a different hash code
-     * Join c = new Join("customers c", new On("a.id", "b.id"));
-     * a.hashCode() == c.hashCode();   // (typically) false
      * }</pre>
      *
      * @return hash code based on operator, join entities, and condition

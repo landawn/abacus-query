@@ -790,6 +790,20 @@ public class SubQueryTest extends TestBase {
         Assertions.assertTrue(SubQuery.class.getConstructor(String.class, String.class).isAnnotationPresent(Deprecated.class));
     }
 
+    // toSql() appended its separator space unconditionally, but a Criteria already emits a leading space
+    // before each of its clauses, so the two stacked into a doubled space after the table name.
+    @Test
+    public void testCriteriaConditionIsSeparatedByExactlyOneSpace() {
+        final Criteria criteria = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").build();
+
+        assertEquals("SELECT id FROM users WHERE a = 1 ORDER BY b", new SubQuery("users", Arrays.asList("id"), criteria).toString());
+        assertEquals("SELECT id FROM users JOIN orders", new SubQuery("users", Arrays.asList("id"), Criteria.builder().join("orders").build()).toString());
+
+        // The single-clause and plain-predicate forms were already correct and must stay that way.
+        assertEquals("SELECT id FROM users WHERE a = 1", new SubQuery("users", Arrays.asList("id"), new Where(Filters.eq("a", 1))).toString());
+        assertEquals("SELECT id FROM users WHERE a = 1", new SubQuery("users", Arrays.asList("id"), Filters.eq("a", 1)).toString());
+    }
+
     private static final class SinglePropEntity {
         private long id;
     }

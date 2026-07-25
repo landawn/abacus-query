@@ -35,7 +35,7 @@ import lombok.experimental.Accessors;
  *       {@code firstName} to {@code first_name};</li>
  *   <li>the {@link SqlPolicy} used to render values as raw literals, positional {@code ?} parameters,
  *       named {@code :name} parameters, or iBATIS/MyBatis {@code #{name}} parameters;</li>
- *   <li>the {@link IdentifierQuote} used when generated aliases or identifiers must be quoted; and</li>
+ *   <li>the {@link IdentifierQuote} used when generated aliases or identifiers must be quoted;</li>
  *   <li>the optional {@link ProductInfo} identifying the target database product, which query builders
  *       use to emit product-specific SQL such as pagination clauses;</li>
  *   <li>the optional named-parameter handler used to render named placeholders; and</li>
@@ -322,7 +322,8 @@ public class SqlDialect {
          * {@code 0}, so {@code "8.0"} equals {@code "8.0.0"} and is less than {@code "8.1"}.</p>
          *
          * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code minVersion}
-         * is {@code null}, blank, or does not begin with an integer component. This makes the method safe for
+         * is {@code null}, blank, does not begin with an integer component, or has an empty or unparseable
+         * component (for example {@code "8."} or {@code "8..0"}). This makes the method safe for
          * feature-gating: an unknown or unparseable version simply fails the check.</p>
          *
          * @param minVersion the minimum version to compare against, such as {@code "8.0"} or {@code "19"}
@@ -343,7 +344,8 @@ public class SqlDialect {
          * {@link #isVersionAtLeast(String)} for the parsing and padding rules.</p>
          *
          * <p>Returns {@code false} (not comparable) when either this {@link #version()} or {@code maxVersion}
-         * is {@code null}, blank, or does not begin with an integer component.</p>
+         * is {@code null}, blank, does not begin with an integer component, or has an empty or unparseable
+         * component (for example {@code "8."} or {@code "8..0"}).</p>
          *
          * @param maxVersion the maximum version to compare against, such as {@code "8.0"} or {@code "19"}
          * @return {@code true} if this product's version parses and is less than or equal to {@code maxVersion};

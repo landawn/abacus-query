@@ -215,10 +215,6 @@ public abstract class ComposableCell extends ComposableCondition {
      * Not a = new Not(Filters.eq("status", "active"));
      * Not b = new Not(Filters.eq("status", "active"));
      * a.hashCode() == b.hashCode();   // true (same operator and condition)
-     *
-     * // Edge: a different wrapped condition produces a different hash code
-     * Not c = new Not(Filters.eq("status", "inactive"));
-     * a.hashCode() == c.hashCode();   // (typically) false
      * }</pre>
      *
      * @return hash code based on operator and wrapped condition

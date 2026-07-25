@@ -549,12 +549,12 @@ public final class Dsl {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.insert(Account.class).into("account").build().query();
-     * // Output: INSERT INTO account (first_name, last_name, email, created_date) VALUES (?, ?, ?, ?)
+     * // Output: INSERT INTO account (id, first_name, last_name, email) VALUES (?, ?, ?, ?)
      * }</pre>
      *
      * @param entityClass the entity class to generate INSERT for
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if entityClass is null or declares no insertable property
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or declares no insertable property
      */
     public SqlBuilder insert(final Class<?> entityClass) {
         return insert(entityClass, null);
@@ -569,7 +569,7 @@ public final class Dsl {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Set<String> excluded = N.asSet("createdDate", "modifiedDate");
+     * Set<String> excluded = N.asSet("id");
      * String sql = PSC.insert(Account.class, excluded).into("account").build().query();
      * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
      * }</pre>
@@ -577,7 +577,7 @@ public final class Dsl {
      * @param entityClass the entity class to generate INSERT for
      * @param excludedPropNames set of property names to exclude from the insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if entityClass is null or no insertable property remains after exclusions are applied
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or no insertable property remains after exclusions are applied
      */
     public SqlBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, SqlBuilder.INSERTION_PART_MSG);
@@ -608,12 +608,13 @@ public final class Dsl {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.insertInto(Account.class).build().query();
-     * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
+     * // Output: INSERT INTO account (id, first_name, last_name, email) VALUES (?, ?, ?, ?)
      * }</pre>
      *
      * @param entityClass the entity class to generate INSERT INTO for
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if entityClass is null or declares no insertable property
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no insertable property,
+     *                                  or resolves to a blank mapped table name
      */
     public SqlBuilder insertInto(final Class<?> entityClass) {
         return insertInto(entityClass, null);
@@ -627,7 +628,7 @@ public final class Dsl {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Set<String> excluded = N.asSet("id", "createdDate");
+     * Set<String> excluded = N.asSet("id");
      * String sql = PSC.insertInto(Account.class, excluded).build().query();
      * // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
      * }</pre>
@@ -635,10 +636,18 @@ public final class Dsl {
      * @param entityClass the entity class to generate INSERT INTO for
      * @param excludedPropNames set of property names to exclude from the insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if entityClass is null or no insertable property remains after exclusions are applied
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no insertable property remains after exclusions are applied,
+     *                                  or the class resolves to a blank mapped table name
      */
     public SqlBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
-        return insert(entityClass, excludedPropNames).into(entityClass);
+        final SqlBuilder builder = insert(entityClass, excludedPropNames);
+
+        try {
+            return builder.into(entityClass);
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(builder, e);
+            throw e;
+        }
     }
 
     /**
@@ -785,7 +794,7 @@ public final class Dsl {
      * String sql = PSC.update(Account.class)
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
-     * // Output: UPDATE account SET first_name = ?, last_name = ?, email = ?, ... WHERE id = ?
+     * // Output: UPDATE account SET id = ?, first_name = ?, last_name = ?, email = ? WHERE id = ?
      * }</pre>
      *
      * @param entityClass the entity class to update
@@ -800,16 +809,19 @@ public final class Dsl {
      * Creates an UPDATE statement for an entity class with excluded properties.
      *
      * <p>This method creates an UPDATE statement excluding specified properties in addition to
-     * those automatically excluded by annotations (@ReadOnly, @NonUpdatable). This is useful
-     * for partial updates or when certain fields should never be updated.</p>
+     * those automatically excluded by annotations ({@code @ReadOnly}, {@code @NonUpdatable}).
+     * The remaining properties are already staged as the generated {@code SET} template; calling
+     * {@code setEntity(entity)} afterward would start a new SET list and would not apply this method's
+     * exclusions. To capture values from an entity, use {@code update(tableName).setEntity(entity,
+     * excludedPropNames)} instead.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Set<String> excluded = N.asSet("createdDate", "createdBy");
+     * Set<String> excluded = N.asSet("email");
      * String sql = PSC.update(Account.class, excluded)
-     *                 .set(account)
-     *                 .where(Filters.equal("id", account.getId()))
+     *                 .where(Filters.equal("id", 1))
      *                 .build().query();
+     * // Output: UPDATE account SET id = ?, first_name = ?, last_name = ? WHERE id = ?
      * }</pre>
      *
      * @param entityClass the entity class to update
@@ -1098,7 +1110,7 @@ public final class Dsl {
      * String sql = PSC.select(Account.class)
      *                 .from("account")
      *                 .build().query();
-     * // Output: SELECT id AS "id", first_name AS "firstName", last_name AS "lastName", email AS "email", created_date AS "createdDate" FROM account
+     * // Output: SELECT id AS "id", first_name AS "firstName", last_name AS "lastName", email AS "email" FROM account
      * }</pre>
      *
      * @param entityClass the entity class to select properties from
@@ -1219,7 +1231,8 @@ public final class Dsl {
      *
      * @param entityClass the entity class to select from
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
+     *                                  or resolves to a blank mapped table name
      */
     public SqlBuilder selectFrom(final Class<?> entityClass) {
         return selectFrom(entityClass, false);
@@ -1242,7 +1255,8 @@ public final class Dsl {
      * @param entityClass the entity class to select from
      * @param tableAlias the table alias to use
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
+     *                                  or resolves to a blank mapped table name
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias) {
         return selectFrom(entityClass, tableAlias, false);
@@ -1268,7 +1282,8 @@ public final class Dsl {
      * @param entityClass the entity class to select from
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
+     *                                  or resolves to a blank mapped table name
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
         return selectFrom(entityClass, includeSubEntityProperties, null);
@@ -1292,7 +1307,8 @@ public final class Dsl {
      * @param tableAlias the table alias to use
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
+     *                                  or resolves to a blank mapped table name
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties) {
         return selectFrom(entityClass, tableAlias, includeSubEntityProperties, null);
@@ -1316,7 +1332,8 @@ public final class Dsl {
      * @param entityClass the entity class to select from
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
+     *                                  or the class resolves to a blank mapped table name
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
         return selectFrom(entityClass, false, excludedPropNames);
@@ -1341,7 +1358,8 @@ public final class Dsl {
      * @param tableAlias the table alias to use
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
+     *                                  or the class resolves to a blank mapped table name
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final Set<String> excludedPropNames) {
         return selectFrom(entityClass, tableAlias, false, excludedPropNames);
@@ -1366,7 +1384,8 @@ public final class Dsl {
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
+     *                                  or the class resolves to a blank mapped table name
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
         return selectFrom(entityClass, QueryUtil.tableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
@@ -1396,18 +1415,23 @@ public final class Dsl {
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
+     *                                  or the class resolves to a blank mapped table name
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties,
             final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, SqlBuilder.SELECTION_PART_MSG);
+        final boolean includesSubEntityTables = SqlBuilder.hasSubEntityToInclude(entityClass, includeSubEntityProperties);
+        final List<String> selectTableNames = includesSubEntityTables ? SqlBuilder.getSelectTableNames(entityClass, tableAlias, excludedPropNames, namingPolicy)
+                : null;
+        final SqlBuilder builder = select(entityClass, includeSubEntityProperties, excludedPropNames);
 
-        if (SqlBuilder.hasSubEntityToInclude(entityClass, includeSubEntityProperties)) {
-            final List<String> selectTableNames = SqlBuilder.getSelectTableNames(entityClass, tableAlias, excludedPropNames, namingPolicy);
-            return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, selectTableNames);
+        try {
+            return includesSubEntityTables ? builder.from(entityClass, selectTableNames) : builder.from(entityClass, tableAlias);
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(builder, e);
+            throw e;
         }
-
-        return select(entityClass, includeSubEntityProperties, excludedPropNames).from(entityClass, tableAlias);
     }
 
     /**
@@ -1435,7 +1459,7 @@ public final class Dsl {
      * @param tableAliasB table alias for second entity
      * @param classAliasB property prefix for second entity results
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
+     * @throws IllegalArgumentException if either entity class is {@code null} or declares no selectable property
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #select(List)}, which is self-documenting and supports any
@@ -1475,7 +1499,8 @@ public final class Dsl {
      * @param classAliasB property prefix for second entity results
      * @param excludedPropNamesB excluded properties for second entity
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClassA or entityClassB is null
+     * @throws IllegalArgumentException if either entity class is {@code null}, or if either selection has no property
+     *                                  remaining after exclusions
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #select(List)}, which is self-documenting and supports any
@@ -1514,7 +1539,7 @@ public final class Dsl {
      *
      * @param selection the selection descriptor defining the entity, aliases, and property filtering; must not be {@code null}
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code selection} is {@code null}
+     * @throws IllegalArgumentException if {@code selection} is {@code null} or resolves to no selectable property
      * @see #select(List)
      * @see Selection
      */
@@ -1553,7 +1578,8 @@ public final class Dsl {
      *
      * @param selections list of Selection objects defining what to select from each entity
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if selections is null or empty, contains invalid data, or the combined selections resolve to no properties
+     * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains invalid data,
+     *                                  or resolves to no properties in total
      */
     public SqlBuilder select(final List<Selection> selections) {
         return createSelectBuilder(snapshotSelections(selections));
@@ -1582,7 +1608,8 @@ public final class Dsl {
      * @param tableAliasB table alias for second entity
      * @param classAliasB property prefix for second entity
      * @return a new SqlBuilder instance with SELECT and FROM configured
-     * @throws IllegalArgumentException if {@code entityClassA} or {@code entityClassB} is {@code null}
+     * @throws IllegalArgumentException if either entity class is {@code null} or declares no selectable property,
+     *                                  or if the generated FROM clause is blank
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #selectFrom(List)}, which is self-documenting and supports any
@@ -1618,7 +1645,8 @@ public final class Dsl {
      * @param classAliasB property prefix for second entity
      * @param excludedPropNamesB excluded properties for second entity
      * @return a new SqlBuilder instance with SELECT and FROM configured
-     * @throws IllegalArgumentException if entityClassA or entityClassB is null
+     * @throws IllegalArgumentException if either entity class is {@code null}, if either selection has no property
+     *                                  remaining after exclusions, or if the generated FROM clause is blank
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #selectFrom(List)}, which is self-documenting and supports any
@@ -1656,7 +1684,8 @@ public final class Dsl {
      *
      * @param selection the selection descriptor defining the entity, aliases, and property filtering; must not be {@code null}
      * @return a new SqlBuilder instance with SELECT and FROM configured
-     * @throws IllegalArgumentException if {@code selection} is {@code null}
+     * @throws IllegalArgumentException if {@code selection} is {@code null}, resolves to no selectable property,
+     *                                  or produces a blank generated FROM clause
      * @see #selectFrom(List)
      * @see Selection
      */
@@ -1691,7 +1720,8 @@ public final class Dsl {
      *
      * @param selections list of Selection objects defining what to select from each entity
      * @return a new SqlBuilder instance with SELECT and FROM configured
-     * @throws IllegalArgumentException if selections is null or empty, contains invalid data, or the combined selections resolve to no properties
+     * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains invalid data,
+     *                                  produces a blank generated FROM clause, or resolves to no properties in total
      */
     public SqlBuilder selectFrom(final List<Selection> selections) {
         final List<Selection> selectionSnapshots = snapshotSelections(selections);
@@ -1735,7 +1765,14 @@ public final class Dsl {
         // caller and could therefore never be released through build().
         AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
 
-        return select(SqlBuilder.COUNT_ALL_LIST).from(tableName);
+        final SqlBuilder builder = select(SqlBuilder.COUNT_ALL_LIST);
+
+        try {
+            return builder.from(tableName);
+        } catch (final RuntimeException | Error e) {
+            releaseFailedBuilder(builder, e);
+            throw e;
+        }
     }
 
     /**
@@ -1755,7 +1792,8 @@ public final class Dsl {
      *
      * @param entityClass the entity class to count
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null or is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class,
+     *                                  or resolves to a blank mapped table name
      */
     public SqlBuilder count(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, SqlBuilder.SELECTION_PART_MSG);
@@ -1843,7 +1881,12 @@ public final class Dsl {
         try {
             builder.build();
         } catch (final RuntimeException | Error cleanupFailure) {
-            failure.addSuppressed(cleanupFailure);
+            // A user-supplied renderer may throw the same cached exception instance on the
+            // original attempt and during cleanup. Throwable rejects self-suppression, so keep
+            // the original failure primary without trying to attach it to itself.
+            if (cleanupFailure != failure) {
+                failure.addSuppressed(cleanupFailure);
+            }
         }
     }
 

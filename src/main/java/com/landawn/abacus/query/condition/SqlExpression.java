@@ -83,8 +83,8 @@ import com.landawn.abacus.util.Strings;
  * in query conditions. It also provides utility methods for building SQL expressions
  * and mathematical/string functions.
  *
- * <p>Expressions are cached for performance optimization. The same expression text
- * will return the same {@code SqlExpression} instance when created through {@link #of(String)}.
+ * <p>Expressions created through {@link #of(String)} are cached for performance optimization. The same expression text
+ * returns the same {@code SqlExpression} instance when created through that factory.
  * This helps reduce memory usage and improves performance for frequently used expressions.</p>
  *
  * <p>The class provides numerous static helper methods for creating common SQL expression
@@ -153,7 +153,14 @@ public class SqlExpression extends ComposableCondition {
             }
         }
 
+        // Niladic (no-parentheses) keyword functions. Those containing an underscore are
+        // indistinguishable from a snake_case column name, so they must be registered explicitly
+        // or a naming policy would rewrite them into an identifier (e.g. CURRENT_ROLE -> currentRole).
+        registerSqlKeyword("CURRENT_CATALOG");
         registerSqlKeyword("CURRENT_DATE");
+        registerSqlKeyword("CURRENT_PATH");
+        registerSqlKeyword("CURRENT_ROLE");
+        registerSqlKeyword("CURRENT_SCHEMA");
         registerSqlKeyword("CURRENT_TIME");
         registerSqlKeyword("CURRENT_TIMESTAMP");
         registerSqlKeyword("CURRENT_USER");
@@ -161,6 +168,16 @@ public class SqlExpression extends ComposableCondition {
         registerSqlKeyword("LOCALTIMESTAMP");
         registerSqlKeyword("SESSION_USER");
         registerSqlKeyword("SYSTEM_USER");
+        registerSqlKeyword("UTC_DATE");
+        registerSqlKeyword("UTC_TIME");
+        registerSqlKeyword("UTC_TIMESTAMP");
+
+        // Predicate operands used by the Is/IsNot condition family and its documented escape hatch.
+        // Unlike NULL (which SK contributes), these are not in SK, so without registration the
+        // builder path would emit "IS nan" / "IS NOT infinite" / "IS unknown".
+        registerSqlKeyword("NAN");
+        registerSqlKeyword("INFINITE");
+        registerSqlKeyword("UNKNOWN");
     }
 
     // For Kryo
@@ -260,7 +277,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates an equality expression between a literal and a value.
+     * Creates an equality expression between the given expression and a value.
      * This is useful for building dynamic SQL conditions programmatically.
      * If {@code value} is {@code null}, the result is rendered as {@code "literal IS NULL"} instead of {@code "literal = null"}.
      *
@@ -286,7 +303,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates an equality expression between a literal and a value.
+     * Creates an equality expression between the given expression and a value.
      * Alias for {@link #equal(String, Object)}.
      *
      * <p><b>Usage Examples:</b></p>
@@ -306,7 +323,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a not-equal expression between a literal and a value.
+     * Creates a not-equal expression between the given expression and a value.
      * If {@code value} is {@code null}, the result is rendered as {@code "literal IS NOT NULL"} instead of {@code "literal != null"}.
      *
      * <p><b>Usage Examples:</b></p>
@@ -331,7 +348,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a not-equal expression between a literal and a value.
+     * Creates a not-equal expression between the given expression and a value.
      * Alias for {@link #notEqual(String, Object)}.
      *
      * <p><b>Usage Examples:</b></p>
@@ -351,7 +368,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a greater-than expression between a literal and a value.
+     * Creates a greater-than expression between the given expression and a value.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -372,7 +389,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a greater-than expression between a literal and a value.
+     * Creates a greater-than expression between the given expression and a value.
      * Alias for {@link #greaterThan(String, Object)}.
      *
      * <p><b>Usage Examples:</b></p>
@@ -392,7 +409,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a greater-than-or-equal expression between a literal and a value.
+     * Creates a greater-than-or-equal expression between the given expression and a value.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -410,7 +427,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a greater-than-or-equal expression between a literal and a value.
+     * Creates a greater-than-or-equal expression between the given expression and a value.
      * Alias for {@link #greaterThanOrEqual(String, Object)}.
      *
      * <p><b>Usage Examples:</b></p>
@@ -430,7 +447,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a less-than expression between a literal and a value.
+     * Creates a less-than expression between the given expression and a value.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -448,7 +465,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a less-than expression between a literal and a value.
+     * Creates a less-than expression between the given expression and a value.
      * Alias for {@link #lessThan(String, Object)}.
      *
      * <p><b>Usage Examples:</b></p>
@@ -468,7 +485,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a less-than-or-equal expression between a literal and a value.
+     * Creates a less-than-or-equal expression between the given expression and a value.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -486,7 +503,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a less-than-or-equal expression between a literal and a value.
+     * Creates a less-than-or-equal expression between the given expression and a value.
      * Alias for {@link #lessThanOrEqual(String, Object)}.
      *
      * <p><b>Usage Examples:</b></p>
@@ -506,7 +523,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a BETWEEN expression for a literal with min and max values.
+     * Creates a BETWEEN expression for the given expression with min and max values.
      * The BETWEEN operator is inclusive on both ends.
      *
      * <p><b>Usage Examples:</b></p>
@@ -529,7 +546,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a NOT BETWEEN expression for a literal with min and max values.
+     * Creates a NOT BETWEEN expression for the given expression with min and max values.
      * A value satisfies {@code NOT BETWEEN min AND max} when it is strictly less than {@code min}
      * or strictly greater than {@code max}, so both ends of the range are excluded.
      *
@@ -600,7 +617,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates an IS NULL expression for the specified literal.
+     * Creates an IS NULL expression for the specified expression.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -616,7 +633,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates an IS NOT NULL expression for the specified literal.
+     * Creates an IS NOT NULL expression for the specified expression.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -632,7 +649,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a framework-specific {@code IS BLANK} expression for the specified literal,
+     * Creates a framework-specific {@code IS BLANK} expression for the specified expression,
      * which the query engine interprets as a combined null-or-empty check.
      * This is not standard SQL; the generated string uses the token {@code "BLANK"}
      * as a special sentinel understood by this framework's SQL parser.
@@ -651,7 +668,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a framework-specific {@code IS NOT BLANK} expression for the specified literal,
+     * Creates a framework-specific {@code IS NOT BLANK} expression for the specified expression,
      * which the query engine interprets as a combined not-null-and-not-empty check.
      * This is not standard SQL; the generated string uses the token {@code "BLANK"}
      * as a special sentinel understood by this framework's SQL parser.
@@ -670,7 +687,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates an AND expression combining multiple literals.
+     * Creates an AND expression combining multiple expressions.
      * All conditions must be true for the AND expression to be true.
      *
      * <p><b>Usage Examples:</b></p>
@@ -690,7 +707,7 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates an OR expression combining multiple literals.
+     * Creates an OR expression combining multiple expressions.
      * At least one condition must be true for the OR expression to be true.
      *
      * <p><b>Usage Examples:</b></p>
@@ -982,8 +999,8 @@ public class SqlExpression extends ComposableCondition {
 
     /**
      * Renders a range expression of the form {@code "literal <op> min AND max"}.
-     * Used by {@link #between(String, Object, Object)} (with {@link Operator#BETWEEN}); the
-     * connector between {@code min} and {@code max} is always the literal {@code AND}.
+     * Used by {@link #between(String, Object, Object)} and {@link #notBetween(String, Object, Object)};
+     * the connector between {@code min} and {@code max} is always the literal {@code AND}.
      * Both {@code min} and {@code max} are rendered via {@link #renderValue(Object)}.
      *
      * @param operator the range operator (typically {@link Operator#BETWEEN})
@@ -1554,7 +1571,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr1 the first SQL expression (column reference or pre-quoted literal)
      * @param expr2 the second SQL expression (column reference or pre-quoted literal)
-     * @return a CONCAT function string of the form {@code CONCAT(str1, str2)}
+     * @return a CONCAT function string of the form {@code CONCAT(expr1, expr2)}
      */
     public static String concat(final String expr1, final String expr2) {
         return function(CONCAT, expr1, expr2);
@@ -1924,9 +1941,10 @@ public class SqlExpression extends ComposableCondition {
 
         // SQL Server/MySQL variable markers (@name, @@name) sit immediately before the variable
         // name, so any token following a bare "@"/"@@" token is treated as a variable name and left
-        // unconverted. Whitespace is dropped during tokenization, so a PostgreSQL "@" operator whose
-        // operand is a plain identifier is indistinguishable here and is likewise left unchanged;
-        // this only affects naming-policy rewriting of that identifier, not SQL correctness.
+        // unconverted. Whitespace is retained as its own token, so a PostgreSQL "@" operator written
+        // with surrounding spaces ("a @ b") is distinguishable and its operand is still converted;
+        // only the space-less form ("a @b") is ambiguous and is likewise left unchanged. This affects
+        // naming-policy rewriting of that identifier only, not SQL correctness.
         final String previous = words.get(index - 1);
         return "@".equals(previous) || "@@".equals(previous);
     }
@@ -1949,7 +1967,7 @@ public class SqlExpression extends ComposableCondition {
 
     /**
      * Checks if this expression equals another object.
-     * Two expressions are equal if they are both {@code SqlExpression} instances with the same literal string.
+     * Two expressions are equal if they have the exact same runtime class and literal string.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1960,7 +1978,7 @@ public class SqlExpression extends ComposableCondition {
      * }</pre>
      *
      * @param obj the object to compare with
-     * @return {@code true} if the objects are equal
+     * @return {@code true} if the objects have the same runtime class and literal string
      */
     @Override
     public boolean equals(final Object obj) {

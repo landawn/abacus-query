@@ -657,11 +657,12 @@ public final class DynamicQuery {
          * {@link #fetchNextRows(int)}) whenever they can express the desired clause.</p>
          *
          * <p>A single separating space is inserted before {@code textToAppend} when, and only when, it is
-         * needed: that is, when the text built so far does not already end with a space and
-         * {@code textToAppend} does not already begin with one. As a result both {@code .append("LIMIT 10")}
-         * and {@code .append(" LIMIT 10")} produce the same, correctly spaced output. The inserted-space
-         * logic itself never creates a doubled space; one can only arise from whitespace already present
-         * in the appended text or at the end of a previously appended fragment.</p>
+         * needed: that is, when this builder's trailing buffer is empty or does not already end with a
+         * space, and {@code textToAppend} does not already begin with one. As a result both
+         * {@code .append("LIMIT 10")} and {@code .append(" LIMIT 10")} produce the same, correctly spaced
+         * output. The inserted-space logic itself never creates a doubled space; one can only arise from
+         * whitespace already present in the appended text or at the end of a previously appended fragment
+         * (including the last fragment of a preceding typed clause, which the trailing buffer cannot see).</p>
          *
          * <p><b>&#9888;&#65039;</b> This writes into the builder's trailing buffer, which {@link #build()}
          * appends after the typed {@link #orderBy()} clause regardless of invocation order. Set operations
@@ -757,7 +758,9 @@ public final class DynamicQuery {
          * Appends {@code rawClause} verbatim to the trailing "more parts" buffer, inserting a single
          * separating space only when the buffer does not already end with a space and {@code rawClause}
          * does not already begin with one. An empty buffer is treated as needing a leading space, since
-         * its content is concatenated directly after the preceding clause (which never ends with a space).
+         * its content is concatenated directly after the preceding clause, which normally does not end
+         * with a space (a caller-supplied fragment such as {@code from().append("t ")} can, in which case
+         * the merged SQL contains a doubled space).
          *
          * @param rawClause the non-blank text to append verbatim
          */
@@ -1462,8 +1465,8 @@ public final class DynamicQuery {
 
         /**
          * Adds a {@code JOIN} clause (implicit {@code INNER JOIN}) with the specified table and no
-         * {@code ON} condition. Use this for join expressions that carry their own condition (or none),
-         * or follow it with a {@code USING}/{@code ON} fragment appended elsewhere.
+         * separate connector step. Any required {@code ON}/{@code USING} connector must be included
+         * in {@code joinExpr} itself; this overload may also be used for dialect-specific conditionless joins.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1488,9 +1491,9 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds an {@code INNER JOIN} clause with the specified table and no {@code ON} condition.
-         * Use this for join expressions that carry their own condition (or none), or follow it with a
-         * {@code USING}/{@code ON} fragment appended elsewhere.
+         * Adds an {@code INNER JOIN} clause with the specified table and no separate connector step.
+         * Any required {@code ON}/{@code USING} connector must be included in {@code joinExpr} itself;
+         * this overload may also be used for dialect-specific conditionless joins.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1515,9 +1518,9 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a {@code LEFT JOIN} clause with the specified table and no {@code ON} condition.
-         * Use this for join expressions that carry their own condition (or none), or follow it with a
-         * {@code USING}/{@code ON} fragment appended elsewhere.
+         * Adds a {@code LEFT JOIN} clause with the specified table and no separate connector step.
+         * Any required {@code ON}/{@code USING} connector must be included in {@code joinExpr} itself;
+         * this overload may also be used for dialect-specific conditionless joins.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1542,9 +1545,9 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a {@code RIGHT JOIN} clause with the specified table and no {@code ON} condition.
-         * Use this for join expressions that carry their own condition (or none), or follow it with a
-         * {@code USING}/{@code ON} fragment appended elsewhere.
+         * Adds a {@code RIGHT JOIN} clause with the specified table and no separate connector step.
+         * Any required {@code ON}/{@code USING} connector must be included in {@code joinExpr} itself;
+         * this overload may also be used for dialect-specific conditionless joins.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1569,9 +1572,9 @@ public final class DynamicQuery {
         }
 
         /**
-         * Adds a {@code FULL JOIN} clause with the specified table and no {@code ON} condition.
-         * Use this for join expressions that carry their own condition (or none), or follow it with a
-         * {@code USING}/{@code ON} fragment appended elsewhere.
+         * Adds a {@code FULL JOIN} clause with the specified table and no separate connector step.
+         * Any required {@code ON}/{@code USING} connector must be included in {@code joinExpr} itself;
+         * this overload may also be used for dialect-specific conditionless joins.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1811,7 +1814,7 @@ public final class DynamicQuery {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * where.append("status IN ").appendPlaceholders(3, "(", ")");
-         * // Generates: status IN (?, ?, ?)
+         * // sb contents so far: "WHERE status IN (?, ?, ?)"
          * }</pre>
          *
          * <p>If {@code placeholderCount} is {@code 0}, neither {@code prefix} nor {@code postfix} is appended.</p>
@@ -2206,7 +2209,7 @@ public final class DynamicQuery {
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * having.append("MAX(score) IN ").appendPlaceholders(3, "(", ")");
-         * // Generates: MAX(score) IN (?, ?, ?)
+         * // sb contents so far: "HAVING MAX(score) IN (?, ?, ?)"
          * }</pre>
          *
          * <p>If {@code placeholderCount} is {@code 0}, neither {@code prefix} nor {@code postfix} is appended.</p>

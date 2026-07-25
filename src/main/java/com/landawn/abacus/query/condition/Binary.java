@@ -441,10 +441,6 @@ public class Binary extends ComposableCondition {
      * Binary a = new Equal("age", 25);
      * Binary b = new Equal("age", 25);
      * boolean same = a.hashCode() == b.hashCode();   // true
-     *
-     * // Different value -> different hash codes
-     * Binary c = new Equal("age", 30);
-     * boolean diff = a.hashCode() == c.hashCode();   // false
      * }</pre>
      *
      * @return hash code based on property name, operator, and value

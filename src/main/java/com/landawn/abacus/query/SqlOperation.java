@@ -138,9 +138,9 @@ public enum SqlOperation {
     /**
      * UNKNOWN operation for unrecognized SQL commands.
      *
-     * <p>Note: {@link #of(String)} returns {@code null} (not this constant) for unrecognized
-     * names; {@code UNKNOWN} is reserved as a default for callers' own classification results,
-     * e.g. {@code N.defaultIfNull(SqlOperation.of(keyword), SqlOperation.UNKNOWN)}.</p>
+     * <p>Note: {@link #of(String)} returns {@code null} (not this constant) for unrecognized names;
+     * use {@link #fromOrUnknown(String)} when an unrecognized token should resolve to {@code UNKNOWN}
+     * instead.</p>
      */
     UNKNOWN("UNKNOWN");
 
@@ -193,6 +193,7 @@ public enum SqlOperation {
      *             without surrounding whitespace); may be {@code null}
      * @return the corresponding {@code SqlOperation} enum value, or {@code null} if {@code name} is
      *         {@code null} or no matching operation is found
+     * @see #fromOrUnknown(String)
      */
     public static SqlOperation of(final String name) {
         if (name == null) {
@@ -211,14 +212,16 @@ public enum SqlOperation {
     /**
      * Resolves an operation token, returning {@link #UNKNOWN} for {@code null} or unsupported input.
      *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SqlOperation.fromOrUnknown("select");   // SELECT
      * SqlOperation.fromOrUnknown("TRUNCATE"); // UNKNOWN
-     * SqlOperation.fromOrUnknown(null);        // UNKNOWN
+     * SqlOperation.fromOrUnknown(null);       // UNKNOWN
      * }</pre>
      *
      * @param token the SQL operation token or enum constant name; may be {@code null}
      * @return the resolved operation, or {@link #UNKNOWN} when no operation matches
+     * @see #of(String)
      */
     public static SqlOperation fromOrUnknown(final String token) {
         final SqlOperation operation = of(token);

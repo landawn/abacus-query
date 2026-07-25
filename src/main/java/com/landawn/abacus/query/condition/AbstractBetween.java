@@ -129,8 +129,8 @@ public abstract class AbstractBetween extends ComposableCondition {
      *
      * @param <T> the expected type of the minimum value (caller-supplied; an unchecked cast is
      *            performed internally and a {@link ClassCastException} may be thrown at the call site)
-     * @return the configured minimum value, which may be a literal, a {@link SubQuery}, any other
-     *         {@link Condition}, or {@code null}
+     * @return the configured minimum value, which may be a literal, a {@link SubQuery}, another
+     *         non-structural, non-quantified {@link Condition}, or {@code null}
      */
     @SuppressWarnings("unchecked")
     public <T> T minValue() {
@@ -149,8 +149,8 @@ public abstract class AbstractBetween extends ComposableCondition {
      *
      * @param <T> the expected type of the maximum value (caller-supplied; an unchecked cast is
      *            performed internally and a {@link ClassCastException} may be thrown at the call site)
-     * @return the configured maximum value, which may be a literal, a {@link SubQuery}, any other
-     *         {@link Condition}, or {@code null}
+     * @return the configured maximum value, which may be a literal, a {@link SubQuery}, another
+     *         non-structural, non-quantified {@link Condition}, or {@code null}
      */
     @SuppressWarnings("unchecked")
     public <T> T maxValue() {
@@ -269,10 +269,6 @@ public abstract class AbstractBetween extends ComposableCondition {
      * Between a = new Between("age", 18, 65);
      * Between b = new Between("age", 18, 65);
      * boolean same = a.hashCode() == b.hashCode();   // true
-     *
-     * // Different bound -> different hash codes
-     * Between c = new Between("age", 18, 99);
-     * boolean diff = a.hashCode() == c.hashCode();   // false
      * }</pre>
      *
      * @return hash code based on property name, operator, and range values
@@ -300,7 +296,7 @@ public abstract class AbstractBetween extends ComposableCondition {
 
     /**
      * Checks if this condition is equal to another object.
-     * Two conditions are equal if they have the same property name,
+     * Two conditions are equal if they have the exact same runtime class, property name,
      * operator, minValue, and maxValue.
      *
      * <p><b>Usage Examples:</b></p>

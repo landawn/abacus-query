@@ -353,10 +353,11 @@ public class Limit extends Clause {
      * Compares limits by representation and value.
      *
      * <p>Expression-based limits compare their normalized expressions; numeric limits compare count and offset.
-     * The two representations are intentionally not equal even when they produce identical SQL text.</p>
+     * The two representations are intentionally not equal even when they produce identical SQL text.
+     * The exact runtime class also participates in equality.</p>
      *
      * @param obj object to compare
-     * @return {@code true} if {@code obj} is a {@code Limit} with the same operator and representation
+     * @return {@code true} if {@code obj} has the same runtime class, operator, and representation
      */
     @Override
     public boolean equals(final Object obj) {

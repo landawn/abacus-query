@@ -129,7 +129,8 @@ public class Criteria extends AbstractCondition {
      * Returns the SELECT modifier (e.g., {@code DISTINCT}, {@code DISTINCTROW},
      * {@code DISTINCT ON (col1, col2)}, or any custom modifier set via
      * {@link Builder#selectModifier(String)}), or {@code null} if none was set.
-     * {@code SqlBuilder.append(Criteria)} applies this modifier to its current SELECT segment.
+     * {@code SqlBuilder.append(Condition)} applies this modifier to its current SELECT segment when
+     * the appended condition is a {@code Criteria}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -578,8 +579,8 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Checks whether this Criteria is equal to another object.
-     * Two {@code Criteria} instances are equal if they have the same select modifier
-     * and the same ordered list of conditions.
+     * Two instances are equal if they have the exact same runtime class, select modifier,
+     * and ordered list of conditions.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -825,8 +826,9 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Sets the DISTINCTROW modifier with specific columns.
-         * Only the specified columns are considered for duplicate removal.
+         * Sets the literal, database-specific {@code DISTINCTROW(columnNames)} modifier.
+         * This builder does not validate the target dialect or assign portable duplicate-removal
+         * semantics to the supplied expressions.
          * If {@code columnNames} is {@code null}, empty, or blank, a plain {@code DISTINCTROW}
          * modifier (without parentheses) is used.
          *
@@ -839,8 +841,8 @@ public class Criteria extends AbstractCondition {
          * Criteria.builder().distinctRowBy(null).build().selectModifier();   // returns "DISTINCTROW"
          * }</pre>
          *
-         * @param columnNames the columns to apply DISTINCTROW to; if {@code null}, empty, or blank,
-         *                    plain {@code DISTINCTROW} is used
+         * @param columnNames the expressions to place inside {@code DISTINCTROW(...)}; if
+         *                    {@code null}, empty, or blank, plain {@code DISTINCTROW} is used
          * @return this Builder instance for method chaining
          */
         public Builder distinctRowBy(final String columnNames) {
@@ -965,7 +967,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param joinCondition the join condition
+         * @param joinCondition the join condition; {@code null} produces a condition-less join (equivalent to the single-argument overload)
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
          *                                  is not valid for a JOIN
@@ -994,7 +996,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param joinCondition the join condition
+         * @param joinCondition the join condition; {@code null} produces a condition-less join
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
          *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
@@ -1046,7 +1048,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param joinCondition the join condition
+         * @param joinCondition the join condition; {@code null} produces a condition-less join (equivalent to the single-argument overload)
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
          *                                  is not valid for a JOIN
@@ -1074,7 +1076,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param joinCondition the join condition
+         * @param joinCondition the join condition; {@code null} produces a condition-less join
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
          *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
@@ -1122,7 +1124,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param joinCondition the join condition
+         * @param joinCondition the join condition; {@code null} produces a condition-less join (equivalent to the single-argument overload)
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
          *                                  is not valid for a JOIN
@@ -1150,7 +1152,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param joinCondition the join condition
+         * @param joinCondition the join condition; {@code null} produces a condition-less join
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
          *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
@@ -1198,7 +1200,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param joinCondition the join condition
+         * @param joinCondition the join condition; {@code null} produces a condition-less join (equivalent to the single-argument overload)
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
          *                                  is not valid for a JOIN
@@ -1226,7 +1228,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param joinCondition the join condition
+         * @param joinCondition the join condition; {@code null} produces a condition-less join
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
          *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
@@ -1274,7 +1276,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param joinCondition the join condition
+         * @param joinCondition the join condition; {@code null} produces a condition-less join (equivalent to the single-argument overload)
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
          *                                  is not valid for a JOIN
@@ -1302,7 +1304,7 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param joinCondition the join condition
+         * @param joinCondition the join condition; {@code null} produces a condition-less join
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
          *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
@@ -1461,7 +1463,11 @@ public class Criteria extends AbstractCondition {
          *
          * @param expr the WHERE condition as a string (must not be {@code null}, empty, or blank)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if it starts with a
+         *                                  clause keyword (e.g. {@code WHERE}, {@code ORDER BY}, {@code GROUP BY},
+         *                                  {@code HAVING}, {@code LIMIT}, a JOIN or set-operation keyword) or with an
+         *                                  {@code ON}/{@code USING} connector — pass only the predicate text, without
+         *                                  the clause keyword
          */
         public Builder where(final String expr) {
             N.checkArgNotEmpty(expr, "expr");
@@ -1871,7 +1877,11 @@ public class Criteria extends AbstractCondition {
          *
          * @param expr the HAVING condition as a string (must not be {@code null}, empty, or blank)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if it starts with a
+         *                                  clause keyword (e.g. {@code WHERE}, {@code ORDER BY}, {@code GROUP BY},
+         *                                  {@code HAVING}, {@code LIMIT}, a JOIN or set-operation keyword) or with an
+         *                                  {@code ON}/{@code USING} connector — pass only the predicate text, without
+         *                                  the clause keyword
          */
         public Builder having(final String expr) {
             N.checkArgNotEmpty(expr, "expr");

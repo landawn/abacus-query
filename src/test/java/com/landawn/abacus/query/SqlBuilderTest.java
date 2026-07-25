@@ -920,6 +920,17 @@ public class SqlBuilderTest extends TestBase {
                 Dsl.PSC.selectFrom(JavadocAccount.class, "a").where(Filters.eq("a.email", "john.doe@example.com")).build().query());
     }
 
+    @Test
+    public void testEntityClassInsertExamplesUseEveryInsertableProperty() {
+        final String fullInsert = "INSERT INTO account (id, first_name, last_name, email) VALUES (?, ?, ?, ?)";
+        final String insertWithoutId = "INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)";
+
+        assertEquals(fullInsert, Dsl.PSC.insert(JavadocAccount.class).into("account").build().query());
+        assertEquals(fullInsert, Dsl.PSC.insertInto(JavadocAccount.class).build().query());
+        assertEquals(insertWithoutId, Dsl.PSC.insert(JavadocAccount.class, Collections.singleton("id")).into("account").build().query());
+        assertEquals(insertWithoutId, Dsl.PSC.insertInto(JavadocAccount.class, Collections.singleton("id")).build().query());
+    }
+
     /** Minimal entity mirroring the Account shape used by the Dsl entity-class SELECT Javadoc examples. */
     @Table(name = "account")
     public static class JavadocAccount {
@@ -958,6 +969,20 @@ public class SqlBuilderTest extends TestBase {
 
         public void setEmail(String email) {
             this.email = email;
+        }
+    }
+
+    /** Deliberately malformed metadata used to force a post-allocation FROM-rendering failure. */
+    @Table(name = " ")
+    public static class BlankTableNameEntity {
+        private String value;
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
         }
     }
 
@@ -13736,6 +13761,36 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
+    public void testClassBasedSelectFromRenderingFailureReleasesAllocatedBuilder() {
+        final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
+
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.selectFrom(BlankTableNameEntity.class, null, false, null));
+        assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                "A failed class-based SELECT FROM convenience factory must release its pooled buffer");
+    }
+
+    @Test
+    public void testInsertIntoRenderingFailureReleasesAllocatedBuilder() {
+        final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
+        final IllegalStateException rendererFailure = new IllegalStateException("named renderer failed");
+        final Dsl throwingNamedDsl = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+            throw rendererFailure;
+        }).build());
+
+        Assertions.assertSame(rendererFailure, assertThrows(IllegalStateException.class, () -> throwingNamedDsl.insertInto(JavadocAccount.class)));
+        assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                "A failed INSERT INTO convenience factory must release its pooled buffer");
+    }
+
+    @Test
+    public void testUpdateEntityClassExclusionsApplyToDeferredSetTemplate() {
+        assertEquals("UPDATE account SET id = ?, first_name = ?, last_name = ?, email = ? WHERE id = ?",
+                Dsl.PSC.update(JavadocAccount.class).where(Filters.equal("id", 1)).build().query());
+        assertEquals("UPDATE account SET id = ?, first_name = ?, last_name = ? WHERE id = ?",
+                Dsl.PSC.update(JavadocAccount.class, Collections.singleton("email")).where(Filters.equal("id", 1)).build().query());
+    }
+
+    @Test
     public void testSetEntityRejectsAnEmptyUpdatableProjectionWithoutChangingMapping() {
         final SqlBuilder builder = Dsl.PSC.update("users");
 
@@ -13775,6 +13830,10 @@ public class SqlBuilderTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.count(String.class));
         assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
                 "A count factory whose FROM rejects the entity class must release its pooled buffer");
+
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.count(BlankTableNameEntity.class));
+        assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                "A count factory whose FROM rejects mapped table metadata must release its pooled buffer");
 
         // The pool must remain usable: a subsequent normal count build still succeeds.
         assertEquals("SELECT count(*) FROM test_account", Dsl.PSC.count(Account.class).build().query());

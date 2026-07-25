@@ -189,12 +189,14 @@ public class Junction extends ComposableCondition {
      * List<Condition> conditions = new ArrayList<>();
      * conditions.add(new Equal("status", "active"));
      * conditions.add(new GreaterThan("score", 80));
+     * boolean includeDateCheck = false;
      * if (includeDateCheck) {
-     *     conditions.add(new LessThanOrEqual("date", today));
+     *     conditions.add(new LessThanOrEqual("date", "2025-01-01"));
      * }
      *
      * Junction junction = new Junction(Operator.AND, conditions);
-     * // junction.toString() returns "((status = 'active') AND (score > 80))"
+     * // With includeDateCheck == false, junction.toString() returns
+     * // "((status = 'active') AND (score > 80))"
      *
      * // Edge: a null collection is treated as no conditions -> renders as ""
      * Junction empty = new Junction(Operator.OR, (Collection<Condition>) null);
@@ -281,7 +283,8 @@ public class Junction extends ComposableCondition {
         N.checkArgNotNull(condition, "condition");
 
         if (containsNonPredicateComponent(condition)) {
-            throw new IllegalArgumentException("Condition with operator '" + condition.operator() + "' cannot be used in a junction constructor");
+            throw new IllegalArgumentException("Condition " + condition.getClass().getSimpleName() + " (operator '" + condition.operator()
+                    + "') cannot be used in a junction constructor");
         }
 
         return condition;
@@ -418,10 +421,6 @@ public class Junction extends ComposableCondition {
      * Junction a = new Junction(Operator.AND, new Equal("status", "active"));
      * Junction b = new Junction(Operator.AND, new Equal("status", "active"));
      * a.hashCode() == b.hashCode();   // true (same operator and conditions)
-     *
-     * // Edge: a different operator produces a different hash code
-     * Junction c = new Junction(Operator.OR, new Equal("status", "active"));
-     * a.hashCode() == c.hashCode();   // (typically) false
      * }</pre>
      *
      * @return hash code based on operator and condition list
@@ -447,7 +446,7 @@ public class Junction extends ComposableCondition {
 
     /**
      * Checks if this junction is equal to another object.
-     * Two junctions are considered equal if they have the same operator
+     * Two junctions are considered equal if they have the exact same runtime class and operator,
      * and contain the same conditions in the same order.
      *
      * <p><b>Usage Examples:</b></p>

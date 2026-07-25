@@ -147,6 +147,7 @@ public final class Filters {
      * // Create a parameterized condition; the parameterless equal(String) overload uses QME internally
      * Equal condition = Filters.equal("age");
      * }</pre>
+     *
      */
     public static final SqlExpression QME = SqlExpression.of(SK.QUESTION_MARK);
 
@@ -480,7 +481,8 @@ public final class Filters {
      *
      * @param entity the entity object whose properties will be used
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map (use {@link #anyEqual(Map)})
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, is a map (use {@link #anyEqual(Map)}),
+     *                                  or its class declares no selectable property
      */
     public static Or anyEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
@@ -615,7 +617,8 @@ public final class Filters {
      *
      * @param entity the entity object whose properties will be used
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map (use {@link #allEqual(Map)})
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, is a map (use {@link #allEqual(Map)}),
+     *                                  or its class declares no selectable property
      */
     public static And allEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
@@ -716,10 +719,10 @@ public final class Filters {
 
     /**
      * Creates an {@code OR} of per-row {@code AND}-of-equals conditions &mdash; i.e. a "match any row" filter, where a row
-     * matches when <em>all</em> of its columns equal the given values. Each non-null element (a property map or entity)
-     * contributes one {@code AND} of {@code column = value} equalities via {@link #allEqual(Object)}, and those per-element
-     * {@code AND} groups are combined with {@code OR}. This is the compositional counterpart of {@link #anyEqual(Map)} /
-     * {@link #allEqual(Map)}: it is literally "any-of-{@code allEqual}".
+     * matches when <em>all</em> of its columns equal the given values. Each non-null property map contributes the equivalent
+     * of {@link #allEqual(Map)}, while each non-null entity contributes the equivalent of
+     * {@link #allEqual(Object, Collection)} over the selected properties. Those per-element {@code AND} groups are combined
+     * with {@code OR}; this is literally "any-of-{@code allEqual}".
      *
      * <p>If the first non-null element is a {@link Map}, all non-null elements must be maps with non-null
      * {@link String} keys. Otherwise, every non-null element must be an entity rather than a map, and all
@@ -728,24 +731,32 @@ public final class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
+     * Map<String, Object> activePremium = new LinkedHashMap<>();
+     * activePremium.put("status", "active");
+     * activePremium.put("type", "premium");
+     * Map<String, Object> verifiedTrial = new LinkedHashMap<>();
+     * verifiedTrial.put("status", "trial");
+     * verifiedTrial.put("verified", true);
      * Set<Map<String, Object>> propsSet = new LinkedHashSet<>();
-     * propsSet.add(Map.of("status", "active", "type", "premium"));
-     * propsSet.add(Map.of("status", "trial", "verified", true));
+     * propsSet.add(activePremium);
+     * propsSet.add(verifiedTrial);
      * Or mapCondition = Filters.anyOfAllEqual(propsSet);
-     * // Results in: (status = 'active' AND type = 'premium') OR (status = 'trial' AND verified = true)
+     * // Results in: ((((status = 'active') AND (type = 'premium'))) OR (((status = 'trial') AND (verified = true))))
      *
      * List<User> users = Arrays.asList(
      *     new User("John", "john@example.com"),
      *     new User("Jane", "jane@example.com")
      * );
      * Or entityCondition = Filters.anyOfAllEqual(users);
-     * // Results in: (name = 'John' AND email = 'john@example.com') OR (name = 'Jane' AND email = 'jane@example.com')
+     * // If User's only selectable properties are name followed by email, results in:
+     * // ((((name = 'John') AND (email = 'john@example.com'))) OR (((name = 'Jane') AND (email = 'jane@example.com'))))
      * }</pre>
      *
      * @param entitiesOrPropMaps collection of property maps or entity objects (must not be empty)
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entitiesOrPropMaps} is {@code null} or empty, if all elements are {@code null}, if maps and entities
-     *                                  are mixed, if a map is empty, or if a map key is not a non-blank {@link String}
+     *                                  are mixed, if a map is empty, if a map key is not a non-blank {@link String}, if the first entity class declares
+     *                                  no selectable property, or if a selected property is unreadable from an entity
      * @see #anyOfAllEqual(Collection, Collection)
      * @see #anyEqual(Map)
      * @see #allEqual(Map)
@@ -785,7 +796,7 @@ public final class Filters {
      * List<User> users = Arrays.asList(new User("John", "active"), new User("Jane", "trial"));
      * Or condition = Filters.anyOfAllEqual(users, Arrays.asList("name", "status"));
      * // Only uses name and status properties from each user
-     * // Results in: (name = 'John' AND status = 'active') OR (name = 'Jane' AND status = 'trial')
+     * // Results in: ((((name = 'John') AND (status = 'active'))) OR (((name = 'Jane') AND (status = 'trial'))))
      * }</pre>
      *
      * @param entities collection of entity objects (must not be empty)
@@ -2244,9 +2255,9 @@ public final class Filters {
      * Creates a {@link Where} clause from a raw SQL expression string.
      * Useful for custom SQL expressions.
      *
-     * <p><b>Warning:</b> {@code expr} is SQL text, not a bind value, and is included verbatim in
-     * the generated clause. Do not build it from untrusted input; prefer {@link #where(Condition)}
-     * with parameterized conditions.</p>
+     * <p><b>Warning:</b> {@code expr} is SQL text, not a bind value. When rendered by a configured
+     * SqlBuilder, detected identifiers may still be converted according to its naming policy. Do not
+     * build it from untrusted input; prefer {@link #where(Condition)} with parameterized conditions.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2549,9 +2560,9 @@ public final class Filters {
      * Creates a {@link Having} clause from a raw SQL expression string.
      * Useful for aggregate function conditions.
      *
-     * <p><b>Warning:</b> {@code expr} is SQL text, not a bind value, and is included verbatim in
-     * the generated clause. Do not build it from untrusted input; prefer {@link #having(Condition)}
-     * with parameterized conditions.</p>
+     * <p><b>Warning:</b> {@code expr} is SQL text, not a bind value. When rendered by a configured
+     * SqlBuilder, detected identifiers may still be converted according to its naming policy. Do not
+     * build it from untrusted input; prefer {@link #having(Condition)} with parameterized conditions.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2859,8 +2870,9 @@ public final class Filters {
     /**
      * Creates an {@link On} clause from a raw SQL expression string for JOIN operations.
      *
-     * <p><b>Warning:</b> the expression is appended verbatim to the generated SQL. Do not build
-     * it from untrusted input — use {@link #on(Condition)} with parameterized conditions instead.</p>
+     * <p><b>Warning:</b> the expression is SQL text rather than a bind value. When rendered by a
+     * configured SqlBuilder, detected identifiers may still be converted according to its naming policy.
+     * Do not build it from untrusted input — use {@link #on(Condition)} with parameterized conditions instead.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3559,7 +3571,8 @@ public final class Filters {
      *
      * <p>Each element of {@code valueRows} is one row and may be supplied as a {@link Collection} or other
      * {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean (read by
-     * property name).</p>
+     * property name). A map contributes {@code null} for an absent property key; a bean must expose every
+     * requested property.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3579,6 +3592,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
      *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
+     *                                  if a requested property is missing or unreadable on a bean row,
      *                                  or if a condition-valued row element is or contains a Criteria, SQL clause, JOIN,
      *                                  or {@code ON}/{@code USING} connector, or is/contains an {@link All}, {@link Any},
      *                                  or {@link Some} quantified operand
@@ -3801,7 +3815,7 @@ public final class Filters {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Set<String> excludedCountries = new HashSet<>(Arrays.asList("XX", "YY"));
+     * List<String> excludedCountries = Arrays.asList("XX", "YY");
      * NotIn condition = Filters.notIn("country_code", excludedCountries);
      * // SQL fragment: country_code NOT IN ('XX', 'YY')
      * }</pre>
@@ -3824,7 +3838,8 @@ public final class Filters {
      *
      * <p>Each element of {@code valueRows} is one row and may be supplied as a {@link Collection} or other
      * {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean (read by
-     * property name).</p>
+     * property name). A map contributes {@code null} for an absent property key; a bean must expose every
+     * requested property.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3844,6 +3859,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
      *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
+     *                                  if a requested property is missing or unreadable on a bean row,
      *                                  or if a condition-valued row element is or contains a Criteria, SQL clause, JOIN,
      *                                  or {@code ON}/{@code USING} connector, or is/contains an {@link All}, {@link Any},
      *                                  or {@link Some} quantified operand
@@ -4155,9 +4171,9 @@ public final class Filters {
     /**
      * Creates a SubQuery from an entity class with selected properties and a raw SQL condition string.
      *
-     * <p><b>Warning:</b> {@code expr} is appended verbatim to the generated SQL. Do not build it
-     * from untrusted input — use {@link #subQuery(Class, Collection, Condition)} with parameterized
-     * conditions instead.</p>
+     * <p><b>Warning:</b> {@code expr} is SQL text rather than a bind value. When rendered by a configured
+     * SqlBuilder, detected identifiers may still be converted according to its naming policy. Do not build
+     * it from untrusted input — use {@link #subQuery(Class, Collection, Condition)} with parameterized conditions instead.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4240,9 +4256,9 @@ public final class Filters {
     /**
      * Creates a SubQuery from an entity name with selected properties and a raw SQL condition string.
      *
-     * <p><b>Warning:</b> {@code expr} is appended verbatim to the generated SQL. Do not build it
-     * from untrusted input — use {@link #subQuery(String, Collection, Condition)} with parameterized
-     * conditions instead.</p>
+     * <p><b>Warning:</b> {@code expr} is SQL text rather than a bind value. When rendered by a configured
+     * SqlBuilder, detected identifiers may still be converted according to its naming policy. Do not build
+     * it from untrusted input — use {@link #subQuery(String, Collection, Condition)} with parameterized conditions instead.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

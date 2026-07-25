@@ -104,13 +104,15 @@ public class LessThanOrEqual extends Binary {
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
-     * @param propValue the value to compare against (a literal value, {@link SqlExpression}, {@link SubQuery},
-     *                  another non-structural {@link Condition}, or direct {@link All}, {@link Any}, or {@link Some} operand); passing
+     * @param propValue the value to compare against (a literal value or a non-structural {@link Condition}, such as
+     *                  a {@link SubQuery} or {@link SqlExpression}); passing
      *                  {@code null} renders as {@code prop <= null}, which is not a meaningful SQL
-     *                  comparison; do not pass {@code null} to this operator
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if a
-     *                                  condition-valued operand is or contains a query-structural component;
-     *                                  or if an {@code ALL}/{@code ANY}/{@code SOME} operand is not the direct RHS
+     *                  comparison; do not pass {@code null} to this operator. A direct {@link All},
+     *                  {@link Any}, or {@link Some} right-hand operand is supported
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
+     *                                  {@code propValue} is or contains a {@link Criteria}, SQL clause,
+     *                                  JOIN, or {@code ON}/{@code USING} connector, or contains a
+     *                                  non-direct {@link All}/{@link Any}/{@link Some} operand
      */
     public LessThanOrEqual(final String propName, final Object propValue) {
         super(propName, Operator.LESS_THAN_OR_EQUAL, propValue);

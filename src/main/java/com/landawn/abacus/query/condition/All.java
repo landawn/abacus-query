@@ -51,7 +51,7 @@ package com.landawn.abacus.query.condition;
  *   <li>&gt; ALL: true if greater than the maximum value in subquery</li>
  *   <li>&lt; ALL: true if less than the minimum value in subquery</li>
  *   <li>= ALL: true if equal to every value (only possible if all returned values are identical, or if the subquery returns no rows)</li>
- *   <li>!= ALL: true if different from every value (equivalent to NOT IN, modulo NULL handling)</li>
+ *   <li>!= ALL: true if different from every value (exactly equivalent to NOT IN, including its NULL behavior)</li>
  *   <li>&gt;= ALL: true if greater than or equal to the maximum value</li>
  *   <li>&lt;= ALL: true if less than or equal to the minimum value</li>
  * </ul>

@@ -37,7 +37,11 @@ package com.landawn.abacus.query.condition;
  *       either {@code minValue} or {@code maxValue}</li>
  *   <li>Works with numbers, strings, dates, and other comparable types</li>
  *   <li>Can use expressions or subqueries as range boundaries</li>
- *   <li>NULL values: if the column value or either boundary is NULL, the result is NULL (not true)</li>
+ *   <li>NULL values: if the column value is NULL the predicate is UNKNOWN (treated as false in a
+ *       WHERE clause). A NULL boundary does <i>not</i> force UNKNOWN — because NOT BETWEEN is
+ *       equivalent to {@code property < minValue OR property > maxValue}, a row can still match on
+ *       the other bound (for example, value 5 with {@code minValue = 10} and a NULL {@code maxValue}
+ *       matches)</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>

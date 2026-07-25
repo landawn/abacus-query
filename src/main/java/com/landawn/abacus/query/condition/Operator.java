@@ -46,6 +46,7 @@ import com.landawn.abacus.util.Strings;
  * <pre>{@code
  * // Direct operator usage
  * Operator op = Operator.EQUAL;
+ * String propertyName = "age";
  * String sql = propertyName + " " + op.toString() + " ?";
  *
  * // Get operator by name
@@ -53,10 +54,11 @@ import com.landawn.abacus.util.Strings;
  * Operator andOp = Operator.of("AND");
  *
  * // Check operator type
- * if (operator == Operator.BETWEEN) {
- *     // Handle between logic
+ * if (op == Operator.EQUAL) {
+ *     // Handle equality logic
  * }
  * }</pre>
+ *
  */
 public enum Operator {
     /**

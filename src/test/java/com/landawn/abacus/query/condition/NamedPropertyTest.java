@@ -1031,4 +1031,98 @@ public class NamedPropertyTest extends TestBase {
         NotInSubQuery notInCondition = NamedProperty.of("user_id").notIn(subQuery);
         assertEquals("user_id NOT IN (SELECT id FROM active_users)", notInCondition.toString());
     }
+
+    @Test
+    public void testIn_AllPrimitiveArrayTypes() {
+        // Regression: boolean[], char[], byte[], short[] and float[] used to bind to in(Object...)
+        // as a SINGLE element and render as one quoted string literal, e.g. "col IN ('[1, 2]')".
+        assertEquals("active IN (true, false)", NamedProperty.of("active").in(new boolean[] { true, false }).toString());
+        assertEquals("grade IN ('A', 'B', 'C')", NamedProperty.of("grade").in(new char[] { 'A', 'B', 'C' }).toString());
+        assertEquals("flag IN (0, 1, 2)", NamedProperty.of("flag").in(new byte[] { 0, 1, 2 }).toString());
+        assertEquals("level IN (1, 2, 3)", NamedProperty.of("level").in(new short[] { 1, 2, 3 }).toString());
+        assertEquals("ratio IN (0.25, 0.5, 0.75)", NamedProperty.of("ratio").in(new float[] { 0.25f, 0.5f, 0.75f }).toString());
+
+        // Parity with the Filters counterparts.
+        assertEquals(Filters.in("active", new boolean[] { true, false }), NamedProperty.of("active").in(new boolean[] { true, false }));
+        assertEquals(Filters.in("grade", new char[] { 'A', 'B' }), NamedProperty.of("grade").in(new char[] { 'A', 'B' }));
+        assertEquals(Filters.in("flag", new byte[] { 0, 1 }), NamedProperty.of("flag").in(new byte[] { 0, 1 }));
+        assertEquals(Filters.in("level", new short[] { 1, 2 }), NamedProperty.of("level").in(new short[] { 1, 2 }));
+        assertEquals(Filters.in("ratio", new float[] { 0.5f, 1.5f }), NamedProperty.of("ratio").in(new float[] { 0.5f, 1.5f }));
+
+        final NamedProperty p = NamedProperty.of("col");
+        assertThrows(IllegalArgumentException.class, () -> p.in((boolean[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new boolean[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.in((char[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new char[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.in((byte[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new byte[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.in((short[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new short[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.in((float[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new float[0]));
+    }
+
+    @Test
+    public void testNotIn_AllPrimitiveArrayTypes() {
+        // Regression: boolean[], char[], byte[], short[] and float[] used to bind to notIn(Object...)
+        // as a SINGLE element and render as one quoted string literal.
+        assertEquals("active NOT IN (false)", NamedProperty.of("active").notIn(new boolean[] { false }).toString());
+        assertEquals("grade NOT IN ('D', 'F')", NamedProperty.of("grade").notIn(new char[] { 'D', 'F' }).toString());
+        assertEquals("flag NOT IN (0, 1)", NamedProperty.of("flag").notIn(new byte[] { 0, 1 }).toString());
+        assertEquals("level NOT IN (0, 9)", NamedProperty.of("level").notIn(new short[] { 0, 9 }).toString());
+        assertEquals("ratio NOT IN (0.0, 1.0)", NamedProperty.of("ratio").notIn(new float[] { 0.0f, 1.0f }).toString());
+
+        // Parity with the Filters counterparts.
+        assertEquals(Filters.notIn("active", new boolean[] { false }), NamedProperty.of("active").notIn(new boolean[] { false }));
+        assertEquals(Filters.notIn("grade", new char[] { 'D', 'F' }), NamedProperty.of("grade").notIn(new char[] { 'D', 'F' }));
+        assertEquals(Filters.notIn("flag", new byte[] { 0, 1 }), NamedProperty.of("flag").notIn(new byte[] { 0, 1 }));
+        assertEquals(Filters.notIn("level", new short[] { 0, 9 }), NamedProperty.of("level").notIn(new short[] { 0, 9 }));
+        assertEquals(Filters.notIn("ratio", new float[] { 0.0f, 1.0f }), NamedProperty.of("ratio").notIn(new float[] { 0.0f, 1.0f }));
+
+        final NamedProperty p = NamedProperty.of("col");
+        assertThrows(IllegalArgumentException.class, () -> p.notIn((boolean[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(new boolean[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn((char[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(new char[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn((byte[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(new byte[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn((short[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(new short[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn((float[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(new float[0]));
+    }
+
+    @Test
+    public void testEqualsAny_AllPrimitiveArrayTypes() {
+        // Regression: boolean[], char[], byte[], short[] and float[] used to bind to equalsAny(Object...)
+        // as a SINGLE element, producing a one-branch OR over a quoted string literal.
+        assertEquals("((active = true) OR (active = false))", NamedProperty.of("active").equalsAny(new boolean[] { true, false }).toString());
+        assertEquals("((grade = 'A') OR (grade = 'B') OR (grade = 'C'))", NamedProperty.of("grade").equalsAny(new char[] { 'A', 'B', 'C' }).toString());
+        assertEquals("((flag = 0) OR (flag = 1) OR (flag = 2))", NamedProperty.of("flag").equalsAny(new byte[] { 0, 1, 2 }).toString());
+        assertEquals("((level = 1) OR (level = 2) OR (level = 3))", NamedProperty.of("level").equalsAny(new short[] { 1, 2, 3 }).toString());
+        assertEquals("((ratio = 0.25) OR (ratio = 0.5) OR (ratio = 0.75))",
+                NamedProperty.of("ratio").equalsAny(new float[] { 0.25f, 0.5f, 0.75f }).toString());
+
+        // One OR branch per array element, each carrying the boxed primitive value.
+        final Or byteOr = NamedProperty.of("flag").equalsAny(new byte[] { 0, 1, 2 });
+        assertEquals(3, byteOr.conditions().size());
+        assertEquals(Byte.valueOf((byte) 0), ((Equal) byteOr.conditions().get(0)).propValue());
+        assertEquals(Byte.valueOf((byte) 2), ((Equal) byteOr.conditions().get(2)).propValue());
+
+        final Or charOr = NamedProperty.of("grade").equalsAny(new char[] { 'A', 'B', 'C' });
+        assertEquals(3, charOr.conditions().size());
+        assertEquals(Character.valueOf('A'), ((Equal) charOr.conditions().get(0)).propValue());
+
+        final NamedProperty p = NamedProperty.of("col");
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((boolean[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new boolean[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((char[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new char[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((byte[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new byte[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((short[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new short[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((float[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new float[0]));
+    }
 }

@@ -27,7 +27,7 @@ import java.util.Collection;
  * 
  * <p>Key characteristics:</p>
  * <ul>
- *   <li>No join condition is typically used (no ON clause)</li>
+ *   <li>No join condition is used (no ON clause); this class accepts none</li>
  *   <li>Every row from the first table is paired with every row from the second table</li>
  *   <li>Result set size = rows in table1 × rows in table2</li>
  *   <li>Useful for generating combinations or test data</li>
@@ -96,13 +96,14 @@ public class CrossJoin extends Join {
     /**
      * Creates a CROSS JOIN clause with multiple tables/entities and no join condition.
      * This produces the Cartesian product of the listed tables. The rendered SQL is
-     * {@code CROSS JOIN (t1, t2, ...)}. The collection is copied by the base class, so later
+     * {@code CROSS JOIN (t1, t2, ...)}; a single-element collection renders bare, without the
+     * parentheses. The collection is copied by the base class, so later
      * changes to the supplied collection do not affect the join.
      *
      * <p>Note: the comma-separated parenthesized form is rarely directly executable on most databases
      * (which expect {@code CROSS JOIN t1 CROSS JOIN t2 ...}); this overload is provided mainly for
      * symmetry with the other multi-table join constructors. Prefer a separate {@code CrossJoin} per
-     * table for portable SQL.
+     * table for portable SQL.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

@@ -16,7 +16,7 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents a logical NOT condition in SQL queries.
- * This class negates the result of any given condition, reversing its boolean logic.
+ * This class negates the result of a composable predicate, reversing its boolean logic.
  * It is a fundamental composable condition used to invert query conditions.
  * 
  * <p>The NOT operator is particularly useful for:</p>
@@ -113,7 +113,8 @@ public class Not extends ComposableCell {
      *
      * @param condition the condition to be negated; must not be {@code null}. May be any composable condition,
      *             including simple comparisons, logical junctions ({@link And}, {@link Or}),
-     *             or subquery conditions. It should not be a clause condition (such as
+     *             or subquery predicates such as {@link Exists}, {@link NotExists}, or {@link InSubQuery}.
+     *             It should not be a clause condition (such as
      *             {@link Where} or {@link Having}), since those are not meant to be composed.
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is non-composable —
      *             a {@link Criteria}, a {@link Clause} condition (for example {@link Where}, {@link Having}, or

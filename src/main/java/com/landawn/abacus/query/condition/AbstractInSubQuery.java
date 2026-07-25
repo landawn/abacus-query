@@ -257,10 +257,6 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * InSubQuery a = new InSubQuery("deptId", subQuery);
      * InSubQuery b = new InSubQuery("deptId", subQuery);
      * boolean same = a.hashCode() == b.hashCode();   // true
-     *
-     * // Different property -> different hash codes
-     * InSubQuery c = new InSubQuery("teamId", subQuery);
-     * boolean diff = a.hashCode() == c.hashCode();   // false
      * }</pre>
      *
      * @return hash code based on property name(s), operator, and subquery
@@ -287,7 +283,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
 
     /**
      * Checks if this condition is equal to another object.
-     * Two conditions are equal if they have the same property names,
+     * Two conditions are equal if they have the exact same runtime class, property names,
      * operator, and subquery.
      *
      * <p><b>Usage Examples:</b></p>

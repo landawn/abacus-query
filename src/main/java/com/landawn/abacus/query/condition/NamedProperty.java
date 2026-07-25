@@ -44,8 +44,8 @@ import com.landawn.abacus.util.Strings;
  *   <li>Support for comparison operators (equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual)</li>
  *   <li>Support for pattern matching (like, notLike, startsWith, notStartsWith, endsWith, notEndsWith, contains, notContains)</li>
  *   <li>Support for null checks (isNull, isNotNull)</li>
- *   <li>Support for range operations (between, notBetween) and set operations (in, notIn), with set operations offering overloads for {@code Object[]}, {@code int[]}, {@code long[]}, {@code double[]}, {@link Collection}, and {@link SubQuery}</li>
- *   <li>Convenience methods for OR combinations (equalsAny) with overloads for {@code Object[]}, {@code int[]}, {@code long[]}, {@code double[]}, and {@link Collection}</li>
+ *   <li>Support for range operations (between, notBetween) and set operations (in, notIn), with set operations offering overloads for {@code Object[]}, all eight primitive array types ({@code boolean[]}, {@code char[]}, {@code byte[]}, {@code short[]}, {@code int[]}, {@code long[]}, {@code float[]}, {@code double[]}), {@link Collection}, and {@link SubQuery}</li>
+ *   <li>Convenience methods for OR combinations (equalsAny) with overloads for {@code Object[]}, all eight primitive array types ({@code boolean[]}, {@code char[]}, {@code byte[]}, {@code short[]}, {@code int[]}, {@code long[]}, {@code float[]}, {@code double[]}), and {@link Collection}</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -252,6 +252,118 @@ public class NamedProperty {
     }
 
     /**
+     * Creates an OR condition with multiple EQUAL checks for this property using primitive boolean values.
+     * Each value in the array is compared for equality with the property, and the results are ORed together.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("active").equalsAny(new boolean[]{true, false});
+     * // SQL: ((active = true) OR (active = false))
+     * }</pre>
+     *
+     * @param values primitive boolean values to check. Must not be {@code null} or empty.
+     * @return an Or condition containing multiple Equal conditions
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see Or
+     * @see Equal
+     */
+    public Or equalsAny(final boolean[] values) {
+        N.checkArgNotEmpty(values, "values");
+
+        final List<Condition> conditions = new ArrayList<>(values.length);
+
+        for (final boolean propValue : values) {
+            conditions.add(Filters.equal(propName, propValue));
+        }
+
+        return new Or(conditions);
+    }
+
+    /**
+     * Creates an OR condition with multiple EQUAL checks for this property using primitive char values.
+     * Each value in the array is compared for equality with the property, and the results are ORed together.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("grade").equalsAny(new char[]{'A', 'B', 'C'});
+     * // SQL: ((grade = 'A') OR (grade = 'B') OR (grade = 'C'))
+     * }</pre>
+     *
+     * @param values primitive char values to check. Must not be {@code null} or empty.
+     * @return an Or condition containing multiple Equal conditions
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see Or
+     * @see Equal
+     */
+    public Or equalsAny(final char[] values) {
+        N.checkArgNotEmpty(values, "values");
+
+        final List<Condition> conditions = new ArrayList<>(values.length);
+
+        for (final char propValue : values) {
+            conditions.add(Filters.equal(propName, propValue));
+        }
+
+        return new Or(conditions);
+    }
+
+    /**
+     * Creates an OR condition with multiple EQUAL checks for this property using primitive byte values.
+     * Each value in the array is compared for equality with the property, and the results are ORed together.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("flag").equalsAny(new byte[]{0, 1, 2});
+     * // SQL: ((flag = 0) OR (flag = 1) OR (flag = 2))
+     * }</pre>
+     *
+     * @param values primitive byte values to check. Must not be {@code null} or empty.
+     * @return an Or condition containing multiple Equal conditions
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see Or
+     * @see Equal
+     */
+    public Or equalsAny(final byte[] values) {
+        N.checkArgNotEmpty(values, "values");
+
+        final List<Condition> conditions = new ArrayList<>(values.length);
+
+        for (final byte propValue : values) {
+            conditions.add(Filters.equal(propName, propValue));
+        }
+
+        return new Or(conditions);
+    }
+
+    /**
+     * Creates an OR condition with multiple EQUAL checks for this property using primitive short values.
+     * Each value in the array is compared for equality with the property, and the results are ORed together.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("level").equalsAny(new short[]{1, 2, 3});
+     * // SQL: ((level = 1) OR (level = 2) OR (level = 3))
+     * }</pre>
+     *
+     * @param values primitive short values to check. Must not be {@code null} or empty.
+     * @return an Or condition containing multiple Equal conditions
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see Or
+     * @see Equal
+     */
+    public Or equalsAny(final short[] values) {
+        N.checkArgNotEmpty(values, "values");
+
+        final List<Condition> conditions = new ArrayList<>(values.length);
+
+        for (final short propValue : values) {
+            conditions.add(Filters.equal(propName, propValue));
+        }
+
+        return new Or(conditions);
+    }
+
+    /**
      * Creates an OR condition with multiple EQUAL checks for this property using primitive int values.
      * Each value in the array is compared for equality with the property, and the results are ORed together.
      *
@@ -301,6 +413,34 @@ public class NamedProperty {
         final List<Condition> conditions = new ArrayList<>(values.length);
 
         for (final long propValue : values) {
+            conditions.add(Filters.equal(propName, propValue));
+        }
+
+        return new Or(conditions);
+    }
+
+    /**
+     * Creates an OR condition with multiple EQUAL checks for this property using primitive float values.
+     * Each value in the array is compared for equality with the property, and the results are ORed together.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("ratio").equalsAny(new float[]{0.25f, 0.5f, 0.75f});
+     * // SQL: ((ratio = 0.25) OR (ratio = 0.5) OR (ratio = 0.75))
+     * }</pre>
+     *
+     * @param values primitive float values to check. Must not be {@code null} or empty.
+     * @return an Or condition containing multiple Equal conditions
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see Or
+     * @see Equal
+     */
+    public Or equalsAny(final float[] values) {
+        N.checkArgNotEmpty(values, "values");
+
+        final List<Condition> conditions = new ArrayList<>(values.length);
+
+        for (final float propValue : values) {
             conditions.add(Filters.equal(propName, propValue));
         }
 
@@ -936,6 +1076,82 @@ public class NamedProperty {
     }
 
     /**
+     * Creates an IN condition for this property with primitive boolean values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("active").in(new boolean[]{true, false});
+     * // SQL: active IN (true, false)
+     * }</pre>
+     *
+     * @param values primitive boolean values to check membership against. Must not be null or empty.
+     * @return an In condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see In
+     * @see Filters#in(String, boolean[])
+     */
+    public In in(final boolean[] values) {
+        return Filters.in(propName, values);
+    }
+
+    /**
+     * Creates an IN condition for this property with primitive char values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("grade").in(new char[]{'A', 'B', 'C'});
+     * // SQL: grade IN ('A', 'B', 'C')
+     * }</pre>
+     *
+     * @param values primitive char values to check membership against. Must not be null or empty.
+     * @return an In condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see In
+     * @see Filters#in(String, char[])
+     */
+    public In in(final char[] values) {
+        return Filters.in(propName, values);
+    }
+
+    /**
+     * Creates an IN condition for this property with primitive byte values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("flag").in(new byte[]{0, 1, 2});
+     * // SQL: flag IN (0, 1, 2)
+     * }</pre>
+     *
+     * @param values primitive byte values to check membership against. Must not be null or empty.
+     * @return an In condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see In
+     * @see Filters#in(String, byte[])
+     */
+    public In in(final byte[] values) {
+        return Filters.in(propName, values);
+    }
+
+    /**
+     * Creates an IN condition for this property with primitive short values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("level").in(new short[]{1, 2, 3});
+     * // SQL: level IN (1, 2, 3)
+     * }</pre>
+     *
+     * @param values primitive short values to check membership against. Must not be null or empty.
+     * @return an In condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see In
+     * @see Filters#in(String, short[])
+     */
+    public In in(final short[] values) {
+        return Filters.in(propName, values);
+    }
+
+    /**
      * Creates an IN condition for this property with primitive int values.
      *
      * <p><b>Usage Examples:</b></p>
@@ -970,6 +1186,25 @@ public class NamedProperty {
      * @see Filters#in(String, long[])
      */
     public In in(final long[] values) {
+        return Filters.in(propName, values);
+    }
+
+    /**
+     * Creates an IN condition for this property with primitive float values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("ratio").in(new float[]{0.25f, 0.5f, 0.75f});
+     * // SQL: ratio IN (0.25, 0.5, 0.75)
+     * }</pre>
+     *
+     * @param values primitive float values to check membership against. Must not be null or empty.
+     * @return an In condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see In
+     * @see Filters#in(String, float[])
+     */
+    public In in(final float[] values) {
         return Filters.in(propName, values);
     }
 
@@ -1030,9 +1265,11 @@ public class NamedProperty {
      * // SQL: user_id IN (SELECT id FROM active_users)
      * }</pre>
      *
-     * @param subQuery the subquery to check membership against (must not be {@code null})
+     * @param subQuery the subquery to check membership against (must not be {@code null}); if it has a
+     *            known, non-wildcard structured projection, that projection must contain exactly one column
      * @return an InSubQuery condition for this property
-     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or has a known, non-wildcard
+     *             structured projection with a column count other than one
      * @see InSubQuery
      * @see Filters#in(String, SubQuery)
      */
@@ -1060,6 +1297,82 @@ public class NamedProperty {
      * @see Filters#notIn(String, Object[])
      */
     public NotIn notIn(final Object... values) {
+        return Filters.notIn(propName, values);
+    }
+
+    /**
+     * Creates a NOT IN condition for this property with primitive boolean values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("active").notIn(new boolean[]{false});
+     * // SQL: active NOT IN (false)
+     * }</pre>
+     *
+     * @param values primitive boolean values to check non-membership against. Must not be null or empty.
+     * @return a NotIn condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see NotIn
+     * @see Filters#notIn(String, boolean[])
+     */
+    public NotIn notIn(final boolean[] values) {
+        return Filters.notIn(propName, values);
+    }
+
+    /**
+     * Creates a NOT IN condition for this property with primitive char values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("grade").notIn(new char[]{'D', 'F'});
+     * // SQL: grade NOT IN ('D', 'F')
+     * }</pre>
+     *
+     * @param values primitive char values to check non-membership against. Must not be null or empty.
+     * @return a NotIn condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see NotIn
+     * @see Filters#notIn(String, char[])
+     */
+    public NotIn notIn(final char[] values) {
+        return Filters.notIn(propName, values);
+    }
+
+    /**
+     * Creates a NOT IN condition for this property with primitive byte values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("flag").notIn(new byte[]{0, 1});
+     * // SQL: flag NOT IN (0, 1)
+     * }</pre>
+     *
+     * @param values primitive byte values to check non-membership against. Must not be null or empty.
+     * @return a NotIn condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see NotIn
+     * @see Filters#notIn(String, byte[])
+     */
+    public NotIn notIn(final byte[] values) {
+        return Filters.notIn(propName, values);
+    }
+
+    /**
+     * Creates a NOT IN condition for this property with primitive short values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("level").notIn(new short[]{0, 9});
+     * // SQL: level NOT IN (0, 9)
+     * }</pre>
+     *
+     * @param values primitive short values to check non-membership against. Must not be null or empty.
+     * @return a NotIn condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see NotIn
+     * @see Filters#notIn(String, short[])
+     */
+    public NotIn notIn(final short[] values) {
         return Filters.notIn(propName, values);
     }
 
@@ -1098,6 +1411,25 @@ public class NamedProperty {
      * @see Filters#notIn(String, long[])
      */
     public NotIn notIn(final long[] values) {
+        return Filters.notIn(propName, values);
+    }
+
+    /**
+     * Creates a NOT IN condition for this property with primitive float values.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * NamedProperty.of("ratio").notIn(new float[]{0.0f, 1.0f});
+     * // SQL: ratio NOT IN (0.0, 1.0)
+     * }</pre>
+     *
+     * @param values primitive float values to check non-membership against. Must not be null or empty.
+     * @return a NotIn condition for this property
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @see NotIn
+     * @see Filters#notIn(String, float[])
+     */
+    public NotIn notIn(final float[] values) {
         return Filters.notIn(propName, values);
     }
 
@@ -1158,9 +1490,11 @@ public class NamedProperty {
      * // SQL: user_id NOT IN (SELECT id FROM blacklisted_users)
      * }</pre>
      *
-     * @param subQuery the subquery to check non-membership against (must not be {@code null})
+     * @param subQuery the subquery to check non-membership against (must not be {@code null}); if it has a
+     *            known, non-wildcard structured projection, that projection must contain exactly one column
      * @return a NotInSubQuery condition for this property
-     * @throws IllegalArgumentException if {@code subQuery} is {@code null}
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or has a known, non-wildcard
+     *             structured projection with a column count other than one
      * @see NotInSubQuery
      * @see Filters#notIn(String, SubQuery)
      */
@@ -1189,8 +1523,8 @@ public class NamedProperty {
 
     /**
      * Checks if this NamedProperty is equal to another object.
-     * Two NamedProperty instances are equal if they have the same property name.
-     * The comparison is case-sensitive and requires exact match.
+     * Two instances are equal if they have the exact same runtime class and property name.
+     * The property-name comparison is case-sensitive and requires an exact match.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1201,7 +1535,7 @@ public class NamedProperty {
      * }</pre>
      *
      * @param obj the object to compare with
-     * @return {@code true} if the objects are equal (same property name), {@code false} otherwise
+     * @return {@code true} if the objects have the same runtime class and property name, {@code false} otherwise
      */
     @Override
     public boolean equals(final Object obj) {

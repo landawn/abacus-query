@@ -37,6 +37,7 @@ import com.landawn.abacus.query.condition.Union;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.util.Throwables;
 
 @Tag("2025")
 public class AbstractQueryBuilderTest extends TestBase {
@@ -192,6 +193,8 @@ public class AbstractQueryBuilderTest extends TestBase {
         final SqlBuilder modifier = Dsl.PSC.select("id").from("users");
         modifier.build();
         assertThrows(IllegalStateException.class, () -> modifier.selectModifier("DISTINCT"));
+        assertThrows(IllegalStateException.class, () -> modifier.selectModifier(null));
+        assertThrows(IllegalStateException.class, () -> modifier.selectModifier(""));
 
         final SqlBuilder condition = Dsl.PSC.select("id").from("users");
         condition.build();
@@ -1474,6 +1477,28 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    public void testRejectedRewrittenSetOperationOperandLeavesParentMetadataReusable() {
+        final boolean[] poisonRenamedToken = { true };
+        final Dsl dsl = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+            if (poisonRenamedToken[0] && "id_2".equals(name)) {
+                sb.append(":id_2; DELETE FROM audit_log");
+            } else {
+                sb.append(':').append(name);
+            }
+        }).build());
+        final SqlBuilder parent = dsl.select("id").from("users").where(Filters.eq("id", 1));
+        final SqlBuilder rejectedChild = dsl.select("id").from("archived_users").where(Filters.eq("id", 2));
+
+        assertThrows(IllegalArgumentException.class, () -> parent.union(rejectedChild));
+
+        poisonRenamedToken[0] = false;
+        final AbstractQueryBuilder.SP sp = parent.union(dsl.select("id").from("active_users").where(Filters.eq("id", 3))).build();
+
+        assertEquals("SELECT id FROM users WHERE id = :id UNION SELECT id FROM active_users WHERE id = :id_2", sp.query());
+        assertEquals(Arrays.asList(1, 3), sp.parameters());
+    }
+
+    @Test
     public void testUnion_Query() {
         final String sql = Dsl.PSC.select("id").from("users").union("SELECT id FROM admins").build().query();
 
@@ -1796,6 +1821,29 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         assertTrue(sqlHolder[0].contains("WHERE"));
         assertEquals(1, paramCount[0]);
+    }
+
+    @Test
+    public void testNullTerminalCallbacksDoNotConsumeBuilder() {
+        final SqlBuilder applySp = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class,
+                () -> applySp.apply((Throwables.Function<AbstractQueryBuilder.SP, Object, RuntimeException>) null));
+        assertEquals("SELECT id FROM users", applySp.build().query());
+
+        final SqlBuilder applySqlAndParams = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class,
+                () -> applySqlAndParams.apply((Throwables.BiFunction<String, List<Object>, Object, RuntimeException>) null));
+        assertEquals("SELECT id FROM users", applySqlAndParams.build().query());
+
+        final SqlBuilder acceptSp = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class,
+                () -> acceptSp.accept((Throwables.Consumer<AbstractQueryBuilder.SP, RuntimeException>) null));
+        assertEquals("SELECT id FROM users", acceptSp.build().query());
+
+        final SqlBuilder acceptSqlAndParams = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class,
+                () -> acceptSqlAndParams.accept((Throwables.BiConsumer<String, List<Object>, RuntimeException>) null));
+        assertEquals("SELECT id FROM users", acceptSqlAndParams.build().query());
     }
 
     // Cover select-into and entity-class join overloads that inject aliases directly.
@@ -2324,5 +2372,99 @@ public class AbstractQueryBuilderTest extends TestBase {
         final String sql = aliased.build().query();
         assertTrue(sql.contains("u.first_name"), "properties must resolve against the first element's inline alias: " + sql);
         assertTrue(sql.endsWith("FROM account u, orders o"), sql);
+    }
+
+    // append(String) used to write straight into the buffer without priming it, so an append that was the
+    // first write permanently suppressed the lazily-emitted "DELETE FROM t" / "UPDATE t SET " prefix and
+    // build() returned the bare fragment as the whole statement.
+    @Test
+    public void testAppendStringAsFirstWriteStillEmitsTheStatementPrefix() {
+        assertEquals("DELETE FROM account WHERE id = 1", Dsl.PSC.deleteFrom("account").append("WHERE id = 1").build().query());
+        assertEquals("DELETE FROM account WHERE id = 1", Dsl.PSC.deleteFrom("account").appendIf(true, "WHERE id = 1").build().query());
+        assertEquals("DELETE FROM account WHERE id = 1",
+                Dsl.PSC.deleteFrom("account").appendIfOrElse(true, "WHERE id = 1", "WHERE id = 2").build().query());
+        assertEquals("DELETE FROM account WHERE id = 2",
+                Dsl.PSC.deleteFrom("account").appendIfOrElse(false, "WHERE id = 1", "WHERE id = 2").build().query());
+
+        // An UPDATE whose SET list is already staged by update(Class, ...) renders it before the fragment.
+        final String updateSql = Dsl.PSC.update(Account.class).append("WHERE id = 1").build().query();
+        assertTrue(updateSql.startsWith("UPDATE account SET id = ?, gui = ?, "), updateSql);
+        assertTrue(updateSql.endsWith(" WHERE id = 1"), updateSql);
+
+        // An UPDATE with nothing staged fails fast rather than silently dropping "UPDATE t SET ".
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.update("account").append("WHERE id = 1").build());
+    }
+
+    // append(Condition) emitted set operations without the per-segment reset that union(...)/intersect(...)
+    // perform, so the finished left operand's table alias leaked into a trailing ORDER BY (invalid on a
+    // set-operation result) and a later distinct() was spliced retro-actively into that operand.
+    @Test
+    public void testAppendedSetOperationClosesTheSegmentLikeTheUnionMethods() {
+        final String viaAppend = Dsl.PSC.select("firstName")
+                .from(Account.class, "acc")
+                .append(new Union(Filters.subQuery("SELECT first_name FROM archive")))
+                .orderBy("firstName")
+                .build()
+                .query();
+        final String viaUnion = Dsl.PSC.select("firstName")
+                .from(Account.class, "acc")
+                .union("SELECT first_name FROM archive")
+                .orderBy("firstName")
+                .build()
+                .query();
+
+        assertEquals(viaUnion, viaAppend);
+        assertTrue(viaAppend.endsWith("ORDER BY first_name"), "ORDER BY after a set operation must not be alias-qualified: " + viaAppend);
+
+        // Same reset for the Criteria-carried set-operation path.
+        final String viaCriteria = Dsl.PSC.select("firstName")
+                .from(Account.class, "acc")
+                .append(Criteria.builder().union(Filters.subQuery("SELECT first_name FROM archive")).orderBy("firstName").build())
+                .build()
+                .query();
+        assertTrue(viaCriteria.endsWith("ORDER BY first_name"), viaCriteria);
+
+        // A select modifier can no longer be spliced into the already-finished left operand; the staged
+        // modifier is now rejected at build() exactly as it is after union(String).
+        assertThrows(IllegalStateException.class,
+                () -> Dsl.PSC.select("id").from("t").append(new Union(Filters.subQuery("SELECT id FROM u"))).distinct().build());
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t").union("SELECT id FROM u").distinct().build());
+    }
+
+    // on(Condition) appended " ON " unconditionally, so an On/Using operand -- which renders its own
+    // keyword -- produced "ON ON (...)" or the impossible "ON USING (...)".
+    @Test
+    public void testOnConditionDoesNotDuplicateTheConnectorKeyword() {
+        assertEquals("SELECT id FROM t INNER JOIN dept ON (t.dept_id = dept.id)",
+                Dsl.PSC.select("id").from("t").innerJoin("dept").on(Filters.on("t.deptId", "dept.id")).build().query());
+        assertEquals("SELECT id FROM t INNER JOIN dept USING (dept_id)",
+                Dsl.PSC.select("id").from("t").innerJoin("dept").on(Filters.using("deptId")).build().query());
+
+        // A plain predicate still gets the ON keyword supplied by the builder.
+        assertEquals("SELECT id FROM t INNER JOIN dept ON t.dept_id = dept.id",
+                Dsl.PSC.select("id").from("t").innerJoin("dept").on(Filters.expr("t.deptId = dept.id")).build().query());
+    }
+
+    // sqlKeyWords is built only from SK, which does not carry the underscore-bearing niladic keyword
+    // functions. Unregistered, a naming policy rewrote them into identifiers -- CURRENT_USER became
+    // currentUser (CAMEL_CASE) and current-user (KEBAB_CASE, which parses as subtraction). This registry
+    // and SqlExpression's are two independent rendering paths that must agree.
+    @Test
+    public void testNiladicKeywordFunctionsAreNotRewrittenByTheNamingPolicy() {
+        final String[] keywords = { "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_PATH", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME",
+                "CURRENT_TIMESTAMP", "CURRENT_USER", "LOCALTIME", "LOCALTIMESTAMP", "SESSION_USER", "SYSTEM_USER", "UTC_DATE", "UTC_TIME",
+                "UTC_TIMESTAMP", "NAN", "INFINITE", "UNKNOWN", "NULL" };
+
+        for (final String keyword : keywords) {
+            for (final Dsl dsl : new Dsl[] { Dsl.PSC, Dsl.PLC, Dsl.PAC }) {
+                // Only the keyword itself is asserted: the naming policy legitimately rewrites the "x" operand.
+                final String sql = dsl.select("id").from("t").where(Filters.expr("x = " + keyword)).build().query();
+                assertTrue(sql.endsWith(" = " + keyword), keyword + " must survive the naming policy, but got: " + sql);
+            }
+        }
+
+        // A column genuinely named like a keyword, in lower case, must still be converted: the registry is
+        // deliberately upper-case only.
+        assertEquals("SELECT id FROM t WHERE x = currentUser", Dsl.PLC.select("id").from("t").where(Filters.expr("x = current_user")).build().query());
     }
 }

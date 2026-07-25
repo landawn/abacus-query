@@ -179,7 +179,11 @@ public abstract class AbstractCondition implements Condition {
 
     /**
      * Checks if the given condition is a clause condition.
-     * A condition is a clause if its operator is a clause operator.
+     * A condition is a clause if its {@link Condition#operator() operator} is a clause operator. For an
+     * {@link SqlExpression}, the operator carries no information, so the leading keyword(s) of its
+     * (non-empty) literal are inspected instead — one-word clauses ({@code WHERE}, {@code UNION}, …),
+     * two-word clauses ({@code ORDER BY}, {@code LEFT JOIN}, …), and the optional {@code OUTER} form
+     * ({@code LEFT OUTER JOIN}) are all recognized, case-insensitively and skipping leading SQL comments.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -196,7 +200,9 @@ public abstract class AbstractCondition implements Condition {
      * }</pre>
      *
      * @param cond the condition to check
-     * @return {@code true} if the condition has a clause operator, {@code false} if null or not a clause
+     * @return {@code true} if the condition is a clause — either by its clause operator, or, for an
+     *         {@link SqlExpression}, by the leading keyword(s) of its literal; {@code false} if null or
+     *         not a clause
      */
     protected static boolean isClause(final Condition cond) {
         if (cond == null) {
@@ -631,6 +637,7 @@ public abstract class AbstractCondition implements Condition {
      * time rather than silently producing invalid SQL such as {@code WHERE x = NaN}.
      *
      * @param value the value to check; non-numeric or finite values are ignored
+     * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float} or {@link Double}
      */
     protected static void checkFiniteNumber(final Object value) {
         if (value instanceof Double) {

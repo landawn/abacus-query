@@ -71,7 +71,7 @@ public class Between extends AbstractBetween {
      * The condition checks if the property value falls within the specified range, inclusive.
      *
      * <p><b>&#9888;&#65039;</b> If the property value or either bound is SQL {@code NULL}, SQL three-valued
-     * logic makes the predicate unknown rather than true.</p>
+     * logic makes the predicate never true (UNKNOWN or false).</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

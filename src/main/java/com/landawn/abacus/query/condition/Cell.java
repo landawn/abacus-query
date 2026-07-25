@@ -196,10 +196,6 @@ public abstract class Cell extends AbstractCondition {
      * Where a = new Where(Filters.eq("active", true));
      * Where b = new Where(Filters.eq("active", true));
      * a.hashCode() == b.hashCode();   // true (same operator and condition)
-     *
-     * // Edge: a different wrapped condition produces a different hash code
-     * Where c = new Where(Filters.eq("active", false));
-     * a.hashCode() == c.hashCode();   // (typically) false
      * }</pre>
      *
      * @return hash code based on operator and wrapped condition

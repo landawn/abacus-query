@@ -1346,4 +1346,32 @@ public class SqlExpressionTest extends TestBase {
         assertEquals("age BETWEEN null AND 65", SqlExpression.between("age", null, 65));
     }
 
+    // Underscore-containing niladic keyword functions are indistinguishable from snake_case column names,
+    // so each must be registered explicitly or a naming policy rewrites it into an identifier -- e.g.
+    // CURRENT_ROLE became "currentRole" under CAMEL_CASE and the un-parseable "current-role" under KEBAB_CASE.
+    @Test
+    public void testNiladicKeywordFunctionsSurviveEveryNamingPolicy() {
+        final String[] keywords = { "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_PATH", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME",
+                "CURRENT_TIMESTAMP", "CURRENT_USER", "LOCALTIME", "LOCALTIMESTAMP", "SESSION_USER", "SYSTEM_USER", "UTC_DATE", "UTC_TIME",
+                "UTC_TIMESTAMP" };
+
+        for (final String keyword : keywords) {
+            for (final NamingPolicy policy : NamingPolicy.values()) {
+                assertEquals(keyword, SqlExpression.of(keyword).toSql(policy), keyword + " must not be converted by " + policy);
+            }
+        }
+    }
+
+    // NULL comes from SK and was always preserved, but NAN/INFINITE/UNKNOWN were not registered, so the
+    // builder path rendered "IS nan" / "IS NOT infinite" / "IS unknown" while Condition.toString() rendered
+    // them in canonical case -- two spellings for the same condition.
+    @Test
+    public void testIsPredicateOperandsAreRecognizedAsKeywords() {
+        for (final String keyword : new String[] { "NULL", "NAN", "INFINITE", "UNKNOWN" }) {
+            for (final NamingPolicy policy : NamingPolicy.values()) {
+                assertEquals(keyword, SqlExpression.of(keyword).toSql(policy), keyword + " must not be converted by " + policy);
+            }
+        }
+    }
+
 }

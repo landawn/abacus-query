@@ -518,10 +518,6 @@ public abstract class AbstractIn extends ComposableCondition {
      * In a = new In("status", Arrays.asList("active", "pending"));
      * In b = new In("status", Arrays.asList("active", "pending"));
      * boolean same = a.hashCode() == b.hashCode();   // true
-     *
-     * // Different values -> different hash codes
-     * In c = new In("status", Arrays.asList("active"));
-     * boolean diff = a.hashCode() == c.hashCode();   // false
      * }</pre>
      *
      * @return the hash code based on property name(s), operator, row-value mode, and values
@@ -549,7 +545,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
     /**
      * Checks if this condition is equal to another object.
-     * Two conditions are equal if they have the same property name(s),
+     * Two conditions are equal if they have the exact same runtime class, property name(s),
      * operator, row-value mode, and values list.
      *
      * <p><b>Usage Examples:</b></p>

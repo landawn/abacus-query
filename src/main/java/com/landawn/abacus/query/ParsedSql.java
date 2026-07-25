@@ -40,7 +40,8 @@ import com.landawn.abacus.util.Strings;
  * <ul>
  *   <li>Named parameters: {@code :paramName}</li>
  *   <li>iBatis/MyBatis style: {@code #{paramName}} (whitespace inside the braces is tolerated,
- *       e.g. {@code #{ paramName }})</li>
+ *       e.g. {@code #{ paramName }}; the text from the first comma onward is treated as MyBatis
+ *       attributes and discarded, so {@code #{ id, jdbcType=BIGINT }} binds {@code id})</li>
  *   <li>Standard JDBC placeholders: {@code ?}</li>
  * </ul>
  *
@@ -59,8 +60,14 @@ import com.landawn.abacus.util.Strings;
  * all produce {@code "SELECT * FROM x"}.</p>
  *
  * <p>Markers inside quoted literals, quoted identifiers, and SQL comments are not parameters.
- * Comments are normally removed by {@link SqlParser}; this rule also applies to block comments
- * retained by its keep-comments directive.</p>
+ * A leading or embedded PostgreSQL-style subscript shaped like {@code [:name]} is the
+ * bracket-specific exception: it is treated as a named binding rather than as a bracket-quoted
+ * identifier. A bracket immediately after a qualification dot, such as {@code table.[:name]},
+ * remains a quoted identifier. Comments are normally removed by {@link SqlParser} when parameter
+ * conversion is applied; markers inside block comments retained by its keep-comments directive
+ * are still ignored. For an unrecognized operation the token stream is not used to rebuild the SQL
+ * and no parameter conversion is performed, so its comments remain in the normalized parameterized
+ * SQL.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -263,7 +270,9 @@ public final class ParsedSql {
      * <ul>
      *   <li>Named parameters starting with {@code ':'} (e.g., {@code :userId})</li>
      *   <li>iBatis/MyBatis style parameters enclosed in {@code #{}} (e.g., {@code #{userName}};
-     *       whitespace inside the braces is tolerated, e.g. {@code #{ userName }})</li>
+     *       whitespace inside the braces is tolerated, e.g. {@code #{ userName }}; the text from the
+     *       first comma onward is treated as MyBatis attributes and discarded, so
+     *       {@code #{ id, jdbcType=BIGINT }} binds {@code id})</li>
      *   <li>Standard JDBC placeholders ({@code ?})</li>
      * </ul>
      *
@@ -348,8 +357,9 @@ public final class ParsedSql {
 
     /**
      * Gets the parameterized SQL with named parameters replaced by JDBC placeholders ({@code ?})
-     * for recognized data-operation statements. Other SQL is returned unchanged because this parser
-     * intentionally does not extract parameters from unrecognized operations.
+     * for recognized data-operation statements. Other SQL is returned without parameter conversion
+     * because this parser intentionally does not extract parameters from unrecognized operations.
+     * It is still normalized by trimming surrounding whitespace and removing trailing semicolons.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
