@@ -39,7 +39,7 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>Key features:</p>
  * <ul>
- *   <li>Instance reuse for a fixed set of property names (using {@link #of(String)})</li>
+ *   <li>Instance reuse by property name (using {@link #of(String)}); intended for a fixed, application-known set of names</li>
  *   <li>Fluent API for creating various SQL conditions</li>
  *   <li>Support for comparison operators (equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual)</li>
  *   <li>Support for pattern matching (like, notLike, startsWith, notStartsWith, endsWith, notEndsWith, contains, notContains)</li>
@@ -492,9 +492,9 @@ public class NamedProperty {
      * }</pre>
      *
      * @param values collection of values to check equality against. Each value will be tested with OR logic.
-     *               Must not be {@code null} or empty and must yield at least one value while snapshotted.
+     *               Must not be {@code null} or empty, and must still yield at least one element when iterated.
      * @return an Or condition containing multiple Equal conditions
-     * @throws IllegalArgumentException if {@code values} is {@code null}, empty, or yields no values while snapshotted
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, or yields no elements when iterated
      * @see Or
      * @see Equal
      */

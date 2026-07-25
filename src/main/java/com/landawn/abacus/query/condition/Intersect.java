@@ -50,9 +50,9 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Performance considerations:</p>
  * <ul>
- *   <li>INTERSECT requires duplicate elimination, similar to UNION</li>
+ *   <li>INTERSECT eliminates duplicates, as UNION does</li>
  *   <li>Performance depends on result set size and database optimization</li>
- *   <li>May use sorting or hashing for duplicate removal</li>
+ *   <li>Duplicate elimination is commonly implemented with sorting or hashing</li>
  *   <li>Indexes on columns used in both queries can improve performance</li>
  *   <li>For large datasets, consider alternative approaches like INNER JOIN or EXISTS</li>
  * </ul>

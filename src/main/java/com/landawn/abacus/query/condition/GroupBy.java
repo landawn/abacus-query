@@ -213,8 +213,7 @@ public class GroupBy extends Clause {
      * // SQL: GROUP BY type ASC, subtype ASC (order preserved)
      * }</pre>
      *
-     * @param propNames the collection of property names to group by. Must not be {@code null} or empty and must not contain
-     *                  {@code null}, empty, or blank elements.
+     * @param propNames the collection of property names to group by. Must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements.
      * @param direction the sort direction to apply to all properties. Must not be {@code null}.
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code direction} is {@code null}

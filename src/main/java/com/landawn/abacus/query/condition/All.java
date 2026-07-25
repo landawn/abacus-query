@@ -93,6 +93,9 @@ public class All extends ComposableCell {
     /**
      * Creates a new ALL condition with the specified subquery.
      * The ALL operator ensures that a comparison is true for every value returned by the subquery.
+     * A structured subquery with an explicit, non-wildcard projection must project exactly one
+     * property because a scalar comparison cannot consume a multi-column row value. Raw SQL and
+     * wildcard projections have unknown arity and are accepted without inspection.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -110,9 +113,11 @@ public class All extends ComposableCell {
      * // throws IllegalArgumentException
      * }</pre>
      *
-     * @param subQuery the subquery that returns values to compare against (must not be {@code null})
-     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or if it has a known,
-     *                                  non-wildcard structured projection containing other than one column
+     * @param subQuery the subquery that returns values to compare against (must not be {@code null});
+     *                 a structured subquery with an explicit, non-wildcard projection must select
+     *                 exactly one property
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or if it is a structured
+     *                                  subquery with a known, non-wildcard projection arity other than one
      */
     public All(final SubQuery subQuery) {
         super(Operator.ALL, subQuery);

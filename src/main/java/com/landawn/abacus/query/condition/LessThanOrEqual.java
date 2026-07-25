@@ -24,7 +24,7 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>Setting inclusive upper bounds on numeric values (maximum limits)</li>
  *   <li>Date comparisons (on or before a certain date)</li>
- *   <li>String comparisons using the database's configured collation</li>
+ *   <li>String comparisons using the database column's collation</li>
  *   <li>Implementing inclusive range queries when combined with GreaterThanOrEqual</li>
  *   <li>Price caps, age limits, and deadline checks</li>
  * </ul>
@@ -33,8 +33,8 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>Numbers: Natural numeric comparison</li>
  *   <li>Dates/Times: Chronological comparison</li>
- *   <li>Strings: Ordering defined by the database collation</li>
- *   <li>Any ordered SQL type supported by the database</li>
+ *   <li>Strings: Order determined by the database collation</li>
+ *   <li>Other SQL types for which the selected database defines ordering</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -108,7 +108,7 @@ public class LessThanOrEqual extends Binary {
      *                  a {@link SubQuery} or {@link SqlExpression}); passing
      *                  {@code null} renders as {@code prop <= null}, which is not a meaningful SQL
      *                  comparison; do not pass {@code null} to this operator. A direct {@link All},
-     *                  {@link Any}, or {@link Some} right-hand operand is supported
+     *                  {@link Any}, or {@link Some} right-hand operand is also supported
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
      *                                  {@code propValue} is or contains a {@link Criteria}, SQL clause,
      *                                  JOIN, or {@code ON}/{@code USING} connector, or contains a

@@ -112,13 +112,19 @@ public class Criteria extends AbstractCondition {
         N.checkArgNotNull(conditions, "conditions");
 
         final List<Condition> conditionsCopy = new ArrayList<>(conditions);
-        final Set<Operator> singletonOperators = N.newHashSet();
+        Set<Operator> singletonOperators = null;
 
         for (final Condition condition : conditionsCopy) {
             validateCriteriaCondition(condition);
 
-            if (isSingletonClause(condition.operator()) && !singletonOperators.add(condition.operator())) {
-                throw new IllegalArgumentException("Duplicate " + condition.operator() + " clause in Criteria");
+            if (isSingletonClause(condition.operator())) {
+                if (singletonOperators == null) {
+                    singletonOperators = N.newHashSet();
+                }
+
+                if (!singletonOperators.add(condition.operator())) {
+                    throw new IllegalArgumentException("Duplicate " + condition.operator() + " clause in Criteria");
+                }
             }
         }
 

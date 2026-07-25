@@ -63,11 +63,13 @@ import com.landawn.abacus.util.Strings;
  * A leading or embedded PostgreSQL-style subscript shaped like {@code [:name]} is the
  * bracket-specific exception: it is treated as a named binding rather than as a bracket-quoted
  * identifier. A bracket immediately after a qualification dot, such as {@code table.[:name]},
- * remains a quoted identifier. Comments are normally removed by {@link SqlParser} when parameter
- * conversion is applied; markers inside block comments retained by its keep-comments directive
- * are still ignored. For an unrecognized operation the token stream is not used to rebuild the SQL
- * and no parameter conversion is performed, so its comments remain in the normalized parameterized
- * SQL.</p>
+ * remains a quoted identifier. As a consequence, a bracket-quoted identifier whose first character
+ * is {@code ':'} (for example the SQL Server column reference {@code SELECT [:identifier] FROM t})
+ * is parameterized rather than preserved; qualify it ({@code t.[:identifier]}) to keep it literal.
+ * Comments are normally removed by {@link SqlParser} when parameter conversion is applied; markers
+ * inside block comments retained by its keep-comments directive are still ignored. For an
+ * unrecognized operation the token stream is not used to rebuild the SQL and no parameter
+ * conversion is performed, so its comments remain in the normalized parameterized SQL.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -162,7 +164,7 @@ public final class ParsedSql {
                             final int rightBracketIndex = ibatisToken.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER);
 
                             if (rightBracketIndex < 0) {
-                                throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' near token index " + i);
+                                throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' in: " + this.sql);
                             }
 
                             if (rightBracketIndex > 2) {
@@ -175,7 +177,7 @@ public final class ParsedSql {
                                     paramCount++;
                                     type |= IBATIS_PARAMETER_TYPE;
                                 } else {
-                                    // Empty/blank #{...} content: keep it verbatim and do not create a parameter.
+                                    // empty/blank #{...} content — keep verbatim, no parameter.
                                     // 'word' strictly shrinks (substring starts at rightBracketIndex + 1 >= 3),
                                     // so continuing the loop cannot spin forever and lets us still extract
                                     // any subsequent "#{...}" markers in the same token (e.g. "#{ }#{a}").

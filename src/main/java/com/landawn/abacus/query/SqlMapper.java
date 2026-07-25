@@ -96,7 +96,6 @@ import com.landawn.abacus.util.XmlUtil;
  * ImmutableMap<String, String> attrs = mapper.attributes("batchInsertAccounts");
  * String batchSize = attrs.get("batchSize");
  * }</pre>
- *
  */
 public final class SqlMapper {
 
@@ -308,8 +307,8 @@ public final class SqlMapper {
      * The stream content must contain a {@code <sqlMapper>} root element.
      *
      * <p>The caller opens the stream and remains responsible for closing it (typically via
-     * try-with-resources). Note that the underlying XML parser consumes and closes the stream,
-     * so it must not be reused after this call returns.</p>
+     * try-with-resources); this method never closes it. The stream is fully consumed, and the
+     * underlying JAXP parser may close it as well, so do not reuse it after this call returns.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -356,8 +355,8 @@ public final class SqlMapper {
 
     /**
      * Parses the XML from {@code inputStream} and merges its {@code <sql>} definitions into {@code sqlMapper}.
-     * This method does not close the stream itself, but the underlying XML parser consumes and closes it,
-     * so it must not be reused after this call returns.
+     * This method does not close the stream itself; it is fully consumed (and may additionally be
+     * closed by the underlying JAXP parser), so it must not be reused after this call returns.
      *
      * @param sqlMapper the mapper to populate
      * @param inputStream the input stream to read

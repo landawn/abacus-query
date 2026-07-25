@@ -25,8 +25,9 @@ package com.landawn.abacus.query.condition;
  * <ul>
  *   <li>Division by zero with non-zero numerator (e.g., 1.0/0.0 = Infinity, -1.0/0.0 = -Infinity)</li>
  *   <li>Operations that exceed the maximum representable value (overflow)</li>
- *   <li>Mathematical operations whose result is outside the finite representable range</li>
- *   <li>Repeated calculations whose magnitude eventually overflows</li>
+ *   <li>Mathematical functions with a pole or an overflowing result (e.g., {@code log(0)} = -Infinity,
+ *       {@code exp(1000)} = Infinity)</li>
+ *   <li>Accumulation in iterative calculations that grow without bound</li>
  * </ul>
  *
  * <p>This condition helps filter out such infinite values to:</p>
@@ -96,9 +97,10 @@ public class IsNotInfinite extends IsNot {
      * numeric value is NOT infinite (neither positive infinity nor negative infinity).
      * It does not exclude NaN; combine it with {@link IsNotNaN} before relying on a value as finite.
      *
-     * <p>The generated SQL uses the vendor-specific {@code IS NOT INFINITE} predicate. Standard
-     * comparison operators are not a portable substitute because infinity handling differs by
-     * database; verify that the selected dialect supports this predicate.</p>
+     * <p>The generated SQL uses the explicit {@code IS NOT INFINITE} predicate rather than relying on
+     * comparison operators, for which there is no portable literal matching either positive or
+     * negative infinity. As noted above, the predicate itself is also vendor-specific and must be
+     * supported by the selected database.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

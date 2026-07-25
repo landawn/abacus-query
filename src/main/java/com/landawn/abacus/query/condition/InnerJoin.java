@@ -37,8 +37,8 @@ import java.util.Collection;
  *   <li>Returns only matching rows from both tables</li>
  *   <li>Non-matching rows are completely excluded</li>
  *   <li>Result set size depends on cardinality of the matching keys (can exceed either table for many-to-many joins)</li>
- *   <li>Swapping the two inputs preserves the matching row pairs for a symmetric predicate,
- *       but can change projection order, duplicate column names, and optimizer behavior</li>
+ *   <li>Swapping the two inputs preserves the set of matching row pairs, but can change
+ *       the column order of a {@code SELECT *} projection and the optimizer's plan</li>
  *   <li>Can be chained for multi-table joins</li>
  * </ul>
  * 
@@ -54,7 +54,7 @@ import java.util.Collection;
  * // SQL: INNER JOIN orders o ON customers.id = o.customer_id
  *
  * // Join customers with their orders (only customers who have orders)
- * // Note: combine plain predicates with Filters.expr(String); an And/Or that wraps an
+ * // Note: combine plain predicates with Filters.expr(...); an And/Or that wraps an
  * // On/Using instance is rejected at construction.
  * InnerJoin customerOrders = new InnerJoin("orders o",
  *     new And(

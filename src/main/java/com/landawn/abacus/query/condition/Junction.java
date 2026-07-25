@@ -120,7 +120,7 @@ public class Junction extends ComposableCondition {
      * freshly created list that they will not retain or mutate afterwards.</p>
      *
      * @param operator the composable operator
-     * @param ownedValidatedConditions a freshly created list whose elements have already been null-validated
+     * @param ownedValidatedConditions a freshly created list whose elements have already been validated
      * @param marker disambiguation marker (ignored)
      */
     @SuppressWarnings({ "unchecked", "unused" })
@@ -167,8 +167,8 @@ public class Junction extends ComposableCondition {
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
      *             or if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             an {@code ON}/{@code USING} connector, or an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or is an empty predicate
+     *             an {@code ON}/{@code USING} connector, an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
      *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public Junction(final Operator operator, final Condition... conditions) {
@@ -209,8 +209,8 @@ public class Junction extends ComposableCondition {
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
      *             or if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             an {@code ON}/{@code USING} connector, or an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or is an empty predicate
+     *             an {@code ON}/{@code USING} connector, an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
      *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {

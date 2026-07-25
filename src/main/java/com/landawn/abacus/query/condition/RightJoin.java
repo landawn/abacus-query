@@ -88,7 +88,7 @@ public class RightJoin extends Join {
     /**
      * Creates a RIGHT JOIN clause for the specified table or entity without a join condition.
      * Most databases require an {@code ON} or {@code USING} clause for a RIGHT JOIN; use
-     * {@link #RightJoin(String, Condition)} when a join predicate is required.
+     * {@link #RightJoin(String, Condition)} when a condition is required.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

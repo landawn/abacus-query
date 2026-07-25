@@ -54,10 +54,10 @@ import com.landawn.abacus.query.SqlDialect.SqlPolicy;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
-import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.Join;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.condition.Operator;
+import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.Beans;
@@ -310,7 +310,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Matches the generic {@code LIMIT count [OFFSET offset]} expressions that reach the builder as an
-     * unparsed {@link Limit#expression() literal}, where each token is an integer literal or a {@code ?} /
+     * unparsed {@link Limit#expression()}, where each token is an integer literal or a {@code ?} /
      * {@code :name} / <code>#{name}</code> parameter placeholder. In practice the integer-only forms are
      * parsed into concrete count/offset by {@link Limit#Limit(String)} and rendered via {@link #limit(int)} /
      * {@link #limit(int, int)}, so this pattern normally handles the placeholder-bearing forms. Deliberately
@@ -533,12 +533,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected final Set<String> calledOpSet = new HashSet<>(); //NOSONAR
 
     /**
-     * Default renderer for {@link SqlDialect.SqlPolicy#NAMED_SQL} placeholders. It appends a colon followed by
-     * the generated parameter name, for example {@code :customerId}.
-     */
-    public static final BiConsumer<StringBuilder, String> DEFAULT_NAMED_PARAMETER_HANDLER = (sql, name) -> sql.append(':').append(name);
-
-    /**
      * Constructs a new AbstractQueryBuilder with the specified SQL dialect.
      *
      * @param sqlDialect the SQL dialect supplying the naming and SQL policies; a {@code null} dialect is treated as an
@@ -569,7 +563,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 ? (_dialectFamily == DialectFamily.MYSQL ? SK._BACKTICK : SK._DOUBLE_QUOTE)
                 : (this.sqlDialect.identifierQuote() == IdentifierQuote.BACKTICK ? SK._BACKTICK : SK._DOUBLE_QUOTE);
 
-        _handlerForNamedParameter = this.sqlDialect.namedParameterHandler() == null ? AbstractQueryBuilder.DEFAULT_NAMED_PARAMETER_HANDLER
+        _handlerForNamedParameter = this.sqlDialect.namedParameterHandler() == null ? SqlDialect.DEFAULT_NAMED_PARAMETER_HANDLER
                 : this.sqlDialect.namedParameterHandler();
         _tokenizer = this.sqlDialect.tokenizerConfig() == null ? SqlParser.tokenizer() : SqlParser.tokenizer(this.sqlDialect.tokenizerConfig());
 
@@ -1126,8 +1120,28 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (!isSubQuery(_tokenizer, query) || !_tokenizer.isReadOnlyQuery(query)) {
             throw new IllegalArgumentException("The query argument to " + operationName
                     + " must be a complete SELECT sub-query (starting with 'SELECT', optionally wrapped in balanced parentheses, or containing 'SELECT ... FROM'), but was: \""
-                    + query + "\". To start a new SELECT from a column list, use " + operationName + "(Collection) followed by from(...).");
+                    + query + "\". To start a new SELECT from a column list, use " + setOperationMethodName(operationName)
+                    + "(Collection) followed by from(...).");
         }
+    }
+
+    /**
+     * Maps a set-operation SQL keyword to the builder method that accepts a column list, so the remediation
+     * hint in {@link #checkSetOperationSubQuery(String, String)} names a method that actually exists
+     * ({@code "UNION ALL"} -&gt; {@code unionAll}, not {@code "UNION ALL(Collection)"}).
+     *
+     * @param operationName the set-operation SQL keyword
+     * @return the corresponding builder method name, or {@code operationName} itself if it is not a known keyword
+     */
+    private static String setOperationMethodName(final String operationName) {
+        return switch (operationName) {
+            case SK.UNION -> "union";
+            case SK.UNION_ALL -> "unionAll";
+            case SK.INTERSECT -> "intersect";
+            case SK.EXCEPT -> "except";
+            case SK.EXCEPT_MINUS -> "minus";
+            default -> operationName;
+        };
     }
 
     /**
@@ -3846,7 +3860,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // pagination-ordering error instead of the closed error every sibling clause method reports.
         checkOpen();
 
-        if (!usesFetchPagination() && calledOpSet.contains(SK.OFFSET)) {
+        // Only report the dialect-ordering error when LIMIT has not been claimed yet. limit(count, offset)
+        // claims BOTH slots, so without this guard a duplicate limit(...) on a limit-style dialect would
+        // report an ordering error instead of the accurate "already set" error that checkIfAlreadyCalled
+        // produces -- and that a FETCH-style dialect already reports for the very same mistake.
+        if (!usesFetchPagination() && !calledOpSet.contains(SK.LIMIT) && calledOpSet.contains(SK.OFFSET)) {
             throw new IllegalStateException("'" + SK.LIMIT + "' must be added before '" + SK.OFFSET + "' for this SQL dialect");
         }
 
@@ -3983,7 +4001,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     private void appendLimit(final Limit limit) {
         // An unparsed string expression (placeholder or product-specific/opaque syntax) is signalled by
-        // the sentinel count == MAX_VALUE / offset == 0; render it from its literal. Everything else —
+        // the sentinel count == MAX_VALUE / offset == 0; render it from its expression. Everything else —
         // the numeric constructors and string expressions parsed into concrete count/offset — is emitted
         // in the dialect's pagination syntax via limit(int) / limit(int, int).
         if (Strings.isNotEmpty(limit.expression()) && !limit.isResolved()) {
@@ -4299,13 +4317,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Validates the mutually exclusive row-limit slots without changing builder state. Keeping this
-     * check side-effect free ensures that a rejected pagination call does not poison an otherwise
-     * valid builder that the caller may still finish or build.
+     * Validates the mutually exclusive row-limit slots before changing any builder state, then emits the
+     * lazily-rendered statement prefix via {@link #init(boolean)}. Performing every check first ensures
+     * that a rejected pagination call does not poison an otherwise valid builder that the caller may still
+     * finish or build.
      *
      * @param requestedFetchSlot the explicit FETCH slot requested by the caller
-     * @throws IllegalStateException if a LIMIT or either FETCH form has already been emitted, or if a prior
-     *                               offset did not use {@code OFFSET n ROWS} syntax
+     * @throws IllegalStateException if the builder is closed, if a LIMIT or either FETCH form has already
+     *                               been emitted, if a prior offset did not use {@code OFFSET n ROWS}
+     *                               syntax, if {@code FOR UPDATE} has already been emitted, or, for SQL
+     *                               Server, if {@code ORDER BY} has not been set
      */
     private void checkExplicitFetchSlotsAvailable(final String requestedFetchSlot) {
         checkClauseCanBeAppended(requestedFetchSlot);
@@ -4892,7 +4913,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
-     * @throws IllegalStateException if this builder has already been closed by {@link #build()}
+     * @throws IllegalStateException if this builder has already been closed by {@link #build()}, or if the
+     *         statement prefix cannot be rendered yet (an INSERT with no {@code into(...)} table, an UPDATE
+     *         with no {@code set(...)} columns, or a SELECT segment not completed by {@code from(...)})
      */
     public This append(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -5435,7 +5458,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * the complete right-hand {@code SELECT} query after resetting per-segment builder state.
      *
      * @param keyword the set-operation keyword token (e.g. {@link #_SPACE_UNION_SPACE})
-     * @param operationName the public set-operation method name used in validation messages
+     * @param operationName the set-operation SQL keyword (e.g. {@code "UNION ALL"}) used in validation messages
      * @param query the complete read-only {@code SELECT} query to append
      * @return this builder instance for method chaining
      */
@@ -7182,12 +7205,47 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         for (int i = 0, len = words.size(); i < len; i++) {
             word = words.get(i);
 
-            if (word.isEmpty() || !Strings.isAsciiAlpha(word.charAt(0)) || SqlParser.isFunctionName(words, i)) {
+            if (word.isEmpty() || !isIdentifierStart(word.charAt(0)) || SqlParser.isFunctionName(words, i) || containsQuotedLiteral(word)
+                    || isSqlVariable(words, i)) {
                 _sb.append(word);
             } else {
                 _sb.append(normalizeColumnName(_propColumnNameMap, word));
             }
         }
+    }
+
+    // The three predicates below mirror their namesakes in SqlExpression.toSql. As noted where
+    // sqlKeyWords is declared, SqlExpression and this builder are two independent rendering paths for the
+    // same expression text, so a guard added to one must be added to the other or the same fragment
+    // renders differently depending on how it reaches the SQL. Parity is pinned by
+    // AbstractQueryBuilderTest.testRawExpressionRendersIdenticallyThroughBothPaths.
+
+    /** Leading character of a convertible identifier: an ASCII letter or an underscore. */
+    private static boolean isIdentifierStart(final char ch) {
+        return Strings.isAsciiAlpha(ch) || ch == '_';
+    }
+
+    /**
+     * SqlParser keeps a SQL literal prefix and its quoted body in one token (for example {@code N'camelCase'}
+     * or {@code _utf8mb4'camelCase'}). Applying a naming policy to that whole token would modify data inside
+     * the literal.
+     */
+    private static boolean containsQuotedLiteral(final String word) {
+        return word.indexOf(SK._SINGLE_QUOTE) > 0;
+    }
+
+    /**
+     * SQL Server/MySQL variable markers ({@code @name}, {@code @@name}) sit immediately before the variable
+     * name, so any token following a bare {@code "@"}/{@code "@@"} token is a variable name, not a column.
+     */
+    private static boolean isSqlVariable(final List<String> words, final int index) {
+        if (index == 0) {
+            return false;
+        }
+
+        final String previous = words.get(index - 1);
+
+        return "@".equals(previous) || "@@".equals(previous);
     }
 
     /**

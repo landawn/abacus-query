@@ -110,7 +110,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
         final List<?> valuesCopy = new ArrayList<>(values);
         N.checkArgNotEmpty(valuesCopy, "values");
-        validateValueElements(valuesCopy, "values");
+        validateNonQuantifiedValueOperands(valuesCopy, "values");
 
         this.propNames = ImmutableList.wrap(Collections.singletonList(propName));
         this.rowValueConstructor = false;
@@ -177,7 +177,7 @@ public abstract class AbstractIn extends ComposableCondition {
             // Each tuple is wrapped unmodifiable so values() is immutable in depth, not just at the
             // outer ImmutableList level (a mutated tuple would silently desync the memoized parameters).
             final List<Object> tuple = toRowTuple(row, this.propNames, arity);
-            validateValueElements(tuple, "valueRows[" + rowIndex++ + "]");
+            validateNonQuantifiedValueOperands(tuple, "valueRows[" + rowIndex++ + "]");
             copy.add(Collections.unmodifiableList(tuple));
         }
 
@@ -247,14 +247,6 @@ public abstract class AbstractIn extends ComposableCondition {
         if (actual != arity) {
             throw new IllegalArgumentException(
                     "Each value row must have exactly " + arity + " element(s) to match the number of property names, but found " + actual);
-        }
-    }
-
-    private static void validateValueElements(final Collection<?> values, final String argumentName) {
-        int index = 0;
-
-        for (final Object value : values) {
-            validateNonQuantifiedValueOperand(value, argumentName + "[" + index++ + "]");
         }
     }
 

@@ -129,8 +129,8 @@ public abstract class AbstractBetween extends ComposableCondition {
      *
      * @param <T> the expected type of the minimum value (caller-supplied; an unchecked cast is
      *            performed internally and a {@link ClassCastException} may be thrown at the call site)
-     * @return the configured minimum value, which may be a literal, a {@link SubQuery}, another
-     *         non-structural, non-quantified {@link Condition}, or {@code null}
+     * @return the configured minimum value, which may be a literal, a {@link SqlExpression}, a
+     *         {@link SubQuery}, another non-structural, non-quantified {@link Condition}, or {@code null}
      */
     @SuppressWarnings("unchecked")
     public <T> T minValue() {
@@ -149,8 +149,8 @@ public abstract class AbstractBetween extends ComposableCondition {
      *
      * @param <T> the expected type of the maximum value (caller-supplied; an unchecked cast is
      *            performed internally and a {@link ClassCastException} may be thrown at the call site)
-     * @return the configured maximum value, which may be a literal, a {@link SubQuery}, another
-     *         non-structural, non-quantified {@link Condition}, or {@code null}
+     * @return the configured maximum value, which may be a literal, a {@link SqlExpression}, a
+     *         {@link SubQuery}, another non-structural, non-quantified {@link Condition}, or {@code null}
      */
     @SuppressWarnings("unchecked")
     public <T> T maxValue() {

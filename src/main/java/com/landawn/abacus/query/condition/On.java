@@ -137,10 +137,10 @@ public class On extends Cell {
      * @param condition the join condition. Any non-clause, non-{@code null} predicate is allowed, including
      *            {@link SqlExpression}, {@link Equal}, {@link And}, {@link Or}, or {@link Between}.
      *            Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or is a {@link Criteria},
-     *                                  is or contains a SQL clause, an {@code ON}/{@code USING} condition, an
-     *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
-     *                                  (a blank {@link SqlExpression} or empty {@link Junction})
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is or contains a {@link Criteria},
+     *                                  a null operator, a SQL clause, an {@code ON}/{@code USING} connector, an
+     *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *                                  or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public On(final Condition condition) {
         super(Operator.ON, validateOnCondition(condition));
@@ -291,7 +291,7 @@ public class On extends Cell {
             throw new IllegalArgumentException("propNamePairs must not be null or empty");
         }
 
-        final List<Condition> conds = new ArrayList<>();
+        final List<Condition> conds = new ArrayList<>(propNamePairs.size());
 
         // Do not branch on Map.size(): a live/concurrent map can change between the size read and
         // entry iteration. Reading one entry in the reported-singleton case would then silently

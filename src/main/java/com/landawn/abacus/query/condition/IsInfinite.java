@@ -28,7 +28,8 @@ import com.landawn.abacus.query.Filters;
  * <ul>
  *   <li>Division by zero with non-zero numerator (e.g., 1.0/0.0 = Infinity, -1.0/0.0 = -Infinity)</li>
  *   <li>Operations that exceed the maximum representable value (overflow)</li>
- *   <li>Mathematical operations whose result is outside the finite representable range</li>
+ *   <li>Mathematical functions with a pole or an overflowing result (e.g., {@code log(0)} = -Infinity,
+ *       {@code exp(1000)} = Infinity)</li>
  *   <li>Accumulation in iterative calculations that grow without bound</li>
  * </ul>
  * 
@@ -102,9 +103,10 @@ public class IsInfinite extends Is {
      * This is particularly useful for identifying numeric overflow conditions,
      * division by zero results, and other exceptional calculation outcomes.
      *
-     * <p>The generated SQL uses the vendor-specific {@code IS INFINITE} predicate to express
-     * a test for either positive or negative infinity. Plain comparison operators are not a
-     * portable substitute, and the selected database must itself support this predicate.</p>
+     * <p>The generated SQL uses the explicit {@code IS INFINITE} predicate rather than relying on
+     * comparison operators, for which there is no portable literal matching either positive or
+     * negative infinity. As noted above, the predicate itself is also vendor-specific and must be
+     * supported by the selected database.</p>
      *
      * <p><b>Usage Example:</b></p>
      * <pre>{@code

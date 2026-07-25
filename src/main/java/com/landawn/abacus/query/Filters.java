@@ -147,7 +147,6 @@ public final class Filters {
      * // Create a parameterized condition; the parameterless equal(String) overload uses QME internally
      * Equal condition = Filters.equal("age");
      * }</pre>
-     *
      */
     public static final SqlExpression QME = SqlExpression.of(SK.QUESTION_MARK);
 
@@ -508,8 +507,9 @@ public final class Filters {
      *                          during this call; subsequent mutations do not affect the returned condition
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map, or if
-     *                                  {@code includedPropNames} is {@code null}, empty, contains a
-     *                                  {@code null}, empty, or blank name, or names an unreadable property
+     *                                  {@code includedPropNames} is {@code null}, empty, contains an
+     *                                  empty or blank name, or names an unreadable property
+     * @throws NullPointerException if {@code includedPropNames} contains a {@code null} name
      */
     public static Or anyEqual(final Object entity, final Collection<String> includedPropNames) {
         return or(equalConditions(entity, includedPropNames));
@@ -644,8 +644,9 @@ public final class Filters {
      *                          during this call; subsequent mutations do not affect the returned condition
      * @return an {@link And} condition
      * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map, or if
-     *                                  {@code includedPropNames} is {@code null}, empty, contains a
-     *                                  {@code null}, empty, or blank name, or names an unreadable property
+     *                                  {@code includedPropNames} is {@code null}, empty, contains an
+     *                                  empty or blank name, or names an unreadable property
+     * @throws NullPointerException if {@code includedPropNames} contains a {@code null} name
      */
     public static And allEqual(final Object entity, final Collection<String> includedPropNames) {
         return and(equalConditions(entity, includedPropNames));
@@ -804,7 +805,9 @@ public final class Filters {
      *                          snapshotted during the call
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entities} or {@code includedPropNames} is {@code null} or empty,
-     *                                  all entities are null, an element is a map, or a property name is null, empty, blank, or not readable
+     *                                  all entities are null, an element is a map, or a property name is empty, blank,
+     *                                  or not readable
+     * @throws NullPointerException if {@code includedPropNames} contains a {@code null} name
      * @see #anyOfAllEqual(Collection)
      * @see #allEqual(Object, Collection)
      */
@@ -847,7 +850,10 @@ public final class Filters {
      * @param minValue the minimum value (exclusive)
      * @param maxValue the maximum value (exclusive)
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
+     *                                  {@code minValue} or {@code maxValue} is or contains a Criteria,
+     *                                  SQL clause, JOIN, or {@code ON}/{@code USING} connector, or
+     *                                  contains a non-direct {@link All}/{@link Any}/{@link Some} operand
      */
     public static And gtAndLt(final String propName, final Object minValue, final Object maxValue) {
         return gt(propName, minValue).and(lt(propName, maxValue));
@@ -891,7 +897,10 @@ public final class Filters {
      * @param minValue the minimum value (inclusive)
      * @param maxValue the maximum value (exclusive)
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
+     *                                  {@code minValue} or {@code maxValue} is or contains a Criteria,
+     *                                  SQL clause, JOIN, or {@code ON}/{@code USING} connector, or
+     *                                  contains a non-direct {@link All}/{@link Any}/{@link Some} operand
      */
     public static And geAndLt(final String propName, final Object minValue, final Object maxValue) {
         return ge(propName, minValue).and(lt(propName, maxValue));
@@ -935,7 +944,10 @@ public final class Filters {
      * @param minValue the minimum value (inclusive)
      * @param maxValue the maximum value (inclusive)
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
+     *                                  {@code minValue} or {@code maxValue} is or contains a Criteria,
+     *                                  SQL clause, JOIN, or {@code ON}/{@code USING} connector, or
+     *                                  contains a non-direct {@link All}/{@link Any}/{@link Some} operand
      */
     public static And geAndLe(final String propName, final Object minValue, final Object maxValue) {
         return ge(propName, minValue).and(le(propName, maxValue));
@@ -979,7 +991,10 @@ public final class Filters {
      * @param minValue the minimum value (exclusive)
      * @param maxValue the maximum value (inclusive)
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
+     *                                  {@code minValue} or {@code maxValue} is or contains a Criteria,
+     *                                  SQL clause, JOIN, or {@code ON}/{@code USING} connector, or
+     *                                  contains a non-direct {@link All}/{@link Any}/{@link Some} operand
      */
     public static And gtAndLe(final String propName, final Object minValue, final Object maxValue) {
         return gt(propName, minValue).and(le(propName, maxValue));
@@ -1087,7 +1102,7 @@ public final class Filters {
      * Converts a collection of {@link EntityId}s to an {@link Or} condition where each {@link EntityId} becomes an {@link And} condition.
      * Useful for querying multiple entities by their composite keys.
      *
-     * @param entityIds collection of {@link EntityId}s (must not be {@code null} or empty)
+     * @param entityIds collection of {@link EntityId}s (must not be {@code null}, empty, or contain null)
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, contains {@code null},
      *         or contains an {@link EntityId} with no keys
@@ -2193,7 +2208,8 @@ public final class Filters {
      * }</pre>
      *
      * @param operator the junction operator; must be {@link Operator#AND} or {@link Operator#OR}
-     * @param conditions the array of conditions to combine; {@code null} or empty is permitted and yields an empty junction
+     * @param conditions the array of conditions to combine; {@code null} or empty is permitted and yields an
+     *                   empty junction (which renders as an empty string)
      * @return a {@link Junction} with the specified operator
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
@@ -2220,7 +2236,8 @@ public final class Filters {
      * }</pre>
      *
      * @param operator the junction operator; must be {@link Operator#AND} or {@link Operator#OR}
-     * @param conditions the collection of conditions to combine; {@code null} or empty is permitted and yields an empty junction
+     * @param conditions the collection of conditions to combine; {@code null} or empty is permitted and yields an
+     *                   empty junction (which renders as an empty string)
      * @return a {@link Junction} with the specified operator
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
@@ -2245,7 +2262,7 @@ public final class Filters {
      *
      * @param condition the condition for the {@code WHERE} clause (must not be {@code null})
      * @return a {@link Where} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public static Where where(final Condition condition) {
         return new Where(condition);
@@ -2532,7 +2549,7 @@ public final class Filters {
      *
      * @param condition the grouping condition (must not be {@code null})
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public static GroupBy groupBy(final Condition condition) {
         return new GroupBy(condition);
@@ -2550,7 +2567,7 @@ public final class Filters {
      *
      * @param condition the condition for the {@code HAVING} clause (must not be {@code null})
      * @return a {@link Having} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public static Having having(final Condition condition) {
         return new Having(condition);
@@ -2839,7 +2856,7 @@ public final class Filters {
      *
      * @param condition the ordering condition (must not be {@code null})
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
      */
     public static OrderBy orderBy(final Condition condition) {
         return new OrderBy(condition);
@@ -3927,9 +3944,8 @@ public final class Filters {
      *
      * @param subQuery the subquery
      * @return an {@link All} condition
-     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or if {@code subQuery} is a structured
-     *                                  subquery (exposing selected property names) that selects a number of columns
-     *                                  other than 1
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or if it has a known,
+     *                                  non-wildcard structured projection selecting other than one column
      */
     public static All all(final SubQuery subQuery) {
         return new All(subQuery);
@@ -3950,9 +3966,8 @@ public final class Filters {
      *
      * @param subQuery the subquery
      * @return an {@link Any} condition
-     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or if {@code subQuery} is a structured
-     *                                  subquery (exposing selected property names) that selects a number of columns
-     *                                  other than 1
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or if it has a known,
+     *                                  non-wildcard structured projection selecting other than one column
      */
     public static Any any(final SubQuery subQuery) {
         return new Any(subQuery);
@@ -3973,9 +3988,8 @@ public final class Filters {
      *
      * @param subQuery the subquery
      * @return a {@link Some} condition
-     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or if {@code subQuery} is a structured
-     *                                  subquery (exposing selected property names) that selects a number of columns
-     *                                  other than 1
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or if it has a known,
+     *                                  non-wildcard structured projection selecting other than one column
      */
     public static Some some(final SubQuery subQuery) {
         return new Some(subQuery);

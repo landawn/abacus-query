@@ -2746,7 +2746,7 @@ public final class SqlParser {
      * @see #isDeleteQuery(String)
      * @see #isInsertOrReplaceQuery(String)
      * @see #isReadOnlyQuery(String)
-     * @see #isNonUpdateQuery(String)
+     * @see #isNoUpdateQuery(String)
      */
     public static boolean isReadOrInsertQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
@@ -2764,19 +2764,6 @@ public final class SqlParser {
                         "DROP", "ALTER", "CREATE")
                 && !containsProcedureInvocation(sql, DEFAULT_TOKENIZER_CONFIG) && !containsInsertUpdateClause(sql) && !containsSelectIntoClause(sql)
                 && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
-    }
-
-    /**
-     * Compatibility alias for the historical {@code NoUpdateDao} terminology. Despite its name,
-     * this predicate accepts both reads and plain/safe inserts.
-     *
-     * @param sql the SQL statement to check; may be empty or {@code null}
-     * @return the result of {@link #isReadOrInsertQuery(String)}
-     * @deprecated use {@link #isReadOrInsertQuery(String)}, whose name describes the accepted statement kinds
-     */
-    @Deprecated
-    public static boolean isNonUpdateQuery(final String sql) {
-        return isReadOrInsertQuery(sql);
     }
 
     /**
@@ -2813,14 +2800,28 @@ public final class SqlParser {
                 // swallowed, which would hide a trailing "; DELETE ..." from the statement split below.
                 // That happens for text this scanner reads as code but the database reads as a comment
                 // (e.g. a MySQL "## don't ..." comment, whose leading "##" matches a configured operator).
-                // Such SQL cannot execute anyway, so rejecting it costs nothing.
-                if (!isQuotedLiteralTerminated(sql, index, ch)) {
+                //
+                // Backslash escaping is a MySQL-ism, though: "ESCAPE '\'" and "'C:\'" are COMPLETE
+                // literals in Oracle, SQL Server, DB2 and standard-conforming PostgreSQL. Try the
+                // backslash reading first (preserving the MySQL interpretation wherever it terminates),
+                // then fall back to the standard doubled-quote-only reading. Only text left unterminated
+                // under BOTH readings cannot execute anywhere, so rejecting that costs nothing.
+                if (isQuotedLiteralTerminated(sql, index, ch, true)) {
+                    index = skipQuotedLiteral(sql, index, ch, true);
+                } else if (isQuotedLiteralTerminated(sql, index, ch, false)) {
+                    index = skipQuotedLiteral(sql, index, ch, false);
+                } else {
                     return false;
                 }
 
-                index = skipQuotedLiteral(sql, index, ch);
                 continue;
             } else if (ch == '[') {
+                // Same fail-closed rule as for quoted literals: an unterminated bracket identifier
+                // swallows everything after it, which would equally hide a trailing "; DELETE ...".
+                if (!isBracketQuotedIdentifierTerminated(sql, index)) {
+                    return false;
+                }
+
                 index = skipBracketQuotedIdentifier(sql, index);
                 continue;
             } else if (ch == '-' && index + 1 < sqlLength && sql.charAt(index + 1) == '-') {
@@ -3550,24 +3551,25 @@ public final class SqlParser {
     }
 
     /**
-     * Checks whether the quoted region opened at {@code fromIndex} is actually closed before the end of
-     * {@code sql}. Applies the same escaping rules as {@link #skipQuotedLiteral(String, int, char)}
-     * (backslash escapes and doubled quotes), which cannot report termination itself because it returns
-     * the same end-of-input index for a region closed by the last character and for one never closed.
+     * Checks whether the quoted region opened at {@code fromIndex} is closed before the end of {@code sql},
+     * under either the MySQL reading (backslash escapes honoured) or the SQL-standard reading (only doubled
+     * quotes escape). A literal such as {@code 'C:\'} is unterminated under the first reading and complete
+     * under the second, so callers that must not over-reject try both.
      *
      * @param sql the SQL to inspect
      * @param fromIndex the index of the opening quote character
      * @param quoteChar the quote character that opened the region
+     * @param backslashEscapes whether a backslash escapes the following character
      * @return {@code true} if a matching closing quote was found
      */
-    private static boolean isQuotedLiteralTerminated(final String sql, final int fromIndex, final char quoteChar) {
+    private static boolean isQuotedLiteralTerminated(final String sql, final int fromIndex, final char quoteChar, final boolean backslashEscapes) {
         final int sqlLength = sql.length();
         int index = fromIndex + 1;
 
         while (index < sqlLength) {
             final char ch = sql.charAt(index);
 
-            if (ch == '\\') {
+            if (backslashEscapes && ch == '\\') {
                 index += 2;
             } else if (ch == quoteChar) {
                 if (index + 1 < sqlLength && sql.charAt(index + 1) == quoteChar) {
@@ -3583,13 +3585,17 @@ public final class SqlParser {
         return false;
     }
 
-    private static int skipQuotedLiteral(final String sql, int fromIndex, final char quoteChar) {
+    private static int skipQuotedLiteral(final String sql, final int fromIndex, final char quoteChar) {
+        return skipQuotedLiteral(sql, fromIndex, quoteChar, true);
+    }
+
+    private static int skipQuotedLiteral(final String sql, int fromIndex, final char quoteChar, final boolean backslashEscapes) {
         fromIndex++;
 
         while (fromIndex < sql.length()) {
             final char ch = sql.charAt(fromIndex);
 
-            if (ch == '\\') {
+            if (backslashEscapes && ch == '\\') {
                 // Skip backslash-escaped character (e.g., \' in MySQL)
                 fromIndex += 2;
                 if (fromIndex >= sql.length()) {
@@ -3609,6 +3615,36 @@ public final class SqlParser {
         }
 
         return fromIndex;
+    }
+
+    /**
+     * Checks whether the bracket-quoted identifier opened at {@code fromIndex} is closed before the end
+     * of {@code sql}. Applies the same doubled-{@code ]]} rule as
+     * {@link #skipBracketQuotedIdentifier(String, int)}, which cannot report termination itself because
+     * it returns the same end-of-input index for a region closed by the last character and for one that
+     * is never closed.
+     *
+     * @param sql the SQL to inspect
+     * @param fromIndex the index of the opening {@code '['}
+     * @return {@code true} if a matching closing bracket was found
+     */
+    private static boolean isBracketQuotedIdentifierTerminated(final String sql, final int fromIndex) {
+        final int sqlLength = sql.length();
+        int index = fromIndex + 1;
+
+        while (index < sqlLength) {
+            if (sql.charAt(index) == ']') {
+                if (index + 1 < sqlLength && sql.charAt(index + 1) == ']') {
+                    index += 2; // doubled-bracket escape
+                } else {
+                    return true;
+                }
+            } else {
+                index++;
+            }
+        }
+
+        return false;
     }
 
     private static int skipBracketQuotedIdentifier(final String sql, int fromIndex) {

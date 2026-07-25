@@ -33,7 +33,7 @@ package com.landawn.abacus.query.condition;
  * <p>When to use UNION ALL vs UNION:</p>
  * <ul>
  *   <li>Use UNION ALL when you want all results or know there are no duplicates</li>
- *   <li>Use UNION ALL for better performance when duplicates don't matter</li>
+ *   <li>Use UNION ALL when duplicates don't matter; it skips the duplicate-elimination step</li>
  *   <li>Use UNION ALL when combining data from different sources that won't overlap</li>
  *   <li>Use UNION when you need distinct results</li>
  * </ul>
@@ -57,7 +57,7 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Relationship to other set operations:</p>
  * <ul>
- *   <li>UNION ALL combines rows from both queries, keeping duplicates (faster)</li>
+ *   <li>UNION ALL combines rows from both queries, keeping duplicates (no duplicate-elimination step)</li>
  *   <li>UNION combines rows from both queries, removing duplicates</li>
  *   <li>INTERSECT returns only rows that appear in both queries</li>
  *   <li>EXCEPT/MINUS returns rows from first query that don't appear in second query</li>

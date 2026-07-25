@@ -39,7 +39,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Finding customers without orders, products never sold, etc.</li>
  * </ul>
  *
- * <p>When to use MINUS vs other approaches:
+ * <p>When to use MINUS vs other approaches:</p>
  * <ul>
  *   <li>Use MINUS for clean, declarative set difference operations</li>
  *   <li>Use MINUS when comparing entire row structures (multiple columns)</li>
@@ -48,7 +48,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Use NOT IN for simple single-column exclusions (but beware of NULL values)</li>
  * </ul>
  *
- * <p>Performance considerations:
+ * <p>Performance considerations:</p>
  * <ul>
  *   <li>Set difference includes duplicate elimination, commonly implemented with sorting or hashing</li>
  *   <li>Performance depends on result set sizes and database optimization</li>
@@ -57,13 +57,11 @@ package com.landawn.abacus.query.condition;
  *   <li>Consider the cardinality of both result sets when choosing an approach</li>
  * </ul>
  *
- * <p>Database support:
+ * <p>Database support:</p>
  * <ul>
- *   <li>Oracle supports the MINUS keyword emitted by this class</li>
- *   <li>Many other databases expose set difference through EXCEPT; use {@link Except} for those targets</li>
- *   <li>Support varies by database and version; when neither operator is available, rewrite with
- *       {@code NOT EXISTS} or an outer join</li>
- *   <li>The SQL-standard keyword is EXCEPT; this class specifically emits MINUS</li>
+ *   <li>Oracle and Db2 accept the MINUS keyword emitted by this class</li>
+ *   <li>PostgreSQL, SQL Server, SQLite and MySQL 8.0.31+ spell set difference EXCEPT; use {@link Except} there</li>
+ *   <li>MySQL before 8.0.31 supports neither; rewrite with {@code NOT EXISTS} or an outer join with a NULL check</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -91,7 +89,8 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Relationship to other set operations:</p>
  * <ul>
- *   <li>MINUS and EXCEPT are functionally equivalent (MINUS in Oracle, EXCEPT in PostgreSQL/SQL Server)</li>
+ *   <li>MINUS and EXCEPT are functionally equivalent (MINUS is the traditional Oracle spelling; EXCEPT is the
+ *       SQL-standard spelling, which Oracle 21c+ also accepts)</li>
  *   <li>UNION combines rows from both queries, removing duplicates</li>
  *   <li>UNION ALL combines rows from both queries, keeping duplicates</li>
  *   <li>INTERSECT returns only rows that appear in both queries</li>

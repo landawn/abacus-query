@@ -102,7 +102,7 @@ public class In extends AbstractIn {
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, if {@code values}
      *                                  is {@code null}/empty, or if a condition-valued element is or contains
      *                                  a {@link Criteria}, SQL clause, JOIN, or {@code ON}/{@code USING} connector,
-     *                                  or is/contains an {@link All}, {@link Any}, or {@link Some} operand
+     *                                  or is/contains an {@link All}, {@link Any}, or {@link Some} quantified operand
      */
     public In(final String propName, final Collection<?> values) {
         super(propName, Operator.IN, values);
@@ -113,8 +113,7 @@ public class In extends AbstractIn {
      * tuple of property values matches any of the supplied value rows. Each element of {@code valueRows}
      * must resolve to exactly {@code propNames.size()} values. A row may be supplied as a {@link Collection}
      * or other {@link Iterable}, an object array, a {@link Map} (looked up by property name, with a
-     * missing key represented as {@code null}) or a bean
-     * (read by property name).
+     * missing key represented as {@code null}) or a bean (read by property name).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

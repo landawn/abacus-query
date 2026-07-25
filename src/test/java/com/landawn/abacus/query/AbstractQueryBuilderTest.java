@@ -2359,6 +2359,28 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertFalse(sql.contains("a.full_name"), "naming-policy fallback indicates the main-table alias registration was dropped: " + sql);
     }
 
+    // SqlExpression.toSql and AbstractQueryBuilder.appendStringExpr are two independent rendering paths for
+    // the same raw expression text: a condition reaches the SQL through the builder, but toString()/toSql()
+    // renders it directly. Guards added to one must be added to the other. Before this was pinned, the
+    // builder left "_firstName" unconverted, converted "@firstName" (a SQL variable, not a column), and
+    // snake-cased the contents of the string literal in "N'camelCase'".
+    @Test
+    public void testRawExpressionRendersIdenticallyThroughBothPaths() {
+        for (final String expr : new String[] { "_firstName = otherValue", "@firstName + columnName", "N'camelCase' = firstName",
+                "_utf8mb4'camelCase' = firstName", "firstName = lastName", "@@version = firstName", "price  *  2" }) {
+            final String viaCondition = Filters.expr(expr).toSql(NamingPolicy.SNAKE_CASE);
+            final String builtSql = Dsl.PSC.select("id").from("t").where(Filters.expr(expr)).build().query();
+            final String viaBuilder = builtSql.substring(builtSql.indexOf("WHERE ") + 6);
+
+            assertEquals(viaCondition, viaBuilder, "rendering paths diverged for: " + expr);
+        }
+
+        // The specific corruptions the guards prevent.
+        assertEquals("N'camelCase' = first_name", Filters.expr("N'camelCase' = firstName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("@firstName + column_name", Filters.expr("@firstName + columnName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_first_name = other_value", Filters.expr("_firstName = otherValue").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
     @Test
     public void testFromVarargsMultiTableKeepsInlineAliasesFromFirstElement() {
         // Mirrors the single-string comma form: from("users u, orders o"). A bare two-String call from

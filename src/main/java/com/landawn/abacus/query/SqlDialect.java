@@ -59,7 +59,7 @@ import lombok.experimental.Accessors;
  * {@link AbstractQueryBuilder}, unset rendering choices are resolved to these defaults:
  * {@link NamingPolicy#SNAKE_CASE}, {@link SqlPolicy#RAW_SQL},
  * {@link IdentifierQuote#DOUBLE_QUOTE} (or {@link IdentifierQuote#BACKTICK} when {@code productInfo}
- * names MySQL or MariaDB), {@link AbstractQueryBuilder#DEFAULT_NAMED_PARAMETER_HANDLER}, and
+ * names MySQL or MariaDB), {@link #DEFAULT_NAMED_PARAMETER_HANDLER}, and
  * {@link SqlParser#defaultTokenizerConfig()}. When {@code productInfo} is set, query builders also adapt
  * product-specific SQL syntax such as pagination clauses; see {@link AbstractQueryBuilder#limit(int)}.
  * When it is {@code null} or its name is not recognized, builders generate the default
@@ -104,10 +104,16 @@ public class SqlDialect {
     private IdentifierQuote identifierQuote;
 
     /**
+     * Default renderer for {@link SqlPolicy#NAMED_SQL} placeholders. It appends a colon followed by
+     * the generated parameter name, for example {@code :customerId}.
+     */
+    public static final BiConsumer<StringBuilder, String> DEFAULT_NAMED_PARAMETER_HANDLER = (sql, name) -> sql.append(':').append(name);
+
+    /**
      * Optional renderer for {@link SqlPolicy#NAMED_SQL} placeholders. It is ignored by the other SQL
      * policies. The handler receives the SQL
      * buffer and generated parameter name. When {@code null}, builders use
-     * {@link AbstractQueryBuilder#DEFAULT_NAMED_PARAMETER_HANDLER}. Keeping the handler on the immutable dialect avoids
+     * {@link #DEFAULT_NAMED_PARAMETER_HANDLER}. Keeping the handler on the immutable dialect avoids
      * thread-local or process-wide rendering configuration. The handler must append a nonempty token,
      * render distinct generated names as distinct tokens, be deterministic and side-effect free, and be
      * safe for concurrent invocation because all builders created from a shared {@link Dsl} use the same

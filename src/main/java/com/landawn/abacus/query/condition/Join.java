@@ -121,8 +121,7 @@ public class Join extends AbstractCondition {
      *
      * <p><b>&#9888;&#65039;</b> This form is rarely used
      * directly; most databases require an explicit {@code ON} or {@code USING} clause for a plain
-     * {@code JOIN}, so this constructor is typically used to build a join fragment incrementally
-     * and combine it with a separately specified condition.
+     * {@code JOIN}, so use {@link #Join(String, Condition)} when a condition is required.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -176,7 +175,7 @@ public class Join extends AbstractCondition {
      *
      * // Join with complex condition using And
      * // Note: an And/Or that wraps an On/Using instance is rejected; combine plain
-     * // predicates with Filters.expr(String) instead.
+     * // predicates with Filters.expr(...) instead.
      * Join complexJoin = new Join("products p",
      *     new And(
      *         Filters.expr("categories.id = p.category_id"),

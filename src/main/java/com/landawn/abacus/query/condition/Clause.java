@@ -132,10 +132,14 @@ public abstract class Clause extends Cell {
             return cond;
         }
 
-        final Operator condOperator = cond.operator();
-
         if (containsNonPredicateComponent(cond)) {
-            throw new IllegalArgumentException("Condition with operator '" + condOperator + "' cannot be nested inside a clause");
+            // Operator.EMPTY renders as "", so an SqlExpression or SubQuery operand would otherwise produce
+            // "Condition with operator '' cannot be nested inside a clause". Describe the condition itself,
+            // mirroring Criteria.Builder.validateClauseCondition.
+            final String actual = cond instanceof SqlExpression ? cond.getClass().getSimpleName() + " \"" + ((SqlExpression) cond).literal() + "\""
+                    : cond.getClass().getSimpleName() + " with operator '" + cond.operator() + "'";
+
+            throw new IllegalArgumentException("Condition " + actual + " cannot be nested inside a clause");
         }
 
         return cond;

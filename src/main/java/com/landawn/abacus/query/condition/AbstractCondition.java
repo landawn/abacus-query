@@ -455,6 +455,26 @@ public abstract class AbstractCondition implements Condition {
         return operand;
     }
 
+    /**
+     * Applies {@link #validateNonQuantifiedValueOperand(Object, String)} to every element of the given
+     * collection, in iteration order. Each element is reported with its positional index appended to
+     * {@code argumentName} (for example {@code values[2]}), so a rejected element can be located in the
+     * supplied list. Used by the multi-value conditions ({@code IN}/{@code NOT IN} value lists and
+     * row-value tuples), whose elements are all rendered in a scalar/value position.
+     *
+     * @param values the value-position operands to validate; must not be {@code null}, though individual
+     *               elements may be {@code null}
+     * @param argumentName the argument name used as the prefix in an exception message
+     * @throws IllegalArgumentException if any element is query-structural or is/contains a quantified operand
+     */
+    protected static void validateNonQuantifiedValueOperands(final Collection<?> values, final String argumentName) {
+        int index = 0;
+
+        for (final Object value : values) {
+            validateNonQuantifiedValueOperand(value, argumentName + "[" + index++ + "]");
+        }
+    }
+
     private static boolean containsQuantifiedSubQueryOperand(final Condition cond) {
         if (cond == null || cond instanceof SqlExpression || cond instanceof SubQuery) {
             return false;
@@ -633,8 +653,10 @@ public abstract class AbstractCondition implements Condition {
      * Throws {@link IllegalArgumentException} if {@code value} is a {@link Float} or {@link Double}
      * that is {@code NaN} or infinite. {@code NaN} and infinity have no portable SQL literal form;
      * callers should use {@link IsNaN}/{@link IsInfinite} conditions instead. This guard is applied
-     * inside {@link #formatParameter(Object, NamingPolicy)} so a misuse fails fast at SQL-render
-     * time rather than silently producing invalid SQL such as {@code WHERE x = NaN}.
+     * inside {@link #formatNumberLiteral(Number)}, which backs both
+     * {@link #formatParameter(Object, NamingPolicy)} and {@link SqlExpression#renderValue(Object)},
+     * so a misuse fails fast at SQL-render time rather than silently producing invalid SQL such as
+     * {@code WHERE x = NaN}.
      *
      * @param value the value to check; non-numeric or finite values are ignored
      * @throws IllegalArgumentException if {@code value} is a {@code NaN} or infinite {@link Float} or {@link Double}

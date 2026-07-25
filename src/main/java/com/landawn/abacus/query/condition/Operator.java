@@ -58,7 +58,6 @@ import com.landawn.abacus.util.Strings;
  *     // Handle equality logic
  * }
  * }</pre>
- *
  */
 public enum Operator {
     /**
@@ -405,8 +404,7 @@ public enum Operator {
      * Returns an Operator by its SQL representation.
      *
      * <p>This method performs a case-insensitive lookup against a precomputed map built once
-     * during class initialization, avoiding a linear scan of the enum constants. Lowercasing and
-     * hashing still scale with the input string's length. It accepts both
+     * during class initialization, so resolution is a constant-time operation. It accepts both
      * the SQL token (such as {@code "="} or {@code ">"}) and the enum constant name (such as
      * {@code "EQUAL"} or {@code "GREATER_THAN"}), including word operators like {@code "AND"}
      * and {@code "OR"}.</p>

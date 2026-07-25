@@ -175,8 +175,8 @@ public class SubQuery extends AbstractCondition {
      *            stored as the empty string
      * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
-     * @deprecated the entity name is unused when rendering raw query-expression text; it only
-     *             participates in {@link #equals(Object)}/{@link #hashCode()}. Use
+     * @deprecated the entity name is unused when rendering raw query-expression text; it is only exposed by
+     *             {@link #entityName()} and participates in {@link #equals(Object)}/{@link #hashCode()}. Use
      *             {@link #SubQuery(String)} for raw text, or
      *             {@link #SubQuery(String, java.util.Collection, Condition)} when an
      *             entity-name-based structured subquery is actually wanted.
@@ -232,7 +232,8 @@ public class SubQuery extends AbstractCondition {
      * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
      * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
      * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
-     *             {@link Where}; {@code null}, a blank expression, or an empty {@code Criteria} adds no clause.
+     *             {@link Where}; {@code null}, a blank expression, an empty {@link Junction}, or an empty
+     *             {@code Criteria} adds no clause.
      * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank, if {@code propNames} is
      *             {@code null} or empty, if {@code propNames} contains {@code null}, empty, or blank names, if {@code condition}
      *             uses an {@link Operator#ON ON}/{@link Operator#USING USING} operator, is not a complete predicate
@@ -299,7 +300,8 @@ public class SubQuery extends AbstractCondition {
      * @param entityClass the entity class (must not be {@code null})
      * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
      * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
-     *             {@link Where}; {@code null}, a blank expression, or an empty {@code Criteria} adds no clause.
+     *             {@link Where}; {@code null}, a blank expression, an empty {@link Junction}, or an empty
+     *             {@code Criteria} adds no clause.
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propNames} is {@code null}
      *             or empty, if {@code propNames} contains {@code null}, empty, or blank names, if {@code condition} uses an
      *             {@link Operator#ON ON}/{@link Operator#USING USING} operator, is not a complete predicate
@@ -455,7 +457,7 @@ public class SubQuery extends AbstractCondition {
         // The source may be a live/custom collection whose contents change between isEmpty() and
         // iteration. Do not silently turn an explicitly projected subquery into SELECT *.
         if (result.isEmpty()) {
-            throw new IllegalArgumentException("Property names must not be empty");
+            throw new IllegalArgumentException("Property names must not be empty (the supplied collection yielded no elements while being copied)");
         }
 
         return result;
@@ -476,7 +478,10 @@ public class SubQuery extends AbstractCondition {
             return criteria.conditions().isEmpty() ? null : criteria;
         }
 
-        if (cond instanceof SqlExpression && Strings.isBlank(((SqlExpression) cond).literal())) {
+        // A blank SqlExpression, an empty Criteria (handled above) and an empty Junction are all
+        // "no filter": normalize every empty predicate to no clause instead of rejecting only the
+        // Junction form. isEmptyPredicate() is the shared definition used by the composable guards.
+        if (isEmptyPredicate(cond)) {
             return null;
         }
 

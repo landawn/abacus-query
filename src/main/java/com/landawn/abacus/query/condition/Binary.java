@@ -368,10 +368,9 @@ public class Binary extends ComposableCondition {
         // The copies are wrapped unmodifiable so propValue() cannot leak a mutable view of the
         // internal membership list (mutation would silently desync the memoized parameters/hashCode).
         if (propValue instanceof final Collection<?> values) {
-            N.checkArgNotEmpty(values, "propValue");
             final List<?> valuesCopy = new ArrayList<>(values);
             N.checkArgNotEmpty(valuesCopy, "propValue");
-            validateValueElements(valuesCopy, "propValue");
+            validateNonQuantifiedValueOperands(valuesCopy, "propValue");
             return Collections.unmodifiableList(valuesCopy);
         }
 
@@ -404,14 +403,6 @@ public class Binary extends ComposableCondition {
         }
 
         return validateNonQuantifiedValueOperand(propValue, "propValue");
-    }
-
-    private static void validateValueElements(final Collection<?> values, final String argumentName) {
-        int index = 0;
-
-        for (final Object value : values) {
-            validateNonQuantifiedValueOperand(value, argumentName + "[" + index++ + "]");
-        }
     }
 
     private static String formatCollection(final Collection<?> values, final NamingPolicy namingPolicy) {

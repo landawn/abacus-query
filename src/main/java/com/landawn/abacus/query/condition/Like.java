@@ -106,13 +106,15 @@ public class Like extends Binary {
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the pattern to match (typically a {@link String} containing {@code %} and/or
-     *                  {@code _} wildcards; may also be a {@link SubQuery}). Use {@code %} to match
+     *                  {@code _} wildcards; may also be a {@link SubQuery}, an {@link SqlExpression},
+     *                  or another non-structural {@link Condition}). Use {@code %} to match
      *                  any sequence of characters and {@code _} to match a single character. Passing
      *                  {@code null} renders as {@code prop LIKE null}, which is not a meaningful SQL
      *                  comparison; do not pass {@code null} to this operator.
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if a
-     *                                  condition-valued operand is or contains a query-structural component;
-     *                                  or if it is or contains an {@link All}, {@link Any}, or {@link Some} operand
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
+     *                                  {@code propValue} is or contains a {@link Criteria}, SQL clause,
+     *                                  JOIN, or {@code ON}/{@code USING} connector, or is/contains an
+     *                                  {@link All}, {@link Any}, or {@link Some} quantified operand
      */
     public Like(final String propName, final Object propValue) {
         super(propName, Operator.LIKE, propValue);

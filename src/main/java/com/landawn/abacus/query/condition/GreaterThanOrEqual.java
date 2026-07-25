@@ -100,7 +100,7 @@ public class GreaterThanOrEqual extends Binary {
      *                  a {@link SubQuery} or {@link SqlExpression}); passing
      *                  {@code null} renders as {@code prop >= null}, which is not a meaningful SQL
      *                  comparison; do not pass {@code null} to this operator. A direct {@link All},
-     *                  {@link Any}, or {@link Some} right-hand operand is supported
+     *                  {@link Any}, or {@link Some} right-hand operand is also supported
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
      *                                  {@code propValue} is or contains a {@link Criteria}, SQL clause,
      *                                  JOIN, or {@code ON}/{@code USING} connector, or contains a

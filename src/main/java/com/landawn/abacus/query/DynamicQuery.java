@@ -148,8 +148,9 @@ public final class DynamicQuery {
      * Instances and retained clause handles are mutable and are not thread-safe. A builder is
      * one-shot: invoking {@link #build()} permanently closes it and all retained clause handles,
      * including when building terminates exceptionally.
-     * String fragments are appended verbatim; this builder validates presence and clause ordering,
-     * not SQL syntax or trustworthiness.
+     *
+     * <p>String fragments are appended verbatim; this builder validates presence and clause ordering,
+     * not SQL syntax or trustworthiness.</p>
      */
     public static class Builder {
 
@@ -895,7 +896,7 @@ public final class DynamicQuery {
                 final String sql = selectClause.sb.toString();
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Built dynamic SQL (length: {})", sql.length());
+                    logger.debug("Built dynamic SQL metadata. Length: {}", sql.length());
                 }
 
                 return sql;

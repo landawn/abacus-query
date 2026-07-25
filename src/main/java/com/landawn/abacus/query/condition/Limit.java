@@ -37,7 +37,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>{@code LIMIT count}</li>
  *   <li>{@code LIMIT count OFFSET offset}</li>
  *   <li>MySQL {@code LIMIT offset, count}</li>
- *   <li>SQL:2008 {@code [OFFSET offset ROWS] FETCH FIRST|NEXT count ROWS ONLY}</li>
+ *   <li>SQL:2008 {@code [OFFSET offset ROW[S]] FETCH FIRST|NEXT count ROW[S] ONLY}</li>
  * </ul>
  *
  * <p>A count or offset in an expression may be a non-negative integer, {@code ?}, {@code :name}, or
@@ -54,10 +54,14 @@ import com.landawn.abacus.util.Strings;
  * {@link Criteria.Builder#limit(int, int)}, and
  * {@link com.landawn.abacus.query.DynamicQuery.Builder#limit(int, int)}.</p>
  *
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * new Limit(10);                                      // LIMIT 10
  * new Limit(20, 50);                                  // LIMIT 20 OFFSET 50
  * new Limit("OFFSET 50 ROWS FETCH NEXT 20 ROWS ONLY");
+ * new Limit("20, 10");                                // MySQL form: toSql() -> "LIMIT 20, 10"; count() -> 10; offset() -> 20
+ * new Limit("? OFFSET ?");                            // opaque: count() -> Integer.MAX_VALUE; offset() -> 0
+ * new Limit("LIMIT 1.0");                             // throws IllegalArgumentException
  * }</pre>
  *
  * <p><b>API note:</b> Placeholders embedded in an expression are not reported by
@@ -76,7 +80,7 @@ public class Limit extends Clause {
     private boolean isResolved;
 
     /**
-     * Creates an uninitialized instance for serialization frameworks.
+     * Creates an uninitialized instance for serialization frameworks like Kryo.
      *
      * <p>Application code should use one of the public constructors.</p>
      */
@@ -128,7 +132,7 @@ public class Limit extends Clause {
      * numbers, misspelled keywords, and unrelated SQL are rejected. Colon-style placeholders ({@code :name})
      * are restricted to word characters ({@code [A-Za-z0-9_]}), so dotted or otherwise exotic parameter names
      * accepted elsewhere (for example, {@code ParsedSql}-style {@code :page.size}) are not valid in that form;
-     * a {@code #{...}} body may contain any characters except {@code }}.</p>
+     * a {@code #{...}} body may contain one or more characters other than {@code }}.</p>
      *
      * <pre>{@code
      * new Limit("10 OFFSET 20");                         // LIMIT 10 OFFSET 20
@@ -145,8 +149,8 @@ public class Limit extends Clause {
      * positional order of its {@code ?} placeholders (the offset placeholder is emitted before the count
      * placeholder); prefer named placeholders when the target dialect may vary.</p>
      *
-     * @param expr row-limiting expression; must be non-null, non-blank, and match a supported form
-     * @throws IllegalArgumentException if {@code expr} is null, blank, or syntactically unsupported
+     * @param expr the row-limiting expression. Must not be {@code null}, empty, or blank, and must match a supported form
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or is not a supported limit form
      */
     public Limit(final String expr) {
         this(prepare(expr));
@@ -157,7 +161,7 @@ public class Limit extends Clause {
         // factory's unbounded cache would retain every distinct pair for the classloader lifetime.
         super(Operator.LIMIT, new SqlExpression(prepared.conditionExpr));
 
-        this.expr = prepared.literal;
+        this.expr = prepared.expr;
         this.count = prepared.count;
         this.offset = prepared.offset;
         this.isResolved = prepared.resolved;
@@ -167,7 +171,7 @@ public class Limit extends Clause {
      * Immutable carrier for the values a {@link #Limit(String)} needs, computed once by {@link #prepare(String)}
      * so they can be handed to the private constructor before its mandatory {@code super(...)} call.
      */
-    private record Prepared(String conditionExpr, String literal, int count, int offset, boolean resolved) {
+    private record Prepared(String conditionExpr, String expr, int count, int offset, boolean resolved) {
     }
 
     /**
@@ -183,8 +187,8 @@ public class Limit extends Clause {
      *         accepted limit forms
      */
     private static Prepared prepare(final String expr) {
-        final String literal = normalizeAndFormat(expr);
-        final String[] slots = matchSlots(literal);
+        final String normalizedExpr = normalizeAndFormat(expr);
+        final String[] slots = matchSlots(normalizedExpr);
 
         if (slots == null) {
             throw new IllegalArgumentException("Invalid LIMIT expression. Supported forms are"
@@ -200,12 +204,13 @@ public class Limit extends Clause {
         final Integer offset = offsetToken == null ? Integer.valueOf(0) : toInt(offsetToken);
 
         // A placeholder slot (or an integer literal that overflows int) leaves the value unresolved: the
-        // expression is accepted but stays opaque (count == MAX_VALUE, offset == 0), rendered from its literal.
+        // expression is accepted but stays opaque (count == MAX_VALUE, offset == 0), rendered from its
+        // normalized expression.
         if (count == null || offset == null) {
-            return new Prepared(conditionExpr, literal, Integer.MAX_VALUE, 0, false);
+            return new Prepared(conditionExpr, normalizedExpr, Integer.MAX_VALUE, 0, false);
         }
 
-        return new Prepared(conditionExpr, literal, count, offset, true);
+        return new Prepared(conditionExpr, normalizedExpr, count, offset, true);
     }
 
     /**

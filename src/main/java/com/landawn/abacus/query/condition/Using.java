@@ -273,9 +273,9 @@ public class Using extends Cell {
 
     /**
      * Creates a condition expression for the USING clause from an array of column names.
-     * This static factory is a retained package-private helper: main code now builds the condition
-     * through {@code prepare(...)}, but the helper is kept and exercised by tests. It constructs the
-     * appropriate condition expression for the USING clause from the provided column names.
+     * This static factory is a retained package-private helper: main code builds the condition
+     * through {@code prepare(...)}. It constructs the appropriate condition expression for the
+     * USING clause from the provided column names.
      *
      * <p><b>Internal Usage Example:</b></p>
      * <pre>{@code
@@ -300,9 +300,9 @@ public class Using extends Cell {
 
     /**
      * Creates a condition expression for the USING clause from a collection of column names.
-     * This static factory is a retained package-private helper: main code now builds the condition
-     * through {@code prepare(...)}, but the helper is kept and exercised by tests. It constructs the
-     * appropriate condition expression for the USING clause from the provided column collection.
+     * This static factory is a retained package-private helper: main code builds the condition
+     * through {@code prepare(...)}. It constructs the appropriate condition expression for the
+     * USING clause from the provided column collection.
      *
      * <p><b>Internal Usage Example:</b></p>
      * <pre>{@code

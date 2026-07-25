@@ -96,8 +96,8 @@ public class NotIn extends AbstractIn {
      *               A condition-valued element must be a non-structural, non-quantified value expression
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, if {@code values} is
      *                                  {@code null}/empty, or if a condition-valued element is or contains a
-     *                                  {@link Criteria}, SQL clause, JOIN, {@code ON}/{@code USING} connector,
-     *                                  or an {@link All}, {@link Any}, or {@link Some} operand
+     *                                  {@link Criteria}, SQL clause, JOIN, or {@code ON}/{@code USING} connector,
+     *                                  or is/contains an {@link All}, {@link Any}, or {@link Some} quantified operand
      */
     public NotIn(final String propName, final Collection<?> values) {
         super(propName, Operator.NOT_IN, values);
@@ -108,7 +108,7 @@ public class NotIn extends AbstractIn {
      * whose tuple of property values does not match any of the supplied value rows. Each element of
      * {@code valueRows} must resolve to exactly {@code propNames.size()} values. A row may be supplied as a
      * {@link Collection} or other {@link Iterable}, an object array, a {@link Map} (looked up by property
-     * name) or a bean (read by property name).
+     * name, with a missing key represented as {@code null}) or a bean (read by property name).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -129,14 +129,16 @@ public class NotIn extends AbstractIn {
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
      * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be
      *               non-{@code null} and resolve to exactly {@code propNames.size()} values. A row may be a
-     *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
+     *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean. A missing
+     *               property-name key in a map contributes {@code null}; condition-valued elements
+     *               must not be query-structural or quantified
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  if a bean row does not expose a requested property, or if a condition-valued row
-     *                                  element is or contains a {@link Criteria}, SQL clause, JOIN,
-     *                                  {@code ON}/{@code USING} connector, or an {@link All}, {@link Any},
-     *                                  or {@link Some} operand
+     *                                  element is or contains a {@link Criteria}, SQL clause, JOIN, or
+     *                                  {@code ON}/{@code USING} connector, or is/contains an {@link All},
+     *                                  {@link Any}, or {@link Some} quantified operand
      */
     public NotIn(final Collection<String> propNames, final Collection<?> valueRows) {
         super(propNames, Operator.NOT_IN, valueRows);

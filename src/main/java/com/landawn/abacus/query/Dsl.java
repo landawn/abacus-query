@@ -237,8 +237,10 @@ public final class Dsl {
         // the same input even for weakly consistent or otherwise mutable caller lists.
         final List<Selection> snapshots = new ArrayList<>(selections);
 
-        // checkMultiSelects repeats this null-element check, but with a message naming its own
-        // 'multiSelects' parameter; checking here first keeps the message aligned with 'selections'.
+        N.checkArgNotEmpty(snapshots, "selections");
+
+        // checkMultiSelects repeats these checks, but with messages naming its own 'multiSelects'
+        // parameter; checking here first keeps the messages aligned with 'selections'.
         for (final Selection selection : snapshots) {
             N.checkArgNotNull(selection, "Selection can't be null in 'selections'");
         }
@@ -1256,7 +1258,7 @@ public final class Dsl {
      * @param tableAlias the table alias to use
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
-     *                                  or resolves to a blank mapped table name
+     *                                  or, when no table alias is supplied, resolves to a blank mapped table name
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias) {
         return selectFrom(entityClass, tableAlias, false);
@@ -1308,7 +1310,7 @@ public final class Dsl {
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
-     *                                  or resolves to a blank mapped table name
+     *                                  or, when no table alias is supplied, resolves to a blank mapped table name
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties) {
         return selectFrom(entityClass, tableAlias, includeSubEntityProperties, null);
@@ -1359,7 +1361,7 @@ public final class Dsl {
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
-     *                                  or the class resolves to a blank mapped table name
+     *                                  or, when no table alias is supplied, the class resolves to a blank mapped table name
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final Set<String> excludedPropNames) {
         return selectFrom(entityClass, tableAlias, false, excludedPropNames);
@@ -1416,15 +1418,18 @@ public final class Dsl {
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
-     *                                  or the class resolves to a blank mapped table name
+     *                                  or, when no table alias is supplied, the class resolves to a blank mapped table name
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties,
             final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, SqlBuilder.SELECTION_PART_MSG);
+        // One snapshot so the generated FROM table list and the projection observe the same exclusions.
+        final Set<String> excludedPropNameSnapshot = N.isEmpty(excludedPropNames) ? null : new HashSet<>(excludedPropNames);
         final boolean includesSubEntityTables = SqlBuilder.hasSubEntityToInclude(entityClass, includeSubEntityProperties);
-        final List<String> selectTableNames = includesSubEntityTables ? SqlBuilder.getSelectTableNames(entityClass, tableAlias, excludedPropNames, namingPolicy)
+        final List<String> selectTableNames = includesSubEntityTables
+                ? SqlBuilder.getSelectTableNames(entityClass, tableAlias, excludedPropNameSnapshot, namingPolicy)
                 : null;
-        final SqlBuilder builder = select(entityClass, includeSubEntityProperties, excludedPropNames);
+        final SqlBuilder builder = select(entityClass, includeSubEntityProperties, excludedPropNameSnapshot);
 
         try {
             return includesSubEntityTables ? builder.from(entityClass, selectTableNames) : builder.from(entityClass, tableAlias);

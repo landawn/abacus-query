@@ -45,7 +45,7 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Performance considerations:</p>
  * <ul>
- *   <li>EXCEPT requires duplicate elimination, which involves sorting or hashing</li>
+ *   <li>EXCEPT requires duplicate elimination, commonly implemented with sorting or hashing</li>
  *   <li>Performance depends on result set sizes and database optimization</li>
  *   <li>Indexes on columns used in both queries can significantly improve performance</li>
  *   <li>For large datasets, NOT EXISTS may outperform EXCEPT in some databases</li>

@@ -23,7 +23,7 @@ package com.landawn.abacus.query.condition;
  * result set. Unlike UNION ALL, it performs duplicate elimination, which can impact performance
  * but ensures that each row in the result set is unique.</p>
  *
- * <p>Key characteristics of UNION:
+ * <p>Key characteristics of UNION:</p>
  * <ul>
  *   <li>Automatically removes duplicate rows from the combined result set</li>
  *   <li>All SELECT statements must have the same number of columns</li>
@@ -35,15 +35,15 @@ package com.landawn.abacus.query.condition;
  *       treated as equal (SQL set-operation semantics, unlike regular {@code =} comparisons)</li>
  * </ul>
  *
- * <p>When to use UNION vs UNION ALL:
+ * <p>When to use UNION vs UNION ALL:</p>
  * <ul>
  *   <li>Use UNION when you need to eliminate duplicates from combined results</li>
  *   <li>Use UNION when merging data from overlapping sources</li>
- *   <li>Use UNION ALL for better performance when duplicates are acceptable or impossible</li>
+ *   <li>Use UNION ALL when duplicates are acceptable or impossible; it skips the duplicate-elimination step</li>
  *   <li>Use UNION ALL when combining data from distinct, non-overlapping sources</li>
  * </ul>
  *
- * <p>Common use cases for UNION:
+ * <p>Common use cases for UNION:</p>
  * <ul>
  *   <li>Combining similar data from different tables (e.g., active and archived records)</li>
  *   <li>Merging results from different conditions that might overlap</li>
@@ -51,15 +51,15 @@ package com.landawn.abacus.query.condition;
  *   <li>Consolidating data from multiple sources where uniqueness matters</li>
  * </ul>
  *
- * <p>Performance considerations:
+ * <p>Performance considerations:</p>
  * <ul>
  *   <li>UNION performs an implicit DISTINCT operation, commonly implemented with sorting or hashing</li>
- *   <li>For large result sets, UNION can be significantly slower than UNION ALL</li>
- *   <li>If you know there are no duplicates, use UNION ALL for better performance</li>
+ *   <li>For large result sets, that duplicate-elimination step is work UNION ALL does not do</li>
+ *   <li>If you know there are no duplicates, use UNION ALL to skip the duplicate-elimination step</li>
  *   <li>Consider adding indexes on columns used in UNION queries</li>
  * </ul>
  *
- * <p>Database support:
+ * <p>Database support:</p>
  * <ul>
  *   <li>All major databases support UNION: MySQL, PostgreSQL, Oracle, SQL Server, SQLite, DB2</li>
  *   <li>UNION is part of the SQL standard and widely portable</li>
@@ -69,7 +69,7 @@ package com.landawn.abacus.query.condition;
  * <p>Relationship to other set operations:</p>
  * <ul>
  *   <li>UNION combines rows from both queries, removing duplicates</li>
- *   <li>UNION ALL combines rows from both queries, keeping duplicates (faster)</li>
+ *   <li>UNION ALL combines rows from both queries, keeping duplicates (no duplicate-elimination step)</li>
  *   <li>INTERSECT returns only rows that appear in both queries</li>
  *   <li>EXCEPT/MINUS returns rows from first query that don't appear in second query</li>
  * </ul>

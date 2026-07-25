@@ -106,8 +106,8 @@ public class Or extends Junction {
      * @param conditions the conditions to combine with OR logic; may be {@code null} or empty
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             an {@code ON}/{@code USING} connector, or an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or is an empty predicate
+     *             an {@code ON}/{@code USING} connector, an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
      *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public Or(final Condition... conditions) {
@@ -144,8 +144,8 @@ public class Or extends Junction {
      * @param conditions the collection of conditions to combine with OR logic; may be {@code null} or empty
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
-     *             an {@code ON}/{@code USING} connector, or an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or is an empty predicate
+     *             an {@code ON}/{@code USING} connector, an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
      *             (a blank {@link SqlExpression} or empty {@link Junction})
      */
     public Or(final Collection<? extends Condition> conditions) {

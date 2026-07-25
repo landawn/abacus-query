@@ -26,7 +26,7 @@ import com.landawn.abacus.query.Filters;
  * <p>In SQL, NULL has special properties:</p>
  * <ul>
  *   <li>NULL is not equal to anything, including itself (NULL = NULL evaluates to UNKNOWN, not true or false)</li>
- *   <li>Ordinary arithmetic with NULL produces NULL</li>
+ *   <li>Any arithmetic operation with NULL results in NULL</li>
  *   <li>Standard aggregates such as SUM, AVG, MIN, MAX, and COUNT(expression) ignore NULL inputs,
  *       while COUNT(*) counts rows</li>
  *   <li>NULL values require special IS NULL/IS NOT NULL operators for comparison</li>
