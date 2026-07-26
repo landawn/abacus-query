@@ -96,6 +96,7 @@ import com.landawn.abacus.util.XmlUtil;
  * ImmutableMap<String, String> attrs = mapper.attributes("batchInsertAccounts");
  * String batchSize = attrs.get("batchSize");
  * }</pre>
+ *
  */
 public final class SqlMapper {
 

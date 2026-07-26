@@ -147,6 +147,7 @@ public final class Filters {
      * // Create a parameterized condition; the parameterless equal(String) overload uses QME internally
      * Equal condition = Filters.equal("age");
      * }</pre>
+     *
      */
     public static final SqlExpression QME = SqlExpression.of(SK.QUESTION_MARK);
 

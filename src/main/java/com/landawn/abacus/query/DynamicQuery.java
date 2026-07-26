@@ -650,8 +650,8 @@ public final class DynamicQuery {
          * The supplied text is emitted unchanged (preceded by a separating space when needed; see below) and is <em>not</em>
          * validated, escaped, or interpreted in any way — whatever you pass becomes the literal tail
          * of the generated SQL. Use it for any trailing clause that has no typed builder method, such
-         * as pagination/row-limiting syntax (for example {@code "LIMIT 10 OFFSET 20"} or a SQL:2008
-         * {@code FETCH FIRST ... ROWS ONLY} clause), locking hints, or other vendor-specific suffixes.
+         * as locking hints (for example {@code "FOR UPDATE"}) or other vendor-specific suffixes, or
+         * for raw pagination/row-limiting syntax when the typed methods do not fit the dialect.
          *
          * <p>Prefer the typed clause methods (such as {@link #limit(int)}, {@link #limit(int, int)},
          * {@link #offset(int)}, {@link #offsetRows(int)}, {@link #fetchFirstRows(int)}, or
@@ -674,9 +674,9 @@ public final class DynamicQuery {
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
+         * builder.append("FOR UPDATE");
+         * // Or a raw pagination fragment when the typed limit/offset methods do not fit the dialect
          * builder.append("LIMIT 10 OFFSET 20");
-         * // Or any trailing clause that has no typed overload (e.g. a SQL:2008 row-limiting clause)
-         * builder.append("FETCH FIRST 10 ROWS ONLY");
          * }</pre>
          *
          * @param textToAppend the complete raw SQL clause to append verbatim (e.g., {@code "LIMIT 10 OFFSET 20"}) (must not be {@code null}, empty, or blank)

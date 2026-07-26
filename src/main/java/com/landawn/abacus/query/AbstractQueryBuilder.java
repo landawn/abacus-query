@@ -1703,7 +1703,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class, "u").build().query();
-     * // Output: SELECT * FROM users u (table name based on naming policy)
+     * // Output: SELECT * FROM user u (table name derived from User class based on naming policy)
      * }</pre>
      *
      * @param entityClass the entity class representing the table (must not be {@code null})
@@ -4681,6 +4681,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final Collection<Join> joins = criteria.joins();
             final String criteriaSelectModifier = criteria.selectModifier();
 
+            // Apply the modifier before any set operation below closes the current SELECT segment:
+            // closeSetOperationSegment() resets _selectKeywordEndIdx, after which the modifier could no
+            // longer be spliced into the segment it was validated against and build() would reject it as
+            // an unattached staged modifier. Applying it here is still atomic -- the enclosing mutation
+            // checkpoint rolls the insertion back if any Criteria clause is rejected during rendering.
+            if (Strings.isNotEmpty(criteriaSelectModifier)) {
+                selectModifier(criteriaSelectModifier);
+            }
+
             if (N.notEmpty(joins)) {
                 for (final Join join : joins) {
                     _sb.append(_SPACE).append(join.operator()).append(_SPACE);
@@ -4773,12 +4782,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (limit != null) {
                 appendLimit(limit);
-            }
-
-            // Apply the modifier only after all Criteria clauses have been accepted. This prevents a
-            // duplicate-clause failure from leaving an otherwise rejected Criteria's modifier behind.
-            if (Strings.isNotEmpty(criteriaSelectModifier)) {
-                selectModifier(criteriaSelectModifier);
             }
         } else if (condition instanceof Clause) {
             if (condition instanceof final Limit limit) {

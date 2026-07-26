@@ -58,6 +58,7 @@ import com.landawn.abacus.util.Strings;
  *     // Handle equality logic
  * }
  * }</pre>
+ *
  */
 public enum Operator {
     /**

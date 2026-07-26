@@ -2453,6 +2453,23 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t").union("SELECT id FROM u").distinct().build());
     }
 
+    // A Criteria carrying both a select modifier and a set operation lost the modifier: it was applied
+    // only after the set operation closed the segment (resetting the SELECT-keyword insertion point),
+    // so build() rejected it as an unattached staged modifier. It must be spliced into the left segment
+    // it was validated against, exactly like selectModifier("DISTINCT") called before union(...).
+    @Test
+    public void testCriteriaSelectModifierWithCriteriaSetOperation() {
+        final String viaCriteria = Dsl.PSC.select("id")
+                .from("t")
+                .append(Criteria.builder().selectModifier("DISTINCT").union(Filters.subQuery("SELECT id FROM u")).build())
+                .build()
+                .query();
+        final String viaMethods = Dsl.PSC.select("id").from("t").selectModifier("DISTINCT").union("SELECT id FROM u").build().query();
+
+        assertEquals("SELECT DISTINCT id FROM t UNION SELECT id FROM u", viaCriteria);
+        assertEquals(viaMethods, viaCriteria);
+    }
+
     // on(Condition) appended " ON " unconditionally, so an On/Using operand -- which renders its own
     // keyword -- produced "ON ON (...)" or the impossible "ON USING (...)".
     @Test
