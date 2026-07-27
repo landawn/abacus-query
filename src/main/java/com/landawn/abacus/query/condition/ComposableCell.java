@@ -21,9 +21,9 @@ import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
- * A composable variant of {@link Cell} that supports logical composition via AND/OR/NOT operations.
+ * A composable variant of {@link Cell} that supports logical composition via AND/OR/NOT/XOR operations.
  * Like Cell, it wraps another condition with an operator, but extends {@link ComposableCondition}
- * instead of {@link AbstractCondition}, enabling chaining with other conditions.
+ * instead of {@link AbstractCondition}, enabling logical composition with other conditions.
  * Unlike {@link Cell}, the wrapped condition is always enclosed in parentheses in the rendered output:
  * {@code OPERATOR (cond)}.
  *
@@ -55,7 +55,8 @@ public abstract class ComposableCell extends ComposableCondition {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * Creates an uninitialized ComposableCell instance; not for direct application use.
+     * This constructor creates an uninitialized ComposableCell instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     ComposableCell() {
         this.condition = null;

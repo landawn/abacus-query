@@ -17,7 +17,7 @@ package com.landawn.abacus.query.condition;
 import java.util.Collection;
 
 /**
- * Represents a CROSS JOIN operation in SQL queries.
+ * Represents a CROSS JOIN clause in SQL queries.
  * A CROSS JOIN returns the Cartesian product of rows from the joined tables,
  * combining each row from the first table with each row from the second table.
  * 
@@ -27,7 +27,7 @@ import java.util.Collection;
  * 
  * <p>Key characteristics:</p>
  * <ul>
- *   <li>No join condition is used (no ON clause); this class accepts none</li>
+ *   <li>No join condition is used; this class does not accept an explicit {@code ON}/{@code USING} or filter condition</li>
  *   <li>Every row from the first table is paired with every row from the second table</li>
  *   <li>Result set size = rows in table1 × rows in table2</li>
  *   <li>Useful for generating combinations or test data</li>

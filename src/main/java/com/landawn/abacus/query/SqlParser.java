@@ -315,7 +315,8 @@ public final class SqlParser {
     }
 
     /**
-     * Starts an immutable tokenizer configuration from the built-in SQL separators.
+     * Starts a configuration builder initialized with the built-in SQL separators.
+     * Changes made through the builder are instance-scoped and do not affect the static parser.
      *
      * @return a builder initialized with the default separators
      * @deprecated use {@link TokenizerConfig#builder()}; builder creation belongs to the type being built
@@ -2348,7 +2349,7 @@ public final class SqlParser {
      *
      * @param tokens the parsed SQL tokens (typically the result of {@link #parse(String)})
      * @param len the exclusive upper bound for the scan; values above {@code tokens.size()} are capped
-     * @param index the index of the candidate function-name token
+     * @param index the index of the candidate function-name token; invalid indices return {@code false}
      * @return {@code true} if an opening-parenthesis token occurs after {@code index}, with only space
      *         tokens between them, and before the effective upper bound; {@code false} otherwise
      * @throws NullPointerException if {@code tokens} is {@code null}
@@ -2637,8 +2638,8 @@ public final class SqlParser {
      * Only the leading keywords are examined, after skipping any leading whitespace, line comments
      * ({@code --}/{@code #}), block comments ({@code /}{@code * ... *}{@code /}), any leading
      * parentheses and any leading {@code WITH} clause; the three keywords {@code INSERT}, {@code OR}
-     * and {@code REPLACE} must
-     * appear (case-insensitively) in that order at the start of the actual statement. A plain
+     * and {@code REPLACE} must appear consecutively (case-insensitively, separated only by whitespace
+     * or comments) in that order at the start of the actual statement. A plain
      * {@code INSERT}, a SQL Server / Oracle standalone {@code REPLACE}, or any other leading
      * keyword returns {@code false}.
      * </p>

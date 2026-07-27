@@ -1034,10 +1034,10 @@ public final class Filters {
      * // (EntityId orders its keys alphabetically, regardless of insertion order)
      * }</pre>
      *
-     * @param entityId the {@link EntityId} containing key-value pairs (must not be null). Entries are
+     * @param entityId the {@link EntityId} containing key-value pairs (must not be {@code null}). Entries are
      *                 consumed once as key/value pairs during this call
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code entityId} is null or contains no keys
+     * @throws IllegalArgumentException if {@code entityId} is {@code null} or contains no keys
      */
     public static And idToCond(final EntityId entityId) {
         N.checkArgNotNull(entityId, "entityId");
@@ -1066,9 +1066,9 @@ public final class Filters {
      * // Results in: ((((companyId = 1) AND (userId = 100))) OR (((companyId = 2) AND (userId = 200))))
      * }</pre>
      *
-     * @param entityIds collection of {@link EntityId}s (must not be {@code null}, empty, or contain null)
+     * @param entityIds collection of {@link EntityId}s (must not be {@code null}, empty, or contain {@code null})
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, contains null, or contains an
+     * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, contains {@code null}, or contains an
      *         {@link EntityId} with no keys
      */
     public static Or idToCond(final Collection<? extends EntityId> entityIds) {
@@ -1088,9 +1088,9 @@ public final class Filters {
      * Converts an {@link EntityId} to an {@link And} condition where each key-value pair becomes an equality check.
      * {@link EntityId} typically represents a composite primary key.
      *
-     * @param entityId the {@link EntityId} containing key-value pairs (must not be null)
+     * @param entityId the {@link EntityId} containing key-value pairs (must not be {@code null})
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code entityId} is null or contains no keys
+     * @throws IllegalArgumentException if {@code entityId} is {@code null} or contains no keys
      * @deprecated the digit-abbreviation name is inconsistent with this class's spelled-out naming
      *             convention; use {@link #idToCond(EntityId)} instead
      */
@@ -1103,7 +1103,7 @@ public final class Filters {
      * Converts a collection of {@link EntityId}s to an {@link Or} condition where each {@link EntityId} becomes an {@link And} condition.
      * Useful for querying multiple entities by their composite keys.
      *
-     * @param entityIds collection of {@link EntityId}s (must not be {@code null}, empty, or contain null)
+     * @param entityIds collection of {@link EntityId}s (must not be {@code null}, empty, or contain {@code null})
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, contains {@code null},
      *         or contains an {@link EntityId} with no keys
@@ -1560,6 +1560,7 @@ public final class Filters {
 
     /**
      * Creates a {@link NotBetween} condition for the specified property and range values.
+     * The excluded range is inclusive on both ends.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2546,6 +2547,7 @@ public final class Filters {
      * GroupBy groupBy = Filters.groupBy(
      *     Filters.expr("YEAR(order_date), MONTH(order_date)")
      * );
+     * // Results in SQL like: GROUP BY YEAR(order_date), MONTH(order_date)
      * }</pre>
      *
      * @param condition the grouping condition (must not be {@code null})
@@ -2909,7 +2911,7 @@ public final class Filters {
     }
 
     /**
-     * Creates an {@link On} clause for simple equality join between two columns.
+     * Creates an {@link On} clause for a simple equality join between two columns.
      *
      * <p><b>Note:</b> unlike {@code SqlBuilder}'s {@code on(String...)} — where each argument is a
      * complete boolean expression and multiple arguments are joined with {@code AND} — the two strings
@@ -4307,7 +4309,8 @@ public final class Filters {
      * // Generates: SELECT COUNT(*) FROM orders WHERE user_id = ?   (entityName is ignored when full SQL is supplied)
      * }</pre>
      *
-     * @param entityName the entity/table name
+     * @param entityName the entity/table name (not used to build the subquery when the full SQL is
+     *                   supplied; may be {@code null} or empty)
      * @param sql the complete SQL for the subquery (must not be {@code null}, empty, or blank)
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank

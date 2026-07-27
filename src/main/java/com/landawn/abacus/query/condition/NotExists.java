@@ -47,8 +47,8 @@ package com.landawn.abacus.query.condition;
  *
  * @see Exists
  * @see SubQuery
- * @see NotInSubQuery
  * @see ComposableCell
+ * @see NotInSubQuery
  */
 public class NotExists extends ComposableCell {
 
@@ -85,7 +85,7 @@ public class NotExists extends ComposableCell {
      * // throws IllegalArgumentException
      * }</pre>
      *
-     * @param subQuery the subquery to check for non-existence of rows (must not be {@code null})
+     * @param subQuery the subquery to check for the absence of rows (must not be {@code null})
      * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public NotExists(final SubQuery subQuery) {

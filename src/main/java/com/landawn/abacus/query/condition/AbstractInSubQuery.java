@@ -42,6 +42,9 @@ import com.landawn.abacus.util.Strings;
 public abstract class AbstractInSubQuery extends ComposableCondition {
 
     // For Kryo
+    /**
+     * The property/column names checked against the subquery result; empty for an uninitialized instance.
+     */
     final ImmutableList<String> propNames;
 
     private SubQuery subQuery;
@@ -54,6 +57,8 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized AbstractInSubQuery instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     AbstractInSubQuery() {
         propNames = ImmutableList.empty();
@@ -151,7 +156,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * Collection<String> props = inSub.propNames();   // ["dept_id"]
      * }</pre>
      *
-     * @return non-null immutable collection of property names
+     * @return an immutable list of property names (never {@code null}; empty for an uninitialized instance)
      */
     public ImmutableList<String> propNames() {
         return propNames;

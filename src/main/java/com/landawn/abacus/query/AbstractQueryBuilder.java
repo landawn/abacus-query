@@ -142,6 +142,7 @@ import com.landawn.abacus.util.stream.Stream;
  */
 public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<This>> { // NOSONAR
 
+    /** Shared logger for builder lifecycle and pooled-resource usage diagnostics. */
     protected static final Logger logger = LoggerFactory.getLogger(AbstractQueryBuilder.class);
 
     /** Constant for the {@code ALL} select modifier (the SQL default; opposite of {@code DISTINCT}). */
@@ -165,6 +166,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /** Constant for the COUNT(*) aggregate function. */
     public static final String COUNT_ALL = "count(*)";
 
+    /** Immutable single-element list holding {@link #COUNT_ALL}, for selecting {@code COUNT(*)}. */
     protected static final List<String> COUNT_ALL_LIST = ImmutableList.of(COUNT_ALL);
 
     /** Char array for the "INSERT" keyword. */
@@ -387,11 +389,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /** String for " AS ". */
     protected static final String SPACE_AS_SPACE = SK.SPACE + SK.AS + SK.SPACE;
 
+    /** Error message for an invalid selection-part argument. */
     protected static final String SELECTION_PART_MSG = "The specified parameter is not valid for selection part. It must not be null or empty";
+
+    /** Error message for an invalid insertion-part argument. */
     protected static final String INSERTION_PART_MSG = "The specified parameter is not valid for insertion part. It must not be null or empty";
+
+    /** Error message for an invalid update-part argument. */
     protected static final String UPDATE_PART_MSG = "The specified parameter is not valid for update part. It must not be null or empty";
+
+    /** Error message for an invalid deletion-part argument. */
     protected static final String DELETION_PART_MSG = "The specified parameter is not valid for deletion part. It must not be null or empty";
 
+    /**
+     * Registry of SQL keywords and niladic (no-parentheses) keyword functions that naming-policy
+     * column-name conversion must leave untouched. Populated from the public {@link SK} string
+     * constants in original, upper, and lower case, plus UPPER-case niladic functions such as
+     * {@code CURRENT_TIMESTAMP}; kept in sync with {@code SqlExpression}'s own registry.
+     */
     protected static final Set<String> sqlKeyWords = N.newHashSet(1024);
 
     static {
@@ -430,14 +445,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /** Cache of the sub-entity property names per entity class; see {@link #getSubEntityPropNames(Class)}. */
     protected static final Map<Class<?>, ImmutableSet<String>> subEntityPropNamesPool = new ObjectPool<>(QueryUtil.POOL_SIZE);
 
+    /** Cache of the categorized property-name sets per entity class; see {@link #loadPropNamesByClass(Class)}. */
     protected static final Map<Class<?>, Set<String>[]> defaultPropNamesPool = new ObjectPool<>(QueryUtil.POOL_SIZE);
 
+    /** Cache of the fully rendered select part per entity class, per naming policy. */
     protected static final Map<NamingPolicy, Map<Class<?>, String>> fullSelectPartsPool = N.newHashMap(NamingPolicy.values().length);
 
-    // The cached select parts embed the dialect's identifier quote, so backtick dialects use a separate
-    // pool to avoid cross-dialect cache poisoning between dialects sharing the same naming policy.
+    /**
+     * Same cache as {@link #fullSelectPartsPool} for backtick-quoting dialects. The cached select parts
+     * embed the dialect's identifier quote, so backtick dialects use a separate pool to avoid
+     * cross-dialect cache poisoning between dialects sharing the same naming policy.
+     */
     protected static final Map<NamingPolicy, Map<Class<?>, String>> fullSelectPartsPoolForBacktick = N.newHashMap(NamingPolicy.values().length);
 
     static {
@@ -447,89 +468,134 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /** Cache of the per-naming-policy table names per entity class; see {@link #getTableName(Class, NamingPolicy)}. */
     protected static final Map<Class<?>, String[]> classTableNameMap = new ConcurrentHashMap<>();
 
+    /** Cache of the {@link Table}-defined alias per entity class; see {@link #tableAlias(Class)}. */
     protected static final Map<Class<?>, String> classTableAliasMap = new ConcurrentHashMap<>();
 
+    /** Count of live builders, used to warn when pooled resources are not released via {@code build()}. */
     protected static final AtomicInteger activeStringBuilderCounter = new AtomicInteger();
 
+    /** The SQL dialect this builder renders SQL with. */
     protected final SqlDialect sqlDialect;
 
+    /** The naming policy applied when converting property/entity names to column/table names. */
     protected final NamingPolicy _namingPolicy; //NOSONAR
 
+    /** The SQL policy governing how parameter placeholders are rendered. */
     protected final SqlPolicy _sqlPolicy; //NOSONAR
 
+    /** The quote character wrapped around generated aliases ({@code `} for MySQL-family dialects, {@code "} otherwise). */
     protected final char _identifierQuote; //NOSONAR
 
+    /** The dialect family resolved from the dialect's product info; selects the pagination syntax. */
     final DialectFamily _dialectFamily; //NOSONAR
 
+    /** The parameter values collected for the built statement, in placeholder order. */
     protected final List<Object> _parameters = new ArrayList<>(); //NOSONAR
 
+    /** Occurrence count per named-parameter base name, used to generate unique {@code <base>_<n>} names. */
     protected final Map<String, Integer> _namedParameterNameOccurrences = new HashMap<>(); //NOSONAR
 
-    // Tracks placeholders emitted by builder APIs (including QME placeholders that have no entry in
-    // _parameters). This lets sibling set operations validate policy compatibility without consuming
-    // the child builder first or mistaking SQL operators such as PostgreSQL's JSON '?' for parameters.
+    /**
+     * Tracks placeholders emitted by builder APIs (including QME placeholders that have no entry in
+     * {@link #_parameters}). This lets sibling set operations validate policy compatibility without
+     * consuming the child builder first or mistaking SQL operators such as PostgreSQL's JSON '?'
+     * for parameters.
+     */
     protected boolean _hasGeneratedParameterPlaceholder = false; //NOSONAR
 
-    // Every named-parameter name emitted into the SQL so far. Needed in addition to the occurrence
-    // counts because a generated "<base>_<n>" may collide with a property literally named "<base>_<n>".
+    /**
+     * Every named-parameter name emitted into the SQL so far. Needed in addition to the occurrence
+     * counts because a generated {@code "<base>_<n>"} may collide with a property literally named
+     * {@code "<base>_<n>"}.
+     */
     protected final Set<String> _generatedNamedParameterNames = new HashSet<>(); //NOSONAR
 
-    // Exact NAMED_SQL token emitted for each generated name. Custom formatters are allowed to emit
-    // forms other than ":name", so set-operation collision handling must not assume the default form.
+    /**
+     * The exact {@code NAMED_SQL} token emitted for each generated name. Custom formatters are allowed
+     * to emit forms other than {@code ":name"}, so set-operation collision handling must not assume
+     * the default form.
+     */
     protected final Map<String, String> _renderedNamedParameterTokens = new HashMap<>(); //NOSONAR
 
+    /** The buffer accumulating the SQL text. */
     protected StringBuilder _sb; //NOSONAR
 
+    /** The entity class associated with this query for property-to-column mapping, if any. */
     protected Class<?> _entityClass; //NOSONAR
 
+    /** Bean metadata for {@link #_entityClass}. */
     protected BeanInfo _entityInfo; //NOSONAR
 
+    /** Property-name to column-info mapping for {@link #_entityClass}. */
     protected ImmutableMap<String, ColumnInfo> _propColumnNameMap; //NOSONAR
 
+    /** The operation type (e.g. {@code ADD}, {@code QUERY}, {@code UPDATE}, {@code DELETE}) of the statement being built. */
     protected OperationType _op; //NOSONAR
 
+    /** The primary table name parsed from the current clause. */
     protected String _tableName; //NOSONAR
 
+    /** The primary table alias parsed from the current clause, if any. */
     protected String _tableAlias; //NOSONAR
 
+    /** The staged select modifier (e.g. {@code DISTINCT}, {@code TOP 10}) for the current SELECT segment. */
     protected String _selectModifier; //NOSONAR
 
-    // Buffer position right after the current segment's emitted SELECT keyword, or -1 if the
-    // current segment's SELECT has not been emitted yet (reset by set operations like union()).
+    /**
+     * Buffer position right after the current segment's emitted SELECT keyword, or -1 if the
+     * current segment's SELECT has not been emitted yet (reset by set operations like union()).
+     */
     protected int _selectKeywordEndIdx = -1; //NOSONAR
 
+    /** The staged select/insert column or property names. */
     protected Collection<String> _propOrColumnNames; //NOSONAR
 
+    /** The staged select expressions and their aliases. */
     protected Map<String, String> _propOrColumnNameAliases; //NOSONAR
 
+    /** The staged multi-entity selections. */
     protected List<Selection> _multiSelects; //NOSONAR
 
+    /** Property-to-column mappings registered per table alias (FROM and JOIN aliases). */
     protected Map<String, Map<String, ColumnInfo>> _aliasPropColumnNameMap; //NOSONAR
 
+    /** The staged property values for an INSERT or UPDATE. */
     protected Map<String, Object> _props; //NOSONAR
 
+    /** The staged batch of property-value maps for a multi-row INSERT. */
     protected Collection<Map<String, Object>> _propsList; //NOSONAR
 
+    /** Whether the FROM clause of the current query segment has been emitted. */
     protected boolean _hasFromBeenSet = false; //NOSONAR
+
+    /** Whether this builder only renders a condition rather than a full statement. */
     protected boolean _isForConditionOnly = false; //NOSONAR
 
-    // True only after a JOIN form that may accept ON/USING, until that connector is emitted.
+    /** True only after a JOIN form that may accept ON/USING, until that connector is emitted. */
     protected boolean _joinConditionAllowed = false; //NOSONAR
 
-    // True after a set operation has appended a complete right-hand query. At that point only
-    // compound-result clauses (another set operation, ORDER BY, pagination, FOR UPDATE) may follow.
+    /**
+     * True after a set operation has appended a complete right-hand query. At that point only
+     * compound-result clauses (another set operation, ORDER BY, pagination, FOR UPDATE) may follow.
+     */
     protected boolean _hasCompletedSetOperation = false; //NOSONAR
 
-    // Whether a set(...) call has already written assignments, so chained set(...) calls know a
-    // leading comma is required (sniffing the buffer's last char breaks on trailing whitespace).
+    /**
+     * Whether a set(...) call has already written assignments, so chained set(...) calls know a
+     * leading comma is required (sniffing the buffer's last char breaks on trailing whitespace).
+     */
     protected boolean _setListStarted = false; //NOSONAR
 
+    /** Renders a named-parameter token into the SQL buffer under the {@code NAMED_SQL} policy. */
     protected final BiConsumer<StringBuilder, String> _handlerForNamedParameter; //NOSONAR
 
+    /** The SQL tokenizer configured by the dialect, used to validate raw SQL fragments and sub-queries. */
     protected final SqlParser.Tokenizer _tokenizer; //NOSONAR
 
+    /** Keywords of the clauses already appended, tracked for clause-order validation. */
     protected final Set<String> calledOpSet = new HashSet<>(); //NOSONAR
 
     /**
@@ -631,7 +697,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Gets the table name for the specified entity class based on the naming policy.
-     * If the entity class has a @Table annotation with a name attribute, that name is used.
+     * If the entity class has a {@link Table} annotation with a name attribute, that name is used.
      * Otherwise, the class name is converted according to the naming policy.
      *
      * @param entityClass the entity class
@@ -673,10 +739,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Gets the table alias for the specified entity class.
-     * The alias is retrieved from the @Table annotation's alias attribute.
+     * The alias is retrieved from the {@link Table} annotation's alias attribute.
      *
-     * @param entityClass the entity class
-     * @return the table alias, or empty string if not defined
+     * @param entityClass the entity class (may be {@code null})
+     * @return the table alias, or an empty string if not defined or if {@code entityClass} is {@code null}
      */
     protected static String tableAlias(final Class<?> entityClass) {
         if (entityClass == null) {
@@ -1040,12 +1106,27 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return m;
     }
 
+    /**
+     * Validates that a raw SQL fragment argument is not {@code null}, empty, or blank.
+     *
+     * @param value the SQL fragment to validate
+     * @param argName the argument name used in the exception message
+     * @throws IllegalArgumentException if {@code value} is {@code null}, empty, or blank
+     */
     static void checkSqlFragmentNotBlank(final String value, final String argName) {
         if (Strings.isBlank(value)) {
             throw new IllegalArgumentException(argName + " must not be null, empty, or blank");
         }
     }
 
+    /**
+     * Validates that an array of raw SQL fragment arguments is not {@code null} or empty and contains
+     * no {@code null}, empty, or blank element.
+     *
+     * @param values the SQL fragments to validate
+     * @param argName the argument name used in the exception message
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     */
     static void checkSqlFragmentsNotBlank(final String[] values, final String argName) {
         N.checkArgNotEmpty(values, argName);
 
@@ -1054,6 +1135,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Validates that a collection of raw SQL fragment arguments is not {@code null} or empty and contains
+     * no {@code null}, empty, or blank element.
+     *
+     * @param values the SQL fragments to validate
+     * @param argName the argument name used in the exception message
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     */
     static void checkSqlFragmentsNotBlank(final Collection<String> values, final String argName) {
         N.checkArgNotEmpty(values, argName);
 
@@ -1078,6 +1167,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return copy;
     }
 
+    /**
+     * Validates that a map carrying raw SQL fragments is not {@code null} or empty and that every key
+     * is a non-blank {@link String}.
+     *
+     * @param values the map whose keys to validate
+     * @param argName the argument name used in the exception message
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, or has a key that is
+     *         not a {@link String} or is {@code null}, empty, or blank
+     */
     static void checkSqlFragmentKeysNotBlank(final Map<?, ?> values, final String argName) {
         N.checkArgNotEmpty(values, argName);
 
@@ -1384,7 +1482,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Adds DISTINCT clause to the SELECT statement.
+     * Adds the {@code DISTINCT} select modifier to the SELECT statement.
      * <p>This method is equivalent to calling {@code selectModifier(DISTINCT)}.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -1528,7 +1626,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets the FROM clause with a single expression.
-     * <p>The expression can be a table name, subquery, or multiple tables separated by comma.</p>
+     * <p>The expression can be a table name, subquery, or multiple tables separated by commas.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1728,9 +1826,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets the FROM clause using the specified entity class and multiple table names.
      *
-     * @param entityClass the entity class to associate with this query
-     * @param tableNames the collection of table names for the FROM clause
+     * @param entityClass the entity class to associate with this query (must not be {@code null})
+     * @param tableNames the collection of table names for the FROM clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this builder instance for method chaining
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, or {@code tableNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalStateException if the current operation is not {@code QUERY}, no columns have been set by
+     *                               {@code select()}, or {@code from(...)} was already called for this query segment
      */
     protected This from(final Class<?> entityClass, final Collection<String> tableNames) {
         N.checkArgNotNull(entityClass, "entityClass");
@@ -2307,6 +2408,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .join(Order.class)
      *                 .on("users.id = orders.user_id")
      *                 .build().query();
+     * // Output: SELECT * FROM users JOIN orders ON users.id = orders.user_id
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join
@@ -2360,6 +2464,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .join(Order.class, "o")
      *                 .on("u.id = o.user_id")
      *                 .build().query();
+     * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id
+     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // names are derived from the class names)
      * }</pre>
      *
      * @param entityClass the entity class to join (must not be {@code null})
@@ -2870,7 +2977,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users JOIN orders USING (user_id)
      * }</pre>
      *
-     * @param expr the column name(s) for the USING clause
+     * @param expr the property or column name(s) for the USING clause (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or contains a SQL comment token
      * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
@@ -5087,7 +5194,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to union (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         generated parameter placeholders with a different SQL policy, or if the built sub-query is not
+     *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
      *         a complete read-only SELECT query (the child builder has already been consumed by {@code build()}
      *         when this is thrown)
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
@@ -5164,7 +5271,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to union all (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         generated parameter placeholders with a different SQL policy, or if the built sub-query is not
+     *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
      *         a complete read-only SELECT query (the child builder has already been consumed by {@code build()}
      *         when this is thrown)
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
@@ -5241,7 +5348,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to intersect (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         generated parameter placeholders with a different SQL policy, or if the built sub-query is not
+     *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
      *         a complete read-only SELECT query (the child builder has already been consumed by {@code build()}
      *         when this is thrown)
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
@@ -5318,7 +5425,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to except (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         generated parameter placeholders with a different SQL policy, or if the built sub-query is not
+     *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
      *         a complete read-only SELECT query (the child builder has already been consumed by {@code build()}
      *         when this is thrown)
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
@@ -5952,8 +6059,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if this is not a SELECT query, FROM has not been completed, or
-     *                               {@code FOR UPDATE} has already been set on this builder
+     * @throws IllegalStateException if this builder is closed, is not building a SELECT query (or is in
+     *                               condition-only mode), the current SELECT segment has not been completed
+     *                               by {@code from(...)}, or {@code FOR UPDATE} has already been set on this
+     *                               builder
      */
     public This forUpdate() {
         checkIfAlreadyCalled(SK.FOR_UPDATE);
@@ -6290,9 +6399,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entity} is {@code null}, if a bean has no updatable property
-     *         after exclusions are applied, or if {@code entity} is a {@code Collection} or array (use
-     *         {@link #set(Collection)} or {@link #set(String...)} for column lists)
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, if a bean has no updatable property,
+     *         or if {@code entity} is a {@code Collection} or array (use {@link #set(Collection)} or
+     *         {@link #set(String...)} for column lists)
      * @deprecated use {@link #setEntity(Object)}
      */
     @Deprecated
@@ -6411,7 +6520,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class to get properties from
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or declares no updatable property
      * @deprecated use {@link #setEntity(Class)}
      */
     @Deprecated
@@ -6476,7 +6585,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class to get properties from
      * @param excludedPropNames additional properties to exclude from the update
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or no updatable property remains after exclusions are applied
      * @deprecated use {@link #setEntity(Class, Set)}
      */
     @Deprecated
@@ -6799,7 +6908,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets the parameter for raw SQL (inlines the value directly into the SQL string).
      *
-     * @param propValue the new parameter for raw SQL
+     * @param propValue the value to render into the SQL string
      */
     protected void setParameterForRawSQL(final Object propValue) {
         if (Filters.QME.equals(propValue)) {
@@ -6815,7 +6924,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets the parameter for parameterized SQL (uses '?' placeholder and adds value to parameter list).
      *
-     * @param propValue the new parameter for parameterized SQL
+     * @param propValue the value to bind to the {@code ?} placeholder
      */
     protected void setParameterForSQL(final Object propValue) {
         if (Filters.QME.equals(propValue)) {

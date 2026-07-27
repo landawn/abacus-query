@@ -19,8 +19,7 @@ import com.landawn.abacus.query.Filters;
 /**
  * Represents a condition that checks if a numeric property value is NaN (Not a Number).
  * This class extends {@link Is} to provide a specialized condition for checking NaN values
- * in floating-point columns. NaN is a special floating-point value that represents
- * undefined or unrepresentable mathematical results.
+ * in floating-point columns.
  * 
  * <p>NaN (Not a Number) is a special floating-point value that represents an undefined
  * or unrepresentable value in systems using IEEE 754-style semantics. Operations that can
@@ -109,7 +108,7 @@ public class IsNaN extends Is {
      * database-specific equality semantics. As noted above, the predicate itself is also
      * vendor-specific and must be supported by the selected database.</p>
      *
-     * <p><b>Usage Example:</b></p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNaN tempCheck = new IsNaN("temperature");
      * // SQL: temperature IS NAN

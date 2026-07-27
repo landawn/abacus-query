@@ -136,7 +136,8 @@ public final class Selection {
     /**
      * Returns the property names to exclude from this selection.
      *
-     * @return the immutable excluded property names, or {@code null} if no properties are excluded
+     * @return the immutable excluded property names; {@code null} or an empty set means no properties
+     *         are excluded
      */
     public Set<String> excludedPropNames() {
         return excludedPropNames;

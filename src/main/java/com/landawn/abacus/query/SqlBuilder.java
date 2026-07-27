@@ -127,6 +127,7 @@ import com.landawn.abacus.util.Strings;
  */
 public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
 
+    /** Logger for this builder; shadows the inherited logger so SqlBuilder-level diagnostics are logged under this class. */
     protected static final Logger logger = LoggerFactory.getLogger(SqlBuilder.class);
 
     /**
@@ -148,13 +149,14 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * {@link SubQuery} and {@link SqlExpression}. Binary conditions with a {@code null} value and an
      * {@code EQUAL}/{@code IS} (or {@code NOT_EQUAL}/{@code NOT_EQUAL_ANSI}/{@code IS_NOT}) operator
      * are rendered as {@code IS NULL}/{@code IS NOT NULL} respectively. Binary conditions whose operator is
-     * {@code IN}/{@code NOT IN} and whose value is a collection are rendered as a full IN list
+     * {@code IN}/{@code NOT IN} and whose value is a {@code List} are rendered as a full IN list
      * ({@code col IN (?, ?, ...)}), identically to {@link In}/{@link NotIn}. Nested conditions and sub-queries
      * are rendered recursively, with sub-query parameters merged into this builder's parameter list.</p>
      *
      * @param cond the condition to render; must be one of the supported condition types
-     * @throws IllegalArgumentException if {@code cond} is an unsupported condition type, or if a
-     *         {@link Junction} contains no sub-conditions
+     * @throws IllegalArgumentException if {@code cond} is an unsupported condition type, if a
+     *         {@link Junction} contains no sub-conditions, or if a {@link SubQuery} has no selected
+     *         property/column names
      */
     @Override
     protected void appendCondition(final Condition cond) {

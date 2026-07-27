@@ -38,7 +38,11 @@ import com.landawn.abacus.util.Strings;
  */
 public abstract class AbstractBetween extends ComposableCondition {
 
-    // For Kryo
+    /**
+     * The property/column name checked by this condition.
+     * It is {@code null} only for an uninitialized instance created by a serialization
+     * framework like Kryo.
+     */
     final String propName;
 
     private Object minValue;

@@ -17,7 +17,7 @@ package com.landawn.abacus.query.condition;
 import java.util.Collection;
 
 /**
- * Represents a NOT IN subquery condition used in SQL WHERE clauses.
+ * Represents a NOT IN subquery condition in SQL queries.
  * This condition checks if a property value (or multiple property values) is NOT contained
  * in the result set of a subquery.
  *
@@ -30,8 +30,8 @@ import java.util.Collection;
  *   <li>NULL handling: if the subquery returns a NULL, equality with a returned non-null value
  *       still makes {@code NOT IN} false, while an otherwise nonmatching value becomes unknown.
  *       Neither result matches a {@code WHERE} clause</li>
- *   <li>Performance: For large result sets, consider using NOT EXISTS instead</li>
- *   <li>Empty subquery results: If subquery returns no rows, all values pass the NOT IN check</li>
+ *   <li>Performance: for large result sets, consider using NOT EXISTS instead</li>
+ *   <li>Empty subquery results: if the subquery returns no rows, all values pass the NOT IN check</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -66,7 +66,8 @@ public class NotInSubQuery extends AbstractInSubQuery {
 
     /**
      * Creates a NOT IN subquery condition for a single property.
-     * This checks if the property value is not present in the subquery results.
+     * Use this constructor when checking that a single column value does not exist in the subquery result.
+     * The subquery must return a single column of compatible type.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -81,7 +82,7 @@ public class NotInSubQuery extends AbstractInSubQuery {
      * // SQL: id NOT IN (SELECT user_id FROM dept_users WHERE dept = 'HR')
      * }</pre>
      *
-     * @param propName the property/column name to check against the subquery results (must not be {@code null}, empty, or blank)
+     * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param subQuery the subquery that returns the values to check against (must not be {@code null});
      *            if it has an explicit structured projection without {@code *} or {@code qualifier.*}, it must select
      *            exactly one column; raw SQL and wildcard projections cannot be arity-checked here
@@ -94,8 +95,8 @@ public class NotInSubQuery extends AbstractInSubQuery {
 
     /**
      * Creates a NOT IN subquery condition for multiple properties.
-     * Used for composite key comparisons where multiple columns need to be
-     * checked against a subquery returning multiple columns.
+     * Use this constructor for composite key checks or when multiple columns need to be
+     * excluded by the subquery results. The subquery must return the same number of columns in the same order.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -112,8 +113,8 @@ public class NotInSubQuery extends AbstractInSubQuery {
      * // SQL: (firstName, lastName, email) NOT IN (SELECT fname, lname, email FROM existing_users)
      * }</pre>
      *
-     * @param propNames collection of property names to check against the subquery results (must not be {@code null}
-     *            or empty, and no element may be {@code null}, empty, or blank). Their order must match the column order in the subquery.
+     * @param propNames the property/column names to check (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements).
+     *            Their order must match the column order in the subquery.
      * @param subQuery the subquery that returns the values to check against (must not be {@code null}).
      *            If it has an explicit structured projection without {@code *} or {@code qualifier.*}, it must select
      *            exactly {@code propNames.size()} columns. Raw SQL and wildcard projections cannot be arity-checked here.

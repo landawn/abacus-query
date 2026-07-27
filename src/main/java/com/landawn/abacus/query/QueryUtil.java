@@ -82,6 +82,10 @@ public final class QueryUtil {
         // utility class — no instances
     }
 
+    /**
+     * Capacity of the per-class object pools used by the query builders (for example, the
+     * property-name pools in {@code AbstractQueryBuilder}); mirrors {@code InternalUtil.POOL_SIZE}.
+     */
     @SuppressWarnings("deprecation")
     static final int POOL_SIZE = InternalUtil.POOL_SIZE;
 
@@ -332,6 +336,19 @@ public final class QueryUtil {
         return result;
     }
 
+    /**
+     * Builds the property-name-to-column-name map for the given entity class, expanding nested bean
+     * properties up to the configured maximum depth ({@code abacus.query.maxNestedPropDepth}, default 2).
+     * When {@code registeringClasses} is {@code null} (a top-level call), the result is cached per
+     * (entity class, naming policy); a non-{@code null} set marks a recursive call and carries the
+     * classes already on the recursion stack so cyclic bean references terminate.
+     *
+     * @param entityClass the entity class to analyze (must not be {@code null})
+     * @param namingPolicy the naming policy used to derive column names for properties without an explicit column name
+     * @param registeringClasses classes already on the recursion stack, or {@code null} for a top-level call
+     * @return an immutable map of property names to column names
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     */
     static ImmutableMap<String, String> registerEntityPropColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy,
             final Set<Class<?>> registeringClasses) {
         return registerEntityPropColumnNameMap(entityClass, namingPolicy, registeringClasses, MAX_NESTED_PROP_DEPTH);
@@ -730,9 +747,8 @@ public final class QueryUtil {
 
     /**
      * Returns the ID property names for the specified entity class.
-     * ID properties are those annotated with {@code @Id} or {@code @ReadOnlyId}; if the class declares
-     * neither, a property named exactly {@code "id"} is treated as the ID by convention (an explicit
-     * {@code @Id} elsewhere suppresses that convention).
+     * ID properties are those annotated with {@code @Id} or {@code @ReadOnlyId}; when the class declares
+     * neither annotation, a property named exactly {@code "id"} is treated as the ID by convention.
      *
      * <p>For entities that declare no ID annotation and have no property named {@code "id"},
      * an empty list is returned.</p>
@@ -936,6 +952,7 @@ public final class QueryUtil {
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @return the table name, optionally followed by space and alias
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @see #tableNameAndAlias(Class, NamingPolicy)
      */
     @Internal
     public static String tableNameAndAlias(final Class<?> entityClass) {

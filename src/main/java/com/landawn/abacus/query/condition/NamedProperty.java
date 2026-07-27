@@ -89,6 +89,12 @@ public class NamedProperty {
 
     private static final ObjectPool<String, NamedProperty> instancePool = new ObjectPool<>(1024);
 
+    /**
+     * The property name this NamedProperty is bound to.
+     * Set once at construction and used as the property/column name in every condition
+     * created by this instance. Retained as a field (rather than recomputed) for Kryo
+     * serialization support.
+     */
     // for Kryo
     final String propName;
 
@@ -132,9 +138,7 @@ public class NamedProperty {
      * }
      * }</pre>
      *
-     * @param propName the property name. Must not be null, empty, or blank.
-     *                 A {@code null} argument causes an {@code IllegalArgumentException}
-     *                 (null is treated like a blank string by the internal {@code Strings.isBlank} check).
+     * @param propName the property name (must not be {@code null}, empty, or blank)
      * @return a cached or new NamedProperty instance
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
@@ -1084,7 +1088,7 @@ public class NamedProperty {
      * // SQL: active IN (true, false)
      * }</pre>
      *
-     * @param values primitive boolean values to check membership against. Must not be null or empty.
+     * @param values primitive boolean values to check membership against. Must not be {@code null} or empty.
      * @return an In condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
@@ -1103,7 +1107,7 @@ public class NamedProperty {
      * // SQL: grade IN ('A', 'B', 'C')
      * }</pre>
      *
-     * @param values primitive char values to check membership against. Must not be null or empty.
+     * @param values primitive char values to check membership against. Must not be {@code null} or empty.
      * @return an In condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
@@ -1122,7 +1126,7 @@ public class NamedProperty {
      * // SQL: flag IN (0, 1, 2)
      * }</pre>
      *
-     * @param values primitive byte values to check membership against. Must not be null or empty.
+     * @param values primitive byte values to check membership against. Must not be {@code null} or empty.
      * @return an In condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
@@ -1141,7 +1145,7 @@ public class NamedProperty {
      * // SQL: level IN (1, 2, 3)
      * }</pre>
      *
-     * @param values primitive short values to check membership against. Must not be null or empty.
+     * @param values primitive short values to check membership against. Must not be {@code null} or empty.
      * @return an In condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
@@ -1160,7 +1164,7 @@ public class NamedProperty {
      * // SQL: priority IN (1, 2, 3)
      * }</pre>
      *
-     * @param values primitive int values to check membership against. Must not be null or empty.
+     * @param values primitive int values to check membership against. Must not be {@code null} or empty.
      * @return an In condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
@@ -1179,7 +1183,7 @@ public class NamedProperty {
      * // SQL: user_id IN (1001, 1002, 1003)
      * }</pre>
      *
-     * @param values primitive long values to check membership against. Must not be null or empty.
+     * @param values primitive long values to check membership against. Must not be {@code null} or empty.
      * @return an In condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
@@ -1198,7 +1202,7 @@ public class NamedProperty {
      * // SQL: ratio IN (0.25, 0.5, 0.75)
      * }</pre>
      *
-     * @param values primitive float values to check membership against. Must not be null or empty.
+     * @param values primitive float values to check membership against. Must not be {@code null} or empty.
      * @return an In condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
@@ -1217,7 +1221,7 @@ public class NamedProperty {
      * // SQL: rate IN (1.5, 2.0, 2.5)
      * }</pre>
      *
-     * @param values primitive double values to check membership against. Must not be null or empty.
+     * @param values primitive double values to check membership against. Must not be {@code null} or empty.
      * @return an In condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see In
@@ -1309,7 +1313,7 @@ public class NamedProperty {
      * // SQL: active NOT IN (false)
      * }</pre>
      *
-     * @param values primitive boolean values to check non-membership against. Must not be null or empty.
+     * @param values primitive boolean values to check non-membership against. Must not be {@code null} or empty.
      * @return a NotIn condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn
@@ -1328,7 +1332,7 @@ public class NamedProperty {
      * // SQL: grade NOT IN ('D', 'F')
      * }</pre>
      *
-     * @param values primitive char values to check non-membership against. Must not be null or empty.
+     * @param values primitive char values to check non-membership against. Must not be {@code null} or empty.
      * @return a NotIn condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn
@@ -1347,7 +1351,7 @@ public class NamedProperty {
      * // SQL: flag NOT IN (0, 1)
      * }</pre>
      *
-     * @param values primitive byte values to check non-membership against. Must not be null or empty.
+     * @param values primitive byte values to check non-membership against. Must not be {@code null} or empty.
      * @return a NotIn condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn
@@ -1366,7 +1370,7 @@ public class NamedProperty {
      * // SQL: level NOT IN (0, 9)
      * }</pre>
      *
-     * @param values primitive short values to check non-membership against. Must not be null or empty.
+     * @param values primitive short values to check non-membership against. Must not be {@code null} or empty.
      * @return a NotIn condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn
@@ -1385,7 +1389,7 @@ public class NamedProperty {
      * // SQL: priority NOT IN (4, 5)
      * }</pre>
      *
-     * @param values primitive int values to check non-membership against. Must not be null or empty.
+     * @param values primitive int values to check non-membership against. Must not be {@code null} or empty.
      * @return a NotIn condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn
@@ -1404,7 +1408,7 @@ public class NamedProperty {
      * // SQL: user_id NOT IN (999, 1000)
      * }</pre>
      *
-     * @param values primitive long values to check non-membership against. Must not be null or empty.
+     * @param values primitive long values to check non-membership against. Must not be {@code null} or empty.
      * @return a NotIn condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn
@@ -1423,7 +1427,7 @@ public class NamedProperty {
      * // SQL: ratio NOT IN (0.0, 1.0)
      * }</pre>
      *
-     * @param values primitive float values to check non-membership against. Must not be null or empty.
+     * @param values primitive float values to check non-membership against. Must not be {@code null} or empty.
      * @return a NotIn condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn
@@ -1442,7 +1446,7 @@ public class NamedProperty {
      * // SQL: rate NOT IN (0.0, -1.0)
      * }</pre>
      *
-     * @param values primitive double values to check non-membership against. Must not be null or empty.
+     * @param values primitive double values to check non-membership against. Must not be {@code null} or empty.
      * @return a NotIn condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty
      * @see NotIn

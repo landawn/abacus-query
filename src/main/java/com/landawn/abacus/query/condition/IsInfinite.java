@@ -108,7 +108,7 @@ public class IsInfinite extends Is {
      * negative infinity. As noted above, the predicate itself is also vendor-specific and must be
      * supported by the selected database.</p>
      *
-     * <p><b>Usage Example:</b></p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsInfinite rateCheck = new IsInfinite("interest_rate");
      * // SQL: interest_rate IS INFINITE

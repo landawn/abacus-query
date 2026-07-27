@@ -19,7 +19,7 @@ import com.landawn.abacus.util.N;
 /**
  * Abstract base class for SQL clause conditions.
  * Clauses represent major SQL query components like WHERE, HAVING, GROUP BY, ORDER BY, etc.
- * Unlike regular conditions, clauses typically cannot be combined using AND/OR/NOT operations.
+ * Unlike regular conditions, clauses cannot be combined using AND/OR/NOT operations.
  * 
  * <p>A Clause is a special type of {@link Cell} that represents a complete SQL clause.
  * While regular conditions can be combined with composable operators (AND, OR, NOT),

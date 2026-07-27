@@ -37,7 +37,7 @@ import java.util.Map;
  *       Neither result matches a {@code WHERE} clause. If the column itself is NULL, the comparison
  *       is also unknown and that row is excluded</li>
  *   <li>Performance: for large lists, consider using NOT EXISTS or a LEFT JOIN / IS NULL pattern</li>
- *   <li>The values collection is copied during construction to ensure immutability</li>
+ *   <li>The values collection is copied during construction to prevent external modifications</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>
@@ -73,9 +73,9 @@ public class NotIn extends AbstractIn {
     }
 
     /**
-     * Creates a NOT IN condition for the specified property and collection of values.
-     * The condition will match records where the property value is not equal to any of the
-     * provided values. A defensive copy of the values collection is made to ensure immutability.
+     * Creates a new NOT IN condition for the specified property and collection of values.
+     * The condition matches records where the property value is not equal to any of the
+     * provided values.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -92,8 +92,8 @@ public class NotIn extends AbstractIn {
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param values the collection of values that the property should NOT match
-     *               (must not be {@code null} or empty); the collection is copied internally to ensure immutability.
-     *               A condition-valued element must be a non-structural, non-quantified value expression
+     *               (must not be {@code null} or empty); the collection is copied internally to prevent external modifications.
+     *               A condition-valued element must not be query-structural or quantified
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, if {@code values} is
      *                                  {@code null}/empty, or if a condition-valued element is or contains a
      *                                  {@link Criteria}, SQL clause, JOIN, or {@code ON}/{@code USING} connector,

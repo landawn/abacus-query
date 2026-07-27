@@ -57,6 +57,8 @@ import com.landawn.abacus.util.Strings;
  * @see In
  * @see NotIn
  * @see InSubQuery
+ * @see NotInSubQuery
+ * @see AbstractInSubQuery
  * @see ComposableCondition
  */
 public abstract class AbstractIn extends ComposableCondition {
@@ -79,6 +81,8 @@ public abstract class AbstractIn extends ComposableCondition {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
+     * This constructor creates an uninitialized instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     AbstractIn() {
         propNames = ImmutableList.empty();

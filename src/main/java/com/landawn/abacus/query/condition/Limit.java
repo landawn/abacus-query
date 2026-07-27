@@ -149,7 +149,7 @@ public class Limit extends Clause {
      * positional order of its {@code ?} placeholders (the offset placeholder is emitted before the count
      * placeholder); prefer named placeholders when the target dialect may vary.</p>
      *
-     * @param expr the row-limiting expression. Must not be {@code null}, empty, or blank, and must match a supported form
+     * @param expr the row-limiting expression. Must not be {@code null}, empty, or blank, and must match a supported form.
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or is not a supported limit form
      */
     public Limit(final String expr) {

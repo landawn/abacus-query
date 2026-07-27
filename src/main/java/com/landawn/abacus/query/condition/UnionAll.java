@@ -26,7 +26,7 @@ package com.landawn.abacus.query.condition;
  *   <li>Preserves all rows from all queries, including duplicates</li>
  *   <li>No duplicate-elimination work; actual performance remains plan- and database-dependent</li>
  *   <li>Does not impose an ordering on the combined result (use ORDER BY if a specific order is needed)</li>
- *   <li>Requires same number of columns with compatible types</li>
+ *   <li>All SELECT statements must have the same number of columns with compatible data types</li>
  *   <li>Column names from the first query are used in the result</li>
  * </ul>
  * 

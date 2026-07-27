@@ -27,9 +27,6 @@ package com.landawn.abacus.query.condition;
  *   <li>Validate that joins will produce meaningful results</li>
  *   <li>Implement business rules that require certain fields to be populated</li>
  * </ul>
- *
- * <p>This condition is crucial for data validation and ensuring that required fields
- * contain values before processing or joining with other data.</p>
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -88,7 +85,7 @@ public class IsNotNull extends IsNot {
      * so no rows would ever match). {@code IS NOT NULL} returns {@code true} for non-null values
      * and {@code false} for null values, giving the correct and predictable filtering behavior.</p>
      *
-     * <p><b>Usage Example:</b></p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNotNull emailCheck = new IsNotNull("email");
      * // SQL: email IS NOT NULL

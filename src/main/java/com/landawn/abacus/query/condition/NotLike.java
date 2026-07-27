@@ -78,7 +78,7 @@ public class NotLike extends Binary {
      * Creates a new NOT LIKE condition for the specified property and pattern.
      * The condition evaluates to true when the property value does not match the given pattern.
      *
-     * <p>The pattern can include SQL wildcards (% and _) for flexible matching.
+     * <p>The pattern can include SQL wildcards ({@code %} and {@code _}) for flexible matching.
      * Case sensitivity depends on the database's collation settings.</p>
      *
      * <p><b>Usage Examples:</b></p>

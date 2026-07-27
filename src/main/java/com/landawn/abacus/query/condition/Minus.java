@@ -59,7 +59,7 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Database support:</p>
  * <ul>
- *   <li>Oracle and Db2 accept the MINUS keyword emitted by this class</li>
+ *   <li>Oracle and DB2 accept the MINUS keyword emitted by this class</li>
  *   <li>PostgreSQL, SQL Server, SQLite and MySQL 8.0.31+ spell set difference EXCEPT; use {@link Except} there</li>
  *   <li>MySQL before 8.0.31 supports neither; rewrite with {@code NOT EXISTS} or an outer join with a NULL check</li>
  * </ul>

@@ -102,7 +102,7 @@ public class IsNotInfinite extends IsNot {
      * negative infinity. As noted above, the predicate itself is also vendor-specific and must be
      * supported by the selected database.</p>
      *
-     * <p><b>Usage Example:</b></p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNotInfinite calcCheck = new IsNotInfinite("calculation_result");
      * // SQL: calculation_result IS NOT INFINITE

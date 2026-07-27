@@ -18,26 +18,27 @@ import java.util.Collection;
 
 /**
  * Represents a RIGHT JOIN clause in SQL queries.
+ * A RIGHT JOIN (also called RIGHT OUTER JOIN) returns all rows from the right table,
+ * and the matched rows from the left table. If there is no match, NULL values are returned
+ * for columns from the left table. This is essentially the opposite of a LEFT JOIN, with
+ * the roles of the two tables swapped.
  * 
- * <p>A RIGHT JOIN (or RIGHT OUTER JOIN) returns all records from the right table (second table),
- * and the matched records from the left table (first table). If there is no match, NULL values
- * are returned for columns from the left table. This is essentially the opposite of a LEFT JOIN.</p>
- * 
- * <p>RIGHT JOIN behavior:</p>
+ * <p>RIGHT JOIN is commonly used when you want to:
  * <ul>
- *   <li>All rows from the right table are included in the result</li>
- *   <li>Matching rows from the left table are included with their values</li>
- *   <li>Right-table rows with no match in the left table have NULL for the left table columns</li>
- *   <li>Rows from left table without matches in right table are excluded</li>
- *   <li>The join condition determines which rows match between tables</li>
+ *   <li>Include all records from the right (reference) table regardless of matches</li>
+ *   <li>List all products even if they have no orders</li>
+ *   <li>Show all departments including those without employees</li>
+ *   <li>Identify missing relationships from the right table perspective</li>
  * </ul>
  * 
- * <p>Common use cases:</p>
+ * <p>Key characteristics:
  * <ul>
- *   <li>Finding all records in a reference table, with optional related data</li>
- *   <li>Listing all products even if they have no orders</li>
- *   <li>Showing all departments including those without employees</li>
- *   <li>Identifying missing relationships from the right table perspective</li>
+ *   <li>Returns ALL rows from the right table</li>
+ *   <li>Returns matching rows from the left table</li>
+ *   <li>Returns NULL for left table columns when no match exists</li>
+ *   <li>Rows from the left table without matches in the right table are excluded</li>
+ *   <li>Result set size is at least the size of the right table (more if a right-table row matches multiple left-table rows)</li>
+ *   <li>Order matters: RIGHT JOIN is not commutative</li>
  * </ul>
  * 
  * <p><b>Usage Examples:</b></p>

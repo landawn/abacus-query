@@ -18,7 +18,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Represents an IN condition in SQL-like queries.
+ * Represents an IN condition in SQL queries.
  * This class is used to check if a property value matches any value in a specified collection.
  * It's equivalent to multiple OR conditions but more concise and often more efficient.
  * The IN operator is one of the most commonly used SQL operators for filtering data.
@@ -74,8 +74,9 @@ public class In extends AbstractIn {
     }
 
     /**
-     * Creates a new IN condition with the specified property name and collection of values.
-     * The condition checks if the property value matches any value in the collection.
+     * Creates a new IN condition for the specified property and collection of values.
+     * The condition matches records where the property value is equal to any of the
+     * provided values.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -109,8 +110,8 @@ public class In extends AbstractIn {
     }
 
     /**
-     * Creates a new row value constructor IN condition. The condition checks whether the
-     * tuple of property values matches any of the supplied value rows. Each element of {@code valueRows}
+     * Creates a new row value constructor IN condition. The condition matches records
+     * where the tuple of property values matches any of the supplied value rows. Each element of {@code valueRows}
      * must resolve to exactly {@code propNames.size()} values. A row may be supplied as a {@link Collection}
      * or other {@link Iterable}, an object array, a {@link Map} (looked up by property name, with a
      * missing key represented as {@code null}) or a bean (read by property name).

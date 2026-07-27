@@ -15,7 +15,7 @@
 package com.landawn.abacus.query.condition;
 
 /**
- * Represents a less-than-or-equal-to (&lt;=) comparison condition in SQL-like queries.
+ * Represents a less-than-or-equal-to (&lt;=) comparison condition in SQL queries.
  * This class is used to create conditions that check if a property value is less than
  * or equal to a specified value. The less-than-or-equal operator is fundamental for
  * implementing inclusive upper bounds, inclusive ranges, and various filtering scenarios.

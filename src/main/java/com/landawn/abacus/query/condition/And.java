@@ -31,6 +31,7 @@ import com.landawn.abacus.util.N;
  * <p>Key characteristics:</p>
  * <ul>
  *   <li>Can combine any types of composable conditions</li>
+ *   <li>Can be nested with other composable operators (OR, NOT)</li>
  *   <li>Supports chaining for readability via {@link #and(Condition)}</li>
  *   <li>Maintains order of conditions for predictable SQL generation</li>
  *   <li>Whether the database short-circuits evaluation is engine-dependent</li>
@@ -165,6 +166,10 @@ public class And extends Junction {
     /**
      * Creates a new AND condition by adding another condition to this AND.
      * This method returns a new AND instance containing all existing conditions plus the new one.
+     *
+     * <p>This method provides a fluent interface for building AND conditions incrementally.
+     * Each call returns a new AND instance, preserving immutability. The new condition
+     * is added to the end of the existing conditions.</p>
      *
      * <p><b>&#9888;&#65039;</b> Unlike the inherited {@link ComposableCondition#and(Condition)}, which rejects an empty
      * junction as its target, this override may be invoked on an empty {@code And}; same-type fluent

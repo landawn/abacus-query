@@ -132,7 +132,7 @@ public abstract class AbstractCondition implements Condition {
      * boolean result6 = isClause((Operator) null);     // false
      * }</pre>
      *
-     * @param operator the operator to check
+     * @param operator the operator to check (may be {@code null})
      * @return {@code true} if the operator is a clause operator, {@code false} otherwise
      */
     protected static boolean isClause(final Operator operator) {
@@ -166,7 +166,7 @@ public abstract class AbstractCondition implements Condition {
      * boolean result5 = isClause("AND");        // false
      * }</pre>
      *
-     * @param operator the operator string to check
+     * @param operator the operator string to check (may be {@code null} or empty)
      * @return {@code true} if the operator string represents a clause operator, {@code false} otherwise
      */
     protected static boolean isClause(final String operator) {
@@ -368,7 +368,7 @@ public abstract class AbstractCondition implements Condition {
      * or null operator. {@link Exists} and {@link NotExists} are complete predicates, so their
      * necessarily wrapped subqueries are not treated as standalone operands.
      *
-     * @param cond the condition tree to inspect; {@code null} is invalid
+     * @param cond the condition tree to inspect; {@code null} counts as an invalid component
      * @return {@code true} if {@code cond} or a nested component is not a valid predicate component
      */
     protected static boolean containsNonPredicateComponent(final Condition cond) {
@@ -719,8 +719,8 @@ public abstract class AbstractCondition implements Condition {
      * concatPropNames();                  // Returns: ""
      * }</pre>
      *
-     * @param propNames the property names to concatenate (varargs, can be empty)
-     * @return a formatted string of property names, empty string if no names provided
+     * @param propNames the property names to concatenate (varargs, may be {@code null} or empty)
+     * @return a formatted string of property names, or an empty string if {@code propNames} is {@code null} or empty
      */
     protected static String concatPropNames(final String... propNames) {
         if (N.isEmpty(propNames)) {
@@ -789,8 +789,8 @@ public abstract class AbstractCondition implements Condition {
      * concatPropNames(empty);   // Returns: ""
      * }</pre>
      *
-     * @param propNames the collection of property names to concatenate (can be empty)
-     * @return a formatted string of property names, empty string if collection is empty
+     * @param propNames the collection of property names to concatenate (may be {@code null} or empty)
+     * @return a formatted string of property names, or an empty string if {@code propNames} is {@code null} or empty
      */
     protected static String concatPropNames(final Collection<String> propNames) {
         if (N.isEmpty(propNames)) {

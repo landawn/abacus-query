@@ -73,7 +73,7 @@ public class Between extends AbstractBetween {
      * <p><b>&#9888;&#65039;</b> If the property value or either bound is SQL {@code NULL}, SQL three-valued
      * logic makes the predicate never true (UNKNOWN or false).</p>
      *
-     * <p><b>Usage Example:</b></p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check if age is between 18 and 65 (inclusive)
      * Between ageRange = new Between("age", 18, 65);

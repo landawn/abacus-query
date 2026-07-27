@@ -25,7 +25,7 @@ import com.landawn.abacus.query.Filters;
  *
  * <p>In SQL, NULL has special properties:</p>
  * <ul>
- *   <li>NULL is not equal to anything, including itself (NULL = NULL evaluates to UNKNOWN, not true or false)</li>
+ *   <li>NULL is not equal to anything, including itself (NULL = NULL evaluates to UNKNOWN, not TRUE)</li>
  *   <li>Any arithmetic operation with NULL results in NULL</li>
  *   <li>Standard aggregates such as SUM, AVG, MIN, MAX, and COUNT(expression) ignore NULL inputs,
  *       while COUNT(*) counts rows</li>
@@ -102,7 +102,7 @@ public class IsNull extends Is {
      * UNKNOWN (which behaves as {@code false} in WHERE clauses), whereas {@code NULL IS NULL}
      * correctly evaluates to {@code true}.</p>
      *
-     * <p><b>Usage Example:</b></p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNull birthdateCheck = new IsNull("birth_date");
      * // SQL: birth_date IS NULL

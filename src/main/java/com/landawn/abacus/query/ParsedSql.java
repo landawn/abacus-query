@@ -300,7 +300,7 @@ public final class ParsedSql {
      * }</pre>
      *
      * @param sql the SQL string to parse (must not be {@code null}, empty, or blank)
-     * @return a {@code ParsedSql} instance containing the parsed information
+     * @return a {@code ParsedSql} instance for the given SQL (typically a cached instance)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, if it mixes different
      *         parameter styles ({@code ?}, {@code :propName}, {@code #{propName}}), or if it contains
      *         a malformed iBatis/MyBatis parameter that is missing its closing brace
@@ -358,10 +358,10 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the parameterized SQL with named parameters replaced by JDBC placeholders ({@code ?})
-     * for recognized data-operation statements. Other SQL is returned without parameter conversion
-     * because this parser intentionally does not extract parameters from unrecognized operations.
-     * It is still normalized by trimming surrounding whitespace and removing trailing semicolons.
+     * Returns the parameterized SQL with named parameters replaced by JDBC placeholders ({@code ?})
+     * for recognized data-operation statements. For any other SQL, no parameter conversion is
+     * performed; the statement is still normalized by trimming surrounding whitespace and removing
+     * trailing semicolons.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -382,8 +382,8 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the list of named parameters extracted from the SQL in order of appearance.
-     * Returns an empty list if the SQL has no named parameters, or if the SQL is not a
+     * Returns the list of named parameters extracted from the SQL in order of appearance.
+     * The list is empty if the SQL has no named parameters, or if the SQL is not a
      * recognized data operation statement (see the class-level documentation), in which
      * case no parameter extraction is performed.
      *
@@ -406,7 +406,7 @@ public final class ParsedSql {
     }
 
     /**
-     * Gets the total number of parameters (named or positional) in the SQL.
+     * Returns the total number of parameters (named or positional) in the SQL.
      * This count includes parameter occurrences of {@code ?}, {@code :paramName}, or {@code #{paramName}},
      * but excludes {@code ?} tokens recognized as PostgreSQL JSON-existence operators. The
      * operator's right operand may be a literal, placeholder, column, or function expression;

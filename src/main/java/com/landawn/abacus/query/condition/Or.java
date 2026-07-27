@@ -32,8 +32,10 @@ import com.landawn.abacus.util.N;
  * <ul>
  *   <li>Returns true if ANY child condition is true</li>
  *   <li>Returns false only if ALL child conditions are false</li>
- *   <li>Supports unlimited number of child conditions</li>
+ *   <li>Can combine any types of composable conditions</li>
  *   <li>Can be nested with other composable operators (AND, NOT)</li>
+ *   <li>Supports chaining for readability via {@link #or(Condition)}</li>
+ *   <li>Maintains order of conditions for predictable SQL generation</li>
  *   <li>Whether the database short-circuits evaluation is engine-dependent</li>
  * </ul>
  *
@@ -167,7 +169,7 @@ public class Or extends Junction {
     }
 
     /**
-     * Creates a new Or condition by adding another condition to this OR.
+     * Creates a new OR condition by adding another condition to this OR.
      * This method returns a new Or instance containing all existing conditions plus the new one.
      *
      * <p>This method provides a fluent interface for building OR conditions incrementally.

@@ -42,7 +42,8 @@ public abstract class ComposableCondition extends AbstractCondition {
 
     /**
      * Default constructor for serialization frameworks like Kryo.
-     * Creates an uninitialized ComposableCondition instance; not for direct application use.
+     * This constructor creates an uninitialized ComposableCondition instance and should not be used
+     * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     ComposableCondition() {
         super();
@@ -51,7 +52,7 @@ public abstract class ComposableCondition extends AbstractCondition {
     /**
      * Creates a new ComposableCondition with the specified operator.
      *
-     * @param operator the logical operator for this condition (must not be {@code null})
+     * @param operator the operator for this condition (must not be {@code null})
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected ComposableCondition(final Operator operator) {

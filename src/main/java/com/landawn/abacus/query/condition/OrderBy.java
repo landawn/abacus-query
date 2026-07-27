@@ -209,7 +209,8 @@ public class OrderBy extends Clause {
      *
      * @param propNames collection of property names to sort by. Must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements.
      * @param direction the sort direction to apply to all properties. Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if {@code direction} is {@code null}, or if {@code propNames} contains {@code null}, empty, or blank elements
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+     *                                  or if {@code direction} is {@code null}
      */
     public OrderBy(final Collection<String> propNames, final SortDirection direction) {
         this(Filters.expr(AbstractCondition.createSortExpression(propNames, direction)));

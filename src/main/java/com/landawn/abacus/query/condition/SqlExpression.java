@@ -180,7 +180,11 @@ public class SqlExpression extends ComposableCondition {
         registerSqlKeyword("UNKNOWN");
     }
 
-    // For Kryo
+    /**
+     * The raw SQL expression text.
+     * May be {@code null} only for an uninitialized instance created by the package-private
+     * default constructor (e.g., during Kryo deserialization).
+     */
     final String literal;
 
     /** Lazily memoized {@link SqlParser#parse(String)} result for {@link #literal} (performance only). */
@@ -1060,7 +1064,7 @@ public class SqlExpression extends ComposableCondition {
 
     /**
      * Joins multiple literals using the specified operator's SQL token as the separator.
-     * Each separator is surrounded by spaces (e.g. {@code " AND " }). If {@code literals}
+     * Each separator is surrounded by spaces (e.g. {@code " AND "}). If {@code literals}
      * contains a single element, that element is returned with no operator appended; a
      * {@code null} or empty array yields an empty string.
      *
@@ -1958,7 +1962,9 @@ public class SqlExpression extends ComposableCondition {
      * SqlExpression.of("a + b").hashCode() == SqlExpression.of("a + b").hashCode();   // true (same literal)
      * }</pre>
      *
-     * @return the hash code of the literal
+     * @return the hash code of the literal, or {@code 0} if the literal is {@code null}
+     *         (only possible for an uninitialized instance produced by the package-private
+     *         default constructor, e.g., during Kryo deserialization)
      */
     @Override
     public int hashCode() {

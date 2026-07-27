@@ -733,6 +733,11 @@ public class Criteria extends AbstractCondition {
     /**
      * A mutable builder for constructing {@link Criteria} instances with a fluent API.
      *
+     * <p>For singleton clauses (WHERE, GROUP BY, HAVING, ORDER BY, LIMIT),
+     * calling the same method again replaces the previous clause.
+     * For JOINs and set operations, multiple calls accumulate.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Criteria criteria = Criteria.builder()
      *     .where(Filters.equal("status", "active"))
@@ -741,9 +746,7 @@ public class Criteria extends AbstractCondition {
      *     .build();
      * }</pre>
      *
-     * <p>For singleton clauses (WHERE, GROUP BY, HAVING, ORDER BY, LIMIT),
-     * calling the same method again replaces the previous clause.
-     * For JOINs and set operations, multiple calls accumulate.</p>
+     * @see Criteria#builder()
      */
     @Beta
     public static final class Builder {
@@ -752,6 +755,11 @@ public class Criteria extends AbstractCondition {
 
         private final List<Condition> conditions = new ArrayList<>();
 
+        /**
+         * Creates a new {@code Builder} instance.
+         * This constructor is package-private; use {@link Criteria#builder()} (or
+         * {@link Criteria#toBuilder()}) to obtain an instance.
+         */
         Builder() {
             // utility/builder class
         }
@@ -1357,8 +1365,8 @@ public class Criteria extends AbstractCondition {
          * c2.toSql(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors"
          * }</pre>
          *
-         * @param joinEntities the entity/table names to cross join
-         * @return this builder
+         * @param joinEntities the collection of tables/entities to join
+         * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements
          */
         public Builder crossJoin(final Collection<String> joinEntities) {
@@ -1403,8 +1411,8 @@ public class Criteria extends AbstractCondition {
          * c2.toSql(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees"
          * }</pre>
          *
-         * @param joinEntities the entity/table names to natural join
-         * @return this builder
+         * @param joinEntities the collection of tables/entities to join
+         * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements
          */
         public Builder naturalJoin(final Collection<String> joinEntities) {
@@ -2293,7 +2301,7 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Sets or replaces the LIMIT clause with count and offset.
-         * Used for pagination - returns up to 'count' rows, skipping 'offset' rows.
+         * Used for pagination — returns up to {@code count} rows, skipping {@code offset} rows.
          * If a LIMIT clause already exists, it will be replaced.
          *
          * <p><b>Usage Examples:</b></p>
@@ -2336,7 +2344,7 @@ public class Criteria extends AbstractCondition {
          * c2.toSql(NamingPolicy.NO_CHANGE);   // returns " LIMIT ? OFFSET ?"
          * }</pre>
          *
-         * @param expr the LIMIT expression as a string
+         * @param expr the LIMIT expression as a string (must not be {@code null}, empty, or blank)
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or not an accepted limit form
          */
@@ -2426,7 +2434,7 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds an EXCEPT operation with a subquery.
-         * EXCEPT returns rows from the first query that don't appear in the second.
+         * EXCEPT returns rows from the first query that do not appear in the second.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code

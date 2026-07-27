@@ -23,10 +23,12 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Comparison behavior:</p>
  * <ul>
- *   <li>column = SOME (subquery) - true if column equals any value from subquery</li>
- *   <li>column &gt; SOME (subquery) - true if column is greater than at least one value</li>
- *   <li>column &lt; SOME (subquery) - true if column is less than at least one value</li>
- *   <li>column != SOME (subquery) - true if column differs from at least one value</li>
+ *   <li>= SOME: true if equal to any value in the subquery (equivalent to IN)</li>
+ *   <li>&gt; SOME: true if greater than at least one value (greater than the minimum)</li>
+ *   <li>&lt; SOME: true if less than at least one value (less than the maximum)</li>
+ *   <li>!= SOME: true if different from at least one value</li>
+ *   <li>&gt;= SOME: true if greater than or equal to at least one value (greater than or equal to the minimum)</li>
+ *   <li>&lt;= SOME: true if less than or equal to at least one value (less than or equal to the maximum)</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>

@@ -169,10 +169,24 @@ public final class Dsl {
         dslCache.put(Dsl.MLC.sqlDialect, Dsl.MLC);
     }
 
+    /**
+     * The complete rendering and tokenizer configuration this DSL is bound to.
+     */
     final SqlDialect sqlDialect;
 
+    /**
+     * The naming policy applied to property/column names, resolved from {@link #sqlDialect}
+     * ({@link NamingPolicy#SNAKE_CASE} when the dialect does not specify one).
+     */
     final NamingPolicy namingPolicy;
 
+    /**
+     * Creates a {@code Dsl} bound to the given {@link SqlDialect}.
+     * Prefer {@link #forDialect(SqlDialect)}, which returns a shared cached instance for the
+     * predefined dialect combinations.
+     *
+     * @param sqlDialect the rendering and tokenizer configuration to bind to (must not be {@code null})
+     */
     Dsl(final SqlDialect sqlDialect) {
         this.sqlDialect = sqlDialect;
         namingPolicy = sqlDialect.namingPolicy() == null ? NamingPolicy.SNAKE_CASE : sqlDialect.namingPolicy();
@@ -291,7 +305,7 @@ public final class Dsl {
      * // Output: INSERT INTO account (first_name) VALUES (?)
      * }</pre>
      *
-     * @param propOrColumnName the property or column name to insert
+     * @param propOrColumnName the property or column name to insert a value into
      * @return a new SqlBuilder instance configured for INSERT operation
      * @throws IllegalArgumentException if propOrColumnName is null, empty, or blank
      */
@@ -676,7 +690,9 @@ public final class Dsl {
      * batch contains maps or beans. Row validation and conversion use that same snapshot, so a live
      * or weakly consistent caller collection cannot supply different rows to those two phases.</p>
      *
-     * @param entitiesOrPropMaps list of entities or property maps to insert
+     * @param entitiesOrPropMaps collection of entities or property maps to insert; {@code null}
+     *        elements are skipped, and the first non-{@code null} row determines whether the batch
+     *        contains maps or beans
      * @return a new SqlBuilder instance configured for batch INSERT operation
      * @throws IllegalArgumentException if {@code entitiesOrPropMaps} is null or empty, if every element is
      *         {@code null}; if a map is empty, contains a non-string or blank key, or does not share
@@ -788,7 +804,7 @@ public final class Dsl {
      *
      * <p>This method derives the table name from the entity class name or {@code @Table} annotation
      * and pre-populates the SET clause with all updatable properties (those not marked
-     * {@code @ReadOnly} or {@code @NonUpdatable}). A WHERE clause should be added before
+     * {@code @ReadOnly}, {@code @ReadOnlyId}, or {@code @NonUpdatable}). A WHERE clause should be added before
      * calling {@code build()}.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -811,7 +827,8 @@ public final class Dsl {
      * Creates an UPDATE statement for an entity class with excluded properties.
      *
      * <p>This method creates an UPDATE statement excluding specified properties in addition to
-     * those automatically excluded by annotations ({@code @ReadOnly}, {@code @NonUpdatable}).
+     * those automatically excluded by annotations ({@code @ReadOnly}, {@code @ReadOnlyId},
+     * {@code @NonUpdatable}).
      * The remaining properties are already staged as the generated {@code SET} template; calling
      * {@code setEntity(entity)} afterward would start a new SET list and would not apply this method's
      * exclusions. To capture values from an entity, use {@code update(tableName).setEntity(entity,
@@ -1859,7 +1876,7 @@ public final class Dsl {
 
     /**
      * Renders a condition as a standalone SQL fragment without an entity class.
-     * Property names are converted according to this Dsl's naming policy only; no
+     * Property names are converted according to this DSL's naming policy only; no
      * property-to-column mapping is applied. Equivalent to
      * {@code renderCondition(condition, null)}.
      *
@@ -1895,12 +1912,31 @@ public final class Dsl {
         }
     }
 
+    /**
+     * Validates the alias of every entry in the given property/column-name-to-alias map.
+     *
+     * @param propOrColumnNameAliases map of property/column names to their aliases (must not be {@code null})
+     * @throws IllegalArgumentException if any alias is blank, contains a quote character, a line break,
+     *                                  or an SQL comment token
+     * @see #validateColumnAlias(String, String)
+     */
     static void validateColumnAliases(final Map<String, String> propOrColumnNameAliases) {
         for (final Map.Entry<String, String> entry : propOrColumnNameAliases.entrySet()) {
             validateColumnAlias(entry.getKey(), entry.getValue());
         }
     }
 
+    /**
+     * Validates that a column alias is safe to emit in a SELECT clause: it must be non-blank and
+     * must not contain a quote character, a line break, or an SQL comment token, any of which
+     * would truncate or corrupt the statement when the alias is emitted.
+     *
+     * @param propOrColumnName the property/column name the alias belongs to (used in the error message)
+     * @param alias the column alias to validate
+     * @throws IllegalArgumentException if {@code alias} is {@code null}, blank, contains a quote character
+     *                                  ({@code "}, {@code `}, or {@code '}), a line break, or an SQL comment
+     *                                  token ({@code --}, {@code /*}, {@code *}{@code /}, or {@code #})
+     */
     static void validateColumnAlias(final String propOrColumnName, final String alias) {
         // '#' starts a comment in MySQL and a single quote opens a string literal; both would truncate
         // or corrupt the statement when the alias is emitted unquoted (e.g. inline "expr AS alias").

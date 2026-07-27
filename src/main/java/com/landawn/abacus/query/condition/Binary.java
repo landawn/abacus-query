@@ -47,6 +47,8 @@ import com.landawn.abacus.util.Strings;
  *   <li>{@link LessThanOrEqual} - property &lt;= value</li>
  *   <li>{@link Like} - property LIKE value</li>
  *   <li>{@link NotLike} - property NOT LIKE value</li>
+ *   <li>{@link Is} - property IS value</li>
+ *   <li>{@link IsNot} - property IS NOT value</li>
  * </ul>
  * 
  * <p><b>Usage Examples:</b></p>
@@ -92,7 +94,10 @@ public class Binary extends ComposableCondition {
     private static final Set<Operator> QUANTIFIED_COMPARISON_OPERATORS = EnumSet.of(Operator.EQUAL, Operator.NOT_EQUAL, Operator.NOT_EQUAL_ANSI,
             Operator.GREATER_THAN, Operator.GREATER_THAN_OR_EQUAL, Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL);
 
-    // For Kryo
+    /**
+     * The property (column) name on the left-hand side of this binary condition;
+     * {@code null} only on an uninitialized instance created by a serialization framework like Kryo.
+     */
     final String propName;
 
     private final Object propValue;

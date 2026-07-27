@@ -28,7 +28,7 @@ import com.landawn.abacus.util.Strings;
 
 /**
  * Base class for SQL JOIN operations.
- * This class provides the foundation for different types of joins (INNER, LEFT, RIGHT, FULL)
+ * This class provides the foundation for different types of joins (INNER, LEFT, RIGHT, FULL, CROSS, NATURAL)
  * and handles the common functionality of specifying join tables and conditions. JOIN operations
  * are fundamental to relational databases, allowing you to combine rows from multiple tables
  * based on related columns.
@@ -134,7 +134,7 @@ public class Join extends AbstractCondition {
      * // SQL: JOIN product_categories pc
      * }</pre>
      *
-     * @param joinEntity the table or entity to join with. Can include alias.
+     * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
      */
     public Join(final String joinEntity) {
@@ -147,7 +147,7 @@ public class Join extends AbstractCondition {
      * (INNER, LEFT, RIGHT, FULL, CROSS, NATURAL) while reusing the common join logic.
      *
      * @param operator the join operator (e.g. {@code INNER_JOIN}, {@code LEFT_JOIN})
-     * @param joinEntity the table or entity to join with
+     * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not a JOIN operator, or if {@code joinEntity} is
      *                                  {@code null}, empty, or blank
@@ -185,7 +185,7 @@ public class Join extends AbstractCondition {
      * // Note: And wraps each child in parentheses and the whole junction in outer parentheses
      * }</pre>
      *
-     * @param joinEntity the table or entity to join with. Can include alias.
+     * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; or if {@code joinCondition} is or contains a
@@ -214,7 +214,7 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param operator the join operator
-     * @param joinEntity the table or entity to join with
+     * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
      * @throws NullPointerException if {@code operator} is {@code null}
@@ -253,7 +253,7 @@ public class Join extends AbstractCondition {
      * // SQL: JOIN (orders o, customers c) ON ((o.customer_id = c.id) AND (o.status = 'active'))
      * }</pre>
      *
-     * @param joinEntities the collection of tables or entities to join with
+     * @param joinEntities the collection of tables or entities to join with.
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
@@ -283,7 +283,7 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param operator the join operator
-     * @param joinEntities the collection of tables or entities to join with
+     * @param joinEntities the collection of tables or entities to join with.
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
      * @throws NullPointerException if {@code operator} is {@code null}

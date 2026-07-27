@@ -17,22 +17,27 @@ package com.landawn.abacus.query.condition;
 import java.util.Collection;
 
 /**
- * Represents a FULL JOIN (a.k.a. FULL OUTER JOIN) operation in SQL queries.
- * A FULL JOIN returns all rows from both tables: matched rows are combined,
- * and unmatched rows from either side are returned with NULLs filled in for
- * the columns of the other table. Conceptually it combines the matched rows
- * with the unmatched rows from each side; mechanically rewriting it as a
- * {@code LEFT JOIN UNION RIGHT JOIN} can change duplicate (bag) semantics.
+ * Represents a FULL JOIN clause in SQL queries.
+ * A FULL JOIN (also called FULL OUTER JOIN) returns all rows from both tables: matched rows
+ * are combined, and unmatched rows from either side are returned with NULL values for the
+ * columns of the other table. Conceptually it combines the matched rows with the unmatched
+ * rows from each side; mechanically rewriting it as a {@code LEFT JOIN UNION RIGHT JOIN}
+ * can change duplicate (bag) semantics.
  * 
- * <p>FULL JOIN is useful when you need to see all records from both tables,
- * regardless of whether they have matching values. It's particularly valuable
- * for finding mismatches or gaps in data between related tables.</p>
- * 
- * <p>When no match is found:</p>
+ * <p>FULL JOIN is commonly used when you want to:
  * <ul>
+ *   <li>See all records from both tables regardless of whether they have matching values</li>
+ *   <li>Find mismatches or gaps in data between related tables</li>
+ *   <li>Identify orphaned records on either side of a relationship</li>
+ *   <li>Compare or reconcile two data sources (e.g., two inventory systems)</li>
+ * </ul>
+ * 
+ * <p>Key characteristics:
+ * <ul>
+ *   <li>Returns ALL rows from both tables</li>
  *   <li>Right-side columns are NULL for left-side rows with no matching right-side row</li>
  *   <li>Left-side columns are NULL for right-side rows with no matching left-side row</li>
- *   <li>All rows from both tables are included in the result set</li>
+ *   <li>Result set size is at least the size of the larger table (more when matches are many-to-many)</li>
  * </ul>
  * 
  * <p><b>Usage Examples:</b></p>

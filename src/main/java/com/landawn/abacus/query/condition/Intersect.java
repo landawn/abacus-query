@@ -16,9 +16,8 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents an INTERSECT clause in SQL queries.
- * This class is used to create conditions that return only the rows that appear in both result sets
- * of two queries, effectively finding the intersection of two query results. The INTERSECT operator
- * is a set operation that combines results from multiple SELECT statements.
+ * This class is used to combine the results of two SELECT statements, returning only the
+ * distinct rows that appear in both result sets (set intersection).
  * 
  * <p>Key characteristics of INTERSECT:</p>
  * <ul>

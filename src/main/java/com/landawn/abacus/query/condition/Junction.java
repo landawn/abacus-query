@@ -90,6 +90,12 @@ import com.landawn.abacus.util.Strings;
  */
 public class Junction extends ComposableCondition {
 
+    /**
+     * The conditions combined by this junction, in the order they are joined in the generated SQL.
+     * Set once in the constructor and not modified afterwards; the public constructors store a
+     * defensive copy of the caller-supplied conditions. Exposed to callers as an immutable view
+     * via {@link #conditions()}.
+     */
     final List<Condition> conditions;
 
     /** Lazily memoized parameters (performance only). */
@@ -119,7 +125,7 @@ public class Junction extends ComposableCondition {
      * <p>The supplied list is taken over directly (not copied); callers must pass a private,
      * freshly created list that they will not retain or mutate afterwards.</p>
      *
-     * @param operator the composable operator
+     * @param operator the composable operator (must be {@link Operator#AND} or {@link Operator#OR})
      * @param ownedValidatedConditions a freshly created list whose elements have already been validated
      * @param marker disambiguation marker (ignored)
      */

@@ -60,6 +60,7 @@ import com.landawn.abacus.util.Strings;
 @SuppressWarnings("java:S1192")
 public final class DynamicQuery {
 
+    /** Internal logger; emits a debug message with the length of the built SQL when {@link Builder#build()} completes and debug logging is enabled. */
     static final Logger logger = LoggerFactory.getLogger(DynamicQuery.class);
 
     private DynamicQuery() {
@@ -679,7 +680,7 @@ public final class DynamicQuery {
          * builder.append("LIMIT 10 OFFSET 20");
          * }</pre>
          *
-         * @param textToAppend the complete raw SQL clause to append verbatim (e.g., {@code "LIMIT 10 OFFSET 20"}) (must not be {@code null}, empty, or blank)
+         * @param textToAppend the complete raw SQL clause to append verbatim, e.g. {@code "LIMIT 10 OFFSET 20"} (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code textToAppend} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
@@ -945,15 +946,33 @@ public final class DynamicQuery {
 
     }
 
+    /**
+     * Base class for the typed clause builders ({@link SelectClause}, {@link FromClause},
+     * {@link WhereClause}, {@link GroupByClause}, {@link HavingClause}, and {@link OrderByClause}).
+     * Holds the shared clause buffer and the closed-state tracking used to recycle the buffer
+     * to the object pool once the owning {@link Builder#build()} completes.
+     */
     static abstract class ClauseBuilder {
+        /** The buffer holding this clause's SQL fragments; recycled to the object pool by {@link #close()}. */
         final StringBuilder sb;
 
         private boolean isClosed;
 
+        /**
+         * Creates a new clause builder wrapping the given buffer.
+         *
+         * @param sb the buffer holding this clause's SQL fragments
+         */
         ClauseBuilder(final StringBuilder sb) {
             this.sb = sb;
         }
 
+        /**
+         * Verifies this clause builder is still open, throwing if it has already been closed.
+         *
+         * @throws IllegalStateException if this clause builder has already been closed by
+         *         {@link Builder#build()} (via {@link #close()})
+         */
         final void assertNotClosed() {
             if (isClosed) {
                 throw new IllegalStateException("Clause builder has already been closed by build()");
@@ -993,6 +1012,11 @@ public final class DynamicQuery {
             }
         }
 
+        /**
+         * Closes this clause builder and recycles its buffer to the object pool.
+         * Idempotent: subsequent calls have no effect. After closing, any append operation
+         * throws {@link IllegalStateException}.
+         */
         final void close() {
             if (isClosed) {
                 return; // idempotent: never recycle the same buffer into the pool twice
@@ -1024,6 +1048,12 @@ public final class DynamicQuery {
      */
     public static class SelectClause extends ClauseBuilder {
 
+        /**
+         * Creates a new {@code SelectClause} wrapping the given buffer.
+         * For internal use by {@link Builder}; obtain an instance via {@link Builder#select()} instead.
+         *
+         * @param sb the buffer holding this clause's SQL fragments
+         */
         SelectClause(final StringBuilder sb) {
             super(sb);
         }
@@ -1235,6 +1265,12 @@ public final class DynamicQuery {
      */
     public static class FromClause extends ClauseBuilder {
 
+        /**
+         * Creates a new {@code FromClause} wrapping the given buffer.
+         * For internal use by {@link Builder}; obtain an instance via {@link Builder#from()} instead.
+         *
+         * @param sb the buffer holding this clause's SQL fragments
+         */
         FromClause(final StringBuilder sb) {
             super(sb);
         }
@@ -1739,6 +1775,12 @@ public final class DynamicQuery {
      */
     public static class WhereClause extends ClauseBuilder {
 
+        /**
+         * Creates a new {@code WhereClause} wrapping the given buffer.
+         * For internal use by {@link Builder}; obtain an instance via {@link Builder#where()} instead.
+         *
+         * @param sb the buffer holding this clause's SQL fragments
+         */
         WhereClause(final StringBuilder sb) {
             super(sb);
         }
@@ -1989,6 +2031,12 @@ public final class DynamicQuery {
      */
     public static class GroupByClause extends ClauseBuilder {
 
+        /**
+         * Creates a new {@code GroupByClause} wrapping the given buffer.
+         * For internal use by {@link Builder}; obtain an instance via {@link Builder#groupBy()} instead.
+         *
+         * @param sb the buffer holding this clause's SQL fragments
+         */
         GroupByClause(final StringBuilder sb) {
             super(sb);
         }
@@ -2134,6 +2182,12 @@ public final class DynamicQuery {
      */
     public static class HavingClause extends ClauseBuilder {
 
+        /**
+         * Creates a new {@code HavingClause} wrapping the given buffer.
+         * For internal use by {@link Builder}; obtain an instance via {@link Builder#having()} instead.
+         *
+         * @param sb the buffer holding this clause's SQL fragments
+         */
         HavingClause(final StringBuilder sb) {
             super(sb);
         }
@@ -2384,6 +2438,12 @@ public final class DynamicQuery {
      */
     public static class OrderByClause extends ClauseBuilder {
 
+        /**
+         * Creates a new {@code OrderByClause} wrapping the given buffer.
+         * For internal use by {@link Builder}; obtain an instance via {@link Builder#orderBy()} instead.
+         *
+         * @param sb the buffer holding this clause's SQL fragments
+         */
         OrderByClause(final StringBuilder sb) {
             super(sb);
         }

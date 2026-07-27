@@ -517,7 +517,7 @@ public final class SqlMapper {
      * ParsedSql retrieved = mapper.get("findUserById");   // returns the same parsedSql instance just added
      * }</pre>
      *
-     * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
+     * @param id the SQL identifier (must not be {@code null} or empty, must not contain whitespace, and must not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the parsed SQL to associate with the identifier (must not be {@code null})
      * @throws IllegalArgumentException if {@code sql} is {@code null}, or if the id is {@code null}/empty, contains whitespace,
      *                                  exceeds {@link #MAX_ID_LENGTH} characters, or already exists
@@ -547,7 +547,7 @@ public final class SqlMapper {
      * mapper.add("insertUser", parsedSql, attrs);
      * }</pre>
      *
-     * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
+     * @param id the SQL identifier (must not be {@code null} or empty, must not contain whitespace, and must not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the parsed SQL to associate with the identifier (must not be {@code null})
      * @param attributes additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout);
      *              may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
@@ -579,7 +579,7 @@ public final class SqlMapper {
      * mapper.add("findAll", "select * from users");
      * }</pre>
      *
-     * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
+     * @param id the SQL identifier (must not be {@code null} or empty, must not contain whitespace, and must not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the SQL string to parse and store (must not be {@code null} or blank)
      * @throws IllegalArgumentException if {@code sql} is {@code null} or blank (blank is rejected by {@link ParsedSql#parse(String)}),
      *                                  or if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH}
@@ -602,14 +602,14 @@ public final class SqlMapper {
      * mapper.add("insertUser", "insert into users (id, name) values (?, ?)", attrs);
      * }</pre>
      *
-     * @param id the SQL identifier (must be non-empty, not contain whitespace, and not exceed {@link #MAX_ID_LENGTH} characters)
+     * @param id the SQL identifier (must not be {@code null} or empty, must not contain whitespace, and must not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the SQL string to parse and store (must not be {@code null} or blank)
      * @param attributes additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout);
      *              may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
      * @throws IllegalArgumentException if {@code sql} is {@code null} or blank (blank is rejected by {@link ParsedSql#parse(String)});
      *                                  if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH}
-     *                                  characters, or already exists; or if {@code attributes} contains a {@code null}/empty key
-     *                                  or a {@code null} value; or an invalid/namespace-qualified XML attribute name
+     *                                  characters, or already exists; or if {@code attributes} contains a {@code null}/empty/invalid
+     *                                  or namespace-qualified XML attribute name, or a {@code null} value
      */
     public void add(final String id, final String sql, final Map<String, String> attributes) {
         N.checkArgNotNull(sql, "sql");
@@ -628,7 +628,7 @@ public final class SqlMapper {
     /**
      * Validates the SQL identifier according to the following rules:
      * <ul>
-     *   <li>Must not be empty</li>
+     *   <li>Must not be {@code null} or empty</li>
      *   <li>Must not contain whitespace</li>
      *   <li>Must not exceed {@value #MAX_ID_LENGTH} characters</li>
      *   <li>Must not already exist in the mapper</li>

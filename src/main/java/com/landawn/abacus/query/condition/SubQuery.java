@@ -82,14 +82,17 @@ import com.landawn.abacus.util.Strings;
 public class SubQuery extends AbstractCondition {
 
     // For Kryo
+    /** The entity/table name of a structured subquery, or the name associated with a raw SQL subquery (empty string when none was supplied). */
     final String entityName;
 
     // For Kryo
+    /** The entity class of a class-based structured subquery; {@code null} otherwise. */
     final Class<?> entityClass;
 
     private List<String> propNames;
 
     // For Kryo
+    /** The raw query-expression text of a raw SQL subquery; {@code null} for structured subqueries. */
     final String sql;
 
     /** The trailing condition or clause for a structured subquery; a predicate is normalized to a
@@ -159,7 +162,7 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Creates a subquery with an entity name and raw SQL.
-     * The entity name is for reference only when using raw SQL and doesn't affect the query.
+     * The entity name is for reference only when using raw SQL and doesn't affect the rendered SQL.
      *
      * <p>This constructor allows associating a logical entity name with a raw SQL subquery,
      * which can be useful for documentation or framework integration purposes.</p>
@@ -201,9 +204,13 @@ public class SubQuery extends AbstractCondition {
      *
      * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
      * @param propName the property to select (must not be {@code null}, empty, or blank)
-     * @param condition the optional trailing condition or clause; a predicate is wrapped in {@link Where}
-     * @throws IllegalArgumentException if either name is {@code null}, empty, or blank, or if
-     *         {@code condition} is not valid for a structured subquery
+     * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
+     *             {@link Where}; {@code null}, a blank expression, an empty {@link Junction}, or an empty
+     *             {@code Criteria} adds no clause.
+     * @throws IllegalArgumentException if {@code entityName} or {@code propName} is {@code null}, empty, or blank,
+     *         if {@code condition} uses an {@link Operator#ON ON}/{@link Operator#USING USING} operator, is not a
+     *         complete predicate (for example a standalone {@link SubQuery} or quantified operand), or is a
+     *         {@link Criteria} that carries a SELECT modifier (e.g. {@code DISTINCT}) — none of which are valid here
      */
     public SubQuery(final String entityName, final String propName, final Condition condition) {
         this(entityName, java.util.Collections.singletonList(propName), condition);
@@ -260,9 +267,14 @@ public class SubQuery extends AbstractCondition {
      *
      * @param entityClass the entity class (must not be {@code null})
      * @param propName the property to select (must not be {@code null}, empty, or blank)
-     * @param condition the optional trailing condition or clause; a predicate is wrapped in {@link Where}
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, {@code propName} is
-     *         {@code null}, empty, or blank, or {@code condition} is not valid for a structured subquery
+     * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
+     *             {@link Where}; {@code null}, a blank expression, an empty {@link Junction}, or an empty
+     *             {@code Criteria} adds no clause.
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propName} is
+     *         {@code null}, empty, or blank, if {@code condition} uses an
+     *         {@link Operator#ON ON}/{@link Operator#USING USING} operator, is not a complete predicate
+     *         (for example a standalone {@link SubQuery} or quantified operand), or is a {@link Criteria} that
+     *         carries a SELECT modifier (e.g. {@code DISTINCT}) — none of which are valid here
      */
     public SubQuery(final Class<?> entityClass, final String propName, final Condition condition) {
         this(entityClass, java.util.Collections.singletonList(propName), condition);
@@ -350,7 +362,7 @@ public class SubQuery extends AbstractCondition {
      * Returns the entity/table name for this subquery.
      * This is available for both structured subqueries and raw SQL subqueries that were
      * created with an entity name parameter. For raw SQL subqueries created without
-     * an entity name, this may be empty.
+     * an entity name, this is the empty string.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

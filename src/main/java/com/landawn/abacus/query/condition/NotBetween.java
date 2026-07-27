@@ -16,8 +16,8 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents a NOT BETWEEN condition in SQL queries.
- * This condition checks if a value is NOT within a specified range.
- * It's the logical opposite of the BETWEEN operator and is useful for excluding ranges of values.
+ * The NOT BETWEEN operator selects values outside a given range, excluding both endpoints.
+ * It's the logical opposite of the {@link Between} operator and is useful for excluding ranges of values.
  *
  * <p>The NOT BETWEEN condition is equivalent to: property &lt; minValue OR property &gt; maxValue.
  * The condition evaluates to true if the property value falls strictly outside the specified range
@@ -78,11 +78,15 @@ public class NotBetween extends AbstractBetween {
     }
 
     /**
-     * Creates a NOT BETWEEN condition for the specified property and range.
+     * Creates a new NOT BETWEEN condition.
      * The condition matches rows where the property value is less than {@code minValue}
      * OR greater than {@code maxValue} — i.e., outside the inclusive {@code [minValue, maxValue]}
      * range. Values exactly equal to either boundary do not match (because they are inside the
      * inclusive BETWEEN range, and NOT BETWEEN is its negation).
+     *
+     * <p><b>&#9888;&#65039;</b> If the property value is SQL {@code NULL}, SQL three-valued logic
+     * makes the predicate UNKNOWN (treated as false in a WHERE clause). A {@code NULL} bound does
+     * <i>not</i> force UNKNOWN — a row can still match on the other bound.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

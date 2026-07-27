@@ -101,7 +101,7 @@ public class IsNotNaN extends IsNot {
      * database-specific equality semantics. As noted above, the predicate itself is also
      * vendor-specific and must be supported by the selected database.</p>
      *
-     * <p><b>Usage Example:</b></p>
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * IsNotNaN tempCheck = new IsNotNaN("temperature");
      * // SQL: temperature IS NOT NAN

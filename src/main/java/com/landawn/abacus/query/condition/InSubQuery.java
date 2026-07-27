@@ -17,8 +17,8 @@ package com.landawn.abacus.query.condition;
 import java.util.Collection;
 
 /**
- * Represents an IN condition with a subquery in SQL-like queries.
- * This class is used to check if a property value (or multiple property values) exists
+ * Represents an IN subquery condition in SQL queries.
+ * This condition checks if a property value (or multiple property values) is contained
  * in the result set of a subquery. It's commonly used for filtering records based on
  * values from another table or complex query result.
  *
@@ -68,7 +68,7 @@ public class InSubQuery extends AbstractInSubQuery {
     /**
      * Creates an IN subquery condition for a single property.
      * Use this constructor when checking if a single column value exists in the subquery result.
-     * The subquery should return a single column of compatible type.
+     * The subquery must return a single column of compatible type.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -110,9 +110,9 @@ public class InSubQuery extends AbstractInSubQuery {
      * // SQL: (dept_id, loc_id) IN (SELECT department_id, location_id FROM dept_locations WHERE active = 'Y')
      * }</pre>
      *
-     * @param propNames the property names to check (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements).
+     * @param propNames the property/column names to check (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements).
      *            Their order must match the column order in the subquery.
-     * @param subQuery the subquery that returns the value combinations to check against (must not be {@code null}).
+     * @param subQuery the subquery that returns the values to check against (must not be {@code null}).
      *            If it has an explicit structured projection without {@code *} or {@code qualifier.*}, it must select
      *            exactly {@code propNames.size()} columns. Raw SQL and wildcard projections cannot be arity-checked here.
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is {@code null}, empty, or blank,
