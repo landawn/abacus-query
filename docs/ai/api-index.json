@@ -2,10 +2,10 @@
   "library": {
     "name": "abacus-query",
     "version": "4.8.10",
-    "generated_at": "2026-07-18",
+    "generated_at": "2026-07-26",
     "java_target": "17",
     "source": {
-      "git_sha": "8e5f5ca081344fd605eb701a3424a4baed2ae494"
+      "git_sha": "6f5b4b15d334f7f7b8e111e4312d78150f971861"
     }
   },
   "packages": [
@@ -144,7 +144,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Adds DISTINCT clause to the SELECT statement.",
+              "javadoc_summary": "Adds the DISTINCT select modifier to the SELECT statement.",
               "contract": [],
               "examples": [
                 "String sql = PSC.select(\"name\").distinct().from(\"account\").build().query();\n// Output: SELECT DISTINCT name FROM account"
@@ -297,7 +297,7 @@
                 {
                   "name": "entityClass",
                   "type": "Class<?>",
-                  "javadoc": "the entity class representing the table",
+                  "javadoc": "the entity class representing the table (must not be null)",
                   "nullability": "unspecified"
                 }
               ],
@@ -336,7 +336,7 @@
               "javadoc_summary": "Sets the FROM clause using an entity class with an alias.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class, \"u\").build().query();\n// Output: SELECT * FROM users u (table name based on naming policy)"
+                "String sql = PSC.select(\"*\").from(User.class, \"u\").build().query();\n// Output: SELECT * FROM user u (table name derived from User class based on naming policy)"
               ],
               "see_also": []
             },
@@ -386,7 +386,7 @@
               "javadoc_summary": "Adds a JOIN clause using an entity class.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\")\n                .from(User.class)\n                .join(Order.class)\n                .on(\"users.id = orders.user_id\")\n                .build().query();"
+                "String sql = PSC.select(\"*\")\n                .from(User.class)\n                .join(Order.class)\n                .on(\"users.id = orders.user_id\")\n                .build().query();\n// Output: SELECT * FROM users JOIN orders ON users.id = orders.user_id\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -417,7 +417,7 @@
               "javadoc_summary": "Adds a JOIN clause using an entity class with an alias.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\")\n                .from(User.class, \"u\")\n                .join(Order.class, \"o\")\n                .on(\"u.id = o.user_id\")\n                .build().query();"
+                "String sql = PSC.select(\"*\")\n                .from(User.class, \"u\")\n                .join(Order.class, \"o\")\n                .on(\"u.id = o.user_id\")\n                .build().query();\n// Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -467,7 +467,7 @@
               "javadoc_summary": "Adds an INNER JOIN clause using an entity class.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class).innerJoin(Order.class).on(\"users.id = orders.user_id\").build().query();\n// Output: SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id"
+                "String sql = PSC.select(\"*\").from(User.class).innerJoin(Order.class).on(\"users.id = orders.user_id\").build().query();\n// Output: SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -498,7 +498,7 @@
               "javadoc_summary": "Adds an INNER JOIN clause using an entity class with an alias.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class, \"u\").innerJoin(Order.class, \"o\").on(\"u.id = o.user_id\").build().query();\n// Output: SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id"
+                "String sql = PSC.select(\"*\").from(User.class, \"u\").innerJoin(Order.class, \"o\").on(\"u.id = o.user_id\").build().query();\n// Output: SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -548,7 +548,7 @@
               "javadoc_summary": "Adds a LEFT JOIN clause using an entity class.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class).leftJoin(Order.class).on(\"users.id = orders.user_id\").build().query();\n// Output: SELECT * FROM users LEFT JOIN orders ON users.id = orders.user_id"
+                "String sql = PSC.select(\"*\").from(User.class).leftJoin(Order.class).on(\"users.id = orders.user_id\").build().query();\n// Output: SELECT * FROM users LEFT JOIN orders ON users.id = orders.user_id\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -579,7 +579,7 @@
               "javadoc_summary": "Adds a LEFT JOIN clause using an entity class with an alias.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class, \"u\").leftJoin(Order.class, \"o\").on(\"u.id = o.user_id\").build().query();\n// Output: SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id"
+                "String sql = PSC.select(\"*\").from(User.class, \"u\").leftJoin(Order.class, \"o\").on(\"u.id = o.user_id\").build().query();\n// Output: SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -629,7 +629,7 @@
               "javadoc_summary": "Adds a RIGHT JOIN clause using an entity class.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class).rightJoin(Order.class).on(\"users.id = orders.user_id\").build().query();\n// Output: SELECT * FROM users RIGHT JOIN orders ON users.id = orders.user_id"
+                "String sql = PSC.select(\"*\").from(User.class).rightJoin(Order.class).on(\"users.id = orders.user_id\").build().query();\n// Output: SELECT * FROM users RIGHT JOIN orders ON users.id = orders.user_id\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -660,7 +660,7 @@
               "javadoc_summary": "Adds a RIGHT JOIN clause using an entity class with an alias.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class, \"u\").rightJoin(Order.class, \"o\").on(\"u.id = o.user_id\").build().query();\n// Output: SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id"
+                "String sql = PSC.select(\"*\").from(User.class, \"u\").rightJoin(Order.class, \"o\").on(\"u.id = o.user_id\").build().query();\n// Output: SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -710,7 +710,7 @@
               "javadoc_summary": "Adds a FULL JOIN clause using an entity class.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class).fullJoin(Order.class).on(\"users.id = orders.user_id\").build().query();\n// Output: SELECT * FROM users FULL JOIN orders ON users.id = orders.user_id"
+                "String sql = PSC.select(\"*\").from(User.class).fullJoin(Order.class).on(\"users.id = orders.user_id\").build().query();\n// Output: SELECT * FROM users FULL JOIN orders ON users.id = orders.user_id\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -741,7 +741,7 @@
               "javadoc_summary": "Adds a FULL JOIN clause using an entity class with an alias.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class, \"u\").fullJoin(Order.class, \"o\").on(\"u.id = o.user_id\").build().query();\n// Output: SELECT * FROM users u FULL JOIN orders o ON u.id = o.user_id"
+                "String sql = PSC.select(\"*\").from(User.class, \"u\").fullJoin(Order.class, \"o\").on(\"u.id = o.user_id\").build().query();\n// Output: SELECT * FROM users u FULL JOIN orders o ON u.id = o.user_id\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -791,7 +791,7 @@
               "javadoc_summary": "Adds a CROSS JOIN clause using an entity class.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class).crossJoin(Order.class).build().query();\n// Output: SELECT * FROM users CROSS JOIN orders"
+                "String sql = PSC.select(\"*\").from(User.class).crossJoin(Order.class).build().query();\n// Output: SELECT * FROM users CROSS JOIN orders\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -822,7 +822,7 @@
               "javadoc_summary": "Adds a CROSS JOIN clause using an entity class with an alias.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class, \"u\").crossJoin(Order.class, \"o\").build().query();\n// Output: SELECT * FROM users u CROSS JOIN orders o"
+                "String sql = PSC.select(\"*\").from(User.class, \"u\").crossJoin(Order.class, \"o\").build().query();\n// Output: SELECT * FROM users u CROSS JOIN orders o\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -872,7 +872,7 @@
               "javadoc_summary": "Adds a NATURAL JOIN clause using an entity class.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class).naturalJoin(Order.class).build().query();\n// Output: SELECT * FROM users NATURAL JOIN orders"
+                "String sql = PSC.select(\"*\").from(User.class).naturalJoin(Order.class).build().query();\n// Output: SELECT * FROM users NATURAL JOIN orders\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -903,7 +903,7 @@
               "javadoc_summary": "Adds a NATURAL JOIN clause using an entity class with an alias.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(\"*\").from(User.class, \"u\").naturalJoin(Order.class, \"o\").build().query();\n// Output: SELECT * FROM users u NATURAL JOIN orders o"
+                "String sql = PSC.select(\"*\").from(User.class, \"u\").naturalJoin(Order.class, \"o\").build().query();\n// Output: SELECT * FROM users u NATURAL JOIN orders o\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
               "see_also": []
             },
@@ -995,7 +995,7 @@
                 {
                   "name": "expr",
                   "type": "String",
-                  "javadoc": "the column name(s) for the USING clause",
+                  "javadoc": "the property or column name(s) for the USING clause (must not be null, empty, or blank)",
                   "nullability": "unspecified"
                 }
               ],
@@ -2007,8 +2007,8 @@
               "throws": [],
               "javadoc_summary": "Appends a string expression to the SQL statement.",
               "contract": [
-                "A single separating space is inserted before expr when, and only when, it is needed: that is, when the statement built so far does not already end with a space and expr does not already begin with one.",
-                "As a result both .append(\"FOR UPDATE\") and .append(\" FOR UPDATE\") produce the same, correctly spaced output (a doubled space is possible only when the statement built so far already ends with a space and expr also begins with one)."
+                "When the statement built so far is nonempty, a separating space is inserted before expr if the statement does not already end with a space and expr does not already begin with one.",
+                "Caller-supplied edge whitespace is otherwise preserved; if the statement ends with a space and expr begins with one, both spaces remain."
               ],
               "examples": [
                 "String sql = PSC.select(\"*\")\n                .from(\"users\")\n                .append(\"FOR UPDATE\")\n                .build().query();\n// Output: SELECT * FROM users FOR UPDATE"
@@ -2934,7 +2934,7 @@
                 {
                   "name": "function",
                   "type": "Throwables.Function<? super SP, T, E>",
-                  "javadoc": "the function to apply to the SP pair",
+                  "javadoc": "the function to apply to the SP pair; must not be null",
                   "nullability": "unspecified"
                 }
               ],
@@ -2947,7 +2947,7 @@
               "javadoc_summary": "Applies a function to the SQL-Parameters pair and returns the result.",
               "contract": [],
               "examples": [
-                "List<Account> accounts = PSC.select(\"*\")\n    .from(\"account\")\n    .where(Filters.equal(\"status\", \"ACTIVE\"))\n    .apply(sp -> jdbcTemplate.query(sp.query(), sp.parameters(), accountRowMapper));"
+                "List<Account> accounts = PSC.select(\"*\")\n    .from(\"account\")\n    .where(Filters.equal(\"status\", \"ACTIVE\"))\n    .apply(sp -> jdbcTemplate.query(sp.query(), accountRowMapper, sp.parameters().toArray()));"
               ],
               "see_also": []
             },
@@ -2977,7 +2977,7 @@
                 {
                   "name": "function",
                   "type": "Throwables.BiFunction<? super String, ? super List<Object>, T, E>",
-                  "javadoc": "the bi-function to apply to the SQL and parameters",
+                  "javadoc": "the bi-function to apply to the SQL and parameters; must not be null",
                   "nullability": "unspecified"
                 }
               ],
@@ -2990,7 +2990,7 @@
               "javadoc_summary": "Applies a bi-function to the SQL string and parameters separately and returns the result.",
               "contract": [],
               "examples": [
-                "int count = PSC.update(\"account\")\n    .set(\"status\", \"lastLogin\")\n    .where(Filters.lessThan(\"lastLogin\", oneYearAgo))\n    .apply((sql, params) -> jdbcTemplate.update(sql, params.toArray()));"
+                "Map<String, Object> updates = new LinkedHashMap<>();\nupdates.put(\"status\", \"INACTIVE\");\n\nint count = PSC.update(\"account\")\n    .set(updates)\n    .where(Filters.lessThan(\"lastLogin\", \"2025-01-01\"))\n    .apply((sql, params) -> jdbcTemplate.update(sql, params.toArray()));"
               ],
               "see_also": []
             },
@@ -3014,7 +3014,7 @@
                 {
                   "name": "consumer",
                   "type": "Throwables.Consumer<? super SP, E>",
-                  "javadoc": "the consumer to accept the SP pair",
+                  "javadoc": "the consumer to accept the SP pair; must not be null",
                   "nullability": "unspecified"
                 }
               ],
@@ -3029,7 +3029,7 @@
                 "This is useful for executing the SQL with a data access framework when no return value is needed."
               ],
               "examples": [
-                "PSC.insert(\"name\", \"email\", \"status\")\n   .into(\"account\")\n   .accept(sp -> jdbcTemplate.update(sp.query(), sp.parameters().toArray()));"
+                "Map<String, Object> account = new LinkedHashMap<>();\naccount.put(\"name\", \"Alice\");\naccount.put(\"email\", \"alice@example.com\");\naccount.put(\"status\", \"ACTIVE\");\n\nPSC.insert(account)\n   .into(\"account\")\n   .accept(sp -> jdbcTemplate.update(sp.query(), sp.parameters().toArray()));"
               ],
               "see_also": []
             },
@@ -3053,7 +3053,7 @@
                 {
                   "name": "consumer",
                   "type": "Throwables.BiConsumer<? super String, ? super List<Object>, E>",
-                  "javadoc": "the bi-consumer to accept the SQL and parameters",
+                  "javadoc": "the bi-consumer to accept the SQL and parameters; must not be null",
                   "nullability": "unspecified"
                 }
               ],
@@ -3168,17 +3168,6 @@
               "type": "String",
               "value": "\"count(*)\"",
               "javadoc_summary": "Constant for the COUNT(*) aggregate function."
-            },
-            {
-              "name": "DEFAULT_NAMED_PARAMETER_HANDLER",
-              "modifiers": [
-                "public",
-                "static",
-                "final"
-              ],
-              "type": "BiConsumer<StringBuilder, String>",
-              "value": "(sql,name)->sql.append(':').append(name)",
-              "javadoc_summary": "Default renderer for SqlDialect.SqlPolicy#NAMED_SQL placeholders."
             }
           ]
         },
@@ -3285,7 +3274,7 @@
                 {
                   "name": "propOrColumnName",
                   "type": "String",
-                  "javadoc": "the property or column name to insert",
+                  "javadoc": "the property or column name to insert a value into",
                   "nullability": "unspecified"
                 }
               ],
@@ -3461,7 +3450,7 @@
               "javadoc_summary": "Creates an INSERT statement for an entity class.",
               "contract": [],
               "examples": [
-                "String sql = PSC.insert(Account.class).into(\"account\").build().query();\n// Output: INSERT INTO account (first_name, last_name, email, created_date) VALUES (?, ?, ?, ?)"
+                "String sql = PSC.insert(Account.class).into(\"account\").build().query();\n// Output: INSERT INTO account (id, first_name, last_name, email) VALUES (?, ?, ?, ?)"
               ],
               "see_also": []
             },
@@ -3492,7 +3481,7 @@
               "javadoc_summary": "Creates an INSERT statement for an entity class with excluded properties.",
               "contract": [],
               "examples": [
-                "Set<String> excluded = N.asSet(\"createdDate\", \"modifiedDate\");\nString sql = PSC.insert(Account.class, excluded).into(\"account\").build().query();\n// Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)"
+                "Set<String> excluded = N.asSet(\"id\");\nString sql = PSC.insert(Account.class, excluded).into(\"account\").build().query();\n// Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)"
               ],
               "see_also": []
             },
@@ -3517,7 +3506,7 @@
               "javadoc_summary": "Creates an INSERT INTO statement for an entity class.",
               "contract": [],
               "examples": [
-                "String sql = PSC.insertInto(Account.class).build().query();\n// Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)"
+                "String sql = PSC.insertInto(Account.class).build().query();\n// Output: INSERT INTO account (id, first_name, last_name, email) VALUES (?, ?, ?, ?)"
               ],
               "see_also": []
             },
@@ -3548,7 +3537,7 @@
               "javadoc_summary": "Creates an INSERT INTO statement for an entity class with excluded properties.",
               "contract": [],
               "examples": [
-                "Set<String> excluded = N.asSet(\"id\", \"createdDate\");\nString sql = PSC.insertInto(Account.class, excluded).build().query();\n// Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)"
+                "Set<String> excluded = N.asSet(\"id\");\nString sql = PSC.insertInto(Account.class, excluded).build().query();\n// Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)"
               ],
               "see_also": []
             },
@@ -3565,7 +3554,7 @@
                 {
                   "name": "entitiesOrPropMaps",
                   "type": "Collection<?>",
-                  "javadoc": "list of entities or property maps to insert",
+                  "javadoc": "collection of entities or property maps to insert; null elements are skipped, and the first non-null row determines whether the batch contains maps or beans",
                   "nullability": "unspecified"
                 }
               ],
@@ -3656,7 +3645,7 @@
                 "A WHERE clause should be added before calling build()."
               ],
               "examples": [
-                "String sql = PSC.update(Account.class)\n                .where(Filters.equal(\"id\", 1))\n                .build().query();\n// Output: UPDATE account SET first_name = ?, last_name = ?, email = ?, ... WHERE id = ?"
+                "String sql = PSC.update(Account.class)\n                .where(Filters.equal(\"id\", 1))\n                .build().query();\n// Output: UPDATE account SET id = ?, first_name = ?, last_name = ?, email = ? WHERE id = ?"
               ],
               "see_also": []
             },
@@ -3685,11 +3674,9 @@
               ],
               "throws": [],
               "javadoc_summary": "Creates an UPDATE statement for an entity class with excluded properties.",
-              "contract": [
-                "This is useful for partial updates or when certain fields should never be updated."
-              ],
+              "contract": [],
               "examples": [
-                "Set<String> excluded = N.asSet(\"createdDate\", \"createdBy\");\nString sql = PSC.update(Account.class, excluded)\n                .set(account)\n                .where(Filters.equal(\"id\", account.getId()))\n                .build().query();"
+                "Set<String> excluded = N.asSet(\"email\");\nString sql = PSC.update(Account.class, excluded)\n                .where(Filters.equal(\"id\", 1))\n                .build().query();\n// Output: UPDATE account SET id = ?, first_name = ?, last_name = ? WHERE id = ?"
               ],
               "see_also": []
             },
@@ -3901,7 +3888,7 @@
               "javadoc_summary": "Creates a SELECT statement for all properties of an entity class.",
               "contract": [],
               "examples": [
-                "String sql = PSC.select(Account.class)\n                .from(\"account\")\n                .build().query();\n// Output: SELECT id AS \"id\", first_name AS \"firstName\", last_name AS \"lastName\", email AS \"email\", created_date AS \"createdDate\" FROM account"
+                "String sql = PSC.select(Account.class)\n                .from(\"account\")\n                .build().query();\n// Output: SELECT id AS \"id\", first_name AS \"firstName\", last_name AS \"lastName\", email AS \"email\" FROM account"
               ],
               "see_also": []
             },
@@ -5396,7 +5383,7 @@
                 {
                   "name": "textToAppend",
                   "type": "String",
-                  "javadoc": "the complete raw SQL clause to append verbatim (e.g., \"LIMIT 10 OFFSET 20\") (must not be null, empty, or blank)",
+                  "javadoc": "the complete raw SQL clause to append verbatim, e.g. \"LIMIT 10 OFFSET 20\" (must not be null, empty, or blank)",
                   "nullability": "unspecified"
                 }
               ],
@@ -5404,11 +5391,12 @@
               "javadoc_summary": "Appends a raw, database-specific SQL clause or fragment verbatim to the end of the query.",
               "contract": [
                 "The supplied text is emitted unchanged (preceded by a separating space when needed; see below) and is not validated, escaped, or interpreted in any way \\u2014 whatever you pass becomes the literal tail of the generated SQL.",
-                "A single separating space is inserted before textToAppend when, and only when, it is needed: that is, when the text built so far does not already end with a space and textToAppend does not already begin with one.",
+                "Use it for any trailing clause that has no typed builder method, such as locking hints (for example \"FOR UPDATE\") or other vendor-specific suffixes, or for raw pagination/row-limiting syntax when the typed methods do not fit the dialect.",
+                "A single separating space is inserted before textToAppend when, and only when, it is needed: that is, when this builder's trailing buffer is empty or does not already end with a space, and textToAppend does not already begin with one.",
                 "Consequently, either orderBy().append(...) or a trailing append(\"ORDER BY ...\") can order a combined set-operation result; prefer the typed form when it is sufficient."
               ],
               "examples": [
-                "builder.append(\"LIMIT 10 OFFSET 20\");\n// Or any trailing clause that has no typed overload (e.g. a SQL:2008 row-limiting clause)\nbuilder.append(\"FETCH FIRST 10 ROWS ONLY\");"
+                "builder.append(\"FOR UPDATE\");\n// Or a raw pagination fragment when the typed limit/offset methods do not fit the dialect\nbuilder.append(\"LIMIT 10 OFFSET 20\");"
               ],
               "see_also": []
             },
@@ -5981,8 +5969,10 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Adds a JOIN clause (implicit INNER JOIN) with the specified table and no ON condition.",
-              "contract": [],
+              "javadoc_summary": "Adds a JOIN clause (implicit INNER JOIN) with the specified table and no separate connector step.",
+              "contract": [
+                "Any required ON/USING connector must be included in joinExpr itself; this overload may also be used for dialect-specific conditionless joins."
+              ],
               "examples": [
                 "from.append(\"users u\").join(\"orders o USING (user_id)\");\n// Generates: FROM users u JOIN orders o USING (user_id)"
               ],
@@ -6006,8 +5996,10 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Adds an INNER JOIN clause with the specified table and no ON condition.",
-              "contract": [],
+              "javadoc_summary": "Adds an INNER JOIN clause with the specified table and no separate connector step.",
+              "contract": [
+                "Any required ON/USING connector must be included in joinExpr itself; this overload may also be used for dialect-specific conditionless joins."
+              ],
               "examples": [
                 "from.append(\"users u\").innerJoin(\"orders o USING (user_id)\");\n// Generates: FROM users u INNER JOIN orders o USING (user_id)"
               ],
@@ -6031,8 +6023,10 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Adds a LEFT JOIN clause with the specified table and no ON condition.",
-              "contract": [],
+              "javadoc_summary": "Adds a LEFT JOIN clause with the specified table and no separate connector step.",
+              "contract": [
+                "Any required ON/USING connector must be included in joinExpr itself; this overload may also be used for dialect-specific conditionless joins."
+              ],
               "examples": [
                 "from.append(\"users u\").leftJoin(\"orders o USING (user_id)\");\n// Generates: FROM users u LEFT JOIN orders o USING (user_id)"
               ],
@@ -6056,8 +6050,10 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Adds a RIGHT JOIN clause with the specified table and no ON condition.",
-              "contract": [],
+              "javadoc_summary": "Adds a RIGHT JOIN clause with the specified table and no separate connector step.",
+              "contract": [
+                "Any required ON/USING connector must be included in joinExpr itself; this overload may also be used for dialect-specific conditionless joins."
+              ],
               "examples": [
                 "from.append(\"orders o\").rightJoin(\"users u USING (user_id)\");\n// Generates: FROM orders o RIGHT JOIN users u USING (user_id)"
               ],
@@ -6081,8 +6077,10 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Adds a FULL JOIN clause with the specified table and no ON condition.",
-              "contract": [],
+              "javadoc_summary": "Adds a FULL JOIN clause with the specified table and no separate connector step.",
+              "contract": [
+                "Any required ON/USING connector must be included in joinExpr itself; this overload may also be used for dialect-specific conditionless joins."
+              ],
               "examples": [
                 "from.append(\"employees e\").fullJoin(\"departments d USING (dept_id)\");\n// Generates: FROM employees e FULL JOIN departments d USING (dept_id)"
               ],
@@ -6315,7 +6313,7 @@
                 "Usage Examples: If placeholderCount is 0, neither prefix nor postfix is appended."
               ],
               "examples": [
-                "where.append(\"status IN \").appendPlaceholders(3, \"(\", \")\");\n// Generates: status IN (?, ?, ?)"
+                "where.append(\"status IN \").appendPlaceholders(3, \"(\", \")\");\n// sb contents so far: \"WHERE status IN (?, ?, ?)\""
               ],
               "see_also": []
             },
@@ -6689,7 +6687,7 @@
                 "Usage Examples: If placeholderCount is 0, neither prefix nor postfix is appended."
               ],
               "examples": [
-                "having.append(\"MAX(score) IN \").appendPlaceholders(3, \"(\", \")\");\n// Generates: MAX(score) IN (?, ?, ?)"
+                "having.append(\"MAX(score) IN \").appendPlaceholders(3, \"(\", \")\");\n// sb contents so far: \"HAVING MAX(score) IN (?, ?, ?)\""
               ],
               "see_also": []
             },
@@ -7695,7 +7693,7 @@
                 "Otherwise, every non-null element must be an entity rather than a map, and all properties selected from the first entity's class are used."
               ],
               "examples": [
-                "Set<Map<String, Object>> propsSet = new LinkedHashSet<>();\npropsSet.add(Map.of(\"status\", \"active\", \"type\", \"premium\"));\npropsSet.add(Map.of(\"status\", \"trial\", \"verified\", true));\nOr mapCondition = Filters.anyOfAllEqual(propsSet);\n// Results in: (status = 'active' AND type = 'premium') OR (status = 'trial' AND verified = true)\n\nList<User> users = Arrays.asList(\n    new User(\"John\", \"john@example.com\"),\n    new User(\"Jane\", \"jane@example.com\")\n);\nOr entityCondition = Filters.anyOfAllEqual(users);\n// Results in: (name = 'John' AND email = 'john@example.com') OR (name = 'Jane' AND email = 'jane@example.com')"
+                "Map<String, Object> activePremium = new LinkedHashMap<>();\nactivePremium.put(\"status\", \"active\");\nactivePremium.put(\"type\", \"premium\");\nMap<String, Object> verifiedTrial = new LinkedHashMap<>();\nverifiedTrial.put(\"status\", \"trial\");\nverifiedTrial.put(\"verified\", true);\nSet<Map<String, Object>> propsSet = new LinkedHashSet<>();\npropsSet.add(activePremium);\npropsSet.add(verifiedTrial);\nOr mapCondition = Filters.anyOfAllEqual(propsSet);\n// Results in: ((((status = 'active') AND (type = 'premium'))) OR (((status = 'trial') AND (verified = true))))\n\nList<User> users = Arrays.asList(\n    new User(\"John\", \"john@example.com\"),\n    new User(\"Jane\", \"jane@example.com\")\n);\nOr entityCondition = Filters.anyOfAllEqual(users);\n// If User's only selectable properties are name followed by email, results in:\n// ((((name = 'John') AND (email = 'john@example.com'))) OR (((name = 'Jane') AND (email = 'jane@example.com'))))"
               ],
               "see_also": [
                 "#anyOfAllEqual(Collection, Collection)",
@@ -7731,7 +7729,7 @@
               "javadoc_summary": "Creates an OR of per-row AND-of-equals conditions &mdash; a \"match any row\" filter &mdash; using only the specified properties of each entity.",
               "contract": [],
               "examples": [
-                "List<User> users = Arrays.asList(new User(\"John\", \"active\"), new User(\"Jane\", \"trial\"));\nOr condition = Filters.anyOfAllEqual(users, Arrays.asList(\"name\", \"status\"));\n// Only uses name and status properties from each user\n// Results in: (name = 'John' AND status = 'active') OR (name = 'Jane' AND status = 'trial')"
+                "List<User> users = Arrays.asList(new User(\"John\", \"active\"), new User(\"Jane\", \"trial\"));\nOr condition = Filters.anyOfAllEqual(users, Arrays.asList(\"name\", \"status\"));\n// Only uses name and status properties from each user\n// Results in: ((((name = 'John') AND (status = 'active'))) OR (((name = 'Jane') AND (status = 'trial'))))"
               ],
               "see_also": [
                 "#anyOfAllEqual(Collection)",
@@ -8089,7 +8087,7 @@
                 {
                   "name": "entityIds",
                   "type": "Collection<? extends EntityId>",
-                  "javadoc": "collection of EntityIds (must not be null or empty)",
+                  "javadoc": "collection of EntityIds (must not be null, empty, or contain null)",
                   "nullability": "unspecified"
                 }
               ],
@@ -9700,7 +9698,7 @@
                 {
                   "name": "conditions",
                   "type": "Condition[]",
-                  "javadoc": "the array of conditions to combine; null or empty is permitted and yields an empty junction",
+                  "javadoc": "the array of conditions to combine; null or empty is permitted and yields an empty junction (which renders as an empty string)",
                   "nullability": "unspecified"
                 }
               ],
@@ -9735,7 +9733,7 @@
                 {
                   "name": "conditions",
                   "type": "Collection<? extends Condition>",
-                  "javadoc": "the collection of conditions to combine; null or empty is permitted and yields an empty junction",
+                  "javadoc": "the collection of conditions to combine; null or empty is permitted and yields an empty junction (which renders as an empty string)",
                   "nullability": "unspecified"
                 }
               ],
@@ -9796,7 +9794,9 @@
               ],
               "throws": [],
               "javadoc_summary": "Creates a Where clause from a raw SQL expression string.",
-              "contract": [],
+              "contract": [
+                "When rendered by a configured SqlBuilder, detected identifiers may still be converted according to its naming policy."
+              ],
               "examples": [
                 "Where where = Filters.where(\"YEAR(created_date) = 2023\");\n// Results in SQL like: WHERE YEAR(created_date) = 2023"
               ],
@@ -10224,7 +10224,7 @@
               "javadoc_summary": "Creates a GroupBy clause with a custom condition.",
               "contract": [],
               "examples": [
-                "GroupBy groupBy = Filters.groupBy(\n    Filters.expr(\"YEAR(order_date), MONTH(order_date)\")\n);"
+                "GroupBy groupBy = Filters.groupBy(\n    Filters.expr(\"YEAR(order_date), MONTH(order_date)\")\n);\n// Results in SQL like: GROUP BY YEAR(order_date), MONTH(order_date)"
               ],
               "see_also": []
             },
@@ -10274,7 +10274,9 @@
               ],
               "throws": [],
               "javadoc_summary": "Creates a Having clause from a raw SQL expression string.",
-              "contract": [],
+              "contract": [
+                "When rendered by a configured SqlBuilder, detected identifiers may still be converted according to its naming policy."
+              ],
               "examples": [
                 "Having having = Filters.having(\"SUM(amount) > 1000\");\n// Results in SQL like: HAVING SUM(amount) > 1000"
               ],
@@ -10752,7 +10754,9 @@
               ],
               "throws": [],
               "javadoc_summary": "Creates an On clause from a raw SQL expression string for JOIN operations.",
-              "contract": [],
+              "contract": [
+                "When rendered by a configured SqlBuilder, detected identifiers may still be converted according to its naming policy."
+              ],
               "examples": [
                 "On on = Filters.on(\"users.department_id = departments.id AND users.active = true\");\n// Results in SQL like: ON users.department_id = departments.id AND users.active = true"
               ],
@@ -10783,7 +10787,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates an On clause for simple equality join between two columns.",
+              "javadoc_summary": "Creates an On clause for a simple equality join between two columns.",
               "contract": [],
               "examples": [
                 "On on = Filters.on(\"user_id\", \"id\");\n// Results in SQL like: ON user_id = id"
@@ -11783,7 +11787,8 @@
               "throws": [],
               "javadoc_summary": "Creates a row value constructor IN condition.",
               "contract": [
-                "The tuple of property values must match one of the supplied value rows."
+                "The tuple of property values must match one of the supplied value rows.",
+                "A map contributes null for an absent property key; a bean must expose every requested property."
               ],
               "examples": [
                 "In condition = Filters.in(Arrays.asList(\"first_name\", \"last_name\"),\n        Arrays.asList(Arrays.asList(\"John\", \"Doe\"), Arrays.asList(\"Jane\", \"Roe\")));\n// SQL fragment: (first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))"
@@ -12172,7 +12177,7 @@
               "javadoc_summary": "Creates a NOT IN condition with a collection of values.",
               "contract": [],
               "examples": [
-                "Set<String> excludedCountries = new HashSet<>(Arrays.asList(\"XX\", \"YY\"));\nNotIn condition = Filters.notIn(\"country_code\", excludedCountries);\n// SQL fragment: country_code NOT IN ('XX', 'YY')"
+                "List<String> excludedCountries = Arrays.asList(\"XX\", \"YY\");\nNotIn condition = Filters.notIn(\"country_code\", excludedCountries);\n// SQL fragment: country_code NOT IN ('XX', 'YY')"
               ],
               "see_also": []
             },
@@ -12203,7 +12208,8 @@
               "throws": [],
               "javadoc_summary": "Creates a row value constructor NOT IN condition.",
               "contract": [
-                "The tuple of property values must not match any of the supplied value rows."
+                "The tuple of property values must not match any of the supplied value rows.",
+                "A map contributes null for an absent property key; a bean must expose every requested property."
               ],
               "examples": [
                 "NotIn condition = Filters.notIn(Arrays.asList(\"first_name\", \"last_name\"),\n        Arrays.asList(Arrays.asList(\"John\", \"Doe\"), Arrays.asList(\"Jane\", \"Roe\")));\n// SQL fragment: (first_name, last_name) NOT IN (('John', 'Doe'), ('Jane', 'Roe'))"
@@ -12654,7 +12660,9 @@
               ],
               "throws": [],
               "javadoc_summary": "Creates a SubQuery from an entity class with selected properties and a raw SQL condition string.",
-              "contract": [],
+              "contract": [
+                "When rendered by a configured SqlBuilder, detected identifiers may still be converted according to its naming policy."
+              ],
               "examples": [
                 "SubQuery subQuery = Filters.subQuery(Product.class,\n    Arrays.asList(\"id\", \"price\"),\n    \"category = 'electronics' AND in_stock = true\");\n// Generates: SELECT id, price FROM Product WHERE category = 'electronics' AND in_stock = true"
               ],
@@ -12772,7 +12780,9 @@
               ],
               "throws": [],
               "javadoc_summary": "Creates a SubQuery from an entity name with selected properties and a raw SQL condition string.",
-              "contract": [],
+              "contract": [
+                "When rendered by a configured SqlBuilder, detected identifiers may still be converted according to its naming policy."
+              ],
               "examples": [
                 "SubQuery subQuery = Filters.subQuery(\"products\",\n    Arrays.asList(\"id\", \"price\"),\n    \"category = 'electronics' AND in_stock = true\");\n// Generates: SELECT id, price FROM products WHERE category = 'electronics' AND in_stock = true"
               ],
@@ -12792,7 +12802,7 @@
                 {
                   "name": "entityName",
                   "type": "String",
-                  "javadoc": "the entity/table name",
+                  "javadoc": "the entity/table name (not used to build the subquery when the full SQL is supplied; may be null or empty)",
                   "nullability": "unspecified"
                 },
                 {
@@ -13020,7 +13030,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the parameterized SQL with named parameters replaced by JDBC placeholders (?) for recognized data-operation statements.",
+              "javadoc_summary": "Returns the parameterized SQL with named parameters replaced by JDBC placeholders (?) for recognized data-operation statements.",
               "contract": [],
               "examples": [
                 "ParsedSql parsed = ParsedSql.parse(\"SELECT * FROM users WHERE id = :userId AND status = :status\");\nString sql = parsed.parameterizedSql();\n// Returns: \"SELECT * FROM users WHERE id = ? AND status = ?\"\n\n// Use with PreparedStatement\nPreparedStatement stmt = connection.prepareStatement(parsed.parameterizedSql());\nstmt.setLong(1, userId);\nstmt.setString(2, status);"
@@ -13038,9 +13048,9 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the list of named parameters extracted from the SQL in order of appearance.",
+              "javadoc_summary": "Returns the list of named parameters extracted from the SQL in order of appearance.",
               "contract": [
-                "Returns an empty list if the SQL has no named parameters, or if the SQL is not a recognized data operation statement (see the class-level documentation), in which case no parameter extraction is performed."
+                "The list is empty if the SQL has no named parameters, or if the SQL is not a recognized data operation statement (see the class-level documentation), in which case no parameter extraction is performed."
               ],
               "examples": [
                 "ParsedSql parsed = ParsedSql.parse(\"SELECT * FROM users WHERE name = :name AND age > :minAge\");\nImmutableList<String> params = parsed.namedParameters();\n// Returns: [\"name\", \"minAge\"]\n\n// SQL with no named parameters returns empty list\nParsedSql parsed2 = ParsedSql.parse(\"SELECT * FROM users WHERE id = ?\");\nImmutableList<String> params2 = parsed2.namedParameters();\n// Returns: []"
@@ -13058,7 +13068,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Gets the total number of parameters (named or positional) in the SQL.",
+              "javadoc_summary": "Returns the total number of parameters (named or positional) in the SQL.",
               "contract": [],
               "examples": [
                 "ParsedSql parsed = ParsedSql.parse(\"INSERT INTO users (name, email, age) VALUES (:name, :email, :age)\");\nint count = parsed.parameterCount();\n// Returns: 3\n\nParsedSql parsed2 = ParsedSql.parse(\"SELECT * FROM users\");\nint count2 = parsed2.parameterCount();\n// Returns: 0"
@@ -13479,9 +13489,11 @@
               ],
               "throws": [],
               "javadoc_summary": "Returns the ID property names for the specified entity class.",
-              "contract": [],
+              "contract": [
+                "ID properties are those annotated with @Id or @ReadOnlyId; when the class declares neither annotation, a property named exactly \"id\" is treated as the ID by convention."
+              ],
               "examples": [
-                "// Get ID property names for an entity with @Id annotation\nList<String> idFields = QueryUtil.idPropNames(User.class);\n// Returns: [\"id\"] for a class with @Id on the \"id\" property\n\n// Composite key example\nList<String> compositeIds = QueryUtil.idPropNames(OrderItem.class);\n// Returns: [\"orderId\", \"itemId\"] for a composite key entity\n\n// Entity without @Id returns empty list\nList<String> noIds = QueryUtil.idPropNames(LogEntry.class);\n// Returns: []"
+                "// Get ID property names for an entity with @Id annotation\nList<String> idFields = QueryUtil.idPropNames(User.class);\n// Returns: [\"id\"] for a class with @Id on the \"id\" property\n\n// Composite key example\nList<String> compositeIds = QueryUtil.idPropNames(OrderItem.class);\n// Returns: [\"orderId\", \"itemId\"] for a composite key entity\n\n// Entity without @Id returns empty list\nList<String> noIds = QueryUtil.idPropNames(LogEntry.class);\n// Returns: [] (no @Id/@ReadOnlyId and no property named \"id\")"
               ],
               "see_also": []
             },
@@ -13607,7 +13619,9 @@
               "examples": [
                 "// Given: @Table(name = \"users\", alias = \"u\") on User class\nString tableAndAlias = QueryUtil.tableNameAndAlias(User.class);\n// Returns: \"users u\"\n\n// Given: @Table(name = \"orders\") on Order class (no alias)\nString tableOnly = QueryUtil.tableNameAndAlias(Order.class);\n// Returns: \"orders\"\n\n// Given: no @Table annotation on MyEntity class\nString derived = QueryUtil.tableNameAndAlias(MyEntity.class);\n// Returns: \"my_entity\" (derived from class name using SNAKE_CASE)"
               ],
-              "see_also": []
+              "see_also": [
+                "#tableNameAndAlias(Class, NamingPolicy)"
+              ]
             },
             {
               "name": "tableNameAndAlias",
@@ -14162,7 +14176,19 @@
           "type_params": [],
           "constructors": [],
           "methods": [],
-          "fields": []
+          "fields": [
+            {
+              "name": "DEFAULT_NAMED_PARAMETER_HANDLER",
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "type": "BiConsumer<StringBuilder, String>",
+              "value": "(sql,name)->sql.append(':').append(name)",
+              "javadoc_summary": "Default renderer for SqlPolicy#NAMED_SQL placeholders."
+            }
+          ]
         },
         {
           "fqn": "com.landawn.abacus.query.SqlDialect.IdentifierQuote",
@@ -14494,7 +14520,7 @@
               "throws": [],
               "javadoc_summary": "Returns whether this product's #version() is greater than or equal to the given version.",
               "contract": [
-                "Returns false (not comparable) when either this #version() or minVersion is null, blank, or does not begin with an integer component."
+                "Returns false (not comparable) when either this #version() or minVersion is null, blank, does not begin with an integer component, or has an empty or unparseable component (for example \"8.\" or \"8..0\")."
               ],
               "examples": [],
               "see_also": [
@@ -14521,7 +14547,7 @@
               "throws": [],
               "javadoc_summary": "Returns whether this product's #version() is less than or equal to the given version.",
               "contract": [
-                "Returns false (not comparable) when either this #version() or maxVersion is null, blank, or does not begin with an integer component."
+                "Returns false (not comparable) when either this #version() or maxVersion is null, blank, does not begin with an integer component, or has an empty or unparseable component (for example \"8.\" or \"8..0\")."
               ],
               "examples": [],
               "see_also": [
@@ -14773,7 +14799,7 @@
                 {
                   "name": "id",
                   "type": "String",
-                  "javadoc": "the SQL identifier (must be non-empty, not contain whitespace, and not exceed #MAX_ID_LENGTH characters)",
+                  "javadoc": "the SQL identifier (must not be null or empty, must not contain whitespace, and must not exceed #MAX_ID_LENGTH characters)",
                   "nullability": "unspecified"
                 },
                 {
@@ -14806,7 +14832,7 @@
                 {
                   "name": "id",
                   "type": "String",
-                  "javadoc": "the SQL identifier (must be non-empty, not contain whitespace, and not exceed #MAX_ID_LENGTH characters)",
+                  "javadoc": "the SQL identifier (must not be null or empty, must not contain whitespace, and must not exceed #MAX_ID_LENGTH characters)",
                   "nullability": "unspecified"
                 },
                 {
@@ -14845,7 +14871,7 @@
                 {
                   "name": "id",
                   "type": "String",
-                  "javadoc": "the SQL identifier (must be non-empty, not contain whitespace, and not exceed #MAX_ID_LENGTH characters)",
+                  "javadoc": "the SQL identifier (must not be null or empty, must not contain whitespace, and must not exceed #MAX_ID_LENGTH characters)",
                   "nullability": "unspecified"
                 },
                 {
@@ -14876,7 +14902,7 @@
                 {
                   "name": "id",
                   "type": "String",
-                  "javadoc": "the SQL identifier (must be non-empty, not contain whitespace, and not exceed #MAX_ID_LENGTH characters)",
+                  "javadoc": "the SQL identifier (must not be null or empty, must not contain whitespace, and must not exceed #MAX_ID_LENGTH characters)",
                   "nullability": "unspecified"
                 },
                 {
@@ -15265,7 +15291,9 @@
               "examples": [
                 "SqlOperation selectOp = SqlOperation.of(\"SELECT\");      // returns SELECT\nSqlOperation insertOp = SqlOperation.of(\"INSERT\");      // returns INSERT\nSqlOperation mergeOp = SqlOperation.of(\"MERGE\");        // returns MERGE\n\n// Case-insensitive; multi-word and enum constant names are accepted\nSqlOperation lower = SqlOperation.of(\"select\");                  // returns SELECT\nSqlOperation tx = SqlOperation.of(\"begin transaction\");          // returns BEGIN_TRANSACTION\nSqlOperation txByName = SqlOperation.of(\"BEGIN_TRANSACTION\");    // returns BEGIN_TRANSACTION\n\n// Edge cases\nSqlOperation unsupported = SqlOperation.of(\"TRUNCATE\");   // returns null (not supported)\nSqlOperation blank = SqlOperation.of(\"\");                 // returns null\nSqlOperation nil = SqlOperation.of(null);                 // returns null"
               ],
-              "see_also": []
+              "see_also": [
+                "#fromOrUnknown(String)"
+              ]
             },
             {
               "name": "fromOrUnknown",
@@ -15289,9 +15317,11 @@
               "javadoc_summary": "Resolves an operation token, returning #UNKNOWN for null or unsupported input.",
               "contract": [],
               "examples": [
-                "SqlOperation.fromOrUnknown(\"select\");   // SELECT\nSqlOperation.fromOrUnknown(\"TRUNCATE\"); // UNKNOWN\nSqlOperation.fromOrUnknown(null);        // UNKNOWN"
+                "SqlOperation.fromOrUnknown(\"select\");   // SELECT\nSqlOperation.fromOrUnknown(\"TRUNCATE\"); // UNKNOWN\nSqlOperation.fromOrUnknown(null);       // UNKNOWN"
               ],
-              "see_also": []
+              "see_also": [
+                "#of(String)"
+              ]
             },
             {
               "name": "sqlToken",
@@ -15551,7 +15581,7 @@
                 "message": "use TokenizerConfig#builder(); builder creation belongs to the type being built",
                 "for_removal": false
               },
-              "javadoc_summary": "Starts an immutable tokenizer configuration from the built-in SQL separators.",
+              "javadoc_summary": "Starts a configuration builder initialized with the built-in SQL separators.",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -15889,7 +15919,7 @@
                 {
                   "name": "index",
                   "type": "int",
-                  "javadoc": "the index of the candidate function-name token",
+                  "javadoc": "the index of the candidate function-name token; invalid indices return false",
                   "nullability": "unspecified"
                 }
               ],
@@ -16100,7 +16130,7 @@
               "javadoc_summary": "Checks whether the given SQL statement begins with an INSERT OR REPLACE clause (the SQLite upsert form that overwrites an existing row when a uniqueness constraint is violated).",
               "contract": [
                 "Checks whether the given SQL statement begins with an INSERT OR REPLACE clause (the SQLite upsert form that overwrites an existing row when a uniqueness constraint is violated).",
-                "*/), any leading parentheses and any leading WITH clause; the three keywords INSERT, OR and REPLACE must appear (case-insensitively) in that order at the start of the actual statement."
+                "*/), any leading parentheses and any leading WITH clause; the three keywords INSERT, OR and REPLACE must appear consecutively (case-insensitively, separated only by whitespace or comments) in that order at the start of the actual statement."
               ],
               "examples": [
                 "boolean result1 = SqlParser.isInsertOrReplaceQuery(\"INSERT OR REPLACE INTO t (id) VALUES (1)\");\n// result1 = true\n\nboolean result2 = SqlParser.isInsertOrReplaceQuery(\"INSERT INTO t (id) VALUES (1)\");\n// result2 = false"
@@ -16146,37 +16176,8 @@
                 "#isDeleteQuery(String)",
                 "#isInsertOrReplaceQuery(String)",
                 "#isReadOnlyQuery(String)",
-                "#isNonUpdateQuery(String)"
+                "#isNoUpdateQuery(String)"
               ]
-            },
-            {
-              "name": "isNonUpdateQuery",
-              "kind": "static",
-              "modifiers": [
-                "public",
-                "static"
-              ],
-              "signature": "@Deprecated public static boolean isNonUpdateQuery(final String sql)",
-              "return_type": "boolean",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "sql",
-                  "type": "String",
-                  "javadoc": "the SQL statement to check; may be empty or null",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [],
-              "deprecated": {
-                "is_deprecated": true,
-                "message": "use #isReadOrInsertQuery(String), whose name describes the accepted statement kinds",
-                "for_removal": false
-              },
-              "javadoc_summary": "Compatibility alias for the historical NoUpdateDao terminology.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
             },
             {
               "name": "isNoUpdateQuery",
@@ -16859,7 +16860,7 @@
               "javadoc_summary": "Returns the hash code of this condition.",
               "contract": [],
               "examples": [
-                "// Same property/operator/bounds -> equal hash codes\nBetween a = new Between(\"age\", 18, 65);\nBetween b = new Between(\"age\", 18, 65);\nboolean same = a.hashCode() == b.hashCode();   // true\n\n// Different bound -> different hash codes\nBetween c = new Between(\"age\", 18, 99);\nboolean diff = a.hashCode() == c.hashCode();   // false"
+                "// Same property/operator/bounds -> equal hash codes\nBetween a = new Between(\"age\", 18, 65);\nBetween b = new Between(\"age\", 18, 65);\nboolean same = a.hashCode() == b.hashCode();   // true"
               ],
               "see_also": []
             },
@@ -16884,7 +16885,7 @@
               "javadoc_summary": "Checks if this condition is equal to another object.",
               "contract": [
                 "Checks if this condition is equal to another object.",
-                "Two conditions are equal if they have the same property name, operator, minValue, and maxValue."
+                "Two conditions are equal if they have the exact same runtime class, property name, operator, minValue, and maxValue."
               ],
               "examples": [
                 "Between a = new Between(\"age\", 18, 65);\nBetween b = new Between(\"age\", 18, 65);\nboolean eq = a.equals(b);   // true\n\n// Different upper bound -> not equal\nboolean neMax = a.equals(new Between(\"age\", 18, 99));   // false\n\n// Different operator (BETWEEN vs NOT BETWEEN) -> not equal\nboolean neOp = a.equals(new NotBetween(\"age\", 18, 65));   // false\n\n// Non-AbstractBetween object -> not equal\nboolean neType = a.equals(\"age\");   // false"
@@ -17092,7 +17093,7 @@
               "javadoc_summary": "Generates the hash code for this condition.",
               "contract": [],
               "examples": [
-                "// Same property/operator/values -> equal hash codes\nIn a = new In(\"status\", Arrays.asList(\"active\", \"pending\"));\nIn b = new In(\"status\", Arrays.asList(\"active\", \"pending\"));\nboolean same = a.hashCode() == b.hashCode();   // true\n\n// Different values -> different hash codes\nIn c = new In(\"status\", Arrays.asList(\"active\"));\nboolean diff = a.hashCode() == c.hashCode();   // false"
+                "// Same property/operator/values -> equal hash codes\nIn a = new In(\"status\", Arrays.asList(\"active\", \"pending\"));\nIn b = new In(\"status\", Arrays.asList(\"active\", \"pending\"));\nboolean same = a.hashCode() == b.hashCode();   // true"
               ],
               "see_also": []
             },
@@ -17117,7 +17118,7 @@
               "javadoc_summary": "Checks if this condition is equal to another object.",
               "contract": [
                 "Checks if this condition is equal to another object.",
-                "Two conditions are equal if they have the same property name(s), operator, row-value mode, and values list."
+                "Two conditions are equal if they have the exact same runtime class, property name(s), operator, row-value mode, and values list."
               ],
               "examples": [
                 "In a = new In(\"status\", Arrays.asList(\"active\", \"pending\"));\nIn b = new In(\"status\", Arrays.asList(\"active\", \"pending\"));\nboolean eq = a.equals(b);   // true\n\n// Different values -> not equal\nboolean neValues = a.equals(new In(\"status\", Arrays.asList(\"active\")));   // false\n\n// Different operator (IN vs NOT IN) -> not equal\nboolean neOp = a.equals(new NotIn(\"status\", Arrays.asList(\"active\", \"pending\")));   // false\n\n// Non-AbstractIn object -> not equal\nboolean neType = a.equals(\"status\");   // false"
@@ -17227,7 +17228,7 @@
               "javadoc_summary": "Generates the hash code for this condition.",
               "contract": [],
               "examples": [
-                "SubQuery subQuery = new SubQuery(\"SELECT id FROM departments\");\nInSubQuery a = new InSubQuery(\"deptId\", subQuery);\nInSubQuery b = new InSubQuery(\"deptId\", subQuery);\nboolean same = a.hashCode() == b.hashCode();   // true\n\n// Different property -> different hash codes\nInSubQuery c = new InSubQuery(\"teamId\", subQuery);\nboolean diff = a.hashCode() == c.hashCode();   // false"
+                "SubQuery subQuery = new SubQuery(\"SELECT id FROM departments\");\nInSubQuery a = new InSubQuery(\"deptId\", subQuery);\nInSubQuery b = new InSubQuery(\"deptId\", subQuery);\nboolean same = a.hashCode() == b.hashCode();   // true"
               ],
               "see_also": []
             },
@@ -17252,7 +17253,7 @@
               "javadoc_summary": "Checks if this condition is equal to another object.",
               "contract": [
                 "Checks if this condition is equal to another object.",
-                "Two conditions are equal if they have the same property names, operator, and subquery."
+                "Two conditions are equal if they have the exact same runtime class, property names, operator, and subquery."
               ],
               "examples": [
                 "SubQuery subQuery = new SubQuery(\"SELECT id FROM departments\");\nInSubQuery a = new InSubQuery(\"deptId\", subQuery);\nInSubQuery b = new InSubQuery(\"deptId\", subQuery);\nboolean eq = a.equals(b);   // true\n\n// Different property -> not equal\nboolean neProp = a.equals(new InSubQuery(\"teamId\", subQuery));   // false\n\n// Different operator (IN vs NOT IN) -> not equal\nboolean neOp = a.equals(new NotInSubQuery(\"deptId\", subQuery));   // false\n\n// Non-AbstractInSubQuery object -> not equal\nboolean neType = a.equals(\"deptId\");   // false"
@@ -17308,7 +17309,7 @@
                 {
                   "name": "subQuery",
                   "type": "SubQuery",
-                  "javadoc": "the subquery that returns values to compare against (must not be null)",
+                  "javadoc": "the subquery that returns values to compare against (must not be null); a structured subquery with an explicit, non-wildcard projection must select exactly one property",
                   "nullability": "unspecified"
                 }
               ]
@@ -17421,7 +17422,7 @@
                 {
                   "name": "subQuery",
                   "type": "SubQuery",
-                  "javadoc": "the subquery that returns values to compare against (must not be null)",
+                  "javadoc": "the subquery that returns values to compare against (must not be null); a structured subquery with an explicit, non-wildcard projection must select exactly one property",
                   "nullability": "unspecified"
                 }
               ]
@@ -17656,7 +17657,7 @@
               "javadoc_summary": "Returns the hash code of this Binary condition.",
               "contract": [],
               "examples": [
-                "// Equal property/operator/value -> equal hash codes\nBinary a = new Equal(\"age\", 25);\nBinary b = new Equal(\"age\", 25);\nboolean same = a.hashCode() == b.hashCode();   // true\n\n// Different value -> different hash codes\nBinary c = new Equal(\"age\", 30);\nboolean diff = a.hashCode() == c.hashCode();   // false"
+                "// Equal property/operator/value -> equal hash codes\nBinary a = new Equal(\"age\", 25);\nBinary b = new Equal(\"age\", 25);\nboolean same = a.hashCode() == b.hashCode();   // true"
               ],
               "see_also": []
             },
@@ -17786,7 +17787,7 @@
               "javadoc_summary": "Returns the hash code of this Cell.",
               "contract": [],
               "examples": [
-                "Where a = new Where(Filters.eq(\"active\", true));\nWhere b = new Where(Filters.eq(\"active\", true));\na.hashCode() == b.hashCode();   // true (same operator and condition)\n\n// Edge: a different wrapped condition produces a different hash code\nWhere c = new Where(Filters.eq(\"active\", false));\na.hashCode() == c.hashCode();   // (typically) false"
+                "Where a = new Where(Filters.eq(\"active\", true));\nWhere b = new Where(Filters.eq(\"active\", true));\na.hashCode() == b.hashCode();   // true (same operator and condition)"
               ],
               "see_also": []
             },
@@ -17846,7 +17847,7 @@
             "public",
             "abstract"
           ],
-          "javadoc_summary": "A composable variant of Cell that supports logical composition via AND/OR/NOT operations.",
+          "javadoc_summary": "A composable variant of Cell that supports logical composition via AND/OR/NOT/XOR operations.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -17931,7 +17932,7 @@
               "javadoc_summary": "Returns the hash code of this ComposableCell, based on the operator and wrapped condition.",
               "contract": [],
               "examples": [
-                "Not a = new Not(Filters.eq(\"status\", \"active\"));\nNot b = new Not(Filters.eq(\"status\", \"active\"));\na.hashCode() == b.hashCode();   // true (same operator and condition)\n\n// Edge: a different wrapped condition produces a different hash code\nNot c = new Not(Filters.eq(\"status\", \"inactive\"));\na.hashCode() == c.hashCode();   // (typically) false"
+                "Not a = new Not(Filters.eq(\"status\", \"active\"));\nNot b = new Not(Filters.eq(\"status\", \"active\"));\na.hashCode() == b.hashCode();   // true (same operator and condition)"
               ],
               "see_also": []
             },
@@ -18188,7 +18189,8 @@
               "throws": [],
               "javadoc_summary": "Returns the SELECT modifier (e.g., DISTINCT, DISTINCTROW, DISTINCT ON (col1, col2), or any custom modifier set via Builder#selectModifier(String)), or null if none was set.",
               "contract": [
-                "Returns the SELECT modifier (e.g., DISTINCT, DISTINCTROW, DISTINCT ON (col1, col2), or any custom modifier set via Builder#selectModifier(String)), or null if none was set."
+                "Returns the SELECT modifier (e.g., DISTINCT, DISTINCTROW, DISTINCT ON (col1, col2), or any custom modifier set via Builder#selectModifier(String)), or null if none was set.",
+                "SqlBuilder.append(Condition) applies this modifier to its current SELECT segment when the appended condition is a Criteria."
               ],
               "examples": [
                 "Criteria.builder().build().selectModifier();                    // returns null\nCriteria.builder().distinct().build().selectModifier();         // returns \"DISTINCT\"\nCriteria.builder().distinctOn(\"a, b\").build().selectModifier(); // returns \"DISTINCT ON (a, b)\""
@@ -18461,7 +18463,7 @@
               "throws": [],
               "javadoc_summary": "Checks whether this Criteria is equal to another object.",
               "contract": [
-                "Two Criteria instances are equal if they have the same select modifier and the same ordered list of conditions."
+                "Two instances are equal if they have the exact same runtime class, select modifier, and ordered list of conditions."
               ],
               "examples": [
                 "Criteria c1 = Criteria.builder().where(Filters.eq(\"a\", 1)).build();\nCriteria c2 = Criteria.builder().where(Filters.eq(\"a\", 1)).build();\nc1.equals(c2);               // returns true\nc1.equals(c1);               // returns true (reflexive)\nc1.equals(null);             // returns false\nc1.equals(\"not a Criteria\"); // returns false"
@@ -18606,12 +18608,12 @@
                 {
                   "name": "columnNames",
                   "type": "String",
-                  "javadoc": "the columns to apply DISTINCTROW to; if null, empty, or blank, plain DISTINCTROW is used",
+                  "javadoc": "the expressions to place inside DISTINCTROW(...); if null, empty, or blank, plain DISTINCTROW is used",
                   "nullability": "unspecified"
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Sets the DISTINCTROW modifier with specific columns.",
+              "javadoc_summary": "Sets the literal, database-specific DISTINCTROW(columnNames) modifier.",
               "contract": [
                 "If columnNames is null, empty, or blank, a plain DISTINCTROW modifier (without parentheses) is used."
               ],
@@ -18739,7 +18741,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition",
+                  "javadoc": "the join condition; null produces a condition-less join (equivalent to the single-argument overload)",
                   "nullability": "unspecified"
                 }
               ],
@@ -18770,7 +18772,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition",
+                  "javadoc": "the join condition; null produces a condition-less join",
                   "nullability": "unspecified"
                 }
               ],
@@ -18826,7 +18828,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition",
+                  "javadoc": "the join condition; null produces a condition-less join (equivalent to the single-argument overload)",
                   "nullability": "unspecified"
                 }
               ],
@@ -18857,7 +18859,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition",
+                  "javadoc": "the join condition; null produces a condition-less join",
                   "nullability": "unspecified"
                 }
               ],
@@ -18913,7 +18915,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition",
+                  "javadoc": "the join condition; null produces a condition-less join (equivalent to the single-argument overload)",
                   "nullability": "unspecified"
                 }
               ],
@@ -18944,7 +18946,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition",
+                  "javadoc": "the join condition; null produces a condition-less join",
                   "nullability": "unspecified"
                 }
               ],
@@ -19000,7 +19002,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition",
+                  "javadoc": "the join condition; null produces a condition-less join (equivalent to the single-argument overload)",
                   "nullability": "unspecified"
                 }
               ],
@@ -19031,7 +19033,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition",
+                  "javadoc": "the join condition; null produces a condition-less join",
                   "nullability": "unspecified"
                 }
               ],
@@ -19087,7 +19089,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition",
+                  "javadoc": "the join condition; null produces a condition-less join (equivalent to the single-argument overload)",
                   "nullability": "unspecified"
                 }
               ],
@@ -19118,7 +19120,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition",
+                  "javadoc": "the join condition; null produces a condition-less join",
                   "nullability": "unspecified"
                 }
               ],
@@ -19168,7 +19170,7 @@
                 {
                   "name": "joinEntities",
                   "type": "Collection<String>",
-                  "javadoc": "the entity/table names to cross join",
+                  "javadoc": "the collection of tables/entities to join",
                   "nullability": "unspecified"
                 }
               ],
@@ -19218,7 +19220,7 @@
                 {
                   "name": "joinEntities",
                   "type": "Collection<String>",
-                  "javadoc": "the entity/table names to natural join",
+                  "javadoc": "the collection of tables/entities to join",
                   "nullability": "unspecified"
                 }
               ],
@@ -20316,7 +20318,7 @@
                 {
                   "name": "expr",
                   "type": "String",
-                  "javadoc": "the LIMIT expression as a string",
+                  "javadoc": "the LIMIT expression as a string (must not be null, empty, or blank)",
                   "nullability": "unspecified"
                 }
               ],
@@ -20509,7 +20511,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents a CROSS JOIN operation in SQL queries.",
+          "javadoc_summary": "Represents a CROSS JOIN clause in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -20677,7 +20679,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents a FULL JOIN (a.k.a.",
+          "javadoc_summary": "Represents a FULL JOIN clause in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -20707,7 +20709,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the join target. Use On (or the deprecated Using) when the SQL should include those keywords. A non-empty predicate is allowed; joinCondition itself may be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ]
@@ -20725,7 +20727,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the joined table list. Use On (or the deprecated Using) when the SQL should include those keywords. A non-empty predicate is allowed; joinCondition itself may be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ]
@@ -20741,7 +20743,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents a greater-than (&gt;) comparison condition in SQL-like queries.",
+          "javadoc_summary": "Represents a greater-than (&gt;) comparison condition in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -20759,7 +20761,7 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop > null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is supported",
+                  "javadoc": "the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop > null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is also supported",
                   "nullability": "unspecified"
                 }
               ]
@@ -20775,7 +20777,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents a greater-than-or-equal-to (&gt;=) comparison condition in SQL-like queries.",
+          "javadoc_summary": "Represents a greater-than-or-equal-to (&gt;=) comparison condition in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -20793,7 +20795,7 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop >= null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is supported",
+                  "javadoc": "the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop >= null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is also supported",
                   "nullability": "unspecified"
                 }
               ]
@@ -20937,14 +20939,14 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents an IN condition in SQL-like queries.",
+          "javadoc_summary": "Represents an IN condition in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
           "constructors": [
             {
               "signature": "public In(final String propName, final Collection<?> values)",
-              "javadoc_summary": "Creates a new IN condition with the specified property name and collection of values.",
+              "javadoc_summary": "Creates a new IN condition for the specified property and collection of values.",
               "params": [
                 {
                   "name": "propName",
@@ -20989,7 +20991,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents an IN condition with a subquery in SQL-like queries.",
+          "javadoc_summary": "Represents an IN subquery condition in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -21019,13 +21021,13 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "the property names to check (must not be null or empty and must not contain null, empty, or blank elements). Their order must match the column order in the subquery.",
+                  "javadoc": "the property/column names to check (must not be null or empty and must not contain null, empty, or blank elements). Their order must match the column order in the subquery.",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "subQuery",
                   "type": "SubQuery",
-                  "javadoc": "the subquery that returns the value combinations to check against (must not be null). If it has an explicit structured projection without * or qualifier.*, it must select exactly propNames.size() columns. Raw SQL and wildcard projections cannot be arity-checked here.",
+                  "javadoc": "the subquery that returns the values to check against (must not be null). If it has an explicit structured projection without * or qualifier.*, it must select exactly propNames.size() columns. Raw SQL and wildcard projections cannot be arity-checked here.",
                   "nullability": "unspecified"
                 }
               ]
@@ -21071,7 +21073,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the join target. Use On (or the deprecated Using) when the SQL should include those keywords. A non-empty predicate is allowed; joinCondition itself may be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ]
@@ -21089,7 +21091,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the joined table list. Use On (or the deprecated Using) when the SQL should include those keywords. A non-empty predicate is allowed; joinCondition itself may be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ]
@@ -21400,7 +21402,7 @@
                 {
                   "name": "joinEntity",
                   "type": "String",
-                  "javadoc": "the table or entity to join with. Can include alias.",
+                  "javadoc": "the table or entity to join with. Can include alias (e.g., \"orders o\").",
                   "nullability": "unspecified"
                 }
               ]
@@ -21412,7 +21414,7 @@
                 {
                   "name": "joinEntity",
                   "type": "String",
-                  "javadoc": "the table or entity to join with. Can include alias.",
+                  "javadoc": "the table or entity to join with. Can include alias (e.g., \"orders o\").",
                   "nullability": "unspecified"
                 },
                 {
@@ -21430,7 +21432,7 @@
                 {
                   "name": "joinEntities",
                   "type": "Collection<String>",
-                  "javadoc": "the collection of tables or entities to join with",
+                  "javadoc": "the collection of tables or entities to join with.",
                   "nullability": "unspecified"
                 },
                 {
@@ -21541,7 +21543,7 @@
               "javadoc_summary": "Computes the hash code for this JOIN clause.",
               "contract": [],
               "examples": [
-                "Join a = new Join(\"orders o\", new On(\"a.id\", \"b.id\"));\nJoin b = new Join(\"orders o\", new On(\"a.id\", \"b.id\"));\na.hashCode() == b.hashCode();   // true (same operator, entities, and condition)\n\n// Edge: a different join entity produces a different hash code\nJoin c = new Join(\"customers c\", new On(\"a.id\", \"b.id\"));\na.hashCode() == c.hashCode();   // (typically) false"
+                "Join a = new Join(\"orders o\", new On(\"a.id\", \"b.id\"));\nJoin b = new Join(\"orders o\", new On(\"a.id\", \"b.id\"));\na.hashCode() == b.hashCode();   // true (same operator, entities, and condition)"
               ],
               "see_also": []
             },
@@ -21682,7 +21684,7 @@
               "throws": [],
               "javadoc_summary": "Converts this junction to its SQL representation according to the specified naming policy.",
               "contract": [
-                "Any null entries in the conditions list are skipped, and an empty string is returned if the junction has no conditions or every condition is null."
+                "An empty string is returned if the junction has no conditions."
               ],
               "examples": [
                 "Junction and = new Junction(Operator.AND,\n    new Equal(\"status\", \"active\"),\n    new GreaterThan(\"age\", 18));\nand.toSql(NamingPolicy.NO_CHANGE);\n// returns \"((status = 'active') AND (age > 18))\"\n\n// Edge: a single condition is still doubly parenthesized\nJunction single = new Junction(Operator.OR, new Equal(\"x\", 1));\nsingle.toSql(NamingPolicy.NO_CHANGE);   // returns \"((x = 1))\"\n\n// Edge: naming policy rewrites property names\nJunction snake = new Junction(Operator.AND, new Equal(\"firstName\", \"John\"));\nsnake.toSql(NamingPolicy.SNAKE_CASE);   // returns \"((first_name = 'John'))\"\n\n// Edge: an empty junction renders as an empty string\nnew Junction(Operator.AND).toSql(NamingPolicy.NO_CHANGE);   // returns \"\""
@@ -21703,7 +21705,7 @@
               "javadoc_summary": "Computes the hash code for this junction based on its operator and conditions.",
               "contract": [],
               "examples": [
-                "Junction a = new Junction(Operator.AND, new Equal(\"status\", \"active\"));\nJunction b = new Junction(Operator.AND, new Equal(\"status\", \"active\"));\na.hashCode() == b.hashCode();   // true (same operator and conditions)\n\n// Edge: a different operator produces a different hash code\nJunction c = new Junction(Operator.OR, new Equal(\"status\", \"active\"));\na.hashCode() == c.hashCode();   // (typically) false"
+                "Junction a = new Junction(Operator.AND, new Equal(\"status\", \"active\"));\nJunction b = new Junction(Operator.AND, new Equal(\"status\", \"active\"));\na.hashCode() == b.hashCode();   // true (same operator and conditions)"
               ],
               "see_also": []
             },
@@ -21728,7 +21730,7 @@
               "javadoc_summary": "Checks if this junction is equal to another object.",
               "contract": [
                 "Checks if this junction is equal to another object.",
-                "Two junctions are considered equal if they have the same operator and contain the same conditions in the same order."
+                "Two junctions are considered equal if they have the exact same runtime class and operator, and contain the same conditions in the same order."
               ],
               "examples": [
                 "Junction a = new Junction(Operator.AND, new Equal(\"status\", \"active\"));\nJunction b = new Junction(Operator.AND, new Equal(\"status\", \"active\"));\na.equals(b);    // returns true\n\n// Edge: a different operator -> not equal\nJunction c = new Junction(Operator.OR, new Equal(\"status\", \"active\"));\na.equals(c);    // returns false\n\n// Edge: same conditions in a different order -> not equal\nJunction d = new Junction(Operator.AND, new Equal(\"a\", 1), new Equal(\"b\", 2));\nJunction e = new Junction(Operator.AND, new Equal(\"b\", 2), new Equal(\"a\", 1));\nd.equals(e);    // returns false\n\na.equals(null); // returns false"
@@ -21775,7 +21777,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the join target. Use On (or the deprecated Using) when the SQL should include those keywords. A non-empty predicate is allowed; joinCondition itself may be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ]
@@ -21793,7 +21795,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the joined table list. Use On (or the deprecated Using) when the SQL should include those keywords. A non-empty predicate is allowed; joinCondition itself may be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ]
@@ -21809,7 +21811,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents a less-than (&lt;) comparison condition in SQL-like queries.",
+          "javadoc_summary": "Represents a less-than (&lt;) comparison condition in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -21827,7 +21829,7 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the value to compare against (a literal value, SqlExpression, SubQuery, another non-structural Condition, or direct All, Any, or Some operand); passing null renders as prop < null, which is not a meaningful SQL comparison; do not pass null to this operator",
+                  "javadoc": "the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop < null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is also supported",
                   "nullability": "unspecified"
                 }
               ]
@@ -21843,7 +21845,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents a less-than-or-equal-to (&lt;=) comparison condition in SQL-like queries.",
+          "javadoc_summary": "Represents a less-than-or-equal-to (&lt;=) comparison condition in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -21861,7 +21863,7 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the value to compare against (a literal value, SqlExpression, SubQuery, another non-structural Condition, or direct All, Any, or Some operand); passing null renders as prop <= null, which is not a meaningful SQL comparison; do not pass null to this operator",
+                  "javadoc": "the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop <= null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is also supported",
                   "nullability": "unspecified"
                 }
               ]
@@ -21895,7 +21897,7 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the pattern to match (typically a String containing % and/or _ wildcards; may also be a SubQuery). Use % to match any sequence of characters and _ to match a single character. Passing null renders as prop LIKE null, which is not a meaningful SQL comparison; do not pass null to this operator.",
+                  "javadoc": "the pattern to match (typically a String containing % and/or _ wildcards; may also be a SubQuery, an SqlExpression, or another non-structural Condition). Use % to match any sequence of characters and _ to match a single character. Passing null renders as prop LIKE null, which is not a meaningful SQL comparison; do not pass null to this operator.",
                   "nullability": "unspecified"
                 }
               ]
@@ -21953,7 +21955,7 @@
                 {
                   "name": "expr",
                   "type": "String",
-                  "javadoc": "row-limiting expression; must be non-null, non-blank, and match a supported form",
+                  "javadoc": "the row-limiting expression. Must not be null, empty, or blank, and must match a supported form.",
                   "nullability": "unspecified"
                 }
               ]
@@ -22256,7 +22258,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property name. Must not be null, empty, or blank. A null argument causes an IllegalArgumentException (null is treated like a blank string by the internal Strings.isBlank check).",
+                  "javadoc": "the property name (must not be null, empty, or blank)",
                   "nullability": "unspecified"
                 }
               ],
@@ -22376,6 +22378,118 @@
               "modifiers": [
                 "public"
               ],
+              "signature": "public Or equalsAny(final boolean[] values)",
+              "return_type": "Or",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "boolean[]",
+                  "javadoc": "primitive boolean values to check. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates an OR condition with multiple EQUAL checks for this property using primitive boolean values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"active\").equalsAny(new boolean[]{true, false});\n// SQL: ((active = true) OR (active = false))"
+              ],
+              "see_also": [
+                "Or",
+                "Equal"
+              ]
+            },
+            {
+              "name": "equalsAny",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public Or equalsAny(final char[] values)",
+              "return_type": "Or",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "char[]",
+                  "javadoc": "primitive char values to check. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates an OR condition with multiple EQUAL checks for this property using primitive char values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"grade\").equalsAny(new char[]{'A', 'B', 'C'});\n// SQL: ((grade = 'A') OR (grade = 'B') OR (grade = 'C'))"
+              ],
+              "see_also": [
+                "Or",
+                "Equal"
+              ]
+            },
+            {
+              "name": "equalsAny",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public Or equalsAny(final byte[] values)",
+              "return_type": "Or",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "byte[]",
+                  "javadoc": "primitive byte values to check. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates an OR condition with multiple EQUAL checks for this property using primitive byte values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"flag\").equalsAny(new byte[]{0, 1, 2});\n// SQL: ((flag = 0) OR (flag = 1) OR (flag = 2))"
+              ],
+              "see_also": [
+                "Or",
+                "Equal"
+              ]
+            },
+            {
+              "name": "equalsAny",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public Or equalsAny(final short[] values)",
+              "return_type": "Or",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "short[]",
+                  "javadoc": "primitive short values to check. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates an OR condition with multiple EQUAL checks for this property using primitive short values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"level\").equalsAny(new short[]{1, 2, 3});\n// SQL: ((level = 1) OR (level = 2) OR (level = 3))"
+              ],
+              "see_also": [
+                "Or",
+                "Equal"
+              ]
+            },
+            {
+              "name": "equalsAny",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
               "signature": "public Or equalsAny(final int[] values)",
               "return_type": "Or",
               "type_params": [],
@@ -22432,6 +22546,34 @@
               "modifiers": [
                 "public"
               ],
+              "signature": "public Or equalsAny(final float[] values)",
+              "return_type": "Or",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "float[]",
+                  "javadoc": "primitive float values to check. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates an OR condition with multiple EQUAL checks for this property using primitive float values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"ratio\").equalsAny(new float[]{0.25f, 0.5f, 0.75f});\n// SQL: ((ratio = 0.25) OR (ratio = 0.5) OR (ratio = 0.75))"
+              ],
+              "see_also": [
+                "Or",
+                "Equal"
+              ]
+            },
+            {
+              "name": "equalsAny",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
               "signature": "public Or equalsAny(final double[] values)",
               "return_type": "Or",
               "type_params": [],
@@ -22467,7 +22609,7 @@
                 {
                   "name": "values",
                   "type": "Collection<?>",
-                  "javadoc": "collection of values to check equality against. Each value will be tested with OR logic. Must not be null or empty and must yield at least one value while snapshotted.",
+                  "javadoc": "collection of values to check equality against. Each value will be tested with OR logic. Must not be null or empty, and must still yield at least one element when iterated.",
                   "nullability": "unspecified"
                 }
               ],
@@ -23279,6 +23421,118 @@
               "modifiers": [
                 "public"
               ],
+              "signature": "public In in(final boolean[] values)",
+              "return_type": "In",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "boolean[]",
+                  "javadoc": "primitive boolean values to check membership against. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates an IN condition for this property with primitive boolean values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"active\").in(new boolean[]{true, false});\n// SQL: active IN (true, false)"
+              ],
+              "see_also": [
+                "In",
+                "Filters#in(String, boolean[])"
+              ]
+            },
+            {
+              "name": "in",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public In in(final char[] values)",
+              "return_type": "In",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "char[]",
+                  "javadoc": "primitive char values to check membership against. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates an IN condition for this property with primitive char values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"grade\").in(new char[]{'A', 'B', 'C'});\n// SQL: grade IN ('A', 'B', 'C')"
+              ],
+              "see_also": [
+                "In",
+                "Filters#in(String, char[])"
+              ]
+            },
+            {
+              "name": "in",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public In in(final byte[] values)",
+              "return_type": "In",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "byte[]",
+                  "javadoc": "primitive byte values to check membership against. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates an IN condition for this property with primitive byte values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"flag\").in(new byte[]{0, 1, 2});\n// SQL: flag IN (0, 1, 2)"
+              ],
+              "see_also": [
+                "In",
+                "Filters#in(String, byte[])"
+              ]
+            },
+            {
+              "name": "in",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public In in(final short[] values)",
+              "return_type": "In",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "short[]",
+                  "javadoc": "primitive short values to check membership against. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates an IN condition for this property with primitive short values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"level\").in(new short[]{1, 2, 3});\n// SQL: level IN (1, 2, 3)"
+              ],
+              "see_also": [
+                "In",
+                "Filters#in(String, short[])"
+              ]
+            },
+            {
+              "name": "in",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
               "signature": "public In in(final int[] values)",
               "return_type": "In",
               "type_params": [],
@@ -23327,6 +23581,34 @@
               "see_also": [
                 "In",
                 "Filters#in(String, long[])"
+              ]
+            },
+            {
+              "name": "in",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public In in(final float[] values)",
+              "return_type": "In",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "float[]",
+                  "javadoc": "primitive float values to check membership against. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates an IN condition for this property with primitive float values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"ratio\").in(new float[]{0.25f, 0.5f, 0.75f});\n// SQL: ratio IN (0.25, 0.5, 0.75)"
+              ],
+              "see_also": [
+                "In",
+                "Filters#in(String, float[])"
               ]
             },
             {
@@ -23400,7 +23682,7 @@
                 {
                   "name": "subQuery",
                   "type": "SubQuery",
-                  "javadoc": "the subquery to check membership against (must not be null)",
+                  "javadoc": "the subquery to check membership against (must not be null); if it has a known, non-wildcard structured projection, that projection must contain exactly one column",
                   "nullability": "unspecified"
                 }
               ],
@@ -23445,6 +23727,118 @@
               "see_also": [
                 "NotIn",
                 "Filters#notIn(String, Object[])"
+              ]
+            },
+            {
+              "name": "notIn",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public NotIn notIn(final boolean[] values)",
+              "return_type": "NotIn",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "boolean[]",
+                  "javadoc": "primitive boolean values to check non-membership against. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates a NOT IN condition for this property with primitive boolean values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"active\").notIn(new boolean[]{false});\n// SQL: active NOT IN (false)"
+              ],
+              "see_also": [
+                "NotIn",
+                "Filters#notIn(String, boolean[])"
+              ]
+            },
+            {
+              "name": "notIn",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public NotIn notIn(final char[] values)",
+              "return_type": "NotIn",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "char[]",
+                  "javadoc": "primitive char values to check non-membership against. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates a NOT IN condition for this property with primitive char values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"grade\").notIn(new char[]{'D', 'F'});\n// SQL: grade NOT IN ('D', 'F')"
+              ],
+              "see_also": [
+                "NotIn",
+                "Filters#notIn(String, char[])"
+              ]
+            },
+            {
+              "name": "notIn",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public NotIn notIn(final byte[] values)",
+              "return_type": "NotIn",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "byte[]",
+                  "javadoc": "primitive byte values to check non-membership against. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates a NOT IN condition for this property with primitive byte values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"flag\").notIn(new byte[]{0, 1});\n// SQL: flag NOT IN (0, 1)"
+              ],
+              "see_also": [
+                "NotIn",
+                "Filters#notIn(String, byte[])"
+              ]
+            },
+            {
+              "name": "notIn",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public NotIn notIn(final short[] values)",
+              "return_type": "NotIn",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "short[]",
+                  "javadoc": "primitive short values to check non-membership against. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates a NOT IN condition for this property with primitive short values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"level\").notIn(new short[]{0, 9});\n// SQL: level NOT IN (0, 9)"
+              ],
+              "see_also": [
+                "NotIn",
+                "Filters#notIn(String, short[])"
               ]
             },
             {
@@ -23501,6 +23895,34 @@
               "see_also": [
                 "NotIn",
                 "Filters#notIn(String, long[])"
+              ]
+            },
+            {
+              "name": "notIn",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public NotIn notIn(final float[] values)",
+              "return_type": "NotIn",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "values",
+                  "type": "float[]",
+                  "javadoc": "primitive float values to check non-membership against. Must not be null or empty.",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Creates a NOT IN condition for this property with primitive float values.",
+              "contract": [],
+              "examples": [
+                "NamedProperty.of(\"ratio\").notIn(new float[]{0.0f, 1.0f});\n// SQL: ratio NOT IN (0.0, 1.0)"
+              ],
+              "see_also": [
+                "NotIn",
+                "Filters#notIn(String, float[])"
               ]
             },
             {
@@ -23574,7 +23996,7 @@
                 {
                   "name": "subQuery",
                   "type": "SubQuery",
-                  "javadoc": "the subquery to check non-membership against (must not be null)",
+                  "javadoc": "the subquery to check non-membership against (must not be null); if it has a known, non-wildcard structured projection, that projection must contain exactly one column",
                   "nullability": "unspecified"
                 }
               ],
@@ -23630,7 +24052,7 @@
               "javadoc_summary": "Checks if this NamedProperty is equal to another object.",
               "contract": [
                 "Checks if this NamedProperty is equal to another object.",
-                "Two NamedProperty instances are equal if they have the same property name."
+                "Two instances are equal if they have the exact same runtime class and property name."
               ],
               "examples": [
                 "new NamedProperty(\"age\").equals(new NamedProperty(\"age\"));   // returns true (same name)\nNamedProperty.of(\"age\").equals(NamedProperty.of(\"age\"));     // true — same property name (structural equality)\nnew NamedProperty(\"age\").equals(new NamedProperty(\"Age\"));   // returns false (case-sensitive)\nnew NamedProperty(\"age\").equals(\"age\");                      // returns false (not a NamedProperty)"
@@ -23717,7 +24139,7 @@
                 {
                   "name": "condition",
                   "type": "Condition",
-                  "javadoc": "the condition to be negated; must not be null. May be any composable condition, including simple comparisons, logical junctions (And, Or), or subquery conditions. It should not be a clause condition (such as Where or Having), since those are not meant to be composed.",
+                  "javadoc": "the condition to be negated; must not be null. May be any composable condition, including simple comparisons, logical junctions (And, Or), or subquery predicates such as Exists, NotExists, or InSubQuery. It should not be a clause condition (such as Where or Having), since those are not meant to be composed.",
                   "nullability": "unspecified"
                 }
               ]
@@ -23740,7 +24162,7 @@
           "constructors": [
             {
               "signature": "public NotBetween(final String propName, final Object minValue, final Object maxValue)",
-              "javadoc_summary": "Creates a NOT BETWEEN condition for the specified property and range.",
+              "javadoc_summary": "Creates a new NOT BETWEEN condition.",
               "params": [
                 {
                   "name": "propName",
@@ -23791,7 +24213,7 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the value to compare against; may be null (renders as IS NOT NULL), a literal value, a SqlExpression, a SubQuery, another non-structural Condition, or a direct All, Any, or Some operand",
+                  "javadoc": "the value to compare against; may be null (renders as IS NOT NULL), a literal value, or a non-structural Condition such as a SubQuery or SqlExpression. A direct All, Any, or Some right-hand operand is also supported",
                   "nullability": "unspecified"
                 }
               ]
@@ -23819,7 +24241,7 @@
                 {
                   "name": "subQuery",
                   "type": "SubQuery",
-                  "javadoc": "the subquery to check for non-existence of rows (must not be null)",
+                  "javadoc": "the subquery to check for the absence of rows (must not be null)",
                   "nullability": "unspecified"
                 }
               ]
@@ -23861,7 +24283,7 @@
           "constructors": [
             {
               "signature": "public NotIn(final String propName, final Collection<?> values)",
-              "javadoc_summary": "Creates a NOT IN condition for the specified property and collection of values.",
+              "javadoc_summary": "Creates a new NOT IN condition for the specified property and collection of values.",
               "params": [
                 {
                   "name": "propName",
@@ -23872,7 +24294,7 @@
                 {
                   "name": "values",
                   "type": "Collection<?>",
-                  "javadoc": "the collection of values that the property should NOT match (must not be null or empty); the collection is copied internally to ensure immutability. A condition-valued element must be a non-structural, non-quantified value expression",
+                  "javadoc": "the collection of values that the property should NOT match (must not be null or empty); the collection is copied internally to prevent external modifications. A condition-valued element must not be query-structural or quantified",
                   "nullability": "unspecified"
                 }
               ]
@@ -23890,7 +24312,7 @@
                 {
                   "name": "valueRows",
                   "type": "Collection<?>",
-                  "javadoc": "the collection of value rows (must not be null or empty); each row must be non-null and resolve to exactly propNames.size() values. A row may be a Collection, Iterable, object array, Map or bean",
+                  "javadoc": "the collection of value rows (must not be null or empty); each row must be non-null and resolve to exactly propNames.size() values. A row may be a Collection, Iterable, object array, Map or bean. A missing property-name key in a map contributes null; condition-valued elements must not be query-structural or quantified",
                   "nullability": "unspecified"
                 }
               ]
@@ -23906,7 +24328,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents a NOT IN subquery condition used in SQL WHERE clauses.",
+          "javadoc_summary": "Represents a NOT IN subquery condition in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -23918,7 +24340,7 @@
                 {
                   "name": "propName",
                   "type": "String",
-                  "javadoc": "the property/column name to check against the subquery results (must not be null, empty, or blank)",
+                  "javadoc": "the property/column name (must not be null, empty, or blank)",
                   "nullability": "unspecified"
                 },
                 {
@@ -23936,7 +24358,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "collection of property names to check against the subquery results (must not be null or empty, and no element may be null, empty, or blank). Their order must match the column order in the subquery.",
+                  "javadoc": "the property/column names to check (must not be null or empty and must not contain null, empty, or blank elements). Their order must match the column order in the subquery.",
                   "nullability": "unspecified"
                 },
                 {
@@ -23976,7 +24398,7 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the pattern to match against (typically a String containing % and/or _ wildcards; may also be a SubQuery). Use % to match any sequence of characters and _ to match a single character. Passing null renders as prop NOT LIKE null, which is not a meaningful SQL comparison; do not pass null to this operator.",
+                  "javadoc": "the pattern to match against (typically a String containing % and/or _ wildcards; may also be a SubQuery, an SqlExpression, or another non-structural Condition). Use % to match any sequence of characters and _ to match a single character. Passing null renders as prop NOT LIKE null, which is not a meaningful SQL comparison; do not pass null to this operator.",
                   "nullability": "unspecified"
                 }
               ]
@@ -24717,10 +25139,10 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a new Or condition by adding another condition to this OR.",
+              "javadoc_summary": "Creates a new OR condition by adding another condition to this OR.",
               "contract": [],
               "examples": [
-                "// Build condition step by step\nOr or = new Or(Filters.equal(\"type\", \"A\"))\n    .or(Filters.equal(\"type\", \"B\"))\n    .or(Filters.equal(\"type\", \"C\"));\n// SQL: ((type = 'A') OR (type = 'B') OR (type = 'C'))\n\n// Add conditions conditionally\nOr baseOr = new Or(Filters.equal(\"status\", \"active\"));\nif (includeInactive) {\n    baseOr = baseOr.or(Filters.equal(\"status\", \"inactive\"));\n}\nif (includePending) {\n    baseOr = baseOr.or(Filters.equal(\"status\", \"pending\"));\n}\n// Results vary based on flags"
+                "// Build condition step by step\nOr or = new Or(Filters.equal(\"type\", \"A\"))\n    .or(Filters.equal(\"type\", \"B\"))\n    .or(Filters.equal(\"type\", \"C\"));\n// SQL: ((type = 'A') OR (type = 'B') OR (type = 'C'))\n\n// Add conditions conditionally\nOr baseOr = new Or(Filters.equal(\"status\", \"active\"));\nboolean includeInactive = true;\nboolean includePending = false;\nif (includeInactive) {\n    baseOr = baseOr.or(Filters.equal(\"status\", \"inactive\"));\n}\nif (includePending) {\n    baseOr = baseOr.or(Filters.equal(\"status\", \"pending\"));\n}\n// With these flag values, SQL is:\n// ((status = 'active') OR (status = 'inactive'))"
               ],
               "see_also": []
             }
@@ -24864,7 +25286,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the join target. Use On (or the deprecated Using) when the SQL should include those keywords. A non-empty predicate is allowed; joinCondition itself may be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ]
@@ -24882,7 +25304,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the condition appended after the joined table list. Use On (or the deprecated Using) when the SQL should include those keywords. A non-empty predicate is allowed; joinCondition itself may be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ]
@@ -25033,7 +25455,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates an equality expression between a literal and a value.",
+              "javadoc_summary": "Creates an equality expression between the given expression and a value.",
               "contract": [
                 "If value is null, the result is rendered as \"literal IS NULL\" instead of \"literal = null\"."
               ],
@@ -25067,7 +25489,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates an equality expression between a literal and a value.",
+              "javadoc_summary": "Creates an equality expression between the given expression and a value.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.eq(\"user_id\", 123);\n// Returns: \"user_id = 123\""
@@ -25099,7 +25521,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a not-equal expression between a literal and a value.",
+              "javadoc_summary": "Creates a not-equal expression between the given expression and a value.",
               "contract": [
                 "If value is null, the result is rendered as \"literal IS NOT NULL\" instead of \"literal != null\"."
               ],
@@ -25133,7 +25555,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a not-equal expression between a literal and a value.",
+              "javadoc_summary": "Creates a not-equal expression between the given expression and a value.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.ne(\"type\", \"guest\");\n// Returns: \"type != 'guest'\""
@@ -25165,7 +25587,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a greater-than expression between a literal and a value.",
+              "javadoc_summary": "Creates a greater-than expression between the given expression and a value.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.greaterThan(\"salary\", 50000);\n// Returns: \"salary > 50000\"\n\nString expr2 = SqlExpression.greaterThan(\"created_date\", \"2024-01-01\");\n// Returns: \"created_date > '2024-01-01'\""
@@ -25197,7 +25619,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a greater-than expression between a literal and a value.",
+              "javadoc_summary": "Creates a greater-than expression between the given expression and a value.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.gt(\"age\", 18);\n// Returns: \"age > 18\""
@@ -25229,7 +25651,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a greater-than-or-equal expression between a literal and a value.",
+              "javadoc_summary": "Creates a greater-than-or-equal expression between the given expression and a value.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.greaterThanOrEqual(\"score\", 60);\n// Returns: \"score >= 60\""
@@ -25261,7 +25683,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a greater-than-or-equal expression between a literal and a value.",
+              "javadoc_summary": "Creates a greater-than-or-equal expression between the given expression and a value.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.ge(\"quantity\", 1);\n// Returns: \"quantity >= 1\""
@@ -25293,7 +25715,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a less-than expression between a literal and a value.",
+              "javadoc_summary": "Creates a less-than expression between the given expression and a value.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.lessThan(\"price\", 100);\n// Returns: \"price < 100\""
@@ -25325,7 +25747,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a less-than expression between a literal and a value.",
+              "javadoc_summary": "Creates a less-than expression between the given expression and a value.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.lt(\"stock\", 10);\n// Returns: \"stock < 10\""
@@ -25357,7 +25779,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a less-than-or-equal expression between a literal and a value.",
+              "javadoc_summary": "Creates a less-than-or-equal expression between the given expression and a value.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.lessThanOrEqual(\"discount\", 50);\n// Returns: \"discount <= 50\""
@@ -25389,7 +25811,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a less-than-or-equal expression between a literal and a value.",
+              "javadoc_summary": "Creates a less-than-or-equal expression between the given expression and a value.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.le(\"temperature\", 32);\n// Returns: \"temperature <= 32\""
@@ -25427,7 +25849,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a BETWEEN expression for a literal with min and max values.",
+              "javadoc_summary": "Creates a BETWEEN expression for the given expression with min and max values.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.between(\"age\", 18, 65);\n// Returns: \"age BETWEEN 18 AND 65\"\n\nString expr2 = SqlExpression.between(\"price\", 10.0, 50.0);\n// Returns: \"price BETWEEN 10.0 AND 50.0\""
@@ -25465,7 +25887,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a NOT BETWEEN expression for a literal with min and max values.",
+              "javadoc_summary": "Creates a NOT BETWEEN expression for the given expression with min and max values.",
               "contract": [
                 "A value satisfies NOT BETWEEN min AND max when it is strictly less than min or strictly greater than max, so both ends of the range are excluded."
               ],
@@ -25557,7 +25979,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates an IS NULL expression for the specified literal.",
+              "javadoc_summary": "Creates an IS NULL expression for the specified expression.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.isNull(\"email\");          // Returns: \"email IS NULL\"\nString expr2 = SqlExpression.isNull(\"middle_name\");   // Returns: \"middle_name IS NULL\""
@@ -25583,7 +26005,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates an IS NOT NULL expression for the specified literal.",
+              "javadoc_summary": "Creates an IS NOT NULL expression for the specified expression.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.isNotNull(\"email\");    // Returns: \"email IS NOT NULL\"\nString expr2 = SqlExpression.isNotNull(\"phone\");   // Returns: \"phone IS NOT NULL\""
@@ -25609,7 +26031,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a framework-specific IS BLANK expression for the specified literal, which the query engine interprets as a combined null-or-empty check.",
+              "javadoc_summary": "Creates a framework-specific IS BLANK expression for the specified expression, which the query engine interprets as a combined null-or-empty check.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.isNullOrEmpty(\"description\");   // Returns: \"description IS BLANK\"\nString expr2 = SqlExpression.isNullOrEmpty(\"address\");      // Returns: \"address IS BLANK\""
@@ -25635,7 +26057,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates a framework-specific IS NOT BLANK expression for the specified literal, which the query engine interprets as a combined not-null-and-not-empty check.",
+              "javadoc_summary": "Creates a framework-specific IS NOT BLANK expression for the specified expression, which the query engine interprets as a combined not-null-and-not-empty check.",
               "contract": [],
               "examples": [
                 "String expr = SqlExpression.isNotNullAndNotEmpty(\"name\");       // Returns: \"name IS NOT BLANK\"\nString expr2 = SqlExpression.isNotNullAndNotEmpty(\"comment\");   // Returns: \"comment IS NOT BLANK\""
@@ -25661,7 +26083,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates an AND expression combining multiple literals.",
+              "javadoc_summary": "Creates an AND expression combining multiple expressions.",
               "contract": [
                 "All conditions must be true for the AND expression to be true."
               ],
@@ -25689,7 +26111,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Creates an OR expression combining multiple literals.",
+              "javadoc_summary": "Creates an OR expression combining multiple expressions.",
               "contract": [
                 "At least one condition must be true for the OR expression to be true."
               ],
@@ -27038,7 +27460,7 @@
               "javadoc_summary": "Checks if this expression equals another object.",
               "contract": [
                 "Checks if this expression equals another object.",
-                "Two expressions are equal if they are both SqlExpression instances with the same literal string."
+                "Two expressions are equal if they have the exact same runtime class and literal string."
               ],
               "examples": [
                 "new SqlExpression(\"a + b\").equals(new SqlExpression(\"a + b\"));   // returns true (same literal)\nSqlExpression.of(\"a + b\").equals(SqlExpression.of(\"a + b\"));     // returns true (cached, same instance)\nnew SqlExpression(\"a + b\").equals(new SqlExpression(\"a - b\"));   // returns false (different literal)\nnew SqlExpression(\"a + b\").equals(\"a + b\");                   // returns false (not an SqlExpression)"
@@ -27077,6 +27499,7 @@
               "javadoc_summary": "Creates a subquery with an entity name and raw SQL.",
               "deprecated": {
                 "is_deprecated": true,
+                "message": "the entity name is unused when rendering raw query-expression text; it is only exposed by #entityName() and participates in #equals(Object)/#hashCode(). Use #SubQuery(String) for raw text, or #SubQuery(String, java.util.Collection, Condition) when an entity-name-based structured subquery is actually wanted.",
                 "for_removal": false
               },
               "params": [
@@ -27113,7 +27536,7 @@
                 {
                   "name": "condition",
                   "type": "Condition",
-                  "javadoc": "the optional trailing condition or clause; a predicate is wrapped in Where",
+                  "javadoc": "an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, an empty Junction, or an empty Criteria adds no clause.",
                   "nullability": "unspecified"
                 }
               ]
@@ -27137,7 +27560,7 @@
                 {
                   "name": "condition",
                   "type": "Condition",
-                  "javadoc": "an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, or an empty Criteria adds no clause.",
+                  "javadoc": "an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, an empty Junction, or an empty Criteria adds no clause.",
                   "nullability": "unspecified"
                 }
               ]
@@ -27161,7 +27584,7 @@
                 {
                   "name": "condition",
                   "type": "Condition",
-                  "javadoc": "the optional trailing condition or clause; a predicate is wrapped in Where",
+                  "javadoc": "an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, an empty Junction, or an empty Criteria adds no clause.",
                   "nullability": "unspecified"
                 }
               ]
@@ -27185,7 +27608,7 @@
                 {
                   "name": "condition",
                   "type": "Condition",
-                  "javadoc": "an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, or an empty Criteria adds no clause.",
+                  "javadoc": "an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, an empty Junction, or an empty Criteria adds no clause.",
                   "nullability": "unspecified"
                 }
               ]
@@ -27346,7 +27769,7 @@
               "javadoc_summary": "Generates the hash code for this subquery.",
               "contract": [],
               "examples": [
-                "// Equal subqueries produce equal hash codes\nSubQuery a = Filters.subQuery(\"SELECT id FROM users\");\nSubQuery b = Filters.subQuery(\"SELECT id FROM users\");\nboolean sameHash = a.hashCode() == b.hashCode();\n// returns true\n\n// Different SQL typically produces different hash codes\nSubQuery c = Filters.subQuery(\"SELECT id FROM customers\");\nboolean differentHash = a.hashCode() != c.hashCode();\n// returns true"
+                "// Equal subqueries produce equal hash codes\nSubQuery a = Filters.subQuery(\"SELECT id FROM users\");\nSubQuery b = Filters.subQuery(\"SELECT id FROM users\");\nboolean sameHash = a.hashCode() == b.hashCode();\n// returns true"
               ],
               "see_also": []
             },
@@ -27371,7 +27794,7 @@
               "javadoc_summary": "Checks if this subquery is equal to another object.",
               "contract": [
                 "Checks if this subquery is equal to another object.",
-                "Two subqueries are equal only when all of their identity fields are equal: the entity name, the entity class, the selected properties, the raw SQL string, and the condition.",
+                "Two subqueries are equal only when they have the exact same runtime class and all of their identity fields are equal: the entity name, the entity class, the selected properties, the raw SQL string, and the condition.",
                 "The entity name participates even for raw-SQL subqueries, so two raw subqueries are equal only when both their SQL and their entity name match."
               ],
               "examples": [

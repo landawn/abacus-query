@@ -1,7 +1,7 @@
 # abacus-query API Index (v4.8.10)
-- Build: 8e5f5ca081344fd605eb701a3424a4baed2ae494
+- Build: 6f5b4b15d334f7f7b8e111e4312d78150f971861
 - Java: 17
-- Generated: 2026-07-18
+- Generated: 2026-07-26
 
 ## Packages
 - com.landawn.abacus.query
@@ -67,7 +67,7 @@ Base class for fluent SQL builders.
     ```
 ##### distinct(...) -> This
 - **Signature:** `public This distinct()`
-- **Summary:** Adds DISTINCT clause to the SELECT statement.
+- **Summary:** Adds the DISTINCT select modifier to the SELECT statement.
 - **Parameters:**
   - (none)
 - **Returns:** this SqlBuilder instance for method chaining
@@ -138,7 +138,7 @@ Base class for fluent SQL builders.
 - **Signature:** `public This from(final Class<?> entityClass)`
 - **Summary:** Sets the FROM clause using an entity class.
 - **Parameters:**
-  - `entityClass` (`Class<?>`) — the entity class representing the table
+  - `entityClass` (`Class<?>`) — the entity class representing the table (must not be null)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Examples:**
   - ```java
@@ -154,7 +154,7 @@ Base class for fluent SQL builders.
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class, "u").build().query();
-    // Output: SELECT * FROM users u (table name based on naming policy)
+    // Output: SELECT * FROM user u (table name derived from User class based on naming policy)
     ```
 ##### join(...) -> This
 - **Signature:** `public This join(final String joinExpr)`
@@ -182,6 +182,9 @@ Base class for fluent SQL builders.
                     .join(Order.class)
                     .on("users.id = orders.user_id")
                     .build().query();
+    // Output: SELECT * FROM users JOIN orders ON users.id = orders.user_id
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 - **Signature:** `public This join(final Class<?> entityClass, final String alias)`
 - **Summary:** Adds a JOIN clause using an entity class with an alias.
@@ -196,6 +199,9 @@ Base class for fluent SQL builders.
                     .join(Order.class, "o")
                     .on("u.id = o.user_id")
                     .build().query();
+    // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 ##### innerJoin(...) -> This
 - **Signature:** `public This innerJoin(final String joinExpr)`
@@ -220,6 +226,8 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from(User.class).innerJoin(Order.class).on("users.id = orders.user_id").build().query();
     // Output: SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 - **Signature:** `public This innerJoin(final Class<?> entityClass, final String alias)`
 - **Summary:** Adds an INNER JOIN clause using an entity class with an alias.
@@ -231,6 +239,8 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from(User.class, "u").innerJoin(Order.class, "o").on("u.id = o.user_id").build().query();
     // Output: SELECT * FROM users u INNER JOIN orders o ON u.id = o.user_id
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 ##### leftJoin(...) -> This
 - **Signature:** `public This leftJoin(final String joinExpr)`
@@ -255,6 +265,8 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from(User.class).leftJoin(Order.class).on("users.id = orders.user_id").build().query();
     // Output: SELECT * FROM users LEFT JOIN orders ON users.id = orders.user_id
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 - **Signature:** `public This leftJoin(final Class<?> entityClass, final String alias)`
 - **Summary:** Adds a LEFT JOIN clause using an entity class with an alias.
@@ -266,6 +278,8 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from(User.class, "u").leftJoin(Order.class, "o").on("u.id = o.user_id").build().query();
     // Output: SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 ##### rightJoin(...) -> This
 - **Signature:** `public This rightJoin(final String joinExpr)`
@@ -290,6 +304,8 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from(User.class).rightJoin(Order.class).on("users.id = orders.user_id").build().query();
     // Output: SELECT * FROM users RIGHT JOIN orders ON users.id = orders.user_id
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 - **Signature:** `public This rightJoin(final Class<?> entityClass, final String alias)`
 - **Summary:** Adds a RIGHT JOIN clause using an entity class with an alias.
@@ -301,6 +317,8 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from(User.class, "u").rightJoin(Order.class, "o").on("u.id = o.user_id").build().query();
     // Output: SELECT * FROM users u RIGHT JOIN orders o ON u.id = o.user_id
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 ##### fullJoin(...) -> This
 - **Signature:** `public This fullJoin(final String joinExpr)`
@@ -325,6 +343,8 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from(User.class).fullJoin(Order.class).on("users.id = orders.user_id").build().query();
     // Output: SELECT * FROM users FULL JOIN orders ON users.id = orders.user_id
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 - **Signature:** `public This fullJoin(final Class<?> entityClass, final String alias)`
 - **Summary:** Adds a FULL JOIN clause using an entity class with an alias.
@@ -336,6 +356,8 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from(User.class, "u").fullJoin(Order.class, "o").on("u.id = o.user_id").build().query();
     // Output: SELECT * FROM users u FULL JOIN orders o ON u.id = o.user_id
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 ##### crossJoin(...) -> This
 - **Signature:** `public This crossJoin(final String joinExpr)`
@@ -360,6 +382,8 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from(User.class).crossJoin(Order.class).build().query();
     // Output: SELECT * FROM users CROSS JOIN orders
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 - **Signature:** `public This crossJoin(final Class<?> entityClass, final String alias)`
 - **Summary:** Adds a CROSS JOIN clause using an entity class with an alias.
@@ -371,6 +395,8 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from(User.class, "u").crossJoin(Order.class, "o").build().query();
     // Output: SELECT * FROM users u CROSS JOIN orders o
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 ##### naturalJoin(...) -> This
 - **Signature:** `public This naturalJoin(final String joinExpr)`
@@ -395,6 +421,8 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from(User.class).naturalJoin(Order.class).build().query();
     // Output: SELECT * FROM users NATURAL JOIN orders
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 - **Signature:** `public This naturalJoin(final Class<?> entityClass, final String alias)`
 - **Summary:** Adds a NATURAL JOIN clause using an entity class with an alias.
@@ -406,6 +434,8 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from(User.class, "u").naturalJoin(Order.class, "o").build().query();
     // Output: SELECT * FROM users u NATURAL JOIN orders o
+    // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+    // names are derived from the class names)
     ```
 ##### on(...) -> This
 - **Signature:** `public This on(final String expr)`
@@ -454,7 +484,7 @@ Base class for fluent SQL builders.
 - **Signature:** `public This using(final String expr)`
 - **Summary:** Adds a USING clause for join conditions.
 - **Parameters:**
-  - `expr` (`String`) — the column name(s) for the USING clause
+  - `expr` (`String`) — the property or column name(s) for the USING clause (must not be null, empty, or blank)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Examples:**
   - ```java
@@ -1023,8 +1053,8 @@ Base class for fluent SQL builders.
 - **Signature:** `public This append(final String expr)`
 - **Summary:** Appends a string expression to the SQL statement.
 - **Contract:**
-  - A single separating space is inserted before expr when, and only when, it is needed: that is, when the statement built so far does not already end with a space and expr does not already begin with one.
-  - As a result both .append("FOR UPDATE") and .append(" FOR UPDATE") produce the same, correctly spaced output (a doubled space is possible only when the statement built so far already ends with a space and expr also begins with one).
+  - When the statement built so far is nonempty, a separating space is inserted before expr if the statement does not already end with a space and expr does not already begin with one.
+  - Caller-supplied edge whitespace is otherwise preserved; if the statement ends with a space and expr begins with one, both spaces remain.
 - **Parameters:**
   - `expr` (`String`) — the expression to append
 - **Returns:** this SqlBuilder instance for method chaining
@@ -1505,7 +1535,7 @@ Base class for fluent SQL builders.
 - **Signature:** `@Beta public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> function) throws E`
 - **Summary:** Applies a function to the SQL-Parameters pair and returns the result.
 - **Parameters:**
-  - `function` (`Throwables.Function<? super SP, T, E>`) — the function to apply to the SP pair
+  - `function` (`Throwables.Function<? super SP, T, E>`) — the function to apply to the SP pair; must not be null
 - **Returns:** the result of applying the function
 - **Throws:**
   - `E` — if the function throws an exception
@@ -1514,20 +1544,23 @@ Base class for fluent SQL builders.
     List<Account> accounts = PSC.select("*")
         .from("account")
         .where(Filters.equal("status", "ACTIVE"))
-        .apply(sp -> jdbcTemplate.query(sp.query(), sp.parameters(), accountRowMapper));
+        .apply(sp -> jdbcTemplate.query(sp.query(), accountRowMapper, sp.parameters().toArray()));
     ```
 - **Signature:** `@Beta public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> function) throws E`
 - **Summary:** Applies a bi-function to the SQL string and parameters separately and returns the result.
 - **Parameters:**
-  - `function` (`Throwables.BiFunction<? super String, ? super List<Object>, T, E>`) — the bi-function to apply to the SQL and parameters
+  - `function` (`Throwables.BiFunction<? super String, ? super List<Object>, T, E>`) — the bi-function to apply to the SQL and parameters; must not be null
 - **Returns:** the result of applying the function
 - **Throws:**
   - `E` — if the function throws an exception
 - **Examples:**
   - ```java
+    Map<String, Object> updates = new LinkedHashMap<>();
+    updates.put("status", "INACTIVE");
+    
     int count = PSC.update("account")
-        .set("status", "lastLogin")
-        .where(Filters.lessThan("lastLogin", oneYearAgo))
+        .set(updates)
+        .where(Filters.lessThan("lastLogin", "2025-01-01"))
         .apply((sql, params) -> jdbcTemplate.update(sql, params.toArray()));
     ```
 ##### accept(...) -> void
@@ -1536,12 +1569,17 @@ Base class for fluent SQL builders.
 - **Contract:**
   - This is useful for executing the SQL with a data access framework when no return value is needed.
 - **Parameters:**
-  - `consumer` (`Throwables.Consumer<? super SP, E>`) — the consumer to accept the SP pair
+  - `consumer` (`Throwables.Consumer<? super SP, E>`) — the consumer to accept the SP pair; must not be null
 - **Throws:**
   - `E` — if the consumer throws an exception
 - **Examples:**
   - ```java
-    PSC.insert("name", "email", "status")
+    Map<String, Object> account = new LinkedHashMap<>();
+    account.put("name", "Alice");
+    account.put("email", "alice@example.com");
+    account.put("status", "ACTIVE");
+    
+    PSC.insert(account)
        .into("account")
        .accept(sp -> jdbcTemplate.update(sp.query(), sp.parameters().toArray()));
     ```
@@ -1550,7 +1588,7 @@ Base class for fluent SQL builders.
 - **Contract:**
   - This is useful for executing the SQL with a data access framework when no return value is needed.
 - **Parameters:**
-  - `consumer` (`Throwables.BiConsumer<? super String, ? super List<Object>, E>`) — the bi-consumer to accept the SQL and parameters
+  - `consumer` (`Throwables.BiConsumer<? super String, ? super List<Object>, E>`) — the bi-consumer to accept the SQL and parameters; must not be null
 - **Throws:**
   - `E` — if the consumer throws an exception
 - **Examples:**
@@ -1633,7 +1671,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Contract:**
   - The actual value will be provided as a parameter when executing the query.
 - **Parameters:**
-  - `propOrColumnName` (`String`) — the property or column name to insert
+  - `propOrColumnName` (`String`) — the property or column name to insert a value into
 - **Returns:** a new SqlBuilder instance configured for INSERT operation
 - **Examples:**
   - ```java
@@ -1730,7 +1768,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Examples:**
   - ```java
     String sql = PSC.insert(Account.class).into("account").build().query();
-    // Output: INSERT INTO account (first_name, last_name, email, created_date) VALUES (?, ?, ?, ?)
+    // Output: INSERT INTO account (id, first_name, last_name, email) VALUES (?, ?, ?, ?)
     ```
 - **Signature:** `public SqlBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates an INSERT statement for an entity class with excluded properties.
@@ -1740,7 +1778,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Returns:** a new SqlBuilder instance configured for INSERT operation
 - **Examples:**
   - ```java
-    Set<String> excluded = N.asSet("createdDate", "modifiedDate");
+    Set<String> excluded = N.asSet("id");
     String sql = PSC.insert(Account.class, excluded).into("account").build().query();
     // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
     ```
@@ -1753,7 +1791,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Examples:**
   - ```java
     String sql = PSC.insertInto(Account.class).build().query();
-    // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
+    // Output: INSERT INTO account (id, first_name, last_name, email) VALUES (?, ?, ?, ?)
     ```
 - **Signature:** `public SqlBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates an INSERT INTO statement for an entity class with excluded properties.
@@ -1763,7 +1801,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Returns:** a new SqlBuilder instance configured for INSERT operation
 - **Examples:**
   - ```java
-    Set<String> excluded = N.asSet("id", "createdDate");
+    Set<String> excluded = N.asSet("id");
     String sql = PSC.insertInto(Account.class, excluded).build().query();
     // Output: INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
     ```
@@ -1771,7 +1809,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Signature:** `@Beta public SqlBuilder batchInsert(final Collection<?> entitiesOrPropMaps)`
 - **Summary:** Generates a MySQL-style batch INSERT statement.
 - **Parameters:**
-  - `entitiesOrPropMaps` (`Collection<?>`) — list of entities or property maps to insert
+  - `entitiesOrPropMaps` (`Collection<?>`) — collection of entities or property maps to insert; null elements are skipped, and the first non-null row determines whether the batch contains maps or beans
 - **Returns:** a new SqlBuilder instance configured for batch INSERT operation
 - **Examples:**
   - ```java
@@ -1825,23 +1863,21 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     String sql = PSC.update(Account.class)
                     .where(Filters.equal("id", 1))
                     .build().query();
-    // Output: UPDATE account SET first_name = ?, last_name = ?, email = ?, ... WHERE id = ?
+    // Output: UPDATE account SET id = ?, first_name = ?, last_name = ?, email = ? WHERE id = ?
     ```
 - **Signature:** `public SqlBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates an UPDATE statement for an entity class with excluded properties.
-- **Contract:**
-  - This is useful for partial updates or when certain fields should never be updated.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to update
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the update
 - **Returns:** a new SqlBuilder instance configured for UPDATE operation
 - **Examples:**
   - ```java
-    Set<String> excluded = N.asSet("createdDate", "createdBy");
+    Set<String> excluded = N.asSet("email");
     String sql = PSC.update(Account.class, excluded)
-                    .set(account)
-                    .where(Filters.equal("id", account.getId()))
+                    .where(Filters.equal("id", 1))
                     .build().query();
+    // Output: UPDATE account SET id = ?, first_name = ?, last_name = ? WHERE id = ?
     ```
 ##### deleteFrom(...) -> SqlBuilder
 - **Signature:** `public SqlBuilder deleteFrom(final String tableName)`
@@ -1961,7 +1997,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     String sql = PSC.select(Account.class)
                     .from("account")
                     .build().query();
-    // Output: SELECT id AS "id", first_name AS "firstName", last_name AS "lastName", email AS "email", created_date AS "createdDate" FROM account
+    // Output: SELECT id AS "id", first_name AS "firstName", last_name AS "lastName", email AS "email" FROM account
     ```
 - **Signature:** `public SqlBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties)`
 - **Summary:** Creates a SELECT statement for an entity class with optional sub-entity properties.
@@ -2593,16 +2629,17 @@ Builder for constructing dynamic SQL queries clause by clause.
 - **Summary:** Appends a raw, database-specific SQL clause or fragment verbatim to the end of the query.
 - **Contract:**
   - The supplied text is emitted unchanged (preceded by a separating space when needed; see below) and is not validated, escaped, or interpreted in any way \\u2014 whatever you pass becomes the literal tail of the generated SQL.
-  - A single separating space is inserted before textToAppend when, and only when, it is needed: that is, when the text built so far does not already end with a space and textToAppend does not already begin with one.
+  - Use it for any trailing clause that has no typed builder method, such as locking hints (for example "FOR UPDATE") or other vendor-specific suffixes, or for raw pagination/row-limiting syntax when the typed methods do not fit the dialect.
+  - A single separating space is inserted before textToAppend when, and only when, it is needed: that is, when this builder's trailing buffer is empty or does not already end with a space, and textToAppend does not already begin with one.
   - Consequently, either orderBy().append(...) or a trailing append("ORDER BY ...") can order a combined set-operation result; prefer the typed form when it is sufficient.
 - **Parameters:**
-  - `textToAppend` (`String`) — the complete raw SQL clause to append verbatim (e.g., "LIMIT 10 OFFSET 20") (must not be null, empty, or blank)
+  - `textToAppend` (`String`) — the complete raw SQL clause to append verbatim, e.g. "LIMIT 10 OFFSET 20" (must not be null, empty, or blank)
 - **Returns:** this builder instance for method chaining
 - **Examples:**
   - ```java
+    builder.append("FOR UPDATE");
+    // Or a raw pagination fragment when the typed limit/offset methods do not fit the dialect
     builder.append("LIMIT 10 OFFSET 20");
-    // Or any trailing clause that has no typed overload (e.g. a SQL:2008 row-limiting clause)
-    builder.append("FETCH FIRST 10 ROWS ONLY");
     ```
 ##### appendIf(...) -> Builder
 - **Signature:** `public Builder appendIf(final boolean b, final String textToAppend)`
@@ -2806,7 +2843,9 @@ Builder class for constructing the FROM clause of a SQL query.
     // Generates: FROM users u JOIN orders o ON u.id = o.user_id
     ```
 - **Signature:** `public FromClause join(final String joinExpr)`
-- **Summary:** Adds a JOIN clause (implicit INNER JOIN) with the specified table and no ON condition.
+- **Summary:** Adds a JOIN clause (implicit INNER JOIN) with the specified table and no separate connector step.
+- **Contract:**
+  - Any required ON/USING connector must be included in joinExpr itself; this overload may also be used for dialect-specific conditionless joins.
 - **Parameters:**
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
@@ -2828,7 +2867,9 @@ Builder class for constructing the FROM clause of a SQL query.
     // Generates: FROM users u INNER JOIN orders o ON u.id = o.user_id
     ```
 - **Signature:** `public FromClause innerJoin(final String joinExpr)`
-- **Summary:** Adds an INNER JOIN clause with the specified table and no ON condition.
+- **Summary:** Adds an INNER JOIN clause with the specified table and no separate connector step.
+- **Contract:**
+  - Any required ON/USING connector must be included in joinExpr itself; this overload may also be used for dialect-specific conditionless joins.
 - **Parameters:**
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
@@ -2850,7 +2891,9 @@ Builder class for constructing the FROM clause of a SQL query.
     // Generates: FROM users u LEFT JOIN orders o ON u.id = o.user_id
     ```
 - **Signature:** `public FromClause leftJoin(final String joinExpr)`
-- **Summary:** Adds a LEFT JOIN clause with the specified table and no ON condition.
+- **Summary:** Adds a LEFT JOIN clause with the specified table and no separate connector step.
+- **Contract:**
+  - Any required ON/USING connector must be included in joinExpr itself; this overload may also be used for dialect-specific conditionless joins.
 - **Parameters:**
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
@@ -2872,7 +2915,9 @@ Builder class for constructing the FROM clause of a SQL query.
     // Generates: FROM orders o RIGHT JOIN users u ON o.user_id = u.id
     ```
 - **Signature:** `public FromClause rightJoin(final String joinExpr)`
-- **Summary:** Adds a RIGHT JOIN clause with the specified table and no ON condition.
+- **Summary:** Adds a RIGHT JOIN clause with the specified table and no separate connector step.
+- **Contract:**
+  - Any required ON/USING connector must be included in joinExpr itself; this overload may also be used for dialect-specific conditionless joins.
 - **Parameters:**
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
@@ -2894,7 +2939,9 @@ Builder class for constructing the FROM clause of a SQL query.
     // Generates: FROM employees e FULL JOIN departments d ON e.dept_id = d.id
     ```
 - **Signature:** `public FromClause fullJoin(final String joinExpr)`
-- **Summary:** Adds a FULL JOIN clause with the specified table and no ON condition.
+- **Summary:** Adds a FULL JOIN clause with the specified table and no separate connector step.
+- **Contract:**
+  - Any required ON/USING connector must be included in joinExpr itself; this overload may also be used for dialect-specific conditionless joins.
 - **Parameters:**
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
@@ -3006,7 +3053,7 @@ Builder class for constructing the WHERE clause of a SQL query.
 - **Examples:**
   - ```java
     where.append("status IN ").appendPlaceholders(3, "(", ")");
-    // Generates: status IN (?, ?, ?)
+    // sb contents so far: "WHERE status IN (?, ?, ?)"
     ```
 ##### and(...) -> WhereClause
 - **Signature:** `public WhereClause and(final String expr)`
@@ -3183,7 +3230,7 @@ Builder class for constructing the HAVING clause of a SQL query.
 - **Examples:**
   - ```java
     having.append("MAX(score) IN ").appendPlaceholders(3, "(", ")");
-    // Generates: MAX(score) IN (?, ?, ?)
+    // sb contents so far: "HAVING MAX(score) IN (?, ?, ?)"
     ```
 ##### and(...) -> HavingClause
 - **Signature:** `public HavingClause and(final String expr)`
@@ -3606,18 +3653,25 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Returns:** an Or condition
 - **Examples:**
   - ```java
+    Map<String, Object> activePremium = new LinkedHashMap<>();
+    activePremium.put("status", "active");
+    activePremium.put("type", "premium");
+    Map<String, Object> verifiedTrial = new LinkedHashMap<>();
+    verifiedTrial.put("status", "trial");
+    verifiedTrial.put("verified", true);
     Set<Map<String, Object>> propsSet = new LinkedHashSet<>();
-    propsSet.add(Map.of("status", "active", "type", "premium"));
-    propsSet.add(Map.of("status", "trial", "verified", true));
+    propsSet.add(activePremium);
+    propsSet.add(verifiedTrial);
     Or mapCondition = Filters.anyOfAllEqual(propsSet);
-    // Results in: (status = 'active' AND type = 'premium') OR (status = 'trial' AND verified = true)
+    // Results in: ((((status = 'active') AND (type = 'premium'))) OR (((status = 'trial') AND (verified = true))))
     
     List<User> users = Arrays.asList(
         new User("John", "john@example.com"),
         new User("Jane", "jane@example.com")
     );
     Or entityCondition = Filters.anyOfAllEqual(users);
-    // Results in: (name = 'John' AND email = 'john@example.com') OR (name = 'Jane' AND email = 'jane@example.com')
+    // If User's only selectable properties are name followed by email, results in:
+    // ((((name = 'John') AND (email = 'john@example.com'))) OR (((name = 'Jane') AND (email = 'jane@example.com'))))
     ```
 - **See also:** #anyOfAllEqual(Collection, Collection), #anyEqual(Map), #allEqual(Map)
 - **Signature:** `@Beta public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> includedPropNames)`
@@ -3631,7 +3685,7 @@ Factory class for creating SQL Condition objects used in query construction.
     List<User> users = Arrays.asList(new User("John", "active"), new User("Jane", "trial"));
     Or condition = Filters.anyOfAllEqual(users, Arrays.asList("name", "status"));
     // Only uses name and status properties from each user
-    // Results in: (name = 'John' AND status = 'active') OR (name = 'Jane' AND status = 'trial')
+    // Results in: ((((name = 'John') AND (status = 'active'))) OR (((name = 'Jane') AND (status = 'trial'))))
     ```
 - **See also:** #anyOfAllEqual(Collection), #allEqual(Object, Collection)
 ##### gtAndLt(...) -> And
@@ -3762,7 +3816,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Signature:** `@Deprecated public static Or id2Cond(final Collection<? extends EntityId> entityIds)`
 - **Summary:** Converts a collection of EntityIds to an Or condition where each EntityId becomes an And condition.
 - **Parameters:**
-  - `entityIds` (`Collection<? extends EntityId>`) — collection of EntityIds (must not be null or empty)
+  - `entityIds` (`Collection<? extends EntityId>`) — collection of EntityIds (must not be null, empty, or contain null)
 - **Returns:** an Or condition
 ##### notEqual(...) -> NotEqual
 - **Signature:** `public static NotEqual notEqual(final String propName, final Object propValue)`
@@ -4423,7 +4477,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - This is useful when the operator is chosen at runtime; for a fixed operator prefer #and(Condition...) or #or(Condition...).
 - **Parameters:**
   - `operator` (`Operator`) — the junction operator; must be Operator#AND or Operator#OR
-  - `conditions` (`Condition[]`) — the array of conditions to combine; null or empty is permitted and yields an empty junction
+  - `conditions` (`Condition[]`) — the array of conditions to combine; null or empty is permitted and yields an empty junction (which renders as an empty string)
 - **Returns:** a Junction with the specified operator
 - **Examples:**
   - ```java
@@ -4440,7 +4494,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - This is useful when the operator is chosen at runtime; for a fixed operator prefer #and(Collection) or #or(Collection).
 - **Parameters:**
   - `operator` (`Operator`) — the junction operator; must be Operator#AND or Operator#OR
-  - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine; null or empty is permitted and yields an empty junction
+  - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine; null or empty is permitted and yields an empty junction (which renders as an empty string)
 - **Returns:** a Junction with the specified operator
 - **Examples:**
   - ```java
@@ -4461,6 +4515,8 @@ Factory class for creating SQL Condition objects used in query construction.
     ```
 - **Signature:** `public static Where where(final String expr)`
 - **Summary:** Creates a Where clause from a raw SQL expression string.
+- **Contract:**
+  - When rendered by a configured SqlBuilder, detected identifiers may still be converted according to its naming policy.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression as a string (must not be null, empty, or blank)
 - **Returns:** a Where clause
@@ -4630,6 +4686,7 @@ Factory class for creating SQL Condition objects used in query construction.
     GroupBy groupBy = Filters.groupBy(
         Filters.expr("YEAR(order_date), MONTH(order_date)")
     );
+    // Results in SQL like: GROUP BY YEAR(order_date), MONTH(order_date)
     ```
 ##### having(...) -> Having
 - **Signature:** `public static Having having(final Condition condition)`
@@ -4644,6 +4701,8 @@ Factory class for creating SQL Condition objects used in query construction.
     ```
 - **Signature:** `public static Having having(final String expr)`
 - **Summary:** Creates a Having clause from a raw SQL expression string.
+- **Contract:**
+  - When rendered by a configured SqlBuilder, detected identifiers may still be converted according to its naming policy.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression as a string (must not be null, empty, or blank)
 - **Returns:** a Having clause
@@ -4829,6 +4888,8 @@ Factory class for creating SQL Condition objects used in query construction.
     ```
 - **Signature:** `public static On on(final String expr)`
 - **Summary:** Creates an On clause from a raw SQL expression string for JOIN operations.
+- **Contract:**
+  - When rendered by a configured SqlBuilder, detected identifiers may still be converted according to its naming policy.
 - **Parameters:**
   - `expr` (`String`) — the join condition as a string (must not be null, empty, or blank)
 - **Returns:** an On clause
@@ -4838,7 +4899,7 @@ Factory class for creating SQL Condition objects used in query construction.
     // Results in SQL like: ON users.department_id = departments.id AND users.active = true
     ```
 - **Signature:** `public static On on(final String leftPropName, final String rightPropName)`
-- **Summary:** Creates an On clause for simple equality join between two columns.
+- **Summary:** Creates an On clause for a simple equality join between two columns.
 - **Parameters:**
   - `leftPropName` (`String`) — the first column name
   - `rightPropName` (`String`) — the second column name to join with
@@ -5220,6 +5281,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a row value constructor IN condition.
 - **Contract:**
   - The tuple of property values must match one of the supplied value rows.
+  - A map contributes null for an absent property key; a bean must expose every requested property.
 - **Parameters:**
   - `propNames` (`Collection<String>`) — the property/column names (must not be null or empty and must not contain null/blank names)
   - `valueRows` (`Collection<?>`) — collection of value rows; each row must resolve to exactly propNames.size() values. A row may be a Collection, Iterable, object array, Map or bean
@@ -5364,7 +5426,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Returns:** a NotIn condition
 - **Examples:**
   - ```java
-    Set<String> excludedCountries = new HashSet<>(Arrays.asList("XX", "YY"));
+    List<String> excludedCountries = Arrays.asList("XX", "YY");
     NotIn condition = Filters.notIn("country_code", excludedCountries);
     // SQL fragment: country_code NOT IN ('XX', 'YY')
     ```
@@ -5372,6 +5434,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a row value constructor NOT IN condition.
 - **Contract:**
   - The tuple of property values must not match any of the supplied value rows.
+  - A map contributes null for an absent property key; a bean must expose every requested property.
 - **Parameters:**
   - `propNames` (`Collection<String>`) — the property/column names (must not be null or empty and must not contain null/blank names)
   - `valueRows` (`Collection<?>`) — collection of value rows to exclude; each row must resolve to exactly propNames.size() values. A row may be a Collection, Iterable, object array, Map or bean
@@ -5573,6 +5636,8 @@ Factory class for creating SQL Condition objects used in query construction.
     ```
 - **Signature:** `public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final String expr)`
 - **Summary:** Creates a SubQuery from an entity class with selected properties and a raw SQL condition string.
+- **Contract:**
+  - When rendered by a configured SqlBuilder, detected identifiers may still be converted according to its naming policy.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class representing the table (must not be null)
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty, and must not contain null, empty, or blank elements)
@@ -5616,6 +5681,8 @@ Factory class for creating SQL Condition objects used in query construction.
     ```
 - **Signature:** `public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final String expr)`
 - **Summary:** Creates a SubQuery from an entity name with selected properties and a raw SQL condition string.
+- **Contract:**
+  - When rendered by a configured SqlBuilder, detected identifiers may still be converted according to its naming policy.
 - **Parameters:**
   - `entityName` (`String`) — the entity/table name (must not be null, empty, or blank)
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty, and must not contain null, empty, or blank elements)
@@ -5631,7 +5698,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Signature:** `@Deprecated public static SubQuery subQuery(final String entityName, final String sql)`
 - **Summary:** Creates a SubQuery from an entity name and raw SQL.
 - **Parameters:**
-  - `entityName` (`String`) — the entity/table name
+  - `entityName` (`String`) — the entity/table name (not used to build the subquery when the full SQL is supplied; may be null or empty)
   - `sql` (`String`) — the complete SQL for the subquery (must not be null, empty, or blank)
 - **Returns:** a SubQuery
 - **Examples:**
@@ -5713,7 +5780,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
   - Parameter conversion is only applied when the SQL is a recognized data operation statement (see the class-level documentation).
 - **Parameters:**
   - `sql` (`String`) — the SQL string to parse (must not be null, empty, or blank)
-- **Returns:** a ParsedSql instance containing the parsed information
+- **Returns:** a ParsedSql instance for the given SQL (typically a cached instance)
 - **Examples:**
   - ```java
     // Using named parameters
@@ -5743,7 +5810,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
     ```
 ##### parameterizedSql(...) -> String
 - **Signature:** `public String parameterizedSql()`
-- **Summary:** Gets the parameterized SQL with named parameters replaced by JDBC placeholders (?) for recognized data-operation statements.
+- **Summary:** Returns the parameterized SQL with named parameters replaced by JDBC placeholders (?) for recognized data-operation statements.
 - **Parameters:**
   - (none)
 - **Returns:** the parameterized SQL string with ? placeholders
@@ -5760,9 +5827,9 @@ Represents a parsed SQL statement with support for named parameters and paramete
     ```
 ##### namedParameters(...) -> ImmutableList<String>
 - **Signature:** `public ImmutableList<String> namedParameters()`
-- **Summary:** Gets the list of named parameters extracted from the SQL in order of appearance.
+- **Summary:** Returns the list of named parameters extracted from the SQL in order of appearance.
 - **Contract:**
-  - Returns an empty list if the SQL has no named parameters, or if the SQL is not a recognized data operation statement (see the class-level documentation), in which case no parameter extraction is performed.
+  - The list is empty if the SQL has no named parameters, or if the SQL is not a recognized data operation statement (see the class-level documentation), in which case no parameter extraction is performed.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameter names
@@ -5779,7 +5846,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
     ```
 ##### parameterCount(...) -> int
 - **Signature:** `public int parameterCount()`
-- **Summary:** Gets the total number of parameters (named or positional) in the SQL.
+- **Summary:** Returns the total number of parameters (named or positional) in the SQL.
 - **Parameters:**
   - (none)
 - **Returns:** the number of parameters in the SQL
@@ -6030,6 +6097,8 @@ Utility class for handling database query operations, entity-column mappings, an
 ##### idPropNames(...) -> ImmutableList<String>
 - **Signature:** `@Internal @Immutable public static ImmutableList<String> idPropNames(final Class<?> entityClass)`
 - **Summary:** Returns the ID property names for the specified entity class.
+- **Contract:**
+  - ID properties are those annotated with @Id or @ReadOnlyId; when the class declares neither annotation, a property named exactly "id" is treated as the ID by convention.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be null)
 - **Returns:** an immutable list of ID property names, or an empty list if no ID properties are defined
@@ -6045,7 +6114,7 @@ Utility class for handling database query operations, entity-column mappings, an
     
     // Entity without @Id returns empty list
     List<String> noIds = QueryUtil.idPropNames(LogEntry.class);
-    // Returns: []
+    // Returns: [] (no @Id/@ReadOnlyId and no property named "id")
     ```
 ##### isNonColumn(...) -> boolean
 - **Signature:** `@Internal public static boolean isNonColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo)`
@@ -6132,6 +6201,7 @@ Utility class for handling database query operations, entity-column mappings, an
     String derived = QueryUtil.tableNameAndAlias(MyEntity.class);
     // Returns: "my_entity" (derived from class name using SNAKE_CASE)
     ```
+- **See also:** #tableNameAndAlias(Class, NamingPolicy)
 - **Signature:** `@Internal public static String tableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy)`
 - **Summary:** Returns the table name and optional alias for the entity class using the specified naming policy.
 - **Contract:**
@@ -6226,7 +6296,7 @@ Immutable selection specification for SQL queries, particularly useful for compl
 - **Summary:** Returns the property names to exclude from this selection.
 - **Parameters:**
   - (none)
-- **Returns:** the immutable excluded property names, or null if no properties are excluded
+- **Returns:** the immutable excluded property names; null or an empty set means no properties are excluded
 ##### hashCode(...) -> int
 - **Signature:** `@Override public int hashCode()`
 - **Parameters:**
@@ -6492,7 +6562,7 @@ Immutable descriptor of a database product, holding the product name and version
 - **Signature:** `public boolean isVersionAtLeast(final String minVersion)`
 - **Summary:** Returns whether this product's #version() is greater than or equal to the given version.
 - **Contract:**
-  - Returns false (not comparable) when either this #version() or minVersion is null, blank, or does not begin with an integer component.
+  - Returns false (not comparable) when either this #version() or minVersion is null, blank, does not begin with an integer component, or has an empty or unparseable component (for example "8." or "8..0").
 - **Parameters:**
   - `minVersion` (`String`) — the minimum version to compare against, such as "8.0" or "19"
 - **Returns:** true if this product's version parses and is greater than or equal to minVersion; false otherwise, including when either version is not comparable
@@ -6501,7 +6571,7 @@ Immutable descriptor of a database product, holding the product name and version
 - **Signature:** `public boolean isVersionAtMost(final String maxVersion)`
 - **Summary:** Returns whether this product's #version() is less than or equal to the given version.
 - **Contract:**
-  - Returns false (not comparable) when either this #version() or maxVersion is null, blank, or does not begin with an integer component.
+  - Returns false (not comparable) when either this #version() or maxVersion is null, blank, does not begin with an integer component, or has an empty or unparseable component (for example "8." or "8..0").
 - **Parameters:**
   - `maxVersion` (`String`) — the maximum version to compare against, such as "8.0" or "19"
 - **Returns:** true if this product's version parses and is less than or equal to maxVersion; false otherwise, including when either version is not comparable
@@ -6640,7 +6710,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Contract:**
   - This method validates the ID and throws an exception if an SQL with the same ID already exists.
 - **Parameters:**
-  - `id` (`String`) — the SQL identifier (must be non-empty, not contain whitespace, and not exceed #MAX_ID_LENGTH characters)
+  - `id` (`String`) — the SQL identifier (must not be null or empty, must not contain whitespace, and must not exceed #MAX_ID_LENGTH characters)
   - `sql` (`ParsedSql`) — the parsed SQL to associate with the identifier (must not be null)
 - **Examples:**
   - ```java
@@ -6656,7 +6726,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Contract:**
   - This method validates the ID and throws an exception if an SQL with the same ID already exists.
 - **Parameters:**
-  - `id` (`String`) — the SQL identifier (must be non-empty, not contain whitespace, and not exceed #MAX_ID_LENGTH characters)
+  - `id` (`String`) — the SQL identifier (must not be null or empty, must not contain whitespace, and must not exceed #MAX_ID_LENGTH characters)
   - `sql` (`ParsedSql`) — the parsed SQL to associate with the identifier (must not be null)
   - `attributes` (`Map<String, String>`) — additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
 - **Examples:**
@@ -6670,7 +6740,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Signature:** `public void add(final String id, final String sql)`
 - **Summary:** Adds a SQL string with the specified identifier and no attributes.
 - **Parameters:**
-  - `id` (`String`) — the SQL identifier (must be non-empty, not contain whitespace, and not exceed #MAX_ID_LENGTH characters)
+  - `id` (`String`) — the SQL identifier (must not be null or empty, must not contain whitespace, and must not exceed #MAX_ID_LENGTH characters)
   - `sql` (`String`) — the SQL string to parse and store (must not be null or blank)
 - **Examples:**
   - ```java
@@ -6680,7 +6750,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Signature:** `public void add(final String id, final String sql, final Map<String, String> attributes)`
 - **Summary:** Adds a SQL string with the specified identifier and attributes.
 - **Parameters:**
-  - `id` (`String`) — the SQL identifier (must be non-empty, not contain whitespace, and not exceed #MAX_ID_LENGTH characters)
+  - `id` (`String`) — the SQL identifier (must not be null or empty, must not contain whitespace, and must not exceed #MAX_ID_LENGTH characters)
   - `sql` (`String`) — the SQL string to parse and store (must not be null or blank)
   - `attributes` (`Map<String, String>`) — additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
 - **Examples:**
@@ -6871,6 +6941,7 @@ Enumeration representing SQL operation types.
     SqlOperation blank = SqlOperation.of("");                 // returns null
     SqlOperation nil = SqlOperation.of(null);                 // returns null
     ```
+- **See also:** #fromOrUnknown(String)
 ##### fromOrUnknown(...) -> SqlOperation
 - **Signature:** `public static SqlOperation fromOrUnknown(final String token)`
 - **Summary:** Resolves an operation token, returning #UNKNOWN for null or unsupported input.
@@ -6881,8 +6952,9 @@ Enumeration representing SQL operation types.
   - ```java
     SqlOperation.fromOrUnknown("select");   // SELECT
     SqlOperation.fromOrUnknown("TRUNCATE"); // UNKNOWN
-    SqlOperation.fromOrUnknown(null);        // UNKNOWN
+    SqlOperation.fromOrUnknown(null);       // UNKNOWN
     ```
+- **See also:** #of(String)
 
 #### Public Instance Methods
 ##### sqlToken(...) -> String
@@ -6928,7 +7000,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 #### Public Static Methods
 ##### tokenizerConfigBuilder(...) -> TokenizerConfig.Builder
 - **Signature:** `@Deprecated public static TokenizerConfig.Builder tokenizerConfigBuilder()`
-- **Summary:** Starts an immutable tokenizer configuration from the built-in SQL separators.
+- **Summary:** Starts a configuration builder initialized with the built-in SQL separators.
 - **Parameters:**
   - (none)
 - **Returns:** a builder initialized with the default separators
@@ -7057,7 +7129,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 - **Parameters:**
   - `tokens` (`List<String>`) — the parsed SQL tokens (typically the result of #parse(String))
   - `len` (`int`) — the exclusive upper bound for the scan; values above tokens.size() are capped
-  - `index` (`int`) — the index of the candidate function-name token
+  - `index` (`int`) — the index of the candidate function-name token; invalid indices return false
 - **Returns:** true if an opening-parenthesis token occurs after index, with only space tokens between them, and before the effective upper bound; false otherwise
 ##### isSelectQuery(...) -> boolean
 - **Signature:** `public static boolean isSelectQuery(final String sql)`
@@ -7180,7 +7252,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 - **Summary:** Checks whether the given SQL statement begins with an INSERT OR REPLACE clause (the SQLite upsert form that overwrites an existing row when a uniqueness constraint is violated).
 - **Contract:**
   - Checks whether the given SQL statement begins with an INSERT OR REPLACE clause (the SQLite upsert form that overwrites an existing row when a uniqueness constraint is violated).
-  - */), any leading parentheses and any leading WITH clause; the three keywords INSERT, OR and REPLACE must appear (case-insensitively) in that order at the start of the actual statement.
+  - */), any leading parentheses and any leading WITH clause; the three keywords INSERT, OR and REPLACE must appear consecutively (case-insensitively, separated only by whitespace or comments) in that order at the start of the actual statement.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
 - **Returns:** true if the SQL begins with INSERT OR REPLACE, false otherwise
@@ -7202,13 +7274,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
 - **Returns:** true for an accepted read or plain/safe insert; false otherwise, including for a null or empty statement
-- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String), #isNonUpdateQuery(String)
-##### isNonUpdateQuery(...) -> boolean
-- **Signature:** `@Deprecated public static boolean isNonUpdateQuery(final String sql)`
-- **Summary:** Compatibility alias for the historical NoUpdateDao terminology.
-- **Parameters:**
-  - `sql` (`String`) — the SQL statement to check; may be empty or null
-- **Returns:** the result of #isReadOrInsertQuery(String)
+- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String), #isNoUpdateQuery(String)
 ##### isNoUpdateQuery(...) -> boolean
 - **Signature:** `@Deprecated public static boolean isNoUpdateQuery(final String sql)`
 - **Summary:** Compatibility alias for the original public API name.
@@ -7412,7 +7478,7 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
 - **Summary:** Returns the lower bound of the range.
 - **Parameters:**
   - (none)
-- **Returns:** the configured minimum value, which may be a literal, a SubQuery, any other Condition, or null
+- **Returns:** the configured minimum value, which may be a literal, a SqlExpression, a SubQuery, another non-structural, non-quantified Condition, or null
 - **Examples:**
   - ```java
     Between between = new Between("age", 18, 65);
@@ -7423,7 +7489,7 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
 - **Summary:** Returns the upper bound of the range.
 - **Parameters:**
   - (none)
-- **Returns:** the configured maximum value, which may be a literal, a SubQuery, any other Condition, or null
+- **Returns:** the configured maximum value, which may be a literal, a SqlExpression, a SubQuery, another non-structural, non-quantified Condition, or null
 - **Examples:**
   - ```java
     Between between = new Between("age", 18, 65);
@@ -7486,17 +7552,13 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
     Between a = new Between("age", 18, 65);
     Between b = new Between("age", 18, 65);
     boolean same = a.hashCode() == b.hashCode();   // true
-    
-    // Different bound -> different hash codes
-    Between c = new Between("age", 18, 99);
-    boolean diff = a.hashCode() == c.hashCode();   // false
     ```
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this condition is equal to another object.
 - **Contract:**
   - Checks if this condition is equal to another object.
-  - Two conditions are equal if they have the same property name, operator, minValue, and maxValue.
+  - Two conditions are equal if they have the exact same runtime class, property name, operator, minValue, and maxValue.
 - **Parameters:**
   - `obj` (`Object`) — the object to compare with
 - **Returns:** true if the objects are equal, false otherwise
@@ -7674,17 +7736,13 @@ Abstract base class for IN and NOT IN conditions in SQL queries.
     In a = new In("status", Arrays.asList("active", "pending"));
     In b = new In("status", Arrays.asList("active", "pending"));
     boolean same = a.hashCode() == b.hashCode();   // true
-    
-    // Different values -> different hash codes
-    In c = new In("status", Arrays.asList("active"));
-    boolean diff = a.hashCode() == c.hashCode();   // false
     ```
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this condition is equal to another object.
 - **Contract:**
   - Checks if this condition is equal to another object.
-  - Two conditions are equal if they have the same property name(s), operator, row-value mode, and values list.
+  - Two conditions are equal if they have the exact same runtime class, property name(s), operator, row-value mode, and values list.
 - **Parameters:**
   - `obj` (`Object`) — the object to compare with
 - **Returns:** true if the objects are equal, false otherwise
@@ -7734,7 +7792,7 @@ Abstract base class for IN and NOT IN subquery conditions in SQL queries.
 - **Summary:** Returns the property names for this IN or NOT IN subquery condition.
 - **Parameters:**
   - (none)
-- **Returns:** non-null immutable collection of property names
+- **Returns:** an immutable list of property names (never null; empty for an uninitialized instance)
 - **Examples:**
   - ```java
     SubQuery subQuery = new SubQuery("SELECT id FROM departments WHERE active = true");
@@ -7783,17 +7841,13 @@ Abstract base class for IN and NOT IN subquery conditions in SQL queries.
     InSubQuery a = new InSubQuery("deptId", subQuery);
     InSubQuery b = new InSubQuery("deptId", subQuery);
     boolean same = a.hashCode() == b.hashCode();   // true
-    
-    // Different property -> different hash codes
-    InSubQuery c = new InSubQuery("teamId", subQuery);
-    boolean diff = a.hashCode() == c.hashCode();   // false
     ```
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this condition is equal to another object.
 - **Contract:**
   - Checks if this condition is equal to another object.
-  - Two conditions are equal if they have the same property names, operator, and subquery.
+  - Two conditions are equal if they have the exact same runtime class, property names, operator, and subquery.
 - **Parameters:**
   - `obj` (`Object`) — the object to compare with
 - **Returns:** true if the objects are equal, false otherwise
@@ -8061,10 +8115,6 @@ Base class for binary conditions that compare a property with a value.
     Binary a = new Equal("age", 25);
     Binary b = new Equal("age", 25);
     boolean same = a.hashCode() == b.hashCode();   // true
-    
-    // Different value -> different hash codes
-    Binary c = new Equal("age", 30);
-    boolean diff = a.hashCode() == c.hashCode();   // false
     ```
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
@@ -8179,10 +8229,6 @@ Represents a condition cell that wraps another condition with an operator.
     Where a = new Where(Filters.eq("active", true));
     Where b = new Where(Filters.eq("active", true));
     a.hashCode() == b.hashCode();   // true (same operator and condition)
-    
-    // Edge: a different wrapped condition produces a different hash code
-    Where c = new Where(Filters.eq("active", false));
-    a.hashCode() == c.hashCode();   // (typically) false
     ```
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
@@ -8228,7 +8274,7 @@ Abstract base class for SQL clause conditions.
 - (none)
 
 ### Class ComposableCell (com.landawn.abacus.query.condition.ComposableCell)
-A composable variant of Cell that supports logical composition via AND/OR/NOT operations.
+A composable variant of Cell that supports logical composition via AND/OR/NOT/XOR operations.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -8317,10 +8363,6 @@ A composable variant of Cell that supports logical composition via AND/OR/NOT op
     Not a = new Not(Filters.eq("status", "active"));
     Not b = new Not(Filters.eq("status", "active"));
     a.hashCode() == b.hashCode();   // true (same operator and condition)
-    
-    // Edge: a different wrapped condition produces a different hash code
-    Not c = new Not(Filters.eq("status", "inactive"));
-    a.hashCode() == c.hashCode();   // (typically) false
     ```
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
@@ -8525,6 +8567,7 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Summary:** Returns the SELECT modifier (e.g., DISTINCT, DISTINCTROW, DISTINCT ON (col1, col2), or any custom modifier set via Builder#selectModifier(String)), or null if none was set.
 - **Contract:**
   - Returns the SELECT modifier (e.g., DISTINCT, DISTINCTROW, DISTINCT ON (col1, col2), or any custom modifier set via Builder#selectModifier(String)), or null if none was set.
+  - SqlBuilder.append(Condition) applies this modifier to its current SELECT segment when the appended condition is a Criteria.
 - **Parameters:**
   - (none)
 - **Returns:** the SELECT modifier, or null if not set
@@ -8706,7 +8749,7 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks whether this Criteria is equal to another object.
 - **Contract:**
-  - Two Criteria instances are equal if they have the same select modifier and the same ordered list of conditions.
+  - Two instances are equal if they have the exact same runtime class, select modifier, and ordered list of conditions.
 - **Parameters:**
   - `obj` (`Object`) — the object to compare with
 - **Returns:** true if the objects are equal, false otherwise
@@ -8801,11 +8844,11 @@ A mutable builder for constructing Criteria instances with a fluent API.
     ```
 ##### distinctRowBy(...) -> Builder
 - **Signature:** `public Builder distinctRowBy(final String columnNames)`
-- **Summary:** Sets the DISTINCTROW modifier with specific columns.
+- **Summary:** Sets the literal, database-specific DISTINCTROW(columnNames) modifier.
 - **Contract:**
   - If columnNames is null, empty, or blank, a plain DISTINCTROW modifier (without parentheses) is used.
 - **Parameters:**
-  - `columnNames` (`String`) — the columns to apply DISTINCTROW to; if null, empty, or blank, plain DISTINCTROW is used
+  - `columnNames` (`String`) — the expressions to place inside DISTINCTROW(...); if null, empty, or blank, plain DISTINCTROW is used
 - **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
@@ -8884,7 +8927,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds a plain JOIN (no explicit type keyword) with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `joinCondition` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join (equivalent to the single-argument overload)
 - **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
@@ -8898,7 +8941,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds a plain JOIN (no explicit type keyword) with multiple entities and a condition to this criteria.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `joinCondition` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join
 - **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
@@ -8933,7 +8976,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds an INNER JOIN with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `joinCondition` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join (equivalent to the single-argument overload)
 - **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
@@ -8950,7 +8993,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds an INNER JOIN with multiple entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `joinCondition` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join
 - **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
@@ -8981,7 +9024,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds a LEFT JOIN with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `joinCondition` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join (equivalent to the single-argument overload)
 - **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
@@ -8997,7 +9040,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds a LEFT JOIN with multiple entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `joinCondition` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join
 - **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
@@ -9028,7 +9071,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds a RIGHT JOIN with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `joinCondition` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join (equivalent to the single-argument overload)
 - **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
@@ -9044,7 +9087,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds a RIGHT JOIN with multiple entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `joinCondition` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join
 - **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
@@ -9075,7 +9118,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds a FULL JOIN with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `joinCondition` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join (equivalent to the single-argument overload)
 - **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
@@ -9091,7 +9134,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds a FULL JOIN with multiple entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `joinCondition` (`Condition`) — the join condition
+  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join
 - **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
@@ -9121,8 +9164,8 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Signature:** `public Builder crossJoin(final Collection<String> joinEntities)`
 - **Summary:** Adds a conditionless CROSS JOIN for multiple entities.
 - **Parameters:**
-  - `joinEntities` (`Collection<String>`) — the entity/table names to cross join
-- **Returns:** this builder
+  - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
+- **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder().crossJoin(Arrays.asList("colors", "sizes")).build();
@@ -9149,8 +9192,8 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Signature:** `public Builder naturalJoin(final Collection<String> joinEntities)`
 - **Summary:** Adds a conditionless NATURAL JOIN for multiple entities.
 - **Parameters:**
-  - `joinEntities` (`Collection<String>`) — the entity/table names to natural join
-- **Returns:** this builder
+  - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
+- **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder().naturalJoin(Arrays.asList("employees", "departments")).build();
@@ -9697,7 +9740,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - If a LIMIT clause already exists, it will be replaced.
   - When rendered by a SQL builder whose dialect paginates with OFFSET/FETCH (Oracle, DB2 or SQL Server), a generic LIMIT count \[OFFSET offset\] expression is re-rendered in that dialect's syntax.
 - **Parameters:**
-  - `expr` (`String`) — the LIMIT expression as a string
+  - `expr` (`String`) — the LIMIT expression as a string (must not be null, empty, or blank)
 - **Returns:** this Builder instance for method chaining
 - **Examples:**
   - ```java
@@ -9821,7 +9864,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
     ```
 
 ### Class CrossJoin (com.landawn.abacus.query.condition.CrossJoin)
-Represents a CROSS JOIN operation in SQL queries.
+Represents a CROSS JOIN clause in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -9916,7 +9959,7 @@ Represents the SQL EXISTS operator for use with subqueries.
     ```
 
 ### Class FullJoin (com.landawn.abacus.query.condition.FullJoin)
-Represents a FULL JOIN (a.k.a.
+Represents a FULL JOIN clause in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -9933,7 +9976,7 @@ Represents a FULL JOIN (a.k.a.
 - (none)
 
 ### Class GreaterThan (com.landawn.abacus.query.condition.GreaterThan)
-Represents a greater-than (&gt;) comparison condition in SQL-like queries.
+Represents a greater-than (&gt;) comparison condition in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -9948,7 +9991,7 @@ Represents a greater-than (&gt;) comparison condition in SQL-like queries.
 - (none)
 
 ### Class GreaterThanOrEqual (com.landawn.abacus.query.condition.GreaterThanOrEqual)
-Represents a greater-than-or-equal-to (&gt;=) comparison condition in SQL-like queries.
+Represents a greater-than-or-equal-to (&gt;=) comparison condition in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -9998,13 +10041,13 @@ Represents a HAVING clause in SQL queries.
 - (none)
 
 ### Class In (com.landawn.abacus.query.condition.In)
-Represents an IN condition in SQL-like queries.
+Represents an IN condition in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
 #### Public Constructors
-- `public In(final String propName, final Collection<?> values)` — Creates a new IN condition with the specified property name and collection of values.
+- `public In(final String propName, final Collection<?> values)` — Creates a new IN condition for the specified property and collection of values.
 - `public In(final Collection<String> propNames, final Collection<?> valueRows)` — Creates a new row value constructor IN condition.
 
 #### Public Static Methods
@@ -10014,7 +10057,7 @@ Represents an IN condition in SQL-like queries.
 - (none)
 
 ### Class InSubQuery (com.landawn.abacus.query.condition.InSubQuery)
-Represents an IN condition with a subquery in SQL-like queries.
+Represents an IN subquery condition in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -10312,10 +10355,6 @@ Base class for SQL JOIN operations.
     Join a = new Join("orders o", new On("a.id", "b.id"));
     Join b = new Join("orders o", new On("a.id", "b.id"));
     a.hashCode() == b.hashCode();   // true (same operator, entities, and condition)
-    
-    // Edge: a different join entity produces a different hash code
-    Join c = new Join("customers c", new On("a.id", "b.id"));
-    a.hashCode() == c.hashCode();   // (typically) false
     ```
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
@@ -10404,10 +10443,10 @@ Base class for composable junction conditions that combine multiple conditions.
 - **Signature:** `@Override public String toSql(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this junction to its SQL representation according to the specified naming policy.
 - **Contract:**
-  - Any null entries in the conditions list are skipped, and an empty string is returned if the junction has no conditions or every condition is null.
+  - An empty string is returned if the junction has no conditions.
 - **Parameters:**
   - `namingPolicy` (`NamingPolicy`) — the naming policy to apply to property names within each condition; if null, com.landawn.abacus.util.NamingPolicy#NO_CHANGE is used
-- **Returns:** the SQL representation with proper parentheses and spacing, or an empty string if no non-null conditions are present
+- **Returns:** the SQL representation with proper parentheses and spacing, or an empty string if the junction has no conditions
 - **Examples:**
   - ```java
     Junction and = new Junction(Operator.AND,
@@ -10438,17 +10477,13 @@ Base class for composable junction conditions that combine multiple conditions.
     Junction a = new Junction(Operator.AND, new Equal("status", "active"));
     Junction b = new Junction(Operator.AND, new Equal("status", "active"));
     a.hashCode() == b.hashCode();   // true (same operator and conditions)
-    
-    // Edge: a different operator produces a different hash code
-    Junction c = new Junction(Operator.OR, new Equal("status", "active"));
-    a.hashCode() == c.hashCode();   // (typically) false
     ```
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this junction is equal to another object.
 - **Contract:**
   - Checks if this junction is equal to another object.
-  - Two junctions are considered equal if they have the same operator and contain the same conditions in the same order.
+  - Two junctions are considered equal if they have the exact same runtime class and operator, and contain the same conditions in the same order.
 - **Parameters:**
   - `obj` (`Object`) — the object to compare with
 - **Returns:** true if the object is of the same class with the same operator and conditions
@@ -10488,7 +10523,7 @@ Represents a LEFT JOIN clause in SQL queries.
 - (none)
 
 ### Class LessThan (com.landawn.abacus.query.condition.LessThan)
-Represents a less-than (&lt;) comparison condition in SQL-like queries.
+Represents a less-than (&lt;) comparison condition in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -10503,7 +10538,7 @@ Represents a less-than (&lt;) comparison condition in SQL-like queries.
 - (none)
 
 ### Class LessThanOrEqual (com.landawn.abacus.query.condition.LessThanOrEqual)
-Represents a less-than-or-equal-to (&lt;=) comparison condition in SQL-like queries.
+Represents a less-than-or-equal-to (&lt;=) comparison condition in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -10626,7 +10661,7 @@ Models a SQL row-limiting clause.
   - The two representations are intentionally not equal even when they produce identical SQL text.
 - **Parameters:**
   - `obj` (`Object`) — object to compare
-- **Returns:** true if obj is a Limit with the same operator and representation
+- **Returns:** true if obj has the same runtime class, operator, and representation
 
 ### Class Minus (com.landawn.abacus.query.condition.Minus)
 Represents a MINUS clause in SQL queries (also known as EXCEPT in some databases).
@@ -10674,7 +10709,7 @@ A utility class that provides a fluent API for creating SQL conditions based on 
 - **Signature:** `public static NamedProperty of(final String propName)`
 - **Summary:** Returns or atomically creates a cached NamedProperty instance for the specified property name.
 - **Parameters:**
-  - `propName` (`String`) — the property name. Must not be null, empty, or blank. A null argument causes an IllegalArgumentException (null is treated like a blank string by the internal Strings.isBlank check).
+  - `propName` (`String`) — the property name (must not be null, empty, or blank)
 - **Returns:** a cached or new NamedProperty instance
 - **Examples:**
   - ```java
@@ -10742,6 +10777,50 @@ A utility class that provides a fluent API for creating SQL conditions based on 
     NamedProperty.of("x").equalsAny();   // throws IllegalArgumentException (empty values)
     ```
 - **See also:** Or, Equal, com.landawn.abacus.query.Filters#anyEqual(java.util.Map)
+- **Signature:** `public Or equalsAny(final boolean[] values)`
+- **Summary:** Creates an OR condition with multiple EQUAL checks for this property using primitive boolean values.
+- **Parameters:**
+  - `values` (`boolean[]`) — primitive boolean values to check. Must not be null or empty.
+- **Returns:** an Or condition containing multiple Equal conditions
+- **Examples:**
+  - ```java
+    NamedProperty.of("active").equalsAny(new boolean[]{true, false});
+    // SQL: ((active = true) OR (active = false))
+    ```
+- **See also:** Or, Equal
+- **Signature:** `public Or equalsAny(final char[] values)`
+- **Summary:** Creates an OR condition with multiple EQUAL checks for this property using primitive char values.
+- **Parameters:**
+  - `values` (`char[]`) — primitive char values to check. Must not be null or empty.
+- **Returns:** an Or condition containing multiple Equal conditions
+- **Examples:**
+  - ```java
+    NamedProperty.of("grade").equalsAny(new char[]{'A', 'B', 'C'});
+    // SQL: ((grade = 'A') OR (grade = 'B') OR (grade = 'C'))
+    ```
+- **See also:** Or, Equal
+- **Signature:** `public Or equalsAny(final byte[] values)`
+- **Summary:** Creates an OR condition with multiple EQUAL checks for this property using primitive byte values.
+- **Parameters:**
+  - `values` (`byte[]`) — primitive byte values to check. Must not be null or empty.
+- **Returns:** an Or condition containing multiple Equal conditions
+- **Examples:**
+  - ```java
+    NamedProperty.of("flag").equalsAny(new byte[]{0, 1, 2});
+    // SQL: ((flag = 0) OR (flag = 1) OR (flag = 2))
+    ```
+- **See also:** Or, Equal
+- **Signature:** `public Or equalsAny(final short[] values)`
+- **Summary:** Creates an OR condition with multiple EQUAL checks for this property using primitive short values.
+- **Parameters:**
+  - `values` (`short[]`) — primitive short values to check. Must not be null or empty.
+- **Returns:** an Or condition containing multiple Equal conditions
+- **Examples:**
+  - ```java
+    NamedProperty.of("level").equalsAny(new short[]{1, 2, 3});
+    // SQL: ((level = 1) OR (level = 2) OR (level = 3))
+    ```
+- **See also:** Or, Equal
 - **Signature:** `public Or equalsAny(final int[] values)`
 - **Summary:** Creates an OR condition with multiple EQUAL checks for this property using primitive int values.
 - **Parameters:**
@@ -10764,6 +10843,17 @@ A utility class that provides a fluent API for creating SQL conditions based on 
     // SQL: ((user_id = 1001) OR (user_id = 1002) OR (user_id = 1003))
     ```
 - **See also:** Or, Equal
+- **Signature:** `public Or equalsAny(final float[] values)`
+- **Summary:** Creates an OR condition with multiple EQUAL checks for this property using primitive float values.
+- **Parameters:**
+  - `values` (`float[]`) — primitive float values to check. Must not be null or empty.
+- **Returns:** an Or condition containing multiple Equal conditions
+- **Examples:**
+  - ```java
+    NamedProperty.of("ratio").equalsAny(new float[]{0.25f, 0.5f, 0.75f});
+    // SQL: ((ratio = 0.25) OR (ratio = 0.5) OR (ratio = 0.75))
+    ```
+- **See also:** Or, Equal
 - **Signature:** `public Or equalsAny(final double[] values)`
 - **Summary:** Creates an OR condition with multiple EQUAL checks for this property using primitive double values.
 - **Parameters:**
@@ -10780,7 +10870,7 @@ A utility class that provides a fluent API for creating SQL conditions based on 
 - **Contract:**
   - Useful when the values are already in a collection or list.
 - **Parameters:**
-  - `values` (`Collection<?>`) — collection of values to check equality against. Each value will be tested with OR logic. Must not be null or empty and must yield at least one value while snapshotted.
+  - `values` (`Collection<?>`) — collection of values to check equality against. Each value will be tested with OR logic. Must not be null or empty, and must still yield at least one element when iterated.
 - **Returns:** an Or condition containing multiple Equal conditions
 - **Examples:**
   - ```java
@@ -11176,6 +11266,50 @@ A utility class that provides a fluent API for creating SQL conditions based on 
     // SQL: priority IN (1, 2, 3)
     ```
 - **See also:** In, Filters#in(String, Object\[\])
+- **Signature:** `public In in(final boolean[] values)`
+- **Summary:** Creates an IN condition for this property with primitive boolean values.
+- **Parameters:**
+  - `values` (`boolean[]`) — primitive boolean values to check membership against. Must not be null or empty.
+- **Returns:** an In condition for this property
+- **Examples:**
+  - ```java
+    NamedProperty.of("active").in(new boolean[]{true, false});
+    // SQL: active IN (true, false)
+    ```
+- **See also:** In, Filters#in(String, boolean\[\])
+- **Signature:** `public In in(final char[] values)`
+- **Summary:** Creates an IN condition for this property with primitive char values.
+- **Parameters:**
+  - `values` (`char[]`) — primitive char values to check membership against. Must not be null or empty.
+- **Returns:** an In condition for this property
+- **Examples:**
+  - ```java
+    NamedProperty.of("grade").in(new char[]{'A', 'B', 'C'});
+    // SQL: grade IN ('A', 'B', 'C')
+    ```
+- **See also:** In, Filters#in(String, char\[\])
+- **Signature:** `public In in(final byte[] values)`
+- **Summary:** Creates an IN condition for this property with primitive byte values.
+- **Parameters:**
+  - `values` (`byte[]`) — primitive byte values to check membership against. Must not be null or empty.
+- **Returns:** an In condition for this property
+- **Examples:**
+  - ```java
+    NamedProperty.of("flag").in(new byte[]{0, 1, 2});
+    // SQL: flag IN (0, 1, 2)
+    ```
+- **See also:** In, Filters#in(String, byte\[\])
+- **Signature:** `public In in(final short[] values)`
+- **Summary:** Creates an IN condition for this property with primitive short values.
+- **Parameters:**
+  - `values` (`short[]`) — primitive short values to check membership against. Must not be null or empty.
+- **Returns:** an In condition for this property
+- **Examples:**
+  - ```java
+    NamedProperty.of("level").in(new short[]{1, 2, 3});
+    // SQL: level IN (1, 2, 3)
+    ```
+- **See also:** In, Filters#in(String, short\[\])
 - **Signature:** `public In in(final int[] values)`
 - **Summary:** Creates an IN condition for this property with primitive int values.
 - **Parameters:**
@@ -11198,6 +11332,17 @@ A utility class that provides a fluent API for creating SQL conditions based on 
     // SQL: user_id IN (1001, 1002, 1003)
     ```
 - **See also:** In, Filters#in(String, long\[\])
+- **Signature:** `public In in(final float[] values)`
+- **Summary:** Creates an IN condition for this property with primitive float values.
+- **Parameters:**
+  - `values` (`float[]`) — primitive float values to check membership against. Must not be null or empty.
+- **Returns:** an In condition for this property
+- **Examples:**
+  - ```java
+    NamedProperty.of("ratio").in(new float[]{0.25f, 0.5f, 0.75f});
+    // SQL: ratio IN (0.25, 0.5, 0.75)
+    ```
+- **See also:** In, Filters#in(String, float\[\])
 - **Signature:** `public In in(final double[] values)`
 - **Summary:** Creates an IN condition for this property with primitive double values.
 - **Parameters:**
@@ -11232,7 +11377,7 @@ A utility class that provides a fluent API for creating SQL conditions based on 
 - **Contract:**
   - This generates a condition that checks if the property value is contained in the result set returned by the specified subquery.
 - **Parameters:**
-  - `subQuery` (`SubQuery`) — the subquery to check membership against (must not be null)
+  - `subQuery` (`SubQuery`) — the subquery to check membership against (must not be null); if it has a known, non-wildcard structured projection, that projection must contain exactly one column
 - **Returns:** an InSubQuery condition for this property
 - **Examples:**
   - ```java
@@ -11258,6 +11403,50 @@ A utility class that provides a fluent API for creating SQL conditions based on 
     // SQL: priority NOT IN (4, 5)
     ```
 - **See also:** NotIn, Filters#notIn(String, Object\[\])
+- **Signature:** `public NotIn notIn(final boolean[] values)`
+- **Summary:** Creates a NOT IN condition for this property with primitive boolean values.
+- **Parameters:**
+  - `values` (`boolean[]`) — primitive boolean values to check non-membership against. Must not be null or empty.
+- **Returns:** a NotIn condition for this property
+- **Examples:**
+  - ```java
+    NamedProperty.of("active").notIn(new boolean[]{false});
+    // SQL: active NOT IN (false)
+    ```
+- **See also:** NotIn, Filters#notIn(String, boolean\[\])
+- **Signature:** `public NotIn notIn(final char[] values)`
+- **Summary:** Creates a NOT IN condition for this property with primitive char values.
+- **Parameters:**
+  - `values` (`char[]`) — primitive char values to check non-membership against. Must not be null or empty.
+- **Returns:** a NotIn condition for this property
+- **Examples:**
+  - ```java
+    NamedProperty.of("grade").notIn(new char[]{'D', 'F'});
+    // SQL: grade NOT IN ('D', 'F')
+    ```
+- **See also:** NotIn, Filters#notIn(String, char\[\])
+- **Signature:** `public NotIn notIn(final byte[] values)`
+- **Summary:** Creates a NOT IN condition for this property with primitive byte values.
+- **Parameters:**
+  - `values` (`byte[]`) — primitive byte values to check non-membership against. Must not be null or empty.
+- **Returns:** a NotIn condition for this property
+- **Examples:**
+  - ```java
+    NamedProperty.of("flag").notIn(new byte[]{0, 1});
+    // SQL: flag NOT IN (0, 1)
+    ```
+- **See also:** NotIn, Filters#notIn(String, byte\[\])
+- **Signature:** `public NotIn notIn(final short[] values)`
+- **Summary:** Creates a NOT IN condition for this property with primitive short values.
+- **Parameters:**
+  - `values` (`short[]`) — primitive short values to check non-membership against. Must not be null or empty.
+- **Returns:** a NotIn condition for this property
+- **Examples:**
+  - ```java
+    NamedProperty.of("level").notIn(new short[]{0, 9});
+    // SQL: level NOT IN (0, 9)
+    ```
+- **See also:** NotIn, Filters#notIn(String, short\[\])
 - **Signature:** `public NotIn notIn(final int[] values)`
 - **Summary:** Creates a NOT IN condition for this property with primitive int values.
 - **Parameters:**
@@ -11280,6 +11469,17 @@ A utility class that provides a fluent API for creating SQL conditions based on 
     // SQL: user_id NOT IN (999, 1000)
     ```
 - **See also:** NotIn, Filters#notIn(String, long\[\])
+- **Signature:** `public NotIn notIn(final float[] values)`
+- **Summary:** Creates a NOT IN condition for this property with primitive float values.
+- **Parameters:**
+  - `values` (`float[]`) — primitive float values to check non-membership against. Must not be null or empty.
+- **Returns:** a NotIn condition for this property
+- **Examples:**
+  - ```java
+    NamedProperty.of("ratio").notIn(new float[]{0.0f, 1.0f});
+    // SQL: ratio NOT IN (0.0, 1.0)
+    ```
+- **See also:** NotIn, Filters#notIn(String, float\[\])
 - **Signature:** `public NotIn notIn(final double[] values)`
 - **Summary:** Creates a NOT IN condition for this property with primitive double values.
 - **Parameters:**
@@ -11314,7 +11514,7 @@ A utility class that provides a fluent API for creating SQL conditions based on 
 - **Contract:**
   - This generates a condition that checks if the property value is not contained in the result set returned by the specified subquery.
 - **Parameters:**
-  - `subQuery` (`SubQuery`) — the subquery to check non-membership against (must not be null)
+  - `subQuery` (`SubQuery`) — the subquery to check non-membership against (must not be null); if it has a known, non-wildcard structured projection, that projection must contain exactly one column
 - **Returns:** a NotInSubQuery condition for this property
 - **Examples:**
   - ```java
@@ -11340,10 +11540,10 @@ A utility class that provides a fluent API for creating SQL conditions based on 
 - **Summary:** Checks if this NamedProperty is equal to another object.
 - **Contract:**
   - Checks if this NamedProperty is equal to another object.
-  - Two NamedProperty instances are equal if they have the same property name.
+  - Two instances are equal if they have the exact same runtime class and property name.
 - **Parameters:**
   - `obj` (`Object`) — the object to compare with
-- **Returns:** true if the objects are equal (same property name), false otherwise
+- **Returns:** true if the objects have the same runtime class and property name, false otherwise
 - **Examples:**
   - ```java
     new NamedProperty("age").equals(new NamedProperty("age"));   // returns true (same name)
@@ -11401,7 +11601,7 @@ Represents a NOT BETWEEN condition in SQL queries.
 **Nullability:** unspecified
 
 #### Public Constructors
-- `public NotBetween(final String propName, final Object minValue, final Object maxValue)` — Creates a NOT BETWEEN condition for the specified property and range.
+- `public NotBetween(final String propName, final Object minValue, final Object maxValue)` — Creates a new NOT BETWEEN condition.
 
 #### Public Static Methods
 - (none)
@@ -11463,7 +11663,7 @@ Represents a NOT IN condition in SQL queries.
 **Nullability:** unspecified
 
 #### Public Constructors
-- `public NotIn(final String propName, final Collection<?> values)` — Creates a NOT IN condition for the specified property and collection of values.
+- `public NotIn(final String propName, final Collection<?> values)` — Creates a new NOT IN condition for the specified property and collection of values.
 - `public NotIn(final Collection<String> propNames, final Collection<?> valueRows)` — Creates a new row value constructor NOT IN condition.
 
 #### Public Static Methods
@@ -11473,7 +11673,7 @@ Represents a NOT IN condition in SQL queries.
 - (none)
 
 ### Class NotInSubQuery (com.landawn.abacus.query.condition.NotInSubQuery)
-Represents a NOT IN subquery condition used in SQL WHERE clauses.
+Represents a NOT IN subquery condition in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -11608,7 +11808,7 @@ Represents a composable OR condition that combines multiple conditions.
 #### Public Instance Methods
 ##### or(...) -> Or
 - **Signature:** `@Override public Or or(final Condition condition)`
-- **Summary:** Creates a new Or condition by adding another condition to this OR.
+- **Summary:** Creates a new OR condition by adding another condition to this OR.
 - **Parameters:**
   - `condition` (`Condition`) — the condition to add to this OR. Must not be null and must be composable (i.e. must not be or contain a Criteria, a Clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate).
 - **Returns:** a new Or condition containing all existing conditions plus the new one
@@ -11622,13 +11822,16 @@ Represents a composable OR condition that combines multiple conditions.
     
     // Add conditions conditionally
     Or baseOr = new Or(Filters.equal("status", "active"));
+    boolean includeInactive = true;
+    boolean includePending = false;
     if (includeInactive) {
         baseOr = baseOr.or(Filters.equal("status", "inactive"));
     }
     if (includePending) {
         baseOr = baseOr.or(Filters.equal("status", "pending"));
     }
-    // Results vary based on flags
+    // With these flag values, SQL is:
+    // ((status = 'active') OR (status = 'inactive'))
     ```
 
 ### Class OrderBy (com.landawn.abacus.query.condition.OrderBy)
@@ -11727,7 +11930,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### equal(...) -> String
 - **Signature:** `public static String equal(final String expr, final Object value)`
-- **Summary:** Creates an equality expression between a literal and a value.
+- **Summary:** Creates an equality expression between the given expression and a value.
 - **Contract:**
   - If value is null, the result is rendered as "literal IS NULL" instead of "literal = null".
 - **Parameters:**
@@ -11747,7 +11950,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### eq(...) -> String
 - **Signature:** `@Beta public static String eq(final String expr, final Object value)`
-- **Summary:** Creates an equality expression between a literal and a value.
+- **Summary:** Creates an equality expression between the given expression and a value.
 - **Parameters:**
   - `expr` (`String`) — the left-hand side of the equality
   - `value` (`Object`) — the right-hand side value; may be null (renders as IS NULL)
@@ -11759,7 +11962,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### notEqual(...) -> String
 - **Signature:** `public static String notEqual(final String expr, final Object value)`
-- **Summary:** Creates a not-equal expression between a literal and a value.
+- **Summary:** Creates a not-equal expression between the given expression and a value.
 - **Contract:**
   - If value is null, the result is rendered as "literal IS NOT NULL" instead of "literal != null".
 - **Parameters:**
@@ -11779,7 +11982,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### ne(...) -> String
 - **Signature:** `@Beta public static String ne(final String expr, final Object value)`
-- **Summary:** Creates a not-equal expression between a literal and a value.
+- **Summary:** Creates a not-equal expression between the given expression and a value.
 - **Parameters:**
   - `expr` (`String`) — the left-hand side of the inequality
   - `value` (`Object`) — the right-hand side value; may be null (renders as IS NOT NULL)
@@ -11791,7 +11994,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### greaterThan(...) -> String
 - **Signature:** `public static String greaterThan(final String expr, final Object value)`
-- **Summary:** Creates a greater-than expression between a literal and a value.
+- **Summary:** Creates a greater-than expression between the given expression and a value.
 - **Parameters:**
   - `expr` (`String`) — the left-hand side of the comparison
   - `value` (`Object`) — the right-hand side value; should not be null \\u2014 a null renders as the literal null
@@ -11806,7 +12009,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### gt(...) -> String
 - **Signature:** `@Beta public static String gt(final String expr, final Object value)`
-- **Summary:** Creates a greater-than expression between a literal and a value.
+- **Summary:** Creates a greater-than expression between the given expression and a value.
 - **Parameters:**
   - `expr` (`String`) — the left-hand side of the comparison
   - `value` (`Object`) — the right-hand side value; should not be null \\u2014 a null renders as the literal null
@@ -11818,7 +12021,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### greaterThanOrEqual(...) -> String
 - **Signature:** `public static String greaterThanOrEqual(final String expr, final Object value)`
-- **Summary:** Creates a greater-than-or-equal expression between a literal and a value.
+- **Summary:** Creates a greater-than-or-equal expression between the given expression and a value.
 - **Parameters:**
   - `expr` (`String`) — the left-hand side of the comparison
   - `value` (`Object`) — the right-hand side value; should not be null \\u2014 a null renders as the literal null
@@ -11830,7 +12033,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### ge(...) -> String
 - **Signature:** `@Beta public static String ge(final String expr, final Object value)`
-- **Summary:** Creates a greater-than-or-equal expression between a literal and a value.
+- **Summary:** Creates a greater-than-or-equal expression between the given expression and a value.
 - **Parameters:**
   - `expr` (`String`) — the left-hand side of the comparison
   - `value` (`Object`) — the right-hand side value; should not be null \\u2014 a null renders as the literal null
@@ -11842,7 +12045,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### lessThan(...) -> String
 - **Signature:** `public static String lessThan(final String expr, final Object value)`
-- **Summary:** Creates a less-than expression between a literal and a value.
+- **Summary:** Creates a less-than expression between the given expression and a value.
 - **Parameters:**
   - `expr` (`String`) — the left-hand side of the comparison
   - `value` (`Object`) — the right-hand side value; should not be null \\u2014 a null renders as the literal null
@@ -11854,7 +12057,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### lt(...) -> String
 - **Signature:** `@Beta public static String lt(final String expr, final Object value)`
-- **Summary:** Creates a less-than expression between a literal and a value.
+- **Summary:** Creates a less-than expression between the given expression and a value.
 - **Parameters:**
   - `expr` (`String`) — the left-hand side of the comparison
   - `value` (`Object`) — the right-hand side value; should not be null \\u2014 a null renders as the literal null
@@ -11866,7 +12069,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### lessThanOrEqual(...) -> String
 - **Signature:** `public static String lessThanOrEqual(final String expr, final Object value)`
-- **Summary:** Creates a less-than-or-equal expression between a literal and a value.
+- **Summary:** Creates a less-than-or-equal expression between the given expression and a value.
 - **Parameters:**
   - `expr` (`String`) — the left-hand side of the comparison
   - `value` (`Object`) — the right-hand side value; should not be null \\u2014 a null renders as the literal null
@@ -11878,7 +12081,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### le(...) -> String
 - **Signature:** `@Beta public static String le(final String expr, final Object value)`
-- **Summary:** Creates a less-than-or-equal expression between a literal and a value.
+- **Summary:** Creates a less-than-or-equal expression between the given expression and a value.
 - **Parameters:**
   - `expr` (`String`) — the left-hand side of the comparison
   - `value` (`Object`) — the right-hand side value; should not be null \\u2014 a null renders as the literal null
@@ -11890,7 +12093,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### between(...) -> String
 - **Signature:** `public static String between(final String expr, final Object minValue, final Object maxValue)`
-- **Summary:** Creates a BETWEEN expression for a literal with min and max values.
+- **Summary:** Creates a BETWEEN expression for the given expression with min and max values.
 - **Parameters:**
   - `expr` (`String`) — the expression to test
   - `minValue` (`Object`) — the minimum value (inclusive)
@@ -11906,7 +12109,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### notBetween(...) -> String
 - **Signature:** `public static String notBetween(final String expr, final Object minValue, final Object maxValue)`
-- **Summary:** Creates a NOT BETWEEN expression for a literal with min and max values.
+- **Summary:** Creates a NOT BETWEEN expression for the given expression with min and max values.
 - **Contract:**
   - A value satisfies NOT BETWEEN min AND max when it is strictly less than min or strictly greater than max, so both ends of the range are excluded.
 - **Parameters:**
@@ -11957,7 +12160,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### isNull(...) -> String
 - **Signature:** `public static String isNull(final String expr)`
-- **Summary:** Creates an IS NULL expression for the specified literal.
+- **Summary:** Creates an IS NULL expression for the specified expression.
 - **Parameters:**
   - `expr` (`String`) — the expression to check for null
 - **Returns:** a SQL representation of the IS NULL expression
@@ -11968,7 +12171,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### isNotNull(...) -> String
 - **Signature:** `public static String isNotNull(final String expr)`
-- **Summary:** Creates an IS NOT NULL expression for the specified literal.
+- **Summary:** Creates an IS NOT NULL expression for the specified expression.
 - **Parameters:**
   - `expr` (`String`) — the expression to check for not null
 - **Returns:** a SQL representation of the IS NOT NULL expression
@@ -11979,7 +12182,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### isNullOrEmpty(...) -> String
 - **Signature:** `public static String isNullOrEmpty(final String expr)`
-- **Summary:** Creates a framework-specific IS BLANK expression for the specified literal, which the query engine interprets as a combined null-or-empty check.
+- **Summary:** Creates a framework-specific IS BLANK expression for the specified expression, which the query engine interprets as a combined null-or-empty check.
 - **Parameters:**
   - `expr` (`String`) — the column reference or expression to check
 - **Returns:** a framework-specific IS BLANK expression string
@@ -11990,7 +12193,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### isNotNullAndNotEmpty(...) -> String
 - **Signature:** `public static String isNotNullAndNotEmpty(final String expr)`
-- **Summary:** Creates a framework-specific IS NOT BLANK expression for the specified literal, which the query engine interprets as a combined not-null-and-not-empty check.
+- **Summary:** Creates a framework-specific IS NOT BLANK expression for the specified expression, which the query engine interprets as a combined not-null-and-not-empty check.
 - **Parameters:**
   - `expr` (`String`) — the column reference or expression to check
 - **Returns:** a framework-specific IS NOT BLANK expression string
@@ -12001,7 +12204,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### and(...) -> String
 - **Signature:** `public static String and(final String... exprs)`
-- **Summary:** Creates an AND expression combining multiple literals.
+- **Summary:** Creates an AND expression combining multiple expressions.
 - **Contract:**
   - All conditions must be true for the AND expression to be true.
 - **Parameters:**
@@ -12017,7 +12220,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### or(...) -> String
 - **Signature:** `public static String or(final String... exprs)`
-- **Summary:** Creates an OR expression combining multiple literals.
+- **Summary:** Creates an OR expression combining multiple expressions.
 - **Contract:**
   - At least one condition must be true for the OR expression to be true.
 - **Parameters:**
@@ -12450,7 +12653,7 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr1` (`String`) — the first SQL expression (column reference or pre-quoted literal)
   - `expr2` (`String`) — the second SQL expression (column reference or pre-quoted literal)
-- **Returns:** a CONCAT function string of the form CONCAT(str1, str2)
+- **Returns:** a CONCAT function string of the form CONCAT(expr1, expr2)
 - **Examples:**
   - ```java
     String expr = SqlExpression.concat("firstName", "' '");
@@ -12644,7 +12847,7 @@ Represents a raw SQL expression that can be used in queries.
 - **Summary:** Computes the hash code based on the literal string.
 - **Parameters:**
   - (none)
-- **Returns:** the hash code of the literal
+- **Returns:** the hash code of the literal, or 0 if the literal is null (only possible for an uninitialized instance produced by the package-private default constructor, e.g., during Kryo deserialization)
 - **Examples:**
   - ```java
     new SqlExpression("price * quantity").hashCode();                            // returns "price * quantity".hashCode()
@@ -12655,10 +12858,10 @@ Represents a raw SQL expression that can be used in queries.
 - **Summary:** Checks if this expression equals another object.
 - **Contract:**
   - Checks if this expression equals another object.
-  - Two expressions are equal if they are both SqlExpression instances with the same literal string.
+  - Two expressions are equal if they have the exact same runtime class and literal string.
 - **Parameters:**
   - `obj` (`Object`) — the object to compare with
-- **Returns:** true if the objects are equal
+- **Returns:** true if the objects have the same runtime class and literal string
 - **Examples:**
   - ```java
     new SqlExpression("a + b").equals(new SqlExpression("a + b"));   // returns true (same literal)
@@ -12854,22 +13057,17 @@ Represents raw query-expression text or a structured SELECT used within SQL cond
     SubQuery b = Filters.subQuery("SELECT id FROM users");
     boolean sameHash = a.hashCode() == b.hashCode();
     // returns true
-    
-    // Different SQL typically produces different hash codes
-    SubQuery c = Filters.subQuery("SELECT id FROM customers");
-    boolean differentHash = a.hashCode() != c.hashCode();
-    // returns true
     ```
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this subquery is equal to another object.
 - **Contract:**
   - Checks if this subquery is equal to another object.
-  - Two subqueries are equal only when all of their identity fields are equal: the entity name, the entity class, the selected properties, the raw SQL string, and the condition.
+  - Two subqueries are equal only when they have the exact same runtime class and all of their identity fields are equal: the entity name, the entity class, the selected properties, the raw SQL string, and the condition.
   - The entity name participates even for raw-SQL subqueries, so two raw subqueries are equal only when both their SQL and their entity name match.
 - **Parameters:**
   - `obj` (`Object`) — the object to compare with
-- **Returns:** true if the objects are equal, false otherwise
+- **Returns:** true if the objects have the same runtime class and identity fields, false otherwise
 - **Examples:**
   - ```java
     // Same raw SQL: equal
