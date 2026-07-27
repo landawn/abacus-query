@@ -1,11 +1,11 @@
-# abacus-query API Index (v4.8.10)
-- Build: 6f5b4b15d334f7f7b8e111e4312d78150f971861
+# abacus-query API Index (v4.8.11)
+- Build: 3e2009f98b474cb1e3ebc24ba1f87f266e899caa
 - Java: 17
 - Generated: 2026-07-26
 
 ## Packages
-- com.landawn.abacus.query
-- com.landawn.abacus.query.condition
+- com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
+- com.landawn.abacus.query.condition — An object model for the parts of a SQL query: comparisons, logical junctions, clauses, joins, and subqueries, which the query builders in com.landawn.abacus.query render into SQL.
 
 ## com.landawn.abacus.query
 ### Class AbstractQueryBuilder (com.landawn.abacus.query.AbstractQueryBuilder)

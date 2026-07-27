@@ -1,16 +1,17 @@
 {
   "library": {
     "name": "abacus-query",
-    "version": "4.8.10",
+    "version": "4.8.11",
     "generated_at": "2026-07-26",
     "java_target": "17",
     "source": {
-      "git_sha": "6f5b4b15d334f7f7b8e111e4312d78150f971861"
+      "git_sha": "3e2009f98b474cb1e3ebc24ba1f87f266e899caa"
     }
   },
   "packages": [
     {
       "name": "com.landawn.abacus.query",
+      "summary": "SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.",
       "types": [
         {
           "fqn": "com.landawn.abacus.query.AbstractQueryBuilder",
@@ -16716,6 +16717,7 @@
     },
     {
       "name": "com.landawn.abacus.query.condition",
+      "summary": "An object model for the parts of a SQL query: comparisons, logical junctions, clauses, joins, and subqueries, which the query builders in com.landawn.abacus.query render into SQL.",
       "types": [
         {
           "fqn": "com.landawn.abacus.query.condition.AbstractBetween",
