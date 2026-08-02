@@ -155,8 +155,8 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      *
      * @param cond the condition to render; must be one of the supported condition types
      * @throws IllegalArgumentException if {@code cond} is an unsupported condition type, if a
-     *         {@link Junction} contains no sub-conditions, or if a {@link SubQuery} has no selected
-     *         property/column names
+     *         {@link Junction} contains no sub-conditions, or if a structured {@link SubQuery} (one
+     *         not defined by raw SQL) has no selected property/column names
      */
     @Override
     protected void appendCondition(final Condition cond) {

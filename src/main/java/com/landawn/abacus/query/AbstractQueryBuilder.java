@@ -2755,7 +2755,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param joinExpr the join expression (a table reference, optionally with alias; a {@code CROSS JOIN} takes no {@code ON} clause) (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains a top-level
+     *                                  {@code ON}/{@code USING} connector
      * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
      */
     public This crossJoin(final String joinExpr) {
@@ -4757,8 +4758,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param condition the condition to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if a set-operation
-     *                                  operand (standalone or carried by a Criteria) is not a complete read-only {@code SELECT} query
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, if a predicate position contains a
+     *                                  non-predicate condition, if a generic clause uses an operator that requires a
+     *                                  dedicated builder method or condition type, or if a set-operation operand
+     *                                  (standalone or carried by a Criteria) is not a complete read-only {@code SELECT} query
      * @throws IllegalStateException if there is no current SELECT segment, if that segment already
      *                               has a select modifier, if a clause emitted by the criteria has already been set,
      *                               if any Criteria clause would be emitted after a clause that must follow it,
@@ -4801,13 +4804,30 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             // Keep all Criteria validation before init(true): init may emit an UPDATE/DELETE prefix,
             // so a rejected Criteria must not be able to leave even that partial mutation behind.
             checkCriteriaClauseSlotsAvailable(criteria);
-        } else if (condition instanceof final Clause clause && isSetOperationOperator(clause.operator())) {
-            // A standalone set-operation clause (Union/UnionAll/Intersect/Except/Minus) must satisfy the
-            // same position and operand rules as the union(...)/intersect(...)/... methods and the
-            // Criteria set-operation path; without this, an appended Union could smuggle in a
-            // non-SELECT operand or land after ORDER BY/pagination/FOR UPDATE.
-            checkCanAppendSetOperation(clause.operator().toString());
-            checkSetOperationSubQuery(((SubQuery) clause.condition()).toSql(_namingPolicy), clause.operator().toString());
+        } else if (condition instanceof final Clause clause) {
+            if (isSetOperationOperator(clause.operator())) {
+                // A standalone set-operation clause (Union/UnionAll/Intersect/Except/Minus) must satisfy the
+                // same position and operand rules as the union(...)/intersect(...)/... methods and the
+                // Criteria set-operation path; without this, an appended Union could smuggle in a
+                // non-SELECT operand or land after ORDER BY/pagination/FOR UPDATE.
+                checkCanAppendSetOperation(clause.operator().toString());
+                checkSetOperationSubQuery(((SubQuery) clause.condition()).toSql(_namingPolicy), clause.operator().toString());
+            } else if (clause.operator() == Operator.WHERE || clause.operator() == Operator.HAVING) {
+                // Directly appended clause objects must not bypass the predicate checks performed by
+                // where(Condition) and having(Condition).
+                validatePredicateCondition(clause.condition());
+            } else if (!(clause instanceof Limit) && clause.operator() != Operator.GROUP_BY && clause.operator() != Operator.ORDER_BY) {
+                // OFFSET and FOR UPDATE require dedicated builder state, while LIMIT must carry the
+                // structured Limit representation used by appendLimit. Rendering an arbitrary Clause
+                // for any of them would bypass ordering/duplicate checks and dialect-specific syntax.
+                throw new IllegalArgumentException("Unsupported clause type for append(Condition): " + clause.getClass().getName() + " with operator "
+                        + clause.operator());
+            }
+        } else if (!_isForConditionOnly) {
+            // Conditions in this branch acquire an implicit WHERE below. Reject structural fragments
+            // (for example a standalone sub-query, ON/USING, JOIN, or ANY/ALL/SOME operand) before
+            // emitting the query prefix, just as where(Condition) does.
+            validatePredicateCondition(condition);
         }
 
         init(true);
@@ -5531,7 +5551,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to minus (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         generated parameter placeholders with a different SQL policy, or if the built sub-query is not
+     *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
      *         a complete read-only SELECT query (the child builder has already been consumed by {@code build()}
      *         when this is thrown)
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment

@@ -1694,7 +1694,8 @@ public final class SqlParser {
      * Unlike {@link #hashIdentifierContextKeywords}, these operation tokens are deliberately not
      * general identifier anchors ({@code UPDATE} additionally is one): they are accepted only
      * directly before the target, optionally with a SQL Server
-     * {@code TOP [ ( expression ) ] [ PERCENT ]} clause between them.
+     * {@code TOP ( expression ) [ PERCENT ]} clause (or the legacy bare-numeric form, e.g.
+     * {@code TOP 5}) between them; a {@code TOP} with no expression at all is not recognized.
      */
     private static boolean isHashIdentifierDmlTargetContext(final String str, int left, final boolean skipLineComments, final TokenizerConfig tokenizerConfig) {
         left = skipBackwardHashContextTrivia(str, left, skipLineComments, tokenizerConfig);
@@ -2293,11 +2294,30 @@ public final class SqlParser {
                     }
                 }
 
+                // A separator may begin outside a quoted region but must not consume the region's
+                // opening delimiter. Otherwise, for example, a configured "N'" separator would split
+                // N'text' before the quote scanners ever see the opening single quote.
+                if (crossesQuotedRegionBoundary(candidate)) {
+                    continue;
+                }
+
                 return candidate;
             }
         }
 
         return null;
+    }
+
+    private static boolean crossesQuotedRegionBoundary(final String separator) {
+        for (int i = 1, len = separator.length(); i < len; i++) {
+            final char ch = separator.charAt(i);
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -2643,8 +2663,8 @@ public final class SqlParser {
      * parentheses and any leading {@code WITH} clause; the three keywords {@code INSERT}, {@code OR}
      * and {@code REPLACE} must appear consecutively (case-insensitively, separated only by whitespace
      * or comments) in that order at the start of the actual statement. A plain
-     * {@code INSERT}, a SQL Server / Oracle standalone {@code REPLACE}, or any other leading
-     * keyword returns {@code false}.
+     * {@code INSERT}, a MySQL / SQLite standalone {@code REPLACE} (as in {@code REPLACE INTO}),
+     * or any other leading keyword returns {@code false}.
      * </p>
      *
      * <p><b>Comparison with related methods:</b> see the
@@ -3235,7 +3255,8 @@ public final class SqlParser {
 
     /**
      * Collects, in a single scan, every keyword found at a statement-start position: the start of
-     * the SQL, after a top-level {@code ;}, or a CTE body opened by {@code AS (}. For a {@code WITH}
+     * the SQL, after a {@code ;} (outside quotes, identifiers and comments; parenthesis depth is
+     * not tracked here), or a CTE body opened by {@code AS (}. For a {@code WITH}
      * clause the statement verb that follows the CTE definitions is collected as well. Quoted
      * string literals, quoted identifiers and comments are ignored. The callers test the returned
      * keywords for membership instead of re-scanning the SQL once per keyword.

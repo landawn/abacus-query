@@ -37,7 +37,8 @@
  * {@link com.landawn.abacus.query.Dsl#NLC NLC}), and {@code M} for iBATIS/MyBatis
  * <code>#{name}</code> ({@link com.landawn.abacus.query.Dsl#MSB MSB},
  * {@link com.landawn.abacus.query.Dsl#MSC MSC}, {@link com.landawn.abacus.query.Dsl#MAC MAC},
- * {@link com.landawn.abacus.query.Dsl#MLC MLC}). The two-letter suffix gives the naming policy:
+ * {@link com.landawn.abacus.query.Dsl#MLC MLC}; this family is deprecated in favor of the
+ * corresponding named-parameter constants). The two-letter suffix gives the naming policy:
  * {@code SB} = {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE},
  * {@code SC} = {@link com.landawn.abacus.util.NamingPolicy#SNAKE_CASE},
  * {@code AC} = {@link com.landawn.abacus.util.NamingPolicy#SCREAMING_SNAKE_CASE},

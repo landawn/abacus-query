@@ -1,7 +1,7 @@
 # abacus-query API Index (v4.8.11)
-- Build: 3e2009f98b474cb1e3ebc24ba1f87f266e899caa
+- Build: 819f7e07e1a1a3670680bbba3aad060b60ec93cd
 - Java: 17
-- Generated: 2026-07-26
+- Generated: 2026-08-01
 
 ## Packages
 - com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
@@ -1532,13 +1532,14 @@ Base class for fluent SQL builders.
     // Output: SELECT * FROM users WHERE status = ?
     ```
 ##### apply(...) -> T
-- **Signature:** `@Beta public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> function) throws E`
+- **Signature:** `@Beta public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> function) throws E, IllegalArgumentException`
 - **Summary:** Applies a function to the SQL-Parameters pair and returns the result.
 - **Parameters:**
   - `function` (`Throwables.Function<? super SP, T, E>`) — the function to apply to the SP pair; must not be null
 - **Returns:** the result of applying the function
 - **Throws:**
   - `E` — if the function throws an exception
+  - `java.lang.IllegalArgumentException` — if function is null
 - **Examples:**
   - ```java
     List<Account> accounts = PSC.select("*")
@@ -1546,13 +1547,14 @@ Base class for fluent SQL builders.
         .where(Filters.equal("status", "ACTIVE"))
         .apply(sp -> jdbcTemplate.query(sp.query(), accountRowMapper, sp.parameters().toArray()));
     ```
-- **Signature:** `@Beta public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> function) throws E`
+- **Signature:** `@Beta public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> function) throws E, IllegalArgumentException`
 - **Summary:** Applies a bi-function to the SQL string and parameters separately and returns the result.
 - **Parameters:**
   - `function` (`Throwables.BiFunction<? super String, ? super List<Object>, T, E>`) — the bi-function to apply to the SQL and parameters; must not be null
 - **Returns:** the result of applying the function
 - **Throws:**
   - `E` — if the function throws an exception
+  - `java.lang.IllegalArgumentException` — if function is null
 - **Examples:**
   - ```java
     Map<String, Object> updates = new LinkedHashMap<>();
@@ -1564,7 +1566,7 @@ Base class for fluent SQL builders.
         .apply((sql, params) -> jdbcTemplate.update(sql, params.toArray()));
     ```
 ##### accept(...) -> void
-- **Signature:** `@Beta public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E`
+- **Signature:** `@Beta public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E, IllegalArgumentException`
 - **Summary:** Accepts a consumer for the SQL-Parameters pair.
 - **Contract:**
   - This is useful for executing the SQL with a data access framework when no return value is needed.
@@ -1572,6 +1574,7 @@ Base class for fluent SQL builders.
   - `consumer` (`Throwables.Consumer<? super SP, E>`) — the consumer to accept the SP pair; must not be null
 - **Throws:**
   - `E` — if the consumer throws an exception
+  - `java.lang.IllegalArgumentException` — if consumer is null
 - **Examples:**
   - ```java
     Map<String, Object> account = new LinkedHashMap<>();
@@ -1583,7 +1586,7 @@ Base class for fluent SQL builders.
        .into("account")
        .accept(sp -> jdbcTemplate.update(sp.query(), sp.parameters().toArray()));
     ```
-- **Signature:** `@Beta public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E`
+- **Signature:** `@Beta public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E, IllegalArgumentException`
 - **Summary:** Accepts a bi-consumer for the SQL string and parameters separately.
 - **Contract:**
   - This is useful for executing the SQL with a data access framework when no return value is needed.
@@ -1591,6 +1594,7 @@ Base class for fluent SQL builders.
   - `consumer` (`Throwables.BiConsumer<? super String, ? super List<Object>, E>`) — the bi-consumer to accept the SQL and parameters; must not be null
 - **Throws:**
   - `E` — if the consumer throws an exception
+  - `java.lang.IllegalArgumentException` — if consumer is null
 - **Examples:**
   - ```java
     PSC.deleteFrom("account")
@@ -5613,7 +5617,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class representing the table (must not be null)
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty, and must not contain null, empty, or blank elements)
-  - `condition` (`Condition`) — the WHERE condition for the subquery; may be null for no WHERE clause (a blank SqlExpression condition is likewise treated as no filter condition)
+  - `condition` (`Condition`) — the WHERE condition for the subquery; may be null for no WHERE clause (a blank SqlExpression or empty Junction condition is likewise treated as no filter condition)
 - **Returns:** a SubQuery
 - **Examples:**
   - ```java
@@ -5658,7 +5662,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Parameters:**
   - `entityName` (`String`) — the entity/table name (must not be null, empty, or blank)
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty, and must not contain null, empty, or blank elements)
-  - `condition` (`Condition`) — the WHERE condition for the subquery; may be null for no WHERE clause (a blank SqlExpression condition is likewise treated as no filter condition)
+  - `condition` (`Condition`) — the WHERE condition for the subquery; may be null for no WHERE clause (a blank SqlExpression or empty Junction condition is likewise treated as no filter condition)
 - **Returns:** a SubQuery
 - **Examples:**
   - ```java
@@ -6183,7 +6187,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Signature:** `@Internal public static String tableNameAndAlias(final Class<?> entityClass)`
 - **Summary:** Returns the table name and optional alias for the entity class using the default naming policy.
 - **Contract:**
-  - If @Table annotation is present, uses its values; otherwise derives the table name from the class name using NamingPolicy.SNAKE_CASE.
+  - If an annotated table name is present (via @Table or a JPA javax.persistence/jakarta.persistence @Table annotation), it is used as-is; otherwise the table name is derived from the class name using NamingPolicy.SNAKE_CASE.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be null)
 - **Returns:** the table name, optionally followed by space and alias

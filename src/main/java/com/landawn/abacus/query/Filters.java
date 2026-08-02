@@ -4147,15 +4147,16 @@ public final class Filters {
      * @param propNames collection of property names to select (must not be {@code null} or empty, and must not contain
      *                  {@code null}, empty, or blank elements)
      * @param condition the WHERE condition for the subquery; may be {@code null} for no WHERE clause
-     *                  (a blank {@link SqlExpression} condition is likewise treated as no filter condition)
+     *                  (a blank {@link SqlExpression} or empty {@link Junction} condition is likewise
+     *                  treated as no filter condition)
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propNames} is
      *         {@code null} or empty, contains a {@code null}, empty, or blank element, if {@code condition}
      *         uses an {@code ON}/{@code USING} operator, if {@code condition} is a
      *         {@link com.landawn.abacus.query.condition.Criteria Criteria} carrying a SELECT modifier
      *         (e.g. {@code DISTINCT}), or if {@code condition} is an {@code ANY}/{@code ALL}/{@code SOME}
-     *         quantified-subquery operand, a standalone {@link SubQuery}, or an empty {@link Junction}
-     *         (none of which can be nested inside the generated {@code WHERE} clause)
+     *         quantified-subquery operand or a standalone {@link SubQuery}
+     *         (neither of which can be nested inside the generated {@code WHERE} clause)
      */
     public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition) {
         return new SubQuery(entityClass, propNames, condition);
@@ -4232,15 +4233,16 @@ public final class Filters {
      * @param propNames collection of property names to select (must not be {@code null} or empty, and must not contain
      *                  {@code null}, empty, or blank elements)
      * @param condition the WHERE condition for the subquery; may be {@code null} for no WHERE clause
-     *                  (a blank {@link SqlExpression} condition is likewise treated as no filter condition)
+     *                  (a blank {@link SqlExpression} or empty {@link Junction} condition is likewise
+     *                  treated as no filter condition)
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank, if
      *         {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
      *         if {@code condition} uses an {@code ON}/{@code USING} operator, if {@code condition} is a
      *         {@link com.landawn.abacus.query.condition.Criteria Criteria} carrying a SELECT modifier
      *         (e.g. {@code DISTINCT}), or if {@code condition} is an {@code ANY}/{@code ALL}/{@code SOME}
-     *         quantified-subquery operand, a standalone {@link SubQuery}, or an empty {@link Junction}
-     *         (none of which can be nested inside the generated {@code WHERE} clause)
+     *         quantified-subquery operand or a standalone {@link SubQuery}
+     *         (neither of which can be nested inside the generated {@code WHERE} clause)
      */
     public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final Condition condition) {
         return new SubQuery(entityName, propNames, condition);

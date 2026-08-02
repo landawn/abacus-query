@@ -1326,6 +1326,24 @@ public class SqlParserTest extends TestBase {
             assertEquals(quotedToken, tokenizer.nextToken(sql, start));
             assertEquals(start + quotedToken.length(), tokenizer.nextTokenEndIndex(sql, start));
         }
+
+        for (final String[] testCase : new String[][] { { "N'", "N'a b'" }, { "N\"", "N\"a b\"" }, { "N`", "N`a b`" },
+                { "N[", "N[a b]" } }) {
+            final SqlParser.Tokenizer prefixedLiteralTokenizer = SqlParser
+                    .tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator(testCase[0]).build());
+            final String prefixedLiteral = testCase[1];
+
+            assertEquals(Arrays.asList(prefixedLiteral), prefixedLiteralTokenizer.parse(prefixedLiteral));
+            assertEquals(0, prefixedLiteralTokenizer.indexOfToken(prefixedLiteral, prefixedLiteral));
+            assertEquals(prefixedLiteral, prefixedLiteralTokenizer.nextToken(prefixedLiteral, 0));
+            assertEquals(prefixedLiteral.length(), prefixedLiteralTokenizer.nextTokenEndIndex(prefixedLiteral, 0));
+        }
+
+        final SqlParser.Tokenizer closingBracketTokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("N]").build());
+        assertEquals(Arrays.asList("N]", "tail"), closingBracketTokenizer.parse("N]tail"));
+        assertEquals(0, closingBracketTokenizer.indexOfToken("N]tail", "N]"));
+        assertEquals("N]", closingBracketTokenizer.nextToken("N]tail", 0));
+        assertEquals(2, closingBracketTokenizer.nextTokenEndIndex("N]tail", 0));
     }
 
     @Test

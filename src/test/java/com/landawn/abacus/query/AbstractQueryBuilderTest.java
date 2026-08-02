@@ -29,10 +29,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.condition.Operator;
+import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Union;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.ImmutableList;
@@ -41,6 +43,12 @@ import com.landawn.abacus.util.Throwables;
 
 @Tag("2025")
 public class AbstractQueryBuilderTest extends TestBase {
+    private static final class TestClause extends Clause {
+        TestClause(final Operator operator, final Condition condition) {
+            super(operator, condition);
+        }
+    }
+
     private static final class ChangingCollection<E> extends AbstractCollection<E> {
         private final Collection<E> firstIteration;
         private final Collection<E> laterIterations;
@@ -2528,6 +2536,30 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> on.on(nullOperator));
         assertEquals("SELECT id FROM users INNER JOIN accounts ON users.id = accounts.user_id",
                 on.on(Filters.expr("users.id = accounts.user_id")).build().query());
+    }
+
+    @Test
+    public void testAppendRejectsStructuralImplicitWhereOperandsWithoutMutation() {
+        final SqlBuilder builder = Dsl.PSC.select("id").from("users");
+        final SubQuery subQuery = Filters.subQuery("SELECT user_id FROM archived_users");
+
+        assertThrows(IllegalArgumentException.class, () -> builder.append(subQuery));
+        assertThrows(IllegalArgumentException.class, () -> builder.append(Filters.any(subQuery)));
+        assertThrows(IllegalArgumentException.class, () -> builder.append(Filters.on("users.id", "accounts.user_id")));
+        assertThrows(IllegalArgumentException.class, () -> builder.append(Filters.innerJoin("accounts")));
+        assertEquals("SELECT id FROM users WHERE active = ?", builder.append(Filters.eq("active", true)).build().query());
+
+        assertEquals("ANY (SELECT user_id FROM archived_users)", Dsl.PSC.renderCondition(Filters.any(subQuery)).build().query());
+    }
+
+    @Test
+    public void testAppendRejectsGenericClausesThatRequireDedicatedBuilderState() {
+        for (final Operator operator : Arrays.asList(Operator.LIMIT, Operator.OFFSET, Operator.FOR_UPDATE)) {
+            final SqlBuilder builder = Dsl.PSC.select("id").from("users");
+
+            assertThrows(IllegalArgumentException.class, () -> builder.append(new TestClause(operator, Filters.expr("10"))));
+            assertEquals("SELECT id FROM users WHERE active = ?", builder.where(Filters.eq("active", true)).build().query());
+        }
     }
 
     @Test

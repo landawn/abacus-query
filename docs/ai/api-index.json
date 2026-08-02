@@ -2,10 +2,10 @@
   "library": {
     "name": "abacus-query",
     "version": "4.8.11",
-    "generated_at": "2026-07-26",
+    "generated_at": "2026-08-01",
     "java_target": "17",
     "source": {
-      "git_sha": "3e2009f98b474cb1e3ebc24ba1f87f266e899caa"
+      "git_sha": "819f7e07e1a1a3670680bbba3aad060b60ec93cd"
     }
   },
   "packages": [
@@ -2915,7 +2915,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "@Beta public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> function) throws E",
+              "signature": "@Beta public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> function) throws E, IllegalArgumentException",
               "return_type": "T",
               "type_params": [
                 {
@@ -2943,6 +2943,10 @@
                 {
                   "type": "E",
                   "condition": "if the function throws an exception"
+                },
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if function is null"
                 }
               ],
               "javadoc_summary": "Applies a function to the SQL-Parameters pair and returns the result.",
@@ -2958,7 +2962,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "@Beta public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> function) throws E",
+              "signature": "@Beta public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> function) throws E, IllegalArgumentException",
               "return_type": "T",
               "type_params": [
                 {
@@ -2986,6 +2990,10 @@
                 {
                   "type": "E",
                   "condition": "if the function throws an exception"
+                },
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if function is null"
                 }
               ],
               "javadoc_summary": "Applies a bi-function to the SQL string and parameters separately and returns the result.",
@@ -3001,7 +3009,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "@Beta public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E",
+              "signature": "@Beta public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E, IllegalArgumentException",
               "return_type": "void",
               "type_params": [
                 {
@@ -3023,6 +3031,10 @@
                 {
                   "type": "E",
                   "condition": "if the consumer throws an exception"
+                },
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if consumer is null"
                 }
               ],
               "javadoc_summary": "Accepts a consumer for the SQL-Parameters pair.",
@@ -3040,7 +3052,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "@Beta public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E",
+              "signature": "@Beta public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E, IllegalArgumentException",
               "return_type": "void",
               "type_params": [
                 {
@@ -3062,6 +3074,10 @@
                 {
                   "type": "E",
                   "condition": "if the consumer throws an exception"
+                },
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if consumer is null"
                 }
               ],
               "javadoc_summary": "Accepts a bi-consumer for the SQL string and parameters separately.",
@@ -12577,7 +12593,7 @@
                 {
                   "name": "condition",
                   "type": "Condition",
-                  "javadoc": "the WHERE condition for the subquery; may be null for no WHERE clause (a blank SqlExpression condition is likewise treated as no filter condition)",
+                  "javadoc": "the WHERE condition for the subquery; may be null for no WHERE clause (a blank SqlExpression or empty Junction condition is likewise treated as no filter condition)",
                   "nullability": "unspecified"
                 }
               ],
@@ -12697,7 +12713,7 @@
                 {
                   "name": "condition",
                   "type": "Condition",
-                  "javadoc": "the WHERE condition for the subquery; may be null for no WHERE clause (a blank SqlExpression condition is likewise treated as no filter condition)",
+                  "javadoc": "the WHERE condition for the subquery; may be null for no WHERE clause (a blank SqlExpression or empty Junction condition is likewise treated as no filter condition)",
                   "nullability": "unspecified"
                 }
               ],
@@ -13615,7 +13631,7 @@
               "throws": [],
               "javadoc_summary": "Returns the table name and optional alias for the entity class using the default naming policy.",
               "contract": [
-                "If @Table annotation is present, uses its values; otherwise derives the table name from the class name using NamingPolicy.SNAKE_CASE."
+                "If an annotated table name is present (via @Table or a JPA javax.persistence/jakarta.persistence @Table annotation), it is used as-is; otherwise the table name is derived from the class name using NamingPolicy.SNAKE_CASE."
               ],
               "examples": [
                 "// Given: @Table(name = \"users\", alias = \"u\") on User class\nString tableAndAlias = QueryUtil.tableNameAndAlias(User.class);\n// Returns: \"users u\"\n\n// Given: @Table(name = \"orders\") on Order class (no alias)\nString tableOnly = QueryUtil.tableNameAndAlias(Order.class);\n// Returns: \"orders\"\n\n// Given: no @Table annotation on MyEntity class\nString derived = QueryUtil.tableNameAndAlias(MyEntity.class);\n// Returns: \"my_entity\" (derived from class name using SNAKE_CASE)"

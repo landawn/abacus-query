@@ -1606,11 +1606,12 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testAppendRejectsEmptyJunction() {
-        // A junction without sub-conditions cannot be rendered as SQL.
+        // A junction without sub-conditions cannot be rendered as SQL. It is now rejected by the
+        // implicit-WHERE predicate validation in append(Condition) before any SQL is emitted.
         final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> Dsl.PSC.select("*").from("users").append(new Junction(Operator.OR)));
 
-        assertTrue(ex.getMessage().contains("must contain at least one element"), ex.getMessage());
+        assertTrue(ex.getMessage().contains("use a non-empty predicate"), ex.getMessage());
     }
 
     @Test

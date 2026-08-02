@@ -244,7 +244,7 @@ public class Join extends AbstractCondition {
      *     new On("o.customer_id", "c.id"));
      * // SQL: JOIN (orders o, customers c) ON o.customer_id = c.id
      *
-     * // Join multiple tables with SqlExpression
+     * // Join multiple tables with a compound condition built from SqlExpressions
      * Join exprMultiJoin = new Join(tables,
      *     new And(
      *         Filters.expr("o.customer_id = c.id"),

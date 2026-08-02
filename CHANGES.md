@@ -1,3 +1,7 @@
+## 4.8.11
+* Naming convention improvements
+* Improvements and bug fixes
+
 ## 4.8.10
 * Naming convention improvements
 * Improvements and bug fixes

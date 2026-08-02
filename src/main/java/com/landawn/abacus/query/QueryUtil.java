@@ -930,8 +930,9 @@ public final class QueryUtil {
 
     /**
      * Returns the table name and optional alias for the entity class using the default naming policy.
-     * If {@code @Table} annotation is present, uses its values; otherwise derives the table name from the class name
-     * using {@code NamingPolicy.SNAKE_CASE}.
+     * If an annotated table name is present (via {@code @Table} or a JPA
+     * {@code javax.persistence}/{@code jakarta.persistence} {@code @Table} annotation), it is used as-is;
+     * otherwise the table name is derived from the class name using {@code NamingPolicy.SNAKE_CASE}.
      *
      * <p>The returned string is formatted as "tableName" or "tableName alias" depending on whether
      * an alias is defined.</p>
