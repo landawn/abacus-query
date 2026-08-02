@@ -74,6 +74,7 @@ import com.landawn.abacus.util.OperationType;
 import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 import com.landawn.abacus.util.Throwables;
+import com.landawn.abacus.util.cs;
 import com.landawn.abacus.query.QueryUtil.ColumnInfo;
 import com.landawn.abacus.util.u.Optional;
 import com.landawn.abacus.util.stream.Stream;
@@ -6691,8 +6692,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws E if the function throws an exception
      */
     @Beta
-    public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> function) throws E {
-        N.checkArgNotNull(function, "function");
+    public <T, E extends Exception> T apply(final Throwables.Function<? super SP, T, E> function) throws E, IllegalArgumentException {
+        N.checkArgNotNull(function, cs.function);
 
         return function.apply(build());
     }
@@ -6720,8 +6721,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws E if the function throws an exception
      */
     @Beta
-    public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> function) throws E {
-        N.checkArgNotNull(function, "function");
+    public <T, E extends Exception> T apply(final Throwables.BiFunction<? super String, ? super List<Object>, T, E> function)
+            throws E, IllegalArgumentException {
+        N.checkArgNotNull(function, cs.function);
 
         final SP sP = build();
 
@@ -6750,8 +6752,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws E if the consumer throws an exception
      */
     @Beta
-    public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E {
-        N.checkArgNotNull(consumer, "consumer");
+    public <E extends Exception> void accept(final Throwables.Consumer<? super SP, E> consumer) throws E, IllegalArgumentException {
+        N.checkArgNotNull(consumer, cs.consumer);
 
         consumer.accept(build());
     }
@@ -6776,8 +6778,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws E if the consumer throws an exception
      */
     @Beta
-    public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E {
-        N.checkArgNotNull(consumer, "consumer");
+    public <E extends Exception> void accept(final Throwables.BiConsumer<? super String, ? super List<Object>, E> consumer) throws E, IllegalArgumentException {
+        N.checkArgNotNull(consumer, cs.consumer);
 
         final SP sP = build();
 

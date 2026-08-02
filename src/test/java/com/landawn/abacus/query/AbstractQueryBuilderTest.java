@@ -1826,23 +1826,27 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testNullTerminalCallbacksDoNotConsumeBuilder() {
         final SqlBuilder applySp = Dsl.PSC.select("id").from("users");
-        assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException applySpError = assertThrows(IllegalArgumentException.class,
                 () -> applySp.apply((Throwables.Function<AbstractQueryBuilder.SP, Object, RuntimeException>) null));
+        assertTrue(applySpError.getMessage().contains("function"));
         assertEquals("SELECT id FROM users", applySp.build().query());
 
         final SqlBuilder applySqlAndParams = Dsl.PSC.select("id").from("users");
-        assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException applySqlAndParamsError = assertThrows(IllegalArgumentException.class,
                 () -> applySqlAndParams.apply((Throwables.BiFunction<String, List<Object>, Object, RuntimeException>) null));
+        assertTrue(applySqlAndParamsError.getMessage().contains("function"));
         assertEquals("SELECT id FROM users", applySqlAndParams.build().query());
 
         final SqlBuilder acceptSp = Dsl.PSC.select("id").from("users");
-        assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException acceptSpError = assertThrows(IllegalArgumentException.class,
                 () -> acceptSp.accept((Throwables.Consumer<AbstractQueryBuilder.SP, RuntimeException>) null));
+        assertTrue(acceptSpError.getMessage().contains("consumer"));
         assertEquals("SELECT id FROM users", acceptSp.build().query());
 
         final SqlBuilder acceptSqlAndParams = Dsl.PSC.select("id").from("users");
-        assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException acceptSqlAndParamsError = assertThrows(IllegalArgumentException.class,
                 () -> acceptSqlAndParams.accept((Throwables.BiConsumer<String, List<Object>, RuntimeException>) null));
+        assertTrue(acceptSqlAndParamsError.getMessage().contains("consumer"));
         assertEquals("SELECT id FROM users", acceptSqlAndParams.build().query());
     }
 
