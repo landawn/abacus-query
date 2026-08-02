@@ -56,9 +56,11 @@ import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Join;
 import com.landawn.abacus.query.condition.Limit;
+import com.landawn.abacus.query.condition.On;
 import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.SubQuery;
+import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.Beans;
 import com.landawn.abacus.util.ClassUtil;
@@ -1749,6 +1751,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return false;
     }
 
+    private static Condition validatePredicateCondition(final Condition condition) {
+        N.checkArgNotNull(condition, "condition");
+
+        return new On(condition).condition();
+    }
+
     /**
      * Sets the FROM clause with an expression and associates it with an entity class.
      *
@@ -2389,6 +2397,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     @SuppressWarnings("unchecked")
     private This appendJoinExpr(final char[] joinKeyword, final String joinExpr, final boolean joinConditionAllowed) {
         checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+
+        if (!joinConditionAllowed && containsTopLevelJoinCondition(joinExpr)) {
+            throw new IllegalArgumentException("CROSS JOIN and NATURAL JOIN expressions must not contain a top-level ON or USING connector");
+        }
+
         checkCanAppendJoin();
 
         _sb.append(joinKeyword);
@@ -2804,7 +2817,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param joinExpr the join expression (a table reference, optionally with alias; a {@code NATURAL JOIN} takes no {@code ON} clause) (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains a top-level
+     *                                  {@code ON}/{@code USING} connector
      * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
      */
     public This naturalJoin(final String joinExpr) {
@@ -2944,11 +2958,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param condition the join condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code condition} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if a condition other than an explicit
+     *                                  {@link On}/{@link Using} has a {@code null} operator or is/contains a {@link Criteria},
+     *                                  standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING} connector,
+     *                                  quantified-subquery operand, or empty predicate
      * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
      */
     public This on(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
+
+        final boolean explicitJoinCondition = condition instanceof On || condition instanceof Using;
+
+        if (!explicitJoinCondition) {
+            validatePredicateCondition(condition);
+        }
 
         return mutateAtomically(() -> {
             checkCanAppendJoinCondition();
@@ -2956,7 +2979,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             // Mirror Join.toString() and the append(Criteria) join path: a raw predicate needs an explicit
             // ON keyword, while an On/Using condition renders its own keyword. Emitting ON unconditionally
             // would produce "ON ON (...)" or the impossible "ON USING (...)".
-            if (condition.operator() != Operator.ON && condition.operator() != Operator.USING) {
+            if (!explicitJoinCondition) {
                 _sb.append(_SPACE_ON_SPACE);
             }
 
@@ -3119,19 +3142,21 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param condition the WHERE condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code condition} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or is/contains a
+     *                                  {@link Criteria}, standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING}
+     *                                  connector, quantified-subquery operand, or empty predicate
      * @throws IllegalStateException if {@code WHERE} has already been set on this builder
      * @see Filters
      */
     public This where(final Condition condition) {
-        N.checkArgNotNull(condition, "condition");
+        final Condition predicate = validatePredicateCondition(condition);
 
         return mutateAtomically(() -> {
             checkIfAlreadyCalled(SK.WHERE);
 
             _sb.append(_SPACE_WHERE_SPACE);
 
-            appendCondition(condition);
+            appendCondition(predicate);
         });
     }
 
@@ -3541,19 +3566,21 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param condition the HAVING condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code condition} is {@code null}
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or is/contains a
+     *                                  {@link Criteria}, standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING}
+     *                                  connector, quantified-subquery operand, or empty predicate
      * @throws IllegalStateException if {@code HAVING} has already been set on this builder
      * @see Filters
      */
     public This having(final Condition condition) {
-        N.checkArgNotNull(condition, "condition");
+        final Condition predicate = validatePredicateCondition(condition);
 
         return mutateAtomically(() -> {
             checkIfAlreadyCalled(SK.HAVING);
 
             _sb.append(_SPACE_HAVING_SPACE);
 
-            appendCondition(condition);
+            appendCondition(predicate);
         });
     }
 

@@ -857,8 +857,8 @@ public class QueryUtilTest extends TestBase {
     public void testPropertyToColumnMapWithRepeatedNestedType() {
         final ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(NestedRoot.class, NamingPolicy.SNAKE_CASE);
 
-        assertTrue(result.containsKey("branch.firstLeaf.value"));
-        assertTrue(result.containsKey("branch.secondLeaf.value"));
+        assertEquals("nested_leaf.value", result.get("branch.firstLeaf.value"));
+        assertEquals("nested_leaf.value", result.get("branch.secondLeaf.value"));
     }
 
     @Test

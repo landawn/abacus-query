@@ -413,7 +413,9 @@ public final class QueryUtil {
                         final String subTableAliasOrName = SqlBuilder.tableAliasOrName(propType.javaType(), namingPolicy);
 
                         for (final Map.Entry<String, String> entry : subPropColumnNameMap.entrySet()) {
-                            propColumnNameMap.put(propInfo.name + SK.PERIOD + entry.getKey(), subTableAliasOrName + SK.PERIOD + entry.getValue());
+                            final String subColumnName = entry.getValue();
+                            propColumnNameMap.put(propInfo.name + SK.PERIOD + entry.getKey(),
+                                    subColumnName.indexOf('.') < 0 ? subTableAliasOrName + SK.PERIOD + subColumnName : subColumnName);
                         }
                     }
                 } else {

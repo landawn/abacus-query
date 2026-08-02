@@ -1307,6 +1307,28 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
+    public void testTokenizerConfiguredQuoteSeparatorsDoNotSplitQuotedRegions() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder()
+                .withSeparator('\'')
+                .withSeparator('"')
+                .withSeparator('`')
+                .withSeparator('[')
+                .build());
+        final String sql = "'a b' \"c d\" `e f` [g h]";
+        final List<String> quotedTokens = Arrays.asList("'a b'", "\"c d\"", "`e f`", "[g h]");
+
+        assertEquals(SqlParser.parse(sql), tokenizer.parse(sql));
+
+        for (final String quotedToken : quotedTokens) {
+            final int start = sql.indexOf(quotedToken);
+
+            assertEquals(start, tokenizer.indexOfToken(sql, quotedToken));
+            assertEquals(quotedToken, tokenizer.nextToken(sql, start));
+            assertEquals(start + quotedToken.length(), tokenizer.nextTokenEndIndex(sql, start));
+        }
+    }
+
+    @Test
     public void testTokenizerConfigurationsAreIsolated() {
         final SqlParser.Tokenizer colonTokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("::").build());
         final SqlParser.Tokenizer dollarTokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("$$").build());

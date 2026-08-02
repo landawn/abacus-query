@@ -841,6 +841,12 @@ public final class SqlParser {
 
                         appendSpaceAfterSkippedBlockCommentIfNeeded(sql, sqlLength, index, tokens, tokenizerConfig);
                     }
+                } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+                    // SQL lexical structure takes precedence over configured separators: even if a
+                    // quote character was registered as a separator, the quoted region is one token.
+                    sb.append(ch);
+                    quoteChar = ch == '[' ? ']' : ch;
+                    bsEscaped = false;
                 } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig)) != null) {
                     // Multi-character operator (e.g. >=, <>, ->>, :=). Matched before the single-character
                     // separator lookup (same effective precedence as before, when isSeparator matched it
@@ -867,12 +873,6 @@ public final class SqlParser {
                     }
                 } else {
                     sb.append(ch);
-
-                    if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
-                        quoteChar = ch == '[' ? ']' : ch;
-                        // Opening quote char is non-backslash -> first content char has even parity.
-                        bsEscaped = false;
-                    }
                 }
             }
 
@@ -1119,6 +1119,12 @@ public final class SqlParser {
                                 break;
                             }
                         }
+                    } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+                        // Quoted regions remain whole even when their opening character is configured
+                        // as a separator.
+                        sb.append(ch);
+                        quoteChar = ch == '[' ? ']' : ch;
+                        bsEscaped = false;
                     } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig)) {
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
@@ -1154,11 +1160,6 @@ public final class SqlParser {
                         }
                     } else {
                         sb.append(ch);
-
-                        if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
-                            quoteChar = ch == '[' ? ']' : ch;
-                            bsEscaped = false;
-                        }
                     }
                 }
 
@@ -1325,6 +1326,12 @@ public final class SqlParser {
                             break;
                         }
                     }
+                } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+                    // Quoted regions remain whole even when their opening character is configured
+                    // as a separator.
+                    sb.append(ch);
+                    quoteChar = ch == '[' ? ']' : ch;
+                    bsEscaped = false;
                 } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig)) {
                     if (!sb.isEmpty()) {
                         break;
@@ -1344,11 +1351,6 @@ public final class SqlParser {
                     break;
                 } else {
                     sb.append(ch);
-
-                    if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
-                        quoteChar = ch == '[' ? ']' : ch;
-                        bsEscaped = false;
-                    }
                 }
             }
 
@@ -1465,6 +1467,12 @@ public final class SqlParser {
                         break;
                     }
                 }
+            } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+                // Quoted regions remain whole even when their opening character is configured
+                // as a separator.
+                started = true;
+                quoteChar = ch == '[' ? ']' : ch;
+                bsEscaped = false;
             } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig)) {
                 if (started) {
                     return index;
@@ -1478,11 +1486,6 @@ public final class SqlParser {
                 return temp != null ? index + temp.length() : index + 1;
             } else {
                 started = true;
-
-                if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
-                    quoteChar = ch == '[' ? ']' : ch;
-                    bsEscaped = false;
-                }
             }
         }
 

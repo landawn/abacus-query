@@ -2488,6 +2488,64 @@ public class AbstractQueryBuilderTest extends TestBase {
                 Dsl.PSC.select("id").from("t").innerJoin("dept").on(Filters.expr("t.deptId = dept.id")).build().query());
     }
 
+    @Test
+    public void testConditionClauseMethodsRejectNonPredicatesWithoutMutation() {
+        final Condition nullOperator = new Condition() {
+            @Override
+            public Operator operator() {
+                return null;
+            }
+
+            @Override
+            public ImmutableList<Object> parameters() {
+                return ImmutableList.empty();
+            }
+
+            @Override
+            public String toSql(final NamingPolicy namingPolicy) {
+                return "invalid";
+            }
+        };
+
+        final SqlBuilder where = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> where.where(Criteria.builder().where(Filters.eq("active", true)).build()));
+        assertThrows(IllegalArgumentException.class, () -> where.where(Filters.subQuery("SELECT id FROM archived_users")));
+        assertThrows(IllegalArgumentException.class, () -> where.where(Filters.where(Filters.eq("active", true))));
+        assertThrows(IllegalArgumentException.class, () -> where.where(Filters.on("users.id", "accounts.user_id")));
+        assertEquals("SELECT id FROM users WHERE active = ?", where.where(Filters.eq("active", true)).build().query());
+
+        final SqlBuilder having = Dsl.PSC.select("department").from("users").groupBy("department");
+        assertThrows(IllegalArgumentException.class, () -> having.having(Filters.innerJoin("accounts")));
+        assertThrows(IllegalArgumentException.class,
+                () -> having.having(Filters.any(Filters.subQuery("SELECT user_id FROM archived_users"))));
+        assertThrows(IllegalArgumentException.class, () -> having.having(Filters.using("department")));
+        assertEquals("SELECT department FROM users GROUP BY department HAVING COUNT(*) > 1",
+                having.having(Filters.expr("COUNT(*) > 1")).build().query());
+
+        final SqlBuilder on = Dsl.PSC.select("id").from("users").innerJoin("accounts");
+        assertThrows(IllegalArgumentException.class, () -> on.on(Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> on.on(Filters.and()));
+        assertThrows(IllegalArgumentException.class, () -> on.on(nullOperator));
+        assertEquals("SELECT id FROM users INNER JOIN accounts ON users.id = accounts.user_id",
+                on.on(Filters.expr("users.id = accounts.user_id")).build().query());
+    }
+
+    @Test
+    public void testCrossAndNaturalJoinRejectOnlyTopLevelConnectorsWithoutMutation() {
+        final SqlBuilder cross = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> cross.crossJoin("orders o ON o.user_id = users.id"));
+        assertEquals("SELECT id FROM users CROSS JOIN orders o", cross.crossJoin("orders o").build().query());
+
+        final SqlBuilder natural = Dsl.PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> natural.naturalJoin("orders o USING (user_id)"));
+        assertEquals("SELECT id FROM users NATURAL JOIN orders o", natural.naturalJoin("orders o").build().query());
+
+        assertEquals("SELECT id FROM users CROSS JOIN (SELECT a.id FROM a JOIN b ON a.id = b.id) nested_orders",
+                Dsl.PSC.select("id").from("users").crossJoin("(SELECT a.id FROM a JOIN b ON a.id = b.id) nested_orders").build().query());
+        assertEquals("SELECT id FROM users NATURAL JOIN (SELECT id FROM a JOIN b USING (id)) nested_orders",
+                Dsl.PSC.select("id").from("users").naturalJoin("(SELECT id FROM a JOIN b USING (id)) nested_orders").build().query());
+    }
+
     // sqlKeyWords is built only from SK, which does not carry the underscore-bearing niladic keyword
     // functions. Unregistered, a naming policy rewrote them into identifiers -- CURRENT_USER became
     // currentUser (CAMEL_CASE) and current-user (KEBAB_CASE, which parses as subtraction). This registry
