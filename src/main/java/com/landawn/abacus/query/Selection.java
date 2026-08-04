@@ -70,13 +70,25 @@ import com.landawn.abacus.util.N;
  */
 public final class Selection {
 
+    /** The entity class to select; never {@code null}. */
     private final Class<?> entityClass;
+    /** The table alias, or {@code null} if none was specified. */
     private final String tableAlias;
+    /** The result class alias, or {@code null} if none was specified. */
     private final String classAlias;
+    /** The property names to include, or {@code null} to derive the projection from the entity class. */
     private final ImmutableList<String> includedPropNames;
+    /** Whether properties from sub-entities are included. */
     private final boolean includeSubEntityProperties;
+    /** The property names to exclude, or {@code null} for no exclusions. */
     private final ImmutableSet<String> excludedPropNames;
 
+    /**
+     * Creates an immutable {@code Selection} from the given builder,
+     * defensively copying its property collections.
+     *
+     * @param builder the builder holding the selection settings
+     */
     private Selection(final SelectionBuilder builder) {
         entityClass = builder.entityClass;
         tableAlias = builder.tableAlias;
@@ -186,13 +198,24 @@ public final class Selection {
      * Builder for immutable {@link Selection} instances.
      */
     public static final class SelectionBuilder {
+        /** The entity class to select; never {@code null}. */
         private final Class<?> entityClass;
+        /** The table alias, or {@code null} if none was specified. */
         private String tableAlias;
+        /** The result class alias, or {@code null} if none was specified. */
         private String classAlias;
+        /** The property names to include, or {@code null} to derive the projection from the entity class. */
         private Collection<String> includedPropNames;
+        /** Whether properties from sub-entities are included. */
         private boolean includeSubEntityProperties;
+        /** The property names to exclude, or {@code null} for no exclusions. */
         private Set<String> excludedPropNames;
 
+        /**
+         * Creates a builder for the given entity class.
+         *
+         * @param entityClass the entity class to select
+         */
         private SelectionBuilder(final Class<?> entityClass) {
             this.entityClass = entityClass;
         }

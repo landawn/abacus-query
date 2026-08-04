@@ -2366,40 +2366,6 @@ public final class SqlParser {
     }
 
     /**
-     * Determines whether a token is a function name while examining only tokens below the supplied
-     * exclusive upper bound. This compatibility overload preserves the historical bounded-scan
-     * behavior; values above {@code tokens.size()} are capped at the list size.
-     *
-     * @param tokens the parsed SQL tokens (typically the result of {@link #parse(String)})
-     * @param len the exclusive upper bound for the scan; values above {@code tokens.size()} are capped
-     * @param index the index of the candidate function-name token; invalid indices return {@code false}
-     * @return {@code true} if an opening-parenthesis token occurs after {@code index}, with only space
-     *         tokens between them, and before the effective upper bound; {@code false} otherwise
-     * @throws NullPointerException if {@code tokens} is {@code null}
-     * @deprecated use {@link #isFunctionName(List, int)} when the complete token list should be examined
-     */
-    @Deprecated
-    public static boolean isFunctionName(final List<String> tokens, final int len, final int index) {
-        final int upperBound = Math.min(len, tokens.size());
-
-        if (index < 0 || index >= upperBound || SK.SPACE.equals(tokens.get(index))) {
-            return false;
-        }
-
-        for (int i = index + 1; i < upperBound; i++) {
-            final String token = tokens.get(i);
-
-            if (SK.PARENTHESIS_L.equals(token)) {
-                return true;
-            } else if (!SK.SPACE.equals(token)) {
-                return false;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Checks if the given SQL statement is a SELECT query.
      * <p>
      * This method performs a case-insensitive check on the leading SQL keyword (after skipping

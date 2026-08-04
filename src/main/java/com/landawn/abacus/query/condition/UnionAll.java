@@ -57,7 +57,7 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Relationship to other set operations:</p>
  * <ul>
- *   <li>UNION ALL combines rows from both queries, keeping duplicates (no duplicate-elimination step)</li>
+ *   <li>UNION ALL combines rows from both queries, keeping duplicates</li>
  *   <li>UNION combines rows from both queries, removing duplicates</li>
  *   <li>INTERSECT returns only rows that appear in both queries</li>
  *   <li>EXCEPT/MINUS returns rows from first query that don't appear in second query</li>

@@ -47,6 +47,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      */
     final ImmutableList<String> propNames;
 
+    /** The subquery whose result set the property value(s) are tested against; {@code null} for an uninitialized instance. */
     private SubQuery subQuery;
 
     /** Lazily memoized parameters (performance only). */
@@ -117,6 +118,14 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
         this.subQuery = subQuery;
     }
 
+    /**
+     * Validates that the given operator is a subquery-membership operator.
+     *
+     * @param operator the operator to validate
+     * @return {@code operator}, unchanged
+     * @throws NullPointerException if {@code operator} is {@code null}
+     * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN}
+     */
     private static Operator validateOperator(final Operator operator) {
         if (operator == null) {
             throw new NullPointerException("operator");
@@ -162,6 +171,15 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
         return propNames;
     }
 
+    /**
+     * Defensively copies the given property names and validates that the collection is non-{@code null}
+     * and non-empty and that every element is non-{@code null}, non-empty, and non-blank.
+     *
+     * @param propNames the property names to copy and validate
+     * @return an immutable copy of {@code propNames}, in iteration order
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any element is
+     *         {@code null}, empty, or blank
+     */
     private static ImmutableList<String> copyAndValidatePropNames(final Collection<String> propNames) {
         N.checkArgNotNull(propNames, "propNames");
 
@@ -210,6 +228,13 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
         }
     }
 
+    /**
+     * Returns whether any selected property name is a wildcard ({@code *} or {@code qualifier.*}), in
+     * which case the projection's column count cannot be determined here and arity is left unchecked.
+     *
+     * @param selectPropNames the selected property names to inspect
+     * @return {@code true} if any element is {@code *} or ends with {@code .*} (ignoring surrounding whitespace)
+     */
     private static boolean hasWildcardProjection(final Collection<String> selectPropNames) {
         for (final String selectPropName : selectPropNames) {
             final String trimmed = selectPropName.trim();

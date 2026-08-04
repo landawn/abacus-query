@@ -157,6 +157,9 @@ public final class Filters {
     /** A SQL expression representing {@code "1 > 2"} which always evaluates to {@code false}. */
     private static final SqlExpression ALWAYS_FALSE = SqlExpression.of("1 > 2");
 
+    /**
+     * Prevents instantiation of this utility class; all members are static.
+     */
     private Filters() {
         // utility class
     }
@@ -588,6 +591,17 @@ public final class Filters {
         return and(equalConditions(props));
     }
 
+    /**
+     * Builds one {@link Equal} condition per entry of the given property map, in the map's iteration order.
+     * Each entry is read once during this call, so concurrent mutation of a live map cannot desynchronize
+     * validation and iteration.
+     *
+     * @param props map of property names to values (must not be {@code null} or empty, and every key must
+     *              be a non-{@code null} {@link String})
+     * @return a non-empty list of {@link Equal} conditions, one per map entry
+     * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or if any key is not a
+     *                                  non-blank {@link String}
+     */
     private static List<Condition> equalConditions(final Map<?, ?> props) {
         N.checkArgNotEmpty(props, "props");
 
@@ -653,6 +667,19 @@ public final class Filters {
         return and(equalConditions(entity, includedPropNames));
     }
 
+    /**
+     * Builds one {@link Equal} condition per requested property of the given entity bean, reading each
+     * property value from the bean. This is the shared implementation behind the entity-based
+     * {@code anyEqual}/{@code allEqual}/{@code anyOfAllEqual} overloads.
+     *
+     * @param entity the bean whose property values are read (must not be {@code null} or a {@link Map})
+     * @param includedPropNames the property names to read (must not be {@code null} or empty)
+     * @return a non-empty list of {@link Equal} conditions, one per included property name
+     * @throws IllegalArgumentException if {@code entity} is {@code null} or a {@link Map}, or if
+     *                                  {@code includedPropNames} is {@code null}, empty, or contains an
+     *                                  empty/blank name or a name that is not a readable property
+     * @throws NullPointerException if {@code includedPropNames} contains a {@code null} name
+     */
     private static List<Condition> equalConditions(final Object entity, final Collection<String> includedPropNames) {
         N.checkArgNotNull(entity, "entity");
         N.checkArgument(!(entity instanceof Map), "entity must be a bean object; use the map overload for maps");

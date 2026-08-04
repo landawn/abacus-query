@@ -907,7 +907,9 @@ public class NamedProperty {
      * }</pre>
      *
      * @param value the pattern to match (can include % for any characters and _ for single character).
-     *              A {@code null} value is permitted (the resulting condition renders the value as {@code null}).
+     *              Passing {@code null} renders the value as {@code null} (e.g. {@code name LIKE null}),
+     *              which is not a meaningful SQL comparison; do not pass {@code null} (the
+     *              {@link #startsWith(String)}/{@link #contains(String)} siblings reject a {@code null} value)
      * @return a Like condition for this property
      * @see Like
      * @see Filters#like(String, String)
@@ -927,7 +929,9 @@ public class NamedProperty {
      * }</pre>
      *
      * @param value the pattern to exclude (can include % for any characters and _ for single character).
-     *              A {@code null} value is permitted (the resulting condition renders the value as {@code null}).
+     *              Passing {@code null} renders the value as {@code null} (e.g. {@code name NOT LIKE null}),
+     *              which is not a meaningful SQL comparison; do not pass {@code null} (the
+     *              {@link #notContains(String)} sibling rejects a {@code null} value)
      * @return a NotLike condition for this property
      * @see NotLike
      * @see Filters#notLike(String, String)

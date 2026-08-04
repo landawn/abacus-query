@@ -283,6 +283,15 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         }
     }
 
+    /**
+     * Renders a {@code BETWEEN} / {@code NOT BETWEEN} clause, e.g. {@code col BETWEEN :minCol AND :maxCol}.
+     * The bound parameter names are derived from the property name with any table-alias prefix stripped.
+     *
+     * @param propName the property/column name
+     * @param operator the operator ({@link Operator#BETWEEN} or {@link Operator#NOT_BETWEEN})
+     * @param minValue the lower bound (inclusive)
+     * @param maxValue the upper bound (inclusive)
+     */
     private void appendBetweenClause(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
         appendColumnName(propName);
 
@@ -303,6 +312,16 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         setParameter("max" + cap, maxValue);
     }
 
+    /**
+     * Renders a single-column {@code IN} / {@code NOT IN} value list, e.g. {@code col IN (?, ?, ...)}.
+     * Inputs with more than one property name are delegated to
+     * {@link #appendMultiColumnInClause(Collection, Operator, List)}. Under the named and iBATIS SQL
+     * policies each value is bound with an indexed parameter name ({@code col1}, {@code col2}, ...).
+     *
+     * @param propNames the property/column names (one or more)
+     * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
+     * @param values the membership values; a {@code null} list renders as an empty value list
+     */
     private void appendInClause(final Collection<String> propNames, final Operator operator, final List<?> values) {
         if (propNames.size() > 1) {
             appendMultiColumnInClause(propNames, operator, values);
@@ -394,6 +413,15 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         _sb.append(SK._PARENTHESIS_R);
     }
 
+    /**
+     * Renders an {@code IN} / {@code NOT IN} subquery clause, e.g. {@code col IN (subQuery)} for a single
+     * column or {@code (col1, col2) IN (subQuery)} for multiple columns. The subquery is rendered through
+     * {@link #appendCondition(Condition)}, so its parameters are merged into this builder's parameter list.
+     *
+     * @param propNames the property/column names (one or more)
+     * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
+     * @param subQuery the subquery whose result set the column value(s) are tested against
+     */
     private void appendInSubQueryClause(final Collection<String> propNames, final Operator operator, final SubQuery subQuery) {
         if (propNames.size() == 1) {
             appendColumnName(propNames.iterator().next());
@@ -422,6 +450,14 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         _sb.append(SK._PARENTHESIS_R);
     }
 
+    /**
+     * Renders {@code OPERATOR (inner)}, inserting a separating space only when the buffer does not already
+     * end with a space or an opening parenthesis. Used for {@link Cell} and {@link ComposableCell}
+     * conditions such as {@code NOT (...)} and {@code EXISTS (...)}.
+     *
+     * @param operator the cell operator (for example {@link Operator#NOT} or {@link Operator#EXISTS})
+     * @param inner the condition to wrap in parentheses
+     */
     private void appendParenthesizedCondition(final Operator operator, final Condition inner) {
         // Clause methods already leave a trailing space (for example, "WHERE "). Add one only when
         // needed so NOT/EXISTS conditions do not acquire an observable double space.

@@ -136,9 +136,12 @@ public class Using extends Cell {
      *
      * @param columnNames variable number of column names to join on.
      *                    All columns must exist in both tables with identical names. Must not be {@code null} or empty,
-     *                    and individual names must not be {@code null}, empty, or blank. Names must be unqualified (cannot contain a {@code .}) and must each be a single column name (cannot contain {@code ,}, {@code (}, or {@code )}).
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
-     *                                  a qualified (dotted) column name, or a name containing {@code ,}, {@code (}, or {@code )}
+     *                    and individual names must not be {@code null}, empty, or blank. Names must be unqualified
+     *                    (cannot contain a {@code .}) and must each be a single column name (cannot contain {@code ,},
+     *                    {@code (}, or {@code )}).
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
+     *                                  or blank entry, a qualified (dotted) column name, or a name containing
+     *                                  {@code ,}, {@code (}, or {@code )}
      * @deprecated It's recommended to use {@link Filters#on(java.util.Map)} instead of {@code Using} for better
      *             portability and clarity. Replace {@code new Using("col1", "col2")} with explicit
      *             {@code Filters.on(N.asMap("table1.col1", "table2.col1", "table1.col2", "table2.col2"))}.
@@ -177,11 +180,14 @@ public class Using extends Cell {
      * }</pre>
      *
      * @param columnNames collection of column names to join on. Must not be {@code null} or empty, and individual
-     *                    names must not be {@code null}, empty, or blank. Names must be unqualified (cannot contain a {@code .}) and must each be a single column name (cannot contain {@code ,}, {@code (}, or {@code )}).
+     *                    names must not be {@code null}, empty, or blank. Names must be unqualified
+     *                    (cannot contain a {@code .}) and must each be a single column name (cannot contain {@code ,},
+     *                    {@code (}, or {@code )}).
      *                    The collection is read once and snapshotted. Order matters for some databases; use a
      *                    {@code LinkedHashSet} or {@code List} to preserve insertion order.
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
-     *                                  a qualified (dotted) column name, or a name containing {@code ,}, {@code (}, or {@code )}
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
+     *                                  or blank entry, a qualified (dotted) column name, or a name containing
+     *                                  {@code ,}, {@code (}, or {@code )}
      * @deprecated It's recommended to use {@link Filters#on(java.util.Map)} instead of {@code Using} for better
      *             portability and clarity. Replace {@code new Using(columnList)} with an explicit
      *             {@code Filters.on(Map)} condition that specifies the full column names with table prefixes.
@@ -289,10 +295,13 @@ public class Using extends Cell {
      * // Creates condition for: USING (customer_id, order_date)
      * }</pre>
      *
-     * @param columnNames array of column names. Must not be null or empty, and names must not be blank, qualified (cannot contain a {@code .}), or multi-column (cannot contain {@code ,}, {@code (}, or {@code )}).
+     * @param columnNames array of column names. Must not be {@code null} or empty, and names must not be blank,
+     *                    qualified (cannot contain a {@code .}), or multi-column (cannot contain {@code ,},
+     *                    {@code (}, or {@code )}).
      * @return a condition representing the USING clause
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
-     *                                  a qualified (dotted) column name, or a name containing {@code ,}, {@code (}, or {@code )}
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
+     *                                  or blank entry, a qualified (dotted) column name, or a name containing
+     *                                  {@code ,}, {@code (}, or {@code )}
      */
     static Condition createUsingCondition(final String... columnNames) {
         return prepare(columnNames).condition;
@@ -318,10 +327,13 @@ public class Using extends Cell {
      * // Creates condition for: USING (tenant_id, user_id)
      * }</pre>
      *
-     * @param columnNames collection of column names. Must not be null or empty, and names must not be blank, qualified (cannot contain a {@code .}), or multi-column (cannot contain {@code ,}, {@code (}, or {@code )}).
+     * @param columnNames collection of column names. Must not be {@code null} or empty, and names must not be blank,
+     *                    qualified (cannot contain a {@code .}), or multi-column (cannot contain {@code ,},
+     *                    {@code (}, or {@code )}).
      * @return a condition representing the USING clause
-     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank entry,
-     *                                  a qualified (dotted) column name, or a name containing {@code ,}, {@code (}, or {@code )}
+     * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
+     *                                  or blank entry, a qualified (dotted) column name, or a name containing
+     *                                  {@code ,}, {@code (}, or {@code )}
      */
     static Condition createUsingCondition(final Collection<String> columnNames) {
         return prepare(columnNames).condition;

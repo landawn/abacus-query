@@ -151,16 +151,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /** Constant for the {@code ALL} select modifier (the SQL default; opposite of {@code DISTINCT}). */
     public static final String ALL = SK.ALL;
 
-    /** Constant for the TOP clause in SQL queries. */
+    /** Constant for the {@code TOP} select modifier (e.g. {@code TOP 10}). */
     public static final String TOP = SK.TOP;
 
-    /** Constant for the UNIQUE clause in SQL queries. */
+    /** Constant for the {@code UNIQUE} select modifier. */
     public static final String UNIQUE = SK.UNIQUE;
 
-    /** Constant for the DISTINCT clause in SQL queries. */
+    /** Constant for the {@code DISTINCT} select modifier (opposite of {@code ALL}). */
     public static final String DISTINCT = SK.DISTINCT;
 
-    /** Constant for the DISTINCTROW clause in SQL queries. */
+    /** Constant for the {@code DISTINCTROW} select modifier. */
     public static final String DISTINCTROW = SK.DISTINCTROW;
 
     /** Constant for the asterisk (*) wildcard in SQL queries. */
@@ -323,8 +323,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * emitted verbatim.
      */
     private static final String LIMIT_SLOT_PATTERN = "(\\d+|\\?|:\\w+|#\\{[^}]+\\})";
+    /** Matches a generic {@code LIMIT count [OFFSET offset]} or {@code LIMIT offset, count} expression. */
     private static final Pattern GENERIC_LIMIT_EXPRESSION_PATTERN = Pattern.compile(
             "LIMIT\\s+" + LIMIT_SLOT_PATTERN + "(?:\\s+OFFSET\\s+" + LIMIT_SLOT_PATTERN + "|\\s*,\\s*" + LIMIT_SLOT_PATTERN + ")?", Pattern.CASE_INSENSITIVE);
+    /** Matches the SQL:2008 {@code [OFFSET offset ROWS] FETCH FIRST|NEXT count ROWS ONLY} expression. */
     private static final Pattern FETCH_LIMIT_EXPRESSION_PATTERN = Pattern.compile(
             "(?:OFFSET\\s+" + LIMIT_SLOT_PATTERN + "\\s+ROWS?\\s+)?FETCH\\s+(?:FIRST|NEXT)\\s+" + LIMIT_SLOT_PATTERN + "\\s+ROWS?\\s+ONLY",
             Pattern.CASE_INSENSITIVE);
@@ -368,10 +370,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /** Char array for " EXCEPT ". */
     protected static final char[] _SPACE_EXCEPT_SPACE = (SK.SPACE + SK.EXCEPT + SK.SPACE).toCharArray();
 
-    /** Char array for the "EXCEPT" or "MINUS" keyword. */
+    /** Char array for the "MINUS" keyword (Oracle's EXCEPT equivalent). */
     protected static final char[] _EXCEPT_MINUS = SK.EXCEPT_MINUS.toCharArray();
 
-    /** Char array for " EXCEPT " or " MINUS ". */
+    /** Char array for " MINUS ". */
     protected static final char[] _SPACE_EXCEPT_MINUS_SPACE = (SK.SPACE + SK.EXCEPT_MINUS + SK.SPACE).toCharArray();
 
     /** Char array for the "AS" keyword. */
@@ -1640,7 +1642,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM (SELECT * FROM users) t
      * }</pre>
      *
-     * @param expr the FROM clause expression
+     * @param expr the FROM clause expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      * @throws IllegalStateException if the current operation is not {@code QUERY}, no columns have been set by
@@ -1697,6 +1699,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return -1;
     }
 
+    /**
+     * Reports whether a JOIN-family keyword (e.g. {@code JOIN}, {@code LEFT}, {@code CROSS},
+     * {@code STRAIGHT_JOIN}) starts at {@code index}, preceded by whitespace or a block-comment end.
+     * The caller is responsible for the nesting-depth check.
+     */
     private static boolean isTopLevelJoinStart(final String sql, final int index) {
         if (index <= 0 || !isJoinLeadingTrivia(sql, index)) {
             return false;
@@ -1708,11 +1715,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 || isSqlWordAt(sql, index, "ANTI");
     }
 
+    /** Reports whether the character before {@code index} can separate a table reference from a JOIN keyword. */
     private static boolean isJoinLeadingTrivia(final String sql, final int index) {
         final char previous = sql.charAt(index - 1);
         return Character.isWhitespace(previous) || (previous == '/' && index > 1 && sql.charAt(index - 2) == '*');
     }
 
+    /** Reports whether {@code word} occurs at {@code index} (case-insensitively) followed by a keyword boundary. */
     private static boolean isSqlWordAt(final String sql, final int index, final String word) {
         final int end = index + word.length();
         return end <= sql.length() && sql.regionMatches(true, index, word, 0, word.length()) && isAliasKeywordBoundary(sql, end);
@@ -1751,6 +1760,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return false;
     }
 
+    /**
+     * Validates that {@code condition} is a non-{@code null} predicate usable in a WHERE/HAVING/ON position.
+     *
+     * @param condition the condition to validate
+     * @return the validated predicate condition
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or
+     *         is/contains a {@link Criteria}, standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING}
+     *         connector, quantified-subquery operand, or empty predicate
+     */
     private static Condition validatePredicateCondition(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
 
@@ -1766,7 +1784,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Associates the User class for property mapping
      * }</pre>
      *
-     * @param expr the FROM clause expression
+     * @param expr the FROM clause expression (must not be {@code null}, empty, or blank)
      * @param entityClass the entity class for property mapping (may be {@code null}, in which case no entity-class association is performed)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
@@ -2060,6 +2078,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _aliasPropColumnNameMap.put(alias, Beans.isBeanClass(entityClass) ? propToColumnInfoMap(entityClass, _namingPolicy) : _propColumnNameMap);
     }
 
+    /**
+     * Strips a leading {@code AS} keyword (case-insensitive) from a table alias.
+     * {@code null} and empty aliases are returned unchanged.
+     */
     private static String normalizeTableAlias(final String tableAlias) {
         if (Strings.isEmpty(tableAlias)) {
             return tableAlias;
@@ -2245,6 +2267,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return isValidTopLevelAlias(sqlFragment, implicitAlias) ? implicitAlias : null;
     }
 
+    /**
+     * Returns the end index (exclusive) of the alias token starting at {@code aliasStart}, honoring quoted
+     * and bracket-quoted aliases, or {@code -1} when no valid alias token starts there.
+     */
     private static int findAliasTokenEnd(final String sqlFragment, final int aliasStart) {
         final int len = sqlFragment.length();
 
@@ -2271,6 +2297,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return end;
     }
 
+    /**
+     * Reports whether {@code alias} spans the final token of {@code sqlFragment} (only trivia may follow it)
+     * and its expression does not end with a qualification dot.
+     */
     private static boolean isValidTopLevelAlias(final String sqlFragment, final TopLevelAlias alias) {
         if (alias == null || alias.aliasEnd() <= alias.aliasStart() || skipAliasTrivia(sqlFragment, alias.aliasEnd()) != sqlFragment.length()) {
             return false;
@@ -2320,10 +2350,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return index;
     }
 
+    /** Reports whether {@code ch} can be part of a bare alias identifier (letter, digit, {@code _}, {@code $}, {@code #}, or {@code @}). */
     private static boolean isAliasIdentifierChar(final char ch) {
         return ch == '_' || ch == '$' || ch == '#' || ch == '@' || Character.isLetterOrDigit(ch);
     }
 
+    /**
+     * Reports whether {@code index} is at a keyword boundary: out of range, or not inside an identifier
+     * or qualified name (the character is not a letter, digit, dot, {@code _}, or {@code $}).
+     */
     private static boolean isAliasKeywordBoundary(final String sqlFragment, final int index) {
         if (index < 0 || index >= sqlFragment.length()) {
             return true;
@@ -2333,6 +2368,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return ch != '.' && ch != '_' && ch != '$' && !Character.isLetterOrDigit(ch);
     }
 
+    /**
+     * Reports whether the {@code '#'} at {@code index} starts a MySQL hash comment rather than being a data
+     * token (a <code>#{...}</code> marker, a {@code #>}/{@code ##}/{@code #-} operator, the second character
+     * of a {@code ?#} operator, or part of a SQL Server {@code #name}/{@code ##name} temporary-table identifier).
+     */
     private static boolean isAliasScannerHashCommentStart(final String sqlFragment, final int index) {
         if (index < sqlFragment.length() - 1) {
             final char next = sqlFragment.charAt(index + 1);
@@ -2358,8 +2398,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return true;
     }
 
+    /**
+     * Compact scan result shared by FROM-table and SELECT-expression alias parsing.
+     *
+     * @param expressionEnd the end index (exclusive) of the expression preceding the alias
+     * @param aliasStart the start index of the alias token
+     * @param aliasEnd the end index (exclusive) of the alias token
+     */
     private record TopLevelAlias(int expressionEnd, int aliasStart, int aliasEnd) {
-        // Compact scan result shared by FROM-table and SELECT-expression alias parsing.
     }
 
     /**
@@ -4532,6 +4578,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         private final boolean hasCompletedSetOperation;
         private final boolean setListStarted;
 
+        /** Captures a snapshot of the mutable state that structured-clause rendering may change. */
         MutationCheckpoint(final AbstractQueryBuilder<?> builder) {
             sql = builder._sb.toString();
             parameters = new ArrayList<>(builder._parameters);
@@ -4560,6 +4607,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             setListStarted = builder._setListStarted;
         }
 
+        /** Restores the captured snapshot into the given builder, discarding every mutation made since capture. */
         void restore(final AbstractQueryBuilder<?> builder) {
             builder._sb.setLength(0);
             builder._sb.append(sql);
@@ -4683,6 +4731,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Returns the first already-emitted clause that {@code op} must precede in SQL clause order, or
+     * {@code null} when {@code op} may be appended at the current position. Pagination clauses are one
+     * terminal family whose internal ordering is enforced by the pagination methods themselves.
+     */
     private String findAlreadyEmittedLaterClause(final String op) {
         if (SK.WHERE.equals(op)) {
             return firstCalledClause(SK.GROUP_BY, SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT, SK.FOR_UPDATE);
@@ -4699,6 +4752,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return null;
     }
 
+    /** Returns the first of {@code clauses} that has already been emitted, or {@code null} when none has. */
     private String firstCalledClause(final String... clauses) {
         for (final String clause : clauses) {
             if (calledOpSet.contains(clause)) {
@@ -4820,8 +4874,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 // OFFSET and FOR UPDATE require dedicated builder state, while LIMIT must carry the
                 // structured Limit representation used by appendLimit. Rendering an arbitrary Clause
                 // for any of them would bypass ordering/duplicate checks and dialect-specific syntax.
-                throw new IllegalArgumentException("Unsupported clause type for append(Condition): " + clause.getClass().getName() + " with operator "
-                        + clause.operator());
+                throw new IllegalArgumentException(
+                        "Unsupported clause type for append(Condition): " + clause.getClass().getName() + " with operator " + clause.operator());
             }
         } else if (!_isForConditionOnly) {
             // Conditions in this branch acquire an implicit WHERE below. Reject structural fragments
@@ -4978,6 +5032,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 || operator == Operator.MINUS;
     }
 
+    /**
+     * Pre-validates, without changing builder state, that every clause carried by the {@link Criteria} may
+     * still be emitted in SQL clause order and that none of the required clause slots has been claimed yet.
+     *
+     * @param criteria the criteria whose WHERE/GROUP BY/HAVING/ORDER BY/LIMIT clauses to validate
+     * @throws IllegalStateException if a criteria clause cannot be appended at the builder's current
+     *         structural position, would follow a clause that must come after it, or has already been set
+     */
     private void checkCriteriaClauseSlotsAvailable(final Criteria criteria) {
         checkCriteriaClauseOrderAvailable(criteria.where(), false, SK.WHERE, SK.GROUP_BY, SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST,
                 SK.FETCH_NEXT, SK.FOR_UPDATE);
@@ -5038,12 +5100,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /** Ensures the slot of an optional Criteria clause has not already been claimed when the clause is present. */
     private void checkClauseSlotAvailable(final Object clause, final String op) {
         if (clause != null) {
             checkClauseSlotAvailable(op);
         }
     }
 
+    /**
+     * Ensures the given clause slot has not already been claimed.
+     *
+     * @param op the clause keyword to check
+     * @throws IllegalStateException if {@code op} has already been set
+     */
     private void checkClauseSlotAvailable(final String op) {
         if (calledOpSet.contains(op)) {
             throw new IllegalStateException("'" + op + "' has already been set and cannot be set again");
@@ -5706,8 +5775,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Renders a sibling builder for set operations while preserving the unique named-parameter
-     * sequence across the full compound query.
+     * Shared implementation for the sibling-builder set-operation overloads: finalizes {@code sqlBuilder}
+     * via {@link #build()}, validates the operand and this builder's structural position, rewrites any
+     * colliding named parameters, and merges the child's parameters and named-parameter bookkeeping so the
+     * placeholder sequence stays unique across the full compound query.
+     *
+     * @param keyword the set-operation keyword token (e.g. {@link #_SPACE_UNION_SPACE})
+     * @param sqlBuilder the sibling builder supplying the right-hand query; consumed by this call
+     * @param operationName the set-operation SQL keyword (e.g. {@code "UNION"}) used in validation messages
+     * @return this builder instance for method chaining
      */
     private This appendSetOperation(final char[] keyword, final This sqlBuilder, final String operationName) {
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
@@ -5763,8 +5839,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * one of them would place the operator in an invalid position.
      *
      * @param operationName the public set-operation name used in the exception message
-     * @throws IllegalStateException if the current operation is not a query or its current SELECT
-     *         segment has not been completed
+     * @throws IllegalStateException if this builder is closed, the current operation is not a query, the
+     *         current SELECT segment has not been completed by {@code from(...)}, or {@code ORDER BY},
+     *         pagination, or {@code FOR UPDATE} has already been added
      */
     private void checkCanAppendSetOperation(final String operationName) {
         checkOpen();
@@ -5786,6 +5863,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Rewrites the named parameters of a set-operation operand so they cannot collide with names already
+     * generated on this (the parent) builder: colliding {@code <base>_<n>} names are shifted to unused
+     * suffixes and the operand's placeholder tokens are replaced outside SQL quoted regions and comments.
+     * {@code childParameterNames} and {@code childParameterTokens} are updated in place to the final names
+     * and tokens, ready to be merged into the parent's bookkeeping.
+     *
+     * @param sql the operand query text built by the child builder
+     * @param childOccurrences the child's named-parameter occurrence counts per base name
+     * @param parentOccurrences the parent's occurrence counts snapshot taken before the child was built
+     * @param childParameterNames the generated names emitted by the child; updated to the final names
+     * @param childParameterTokens the rendered tokens per generated name; updated to the final tokens
+     * @param childSqlPolicy the SQL policy of the child builder
+     * @return the operand query with collision-free parameter names (may be the unchanged {@code sql})
+     * @throws IllegalArgumentException if the child generated named parameters under a different SQL policy
+     */
     private String uniquifySetOperationNamedParameters(final String sql, final Map<String, Integer> childOccurrences,
             final Map<String, Integer> parentOccurrences, final Set<String> childParameterNames, final Map<String, String> childParameterTokens,
             final SqlPolicy childSqlPolicy) {
@@ -5867,6 +5960,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return result;
     }
 
+    /**
+     * Renders the placeholder token for a named parameter with the given handler.
+     *
+     * @param handler the named-parameter handler to render with
+     * @param parameterName the parameter name to render
+     * @return the rendered token (e.g. {@code ":name"})
+     * @throws IllegalStateException if the handler emits an empty token
+     */
     private static String renderNamedParameterToken(final BiConsumer<StringBuilder, String> handler, final String parameterName) {
         final StringBuilder sb = new StringBuilder(parameterName.length() + 8);
         handler.accept(sb, parameterName);
@@ -5878,6 +5979,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return sb.toString();
     }
 
+    /**
+     * Merges another builder's named-parameter occurrence counts into this builder's, summing the counts
+     * per base name so names generated later stay unique across the compound statement.
+     *
+     * @param occurrences the occurrence counts to merge (may be {@code null} or empty)
+     */
     private void mergeNamedParameterOccurrences(final Map<String, Integer> occurrences) {
         if (N.isEmpty(occurrences)) {
             return;
@@ -5888,6 +5995,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Returns the parameter name for the given occurrence of a base name: the base name itself for the
+     * first occurrence, otherwise {@code <name>_<occurrence>}.
+     *
+     * @param name the base parameter name
+     * @param occurrence the 1-based occurrence index
+     * @return the indexed parameter name
+     */
     private static String indexedNamedParameterName(final String name, final int occurrence) {
         return occurrence == 1 ? name : name + "_" + occurrence;
     }
@@ -5931,6 +6046,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return sb == null ? sql : sb.append(sql, last, sql.length()).toString();
     }
 
+    /**
+     * Replaces every iBATIS <code>#{oldName}</code> placeholder with <code>#{newName}</code> outside SQL
+     * quoted regions and comments.
+     *
+     * @param sql the query text to rewrite
+     * @param oldName the parameter name to replace
+     * @param newName the replacement parameter name
+     * @param sqlServerTempIdentifiers whether {@code #name}/{@code ##name} are SQL Server temporary-table
+     *        identifiers (data tokens) rather than MySQL hash comments
+     * @return the rewritten query, or {@code sql} unchanged when no placeholder matches
+     */
     private static String replaceIbatisParameterName(final String sql, final String oldName, final String newName, final boolean sqlServerTempIdentifiers) {
         StringBuilder sb = null;
         int last = 0;
@@ -6007,6 +6133,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return sb == null ? sql : sb.append(sql, last, sql.length()).toString();
     }
 
+    /**
+     * Returns the index just past the quoted region or comment starting at {@code start}, or {@code start}
+     * itself when none starts there. Equivalent to {@code skipSqlQuotedOrComment(sql, start, false)}.
+     *
+     * @param sql the SQL text to scan
+     * @param start the index to inspect
+     * @return the end index of the quoted region or comment, or {@code start}
+     */
     private static int skipSqlQuotedOrComment(final String sql, final int start) {
         return skipSqlQuotedOrComment(sql, start, false);
     }
@@ -6018,6 +6152,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * not skip the rest of the line. Without this, a set-operation operand such as
      * {@code "SELECT id FROM #tmp WHERE id = :id"} had everything after {@code #tmp} skipped and the
      * named-parameter uniquify pass silently left a colliding {@code :id} in place.
+     *
+     * @param sql the SQL text to scan
+     * @param start the index to inspect
+     * @param sqlServerTempIdentifiers whether {@code #name}/{@code ##name} are SQL Server temporary-table
+     *        identifiers (data tokens) rather than MySQL hash comments
+     * @return the index just past the quoted region or comment starting at {@code start}, or {@code start}
+     *         itself when none starts there
      */
     private static int skipSqlQuotedOrComment(final String sql, final int start, final boolean sqlServerTempIdentifiers) {
         final int len = sql.length();
@@ -6089,6 +6230,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return start;
     }
 
+    /** Reports whether {@code ch} can be part of a named-parameter name (letter, digit, {@code _}, dot, or non-ASCII). */
     private static boolean isSqlParameterNameChar(final char ch) {
         return ch == '_' || ch == '.' || (ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch >= 128;
     }
@@ -6359,7 +6501,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     _sb.append(_SPACE_EQUAL_SPACE);
 
-                    setParameterForSQL(entry.getValue());
+                    setParameterForParameterizedSql(entry.getValue());
                 }
 
                 break;
@@ -6376,7 +6518,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     _sb.append(_SPACE_EQUAL_SPACE);
 
-                    setParameterForNamedSQL(entry.getKey(), entry.getValue());
+                    setParameterForNamedSql(entry.getKey(), entry.getValue());
                 }
 
                 break;
@@ -6393,7 +6535,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     _sb.append(_SPACE_EQUAL_SPACE);
 
-                    setParameterForIbatisNamedSQL(entry.getKey(), entry.getValue());
+                    setParameterForIbatisNamedSql(entry.getKey(), entry.getValue());
                 }
 
                 break;
@@ -6713,6 +6855,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return new SP(sql, ImmutableList.wrap(_parameters));
     }
 
+    /**
+     * Ensures this builder is still open.
+     *
+     * @throws IllegalStateException if the builder has been closed by {@code build()} or a terminal helper
+     */
     private void checkOpen() {
         if (_sb == null) {
             throw new IllegalStateException("SqlBuilder is closed and cannot be reused after build() was called");
@@ -6975,7 +7122,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propValue the value to bind to the {@code ?} placeholder
      */
-    protected void setParameterForSQL(final Object propValue) {
+    protected void setParameterForParameterizedSql(final Object propValue) {
         if (Filters.QME.equals(propValue)) {
             _hasGeneratedParameterPlaceholder = true;
             _sb.append(SK._QUESTION_MARK);
@@ -6995,7 +7142,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propName the property or parameter name for the named SQL placeholder
      * @param propValue the value to bind to the named parameter
      */
-    protected void setParameterForNamedSQL(final String propName, final Object propValue) {
+    protected void setParameterForNamedSql(final String propName, final Object propValue) {
         if (Filters.QME.equals(propValue)) {
             final String namedPropName = nextNamedParameterName(propName);
             appendNamedParameter(namedPropName);
@@ -7009,6 +7156,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Renders a named-parameter token into the SQL buffer with this builder's handler and records the
+     * rendered token for set-operation collision handling.
+     *
+     * @param parameterName the parameter name to emit
+     * @throws IllegalStateException if the handler emits an empty token
+     */
     private void appendNamedParameter(final String parameterName) {
         final int start = _sb.length();
         _handlerForNamedParameter.accept(_sb, parameterName);
@@ -7026,7 +7180,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propName the property or parameter name for the ibatis named SQL placeholder
      * @param propValue the value to bind to the ibatis named parameter
      */
-    protected void setParameterForIbatisNamedSQL(final String propName, final Object propValue) {
+    protected void setParameterForIbatisNamedSql(final String propName, final Object propValue) {
         if (Filters.QME.equals(propValue)) {
             final String namedPropName = nextNamedParameterName(propName);
             _sb.append("#{");
@@ -7185,19 +7339,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             case PARAMETERIZED_SQL: {
-                setParameterForSQL(propValue);
+                setParameterForParameterizedSql(propValue);
 
                 break;
             }
 
             case NAMED_SQL: {
-                setParameterForNamedSQL(propName, propValue);
+                setParameterForNamedSql(propName, propValue);
 
                 break;
             }
 
             case IBATIS_SQL: {
-                setParameterForIbatisNamedSQL(propName, propValue);
+                setParameterForIbatisNamedSql(propName, propValue);
 
                 break;
             }
@@ -7257,7 +7411,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     }
 
                     final Object propValue = props.get(propName);
-                    setParameterForSQL(propValue);
+                    setParameterForParameterizedSql(propValue);
                 }
 
                 break;
@@ -7271,7 +7425,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     }
 
                     final String namedPropName = rowIndex >= 0 ? propName + "_" + rowIndex : propName;
-                    setParameterForNamedSQL(namedPropName, props.get(propName));
+                    setParameterForNamedSql(namedPropName, props.get(propName));
                 }
 
                 break;
@@ -7285,7 +7439,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     }
 
                     final String namedPropName = rowIndex >= 0 ? propName + "_" + rowIndex : propName;
-                    setParameterForIbatisNamedSQL(namedPropName, props.get(propName));
+                    setParameterForIbatisNamedSql(namedPropName, props.get(propName));
                 }
 
                 break;
@@ -7524,6 +7678,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return false;
     }
 
+    /**
+     * Reports whether {@code expr} contains a SQL Server local or global temporary-table identifier
+     * ({@code #name} or {@code ##name}) outside quoted regions and comments.
+     */
     private static boolean containsSqlServerTempIdentifier(final String expr) {
         for (int i = 0, len = expr.length(); i < len; i++) {
             if (isSqlServerTempIdentifierAt(expr, i)) {
@@ -7540,6 +7698,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return false;
     }
 
+    /**
+     * Reports whether a SQL Server temporary-table identifier ({@code #name} or {@code ##name}) starts at
+     * {@code index}: one or two {@code '#'} characters followed by an identifier character, and not
+     * immediately preceded by an identifier character.
+     */
     private static boolean isSqlServerTempIdentifierAt(final String expr, final int index) {
         final int len = expr.length();
 
@@ -8097,6 +8260,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * valid selected-property fragments, and a safe result alias.
      *
      * @param multiSelects the list of selections to validate
+     * @throws IllegalArgumentException if {@code multiSelects} is {@code null} or empty, contains a
+     *         {@code null} selection or one with a {@code null} entity class, a blank selected property,
+     *         or an unsafe class alias
      */
     protected static void checkMultiSelects(final List<Selection> multiSelects) {
         N.checkArgNotEmpty(multiSelects, "multiSelects");
@@ -8199,6 +8365,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /**
+     * Reports whether {@code propName} itself or any of its sub-properties (prefixed by
+     * {@code propName + "."}) is contained in {@code selectPropNames}.
+     */
     private static boolean containsSelectedPropOrSubProp(final Collection<String> selectPropNames, final String propName) {
         if (N.isEmpty(selectPropNames)) {
             return false;

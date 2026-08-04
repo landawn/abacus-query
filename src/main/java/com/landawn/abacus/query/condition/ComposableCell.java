@@ -27,7 +27,8 @@ import com.landawn.abacus.util.Strings;
  * Unlike {@link Cell}, the wrapped condition is always enclosed in parentheses in the rendered output:
  * {@code OPERATOR (cond)}.
  *
- * <p>Concrete subclasses include {@link Not}, {@link Exists}, {@link NotExists}, {@link All}, {@link Any}, and {@link Some}.</p>
+ * <p>Concrete subclasses include {@link Not}, {@link Exists}, {@link NotExists}, {@link All}, {@link Any},
+ * and {@link Some}.</p>
  *
  * <p><b>&#9888;&#65039;</b> {@link All}, {@link Any}, and {@link Some} are quantified right-hand operands and
  * cannot themselves be combined as boolean predicates.</p>

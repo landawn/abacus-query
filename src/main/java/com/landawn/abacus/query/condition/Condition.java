@@ -44,7 +44,7 @@ import com.landawn.abacus.util.NamingPolicy;
  *   <li><b>Collection operations:</b> {@code In}, {@code NotIn}</li>
  *   <li><b>Composable operations:</b> {@code And}, {@code Or}, {@code Not}</li>
  *   <li><b>SQL clauses:</b> {@code Where}, {@code Having}, {@code GroupBy}, {@code OrderBy}, {@code Join}</li>
- *   <li><b>Subquery operations:</b> {@code Exists}, {@code NotExists}, {@code All}, {@code Any}</li>
+ *   <li><b>Subquery operations:</b> {@code Exists}, {@code NotExists}, {@code All}, {@code Any}, {@code Some}</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>

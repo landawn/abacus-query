@@ -120,8 +120,10 @@ public class SqlExpression extends ComposableCondition {
     /** Lowercase {@code "null"} literal used when rendering a null value (distinct from the {@code "NULL"} SQL keyword in {@link #NULL_KEYWORD}). */
     static final String NULL_STRING = Strings.NULL;
 
+    /** SQL token for the bitwise left-shift operator used by {@link #leftShift(Object...)}. */
     private static final String LEFT_SHIFT = "<<";
 
+    /** SQL token for the bitwise right-shift operator used by {@link #rightShift(Object...)}. */
     private static final String RIGHT_SHIFT = ">>";
 
     /** SQL keyword rendered as the right-hand side of {@code IS NULL} / {@code IS NOT NULL}. */
@@ -130,8 +132,10 @@ public class SqlExpression extends ComposableCondition {
     /** Framework-specific sentinel rendered as the right-hand side of {@code IS BLANK} / {@code IS NOT BLANK}. */
     private static final String BLANK_KEYWORD = "BLANK";
 
+    /** Unbounded cache backing {@link #of(String)}: maps each literal text to its shared {@code SqlExpression} instance. */
     private static final Map<String, SqlExpression> cachedExpression = new ConcurrentHashMap<>();
 
+    /** Recognized SQL keywords (canonical upper-case forms) that {@link #toSql(NamingPolicy)} must not rewrite as identifiers. */
     private static final Set<String> SQL_KEY_WORDS = N.newHashSet(1024);
 
     static {
@@ -540,8 +544,8 @@ public class SqlExpression extends ComposableCondition {
      * }</pre>
      *
      * @param expr the expression to test
-     * @param minValue the minimum value (inclusive)
-     * @param maxValue the maximum value (inclusive)
+     * @param minValue the minimum value (inclusive); should not be {@code null} — a {@code null} renders as the literal {@code null}
+     * @param maxValue the maximum value (inclusive); should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the BETWEEN expression
      * @throws IllegalArgumentException if {@code minValue} or {@code maxValue} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
@@ -564,8 +568,8 @@ public class SqlExpression extends ComposableCondition {
      * }</pre>
      *
      * @param expr the expression to test
-     * @param minValue the lower bound of the excluded range (inclusive)
-     * @param maxValue the upper bound of the excluded range (inclusive)
+     * @param minValue the lower bound of the excluded range (inclusive); should not be {@code null} — a {@code null} renders as the literal {@code null}
+     * @param maxValue the upper bound of the excluded range (inclusive); should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the NOT BETWEEN expression
      * @throws IllegalArgumentException if {@code minValue} or {@code maxValue} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      */
@@ -1833,6 +1837,12 @@ public class SqlExpression extends ComposableCondition {
         }
     }
 
+    /**
+     * Registers a SQL keyword and its upper-case (canonical) form in {@link #SQL_KEY_WORDS},
+     * so {@link #toSql(NamingPolicy)} leaves it unconverted. {@code null} or empty keywords are ignored.
+     *
+     * @param keyword the keyword to register
+     */
     private static void registerSqlKeyword(final String keyword) {
         if (Strings.isNotEmpty(keyword)) {
             // Register the keyword as-is and its upper-case (canonical) form only. The lower-case form is
@@ -1845,10 +1855,23 @@ public class SqlExpression extends ComposableCondition {
         }
     }
 
+    /**
+     * Returns whether the given word is a registered SQL keyword.
+     * The match is exact (case-sensitive); only the forms registered by {@link #registerSqlKeyword(String)} qualify.
+     *
+     * @param word the token to check
+     * @return {@code true} if {@code word} is a registered SQL keyword
+     */
     private static boolean isSqlKeyword(final String word) {
         return SQL_KEY_WORDS.contains(word);
     }
 
+    /**
+     * Returns whether the given character can start a SQL identifier.
+     *
+     * @param ch the character to check
+     * @return {@code true} if {@code ch} is an ASCII letter or an underscore ({@code '_'})
+     */
     private static boolean isIdentifierStart(final char ch) {
         return Strings.isAsciiAlpha(ch) || ch == '_';
     }
@@ -1931,6 +1954,14 @@ public class SqlExpression extends ComposableCondition {
         }
     }
 
+    /**
+     * Returns whether the given token embeds a quoted string literal after a prefix
+     * (e.g. {@code N'text'} or {@code _utf8mb4'text'}), in which case naming-policy
+     * conversion must be skipped so the literal's content is not modified.
+     *
+     * @param word the token to check
+     * @return {@code true} if a single quote appears after the first character of {@code word}
+     */
     private static boolean containsQuotedLiteral(final String word) {
         // SqlParser keeps a SQL literal prefix and its quoted body in one token (for example,
         // N'camelCase' or _utf8mb4'camelCase'). Applying a naming policy to that whole token
@@ -1938,6 +1969,15 @@ public class SqlExpression extends ComposableCondition {
         return word.indexOf(SK._SINGLE_QUOTE) > 0;
     }
 
+    /**
+     * Returns whether the token at {@code index} is a SQL variable name — that is, immediately
+     * preceded by a bare {@code "@"} or {@code "@@"} token (e.g. SQL Server/MySQL variables).
+     * Variable names are left unconverted by the naming policy.
+     *
+     * @param words the parsed tokens of the expression literal
+     * @param index the index of the token to check within {@code words}
+     * @return {@code true} if the token at {@code index} is a SQL variable name
+     */
     private static boolean isSqlVariable(final List<String> words, final int index) {
         if (index == 0) {
             return false;

@@ -78,6 +78,9 @@ public final class QueryUtil {
      */
     public static final Pattern SIMPLE_COLUMN_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
 
+    /**
+     * Prevents instantiation; this is a static utility class.
+     */
     private QueryUtil() {
         // utility class — no instances
     }
@@ -89,16 +92,40 @@ public final class QueryUtil {
     @SuppressWarnings("deprecation")
     static final int POOL_SIZE = InternalUtil.POOL_SIZE;
 
+    /**
+     * Default maximum depth for expanding nested bean properties into dot-notation column mappings,
+     * used when the {@code abacus.query.maxNestedPropDepth} system property is not set.
+     */
     private static final int DEFAULT_MAX_NESTED_PROP_DEPTH = 2;
 
+    /**
+     * Maximum number of nested bean-property hops expanded into dot-notation column mappings;
+     * configurable via the {@code abacus.query.maxNestedPropDepth} system property
+     * (default: {@value #DEFAULT_MAX_NESTED_PROP_DEPTH}, never negative).
+     */
     private static final int MAX_NESTED_PROP_DEPTH = Math.max(0, Integer.getInteger("abacus.query.maxNestedPropDepth", DEFAULT_MAX_NESTED_PROP_DEPTH));
 
+    /**
+     * Parameter name used in argument-validation messages for entity-class parameters.
+     */
     private static final String ENTITY_CLASS = "entityClass";
 
+    /**
+     * Cache of column-name-to-property-name maps per entity class, built by
+     * {@link #columnToPropNameMap(Class)}.
+     */
     private static final Map<Class<?>, ImmutableMap<String, String>> column2PropNameMapPool = new ConcurrentHashMap<>();
 
+    /**
+     * Cache of property-name-to-column-name maps per entity class and naming policy, built by
+     * {@link #propToColumnNameMap(Class, NamingPolicy)}.
+     */
     private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, String>>> entityTablePropColumnNameMap = new ConcurrentHashMap<>();
 
+    /**
+     * Cache of {@link ColumnInfo} maps per entity class and naming policy, built by
+     * {@link #propToColumnInfoMap(Class, NamingPolicy)}.
+     */
     private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, ColumnInfo>>> entityPropColumnInfoMap = new ConcurrentHashMap<>();
 
     /**
@@ -354,6 +381,19 @@ public final class QueryUtil {
         return registerEntityPropColumnNameMap(entityClass, namingPolicy, registeringClasses, MAX_NESTED_PROP_DEPTH);
     }
 
+    /**
+     * Recursive implementation of {@link #registerEntityPropColumnNameMap(Class, NamingPolicy, Set)} that
+     * additionally tracks the remaining nesting budget: nested bean properties are expanded into
+     * dot-notation entries only while {@code remainingNestedPropDepth} is positive, and expansion stops
+     * entirely when a class already on the recursion stack is encountered again (a cyclic reference).
+     *
+     * @param entityClass the entity class to analyze (must not be {@code null})
+     * @param namingPolicy the naming policy used to derive column names for properties without an explicit column name
+     * @param registeringClasses classes already on the recursion stack, or {@code null} for a top-level call
+     * @param remainingNestedPropDepth the number of further nested bean hops to expand
+     * @return an immutable map of property names to column names
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     */
     private static ImmutableMap<String, String> registerEntityPropColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy,
             final Set<Class<?>> registeringClasses, final int remainingNestedPropDepth) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
@@ -830,14 +870,30 @@ public final class QueryUtil {
     // Pre-built placeholder strings for the larger "round" counts that the previous map-based
     // cache also retained, kept as constants so batch INSERT / large IN (...) clauses reuse a
     // single instance instead of rebuilding the string on every call.
+
+    /**
+     * Pre-built placeholder string for 100 parameters; see {@link #placeholders(int)}.
+     */
     private static final String QM_100;
 
+    /**
+     * Pre-built placeholder string for 200 parameters; see {@link #placeholders(int)}.
+     */
     private static final String QM_200;
 
+    /**
+     * Pre-built placeholder string for 300 parameters; see {@link #placeholders(int)}.
+     */
     private static final String QM_300;
 
+    /**
+     * Pre-built placeholder string for 500 parameters; see {@link #placeholders(int)}.
+     */
     private static final String QM_500;
 
+    /**
+     * Pre-built placeholder string for 1000 parameters; see {@link #placeholders(int)}.
+     */
     private static final String QM_1000;
 
     static {

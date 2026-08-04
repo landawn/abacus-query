@@ -59,8 +59,8 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Database support:</p>
  * <ul>
- *   <li>Oracle and DB2 accept the MINUS keyword emitted by this class</li>
- *   <li>PostgreSQL, SQL Server, SQLite and MySQL 8.0.31+ spell set difference EXCEPT; use {@link Except} there</li>
+ *   <li>Oracle accepts the MINUS keyword emitted by this class (Oracle 21c+ also accepts EXCEPT)</li>
+ *   <li>PostgreSQL, SQL Server, SQLite, DB2 and MySQL 8.0.31+ spell set difference EXCEPT; use {@link Except} there</li>
  *   <li>MySQL before 8.0.31 supports neither; rewrite with {@code NOT EXISTS} or an outer join with a NULL check</li>
  * </ul>
  *
@@ -76,7 +76,7 @@ package com.landawn.abacus.query.condition;
  *
  * // Find products not sold in the last month
  * SubQuery soldProducts = Filters.subQuery(
- *     "SELECT DISTINCT product_id FROM order_items WHERE order_date > DATE_SUB(NOW(), INTERVAL 1 MONTH)"
+ *     "SELECT DISTINCT product_id FROM order_items WHERE order_date > CURRENT_DATE - INTERVAL '1' MONTH"
  * );
  * Minus unsoldProducts = new Minus(soldProducts);
  * // When combined with all products query, returns products not in sales
@@ -122,7 +122,7 @@ public class Minus extends Clause {
      * <p>The MINUS operator performs a set difference operation, equivalent to A - B in set theory.
      * Only rows that appear in the first query but not in the second query will be returned.
      * Both queries must have compatible column structures (same number of columns with compatible types).
-     * MINUS is functionally equivalent to EXCEPT and is primarily used in Oracle and DB2 databases.</p>
+     * MINUS is functionally equivalent to EXCEPT and is primarily used in Oracle databases.</p>
      *
      * <p>MINUS is useful for identifying gaps, finding missing data, or determining records
      * that exist in one dataset but not another. Common use cases include finding customers

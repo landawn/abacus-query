@@ -1530,8 +1530,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         // All five set operations (union/unionAll/intersect/except/minus) share the same operand check
         // (checkSetOperationSubQuery -> isSubQuery), so a second operation pins the shared path.
-        assertEquals("SELECT id FROM users INTERSECT (SELECT id FROM t)",
-                Dsl.PSC.select("id").from("users").intersect("(SELECT id FROM t)").build().query());
+        assertEquals("SELECT id FROM users INTERSECT (SELECT id FROM t)", Dsl.PSC.select("id").from("users").intersect("(SELECT id FROM t)").build().query());
     }
 
     @Test
@@ -2415,10 +2414,8 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testAppendStringAsFirstWriteStillEmitsTheStatementPrefix() {
         assertEquals("DELETE FROM account WHERE id = 1", Dsl.PSC.deleteFrom("account").append("WHERE id = 1").build().query());
         assertEquals("DELETE FROM account WHERE id = 1", Dsl.PSC.deleteFrom("account").appendIf(true, "WHERE id = 1").build().query());
-        assertEquals("DELETE FROM account WHERE id = 1",
-                Dsl.PSC.deleteFrom("account").appendIfOrElse(true, "WHERE id = 1", "WHERE id = 2").build().query());
-        assertEquals("DELETE FROM account WHERE id = 2",
-                Dsl.PSC.deleteFrom("account").appendIfOrElse(false, "WHERE id = 1", "WHERE id = 2").build().query());
+        assertEquals("DELETE FROM account WHERE id = 1", Dsl.PSC.deleteFrom("account").appendIfOrElse(true, "WHERE id = 1", "WHERE id = 2").build().query());
+        assertEquals("DELETE FROM account WHERE id = 2", Dsl.PSC.deleteFrom("account").appendIfOrElse(false, "WHERE id = 1", "WHERE id = 2").build().query());
 
         // An UPDATE whose SET list is already staged by update(Class, ...) renders it before the fragment.
         final String updateSql = Dsl.PSC.update(Account.class).append("WHERE id = 1").build().query();
@@ -2524,11 +2521,9 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         final SqlBuilder having = Dsl.PSC.select("department").from("users").groupBy("department");
         assertThrows(IllegalArgumentException.class, () -> having.having(Filters.innerJoin("accounts")));
-        assertThrows(IllegalArgumentException.class,
-                () -> having.having(Filters.any(Filters.subQuery("SELECT user_id FROM archived_users"))));
+        assertThrows(IllegalArgumentException.class, () -> having.having(Filters.any(Filters.subQuery("SELECT user_id FROM archived_users"))));
         assertThrows(IllegalArgumentException.class, () -> having.having(Filters.using("department")));
-        assertEquals("SELECT department FROM users GROUP BY department HAVING COUNT(*) > 1",
-                having.having(Filters.expr("COUNT(*) > 1")).build().query());
+        assertEquals("SELECT department FROM users GROUP BY department HAVING COUNT(*) > 1", having.having(Filters.expr("COUNT(*) > 1")).build().query());
 
         final SqlBuilder on = Dsl.PSC.select("id").from("users").innerJoin("accounts");
         assertThrows(IllegalArgumentException.class, () -> on.on(Filters.expr(" ")));
@@ -2584,9 +2579,9 @@ public class AbstractQueryBuilderTest extends TestBase {
     // and SqlExpression's are two independent rendering paths that must agree.
     @Test
     public void testNiladicKeywordFunctionsAreNotRewrittenByTheNamingPolicy() {
-        final String[] keywords = { "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_PATH", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME",
-                "CURRENT_TIMESTAMP", "CURRENT_USER", "LOCALTIME", "LOCALTIMESTAMP", "SESSION_USER", "SYSTEM_USER", "UTC_DATE", "UTC_TIME",
-                "UTC_TIMESTAMP", "NAN", "INFINITE", "UNKNOWN", "NULL" };
+        final String[] keywords = { "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_PATH", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME", "CURRENT_TIMESTAMP",
+                "CURRENT_USER", "LOCALTIME", "LOCALTIMESTAMP", "SESSION_USER", "SYSTEM_USER", "UTC_DATE", "UTC_TIME", "UTC_TIMESTAMP", "NAN", "INFINITE",
+                "UNKNOWN", "NULL" };
 
         for (final String keyword : keywords) {
             for (final Dsl dsl : new Dsl[] { Dsl.PSC, Dsl.PLC, Dsl.PAC }) {

@@ -429,16 +429,6 @@ public class SqlParserTest extends TestBase {
         assertTrue(countIndex >= 0);
     }
 
-    @SuppressWarnings("deprecation")
-    @Test
-    public void testDeprecatedBoundedIsFunctionNamePreservesUpperBound() {
-        final List<String> tokens = Arrays.asList("COUNT", " ", "(", "*");
-
-        assertFalse(SqlParser.isFunctionName(tokens, 2, 0));
-        assertTrue(SqlParser.isFunctionName(tokens, 3, 0));
-        assertTrue(SqlParser.isFunctionName(tokens, Integer.MAX_VALUE, 0));
-    }
-
     @Test
     public void testIsFunctionNameNotFunction() {
         List<String> tokens = SqlParser.parse("SELECT name FROM users");
@@ -690,8 +680,7 @@ public class SqlParserTest extends TestBase {
         assertNextTokenConsistency(combined);
 
         final String formFeedSql = "SELECT\fFROM";
-        final SqlParser.Tokenizer withoutFormFeed = SqlParser
-                .tokenizer(defaults.toBuilder().withoutSeparator('\f').build());
+        final SqlParser.Tokenizer withoutFormFeed = SqlParser.tokenizer(defaults.toBuilder().withoutSeparator('\f').build());
         assertEquals(Arrays.asList(formFeedSql), withoutFormFeed.parse(formFeedSql));
         assertEquals(-1, withoutFormFeed.indexOfToken(formFeedSql, "FROM"));
         assertEquals(formFeedSql, withoutFormFeed.nextToken(formFeedSql, 0));
@@ -1308,12 +1297,8 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testTokenizerConfiguredQuoteSeparatorsDoNotSplitQuotedRegions() {
-        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder()
-                .withSeparator('\'')
-                .withSeparator('"')
-                .withSeparator('`')
-                .withSeparator('[')
-                .build());
+        final SqlParser.Tokenizer tokenizer = SqlParser
+                .tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator('\'').withSeparator('"').withSeparator('`').withSeparator('[').build());
         final String sql = "'a b' \"c d\" `e f` [g h]";
         final List<String> quotedTokens = Arrays.asList("'a b'", "\"c d\"", "`e f`", "[g h]");
 
@@ -1327,10 +1312,8 @@ public class SqlParserTest extends TestBase {
             assertEquals(start + quotedToken.length(), tokenizer.nextTokenEndIndex(sql, start));
         }
 
-        for (final String[] testCase : new String[][] { { "N'", "N'a b'" }, { "N\"", "N\"a b\"" }, { "N`", "N`a b`" },
-                { "N[", "N[a b]" } }) {
-            final SqlParser.Tokenizer prefixedLiteralTokenizer = SqlParser
-                    .tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator(testCase[0]).build());
+        for (final String[] testCase : new String[][] { { "N'", "N'a b'" }, { "N\"", "N\"a b\"" }, { "N`", "N`a b`" }, { "N[", "N[a b]" } }) {
+            final SqlParser.Tokenizer prefixedLiteralTokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator(testCase[0]).build());
             final String prefixedLiteral = testCase[1];
 
             assertEquals(Arrays.asList(prefixedLiteral), prefixedLiteralTokenizer.parse(prefixedLiteral));
@@ -2884,8 +2867,8 @@ public class SqlParserTest extends TestBase {
         // the SQL-standard reading (Oracle, SQL Server, DB2, standard-conforming PostgreSQL), and
         // "ESCAPE '\'" is the ANSI escape clause. Rejecting these broke ordinary read-only queries.
         assertTrue(SqlParser.isReadOnlyQuery("SELECT * FROM t WHERE n = " + quote + "a" + backslash + quote));
-        assertTrue(SqlParser
-                .isReadOnlyQuery("SELECT * FROM t WHERE n LIKE " + quote + "%" + backslash + "_%" + quote + " ESCAPE " + quote + backslash + quote));
+        assertTrue(
+                SqlParser.isReadOnlyQuery("SELECT * FROM t WHERE n LIKE " + quote + "%" + backslash + "_%" + quote + " ESCAPE " + quote + backslash + quote));
         assertTrue(SqlParser.isReadOnlyQuery("SELECT * FROM files WHERE dir = " + quote + "C:" + backslash + quote + " AND x = 1"));
         assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t (p) VALUES (" + quote + "C:" + backslash + quote + ")"));
 

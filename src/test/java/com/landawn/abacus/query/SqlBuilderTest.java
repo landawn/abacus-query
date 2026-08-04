@@ -915,8 +915,7 @@ public class SqlBuilderTest extends TestBase {
         assertEquals("SELECT id AS \"id\", first_name AS \"firstName\", last_name AS \"lastName\", email AS \"email\" FROM account WHERE email = ?",
                 Dsl.PSC.selectFrom(JavadocAccount.class).where(Filters.eq("email", "john.doe@example.com")).build().query());
 
-        assertEquals(
-                "SELECT a.id AS \"id\", a.first_name AS \"firstName\", a.last_name AS \"lastName\", a.email AS \"email\" FROM account a WHERE a.email = ?",
+        assertEquals("SELECT a.id AS \"id\", a.first_name AS \"firstName\", a.last_name AS \"lastName\", a.email AS \"email\" FROM account a WHERE a.email = ?",
                 Dsl.PSC.selectFrom(JavadocAccount.class, "a").where(Filters.eq("a.email", "john.doe@example.com")).build().query());
     }
 
@@ -1452,19 +1451,13 @@ public class SqlBuilderTest extends TestBase {
     public void testBinaryWithInOperatorAndSubQueryRendersAsInSubQuery() {
         // A Binary built via Filters.binary(prop, IN, subQuery) must render the sub-query inline in
         // parentheses -- "col IN (SELECT ...)" -- rather than binding the sub-query as a parameter.
-        final SP binaryIn = Dsl.PSC.select("*")
-                .from("users")
-                .where(Filters.binary("userId", Operator.IN, Filters.subQuery("SELECT id FROM x")))
-                .build();
+        final SP binaryIn = Dsl.PSC.select("*").from("users").where(Filters.binary("userId", Operator.IN, Filters.subQuery("SELECT id FROM x"))).build();
 
         assertEquals("SELECT * FROM users WHERE user_id IN (SELECT id FROM x)", binaryIn.query());
         assertTrue(binaryIn.parameters().isEmpty());
 
         // NOT IN behaves the same way.
-        final SP binaryNotIn = Dsl.PSC.select("*")
-                .from("users")
-                .where(Filters.binary("userId", Operator.NOT_IN, Filters.subQuery("SELECT id FROM x")))
-                .build();
+        final SP binaryNotIn = Dsl.PSC.select("*").from("users").where(Filters.binary("userId", Operator.NOT_IN, Filters.subQuery("SELECT id FROM x"))).build();
 
         assertEquals("SELECT * FROM users WHERE user_id NOT IN (SELECT id FROM x)", binaryNotIn.query());
         assertTrue(binaryNotIn.parameters().isEmpty());
@@ -13245,22 +13238,14 @@ public class SqlBuilderTest extends TestBase {
                 .productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server"))
                 .build());
 
-        SP sp = mssqlNamed.select("id")
-                .from("t")
-                .where(Filters.eq("id", 1))
-                .union(mssqlNamed.select("id").from("#tmp").where(Filters.eq("id", 2)))
-                .build();
+        SP sp = mssqlNamed.select("id").from("t").where(Filters.eq("id", 1)).union(mssqlNamed.select("id").from("#tmp").where(Filters.eq("id", 2))).build();
 
         assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM #tmp WHERE id = :id_2", sp.query());
         assertEquals(Arrays.asList(1, 2), sp.parameters());
 
         // Global temporary table (##name): already safe before the fix via the ##-specific carve-out,
         // pinned here so both temp-identifier forms stay covered.
-        sp = mssqlNamed.select("id")
-                .from("t")
-                .where(Filters.eq("id", 1))
-                .union(mssqlNamed.select("id").from("##tmp").where(Filters.eq("id", 2)))
-                .build();
+        sp = mssqlNamed.select("id").from("t").where(Filters.eq("id", 1)).union(mssqlNamed.select("id").from("##tmp").where(Filters.eq("id", 2))).build();
 
         assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM ##tmp WHERE id = :id_2", sp.query());
         assertEquals(Arrays.asList(1, 2), sp.parameters());
@@ -13743,8 +13728,7 @@ public class SqlBuilderTest extends TestBase {
     public void testInsertMapRejectsAllKeysExcludedBeforeAllocatingBuilder() {
         final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
 
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> Dsl.PSC.insert((Object) N.asMap("a", 1), N.asSet("a")));
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert((Object) N.asMap("a", 1), N.asSet("a")));
 
         assertTrue(ex.getMessage().contains("entity map must contain at least one non-excluded property"), ex.getMessage());
         assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),

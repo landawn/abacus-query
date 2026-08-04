@@ -397,6 +397,14 @@ public class Criteria extends AbstractCondition {
         return result;
     }
 
+    /**
+     * Computes the parameter list for {@link #parameters()}, collecting parameters from the
+     * constituent clauses in SQL clause order: JOINs, WHERE, GROUP BY, HAVING, set operations,
+     * ORDER BY, LIMIT.
+     *
+     * @return an immutable list of all parameters collected from the constituent clauses;
+     *         empty if this criteria has no conditions
+     */
     private ImmutableList<Object> computeParameters() {
         if (this.conditions.isEmpty()) {
             return ImmutableList.empty();
@@ -615,10 +623,23 @@ public class Criteria extends AbstractCondition {
         return N.equals(other.selectModifier, selectModifier) && N.equals(other.conditions, conditions);
     }
 
+    /**
+     * Returns the first condition in this criteria whose operator equals the given operator.
+     *
+     * @param operator the operator to look up (must not be {@code null})
+     * @return the first matching condition, or {@code null} if none is present
+     */
     private Condition find(final Operator operator) {
         return findConditionByOperator(conditions, operator);
     }
 
+    /**
+     * Returns the first condition in the given list whose operator equals the given operator.
+     *
+     * @param conds the conditions to search (must not be {@code null})
+     * @param operator the operator to look up
+     * @return the first matching condition, or {@code null} if none is present
+     */
     private static Condition findConditionByOperator(final List<Condition> conds, final Operator operator) {
         for (final Condition cond : conds) {
             if (cond.operator() == operator) {
@@ -629,6 +650,16 @@ public class Criteria extends AbstractCondition {
         return null;
     }
 
+    /**
+     * Validates that the given condition is acceptable as a clause of a {@code Criteria}: it must
+     * not be {@code null}, must report a clause-level operator (a join, WHERE, GROUP BY, HAVING,
+     * set operation, ORDER BY, or LIMIT), and must be an instance of the condition type required
+     * by that operator.
+     *
+     * @param cond the condition to validate (must not be {@code null})
+     * @throws IllegalArgumentException if {@code cond} is {@code null}, reports a {@code null} or
+     *         non-clause operator, or is not an instance of the condition type its operator requires
+     */
     private static void validateCriteriaCondition(final Condition cond) {
         N.checkArgNotNull(cond, "cond");
         final Operator operator = cond.operator();
@@ -651,6 +682,13 @@ public class Criteria extends AbstractCondition {
         }
     }
 
+    /**
+     * Returns the condition type required for the given clause-level operator
+     * (e.g. {@link Where} for {@link Operator#WHERE}, {@link Join} for any join operator).
+     *
+     * @param operator the operator to map
+     * @return the required condition type, or {@code null} if {@code operator} is not a clause-level operator
+     */
     private static Class<? extends Condition> expectedCriteriaConditionType(final Operator operator) {
         switch (operator) {
             case JOIN:
@@ -686,6 +724,14 @@ public class Criteria extends AbstractCondition {
         }
     }
 
+    /**
+     * Returns whether the given operator identifies a singleton clause — one that may occur at
+     * most once in a {@code Criteria}: WHERE, GROUP BY, HAVING, ORDER BY, or LIMIT. JOINs and
+     * set operations are not singleton clauses and may accumulate.
+     *
+     * @param operator the operator to test
+     * @return {@code true} if the operator identifies a singleton clause, {@code false} otherwise
+     */
     private static boolean isSingletonClause(final Operator operator) {
         return operator == Operator.WHERE || operator == Operator.GROUP_BY || operator == Operator.HAVING || operator == Operator.ORDER_BY
                 || operator == Operator.LIMIT;
@@ -2579,6 +2625,15 @@ public class Criteria extends AbstractCondition {
             return this;
         }
 
+        /**
+         * Casts the given condition to the expected type, or rejects it.
+         *
+         * @param <T> the expected condition type
+         * @param cond the condition to check
+         * @param expectedType the condition type required for the condition's operator
+         * @return {@code cond} cast to {@code expectedType}
+         * @throws IllegalArgumentException if {@code cond} is not an instance of {@code expectedType}
+         */
         private static <T extends Condition> T requireConditionType(final Condition cond, final Class<T> expectedType) {
             if (!expectedType.isInstance(cond)) {
                 throw new IllegalArgumentException("Invalid condition for operator " + cond.operator() + ": expected " + expectedType.getSimpleName()
@@ -2588,6 +2643,20 @@ public class Criteria extends AbstractCondition {
             return expectedType.cast(cond);
         }
 
+        /**
+         * Validates that the given condition can be wrapped in (or used directly as) the clause
+         * identified by {@code expectedOperator}: it must not be a nested {@link Criteria}, an
+         * {@code ON}/{@code USING} condition, or an empty predicate; and if it is itself a clause
+         * condition, its operator must equal {@code expectedOperator} and its type must be the
+         * clause implementation that operator requires.
+         *
+         * @param cond the condition to validate (must not be {@code null})
+         * @param expectedOperator the operator of the target clause
+         * @param methodName the name of the calling builder method, used in error messages
+         * @throws IllegalArgumentException if {@code cond} is a nested {@link Criteria}, uses an
+         *         {@code ON}/{@code USING} operator, is an empty predicate, or is a clause condition
+         *         whose operator or type does not match the target clause
+         */
         private void validateClauseCondition(final Condition cond, final Operator expectedOperator, final String methodName) {
             if (cond instanceof Criteria) {
                 throw new IllegalArgumentException("Invalid condition for " + methodName + ": nested Criteria is not supported");
@@ -2626,6 +2695,14 @@ public class Criteria extends AbstractCondition {
             }
         }
 
+        /**
+         * Returns the {@link Clause} implementation required for the given singleton clause
+         * operator (WHERE, GROUP BY, HAVING, or ORDER BY).
+         *
+         * @param operator the operator to map
+         * @return the required clause type, or {@code null} if the operator has no specific clause
+         *         type requirement
+         */
         private static Class<? extends Clause> expectedClauseType(final Operator operator) {
             if (operator == Operator.WHERE) {
                 return Where.class;
@@ -2670,10 +2747,24 @@ public class Criteria extends AbstractCondition {
             }
         }
 
+        /**
+         * Validates that a single condition is a valid clause-level condition for a {@code Criteria};
+         * see the {@link Criteria} constructor for the exact rules.
+         *
+         * @param cond the condition to validate (must not be {@code null})
+         * @throws IllegalArgumentException if {@code cond} is not a valid clause-level condition
+         */
         private void checkCondition(final Condition cond) {
             validateCriteriaCondition(cond);
         }
 
+        /**
+         * Adds a single condition to this builder. If the condition is a singleton clause
+         * (WHERE, GROUP BY, HAVING, ORDER BY, or LIMIT), any previously added clause of the same
+         * kind is replaced; otherwise the condition is appended.
+         *
+         * @param cond the condition to add; assumed already validated by {@link #checkCondition(Condition)}
+         */
         private void addCondition(final Condition cond) {
             if (isSingletonClause(cond.operator())) {
                 final Condition clause = findConditionByOperator(this.conditions, cond.operator());
@@ -2686,6 +2777,13 @@ public class Criteria extends AbstractCondition {
             conditions.add(cond);
         }
 
+        /**
+         * Validates and adds the given conditions to this builder; singleton clauses replace any
+         * existing clause of the same kind, all others are appended in order.
+         *
+         * @param conditions the conditions to add (must not be {@code null})
+         * @throws IllegalArgumentException if {@code conditions} is {@code null} or contains an invalid condition
+         */
         private void addConditions(final Condition... conditions) {
             N.checkArgNotNull(conditions, "conditions");
 
@@ -2697,6 +2795,13 @@ public class Criteria extends AbstractCondition {
             }
         }
 
+        /**
+         * Validates and adds the given conditions to this builder; singleton clauses replace any
+         * existing clause of the same kind, all others are appended in order.
+         *
+         * @param conditions the conditions to add (must not be {@code null})
+         * @throws IllegalArgumentException if {@code conditions} is {@code null} or contains an invalid condition
+         */
         private void addConditions(final Collection<? extends Condition> conditions) {
             N.checkArgNotNull(conditions, "conditions");
 

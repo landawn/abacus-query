@@ -58,9 +58,10 @@ import com.landawn.abacus.util.Strings;
  */
 public abstract class AbstractCondition implements Condition {
 
-    /** Portable decimal/integer literal syntax accepted when a {@link Number} is rendered inline. */
+    /** Portable decimal, integer, or scientific-notation literal syntax accepted when a {@link Number} is rendered inline. */
     private static final Pattern SQL_NUMBER_LITERAL_PATTERN = Pattern.compile("[+-]?(?:(?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))(?:[eE][+-]?\\d+)?");
 
+    /** The operators representing SQL query clauses (WHERE, JOIN, GROUP BY, set operations, etc.); see {@link #isClause(Operator)}. */
     private static final ImmutableSet<Operator> clauseOperators;
 
     static {
@@ -475,6 +476,16 @@ public abstract class AbstractCondition implements Condition {
         }
     }
 
+    /**
+     * Checks whether the given condition is, or recursively contains, an {@code ALL}/{@code ANY}/{@code SOME}
+     * quantified-subquery operand. The search descends into the children of a {@link Junction} and into the
+     * wrapped condition of a {@link Cell} or {@link ComposableCell}; {@link SqlExpression} and {@link SubQuery}
+     * instances are opaque to this check and never match.
+     *
+     * @param cond the condition to check (may be {@code null})
+     * @return {@code true} if {@code cond} is or contains a quantified-subquery operand, {@code false}
+     *         otherwise (including for a {@code null} {@code cond})
+     */
     private static boolean containsQuantifiedSubQueryOperand(final Condition cond) {
         if (cond == null || cond instanceof SqlExpression || cond instanceof SubQuery) {
             return false;
@@ -505,6 +516,18 @@ public abstract class AbstractCondition implements Condition {
         return false;
     }
 
+    /**
+     * Checks whether the given condition is, or recursively contains, a query-structural component:
+     * a {@link Criteria}, a {@link Clause}, a {@link Join}, or a condition whose operator is a clause
+     * operator or an {@code ON}/{@code USING} connector. The search descends into the children of a
+     * {@link Junction} and into the wrapped condition of a {@link Cell} or {@link ComposableCell};
+     * {@link SqlExpression}, {@link SubQuery}, and quantified-subquery operands are not treated as
+     * structural components.
+     *
+     * @param cond the condition to check (may be {@code null})
+     * @return {@code true} if {@code cond} is or contains a query-structural component, {@code false}
+     *         otherwise (including for a {@code null} {@code cond})
+     */
     private static boolean containsStructuralQueryComponent(final Condition cond) {
         if (cond == null || cond instanceof SqlExpression || cond instanceof SubQuery || isQuantifiedSubQueryOperand(cond)) {
             return false;
@@ -613,7 +636,7 @@ public abstract class AbstractCondition implements Condition {
 
     /**
      * Escapes a string for inclusion as the body of a single-quoted SQL string literal.
-     * Single quotes and double quotes are backslash-escaped via {@link com.landawn.abacus.util.Strings#quoteEscaped},
+     * Single quotes and double quotes are backslash-escaped via {@link com.landawn.abacus.util.Strings#escapeQuotes(String)},
      * and a trailing-backslash guard is applied so that the closing {@code '} quote cannot be consumed
      * as an escape sequence. This is a defense-in-depth helper used by
      * {@link #formatParameter(Object, NamingPolicy)} and by {@link SqlExpression#renderValue(Object)};
@@ -632,7 +655,7 @@ public abstract class AbstractCondition implements Condition {
             return str == null ? Strings.EMPTY : str;
         }
 
-        final String escaped = Strings.quoteEscaped(str);
+        final String escaped = Strings.escapeQuotes(str);
 
         // Defensive guard: if the original ends in an unescaped backslash, the trailing closing
         // quote would be consumed as an escape in MySQL-style parsing. Count trailing backslashes

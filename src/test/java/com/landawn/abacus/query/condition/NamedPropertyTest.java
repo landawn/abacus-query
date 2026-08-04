@@ -1100,8 +1100,7 @@ public class NamedPropertyTest extends TestBase {
         assertEquals("((grade = 'A') OR (grade = 'B') OR (grade = 'C'))", NamedProperty.of("grade").equalsAny(new char[] { 'A', 'B', 'C' }).toString());
         assertEquals("((flag = 0) OR (flag = 1) OR (flag = 2))", NamedProperty.of("flag").equalsAny(new byte[] { 0, 1, 2 }).toString());
         assertEquals("((level = 1) OR (level = 2) OR (level = 3))", NamedProperty.of("level").equalsAny(new short[] { 1, 2, 3 }).toString());
-        assertEquals("((ratio = 0.25) OR (ratio = 0.5) OR (ratio = 0.75))",
-                NamedProperty.of("ratio").equalsAny(new float[] { 0.25f, 0.5f, 0.75f }).toString());
+        assertEquals("((ratio = 0.25) OR (ratio = 0.5) OR (ratio = 0.75))", NamedProperty.of("ratio").equalsAny(new float[] { 0.25f, 0.5f, 0.75f }).toString());
 
         // One OR branch per array element, each carrying the boxed primitive value.
         final Or byteOr = NamedProperty.of("flag").equalsAny(new byte[] { 0, 1, 2 });

@@ -100,6 +100,11 @@ public class Binary extends ComposableCondition {
      */
     final String propName;
 
+    /**
+     * The value on the right-hand side of this binary condition; may be {@code null} (rendered as
+     * {@code IS NULL} / {@code IS NOT NULL} for the equality operators), a literal, a {@link Condition}
+     * such as a {@link SubQuery}, or an unmodifiable membership list for {@code IN}/{@code NOT IN}.
+     */
     private final Object propValue;
 
     /** Lazily memoized parameters (performance only). */
@@ -263,6 +268,12 @@ public class Binary extends ComposableCondition {
         return result;
     }
 
+    /**
+     * Builds the parameter list returned by {@link #parameters()}, applying the rules described there;
+     * invoked at most once, with the result memoized.
+     *
+     * @return an immutable list of parameter values; never {@code null}
+     */
     private ImmutableList<Object> computeParameters() {
         final Operator op = operator();
 
@@ -357,10 +368,29 @@ public class Binary extends ComposableCondition {
         return effectiveNamingPolicy.convert(propName) + SK._SPACE + opStr + SK._SPACE + formatParameter(propValue, effectiveNamingPolicy);
     }
 
+    /**
+     * Tests whether {@code op} takes a collection-valued right-hand side, i.e. is {@link Operator#IN} or
+     * {@link Operator#NOT_IN}.
+     *
+     * @param op the operator to test; may be {@code null}
+     * @return {@code true} only for {@code IN} and {@code NOT_IN}
+     */
     private static boolean isCollectionOperator(final Operator op) {
         return op == Operator.IN || op == Operator.NOT_IN;
     }
 
+    /**
+     * Validates {@code propValue} against {@code op} and normalizes it for storage. For {@code IN}/
+     * {@code NOT IN}, a {@link Collection} or array value is defensively copied into an unmodifiable list
+     * (which must be non-empty) and a {@link Condition} value is accepted as-is; for every other operator
+     * the value is validated as a scalar operand. All condition-valued operands must be non-structural.
+     *
+     * @param op the comparison operator; not {@code null}
+     * @param propValue the raw right-hand-side value; may be {@code null}
+     * @return the normalized value to store
+     * @throws IllegalArgumentException if the value is not valid for {@code op}, as documented for
+     *         {@link #Binary(String, Operator, Object)}
+     */
     private static Object normalizePropValue(final Operator op, final Object propValue) {
         if (!isCollectionOperator(op)) {
             return validateScalarValueOperand(op, propValue);
@@ -398,6 +428,18 @@ public class Binary extends ComposableCondition {
         throw new IllegalArgumentException("IN/NOT IN operator requires a non-empty collection, array, or condition value");
     }
 
+    /**
+     * Validates a scalar (non-{@code IN}/{@code NOT IN}) right-hand operand. An {@link All}/{@link Any}/
+     * {@link Some} quantified-subquery operand is accepted only when {@code op} is in
+     * {@link #QUANTIFIED_COMPARISON_OPERATORS}; every other operand must be non-quantified and
+     * non-structural.
+     *
+     * @param op the comparison operator; not {@code null}
+     * @param propValue the raw right-hand-side value; may be {@code null}
+     * @return the validated value
+     * @throws IllegalArgumentException if a quantified operand is used with an incompatible operator, or
+     *         the operand is or contains a structural condition
+     */
     private static Object validateScalarValueOperand(final Operator op, final Object propValue) {
         if (propValue instanceof Condition && isQuantifiedSubQueryOperand((Condition) propValue)) {
             if (!QUANTIFIED_COMPARISON_OPERATORS.contains(op)) {
@@ -410,6 +452,14 @@ public class Binary extends ComposableCondition {
         return validateNonQuantifiedValueOperand(propValue, "propValue");
     }
 
+    /**
+     * Renders the values of an {@code IN}/{@code NOT IN} operand as a parenthesized, comma-separated list
+     * of formatted parameter literals.
+     *
+     * @param values the non-empty membership values
+     * @param namingPolicy the naming policy applied to condition-valued elements
+     * @return the parenthesized value list (e.g. {@code "(1, 'a', null)"})
+     */
     private static String formatCollection(final Collection<?> values, final NamingPolicy namingPolicy) {
         final StringBuilder sb = new StringBuilder();
         sb.append(SK._PARENTHESIS_L);

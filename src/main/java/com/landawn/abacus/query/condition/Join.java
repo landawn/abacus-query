@@ -312,6 +312,15 @@ public class Join extends AbstractCondition {
         this.condition = validateJoinCondition(joinCondition);
     }
 
+    /**
+     * Copies {@code joinEntities} into a new list, rejecting a {@code null} or empty collection and any
+     * {@code null}, empty, or blank element.
+     *
+     * @param joinEntities the tables or entities to join with
+     * @return a mutable copy of the validated join entities
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains a
+     *         {@code null}, empty, or blank element
+     */
     private static List<String> copyAndValidateJoinEntities(final Collection<String> joinEntities) {
         N.checkArgNotEmpty(joinEntities, "joinEntities");
 
@@ -334,6 +343,17 @@ public class Join extends AbstractCondition {
         return copy;
     }
 
+    /**
+     * Validates that {@code joinCondition} is usable as a join predicate: an {@link On} or {@link Using}
+     * connector is unwrapped to the condition it carries, and the result must not be or contain a
+     * non-predicate component (a {@link Criteria}, a SQL clause, a nested ON/USING connector, an
+     * {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an
+     * empty predicate).
+     *
+     * @param joinCondition the join condition; may be {@code null}
+     * @return the validated join condition, or {@code null} when none was supplied
+     * @throws IllegalArgumentException if the condition is or contains a non-predicate component
+     */
     private static Condition validateJoinCondition(final Condition joinCondition) {
         if (joinCondition != null) {
             final Condition predicate = (joinCondition instanceof On || joinCondition instanceof Using) ? ((Cell) joinCondition).condition() : joinCondition;

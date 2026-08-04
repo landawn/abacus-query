@@ -239,10 +239,24 @@ public final class Dsl {
         return sqlDialect;
     }
 
+    /**
+     * Returns a fresh {@link SqlBuilder} bound to this DSL's {@link SqlDialect}.
+     *
+     * @return a new, unconfigured {@code SqlBuilder} instance
+     */
     private SqlBuilder createSqlBuilderInstance() {
         return new SqlBuilder(sqlDialect);
     }
 
+    /**
+     * Validates and snapshots the caller-owned selection list for a multi-entity SELECT.
+     *
+     * @param selections the selection descriptors to validate (must not be {@code null} or empty,
+     *        contain no {@code null} element, and resolve to at least one property in total)
+     * @return a snapshot copy of {@code selections}, detached from later caller mutations
+     * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains a
+     *         {@code null} element, or resolves to no properties in total
+     */
     private static List<Selection> snapshotSelections(final List<Selection> selections) {
         N.checkArgNotNull(selections, "selections");
 
@@ -278,6 +292,14 @@ public final class Dsl {
         return snapshots;
     }
 
+    /**
+     * Returns a {@link SqlBuilder} configured for a SELECT operation over the given selection
+     * snapshots, with the entity class of the first selection associated for property mapping.
+     *
+     * @param selectionSnapshots validated, snapshotted selection descriptors (as returned by
+     *        {@link #snapshotSelections(List)})
+     * @return a new {@code SqlBuilder} instance configured for SELECT operation
+     */
     private SqlBuilder createSelectBuilder(final List<Selection> selectionSnapshots) {
         final SqlBuilder instance = createSqlBuilderInstance();
 
@@ -1763,7 +1785,7 @@ public final class Dsl {
      * Creates a COUNT(*) query for a table.
      *
      * <p>Convenience method for generating count queries. This is equivalent to
-     * {@code select("COUNT(*)").from(tableName)} but more expressive.</p>
+     * {@code select("count(*)").from(tableName)} but more expressive.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1773,9 +1795,10 @@ public final class Dsl {
      * // Output: SELECT count(*) FROM account WHERE status = ?
      * }</pre>
      *
-     * <p><b>Note:</b> unlike {@code insert(String)}/{@code select(String)}, whose String argument
-     * is a column, the argument here is a <em>table name</em> and a {@code FROM} clause is emitted
-     * immediately — {@code count("id")} would generate {@code SELECT count(*) FROM id}.</p>
+     * <p><b>Note:</b> unlike {@code insert(String)}, whose String argument is a column name, and
+     * {@code select(String)}, whose String argument is a select expression, the argument here is a
+     * <em>table name</em> and a {@code FROM} clause is emitted immediately &mdash;
+     * {@code count("id")} would generate {@code SELECT count(*) FROM id}.</p>
      *
      * @param tableName the table to count rows from
      * @return a new SqlBuilder instance configured for SELECT operation

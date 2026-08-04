@@ -63,6 +63,10 @@ public final class DynamicQuery {
     /** Internal logger; emits a debug message with the length of the built SQL when {@link Builder#build()} completes and debug logging is enabled. */
     static final Logger logger = LoggerFactory.getLogger(DynamicQuery.class);
 
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     * Use {@link #builder()} to create a {@link Builder}.
+     */
     private DynamicQuery() {
         // utility/wrapper class.
     }
@@ -92,12 +96,31 @@ public final class DynamicQuery {
         return new Builder();
     }
 
+    /**
+     * Validates that {@code value} is a non-blank SQL fragment, throwing otherwise.
+     * Shared by all public append-style methods to enforce the non-blank contract.
+     *
+     * @param value the SQL fragment to validate
+     * @param argName the argument name used in the exception message
+     * @throws IllegalArgumentException if {@code value} is {@code null}, empty, or blank
+     */
     private static void checkSqlFragmentNotBlank(final String value, final String argName) {
         if (Strings.isBlank(value)) {
             throw new IllegalArgumentException(argName + " must not be null, empty, or blank");
         }
     }
 
+    /**
+     * Snapshots {@code values} and validates that the snapshot is non-empty and every element
+     * is a non-blank SQL fragment. The snapshot is taken before validation so that validation
+     * and rendering observe the same elements even if the supplied collection is live or mutable.
+     *
+     * @param values the SQL fragments to copy and validate (must not be {@code null} or empty)
+     * @param argName the argument name used in exception messages
+     * @return a snapshot of {@code values} preserving iteration order
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, or any element
+     *         is {@code null}, empty, or blank
+     */
     private static Collection<String> copyAndCheckSqlFragmentsNotBlank(final Collection<String> values, final String argName) {
         N.checkArgNotNull(values, argName);
 
@@ -113,6 +136,17 @@ public final class DynamicQuery {
         return copy;
     }
 
+    /**
+     * Snapshots {@code values} and validates that the snapshot is non-empty and every key and value
+     * is a non-blank SQL fragment. The snapshot is taken before validation so that validation and
+     * rendering observe the same entries even if the supplied map is live or mutable.
+     *
+     * @param values the key/value SQL fragments to copy and validate (must not be {@code null} or empty)
+     * @param argName the argument name used in exception messages
+     * @return a snapshot of {@code values} preserving iteration order
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, or any key or value
+     *         is {@code null}, empty, or blank
+     */
     private static Map<String, String> copyAndCheckSqlFragmentMapNotBlank(final Map<String, String> values, final String argName) {
         N.checkArgNotNull(values, argName);
 
@@ -179,6 +213,9 @@ public final class DynamicQuery {
         /** The {@link StringBuilder} for additional SQL parts. */
         private StringBuilder moreParts = null;
 
+        /**
+         * Private constructor; obtain an instance via {@link DynamicQuery#builder()}.
+         */
         private Builder() {
 
         }
@@ -776,6 +813,14 @@ public final class DynamicQuery {
             sb.append(rawClause);
         }
 
+        /**
+         * Returns the trailing "more parts" buffer, creating it from the object pool on first use.
+         * Holds the pagination fragments ({@code LIMIT}/{@code OFFSET}/{@code FETCH}) and the raw
+         * fragments appended by {@link #append(String)}-style methods, in relative invocation order.
+         *
+         * @return the trailing buffer for pagination and raw fragments
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         */
         private StringBuilder getStringBuilderForMoreParts() {
             checkNotBuilt();
 
@@ -786,6 +831,15 @@ public final class DynamicQuery {
             return moreParts;
         }
 
+        /**
+         * Returns the set-operations buffer, creating it from the object pool on first use.
+         * Holds the {@code UNION}/{@code UNION ALL}/{@code INTERSECT}/{@code EXCEPT}/{@code MINUS}
+         * fragments, which {@link #build()} renders before the final {@code ORDER BY} and pagination
+         * clauses regardless of invocation order.
+         *
+         * @return the buffer for set-operation fragments
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         */
         private StringBuilder getStringBuilderForSetOperations() {
             checkNotBuilt();
 
@@ -956,6 +1010,7 @@ public final class DynamicQuery {
         /** The buffer holding this clause's SQL fragments; recycled to the object pool by {@link #close()}. */
         final StringBuilder sb;
 
+        /** Closed-state marker; set by {@link #close()} when the owning {@link Builder#build()} recycles this clause's buffer. */
         private boolean isClosed;
 
         /**
@@ -1687,6 +1742,13 @@ public final class DynamicQuery {
             return this;
         }
 
+        /**
+         * Verifies the {@code FROM} clause already holds a first table before a join is appended,
+         * throwing otherwise.
+         *
+         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call
+         *         that actually appended a table (e.g. {@code append(...)})
+         */
         private void requireFromInitialized() {
             if (sb.isEmpty()) {
                 throw new IllegalStateException("FROM clause must be initialized by append(...) before join operations");

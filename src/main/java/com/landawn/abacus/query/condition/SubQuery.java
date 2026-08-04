@@ -336,7 +336,7 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Returns the raw SQL script if this is a raw SQL subquery.
+     * Returns the raw query-expression text if this is a raw SQL subquery.
      * For structured subqueries created with entity name/class and conditions, this returns {@code null}.
      *
      * <p><b>Usage Examples:</b></p>
@@ -352,7 +352,7 @@ public class SubQuery extends AbstractCondition {
      * // Returns: null
      * }</pre>
      *
-     * @return the SQL script, or {@code null} if this is a structured subquery
+     * @return the raw query-expression text, or {@code null} if this is a structured subquery
      */
     public String rawSql() {
         return sql;

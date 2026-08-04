@@ -1351,9 +1351,8 @@ public class SqlExpressionTest extends TestBase {
     // CURRENT_ROLE became "currentRole" under CAMEL_CASE and the un-parseable "current-role" under KEBAB_CASE.
     @Test
     public void testNiladicKeywordFunctionsSurviveEveryNamingPolicy() {
-        final String[] keywords = { "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_PATH", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME",
-                "CURRENT_TIMESTAMP", "CURRENT_USER", "LOCALTIME", "LOCALTIMESTAMP", "SESSION_USER", "SYSTEM_USER", "UTC_DATE", "UTC_TIME",
-                "UTC_TIMESTAMP" };
+        final String[] keywords = { "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_PATH", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME", "CURRENT_TIMESTAMP",
+                "CURRENT_USER", "LOCALTIME", "LOCALTIMESTAMP", "SESSION_USER", "SYSTEM_USER", "UTC_DATE", "UTC_TIME", "UTC_TIMESTAMP" };
 
         for (final String keyword : keywords) {
             for (final NamingPolicy policy : NamingPolicy.values()) {

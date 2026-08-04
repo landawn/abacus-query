@@ -100,6 +100,9 @@ import com.landawn.abacus.util.XmlUtil;
  */
 public final class SqlMapper {
 
+    /**
+     * Logger for this class.
+     */
     static final Logger logger = LoggerFactory.getLogger(SqlMapper.class);
 
     /**
@@ -149,8 +152,15 @@ public final class SqlMapper {
      */
     public static final int MAX_ID_LENGTH = 128;
 
+    /**
+     * Registered SQL definitions keyed by id, in insertion order.
+     */
     private final Map<String, ParsedSql> sqlMap = new LinkedHashMap<>();
 
+    /**
+     * Immutable attribute maps keyed by SQL id; every id registered in {@link #sqlMap} has an entry
+     * here (possibly {@link ImmutableMap#empty()} when the SQL was added without attributes).
+     */
     private final Map<String, ImmutableMap<String, String>> attrsMap = new HashMap<>();
 
     /**
@@ -259,6 +269,17 @@ public final class SqlMapper {
         return sqlMapper;
     }
 
+    /**
+     * Resolves {@code filePath} (literal location first, then the common configuration directories as a
+     * fallback) and loads the SQL definitions of the resolved file into {@code sqlMapper}.
+     *
+     * @param sqlMapper the mapper to populate
+     * @param filePath the XML mapper path to resolve and load
+     * @throws IllegalArgumentException if no file can be found for {@code filePath}, or if a loaded
+     *         {@code <sql>} definition is invalid or duplicated
+     * @throws UncheckedIOException if an I/O error occurs reading the file
+     * @throws ParsingException if the XML content is invalid or does not have {@code <sqlMapper>} as its root element
+     */
     private static void loadPath(final SqlMapper sqlMapper, final String filePath) {
         final File foundFile = PropertiesUtil.findFile(filePath);
 
@@ -653,6 +674,16 @@ public final class SqlMapper {
         }
     }
 
+    /**
+     * Validates and copies the supplied XML attribute map into an immutable map. Each attribute name
+     * must be non-empty and a valid non-namespace XML attribute name ({@code xmlns} and names
+     * containing {@code ':'} are rejected), and each value must be non-{@code null}.
+     *
+     * @param attrs the attributes to copy (may be {@code null} or empty)
+     * @return an immutable copy of {@code attrs}, or an empty immutable map if {@code attrs} is {@code null} or empty
+     * @throws IllegalArgumentException if an attribute name is {@code null}, empty, namespace-qualified,
+     *         or not a valid XML attribute name, or if an attribute value is {@code null}
+     */
     private static ImmutableMap<String, String> copyAttributes(final Map<String, String> attrs) {
         if (attrs == null || attrs.isEmpty()) {
             return ImmutableMap.empty();

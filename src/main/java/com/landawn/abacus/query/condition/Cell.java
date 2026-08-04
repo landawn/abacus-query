@@ -22,8 +22,8 @@ import com.landawn.abacus.util.Strings;
 
 /**
  * Represents a condition cell that wraps another condition with an operator.
- * This class serves as a container for a condition paired with a specific operator,
- * typically used for unary operations or clauses that modify other conditions.
+ * This class serves as a container that pairs a condition with the operator
+ * that prefixes it when the condition is rendered as SQL.
  * 
  * <p>A Cell is commonly used to wrap conditions with operators like {@code ON} and
  * {@code USING}, or to create clause conditions like {@code WHERE}, {@code HAVING}, etc.

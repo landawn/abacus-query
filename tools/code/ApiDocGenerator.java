@@ -41,6 +41,7 @@ import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.StartElementTree;
+import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.AssignmentTree;
@@ -513,14 +514,14 @@ public final class ApiDocGenerator {
         }
 
         final DocInfo doc = new DocInfo();
-        doc.summary = normalizeDocText(comment.getFirstSentence());
         final String prose = proseText(comment.getFullBody());
+        doc.summary = readSummary(comment, prose);
         doc.threadSafety = inferThreadSafety((doc.summary == null ? "" : doc.summary) + " " + (prose == null ? "" : prose));
         doc.examples = readExamples(comment.getFullBody());
         if (!isBlank(prose)) {
-            for (final String sentence : prose.split("(?<=[.!?])\\s+")) {
+            for (final String sentence : splitSentences(prose)) {
                 final String s = sentence.trim();
-                if (s.isEmpty()) {
+                if (s.isEmpty() || s.equals(doc.summary)) {
                     continue;
                 }
                 final String lower = s.toLowerCase(Locale.ROOT);
@@ -548,7 +549,6 @@ public final class ApiDocGenerator {
                     final String key = normalize(t.getExceptionName().toString());
                     final String value = normalizeDocText(t.getDescription());
                     doc.throwsDocs.put(key, value);
-                    doc.throwsDocs.putIfAbsent(simpleName(key), value);
                 }
                 case SEE -> {
                     final SeeTree s = (SeeTree) tag;
@@ -566,6 +566,56 @@ public final class ApiDocGenerator {
             }
         }
         return doc;
+    }
+
+    /**
+     * Returns the first Javadoc sentence without treating the periods in common abbreviations as
+     * sentence terminators. The standard doc-tree split is retained unless it demonstrably stops
+     * at {@code e.g.} or {@code i.e.}.
+     */
+    private static String readSummary(final DocCommentTree comment, final String prose) {
+        final String standardSummary = normalizeDocText(comment.getFirstSentence());
+        if (isBlank(standardSummary) || isBlank(prose) || !endsWithSentenceAbbreviation(standardSummary)) {
+            return standardSummary;
+        }
+
+        final List<String> sentences = splitSentences(prose);
+        return sentences.isEmpty() ? prose : sentences.get(0);
+    }
+
+    private static boolean endsWithSentenceAbbreviation(final String value) {
+        final String lower = value.toLowerCase(Locale.ROOT);
+        return lower.endsWith("e.g.") || lower.endsWith("i.e.");
+    }
+
+    private static List<String> splitSentences(final String prose) {
+        final List<String> sentences = new ArrayList<>();
+        int sentenceStart = 0;
+
+        for (int i = 0; i < prose.length(); i++) {
+            final char ch = prose.charAt(i);
+            if (ch != '.' && ch != '!' && ch != '?') {
+                continue;
+            }
+            if (ch == '.' && endsWithSentenceAbbreviation(prose.substring(sentenceStart, i + 1))) {
+                continue;
+            }
+            if (i + 1 < prose.length() && !Character.isWhitespace(prose.charAt(i + 1))) {
+                continue;
+            }
+
+            final String sentence = prose.substring(sentenceStart, i + 1).trim();
+            if (!sentence.isEmpty()) {
+                sentences.add(sentence);
+            }
+            sentenceStart = i + 1;
+        }
+
+        final String remainder = prose.substring(sentenceStart).trim();
+        if (!remainder.isEmpty()) {
+            sentences.add(remainder);
+        }
+        return sentences;
     }
 
     private static String normalizeDocText(final List<? extends DocTree> trees) {
@@ -610,6 +660,7 @@ public final class ApiDocGenerator {
     private static void appendDocText(final DocTree tree, final StringBuilder sb) {
         switch (tree.getKind()) {
             case CODE, LITERAL -> sb.append(((LiteralTree) tree).getBody().getBody());
+            case TEXT -> sb.append(((TextTree) tree).getBody());
             case LINK, LINK_PLAIN -> {
                 final LinkTree link = (LinkTree) tree;
                 if (link.getLabel().isEmpty()) {
@@ -719,20 +770,53 @@ public final class ApiDocGenerator {
         final List<ThrowInfo> out = new ArrayList<>();
         final Set<String> ownerTypeParams = ownerType.typeParams.stream().map(tp -> tp.name).collect(Collectors.toSet());
         final Set<String> methodTypeParams = methodTree.getTypeParameters().stream().map(tp -> tp.getName().toString()).collect(Collectors.toSet());
+        final Set<String> emittedTypes = new LinkedHashSet<>();
+
         for (final ExpressionTree thrownType : methodTree.getThrows()) {
             final String declared = normalize(thrownType.toString());
             final ThrowInfo t = new ThrowInfo();
             t.type = resolveExceptionType(declared, unitData, typesByPackage, allTypes, ownerTypeParams, methodTypeParams);
-            if (doc != null) {
-                String condition = doc.throwsDocs.get(declared);
-                if (isBlank(condition)) {
-                    condition = doc.throwsDocs.get(simpleName(declared));
-                }
-                t.condition = condition;
-            }
+            t.condition = findThrowsDoc(doc, declared);
             out.add(t);
+            emittedTypes.add(t.type);
         }
+
+        // Unchecked exceptions are normally documented with @throws but omitted from the Java
+        // throws clause. They are still part of the public contract and must appear in both outputs.
+        if (doc != null) {
+            for (final Map.Entry<String, String> entry : doc.throwsDocs.entrySet()) {
+                final String documented = entry.getKey();
+                final String resolved = resolveExceptionType(documented, unitData, typesByPackage, allTypes, ownerTypeParams, methodTypeParams);
+                if (emittedTypes.add(resolved)) {
+                    final ThrowInfo t = new ThrowInfo();
+                    t.type = resolved;
+                    t.condition = entry.getValue();
+                    out.add(t);
+                }
+            }
+        }
+
         return out;
+    }
+
+    private static String findThrowsDoc(final DocInfo doc, final String declared) {
+        if (doc == null || doc.throwsDocs.isEmpty()) {
+            return null;
+        }
+
+        String condition = doc.throwsDocs.get(declared);
+        if (!isBlank(condition)) {
+            return condition;
+        }
+
+        final String simpleDeclared = simpleName(declared);
+        for (final Map.Entry<String, String> entry : doc.throwsDocs.entrySet()) {
+            if (simpleDeclared.equals(simpleName(entry.getKey()))) {
+                condition = entry.getValue();
+                break;
+            }
+        }
+        return condition;
     }
 
     private static String resolveExceptionType(final String declared, final UnitData unitData, final Map<String, Map<String, String>> typesByPackage,

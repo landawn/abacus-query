@@ -45,8 +45,18 @@ public abstract class AbstractBetween extends ComposableCondition {
      */
     final String propName;
 
+    /**
+     * The lower bound of the range; inclusive for {@code BETWEEN}, and the lower edge of the
+     * excluded range for {@code NOT_BETWEEN}. May be a literal value, a {@link SqlExpression},
+     * a {@link SubQuery}, another non-structural, non-quantified {@link Condition}, or {@code null}.
+     */
     private Object minValue;
 
+    /**
+     * The upper bound of the range; inclusive for {@code BETWEEN}, and the upper edge of the
+     * excluded range for {@code NOT_BETWEEN}. May be a literal value, a {@link SqlExpression},
+     * a {@link SubQuery}, another non-structural, non-quantified {@link Condition}, or {@code null}.
+     */
     private Object maxValue;
 
     /** Lazily memoized parameters (performance only). */

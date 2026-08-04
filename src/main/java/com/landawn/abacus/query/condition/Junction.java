@@ -279,12 +279,29 @@ public class Junction extends ComposableCondition {
         return snapshot;
     }
 
+    /**
+     * Validates that the given operator is a junction operator.
+     *
+     * @param operator the operator to validate
+     * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR}
+     */
     private static void validateJunctionOperator(final Operator operator) {
         if (operator != Operator.AND && operator != Operator.OR) {
             throw new IllegalArgumentException("Junction operator must be " + Operator.AND + " or " + Operator.OR + ", but was: " + operator);
         }
     }
 
+    /**
+     * Validates a single constructor operand: it must be non-{@code null} and must not be or contain a
+     * non-predicate component (a {@link Criteria}, a clause, an {@code ON}/{@code USING} connector, a
+     * quantified {@code ALL}/{@code ANY}/{@code SOME} operand, a standalone {@link SubQuery}, or an empty
+     * predicate).
+     *
+     * @param condition the condition to validate
+     * @return {@code condition}, unchanged
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if it is or contains a
+     *         non-predicate component
+     */
     private static Condition validateConstructorOperand(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
 

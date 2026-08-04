@@ -131,7 +131,8 @@ public class On extends Cell {
      * );
      * On on3 = new On(rangeJoin);
      * InnerJoin join3 = new InnerJoin("salary_grades", on3);
-     * // SQL: INNER JOIN salary_grades ON ((emp.salary >= salary_grades.min_salary) AND (emp.salary <= salary_grades.max_salary))
+     * // SQL: INNER JOIN salary_grades ON ((emp.salary >= salary_grades.min_salary)
+     * //      AND (emp.salary <= salary_grades.max_salary))
      * }</pre>
      *
      * @param condition the join condition. Any non-clause, non-{@code null} predicate is allowed, including
@@ -139,8 +140,9 @@ public class On extends Cell {
      *            Must not be {@code null}.
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or is or contains a {@link Criteria},
      *                                  a null operator, a SQL clause, an {@code ON}/{@code USING} connector, an
-     *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-     *                                  or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
+     *                                  {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or
+     *                                  empty {@link Junction})
      */
     public On(final Condition condition) {
         super(Operator.ON, validateOnCondition(condition));

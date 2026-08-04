@@ -144,12 +144,19 @@ public enum SqlOperation {
      */
     UNKNOWN("UNKNOWN");
 
+    /** The canonical SQL keyword text for this operation (e.g. "SELECT", "BEGIN TRANSACTION"). */
     private final String sqlToken;
 
+    /**
+     * Creates an enum constant with the given SQL token.
+     *
+     * @param sqlToken the canonical SQL keyword text for this operation
+     */
     SqlOperation(final String sqlToken) {
         this.sqlToken = sqlToken;
     }
 
+    /** Case-insensitive lookup table keyed by SQL token and enum constant name, in both upper and lower case. */
     private static final Map<String, SqlOperation> operationMap;
 
     static {

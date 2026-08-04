@@ -570,6 +570,14 @@ public class Limit extends Clause {
         return sb.toString();
     }
 
+    /**
+     * Tests whether a formatted expression begins with a bare number slot or placeholder ({@code ?},
+     * {@code :name}, or <code>#{name}</code>), in which case a {@code "LIMIT "} prefix is prepended so the
+     * expression matches the {@code LIMIT}-family grammar.
+     *
+     * @param expr the formatted expression; must be non-empty
+     * @return {@code true} if a {@code "LIMIT "} prefix should be prepended
+     */
     private static boolean shouldPrefixLimit(final String expr) {
         final char firstChar = expr.charAt(0);
 
