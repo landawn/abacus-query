@@ -1,0 +1,95 @@
+SQLBuilder/DSL: supported SQL statement and feature families
+===========================================================
+
+Scope: This table inventories the statement and feature families exposed by the current Dsl,
+SqlBuilder, Filters, Criteria, Selection, and SqlExpression APIs. Closely related operators and
+function overloads are grouped into one row with one representative example. Examples use PSC
+(`?` parameters and snake_case property conversion) unless another preset is shown.
+
+`build()` returns an SP containing `query()` and ordered `parameters()`. Product-specific syntax
+still depends on the configured SqlDialect and the target database.
+
+| SQL Type/Feature | Sample SQL | Equivalent SQLBuilder/DSL Code |
+|---|---|---|
+| Basic `SELECT` projection | `SELECT id, first_name FROM users` | `PSC.select("id", "first_name").from("users").build()` |
+| Column alias | `SELECT first_name AS "fname" FROM users` | `PSC.select(Map.of("firstName", "fname")).from("users").build()` |
+| `SELECT DISTINCT` | `SELECT DISTINCT status FROM users` | `PSC.select("status").distinct().from("users").build()` |
+| PostgreSQL-style `DISTINCT ON` | `SELECT DISTINCT ON (department) department FROM employees` | `PSC.select("department").from("employees").append(Criteria.builder().distinctOn("department").build()).build()` |
+| MySQL-style `DISTINCTROW` | `SELECT DISTINCTROW department FROM employees` | `PSC.select("department").from("employees").append(Criteria.builder().distinctRow().build()).build()` |
+| Custom `SELECT` modifier (`TOP`, `ALL`, vendor modifiers) | `SELECT TOP 10 * FROM users` | `PSC.select("*").selectModifier("TOP 10").from("users").build()` |
+| Multiple-table `FROM` | `SELECT * FROM users u, orders o` | `PSC.select("*").from(List.of("users u", "orders o")).build()` |
+| Derived table / subquery in `FROM` | `SELECT * FROM (SELECT id FROM users) u` | `PSC.select("*").from("(SELECT id FROM users) u").build()` |
+| Entity-derived `SELECT` and table | `SELECT id AS "id" FROM account WHERE id = ?` | `PSC.selectFrom(Selection.builder(Account.class).includedPropNames(List.of("id")).build()).where(Filters.eq("id", 7)).build()` |
+| Aggregate `COUNT(*)` factory | `SELECT count(*) FROM users WHERE active = ?` | `PSC.count("users").where(Filters.eq("active", true)).build()` |
+| `INSERT` template | `INSERT INTO users (name, status) VALUES (?, ?)` | `PSC.insert("name", "status").into("users").build()` |
+| Value-bearing `INSERT` from map/entity | `INSERT INTO users (name) VALUES (?)` | `PSC.insert(Map.of("name", "Ada")).into("users").build()` |
+| Batch/multi-row `INSERT` | `INSERT INTO users (name) VALUES (?), (?)` | `PSC.batchInsert(List.of(Map.of("name", "Ada"), Map.of("name", "Linus"))).into("users").build()` |
+| `INSERT ... SELECT` | `INSERT INTO archived_users (id, name) SELECT id, name FROM users` | `PSC.select("id", "name").into("archived_users").from("users").build()` |
+| `UPDATE` template | `UPDATE users SET name = ?, status = ? WHERE id = ?` | `PSC.update("users").set("name", "status").where(Filters.eq("id", 7)).build()` |
+| Value-bearing `UPDATE` from map/entity | `UPDATE users SET status = ? WHERE id = ?` | `PSC.update("users").set(Map.of("status", "INACTIVE")).where(Filters.eq("id", 7)).build()` |
+| Expression assignment in `UPDATE` | `UPDATE users SET login_count = login_count + 1 WHERE id = ?` | `PSC.update("users").set("login_count = login_count + 1").where(Filters.eq("id", 7)).build()` |
+| `DELETE` | `DELETE FROM users WHERE id = ?` | `PSC.deleteFrom("users").where(Filters.eq("id", 7)).build()` |
+| Standalone condition fragment | `status = ?` | `PSC.renderCondition(Filters.eq("status", "ACTIVE")).build()` |
+| Comparisons (`=`, `!=`, `<>`, `>`, `>=`, `<`, `<=`) | `SELECT * FROM users WHERE age >= ?` | `PSC.select("*").from("users").where(Filters.ge("age", 18)).build()` |
+| `BETWEEN` / `NOT BETWEEN` | `SELECT * FROM users WHERE age BETWEEN ? AND ?` | `PSC.select("*").from("users").where(Filters.between("age", 18, 65)).build()` |
+| `LIKE` / `NOT LIKE` | `SELECT * FROM users WHERE name LIKE ?` | `PSC.select("*").from("users").where(Filters.like("name", "A%")).build()` |
+| Pattern helpers (`contains`, `startsWith`, `endsWith` and negations) | `SELECT * FROM users WHERE name LIKE ?` | `PSC.select("*").from("users").where(Filters.startsWith("name", "A")).build()` |
+| `IS NULL` / `IS NOT NULL` | `SELECT * FROM users WHERE deleted_at IS NULL` | `PSC.select("*").from("users").where(Filters.isNull("deletedAt")).build()` |
+| `IS` / `IS NOT` | `SELECT * FROM users WHERE active IS true` | `PSC.select("*").from("users").where(Filters.is("active", SqlExpression.of("TRUE"))).build()` |
+| Null/empty/zero convenience predicates | `SELECT * FROM users WHERE (name IS NULL) OR (name = ?)` | `PSC.select("*").from("users").where(Filters.isNullOrEmpty("name")).build()` |
+| NaN / infinity predicates | `SELECT * FROM metrics WHERE score IS INFINITE` | `PSC.select("*").from("metrics").where(Filters.isInfinite("score")).build()` |
+| `IN` / `NOT IN` value list | `SELECT * FROM users WHERE id IN (?, ?, ?)` | `PSC.select("*").from("users").where(Filters.in("id", List.of(1, 2, 3))).build()` |
+| Row-value / multi-column `IN` | `SELECT * FROM users WHERE (id, type) IN ((?, ?), (?, ?))` | `PSC.select("*").from("users").where(Filters.in(List.of("id", "type"), List.of(List.of(1, "A"), List.of(2, "B")))).build()` |
+| Boolean `AND` / `OR` composition | `SELECT * FROM users WHERE (status = ?) AND ((age > ?) OR (vip = ?))` | `PSC.select("*").from("users").where(Filters.and(Filters.eq("status", "ACTIVE"), Filters.or(Filters.gt("age", 21), Filters.eq("vip", true)))).build()` |
+| Boolean `NOT` | `SELECT * FROM users WHERE NOT (status = ?)` | `PSC.select("*").from("users").where(Filters.not(Filters.eq("status", "ACTIVE"))).build()` |
+| Raw predicate expression | `SELECT * FROM users WHERE score > average_score` | `PSC.select("*").from("users").where(Filters.expr("score > average_score")).build()` |
+| Scalar subquery comparison | `SELECT * FROM users WHERE id = (SELECT MAX(user_id) FROM orders)` | `PSC.select("*").from("users").where(Filters.eq("id", Filters.subQuery("SELECT MAX(user_id) FROM orders"))).build()` |
+| Structured `IN` subquery with parameters | `SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE total > ?)` | `PSC.select("*").from("users").where(Filters.in("id", Filters.subQuery("orders", "user_id", Filters.gt("total", 100)))).build()` |
+| Row-value `IN` subquery | `SELECT * FROM users WHERE (id, type) IN (SELECT user_id, type FROM memberships)` | `PSC.select("*").from("users").where(Filters.in(List.of("id", "type"), Filters.subQuery("SELECT user_id, type FROM memberships"))).build()` |
+| `EXISTS` / `NOT EXISTS` | `SELECT * FROM users u WHERE EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)` | `PSC.select("*").from("users u").where(Filters.exists(Filters.subQuery("SELECT 1 FROM orders o WHERE o.user_id = u.id"))).build()` |
+| Quantified subquery (`ALL`, `ANY`, `SOME`) | `SELECT * FROM employees WHERE salary > ALL (SELECT salary FROM managers)` | `PSC.select("*").from("employees").where(Filters.binary("salary", Operator.GREATER_THAN, Filters.all(Filters.subQuery("SELECT salary FROM managers")))).build()` |
+| Generic / `INNER JOIN ... ON` | `SELECT u.id FROM users u INNER JOIN orders o ON u.id = o.user_id` | `PSC.select("u.id").from("users u").innerJoin("orders o").on("u.id = o.user_id").build()` |
+| `LEFT JOIN` | `SELECT u.id FROM users u LEFT JOIN profiles p ON u.id = p.user_id` | `PSC.select("u.id").from("users u").leftJoin("profiles p").on("u.id = p.user_id").build()` |
+| `RIGHT JOIN` | `SELECT u.id FROM users u RIGHT JOIN profiles p ON u.id = p.user_id` | `PSC.select("u.id").from("users u").rightJoin("profiles p").on("u.id = p.user_id").build()` |
+| `FULL JOIN` | `SELECT u.id FROM users u FULL JOIN profiles p ON u.id = p.user_id` | `PSC.select("u.id").from("users u").fullJoin("profiles p").on("u.id = p.user_id").build()` |
+| `CROSS JOIN` | `SELECT * FROM colors CROSS JOIN sizes` | `PSC.select("*").from("colors").crossJoin("sizes").build()` |
+| `NATURAL JOIN` | `SELECT * FROM users NATURAL JOIN profiles` | `PSC.select("*").from("users").naturalJoin("profiles").build()` |
+| `JOIN ... USING` | `SELECT * FROM users JOIN profiles USING (user_id)` | `PSC.select("*").from("users").join("profiles").using("userId").build()` |
+| `GROUP BY` | `SELECT department, COUNT(*) FROM employees GROUP BY department` | `PSC.select("department", "COUNT(*)").from("employees").groupBy("department").build()` |
+| `HAVING` | `SELECT department, COUNT(*) FROM employees GROUP BY department HAVING COUNT(*) > ?` | `PSC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.gt("COUNT(*)", 5)).build()` |
+| `ORDER BY` with direction | `SELECT * FROM users ORDER BY created_at DESC` | `PSC.select("*").from("users").orderBy("createdAt", SortDirection.DESC).build()` |
+| `LIMIT` | `SELECT * FROM users LIMIT 10` | `PSC.select("*").from("users").limit(10).build()` |
+| `LIMIT ... OFFSET` | `SELECT * FROM users LIMIT 10 OFFSET 20` | `PSC.select("*").from("users").limit(10, 20).build()` |
+| Standalone `OFFSET` | `SELECT * FROM users ORDER BY id OFFSET 20` | `PSC.select("*").from("users").orderBy("id").offset(20).build()` |
+| ANSI `FETCH FIRST` | `SELECT * FROM users ORDER BY id FETCH FIRST 10 ROWS ONLY` | `PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).build()` |
+| ANSI `OFFSET ... FETCH NEXT` | `SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY` | `PSC.select("*").from("users").orderBy("id").offsetRows(20).fetchNextRows(10).build()` |
+| `FOR UPDATE` | `SELECT * FROM users WHERE id = ? FOR UPDATE` | `PSC.select("*").from("users").where(Filters.eq("id", 7)).forUpdate().build()` |
+| `UNION` | `SELECT id FROM users UNION SELECT id FROM admins` | `PSC.select("id").from("users").union(PSC.select("id").from("admins")).build()` |
+| `UNION ALL` | `SELECT id FROM users UNION ALL SELECT id FROM admins` | `PSC.select("id").from("users").unionAll(PSC.select("id").from("admins")).build()` |
+| `INTERSECT` | `SELECT id FROM users INTERSECT SELECT id FROM subscribers` | `PSC.select("id").from("users").intersect(PSC.select("id").from("subscribers")).build()` |
+| `EXCEPT` | `SELECT id FROM users EXCEPT SELECT id FROM blocked_users` | `PSC.select("id").from("users").except(PSC.select("id").from("blocked_users")).build()` |
+| Oracle-style `MINUS` | `SELECT id FROM users MINUS SELECT id FROM blocked_users` | `PSC.select("id").from("users").minus(PSC.select("id").from("blocked_users")).build()` |
+| Arithmetic expressions (`+`, `-`, `*`, `/`, `%`) | `SELECT price + tax FROM orders` | `PSC.select(SqlExpression.plus(SqlExpression.of("price"), SqlExpression.of("tax"))).from("orders").build()` |
+| Bitwise and shift expressions | `SELECT flags & mask FROM users` | `PSC.select(SqlExpression.bitwiseAnd(SqlExpression.of("flags"), SqlExpression.of("mask"))).from("users").build()` |
+| Aggregate functions (`COUNT`, `AVG`, `SUM`, `MIN`, `MAX`) | `SELECT SUM(amount) FROM orders` | `PSC.select(SqlExpression.sum("amount")).from("orders").build()` |
+| Numeric functions (`ABS`, trig, rounding, logs, power, etc.) | `SELECT SQRT(score) FROM metrics` | `PSC.select(SqlExpression.sqrt("score")).from("metrics").build()` |
+| String functions (`CONCAT`, `REPLACE`, `LENGTH`, `SUBSTR`, trim/pad/case) | `SELECT UPPER(name) FROM users` | `PSC.select(SqlExpression.upper("name")).from("users").build()` |
+| Positional parameters | `SELECT * FROM users WHERE status = ?` | `PSC.select("*").from("users").where(Filters.eq("status", "ACTIVE")).build()` |
+| Named parameters | `SELECT * FROM users WHERE status = :status` | `NSC.select("*").from("users").where(Filters.eq("status", "ACTIVE")).build()` |
+| MyBatis/iBATIS parameters (deprecated policy) | `SELECT * FROM users WHERE status = #{status}` | `MSC.select("*").from("users").where(Filters.eq("status", "ACTIVE")).build()` |
+| Inlined literal SQL (deprecated/unsafe policy) | `SELECT * FROM users WHERE status = 'ACTIVE'` | `SCSB.select("*").from("users").where(Filters.eq("status", "ACTIVE")).build()` |
+| Identifier naming policies | `SELECT FIRST_NAME AS "firstName" FROM account` | `PAC.select("firstName").from("account").build()` |
+| Reusable full query shape via `Criteria` | `SELECT department FROM users WHERE active = ? GROUP BY department ORDER BY department` | `PSC.select("department").from("users").append(Criteria.builder().where(Filters.eq("active", true)).groupBy("department").orderBy("department").build()).build()` |
+| Conditional SQL composition | `SELECT * FROM users WHERE status = ?` | `PSC.select("*").from("users").appendIf(includeStatus, Filters.eq("status", "ACTIVE")).build()` |
+| Trusted raw trailing fragment escape hatch | `SELECT * FROM users FOR SHARE` | `PSC.select("*").from("users").append("FOR SHARE").build()` |
+
+Notes
+-----
+
+1. The String-based expression, FROM, selectModifier, set, and append APIs deliberately accept
+   trusted SQL fragments. They make the builder extensible, but those fragments are not structurally
+   validated, escaped, made portable, or parameterized by SQLBuilder.
+2. The raw SQL preset family (SCSB/ACSB/LCSB) and MyBatis preset family are deprecated. Prefer PSC
+   or NSC unless compatibility requires otherwise.
+3. Database support varies for DISTINCT ON, DISTINCTROW, TOP, FULL JOIN, MINUS, locking, pagination,
+   NaN/infinity predicates, and other vendor-specific syntax.

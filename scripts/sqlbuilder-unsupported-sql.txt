@@ -1,0 +1,82 @@
+SQLBuilder/DSL: SQL not natively generated
+===========================================
+
+Scope: These are major standard or vendor SQL statement/feature families for which the current
+Dsl/SqlBuilder API has no dedicated structural generator. This does not mean every example is
+impossible to place in a String: trusted raw projection/FROM/set/append fragments can express some
+of them. In that case SQLBuilder does not understand, validate, parameterize, or make the feature
+portable. Complete unsupported statements should normally be kept as raw SQL (optionally in
+SqlMapper) and executed through JDBC or abacus-jdbc.
+
+| SQL Type/Feature | Sample SQL | Reason/Suggestion |
+|---|---|---|
+| Common table expression (`WITH`) | `WITH active_users AS (SELECT * FROM users WHERE active = true) SELECT * FROM active_users` | No CTE/prefix model. Keep the complete statement as raw SQL or add a dedicated CTE builder API. |
+| Recursive CTE | `WITH RECURSIVE tree AS (...) SELECT * FROM tree` | No recursive CTE, anchor, or recursive-member model. Use raw SQL appropriate to the target database. |
+| `MERGE` | `MERGE INTO target t USING source s ON (...) WHEN MATCHED THEN UPDATE ...` | Root operations are SELECT, INSERT, UPDATE, and DELETE only. Use raw SQL or a database/JDBC MERGE facility. |
+| Native UPSERT / conflict handling | `INSERT INTO users (...) VALUES (...) ON CONFLICT (id) DO UPDATE ...` | No `ON CONFLICT`, `ON DUPLICATE KEY UPDATE`, or equivalent model. Use raw vendor SQL or an application-level insert/update strategy. |
+| `REPLACE` | `REPLACE INTO users (id, name) VALUES (?, ?)` | MySQL/SQLite REPLACE is not a Dsl root operation. Use raw SQL and document its delete/insert semantics. |
+| DML `RETURNING` / SQL Server `OUTPUT` | `INSERT INTO users (name) VALUES (?) RETURNING id` | No typed result-projection clause on INSERT/UPDATE/DELETE. A trusted `.append("RETURNING id")` may work for simple vendor cases; otherwise use raw SQL/JDBC generated keys. |
+| SQL Server `SELECT ... INTO` | `SELECT * INTO archived_users FROM users` | `into()` after `select()` means `INSERT INTO ... SELECT`, not SQL Server SELECT INTO. Use raw SQL. |
+| `CREATE TABLE ... AS SELECT` | `CREATE TABLE archived_users AS SELECT * FROM users` | This is DDL plus query and has no root builder. Use migration tooling or raw SQL. |
+| Oracle multi-table `INSERT ALL` / `INSERT FIRST` | `INSERT ALL INTO a VALUES (...) INTO b VALUES (...) SELECT 1 FROM dual` | Batch insert only targets one table with one column set. Use raw Oracle SQL. |
+| `UPDATE ... FROM` / joined update | `UPDATE users u SET status = s.status FROM staging s WHERE u.id = s.id` | UPDATE has SET and conditions but no typed FROM/join section. Use raw SQL or trusted fragments with database-specific tests. |
+| Multi-table MySQL `UPDATE` | `UPDATE users u JOIN staging s ON u.id = s.id SET u.status = s.status` | No joined-update model. Use raw MySQL SQL. |
+| `DELETE ... USING` / joined delete | `DELETE FROM users u USING blocked b WHERE u.id = b.id` | DELETE has conditions but no typed USING/join section. Use raw vendor SQL. |
+| Multi-table MySQL `DELETE` | `DELETE u FROM users u JOIN blocked b ON u.id = b.id` | No multi-target/joined-delete model. Use raw MySQL SQL. |
+| Top-level `VALUES` query | `VALUES (1, 'A'), (2, 'B')` | VALUES exists only inside generated INSERT statements. Use raw SQL for a standalone table-value constructor. |
+| `CREATE TABLE` / temporary table | `CREATE TEMPORARY TABLE work_items (...)` | No DDL roots. Use a schema migration tool or raw SQL. |
+| `ALTER TABLE` and constraints | `ALTER TABLE users ADD CONSTRAINT uq_email UNIQUE (email)` | Schema evolution is outside the query builder. Use Flyway/Liquibase or raw migration SQL. |
+| `DROP TABLE` / object removal | `DROP TABLE archived_users` | No DDL roots. Use migration/administration tooling. |
+| `TRUNCATE` | `TRUNCATE TABLE staging` | Not a DELETE variant and not modeled. Execute raw SQL with appropriate transaction/permission safeguards. |
+| Index DDL | `CREATE INDEX idx_users_email ON users(email)` | No CREATE/ALTER/DROP INDEX API. Use migrations or raw DDL. |
+| View DDL | `CREATE VIEW active_users AS SELECT * FROM users WHERE active = true` | No CREATE/ALTER/DROP VIEW API. Use migrations/raw SQL; the inner SELECT can be generated separately if useful. |
+| Materialized view DDL/refresh | `REFRESH MATERIALIZED VIEW user_summary` | No materialized-view lifecycle support. Use database administration or migration SQL. |
+| Sequence / identity object DDL | `CREATE SEQUENCE order_seq START WITH 1` | No sequence generator or DDL model. Use migrations; raw `NEXTVAL` expressions can be supplied only as trusted fragments. |
+| Schema/database/catalog DDL | `CREATE SCHEMA reporting` | No database object administration roots. Use migration/admin tooling. |
+| Synonym/alias DDL | `CREATE SYNONYM customers FOR crm.customers` | Vendor administration syntax is not modeled. Use raw DDL. |
+| Stored procedure/function/package DDL | `CREATE PROCEDURE refresh_data() ...` | Procedural SQL bodies and delimiters are outside SQLBuilder. Use migration files or database tooling. |
+| Trigger/event DDL | `CREATE TRIGGER users_audit AFTER UPDATE ON users ...` | No trigger/event model. Use migration files or database tooling. |
+| Row-level security/policy DDL | `CREATE POLICY tenant_policy ON orders USING (tenant_id = current_setting(...))` | Security-policy administration is not modeled. Use database-specific migrations. |
+| Partition administration | `ALTER TABLE events ATTACH PARTITION events_2026 ...` | No partition DDL model. Use migration/administration SQL. |
+| Privileges and roles (`GRANT`, `REVOKE`, role DDL) | `GRANT SELECT ON users TO reporting_role` | DCL is outside query construction. Use provisioning/migration tooling. |
+| Transaction control | `BEGIN; SAVEPOINT s1; COMMIT;` | SQLBuilder returns one SQL/parameter pair and does not manage transactions. Use JDBC/abacus-jdbc transaction APIs. |
+| `SET TRANSACTION` / isolation control | `SET TRANSACTION ISOLATION LEVEL SERIALIZABLE` | Connection transaction state belongs to the driver/data-access layer. Use JDBC connection APIs where possible. |
+| Explicit table/advisory locks | `LOCK TABLE users IN EXCLUSIVE MODE` | Only SELECT `FOR UPDATE` is modeled. Use database-specific raw SQL or lock APIs. |
+| Stored routine invocation (`CALL`, `EXEC`) | `CALL refresh_user(?)` | No callable-statement builder. Use JDBC `CallableStatement` or the data-access layer. |
+| `EXPLAIN` / `EXPLAIN ANALYZE` | `EXPLAIN ANALYZE SELECT * FROM users` | No statement-prefix wrapper. Build the inner query, then execute a carefully composed raw EXPLAIN statement. |
+| Metadata/session commands (`SHOW`, `DESCRIBE`, `USE`, `PRAGMA`) | `SHOW TABLES` | Not SELECT/INSERT/UPDATE/DELETE and highly vendor-specific. Execute raw SQL through the driver. |
+| Maintenance commands (`VACUUM`, `ANALYZE`, `REINDEX`, `OPTIMIZE`) | `VACUUM ANALYZE users` | Administrative commands are outside query generation. Use database maintenance tooling/raw SQL. |
+| Bulk import/export (`COPY`, `LOAD DATA`, `BULK INSERT`, unload) | `COPY users FROM STDIN` | Streaming/file protocols require driver-specific APIs, not an SQL string builder. Use the database driver's bulk API. |
+| Window functions / `OVER` / `PARTITION BY` | `SELECT ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC) FROM employees` | No typed window-expression model. A trusted expression passed to `select(String)` works, but SQLBuilder will not parse or validate it. |
+| Named `WINDOW` clause | `SELECT SUM(amount) OVER w FROM orders WINDOW w AS (PARTITION BY customer_id)` | No WINDOW clause stage. Use raw projection plus trusted `.append(...)`, or raw SQL. |
+| Aggregate `FILTER` / ordered-set aggregates | `SELECT COUNT(*) FILTER (WHERE active) FROM users` | No typed FILTER/WITHIN GROUP model. Use a trusted raw select expression. |
+| `CASE` expression | `SELECT CASE WHEN active THEN 'Y' ELSE 'N' END FROM users` | No CASE expression builder. Pass a trusted expression to `select(String)` or add a case-expression helper. |
+| `CAST` / `CONVERT` / type literals | `SELECT CAST(created_at AS DATE) FROM events` | No dedicated cast/type API. Trusted select expressions are supported and preserve nested `AS`, but are not type-checked. |
+| `COALESCE`, `NULLIF`, `GREATEST`, `LEAST` | `SELECT COALESCE(nickname, name) FROM users` | These functions are absent from SqlExpression helpers. Use trusted expressions or extend SqlExpression. |
+| `GROUPING SETS`, `ROLLUP`, `CUBE` | `SELECT region, SUM(total) FROM sales GROUP BY ROLLUP(region)` | `groupBy` models ordinary expressions only; advanced grouping structure is not typed. Use a trusted group-by expression/raw SQL. |
+| `QUALIFY` | `SELECT *, ROW_NUMBER() OVER (...) rn FROM users QUALIFY rn = 1` | No QUALIFY clause stage. Use trusted `.append(...)` after a raw window expression where the database supports it. |
+| `PIVOT` / `UNPIVOT` | `SELECT * FROM sales PIVOT (SUM(amount) FOR quarter IN (...))` | No pivot model. Use a raw FROM expression or raw SQL. |
+| `LATERAL`, `CROSS APPLY`, `OUTER APPLY` | `SELECT * FROM users u CROSS APPLY recent_orders(u.id) r` | No dedicated typed join methods. A trusted full FROM expression can represent these vendor joins. |
+| `TABLESAMPLE` | `SELECT * FROM users TABLESAMPLE SYSTEM (10)` | No sampling clause. Use a trusted FROM expression. |
+| Hierarchical queries (`CONNECT BY`, `START WITH`) | `SELECT * FROM employees START WITH manager_id IS NULL CONNECT BY PRIOR id = manager_id` | No hierarchical-query clause model. Use vendor-specific raw SQL. |
+| Row pattern recognition (`MATCH_RECOGNIZE`) | `SELECT * FROM trades MATCH_RECOGNIZE (...)` | No row-pattern model. Use raw SQL. |
+| JSON/XML constructors, paths, table functions, and operators | `SELECT JSON_VALUE(payload, '$.name') FROM events` | No structured JSON/XML DSL. Trusted expressions/operators can be passed through, but are vendor-specific and unvalidated. |
+| Full-text search | `SELECT * FROM docs WHERE MATCH(body) AGAINST (?)` | No full-text predicate model. Use a trusted predicate and bind through the execution layer, or raw vendor SQL. |
+| Spatial SQL | `SELECT ST_Distance(a.geom, b.geom) FROM places a, places b` | No geometry types/functions model. Use trusted expressions with the database's spatial extension. |
+| Time-travel/system-versioned queries | `SELECT * FROM users FOR SYSTEM_TIME AS OF ?` | No temporal table clause model. Use a trusted FROM expression or raw vendor SQL. |
+| Lock variants (`FOR SHARE`, `NOWAIT`, `SKIP LOCKED`, lock strengths) | `SELECT * FROM jobs FOR UPDATE SKIP LOCKED` | Only plain `forUpdate()` is typed. Use trusted `.append(...)` for supported databases and test clause ordering. |
+| `FETCH ... WITH TIES`, `TOP ... PERCENT`, percentage limits | `SELECT * FROM users ORDER BY score DESC FETCH FIRST 10 ROWS WITH TIES` | Typed pagination supports integer LIMIT/OFFSET and ROWS ONLY forms. Use selectModifier/append or raw vendor SQL. |
+| Query/table/index hints | `SELECT /*+ INDEX(users idx_users_status) */ * FROM users` | No structured hint model. Use `selectModifier`, a trusted expression/FROM fragment, or `.append(...)` as appropriate. |
+| Cursor statements | `DECLARE c CURSOR FOR SELECT * FROM users; FETCH NEXT FROM c;` | Cursor lifecycle is not modeled. Use JDBC result-set streaming or raw procedural SQL. |
+| Prepared-statement lifecycle SQL | `PREPARE q FROM 'SELECT ...'; EXECUTE q; DEALLOCATE PREPARE q;` | SQLBuilder produces parameterized SQL for client-side preparation; it does not generate server PREPARE/EXECUTE commands. Use driver APIs. |
+| Session configuration | `SET search_path TO reporting` | Connection/session state is outside query generation. Use JDBC initialization hooks or raw SQL. |
+
+Classification notes
+--------------------
+
+1. “Not natively generated” means there is no dedicated structural API for the feature. Some suffix,
+   projection, predicate, or FROM-clause examples can still be passed as trusted Strings.
+2. `.append(String)` is a verbatim escape hatch, not a general SQL parser. It cannot safely turn an
+   arbitrary unsupported statement into a validated or portable builder operation.
+3. For complete unsupported statements, prefer raw SQL stored in `SqlMapper` and execute it through
+   JDBC/abacus-jdbc. For schema and administrative SQL, prefer migration or database tooling.

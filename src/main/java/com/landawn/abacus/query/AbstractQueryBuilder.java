@@ -4051,18 +4051,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param count the maximum number of rows to return
      * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if this builder has already been closed by {@link #build()}, or if
+     *         {@code LIMIT} has already been set on this builder, or on a {@code FETCH}-style dialect if
+     *         {@code FETCH FIRST}/{@code FETCH NEXT} has already been set, or if {@code OFFSET} was already
+     *         emitted on a limit-style dialect where {@code LIMIT} must precede {@code OFFSET}, or for SQL
+     *         Server if {@code ORDER BY} has not been set
      * @throws IllegalArgumentException if {@code count} is negative
-     * @throws IllegalStateException if {@code LIMIT} has already been set on this builder, or on a
-     *         {@code FETCH}-style dialect if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set,
-     *         or if {@code OFFSET} was already emitted on a limit-style dialect where {@code LIMIT}
-     *         must precede {@code OFFSET}, or for SQL Server if {@code ORDER BY} has not been set
      */
     public This limit(final int count) {
-        N.checkArgNotNegative(count, "count");
-        // Report the "closed builder" state before the dialect-ordering check: calledOpSet survives
-        // build(), so a closed builder that had offset(...) would otherwise report a misleading
-        // pagination-ordering error instead of the closed error every sibling clause method reports.
+        // Report the "closed builder" state first: the lifecycle error takes precedence over argument
+        // validation, and calledOpSet survives build(), so a closed builder that had offset(...) would
+        // otherwise report a misleading pagination-ordering error instead of the closed error every
+        // sibling clause method reports.
         assertNotClosed();
+        N.checkArgNotNegative(count, "count");
 
         // Only report the dialect-ordering error when LIMIT has not been claimed yet. limit(count, offset)
         // claims BOTH slots, so without this guard a duplicate limit(...) on a limit-style dialect would
@@ -5161,14 +5163,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      * @throws IllegalStateException if this builder has already been closed by {@link #build()}, or if the
      *         statement prefix cannot be rendered yet (an INSERT with no {@code into(...)} table, an UPDATE
      *         with no {@code set(...)} columns, or a SELECT segment not completed by {@code from(...)})
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public This append(final String expr) {
-        checkSqlFragmentNotBlank(expr, "expr");
         assertNotClosed();
+        checkSqlFragmentNotBlank(expr, "expr");
 
         // Mirror append(Condition): emit any not-yet-rendered statement prefix first. Without this, an
         // append(...) that is the first write into the buffer permanently suppresses the lazily-emitted
@@ -5201,9 +5203,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param b if true, the condition will be appended
      * @param condition the condition to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code b} is {@code true} and {@code condition} is {@code null}
      * @throws IllegalStateException if this builder has already been closed by {@link #build()}, or if {@code b} is
      *                               {@code true} and a clause emitted by {@code condition} has already been set
+     * @throws IllegalArgumentException if {@code b} is {@code true} and {@code condition} is {@code null}
      */
     @Beta
     public This appendIf(final boolean b, final Condition condition) {
@@ -5234,8 +5236,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param b if true, the expression will be appended
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code b} is {@code true} and {@code expr} is {@code null}, empty, or blank
      * @throws IllegalStateException if this builder has already been closed by {@link #build()}
+     * @throws IllegalArgumentException if {@code b} is {@code true} and {@code expr} is {@code null}, empty, or blank
      */
     @Beta
     public This appendIf(final boolean b, final String expr) {
@@ -7039,9 +7041,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         an UPDATE with no columns staged and no prior {@code set(...)} call
      */
     protected void init(final boolean setForUpdate) {
-        // Note: any change, please take a look at: Dsl.renderCondition(final Condition cond, final Class<?> entityClass) first.
-
         assertNotClosed();
+
+        // Note: any change, please take a look at: Dsl.renderCondition(final Condition cond, final Class<?> entityClass) first.
 
         if (_op == OperationType.ADD && Strings.isEmpty(_tableName)) {
             throw new IllegalStateException("into() must be called to specify the target table before building an INSERT statement");

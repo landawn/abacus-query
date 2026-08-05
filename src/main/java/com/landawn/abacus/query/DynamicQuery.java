@@ -1125,6 +1125,7 @@ public final class DynamicQuery {
          *
          * @param column the column name to select (must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code column} is {@code null}, empty, or blank
          */
         public SelectClause append(final String column) {
@@ -1151,6 +1152,7 @@ public final class DynamicQuery {
          * @param column the column name to select (must not be {@code null}, empty, or blank)
          * @param alias the alias for the column (must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code column} or {@code alias} is {@code null}, empty, or blank
          */
         public SelectClause append(final String column, final String alias) {
@@ -1180,6 +1182,7 @@ public final class DynamicQuery {
          * @param columns collection of column names to select (may be {@code null} or empty;
          *                individual elements must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if a non-empty input yields an empty snapshot, or any
          *                                  snapshotted element is {@code null}, empty, or blank
          */
@@ -1218,6 +1221,7 @@ public final class DynamicQuery {
          * @param columnAliases map where keys are column names and values are aliases (may be {@code null} or empty;
          *        individual keys and values must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if a non-empty input yields an empty snapshot, or any
          *                                  snapshotted key or value is {@code null}, empty, or blank
          */
@@ -1250,6 +1254,7 @@ public final class DynamicQuery {
          * @param b the condition to check
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link SelectClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public SelectClause appendIf(final boolean b, final String textToAppend) {
@@ -1281,6 +1286,7 @@ public final class DynamicQuery {
          * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link SelectClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public SelectClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
@@ -1342,6 +1348,7 @@ public final class DynamicQuery {
          *
          * @param table the table name to add (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code table} is {@code null}, empty, or blank
          */
         public FromClause append(final String table) {
@@ -1368,6 +1375,7 @@ public final class DynamicQuery {
          * @param table the table name to add (must not be {@code null}, empty, or blank)
          * @param alias the alias for the table (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code table} or {@code alias} is {@code null}, empty, or blank
          */
         public FromClause append(final String table, final String alias) {
@@ -1396,6 +1404,7 @@ public final class DynamicQuery {
          * @param tables collection of table names to add (may be {@code null} or empty;
          *               individual elements must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if a non-empty input yields an empty snapshot, or any
          *                                  snapshotted element is {@code null}, empty, or blank
          */
@@ -1427,10 +1436,10 @@ public final class DynamicQuery {
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param expr the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause join(final String joinExpr, final String expr) {
             assertNotClosed();
@@ -1455,10 +1464,10 @@ public final class DynamicQuery {
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param expr the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause innerJoin(final String joinExpr, final String expr) {
             assertNotClosed();
@@ -1483,10 +1492,10 @@ public final class DynamicQuery {
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param expr the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause leftJoin(final String joinExpr, final String expr) {
             assertNotClosed();
@@ -1511,10 +1520,10 @@ public final class DynamicQuery {
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param expr the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause rightJoin(final String joinExpr, final String expr) {
             assertNotClosed();
@@ -1540,10 +1549,10 @@ public final class DynamicQuery {
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @param expr the join condition (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause fullJoin(final String joinExpr, final String expr) {
             assertNotClosed();
@@ -1568,10 +1577,10 @@ public final class DynamicQuery {
          *
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause join(final String joinExpr) {
             assertNotClosed();
@@ -1595,10 +1604,10 @@ public final class DynamicQuery {
          *
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause innerJoin(final String joinExpr) {
             assertNotClosed();
@@ -1622,10 +1631,10 @@ public final class DynamicQuery {
          *
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause leftJoin(final String joinExpr) {
             assertNotClosed();
@@ -1649,10 +1658,10 @@ public final class DynamicQuery {
          *
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause rightJoin(final String joinExpr) {
             assertNotClosed();
@@ -1676,10 +1685,10 @@ public final class DynamicQuery {
          *
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause fullJoin(final String joinExpr) {
             assertNotClosed();
@@ -1702,10 +1711,10 @@ public final class DynamicQuery {
          *
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause crossJoin(final String joinExpr) {
             assertNotClosed();
@@ -1728,10 +1737,10 @@ public final class DynamicQuery {
          *
          * @param joinExpr the table or entity to join (can include alias; must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
+         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
          * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
-         * @throws IllegalStateException if the {@code FROM} clause has not been initialized by a prior call that actually appended a table
-         *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public FromClause naturalJoin(final String joinExpr) {
             assertNotClosed();
@@ -1767,6 +1776,7 @@ public final class DynamicQuery {
          * @param b the condition to check
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public FromClause appendIf(final boolean b, final String textToAppend) {
@@ -1796,6 +1806,7 @@ public final class DynamicQuery {
          * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public FromClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
@@ -1862,6 +1873,7 @@ public final class DynamicQuery {
          *
          * @param expr the SQL expression to append (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public WhereClause append(final String expr) {
@@ -1897,10 +1909,10 @@ public final class DynamicQuery {
          *
          * @param placeholderCount the number of question marks to append (must not be negative)
          * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code WHERE} clause has not been initialized by a prior call that actually appended a condition
+         *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)})
          * @throws IllegalArgumentException if {@code placeholderCount} is negative
-         * @throws IllegalStateException if the {@code WHERE} clause has not been initialized by a prior call that actually appended a condition
-         *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public WhereClause appendPlaceholders(final int placeholderCount) {
             assertNotClosed();
@@ -1928,10 +1940,10 @@ public final class DynamicQuery {
          * @param prefix the string to add before the question marks (must not be {@code null})
          * @param postfix the string to add after the question marks (must not be {@code null})
          * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code WHERE} clause has not been initialized by a prior call that actually appended a condition
+         *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)})
          * @throws IllegalArgumentException if {@code placeholderCount} is negative, or if {@code prefix} or {@code postfix} is {@code null}
-         * @throws IllegalStateException if the {@code WHERE} clause has not been initialized by a prior call that actually appended a condition
-         *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public WhereClause appendPlaceholders(final int placeholderCount, final String prefix, final String postfix) {
             assertNotClosed();
@@ -1962,6 +1974,7 @@ public final class DynamicQuery {
          *
          * @param expr the SQL expression to add with {@code AND} (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public WhereClause and(final String expr) {
@@ -1992,6 +2005,7 @@ public final class DynamicQuery {
          *
          * @param expr the SQL expression to add with {@code OR} (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public WhereClause or(final String expr) {
@@ -2022,6 +2036,7 @@ public final class DynamicQuery {
          * @param b the condition to check
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public WhereClause appendIf(final boolean b, final String textToAppend) {
@@ -2053,6 +2068,7 @@ public final class DynamicQuery {
          * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link WhereClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public WhereClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
@@ -2115,6 +2131,7 @@ public final class DynamicQuery {
          *
          * @param propOrColumnName the property or column name to group by (must not be {@code null}, empty, or blank)
          * @return this {@link GroupByClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
          */
         public GroupByClause append(final String propOrColumnName) {
@@ -2142,6 +2159,7 @@ public final class DynamicQuery {
          * @param columns collection of column names to group by (may be {@code null} or empty;
          *                individual elements must not be {@code null}, empty, or blank)
          * @return this {@link GroupByClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if a non-empty input yields an empty snapshot, or any
          *                                  snapshotted element is {@code null}, empty, or blank
          */
@@ -2174,6 +2192,7 @@ public final class DynamicQuery {
          * @param b the condition to check
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link GroupByClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public GroupByClause appendIf(final boolean b, final String textToAppend) {
@@ -2205,6 +2224,7 @@ public final class DynamicQuery {
          * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link GroupByClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public GroupByClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
@@ -2269,6 +2289,7 @@ public final class DynamicQuery {
          *
          * @param expr the SQL expression to append (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public HavingClause append(final String expr) {
@@ -2304,10 +2325,10 @@ public final class DynamicQuery {
          *
          * @param placeholderCount the number of question marks to append (must not be negative)
          * @return this {@link HavingClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code HAVING} clause has not been initialized by a prior call that actually appended a condition
+         *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)})
          * @throws IllegalArgumentException if {@code placeholderCount} is negative
-         * @throws IllegalStateException if the {@code HAVING} clause has not been initialized by a prior call that actually appended a condition
-         *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public HavingClause appendPlaceholders(final int placeholderCount) {
             assertNotClosed();
@@ -2335,10 +2356,10 @@ public final class DynamicQuery {
          * @param prefix the string to add before the question marks (must not be {@code null})
          * @param postfix the string to add after the question marks (must not be {@code null})
          * @return this {@link HavingClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
+         *         {@code HAVING} clause has not been initialized by a prior call that actually appended a condition
+         *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)})
          * @throws IllegalArgumentException if {@code placeholderCount} is negative, or if {@code prefix} or {@code postfix} is {@code null}
-         * @throws IllegalStateException if the {@code HAVING} clause has not been initialized by a prior call that actually appended a condition
-         *         (e.g. {@code append(...)}, {@code and(...)}, or {@code or(...)}),
-         *         or if this clause builder has already been closed by {@code build()}
          */
         public HavingClause appendPlaceholders(final int placeholderCount, final String prefix, final String postfix) {
             assertNotClosed();
@@ -2369,6 +2390,7 @@ public final class DynamicQuery {
          *
          * @param expr the SQL expression to add with {@code AND} (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public HavingClause and(final String expr) {
@@ -2399,6 +2421,7 @@ public final class DynamicQuery {
          *
          * @param expr the SQL expression to add with {@code OR} (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
          */
         public HavingClause or(final String expr) {
@@ -2429,6 +2452,7 @@ public final class DynamicQuery {
          * @param b the condition to check
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link HavingClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public HavingClause appendIf(final boolean b, final String textToAppend) {
@@ -2460,6 +2484,7 @@ public final class DynamicQuery {
          * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link HavingClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public HavingClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
@@ -2522,6 +2547,7 @@ public final class DynamicQuery {
          *
          * @param propOrColumnName the property or column name with optional {@code ASC}/{@code DESC} (must not be {@code null}, empty, or blank)
          * @return this {@link OrderByClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
          */
         public OrderByClause append(final String propOrColumnName) {
@@ -2550,6 +2576,7 @@ public final class DynamicQuery {
          * @param columns collection of column names with optional sort directions (may be {@code null} or empty;
          *                individual elements must not be {@code null}, empty, or blank)
          * @return this {@link OrderByClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if a non-empty input yields an empty snapshot, or any
          *                                  snapshotted element is {@code null}, empty, or blank
          */
@@ -2582,6 +2609,7 @@ public final class DynamicQuery {
          * @param b the condition to check
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link OrderByClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          */
         public OrderByClause appendIf(final boolean b, final String textToAppend) {
@@ -2613,6 +2641,7 @@ public final class DynamicQuery {
          * @param textToAppendWhenTrue the string to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link OrderByClause} instance for method chaining
+         * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          */
         public OrderByClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {

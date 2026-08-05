@@ -197,6 +197,9 @@ public class AbstractQueryBuilderTest extends TestBase {
         final SqlBuilder rawAppend = Dsl.PSC.select("id").from("users");
         rawAppend.build();
         assertThrows(IllegalStateException.class, () -> rawAppend.append("FOR UPDATE"));
+        // Lifecycle errors take precedence over argument validation after the builder is closed.
+        assertThrows(IllegalStateException.class, () -> rawAppend.append((String) null));
+        assertThrows(IllegalStateException.class, () -> rawAppend.append("   "));
 
         final SqlBuilder modifier = Dsl.PSC.select("id").from("users");
         modifier.build();
@@ -207,6 +210,14 @@ public class AbstractQueryBuilderTest extends TestBase {
         final SqlBuilder condition = Dsl.PSC.select("id").from("users");
         condition.build();
         assertThrows(IllegalStateException.class, () -> condition.append(Filters.eq("id", 1)));
+        assertThrows(IllegalStateException.class, () -> condition.appendIf(false, Filters.eq("id", 1)));
+        assertThrows(IllegalStateException.class, () -> condition.appendIf(false, (Condition) null));
+        assertThrows(IllegalStateException.class, () -> condition.appendIf(true, (Condition) null));
+
+        final SqlBuilder pagination = Dsl.PSC.select("id").from("users");
+        pagination.build();
+        assertThrows(IllegalStateException.class, () -> pagination.limit(-1));
+        assertThrows(IllegalStateException.class, () -> pagination.limit(10));
 
         final SqlBuilder setOperation = Dsl.PSC.select("id").from("users");
         setOperation.build();
