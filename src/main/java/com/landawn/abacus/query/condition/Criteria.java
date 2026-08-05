@@ -82,9 +82,6 @@ public class Criteria extends AbstractCondition {
     /** Lazily memoized parameters (performance only). */
     private transient ImmutableList<Object> cachedParameters;
 
-    /** Lazily memoized hashCode (0 == not computed). */
-    private transient int cachedHashCode;
-
     /** Lazily memoized unmodifiable JOIN view (performance only). */
     private transient ImmutableList<Join> cachedJoinsView;
 
@@ -98,7 +95,7 @@ public class Criteria extends AbstractCondition {
      * Creates a new Criteria instance with the specified select modifier and condition list.
      * This constructor is package-private; use {@link #builder()} to construct instances.
      * The supplied {@code conditions} list is defensively copied so subsequent changes to the
-     * caller's list cannot change this condition or invalidate its cached parameters/hash code.
+     * caller's list cannot change this condition's clause membership or its cached parameters.
      *
      * @param selectModifier the SELECT modifier (e.g., {@code DISTINCT}); {@code null}, empty, or blank means none
      * @param conditions the list of conditions representing the query clauses; defensively copied
@@ -562,6 +559,8 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Returns the hash code of this Criteria, based on its select modifier and conditions list.
+     * It is recomputed on every call because child conditions may contain retained mutable parameter
+     * values; caching the composite hash would preserve a stale child hash transitively.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -574,21 +573,11 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public int hashCode() {
-        int h = cachedHashCode;
+        int h = 17;
+        h = (h * 31) + (Strings.isEmpty(selectModifier) ? 0 : selectModifier.hashCode());
+        h = (h * 31) + conditions.hashCode();
 
-        if (h == 0) {
-            h = 17;
-            h = (h * 31) + (Strings.isEmpty(selectModifier) ? 0 : selectModifier.hashCode());
-            h = (h * 31) + conditions.hashCode();
-
-            if (h == 0) {
-                h = 1;
-            }
-
-            cachedHashCode = h;
-        }
-
-        return h;
+        return h == 0 ? 1 : h;
     }
 
     /**

@@ -102,9 +102,6 @@ public class SubQuery extends AbstractCondition {
     /** Lazily memoized parameters (performance only). */
     private transient ImmutableList<Object> cachedParameters;
 
-    /** Lazily memoized hashCode (0 == not computed). */
-    private transient int cachedHashCode;
-
     /** Lazily memoized unmodifiable view of {@link #propNames} (performance only). */
     private transient ImmutableList<String> cachedPropNamesView;
 
@@ -677,6 +674,8 @@ public class SubQuery extends AbstractCondition {
      * The hash code incorporates all identity fields unconditionally — the raw SQL string,
      * the entity name, the entity class, the property names, and the condition — ensuring
      * consistent hashing for equivalent subqueries regardless of how they were constructed.
+     * It is recomputed on every call because a structured subquery condition may contain retained
+     * mutable parameter values; caching would preserve a stale transitive hash.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -691,24 +690,14 @@ public class SubQuery extends AbstractCondition {
      */
     @Override
     public int hashCode() {
-        int h = cachedHashCode;
+        int h = 17;
+        h = (h * 31) + ((sql == null) ? 0 : sql.hashCode());
+        h = (h * 31) + ((entityName == null) ? 0 : entityName.hashCode());
+        h = (h * 31) + ((entityClass == null) ? 0 : entityClass.hashCode());
+        h = (h * 31) + ((propNames == null) ? 0 : propNames.hashCode());
+        h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
 
-        if (h == 0) {
-            h = 17;
-            h = (h * 31) + ((sql == null) ? 0 : sql.hashCode());
-            h = (h * 31) + ((entityName == null) ? 0 : entityName.hashCode());
-            h = (h * 31) + ((entityClass == null) ? 0 : entityClass.hashCode());
-            h = (h * 31) + ((propNames == null) ? 0 : propNames.hashCode());
-            h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
-
-            if (h == 0) {
-                h = 1;
-            }
-
-            cachedHashCode = h;
-        }
-
-        return h;
+        return h == 0 ? 1 : h;
     }
 
     /**

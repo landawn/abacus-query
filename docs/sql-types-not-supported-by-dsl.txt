@@ -1,0 +1,34 @@
+| SQL Type/Feature | Sample SQL | Reason / Suggestion |
+|---|---|---|
+| CTE / WITH clause | `WITH recent AS (SELECT * FROM orders) SELECT * FROM recent` | No WITH/CTE builder; pass raw SQL via from()/SqlMapper/DynamicQuery |
+| WITH RECURSIVE | `WITH RECURSIVE t(n) AS (...)` | Same as CTE; raw SQL |
+| Window functions | `SELECT ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC) ...` | No OVER API; raw expression string in select() |
+| CASE / WHEN / THEN | `SELECT CASE WHEN age < 18 THEN 'minor' ELSE 'adult' END ...` | No CASE builder; raw expression string |
+| MERGE / UPSERT | `MERGE INTO target USING source ON (...) WHEN MATCHED THEN ...` | No MERGE; raw SQL or split UPDATE+INSERT |
+| INSERT ... ON DUPLICATE KEY UPDATE | `INSERT ... VALUES (...) ON DUPLICATE KEY UPDATE ...` | No upsert suffix; raw SQL |
+| INSERT OR REPLACE / IGNORE | `REPLACE INTO t ...` | No variant; raw SQL |
+| RETURNING clause | `INSERT ... RETURNING id` | No RETURNING; raw SQL |
+| DDL (CREATE/ALTER/DROP/TRUNCATE) | `CREATE TABLE users (...)` | Builder emits DML only; run DDL via JDBC/SqlMapper |
+| DDL indexes | `CREATE INDEX idx ON users (name)` | Same as DDL |
+| DCL (GRANT/REVOKE) | `GRANT SELECT ON users TO app` | Raw SQL via JDBC |
+| TCL (BEGIN/COMMIT/ROLLBACK/SAVEPOINT) | `BEGIN; ... COMMIT;` | Intentionally left to JDBC/abacus-jdbc transaction layer |
+| LOCK / UNLOCK TABLES | `LOCK TABLES users WRITE` | Raw SQL |
+| LATERAL join / APPLY | `SELECT * FROM t CROSS APPLY fn(t.col)` | No LATERAL/APPLY modeling; raw from()/join() string |
+| PIVOT / UNPIVOT | `SELECT * FROM sales PIVOT (...) FOR ...` | Raw SQL |
+| GROUP BY ROLLUP / CUBE / GROUPING SETS | `... GROUP BY ROLLUP (dept, year)` | Not first-class; raw groupBy expression or raw SQL |
+| Full-text MATCH ... AGAINST | `WHERE MATCH(title, body) AGAINST ('...')` | No operator; `Filters.expr(...)` or where(String) |
+| REGEXP / RLIKE / GLOB / SIMILAR TO | `WHERE name REGEXP '^A'` | Not in Operator enum; `Filters.expr(...)` |
+| QUALIFY | `... QUALIFY ROW_NUMBER() OVER (...) = 1` | Raw SQL |
+| Stored procedures CALL / EXEC | `CALL refresh_mv()` | Use JDBC CallableStatement / SqlMapper |
+| Cursors | `DECLARE c CURSOR FOR ...` | JDBC layer responsibility |
+| EXPLAIN / ANALYZE / VACUUM | `EXPLAIN ANALYZE SELECT ...` | Raw SQL |
+| SHOW / DESCRIBE / USE / SET vars | `DESCRIBE users` | Raw SQL |
+| Sequences / NEXT VALUE FOR | `SELECT NEXT VALUE FOR seq` | Raw select expression |
+| Table value constructor | `SELECT * FROM (VALUES (1,'a')) AS t(...)` | Raw from() string |
+| SELECT INTO OUTFILE | `SELECT * FROM t INTO OUTFILE '...'` | Raw SQL |
+| CONNECT BY hierarchical | `SELECT ... CONNECT BY PRIOR id = parent_id` | Raw SQL |
+| Comments / optimizer hints | `SELECT /*+ INDEX(t i) */ * FROM t` | No comment API; `.append()` or DynamicQuery |
+| Multi-statement scripts | `DELETE FROM a; DELETE FROM b;` | Builder emits single statement; batch at JDBC layer |
+| `${property}` dynamic SQL | `WHERE id = ${id}` | No ${} substitution (injection risk); use parameterized builders + appendIf |
+| GROUP_CONCAT / LISTAGG / STRING_AGG | `SELECT GROUP_CONCAT(name) ...` | Raw select expression string |
+| Date/math functions | `SELECT DATEADD(day, 1, created_at) ...` | Raw select expression string |

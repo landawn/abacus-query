@@ -62,6 +62,19 @@ public class ComposableCellTest extends TestBase {
     }
 
     @Test
+    public void testHashCodeTracksMutableValueInWrappedCondition() {
+        final byte[] value = { 1 };
+        final TestComposableCell condition = new TestComposableCell(Operator.NOT, new Binary("payload", Operator.EQUAL, value));
+
+        condition.hashCode();
+        value[0] = 2;
+
+        final TestComposableCell equalAfterMutation = new TestComposableCell(Operator.NOT, new Binary("payload", Operator.EQUAL, new byte[] { 2 }));
+        assertEquals(condition, equalAfterMutation);
+        assertEquals(condition.hashCode(), equalAfterMutation.hashCode());
+    }
+
+    @Test
     public void testHashCode_DifferentCondition() {
         final TestComposableCell left = new TestComposableCell(Operator.NOT, Filters.eq("status", "ACTIVE"));
         final TestComposableCell right = new TestComposableCell(Operator.NOT, Filters.eq("status", "INACTIVE"));

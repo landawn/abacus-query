@@ -1414,7 +1414,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /** Validates the structural preconditions shared by all {@code into(...)} overloads. */
     private void checkCanAppendInto() {
-        checkOpen();
+        assertNotClosed();
 
         if (!(_op == OperationType.ADD || _op == OperationType.QUERY)) {
             throw new IllegalStateException("Invalid operation for into(): " + _op + ". Expected ADD or QUERY");
@@ -1437,7 +1437,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Specifies the target table for an {@code INSERT} or {@code INSERT ... SELECT} operation using an entity class.
-     * <p>The table name will be derived from the entity class based on the naming policy.</p>
+     * <p>The table name will be derived from the entity class based on the naming policy. Installing
+     * the entity mapping and rendering the INSERT clause are atomic; if rendering fails, neither the
+     * mapping nor a partial clause is retained.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1454,13 +1456,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This into(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, "entityClass");
         checkCanAppendInto();
-        setEntityClass(entityClass);
 
-        return into(getTableName(entityClass, _namingPolicy));
+        return mutateAtomically(() -> {
+            setEntityClass(entityClass);
+            appendIntoClause(getTableName(entityClass, _namingPolicy));
+        });
     }
 
     /**
      * Specifies the target table for an {@code INSERT} or {@code INSERT ... SELECT} operation with an explicit table name and entity class.
+     * Installing the optional entity mapping and rendering the INSERT clause are atomic; if rendering
+     * fails, neither the mapping nor a partial clause is retained.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1478,12 +1484,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This into(final String tableName, final Class<?> entityClass) {
         checkSqlFragmentNotBlank(tableName, "tableName");
         checkCanAppendInto();
+        final String normalizedTableName = tableName.trim();
 
-        if (entityClass != null) {
-            setEntityClass(entityClass);
-        }
+        return mutateAtomically(() -> {
+            if (entityClass != null) {
+                setEntityClass(entityClass);
+            }
 
-        return into(tableName);
+            appendIntoClause(normalizedTableName);
+        });
     }
 
     /**
@@ -1530,7 +1539,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code selectModifier} is non-empty but blank (whitespace only)
      */
     public This selectModifier(final String selectModifier) {
-        checkOpen();
+        assertNotClosed();
 
         if (Strings.isEmpty(selectModifier)) {
             return (This) this;
@@ -1777,6 +1786,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets the FROM clause with an expression and associates it with an entity class.
+     * Installing the optional entity mapping and rendering the SELECT/FROM text are atomic; if
+     * rendering fails, neither the mapping nor a partial clause is retained.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1795,11 +1806,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         checkSqlFragmentNotBlank(expr, "expr");
         checkCanAppendFrom();
 
-        if (entityClass != null) {
-            setEntityClass(entityClass);
-        }
+        return mutateAtomically(() -> {
+            if (entityClass != null) {
+                setEntityClass(entityClass);
+            }
 
-        return from(expr);
+            from(expr);
+        });
     }
 
     /**
@@ -1824,6 +1837,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets the FROM clause using an entity class with an alias.
+     * Installing the entity mapping and rendering the SELECT/FROM text are atomic; if rendering
+     * fails, neither the mapping nor a partial clause is retained.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1841,17 +1856,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public This from(final Class<?> entityClass, final String alias) {
         N.checkArgNotNull(entityClass, "entityClass");
         checkCanAppendFrom();
-        setEntityClass(entityClass);
 
-        if (Strings.isEmpty(alias)) {
-            return from(getTableName(entityClass, _namingPolicy));
-        } else {
-            return from(getTableName(entityClass, _namingPolicy) + " " + alias);
-        }
+        return mutateAtomically(() -> {
+            setEntityClass(entityClass);
+
+            if (Strings.isEmpty(alias)) {
+                from(getTableName(entityClass, _namingPolicy));
+            } else {
+                from(getTableName(entityClass, _namingPolicy) + " " + alias);
+            }
+        });
     }
 
     /**
      * Sets the FROM clause using the specified entity class and multiple table names.
+     * Installing the entity mapping and rendering the SELECT/FROM text are atomic; if rendering
+     * fails, neither the mapping nor a partial clause is retained.
      *
      * @param entityClass the entity class to associate with this query (must not be {@code null})
      * @param tableNames the collection of table names for the FROM clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
@@ -1863,9 +1883,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected This from(final Class<?> entityClass, final Collection<String> tableNames) {
         N.checkArgNotNull(entityClass, "entityClass");
         checkCanAppendFrom();
-        setEntityClass(entityClass);
 
-        return from(tableNames);
+        return mutateAtomically(() -> {
+            setEntityClass(entityClass);
+            from(tableNames);
+        });
     }
 
     /**
@@ -2041,7 +2063,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /** Validates the structural preconditions shared by all {@code from(...)} overloads. */
     private void checkCanAppendFrom() {
-        checkOpen();
+        assertNotClosed();
 
         if (_op != OperationType.QUERY) {
             throw new IllegalStateException("Invalid operation for from(): " + _op + ". Expected QUERY");
@@ -4040,7 +4062,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // Report the "closed builder" state before the dialect-ordering check: calledOpSet survives
         // build(), so a closed builder that had offset(...) would otherwise report a misleading
         // pagination-ordering error instead of the closed error every sibling clause method reports.
-        checkOpen();
+        assertNotClosed();
 
         // Only report the dialect-ordering error when LIMIT has not been claimed yet. limit(count, offset)
         // claims BOTH slots, so without this guard a duplicate limit(...) on a limit-style dialect would
@@ -4462,7 +4484,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * grouping, ordering, pagination, or row-locking clauses.
      */
     private void checkCanAppendJoin() {
-        checkOpen();
+        assertNotClosed();
 
         if (_hasCompletedSetOperation) {
             throw new IllegalStateException("JOIN clauses cannot be added after a completed set-operation operand");
@@ -4481,7 +4503,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /** Ensures ON/USING is attached once, directly after a JOIN form that supports it. */
     private void checkCanAppendJoinCondition() {
-        checkOpen();
+        assertNotClosed();
 
         if (_hasCompletedSetOperation) {
             throw new IllegalStateException("ON/USING cannot be added after a completed set-operation operand");
@@ -4536,8 +4558,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@link #append(String)} deliberately remains an unstructured escape hatch and is not wrapped.
      */
     @SuppressWarnings("unchecked")
-    private This mutateAtomically(final Runnable mutation) {
-        checkOpen();
+    protected This mutateAtomically(final Runnable mutation) {
+        assertNotClosed();
 
         final MutationCheckpoint checkpoint = new MutationCheckpoint(this);
 
@@ -4687,7 +4709,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * recorded it in {@code calledOpSet}.
      */
     private void checkClauseCanBeAppended(final String op, final boolean orderByCarriedByCriteria) {
-        checkOpen();
+        assertNotClosed();
 
         if (_op == OperationType.ADD) {
             throw new IllegalStateException("'" + op + "' cannot be added to an INSERT VALUES statement");
@@ -5146,7 +5168,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This append(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
-        checkOpen();
+        assertNotClosed();
 
         // Mirror append(Condition): emit any not-yet-rendered statement prefix first. Without this, an
         // append(...) that is the first write into the buffer permanently suppresses the lazily-emitted
@@ -5185,7 +5207,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @Beta
     public This appendIf(final boolean b, final Condition condition) {
-        checkOpen();
+        assertNotClosed();
 
         if (b) {
             append(condition);
@@ -5217,7 +5239,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     @Beta
     public This appendIf(final boolean b, final String expr) {
-        checkOpen();
+        assertNotClosed();
 
         if (b) {
             append(expr);
@@ -5844,7 +5866,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         pagination, or {@code FOR UPDATE} has already been added
      */
     private void checkCanAppendSetOperation(final String operationName) {
-        checkOpen();
+        assertNotClosed();
 
         if (_op != OperationType.QUERY || _isForConditionOnly) {
             throw new IllegalStateException(operationName + " requires a complete SELECT query on its left-hand side");
@@ -6755,7 +6777,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /** Ensures that a SET assignment API is used only in the SET-list portion of a live UPDATE builder. */
     private void checkUpdateOperation() {
-        checkOpen();
+        assertNotClosed();
 
         if (_op != OperationType.UPDATE) {
             throw new IllegalStateException("set()/setEntity() requires an UPDATE builder, but current operation is: " + _op);
@@ -6831,7 +6853,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         SET columns)
      */
     public SP build() {
-        checkOpen();
+        assertNotClosed();
 
         String sql = null;
 
@@ -6853,17 +6875,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // SP's canonical constructor snapshots even a wrapped list, so a subclass retaining access to
         // this protected buffer cannot mutate an already built result.
         return new SP(sql, ImmutableList.wrap(_parameters));
-    }
-
-    /**
-     * Ensures this builder is still open.
-     *
-     * @throws IllegalStateException if the builder has been closed by {@code build()} or a terminal helper
-     */
-    private void checkOpen() {
-        if (_sb == null) {
-            throw new IllegalStateException("SqlBuilder is closed and cannot be reused after build() was called");
-        }
     }
 
     /**
@@ -7002,6 +7013,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Ensures this builder is still open.
+     *
+     * @throws IllegalStateException if the builder has been closed by {@code build()} or a terminal helper
+     */
+    protected void assertNotClosed() {
+        if (_sb == null) {
+            throw new IllegalStateException("SqlBuilder is closed and cannot be reused after build() was called");
+        }
+    }
+
+    /**
      * Lazily emits the leading SQL keyword for the current operation (UPDATE/DELETE) into the buffer
      * the first time it is required, and validates that {@code from()} has been called for QUERY operations.
      * Returns immediately if the buffer is already non-empty.
@@ -7019,7 +7041,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected void init(final boolean setForUpdate) {
         // Note: any change, please take a look at: Dsl.renderCondition(final Condition cond, final Class<?> entityClass) first.
 
-        checkOpen();
+        assertNotClosed();
 
         if (_op == OperationType.ADD && Strings.isEmpty(_tableName)) {
             throw new IllegalStateException("into() must be called to specify the target table before building an INSERT statement");
@@ -7501,7 +7523,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         if (expr.length() < 16) {
-            final boolean matched = QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher(expr).matches();
+            // Although the simple-column pattern permits '-', a hyphen can be the subtraction operator.
+            // Let the tokenizer split those expressions so each operand is normalized independently.
+            // This mirrors SqlExpression.toSql and prevents a naming policy from treating the complete
+            // expression (for example, "aB-cD") as one identifier.
+            final boolean matched = expr.indexOf('-') < 0 && QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher(expr).matches();
 
             if (matched) {
                 if (isFromAppendColumn) {
@@ -7976,7 +8002,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Reports whether {@code query} is one or more balanced opening parentheses (plus whitespace)
      * followed by a {@code SELECT} query, e.g. {@code "(SELECT 1)"} or {@code "((SELECT 1))"}.
      * The balance scan is quote- and comment-aware, so an unbalanced operand like {@code "(SELECT 1"}
-     * is rejected while a parenthesis inside a string literal does not affect the count.
+     * is rejected while a parenthesis inside a string literal does not affect the count. Once the
+     * outermost parenthesis closes, only whitespace or comments may follow it.
      *
      * @param query the trimmed candidate operand
      * @param selectIndex the index of the first {@code SELECT} token in {@code query} (must be {@code > 0})
@@ -8018,10 +8045,41 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 if (--depth < 0) {
                     return false;
                 }
+
+                if (depth == 0) {
+                    // The closing parenthesis must terminate the operand. Accept only whitespace or
+                    // comments after it; otherwise fragments such as "(SELECT 1) + 2" are not complete
+                    // parenthesized SELECT queries and must not be admitted as set-operation operands.
+                    for (int j = i + 1; j < len; j++) {
+                        final char trailingChar = query.charAt(j);
+
+                        if (Character.isWhitespace(trailingChar)) {
+                            continue;
+                        }
+
+                        final boolean lineComment = trailingChar == '-' && j < len - 1 && query.charAt(j + 1) == '-';
+                        final boolean blockComment = trailingChar == '/' && j < len - 1 && query.charAt(j + 1) == '*';
+                        final boolean hashComment = trailingChar == '#' && isAliasScannerHashCommentStart(query, j);
+
+                        if ((!lineComment && !blockComment && !hashComment) || (blockComment && query.indexOf("*/", j + 2) < 0)) {
+                            return false;
+                        }
+
+                        final int afterTrivia = skipSqlQuotedOrComment(query, j);
+
+                        if (afterTrivia == j) {
+                            return false;
+                        }
+
+                        j = afterTrivia - 1;
+                    }
+
+                    return true;
+                }
             }
         }
 
-        return depth == 0;
+        return false;
     }
 
     /**

@@ -1,0 +1,64 @@
+| SQL Type/Feature | Sample SQL | Equivalent SQLBuilder/DSL Code |
+|---|---|---|
+| SELECT columns | `SELECT first_name, last_name FROM users` | `PSC.select("firstName", "lastName").from("users").build()` |
+| SELECT all (*) | `SELECT * FROM users` | `PSC.select("*").from("users").build()` |
+| SELECT DISTINCT | `SELECT DISTINCT department FROM employees` | `PSC.select("department").distinct().from("employees").build()` |
+| SELECT modifier (TOP/ALL/UNIQUE) | `SELECT TOP 10 * FROM account` | `PSC.select("*").selectModifier("TOP 10").from("account").build()` |
+| Column alias | `SELECT first_name AS "fn" FROM users` | `PSC.select(Map.of("firstName", "fn")).from("users").build()` |
+| Aggregate expression | `SELECT department, COUNT(*) FROM employees GROUP BY department` | `PSC.select("department", "COUNT(*)").from("employees").groupBy("department").build()` |
+| COUNT(*) convenience | `SELECT count(*) FROM account WHERE email IS NOT NULL` | `PSC.count(Account.class).where(Filters.isNotNull("email")).build()` |
+| Entity-based SELECT | `SELECT id, first_name, ... FROM users u` | `PSC.selectFrom(User.class, "u").where(Filters.eq("id", id)).build()` |
+| Derived table in FROM | `SELECT * FROM (SELECT id FROM orders WHERE amount > 100) t` | `PSC.select("*").from("(SELECT id FROM orders WHERE amount > 100) t").build()` |
+| Multi-table FROM | `SELECT * FROM users, orders, items` | `PSC.select("*").from("users", "orders", "items").build()` |
+| FROM entity + alias | `SELECT * FROM users u` | `PSC.select("*").from(User.class, "u").build()` |
+| Equality (=) | `WHERE status = ?` | `where(Filters.eq("status", "ACTIVE"))` |
+| Not equal (<> / !=) | `WHERE status <> ?` | `where(Filters.ne("status", "BANNED"))` |
+| Greater than (>) | `WHERE age > ?` | `where(Filters.gt("age", 18))` |
+| >= / < / <= | `WHERE age >= ?` | `where(Filters.ge("age", 18))`, `Filters.lt(...)`, `Filters.le(...)` |
+| Raw WHERE string | `WHERE age > 18` | `where("age > 18")` |
+| AND | `WHERE status = ? AND age > ?` | `where(Filters.and(Filters.eq(...), Filters.gt(...)))` |
+| OR | `WHERE country = ? OR vip = ?` | `where(Filters.or(Filters.eq(...), Filters.eq(...)))` |
+| NOT | `WHERE NOT (age < ?)` | `where(Filters.not(Filters.lt("age", 18)))` |
+| Junction (arbitrary nesting) | `WHERE (a = ? AND b = ?) OR c = ?` | `where(Filters.junction(Operator.OR, Filters.and(...), Filters.eq("c", 3)))` |
+| IN (list/array overloads) | `WHERE id IN (?, ?, ?)` | `where(Filters.in("id", List.of(1, 2, 3)))` |
+| NOT IN | `WHERE id NOT IN (?, ?)` | `where(Filters.notIn("id", List.of(1, 2)))` |
+| Multi-column IN | `WHERE (a, b) IN ((?, ?), (?, ?))` | `where(Filters.in(List.of("a", "b"), rows))` |
+| BETWEEN / NOT BETWEEN | `WHERE order_date BETWEEN ? AND ?` | `where(Filters.between("orderDate", start, end))` |
+| Range helpers | `WHERE age >= ? AND age <= ?` | `Filters.geAndLe("age", min, max)`, `gtAndLt`, `geAndLt`, `gtAndLe` |
+| LIKE / NOT LIKE | `WHERE name LIKE ?` | `where(Filters.like("name", "A%"))` |
+| startsWith / endsWith / contains | `WHERE name LIKE ?` | `Filters.startsWith("name", "A")`, `Filters.endsWith(...)`, `Filters.contains(...)` |
+| IS NULL / IS NOT NULL | `WHERE deleted_at IS NULL` | `where(Filters.isNull("deletedAt"))` |
+| isNullOrEmpty / isNullOrZero | `WHERE name IS NULL OR name = ''` | `Filters.isNullOrEmpty("name")`, `Filters.isNullOrZero("qty")` |
+| IS TRUE/FALSE, NaN, INFINITE | `WHERE active IS ?` | `Filters.is("active", true)`, `Filters.isNaN(...)`, `Filters.isInfinite(...)` |
+| anyEqual / allEqual | `WHERE a = ? OR b = ?` | `Filters.anyEqual(Map.of("a",1,"b",2))`, `Filters.allEqual(...)` |
+| anyOfAllEqual | `WHERE (a = ? AND b = ?) OR (a = ? AND b = ?)` | `Filters.anyOfAllEqual(rows)` |
+| Entity-id conditions | `WHERE id = ?` | `Filters.idToCond(entityId)` |
+| alwaysTrue / alwaysFalse | `WHERE 1 = 1` | `Filters.alwaysTrue()` |
+| Raw SQL expression | `WHERE MATCH(name) AGAINST (?)` | `where(Filters.expr("MATCH(name) AGAINST (?)"))` |
+| IN (subquery) | `WHERE id IN (SELECT user_id FROM orders WHERE amount > ?)` | `where(Filters.in("id", Filters.subQuery("orders", List.of("userId"), Filters.gt("amount", 100))))` |
+| NOT IN (subquery) | `WHERE id NOT IN (SELECT user_id FROM orders ...)` | `where(Filters.notIn("id", Filters.subQuery(...)))` |
+| EXISTS / NOT EXISTS | `WHERE EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)` | `where(Filters.exists(Filters.subQuery("orders o", List.of("1"), "o.user_id = u.id")))` |
+| Quantified ANY / ALL / SOME | `WHERE price > ALL (SELECT price FROM products)` | `where(Filters.binary("price", Operator.GREATER_THAN, Filters.all(subQuery)))` |
+| JOIN (INNER / LEFT / RIGHT / FULL) | `SELECT * FROM users u JOIN orders o ON u.id = o.user_id` | `.join("orders o").on("u.id = o.user_id")`, `.leftJoin(...)`, `.rightJoin(...)`, `.fullJoin(...)` |
+| CROSS JOIN / NATURAL JOIN | `SELECT * FROM users CROSS JOIN orders` | `.from("users").crossJoin("orders")`, `.naturalJoin("orders")` |
+| Multi-column ON | `ON u.id = o.user_id AND u.tenant_id = o.tenant_id` | `.on("u.id = o.user_id", "u.tenant_id = o.tenant_id")` |
+| JOIN ... USING | `JOIN orders USING (user_id)` | `.join("orders").using("user_id")` |
+| Entity-class JOIN | `SELECT * FROM users u JOIN orders o ON ...` | `.from(User.class, "u").join(Order.class, "o").on("u.id = o.user_id")` |
+| GROUP BY (+ direction) | `GROUP BY category ASC, brand DESC` | `.groupBy("department")`, `.groupBy(Map.of(...))`, `.groupByAsc(...)`, `.groupByDesc(...)` |
+| HAVING (string / condition) | `HAVING COUNT(*) > ?` | `.having("COUNT(*) > 10")`, `.having(Filters.gt("COUNT(*)", 10))` |
+| ORDER BY (+ directions) | `ORDER BY last_name DESC` | `.orderBy("lastName", SortDirection.DESC)`, `.orderBy(Map.of(...))`, `.orderByAsc(...)`, `.orderByDesc(...)` |
+| LIMIT / OFFSET | `LIMIT ? OFFSET ?` | `.limit(10, 20)`, `.limit(10)`, `.offset(20)` |
+| OFFSET ROWS / FETCH NEXT | `OFFSET ? ROWS FETCH NEXT ? ROWS ONLY` | `.offsetRows(20).fetchNextRows(20)` |
+| FOR UPDATE | `SELECT * FROM users WHERE id = ? FOR UPDATE` | `.forUpdate()` |
+| UNION / UNION ALL | `SELECT name FROM users_a UNION SELECT name FROM users_b` | `.union("SELECT name FROM users_b")`, `.unionAll(...)` |
+| INTERSECT / EXCEPT / MINUS | `SELECT id FROM a INTERSECT SELECT id FROM b` | `.intersect(...)`, `.except(...)`, `.minus(...)`, or `Filters.union(subQuery)` |
+| INSERT (columns/map/entity) | `INSERT INTO users (first_name, last_name) VALUES (?, ?)` | `PSC.insert("firstName", "lastName").into("users").build()`, `PSC.insert(Map.of(...))`, `PSC.insert(user)` |
+| INSERT INTO (entity class) | `INSERT INTO users (...) VALUES (?, ...)` | `PSC.insertInto(User.class).build()` |
+| batchInsert (multi-row) | `INSERT INTO users (id, name) VALUES (?, ?), (?, ?)` | `PSC.batchInsert(List.of(u1, u2)).into("users").build()` |
+| INSERT ... SELECT | `INSERT INTO users_backup (first_name) SELECT first_name FROM users` | `PSC.select("firstName").into("usersBackup").from("users").build()` |
+| UPDATE (set list/map/entity/raw) | `UPDATE users SET status = ? WHERE id = ?` | `PSC.update("users").set("status").where(...).build()`, `.set(Map.of(...))`, `.set(user)`, `.set("name = 'John'")` |
+| DELETE | `DELETE FROM users WHERE id = ?` | `PSC.deleteFrom("users").where(Filters.eq("id", id)).build()` |
+| Conditional/dynamic fragments | (clause added when flag true) | `.appendIf(flag, Filters.eq("status", "ACTIVE"))`, `.appendIfOrElse(...)`, `.append(...)` |
+| Named parameters (:name) | `WHERE status = :status` | `NSC.select("*").from("users").where(Filters.eq("status", "ACTIVE")).build()` |
+| MyBatis #{name} / inlined literals | `WHERE status = #{status}` / `= 'ACTIVE'` | `MSC...`, `SCSB...` |
+| Custom dialect | quoted identifiers, product pagination | `Dsl.forDialect(SqlDialect.builder()...).select(...)` |

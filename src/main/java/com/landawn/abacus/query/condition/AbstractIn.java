@@ -73,9 +73,6 @@ public abstract class AbstractIn extends ComposableCondition {
     /** Lazily memoized parameters (performance only). */
     private transient ImmutableList<Object> cachedParameters;
 
-    /** Lazily memoized hashCode (0 == not computed). */
-    private transient int cachedHashCode;
-
     /** Lazily memoized immutable view of {@link #values} (performance only). */
     private transient ImmutableList<?> cachedValuesView;
 
@@ -507,6 +504,9 @@ public abstract class AbstractIn extends ComposableCondition {
 
     /**
      * Generates the hash code for this condition.
+     * The value collection is copied, but its individual elements are retained. The hash is therefore
+     * recomputed on every call so a mutable value element cannot leave this condition with a stale hash
+     * that disagrees with an equal, newly constructed condition.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -520,23 +520,13 @@ public abstract class AbstractIn extends ComposableCondition {
      */
     @Override
     public int hashCode() {
-        int h = cachedHashCode;
+        int h = 17;
+        h = (h * 31) + N.hashCode(propNames);
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+        h = (h * 31) + (rowValueConstructor ? 1231 : 1237);
+        h = (h * 31) + ((values == null) ? 0 : values.hashCode());
 
-        if (h == 0) {
-            h = 17;
-            h = (h * 31) + N.hashCode(propNames);
-            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-            h = (h * 31) + (rowValueConstructor ? 1231 : 1237);
-            h = (h * 31) + ((values == null) ? 0 : values.hashCode());
-
-            if (h == 0) {
-                h = 1;
-            }
-
-            cachedHashCode = h;
-        }
-
-        return h;
+        return h == 0 ? 1 : h;
     }
 
     /**

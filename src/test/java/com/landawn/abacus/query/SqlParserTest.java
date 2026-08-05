@@ -2892,4 +2892,57 @@ public class SqlParserTest extends TestBase {
         assertTrue(SqlParser.isReadOnlyQuery("SELECT [id], [name] FROM [dbo].[users]"));
         assertTrue(SqlParser.isReadOnlyQuery("SELECT [a]]b] FROM t"));
     }
+
+    @Test
+    public void testStandardStringEndingInBackslashDoesNotHideMutationClauses() {
+        final char backslash = (char) 92;
+        final String pathLiteral = "'C:" + backslash + "'";
+
+        // Backslash does not escape the quote in standard-conforming PostgreSQL strings, SQL
+        // Server, Oracle, or MySQL's NO_BACKSLASH_ESCAPES mode. The safety scanners used to apply
+        // only the MySQL interpretation and swallowed everything following this literal.
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT " + pathLiteral + " INTO backup_table"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t (p) VALUES (" + pathLiteral + ") ON DUPLICATE KEY UPDATE p = 1"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t (p) VALUES (" + pathLiteral + ") ON CONFLICT (p) DO UPDATE SET p = 1"));
+
+        // A later quote inside a comment must not make the backslash interpretation win for an
+        // earlier literal and hide executable text under standard quote rules.
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT " + pathLiteral + " INTO backup_table -- '"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t (p) VALUES (" + pathLiteral + ") ON CONFLICT (p) DO UPDATE SET p = 1 -- '"));
+
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT " + pathLiteral + ", 'x'"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT 'can" + backslash + "'t'"));
+    }
+
+    @Test
+    public void testStandardStringEndingInBackslashDoesNotHideCteOrMainStatement() {
+        final char backslash = (char) 92;
+        final String pathLiteral = "'C:" + backslash + "'";
+
+        assertTrue(SqlParser.isSelectQuery("WITH p AS (SELECT " + pathLiteral + ") SELECT * FROM p"));
+        assertTrue(SqlParser.isReadOnlyQuery("WITH p AS (SELECT " + pathLiteral + ") SELECT * FROM p"));
+        assertFalse(SqlParser.isReadOnlyQuery("WITH p AS (SELECT " + pathLiteral + "), d AS (DELETE FROM t RETURNING id) SELECT * FROM p"));
+    }
+
+    @Test
+    public void testExecutableBlockCommentsAreRejectedBySafetyClassifiers() {
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; /*! DELETE FROM audit_log */"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1 /*! INTO backup_table */"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1; /*M! DELETE FROM audit_log */"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t (id) VALUES (1) /*! ON DUPLICATE KEY UPDATE id = 2 */"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 'x'/*! INTO backup_table */"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t SET p = 'x'/*! ON DUPLICATE KEY UPDATE p = 2 */"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1--/*! + side_effect_function() */"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT 1-- /*! + side_effect_function() */"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT 1--" + (char) 127 + "/*! + side_effect_function() */"));
+
+        final char backslash = (char) 92;
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 'C:" + backslash + "'/*! INTO backup_table */ -- '"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 'C:" + backslash + "'--/*! + side_effect_function() */"));
+        assertFalse(SqlParser.isReadOnlyQuery("SELECT 1--\u2003/*! + side_effect_function() */"));
+
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT '/*! DELETE FROM audit_log */'"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT 1 /* ordinary comment */"));
+        assertTrue(SqlParser.isReadOnlyQuery("SELECT /*+ MAX_EXECUTION_TIME(1000) */ 1"));
+    }
 }

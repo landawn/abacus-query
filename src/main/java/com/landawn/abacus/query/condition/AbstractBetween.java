@@ -62,9 +62,6 @@ public abstract class AbstractBetween extends ComposableCondition {
     /** Lazily memoized parameters (performance only). */
     private transient ImmutableList<Object> cachedParameters;
 
-    /** Lazily memoized hashCode (0 == not computed). */
-    private transient int cachedHashCode;
-
     /**
      * Default constructor for serialization frameworks like Kryo.
      */
@@ -276,6 +273,9 @@ public abstract class AbstractBetween extends ComposableCondition {
 
     /**
      * Returns the hash code of this condition.
+     * The value is recomputed on every call because array and other mutable bounds are retained and
+     * exposed by {@link #minValue()} and {@link #maxValue()}; memoizing it could make two equal
+     * conditions report different hash codes after a bound is mutated.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -289,23 +289,13 @@ public abstract class AbstractBetween extends ComposableCondition {
      */
     @Override
     public int hashCode() {
-        int h = cachedHashCode;
+        int h = 17;
+        h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+        h = (h * 31) + N.deepHashCode(minValue);
+        h = (h * 31) + N.deepHashCode(maxValue);
 
-        if (h == 0) {
-            h = 17;
-            h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
-            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-            h = (h * 31) + N.deepHashCode(minValue);
-            h = (h * 31) + N.deepHashCode(maxValue);
-
-            if (h == 0) {
-                h = 1;
-            }
-
-            cachedHashCode = h;
-        }
-
-        return h;
+        return h == 0 ? 1 : h;
     }
 
     /**

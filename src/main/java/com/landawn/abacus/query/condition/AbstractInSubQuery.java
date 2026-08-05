@@ -53,9 +53,6 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     /** Lazily memoized parameters (performance only). */
     private transient ImmutableList<Object> cachedParameters;
 
-    /** Lazily memoized hashCode (0 == not computed). */
-    private transient int cachedHashCode;
-
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized AbstractInSubQuery instance and should not be used
@@ -280,6 +277,8 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
 
     /**
      * Generates the hash code for this condition.
+     * It is recomputed on every call because the wrapped structured subquery may contain retained
+     * mutable parameter values; caching its hash here would preserve a stale transitive hash.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -293,22 +292,12 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      */
     @Override
     public int hashCode() {
-        int h = cachedHashCode;
+        int h = 17;
+        h = (h * 31) + N.hashCode(propNames);
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+        h = (h * 31) + ((subQuery == null) ? 0 : subQuery.hashCode());
 
-        if (h == 0) {
-            h = 17;
-            h = (h * 31) + N.hashCode(propNames);
-            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-            h = (h * 31) + ((subQuery == null) ? 0 : subQuery.hashCode());
-
-            if (h == 0) {
-                h = 1;
-            }
-
-            cachedHashCode = h;
-        }
-
-        return h;
+        return h == 0 ? 1 : h;
     }
 
     /**

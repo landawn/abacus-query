@@ -101,9 +101,6 @@ public class Junction extends ComposableCondition {
     /** Lazily memoized parameters (performance only). */
     private transient ImmutableList<Object> cachedParameters;
 
-    /** Lazily memoized hashCode (0 == not computed). */
-    private transient int cachedHashCode;
-
     /** Lazily memoized immutable view of {@link #conditions} (performance only). */
     private transient ImmutableList<Condition> cachedConditionsView;
 
@@ -438,6 +435,8 @@ public class Junction extends ComposableCondition {
      * Computes the hash code for this junction based on its operator and conditions.
      * The hash code is consistent with equals() - junctions with the same operator
      * and conditions will have the same hash code.
+     * It is recomputed on every call because child conditions may contain retained mutable parameter
+     * values; caching the junction hash would preserve a stale child hash transitively.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -450,21 +449,11 @@ public class Junction extends ComposableCondition {
      */
     @Override
     public int hashCode() {
-        int h = cachedHashCode;
+        int h = 17;
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+        h = (h * 31) + conditions.hashCode();
 
-        if (h == 0) {
-            h = 17;
-            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-            h = (h * 31) + conditions.hashCode();
-
-            if (h == 0) {
-                h = 1;
-            }
-
-            cachedHashCode = h;
-        }
-
-        return h;
+        return h == 0 ? 1 : h;
     }
 
     /**

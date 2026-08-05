@@ -139,7 +139,7 @@
  *         .build();
  *
  * Dsl.PSC.select("id").from("account a").append(criteria).build().query();
- * // SELECT id FROM account a JOIN orders o ON (a.id = o.account_id) WHERE a.status = ?
+ * // SELECT id FROM account a JOIN orders o ON a.id = o.account_id WHERE a.status = ?
  * //   GROUP BY a.id HAVING COUNT(*) > ? ORDER BY a.id DESC LIMIT 10
  * }</pre>
  *

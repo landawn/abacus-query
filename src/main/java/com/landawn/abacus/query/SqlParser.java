@@ -2414,7 +2414,7 @@ public final class SqlParser {
             return false;
         }
 
-        return "SELECT".equalsIgnoreCase(getLeadingQueryKeyword(sql));
+        return "SELECT".equalsIgnoreCase(getLeadingQueryKeywordAcrossLexicalModes(sql, DEFAULT_TOKENIZER_CONFIG));
     }
 
     /**
@@ -2439,7 +2439,12 @@ public final class SqlParser {
      * This includes statements that start with a {@code WITH} clause or leading parentheses. The
      * mutation-keyword scan matches only statement-start positions, so the
      * {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL <i>functions</i> inside a SELECT do not
-     * affect the classification.
+     * affect the classification. The complete SQL is checked under both backslash-escaped and
+     * doubled-quote-only string rules, independently combined with standard and MySQL {@code --}
+     * line-comment rules. Hash-comment/operator treatment follows the active tokenizer configuration.
+     * Every lexically valid interpretation must be read-only, so an ambiguous quote or comment cannot
+     * hide a mutation clause. MySQL/MariaDB executable comments are rejected because their apparent
+     * comment body may run.
      * </p>
      *
      * <p><b>Comparison with related methods:</b> see the
@@ -2464,12 +2469,7 @@ public final class SqlParser {
             return false;
         }
 
-        return isSelectQuery(sql, tokenizerConfig) && hasOnlyAllowedTopLevelStatements(sql, tokenizerConfig, false)
-                && !containsMutationQueryKeyword(sql, tokenizerConfig) && !containsSelectIntoClause(sql, tokenizerConfig);
-    }
-
-    private static boolean isSelectQuery(final String sql, final TokenizerConfig tokenizerConfig) {
-        return !Strings.isEmpty(sql) && "SELECT".equalsIgnoreCase(getLeadingQueryKeyword(sql, tokenizerConfig));
+        return isSafeQueryUnderEveryLexicalMode(sql, tokenizerConfig, false);
     }
 
     /**
@@ -2520,7 +2520,7 @@ public final class SqlParser {
             return false;
         }
 
-        return "INSERT".equalsIgnoreCase(getLeadingQueryKeyword(sql));
+        return "INSERT".equalsIgnoreCase(getLeadingQueryKeywordAcrossLexicalModes(sql, DEFAULT_TOKENIZER_CONFIG));
     }
 
     /**
@@ -2568,7 +2568,7 @@ public final class SqlParser {
             return false;
         }
 
-        return "UPDATE".equalsIgnoreCase(getLeadingQueryKeyword(sql));
+        return "UPDATE".equalsIgnoreCase(getLeadingQueryKeywordAcrossLexicalModes(sql, DEFAULT_TOKENIZER_CONFIG));
     }
 
     /**
@@ -2616,7 +2616,7 @@ public final class SqlParser {
             return false;
         }
 
-        return "DELETE".equalsIgnoreCase(getLeadingQueryKeyword(sql));
+        return "DELETE".equalsIgnoreCase(getLeadingQueryKeywordAcrossLexicalModes(sql, DEFAULT_TOKENIZER_CONFIG));
     }
 
     /**
@@ -2720,7 +2720,12 @@ public final class SqlParser {
      * or vendor-specific command is rejected rather than assumed to be safe. Procedure calls are
      * conservatively rejected because their effects cannot be determined from the SQL text; the keyword scan matches
      * only statement-start positions, so the {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL
-     * <i>functions</i> do not affect the classification.
+     * <i>functions</i> do not affect the classification. The complete SQL is checked under both
+     * backslash-escaped and doubled-quote-only string rules, independently combined with standard
+     * and MySQL {@code --} line-comment rules. Hash-comment/operator treatment follows the active
+     * tokenizer configuration. Every lexically valid interpretation must be safe, so an ambiguous
+     * quote or comment cannot hide an upsert or overwrite clause. MySQL/MariaDB executable comments
+     * are rejected because their apparent comment body may run.
      * </p>
      *
      * <p><b>Comparison with related methods:</b> see the
@@ -2743,17 +2748,199 @@ public final class SqlParser {
             return false;
         }
 
-        if (!(isSelectQuery(sql) || isInsertQuery(sql))) {
+        return isSafeQueryUnderEveryLexicalMode(sql, DEFAULT_TOKENIZER_CONFIG, true);
+    }
+
+    /**
+     * Applies a safety classification under every lexically complete combination of supported quote
+     * and {@code --} line-comment conventions. These choices are independent: MySQL with
+     * {@code NO_BACKSLASH_ESCAPES}, for example, combines doubled-quote-only strings with MySQL's
+     * whitespace requirement after {@code --}.
+     */
+    private static boolean isSafeQueryUnderEveryLexicalMode(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert) {
+        boolean hasValidMode = false;
+
+        for (int quoteMode = 0; quoteMode < 2; quoteMode++) {
+            final boolean backslashEscapes = quoteMode == 0;
+
+            for (int commentMode = 0; commentMode < 2; commentMode++) {
+                final boolean mysqlCommentRules = commentMode == 0;
+                final String maskedSql = maskQuotedRegionsForSafety(sql, tokenizerConfig, backslashEscapes, mysqlCommentRules);
+
+                if (maskedSql != null) {
+                    hasValidMode = true;
+
+                    if (!isSafeMaskedQuery(maskedSql, tokenizerConfig, allowInsert, mysqlCommentRules)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return hasValidMode;
+    }
+
+    /**
+     * Classifies SQL whose quoted regions have already been replaced by whitespace. Keeping all
+     * safety scanners on the same masked text prevents them from choosing inconsistent quote modes.
+     */
+    private static boolean isSafeMaskedQuery(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert,
+            final boolean mysqlCommentRules) {
+        final String leadingKeyword = getLeadingQueryKeyword(sql, tokenizerConfig);
+
+        if (!("SELECT".equalsIgnoreCase(leadingKeyword) || allowInsert && "INSERT".equalsIgnoreCase(leadingKeyword))) {
             return false;
         }
 
-        // See the note in containsMutationQueryKeyword: statement-start-only matching keeps the
-        // REPLACE(...)/TRUNCATE(...) functions from false-positiving.
-        return hasOnlyAllowedTopLevelStatements(sql, DEFAULT_TOKENIZER_CONFIG, true)
-                && !containsAnyQueryKeyword(collectQueryStartKeywords(sql, DEFAULT_TOKENIZER_CONFIG), "UPDATE", "DELETE", "MERGE", "REPLACE", "TRUNCATE",
-                        "DROP", "ALTER", "CREATE")
-                && !containsProcedureInvocation(sql, DEFAULT_TOKENIZER_CONFIG) && !containsInsertUpdateClause(sql) && !containsSelectIntoClause(sql)
-                && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
+        if (containsExecutableBlockComment(sql, tokenizerConfig, mysqlCommentRules) || !hasOnlyAllowedTopLevelStatements(sql, tokenizerConfig, allowInsert)) {
+            return false;
+        }
+
+        // Statement-start-only matching keeps REPLACE(...)/TRUNCATE(...) functions from
+        // false-positiving while still rejecting those verbs at the start of a statement or CTE.
+        if (allowInsert) {
+            return !containsAnyQueryKeyword(collectQueryStartKeywords(sql, tokenizerConfig), "UPDATE", "DELETE", "MERGE", "REPLACE", "TRUNCATE", "DROP",
+                    "ALTER", "CREATE") && !containsProcedureInvocation(sql, tokenizerConfig) && !containsInsertUpdateClause(sql)
+                    && !containsSelectIntoClause(sql, tokenizerConfig) && !containsTokenSequence(sql, "INSERT", "OVERWRITE");
+        }
+
+        return !containsMutationQueryKeyword(sql, tokenizerConfig) && !containsSelectIntoClause(sql, tokenizerConfig);
+    }
+
+    /**
+     * Replaces the contents of quoted strings and identifiers with same-length whitespace under one
+     * fixed quote convention, retaining their delimiters for context-sensitive token checks.
+     * Comments are preserved for the existing comment-aware safety scanners, but are skipped here
+     * so quotes inside comments cannot affect lexical validity.
+     *
+     * @return the masked SQL, or {@code null} if a quoted region or block comment is unterminated
+     */
+    private static String maskQuotedRegionsForSafety(final String sql, final TokenizerConfig tokenizerConfig, final boolean backslashEscapes,
+            final boolean mysqlCommentRules) {
+        final char[] masked = sql.toCharArray();
+        final int len = masked.length;
+        int index = 0;
+
+        while (index < len) {
+            final char ch = sql.charAt(index);
+
+            if (ch == '\'' || ch == '"' || ch == '`') {
+                if (!isQuotedLiteralTerminated(sql, index, ch, backslashEscapes)) {
+                    return null;
+                }
+
+                final int endIndex = skipQuotedLiteral(sql, index, ch, backslashEscapes);
+                maskRange(masked, index + 1, endIndex - 1);
+                index = endIndex;
+                continue;
+            } else if (ch == '[') {
+                if (!isBracketQuotedIdentifierTerminated(sql, index)) {
+                    return null;
+                }
+
+                final int endIndex = skipBracketQuotedIdentifier(sql, index);
+                maskRange(masked, index + 1, endIndex - 1);
+                index = endIndex;
+                continue;
+            } else if (ch == '-' && index + 1 < len && sql.charAt(index + 1) == '-') {
+                if (!mysqlCommentRules || isMySqlDashCommentStart(sql, len, index)) {
+                    index += 2;
+
+                    while (index < len && sql.charAt(index) != ENTER && sql.charAt(index) != ENTER_2) {
+                        index++;
+                    }
+
+                    continue;
+                }
+
+                // The general scanners treat every "--" as a line comment. Break a pair that is
+                // not a comment under MySQL/MariaDB rules so following executable text stays visible.
+                masked[index] = ' ';
+            } else if (ch == '#' && isHashCommentStart(sql, len, index, tokenizerConfig)) {
+                do {
+                    index++;
+                } while (index < len && sql.charAt(index) != ENTER && sql.charAt(index) != ENTER_2);
+
+                continue;
+            } else if (ch == '/' && index + 1 < len && sql.charAt(index + 1) == '*') {
+                index += 2;
+
+                while (index + 1 < len && !(sql.charAt(index) == '*' && sql.charAt(index + 1) == '/')) {
+                    index++;
+                }
+
+                if (index + 1 >= len) {
+                    return null;
+                }
+
+                index += 2;
+                continue;
+            }
+
+            index++;
+        }
+
+        return new String(masked);
+    }
+
+    private static void maskRange(final char[] chars, final int fromIndex, final int toIndex) {
+        for (int index = fromIndex; index < toIndex; index++) {
+            if (chars[index] != ENTER && chars[index] != ENTER_2) {
+                chars[index] = ' ';
+            }
+        }
+    }
+
+    /**
+     * Reports whether SQL contains a MySQL/MariaDB executable block comment outside a quoted region
+     * or another comment. MySQL executes {@code /\*! ... *\/}; MariaDB additionally executes
+     * {@code /\*M! ... *\/}. The safety classifiers reject these comments wholesale rather than
+     * attempting to parse their optional version prefix and dialect-specific body. Ordinary block
+     * comments and optimizer hints ({@code /\*+ ... *\/}) remain inert for this check.
+     */
+    private static boolean containsExecutableBlockComment(final String sql, final TokenizerConfig tokenizerConfig, final boolean mysqlCommentRules) {
+        for (int index = 0, len = sql.length(); index < len; index++) {
+            final char ch = sql.charAt(index);
+
+            if (ch == '\'' || ch == '"' || ch == '`') {
+                index = skipQuotedLiteral(sql, index, ch) - 1;
+            } else if (ch == '[') {
+                index = skipBracketQuotedIdentifier(sql, index) - 1;
+            } else if (ch == '-' && index + 1 < len && sql.charAt(index + 1) == '-' && (!mysqlCommentRules || isMySqlDashCommentStart(sql, len, index))) {
+                index += 2;
+
+                while (index < len && sql.charAt(index) != ENTER && sql.charAt(index) != ENTER_2) {
+                    index++;
+                }
+            } else if (ch == '#' && isHashCommentStart(sql, len, index, tokenizerConfig)) {
+                do {
+                    index++;
+                } while (index < len && sql.charAt(index) != ENTER && sql.charAt(index) != ENTER_2);
+            } else if (ch == '/' && index + 1 < len && sql.charAt(index + 1) == '*') {
+                final boolean mysqlExecutable = index + 2 < len && sql.charAt(index + 2) == '!';
+                final boolean mariaDbExecutable = index + 3 < len && (sql.charAt(index + 2) == 'M' || sql.charAt(index + 2) == 'm')
+                        && sql.charAt(index + 3) == '!';
+
+                if (mysqlExecutable || mariaDbExecutable) {
+                    return true;
+                }
+
+                index += 2;
+
+                while (index + 1 < len && !(sql.charAt(index) == '*' && sql.charAt(index + 1) == '/')) {
+                    index++;
+                }
+
+                index = Math.min(index + 1, len);
+            }
+        }
+
+        return false;
+    }
+
+    /** MySQL/MariaDB recognize {@code --} as a comment only before ASCII whitespace/control or end-of-input. */
+    private static boolean isMySqlDashCommentStart(final String sql, final int len, final int index) {
+        return index + 2 >= len || sql.charAt(index + 2) <= ' ' || sql.charAt(index + 2) == '\u007F';
     }
 
     /**
@@ -2786,23 +2973,13 @@ public final class SqlParser {
             final char ch = sql.charAt(index);
 
             if (ch == '\'' || ch == '"' || ch == '`') {
-                // Fail closed on an unterminated quoted region: everything after the opening quote is
-                // swallowed, which would hide a trailing "; DELETE ..." from the statement split below.
-                // That happens for text this scanner reads as code but the database reads as a comment
-                // (e.g. a MySQL "## don't ..." comment, whose leading "##" matches a configured operator).
-                //
-                // Backslash escaping is a MySQL-ism, though: "ESCAPE '\'" and "'C:\'" are COMPLETE
-                // literals in Oracle, SQL Server, DB2 and standard-conforming PostgreSQL. Try the
-                // backslash reading first (preserving the MySQL interpretation wherever it terminates),
-                // then fall back to the standard doubled-quote-only reading. Only text left unterminated
-                // under BOTH readings cannot execute anywhere, so rejecting that costs nothing.
-                if (isQuotedLiteralTerminated(sql, index, ch, true)) {
-                    index = skipQuotedLiteral(sql, index, ch, true);
-                } else if (isQuotedLiteralTerminated(sql, index, ch, false)) {
-                    index = skipQuotedLiteral(sql, index, ch, false);
-                } else {
+                // Safety callers normally pass pre-masked SQL. Keep this helper fail-closed if it is
+                // ever called directly with an unterminated quoted region.
+                if (!isQuotedLiteralTerminated(sql, index, ch, true)) {
                     return false;
                 }
+
+                index = skipQuotedLiteral(sql, index, ch);
 
                 continue;
             } else if (ch == '[') {
@@ -3056,10 +3233,6 @@ public final class SqlParser {
         return false;
     }
 
-    private static boolean containsSelectIntoClause(final String sql) {
-        return containsSelectIntoClause(sql, DEFAULT_TOKENIZER_CONFIG);
-    }
-
     private static boolean containsSelectIntoClause(final String sql, final TokenizerConfig tokenizerConfig) {
         // Scan every SELECT in the SQL, not only when the first statement is a SELECT. The
         // no-update gate also permits a leading INSERT, and a later statement such as
@@ -3304,8 +3477,39 @@ public final class SqlParser {
         return false;
     }
 
-    private static String getLeadingQueryKeyword(final String sql) {
-        return getLeadingQueryKeyword(sql, DEFAULT_TOKENIZER_CONFIG);
+    /**
+     * Resolves the leading verb under every supported combination of quote and line-comment rules.
+     * If valid interpretations disagree, no unambiguous classification is possible. For text
+     * malformed under all combinations, retain the historical leading-token behavior for non-safety
+     * query predicates such as {@link #isSelectQuery(String)}.
+     */
+    private static String getLeadingQueryKeywordAcrossLexicalModes(final String sql, final TokenizerConfig tokenizerConfig) {
+        String resolvedKeyword = null;
+        boolean hasValidMode = false;
+
+        for (int quoteMode = 0; quoteMode < 2; quoteMode++) {
+            final boolean backslashEscapes = quoteMode == 0;
+
+            for (int commentMode = 0; commentMode < 2; commentMode++) {
+                final boolean mysqlCommentRules = commentMode == 0;
+                final String maskedSql = maskQuotedRegionsForSafety(sql, tokenizerConfig, backslashEscapes, mysqlCommentRules);
+
+                if (maskedSql == null) {
+                    continue;
+                }
+
+                final String keyword = getLeadingQueryKeyword(maskedSql, tokenizerConfig);
+                hasValidMode = true;
+
+                if (resolvedKeyword == null) {
+                    resolvedKeyword = keyword;
+                } else if (!resolvedKeyword.equalsIgnoreCase(keyword)) {
+                    return "";
+                }
+            }
+        }
+
+        return hasValidMode ? resolvedKeyword : getLeadingQueryKeyword(sql, tokenizerConfig);
     }
 
     private static String getLeadingQueryKeyword(final String sql, final TokenizerConfig tokenizerConfig) {

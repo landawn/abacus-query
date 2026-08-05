@@ -112,16 +112,16 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
-    public void testGetPropValue() {
+    public void testPropValueAs() {
         Binary condition = new Binary("age", Operator.GREATER_THAN, 30);
-        Integer value = condition.propValue(Integer.class);
+        Integer value = condition.propValueAs(Integer.class);
         assertEquals(Integer.valueOf(30), value);
     }
 
     @Test
-    public void testGetPropValue_String() {
+    public void testPropValueAs_String() {
         Binary condition = new Binary("name", Operator.EQUAL, "Alice");
-        String value = condition.propValue(String.class);
+        String value = condition.propValueAs(String.class);
         assertEquals("Alice", value);
     }
 
@@ -135,10 +135,10 @@ public class BinaryTest extends TestBase {
     public void testSafeValueAccessors() {
         Binary condition = new Binary("age", Operator.EQUAL, 30);
         assertEquals(30, condition.propValue());
-        assertEquals(Integer.valueOf(30), condition.propValue(Integer.class));
-        assertThrows(ClassCastException.class, () -> condition.propValue(String.class));
-        assertThrows(IllegalArgumentException.class, () -> condition.propValue(null));
-        assertNull(new Binary("age", Operator.EQUAL, null).propValue(Integer.class));
+        assertEquals(Integer.valueOf(30), condition.propValueAs(Integer.class));
+        assertThrows(ClassCastException.class, () -> condition.propValueAs(String.class));
+        assertThrows(IllegalArgumentException.class, () -> condition.propValueAs(null));
+        assertNull(new Binary("age", Operator.EQUAL, null).propValueAs(Integer.class));
     }
 
     @Test
@@ -214,6 +214,19 @@ public class BinaryTest extends TestBase {
 
         assertEquals(cond1, cond2);
         assertEquals(cond1.hashCode(), cond2.hashCode());
+    }
+
+    @Test
+    public void testHashCodeTracksMutableArrayValue() {
+        final byte[] value = { 1, 2 };
+        final Binary condition = new Binary("payload", Operator.EQUAL, value);
+
+        condition.hashCode(); // Populate the old memoized implementation before mutating its exposed value.
+        value[0] = 9;
+
+        final Binary equalAfterMutation = new Binary("payload", Operator.EQUAL, new byte[] { 9, 2 });
+        assertEquals(condition, equalAfterMutation);
+        assertEquals(condition.hashCode(), equalAfterMutation.hashCode());
     }
 
     @Test

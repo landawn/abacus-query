@@ -55,6 +55,19 @@ public class CellTest extends TestBase {
     }
 
     @Test
+    public void testHashCodeTracksMutableValueInWrappedCondition() {
+        final byte[] value = { 1 };
+        final TestCell condition = new TestCell(Operator.WHERE, new Binary("payload", Operator.EQUAL, value));
+
+        condition.hashCode();
+        value[0] = 2;
+
+        final TestCell equalAfterMutation = new TestCell(Operator.WHERE, new Binary("payload", Operator.EQUAL, new byte[] { 2 }));
+        assertEquals(condition, equalAfterMutation);
+        assertEquals(condition.hashCode(), equalAfterMutation.hashCode());
+    }
+
+    @Test
     public void testHashCode_DifferentCondition() {
         final TestCell left = new TestCell(Operator.WHERE, Filters.eq("status", "ACTIVE"));
         final TestCell right = new TestCell(Operator.WHERE, Filters.eq("status", "INACTIVE"));

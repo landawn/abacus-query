@@ -101,9 +101,6 @@ public class Join extends AbstractCondition {
     /** Lazily memoized parameters (performance only). */
     private transient ImmutableList<Object> cachedParameters;
 
-    /** Lazily memoized hashCode (0 == not computed). */
-    private transient int cachedHashCode;
-
     /** Lazily memoized immutable view of {@link #joinEntities} (performance only). */
     private transient ImmutableList<String> cachedJoinEntitiesView;
 
@@ -522,6 +519,8 @@ public class Join extends AbstractCondition {
      * Computes the hash code for this JOIN clause.
      * The hash code is based on the operator, join entities, and condition,
      * ensuring consistent hashing for equivalent joins.
+     * It is recomputed on every call because the join condition may contain retained mutable
+     * parameter values; caching would preserve a stale transitive hash.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -534,22 +533,12 @@ public class Join extends AbstractCondition {
      */
     @Override
     public int hashCode() {
-        int h = cachedHashCode;
+        int h = 17;
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+        h = (h * 31) + ((joinEntities == null) ? 0 : joinEntities.hashCode());
+        h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
 
-        if (h == 0) {
-            h = 17;
-            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-            h = (h * 31) + ((joinEntities == null) ? 0 : joinEntities.hashCode());
-            h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
-
-            if (h == 0) {
-                h = 1;
-            }
-
-            cachedHashCode = h;
-        }
-
-        return h;
+        return h == 0 ? 1 : h;
     }
 
     /**

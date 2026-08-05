@@ -110,9 +110,6 @@ public class Binary extends ComposableCondition {
     /** Lazily memoized parameters (performance only). */
     private transient ImmutableList<Object> cachedParameters;
 
-    /** Lazily memoized hashCode (0 == not computed). */
-    private transient int cachedHashCode;
-
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized Binary instance and should not be used
@@ -206,7 +203,8 @@ public class Binary extends ComposableCondition {
     }
 
     /**
-     * Returns the property value cast by the supplied runtime type.
+     * Returns the property value cast to the supplied runtime type.
+     * This is the type-safe companion to {@link #propValue()} when the expected value type is known.
      *
      * @param <T> the requested value type
      * @param valueType the requested value type; must not be {@code null}
@@ -214,7 +212,7 @@ public class Binary extends ComposableCondition {
      * @throws IllegalArgumentException if {@code valueType} is {@code null}
      * @throws ClassCastException if the stored value is not assignable to {@code valueType}
      */
-    public <T> T propValue(final Class<T> valueType) {
+    public <T> T propValueAs(final Class<T> valueType) {
         N.checkArgNotNull(valueType, "valueType");
 
         return valueType.cast(propValue);
@@ -480,6 +478,9 @@ public class Binary extends ComposableCondition {
     /**
      * Returns the hash code of this Binary condition.
      * The hash code is computed based on the property name, operator, and value.
+     * It is recomputed on every call because scalar values are retained and exposed by
+     * {@link #propValue()}; memoizing a hash derived from a mutable value (for example, an array)
+     * could make two equal conditions report different hash codes after that value is mutated.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -493,22 +494,12 @@ public class Binary extends ComposableCondition {
      */
     @Override
     public int hashCode() {
-        int h = cachedHashCode;
+        int h = 17;
+        h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+        h = (h * 31) + N.deepHashCode(propValue);
 
-        if (h == 0) {
-            h = 17;
-            h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
-            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-            h = (h * 31) + N.deepHashCode(propValue);
-
-            if (h == 0) {
-                h = 1;
-            }
-
-            cachedHashCode = h;
-        }
-
-        return h;
+        return h == 0 ? 1 : h;
     }
 
     /**

@@ -1,11 +1,11 @@
 {
   "library": {
     "name": "abacus-query",
-    "version": "4.9.0",
-    "generated_at": "2026-08-03",
+    "version": "4.9.1",
+    "generated_at": "2026-08-04",
     "java_target": "17",
     "source": {
-      "git_sha": "e99e8f6e8e12356193048e3a9fd4f0da1583998c"
+      "git_sha": "1711cf92c11b1cacb2138a1f2909885e773cdd9e"
     }
   },
   "packages": [
@@ -115,7 +115,9 @@
                 }
               ],
               "javadoc_summary": "Specifies the target table for an INSERT or INSERT ... SELECT operation using an entity class.",
-              "contract": [],
+              "contract": [
+                "Installing the entity mapping and rendering the INSERT clause are atomic; if rendering fails, neither the mapping nor a partial clause is retained."
+              ],
               "examples": [
                 "String sql = PSC.insert(account).into(Account.class).build().query();\n// Table name derived from Account class based on naming policy"
               ],
@@ -155,7 +157,9 @@
                 }
               ],
               "javadoc_summary": "Specifies the target table for an INSERT or INSERT ... SELECT operation with an explicit table name and entity class.",
-              "contract": [],
+              "contract": [
+                "Installing the optional entity mapping and rendering the INSERT clause are atomic; if rendering fails, neither the mapping nor a partial clause is retained."
+              ],
               "examples": [
                 "String sql = PSC.insert(account).into(\"account_archive\", Account.class).build().query();\n// Inserts into specified table with Account class mapping"
               ],
@@ -356,7 +360,9 @@
                 }
               ],
               "javadoc_summary": "Sets the FROM clause with an expression and associates it with an entity class.",
-              "contract": [],
+              "contract": [
+                "Installing the optional entity mapping and rendering the SELECT/FROM text are atomic; if rendering fails, neither the mapping nor a partial clause is retained."
+              ],
               "examples": [
                 "String sql = PSC.select(\"*\").from(\"users u\", User.class).build().query();\n// Associates the User class for property mapping"
               ],
@@ -430,7 +436,9 @@
                 }
               ],
               "javadoc_summary": "Sets the FROM clause using an entity class with an alias.",
-              "contract": [],
+              "contract": [
+                "Installing the entity mapping and rendering the SELECT/FROM text are atomic; if rendering fails, neither the mapping nor a partial clause is retained."
+              ],
               "examples": [
                 "String sql = PSC.select(\"*\").from(User.class, \"u\").build().query();\n// Output: SELECT * FROM user u (table name derived from User class based on naming policy)"
               ],
@@ -18769,7 +18777,8 @@
               "javadoc_summary": "Checks whether the given SQL statement is read-only, i.e. a SELECT that performs no data mutation.",
               "contract": [
                 "A statement is considered read-only only if its leading keyword is SELECT (see #isSelectQuery(String)) and it contains no top-level mutation, DDL, or procedure-invocation keyword (INSERT, UPDATE, DELETE, MERGE, REPLACE, TRUNCATE, CREATE, ALTER or DROP), no procedure invocation (CALL, JDBC {call ...} / {?",
-                "For multi-statement SQL, a later statement is permitted only when it also resolves to a SELECT; a later statement with any other leading verb (including an unrecognized or vendor-specific command) makes the SQL non-read-only."
+                "For multi-statement SQL, a later statement is permitted only when it also resolves to a SELECT; a later statement with any other leading verb (including an unrecognized or vendor-specific command) makes the SQL non-read-only.",
+                "Every lexically valid interpretation must be read-only, so an ambiguous quote or comment cannot hide a mutation clause."
               ],
               "examples": [],
               "see_also": [
@@ -18937,7 +18946,8 @@
               "javadoc_summary": "Checks whether the given SQL statement is a read or a plain/safe insert.",
               "contract": [
                 "A statement qualifies as read-or-insert only if its leading keyword is SELECT or INSERT and it contains none of the following (matching outside of quoted string literals and SQL comments): a top-level UPDATE, DELETE, MERGE, REPLACE, TRUNCATE, CREATE, ALTER or DROP keyword (matched only at statement-start positions, so e.g. SELECT ...",
-                "More generally, every top-level statement must resolve to either SELECT or INSERT; an unrecognized or vendor-specific command is rejected rather than assumed to be safe."
+                "More generally, every top-level statement must resolve to either SELECT or INSERT; an unrecognized or vendor-specific command is rejected rather than assumed to be safe.",
+                "Every lexically valid interpretation must be safe, so an ambiguous quote or comment cannot hide an upsert or overwrite clause."
               ],
               "examples": [],
               "see_also": [
@@ -20387,12 +20397,12 @@
               "see_also": []
             },
             {
-              "name": "propValue",
+              "name": "propValueAs",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public <T> T propValue(final Class<T> valueType)",
+              "signature": "public <T> T propValueAs(final Class<T> valueType)",
               "return_type": "T",
               "type_params": [
                 {
@@ -20420,8 +20430,10 @@
                   "condition": "if the stored value is not assignable to valueType"
                 }
               ],
-              "javadoc_summary": "Returns the property value cast by the supplied runtime type.",
-              "contract": [],
+              "javadoc_summary": "Returns the property value cast to the supplied runtime type.",
+              "contract": [
+                "This is the type-safe companion to #propValue() when the expected value type is known."
+              ],
               "examples": [],
               "see_also": []
             },

@@ -46,9 +46,6 @@ public abstract class Cell extends AbstractCondition {
     /** Lazily memoized parameters (performance only). */
     private transient ImmutableList<Object> cachedParameters;
 
-    /** Lazily memoized hashCode (0 == not computed). */
-    private transient int cachedHashCode;
-
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized Cell instance and should not be used
@@ -190,6 +187,9 @@ public abstract class Cell extends AbstractCondition {
     /**
      * Returns the hash code of this Cell.
      * The hash code is computed based on the operator and wrapped condition.
+     * It is recomputed on every call because a wrapped condition may retain and expose mutable
+     * parameter values; memoizing its hash could make equal cells report different hash codes after
+     * such a value is mutated.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -202,21 +202,11 @@ public abstract class Cell extends AbstractCondition {
      */
     @Override
     public int hashCode() {
-        int h = cachedHashCode;
+        int h = 17;
+        h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
+        h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
 
-        if (h == 0) {
-            h = 17;
-            h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-            h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
-
-            if (h == 0) {
-                h = 1;
-            }
-
-            cachedHashCode = h;
-        }
-
-        return h;
+        return h == 0 ? 1 : h;
     }
 
     /**

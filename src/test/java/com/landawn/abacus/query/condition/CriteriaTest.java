@@ -520,6 +520,19 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
+    public void testHashCodeTracksMutableValueInClause() {
+        final byte[] value = { 1 };
+        final Criteria criteria = Criteria.builder().where(Filters.eq("payload", value)).build();
+
+        criteria.hashCode();
+        value[0] = 2;
+
+        final Criteria equalAfterMutation = Criteria.builder().where(Filters.eq("payload", new byte[] { 2 })).build();
+        assertEquals(criteria, equalAfterMutation);
+        assertEquals(criteria.hashCode(), equalAfterMutation.hashCode());
+    }
+
+    @Test
     public void testEquals() {
         Criteria c1 = Criteria.builder().distinct().where(Filters.equal("status", "active")).build();
         Criteria c2 = Criteria.builder().distinct().where(Filters.equal("status", "active")).build();

@@ -312,6 +312,19 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
+    public void testHashCodeTracksMutableValueInStructuredCondition() {
+        final byte[] value = { 1 };
+        final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", value));
+
+        subQuery.hashCode();
+        value[0] = 2;
+
+        final SubQuery equalAfterMutation = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 2 }));
+        assertEquals(subQuery, equalAfterMutation);
+        assertEquals(subQuery.hashCode(), equalAfterMutation.hashCode());
+    }
+
+    @Test
     public void testEquals() {
         SubQuery sq1 = Filters.subQuery("SELECT * FROM users");
         SubQuery sq2 = Filters.subQuery("SELECT * FROM users");

@@ -230,6 +230,19 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
+    public void testHashCodeTracksMutableValueInChildCondition() {
+        final byte[] value = { 1 };
+        final Junction junction = new Junction(Operator.AND, Filters.eq("payload", value));
+
+        junction.hashCode();
+        value[0] = 2;
+
+        final Junction equalAfterMutation = new Junction(Operator.AND, Filters.eq("payload", new byte[] { 2 }));
+        assertEquals(junction, equalAfterMutation);
+        assertEquals(junction.hashCode(), equalAfterMutation.hashCode());
+    }
+
+    @Test
     public void testHashCodeDifferent() {
         Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
         Junction j2 = new Junction(Operator.OR, Filters.eq("a", 1));

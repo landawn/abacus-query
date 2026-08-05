@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.AbstractCollection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -171,6 +172,19 @@ public class AbstractInTest extends TestBase {
         final TestAbstractIn right = new TestAbstractIn("status", Arrays.asList("ACTIVE", "PENDING"));
 
         assertEquals(left.hashCode(), right.hashCode());
+    }
+
+    @Test
+    public void testHashCodeTracksRetainedMutableValueElement() {
+        final List<Integer> mutableValue = new ArrayList<>(List.of(1));
+        final TestAbstractIn condition = new TestAbstractIn("payload", List.of(mutableValue));
+
+        condition.hashCode();
+        mutableValue.add(2);
+
+        final TestAbstractIn equalAfterMutation = new TestAbstractIn("payload", List.of(List.of(1, 2)));
+        assertEquals(condition, equalAfterMutation);
+        assertEquals(condition.hashCode(), equalAfterMutation.hashCode());
     }
 
     @Test

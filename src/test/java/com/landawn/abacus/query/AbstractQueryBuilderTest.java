@@ -442,6 +442,24 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertTrue(namedInsert._generatedNamedParameterNames.isEmpty());
         assertTrue(namedInsert._renderedNamedParameterTokens.isEmpty());
         assertEquals("INSERT INTO account (first_name, last_name) VALUES (:firstName, :lastName)", namedInsert.into("account").build().query());
+
+        // Entity-aware overloads used to install their mapping before opening the rendering
+        // transaction, so a rejected column left metadata from a failed into(...) attempt behind.
+        final SqlBuilder entityInsert = Dsl.PSC.insert("bad--name");
+        assertThrows(IllegalArgumentException.class, () -> entityInsert.into("account", Account.class));
+        assertNull(entityInsert._entityClass);
+        assertNull(entityInsert._entityInfo);
+        assertNull(entityInsert._propColumnNameMap);
+        assertNull(entityInsert._tableName);
+        assertEquals(0, entityInsert._sb.length());
+
+        final SqlBuilder classEntityInsert = Dsl.PSC.insert("bad--name");
+        assertThrows(IllegalArgumentException.class, () -> classEntityInsert.into(Account.class));
+        assertNull(classEntityInsert._entityClass);
+        assertNull(classEntityInsert._entityInfo);
+        assertNull(classEntityInsert._propColumnNameMap);
+        assertNull(classEntityInsert._tableName);
+        assertEquals(0, classEntityInsert._sb.length());
     }
 
     @Test
@@ -458,6 +476,35 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> unsafeSelect.from("t"));
         assertEquals(0, unsafeSelect._sb.length());
         assertThrows(IllegalStateException.class, unsafeSelect::build);
+
+        // The entity association is part of from(...), so it must be rolled back along with the SQL
+        // when rendering a staged select expression fails.
+        final SqlBuilder entitySelect = Dsl.PSC.select("bad--name");
+        assertThrows(IllegalArgumentException.class, () -> entitySelect.from("account", Account.class));
+        assertNull(entitySelect._entityClass);
+        assertNull(entitySelect._entityInfo);
+        assertNull(entitySelect._propColumnNameMap);
+        assertNull(entitySelect._tableName);
+        assertFalse(entitySelect._hasFromBeenSet);
+        assertEquals(0, entitySelect._sb.length());
+
+        final SqlBuilder classEntitySelect = Dsl.PSC.select("bad--name");
+        assertThrows(IllegalArgumentException.class, () -> classEntitySelect.from(Account.class, "acc"));
+        assertNull(classEntitySelect._entityClass);
+        assertNull(classEntitySelect._entityInfo);
+        assertNull(classEntitySelect._propColumnNameMap);
+        assertNull(classEntitySelect._tableName);
+        assertFalse(classEntitySelect._hasFromBeenSet);
+        assertEquals(0, classEntitySelect._sb.length());
+
+        final SqlBuilder collectionEntitySelect = Dsl.PSC.select("bad--name");
+        assertThrows(IllegalArgumentException.class, () -> collectionEntitySelect.from(Account.class, Collections.singletonList("account")));
+        assertNull(collectionEntitySelect._entityClass);
+        assertNull(collectionEntitySelect._entityInfo);
+        assertNull(collectionEntitySelect._propColumnNameMap);
+        assertNull(collectionEntitySelect._tableName);
+        assertFalse(collectionEntitySelect._hasFromBeenSet);
+        assertEquals(0, collectionEntitySelect._sb.length());
     }
 
     @Test
@@ -1527,6 +1574,8 @@ public class AbstractQueryBuilderTest extends TestBase {
         // complete an operand as the already-accepted unparenthesized union("SELECT 1").
         assertEquals("SELECT id FROM users UNION (SELECT 1)", Dsl.PSC.select("id").from("users").union("(SELECT 1)").build().query());
         assertEquals("SELECT id FROM users UNION ((SELECT 1))", Dsl.PSC.select("id").from("users").union("((SELECT 1))").build().query());
+        assertEquals("SELECT id FROM users UNION (SELECT 1) /* operand */",
+                Dsl.PSC.select("id").from("users").union("(SELECT 1) /* operand */").build().query());
 
         // All five set operations (union/unionAll/intersect/except/minus) share the same operand check
         // (checkSetOperationSubQuery -> isSubQuery), so a second operation pins the shared path.
@@ -1545,6 +1594,12 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").union("(SELECT 1"));
         assertTrue(ex.getMessage().contains("SELECT sub-query"));
+
+        ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").union("(SELECT 1) + 2"));
+        assertTrue(ex.getMessage().contains("SELECT sub-query"));
+        assertFalse(AbstractQueryBuilder.isSubQuery("(SELECT 1) + 2"));
+        assertFalse(AbstractQueryBuilder.isSubQuery("(SELECT 1) 'not trivia'"));
+        assertFalse(AbstractQueryBuilder.isSubQuery("(SELECT 1) /* unterminated"));
     }
 
     @Test
@@ -2378,7 +2433,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testRawExpressionRendersIdenticallyThroughBothPaths() {
         for (final String expr : new String[] { "_firstName = otherValue", "@firstName + columnName", "N'camelCase' = firstName",
-                "_utf8mb4'camelCase' = firstName", "firstName = lastName", "@@version = firstName", "price  *  2" }) {
+                "_utf8mb4'camelCase' = firstName", "firstName = lastName", "@@version = firstName", "price  *  2", "aB-cD" }) {
             final String viaCondition = Filters.expr(expr).toSql(NamingPolicy.SNAKE_CASE);
             final String builtSql = Dsl.PSC.select("id").from("t").where(Filters.expr(expr)).build().query();
             final String viaBuilder = builtSql.substring(builtSql.indexOf("WHERE ") + 6);
@@ -2390,6 +2445,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals("N'camelCase' = first_name", Filters.expr("N'camelCase' = firstName").toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("@firstName + column_name", Filters.expr("@firstName + columnName").toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("_first_name = other_value", Filters.expr("_firstName = otherValue").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("a_b-c_d", Filters.expr("aB-cD").toSql(NamingPolicy.SNAKE_CASE));
     }
 
     @Test

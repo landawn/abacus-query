@@ -108,6 +108,19 @@ public class JoinTest extends TestBase {
     }
 
     @Test
+    public void testHashCodeTracksMutableValueInJoinCondition() {
+        final byte[] value = { 1 };
+        final Join join = new Join("orders", Filters.eq("payload", value));
+
+        join.hashCode();
+        value[0] = 2;
+
+        final Join equalAfterMutation = new Join("orders", Filters.eq("payload", new byte[] { 2 }));
+        assertEquals(join, equalAfterMutation);
+        assertEquals(join.hashCode(), equalAfterMutation.hashCode());
+    }
+
+    @Test
     public void testEquals_SameObject() {
         Join join = new Join("orders");
         assertEquals(join, join);

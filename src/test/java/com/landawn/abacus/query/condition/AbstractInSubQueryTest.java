@@ -118,6 +118,21 @@ public class AbstractInSubQueryTest extends TestBase {
     }
 
     @Test
+    public void testHashCodeTracksMutableValueInSubQuery() {
+        final byte[] value = { 1 };
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", value)));
+
+        condition.hashCode();
+        value[0] = 2;
+
+        final TestAbstractInSubQuery equalAfterMutation = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 2 })));
+        assertEquals(condition, equalAfterMutation);
+        assertEquals(condition.hashCode(), equalAfterMutation.hashCode());
+    }
+
+    @Test
     public void testHashCode_DifferentSubQuery() {
         final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id",
                 Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));

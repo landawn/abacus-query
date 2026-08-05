@@ -46,16 +46,16 @@ public class EqualTest extends TestBase {
     }
 
     @Test
-    public void testGetPropValue() {
+    public void testPropValueAs() {
         Equal condition = new Equal("age", 30);
-        Integer value = condition.propValue(Integer.class);
+        Integer value = condition.propValueAs(Integer.class);
         assertEquals(Integer.valueOf(30), value);
     }
 
     @Test
-    public void testGetPropValue_String() {
+    public void testPropValueAs_String() {
         Equal condition = new Equal("name", "Alice");
-        String value = condition.propValue(String.class);
+        String value = condition.propValueAs(String.class);
         assertEquals("Alice", value);
     }
 

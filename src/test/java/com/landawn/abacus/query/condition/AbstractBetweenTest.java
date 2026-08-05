@@ -143,6 +143,22 @@ public class AbstractBetweenTest extends TestBase {
     }
 
     @Test
+    @Tag("2025")
+    public void testHashCodeTracksMutableArrayBounds() {
+        final byte[] min = { 1 };
+        final byte[] max = { 2 };
+        final TestAbstractBetween condition = new TestAbstractBetween("payload", min, max);
+
+        condition.hashCode(); // Populate the old memoized implementation before mutating its exposed values.
+        min[0] = 3;
+        max[0] = 4;
+
+        final TestAbstractBetween equalAfterMutation = new TestAbstractBetween("payload", new byte[] { 3 }, new byte[] { 4 });
+        assertEquals(condition, equalAfterMutation);
+        assertEquals(condition.hashCode(), equalAfterMutation.hashCode());
+    }
+
+    @Test
     public void testHashCode_DifferentValues() {
         final TestAbstractBetween left = new TestAbstractBetween("age", 18, 65);
         final TestAbstractBetween right = new TestAbstractBetween("age", 21, 65);

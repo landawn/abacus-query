@@ -1,7 +1,7 @@
-# abacus-query API Index (v4.9.0)
-- Build: e99e8f6e8e12356193048e3a9fd4f0da1583998c
+# abacus-query API Index (v4.9.1)
+- Build: 1711cf92c11b1cacb2138a1f2909885e773cdd9e
 - Java: 17
-- Generated: 2026-08-03
+- Generated: 2026-08-04
 
 ## Packages
 - com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
@@ -49,6 +49,8 @@ Base class for fluent SQL builders.
     ```
 - **Signature:** `public This into(final Class<?> entityClass)`
 - **Summary:** Specifies the target table for an INSERT or INSERT ... SELECT operation using an entity class.
+- **Contract:**
+  - Installing the entity mapping and rendering the INSERT clause are atomic; if rendering fails, neither the mapping nor a partial clause is retained.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class representing the target table (must not be null)
 - **Returns:** this SqlBuilder instance for method chaining
@@ -62,6 +64,8 @@ Base class for fluent SQL builders.
     ```
 - **Signature:** `public This into(final String tableName, final Class<?> entityClass)`
 - **Summary:** Specifies the target table for an INSERT or INSERT ... SELECT operation with an explicit table name and entity class.
+- **Contract:**
+  - Installing the optional entity mapping and rendering the INSERT clause are atomic; if rendering fails, neither the mapping nor a partial clause is retained.
 - **Parameters:**
   - `tableName` (`String`) — the name of the target table (must not be null, empty, or blank)
   - `entityClass` (`Class<?>`) — the entity class for property mapping (may be null)
@@ -149,6 +153,8 @@ Base class for fluent SQL builders.
     ```
 - **Signature:** `public This from(final String expr, final Class<?> entityClass)`
 - **Summary:** Sets the FROM clause with an expression and associates it with an entity class.
+- **Contract:**
+  - Installing the optional entity mapping and rendering the SELECT/FROM text are atomic; if rendering fails, neither the mapping nor a partial clause is retained.
 - **Parameters:**
   - `expr` (`String`) — the FROM clause expression (must not be null, empty, or blank)
   - `entityClass` (`Class<?>`) — the entity class for property mapping (may be null, in which case no entity-class association is performed)
@@ -176,6 +182,8 @@ Base class for fluent SQL builders.
     ```
 - **Signature:** `public This from(final Class<?> entityClass, final String alias)`
 - **Summary:** Sets the FROM clause using an entity class with an alias.
+- **Contract:**
+  - Installing the entity mapping and rendering the SELECT/FROM text are atomic; if rendering fails, neither the mapping nor a partial clause is retained.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class representing the table (must not be null)
   - `alias` (`String`) — the table alias
@@ -8164,6 +8172,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 - **Contract:**
   - A statement is considered read-only only if its leading keyword is SELECT (see #isSelectQuery(String)) and it contains no top-level mutation, DDL, or procedure-invocation keyword (INSERT, UPDATE, DELETE, MERGE, REPLACE, TRUNCATE, CREATE, ALTER or DROP), no procedure invocation (CALL, JDBC {call ...} / {?
   - For multi-statement SQL, a later statement is permitted only when it also resolves to a SELECT; a later statement with any other leading verb (including an unrecognized or vendor-specific command) makes the SQL non-read-only.
+  - Every lexically valid interpretation must be read-only, so an ambiguous quote or comment cannot hide a mutation clause.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
 - **Returns:** true if the SQL is a read-only SELECT query, false otherwise
@@ -8263,6 +8272,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 - **Contract:**
   - A statement qualifies as read-or-insert only if its leading keyword is SELECT or INSERT and it contains none of the following (matching outside of quoted string literals and SQL comments): a top-level UPDATE, DELETE, MERGE, REPLACE, TRUNCATE, CREATE, ALTER or DROP keyword (matched only at statement-start positions, so e.g. SELECT ...
   - More generally, every top-level statement must resolve to either SELECT or INSERT; an unrecognized or vendor-specific command is rejected rather than assumed to be safe.
+  - Every lexically valid interpretation must be safe, so an ambiguous quote or comment cannot hide an upsert or overwrite clause.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
 - **Returns:** true for an accepted read or plain/safe insert; false otherwise, including for a null or empty statement
@@ -9054,8 +9064,11 @@ Base class for binary conditions that compare a property with a value.
 - **Parameters:**
   - (none)
 - **Returns:** the property value, which may be null
-- **Signature:** `public <T> T propValue(final Class<T> valueType)`
-- **Summary:** Returns the property value cast by the supplied runtime type.
+##### propValueAs(...) -> T
+- **Signature:** `public <T> T propValueAs(final Class<T> valueType)`
+- **Summary:** Returns the property value cast to the supplied runtime type.
+- **Contract:**
+  - This is the type-safe companion to #propValue() when the expected value type is known.
 - **Parameters:**
   - `valueType` (`Class<T>`) — the requested value type; must not be null
 - **Returns:** the property value cast to valueType, or null when the stored value is null
