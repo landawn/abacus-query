@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.QueryUtil;
+import com.landawn.abacus.query.SqlBuilder;
 import com.landawn.abacus.util.ClassUtil;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -33,12 +34,15 @@ import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
 
 /**
- * Represents raw query-expression text or a structured SELECT used within SQL conditions.
+ * Represents a complete or structured SELECT used within SQL conditions.
  *
- * <p>This class supports two types of subqueries:</p>
+ * <p>This class supports three types of subqueries:</p>
  * <ul>
  *   <li><b>Raw subqueries</b> - complete text accepted without SQL syntax validation</li>
  *   <li><b>Structured subqueries</b> - generated from entity names/classes, property names, and conditions</li>
+ *   <li><b>Builder-backed snapshots</b> - complete, validated SELECT statements captured through
+ *       {@link Filters#subQuery(SqlBuilder)}, retaining parameters and placeholder metadata for safe
+ *       composition into another builder</li>
  * </ul>
  *
  * <p>Subqueries can be used in various contexts:</p>
@@ -66,6 +70,12 @@ import com.landawn.abacus.util.Strings;
  * //  table-mapping annotations it falls back to the class's simple name; column-name mapping
  * //  for the selected properties is also applied when available)
  *
+ * // Builder-backed snapshot with retained parameters
+ * SubQuery subQuery4 = Filters.subQuery(
+ *    PSC.select("userId").from("orders").where(Filters.greaterThan("total", 100)));
+ * // SQL: SELECT user_id FROM orders WHERE total > ?
+ * // parameters: [100]
+ *
  * // Use in IN condition
  * InSubQuery inCondition = Filters.in("userId", subQuery1);
  * // SQL: userId IN (SELECT id FROM users WHERE status = 'active')
@@ -82,7 +92,8 @@ import com.landawn.abacus.util.Strings;
 public class SubQuery extends AbstractCondition {
 
     // For Kryo
-    /** The entity/table name of a structured subquery, or the name associated with a raw SQL subquery (empty string when none was supplied). */
+    /** The entity/table name of a structured subquery, or the optional name associated with raw SQL;
+     *  empty for unnamed raw SQL and builder-backed snapshots. */
     final String entityName;
 
     // For Kryo
@@ -92,11 +103,11 @@ public class SubQuery extends AbstractCondition {
     private List<String> propNames;
 
     // For Kryo
-    /** The raw query-expression text of a raw SQL subquery; {@code null} for structured subqueries. */
+    /** The complete query text of a raw SQL or builder-backed subquery; {@code null} for structured subqueries. */
     final String sql;
 
     /** The trailing condition or clause for a structured subquery; a predicate is normalized to a
-     *  {@link Where}. {@code null} for raw SQL subqueries or structured subqueries without clauses. */
+     *  {@link Where}. {@code null} for raw SQL, builder-backed snapshots, or structured subqueries without clauses. */
     private Condition condition;
 
     /** Lazily memoized parameters (performance only). */
@@ -333,7 +344,7 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Returns the raw query-expression text if this is a raw SQL subquery.
+     * Returns the stored complete query text if this is a raw SQL subquery or builder-backed snapshot.
      * For structured subqueries created with entity name/class and conditions, this returns {@code null}.
      *
      * <p><b>Usage Examples:</b></p>
@@ -347,9 +358,14 @@ public class SubQuery extends AbstractCondition {
      * SubQuery structured = new SubQuery("users", Arrays.asList("id"), Filters.equal("status", "active"));
      * String structuredSql = structured.rawSql();
      * // Returns: null
+     *
+     * // Builder-backed snapshot returns the SQL rendered by its source builder
+     * SubQuery built = Filters.subQuery(Dsl.PSC.select("id").from("users"));
+     * String builtSql = built.rawSql();
+     * // Returns: "SELECT id FROM users"
      * }</pre>
      *
-     * @return the raw query-expression text, or {@code null} if this is a structured subquery
+     * @return the stored complete query text, or {@code null} if this is a structured subquery
      */
     public String rawSql() {
         return sql;
@@ -359,7 +375,7 @@ public class SubQuery extends AbstractCondition {
      * Returns the entity/table name for this subquery.
      * This is available for both structured subqueries and raw SQL subqueries that were
      * created with an entity name parameter. For raw SQL subqueries created without
-     * an entity name, this is the empty string.
+     * an entity name and for builder-backed snapshots, this is the empty string.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -379,8 +395,8 @@ public class SubQuery extends AbstractCondition {
      * // Returns: "" (empty string)
      * }</pre>
      *
-     * @return the entity/table name; an empty string for an initialized raw subquery without an associated
-     *         entity, or {@code null} only for an uninitialized serialization-framework instance
+     * @return the entity/table name; an empty string for an initialized unnamed raw or builder-backed
+     *         subquery, or {@code null} only for an uninitialized serialization-framework instance
      */
     public String entityName() {
         return entityName;
@@ -403,7 +419,7 @@ public class SubQuery extends AbstractCondition {
      * // Returns: null
      * }</pre>
      *
-     * @return the entity class, or {@code null} if created with an entity name string or raw SQL
+     * @return the entity class, or {@code null} if created with an entity name string, raw SQL, or a builder snapshot
      */
     public Class<?> entityClass() {
         return entityClass;
@@ -412,7 +428,8 @@ public class SubQuery extends AbstractCondition {
     /**
      * Returns the collection of property names to select in this subquery.
      * These are the columns that will appear in the SELECT clause of the generated SQL.
-     * For raw SQL subqueries, this returns {@code null}.
+     * For raw SQL subqueries and builder-backed snapshots, this returns {@code null} because their
+     * complete SELECT lists are already represented by the stored SQL text.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -427,7 +444,7 @@ public class SubQuery extends AbstractCondition {
      * // Returns: null
      * }</pre>
      *
-     * @return immutable list of property names to select, or {@code null} for raw SQL subqueries
+     * @return immutable list of property names to select, or {@code null} for raw SQL and builder-backed subqueries
      */
     public ImmutableList<String> selectPropNames() {
         if (propNames == null) {
@@ -504,8 +521,8 @@ public class SubQuery extends AbstractCondition {
     /**
      * Returns the trailing condition or clause for this structured subquery. A predicate supplied to a
      * constructor is normalized to a {@link Where}; an explicitly supplied clause or non-empty
-     * {@link Criteria} is retained. Raw SQL subqueries and structured subqueries without clauses return
-     * {@code null}.
+     * {@link Criteria} is retained. Raw SQL subqueries, builder-backed snapshots, and structured
+     * subqueries without clauses return {@code null}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -521,19 +538,18 @@ public class SubQuery extends AbstractCondition {
      * // Returns: null
      * }</pre>
      *
-     * @return the normalized condition/clause, or {@code null} if none or for a raw SQL subquery
+     * @return the normalized condition/clause, or {@code null} if none or for a raw SQL or builder-backed subquery
      */
     public Condition condition() {
         return condition;
     }
 
     /**
-     * Returns the list of parameter values from the condition.
-     * These are the parameter values that will be bound to the prepared statement placeholders
-     * when the query is executed.
+     * Returns this subquery's parameter values. Structured subqueries collect them from their condition;
+     * builder-backed snapshots retain the values captured from their source builder.
      *
-     * <p><b>&#9888;&#65039;</b> For raw SQL subqueries this returns an empty list even when the raw text contains
-     * placeholders; raw bindings are managed by the caller.</p>
+     * <p><b>&#9888;&#65039;</b> For raw SQL subqueries constructed from text this returns an empty list even when
+     * that text contains placeholders; raw bindings are managed by the caller.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -552,9 +568,15 @@ public class SubQuery extends AbstractCondition {
      * SubQuery noCond = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
      * List<Object> noCondParams = noCond.parameters();
      * // returns [] (empty immutable list)
+     *
+     * // Builder-backed snapshot: parameters from the source builder are retained
+     * SubQuery built = Filters.subQuery(
+     *     Dsl.PSC.select("id").from("users").where(Filters.equal("status", "active")));
+     * List<Object> builtParams = built.parameters();
+     * // returns ["active"]
      * }</pre>
      *
-     * @return an immutable list of parameter values, or an empty immutable list if no condition or raw SQL subquery
+     * @return an immutable list of parameter values, or an empty immutable list when none were captured
      */
     @Override
     public ImmutableList<Object> parameters() {
@@ -571,7 +593,8 @@ public class SubQuery extends AbstractCondition {
     /**
      * Converts this subquery to its SQL representation.
      *
-     * <p>For raw SQL subqueries, returns the SQL as-is (the {@code namingPolicy} is ignored).
+     * <p>For raw SQL subqueries and builder-backed snapshots, returns the stored SQL as-is (the
+     * {@code namingPolicy} is ignored because builder-backed SQL was already rendered by its source builder).
      * For structured subqueries, generates a {@code SELECT [props] FROM [entity] [condition-or-clauses]}
      * statement, applying the naming policy to property names, the entity/table name, and to
      * the trailing condition or clauses.</p>
@@ -671,9 +694,9 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Generates the hash code for this subquery.
-     * The hash code incorporates all identity fields unconditionally — the raw SQL string,
-     * the entity name, the entity class, the property names, and the condition — ensuring
-     * consistent hashing for equivalent subqueries regardless of how they were constructed.
+     * The base hash incorporates the stored SQL string, entity name, entity class, property names,
+     * and condition. Specialized builder-backed snapshots additionally incorporate their retained
+     * parameters, SQL policy, and placeholder metadata.
      * It is recomputed on every call because a structured subquery condition may contain retained
      * mutable parameter values; caching would preserve a stale transitive hash.
      *
@@ -703,8 +726,9 @@ public class SubQuery extends AbstractCondition {
     /**
      * Checks if this subquery is equal to another object.
      * Two subqueries are equal only when they have the exact same runtime class and all of their identity
-     * fields are equal: the entity name, the
-     * entity class, the selected properties, the raw SQL string, and the condition. The entity name
+     * fields are equal: the entity name, the entity class, the selected properties, the stored SQL string,
+     * and the condition. Builder-backed snapshots additionally compare retained parameters, SQL policy,
+     * and placeholder metadata. The entity name
      * participates even for raw-SQL subqueries, so two raw subqueries are equal only when both their
      * SQL and their entity name match.
      *

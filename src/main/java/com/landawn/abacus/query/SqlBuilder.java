@@ -109,7 +109,7 @@ import com.landawn.abacus.util.Strings;
  *
  * // UPDATE
  * String sql = PSC.update("users")
- *     .set("status", "lastModified")
+ *     .set(List.of("status", "lastModified"))
  *     .where(Filters.equal("id", userId))
  *     .build().query();
  *
@@ -251,7 +251,9 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         } else if (cond instanceof final SubQuery subQuery) {
             final Condition subCond = subQuery.condition();
 
-            if (Strings.isNotEmpty(subQuery.rawSql())) {
+            if (subQuery instanceof final SubQuerySnapshot subQuerySnapshot) {
+                appendSubQuerySnapshot(subQuerySnapshot);
+            } else if (Strings.isNotEmpty(subQuery.rawSql())) {
                 _sb.append(subQuery.rawSql());
             } else {
                 final SqlBuilder subBuilder = newSubQueryBuilder(subQuery);

@@ -99,7 +99,7 @@ public class SqlBuilderTest extends TestBase {
     @Test
     public void testFromMultipleTables() {
         String sql = Dsl.PSC.select("*").from("users", "orders").build().query();
-        assertTrue(sql.contains("FROM orders"));
+        assertEquals("SELECT * FROM users, orders", sql);
     }
 
     @Test
@@ -307,7 +307,7 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testUpdateMultipleColumns() {
-        String sql = Dsl.PSC.update("users").set("first_name", "John").set("last_name", "Doe").where(Filters.eq("id", 1)).build().query();
+        String sql = Dsl.PSC.update("users").set("first_name", "John", "last_name", "Doe").where(Filters.eq("id", 1)).build().query();
         assertTrue(sql.contains("SET"));
     }
 
@@ -1925,7 +1925,7 @@ public class SqlBuilderTest extends TestBase {
         assertEquals("UPDATE users SET name = 'John' WHERE id = ?", sql);
 
         // With columns
-        sql = Dsl.PSC.update("users").set("firstName", "lastName", "email").where(Filters.eq("id", 1)).build().query();
+        sql = Dsl.PSC.update("users").set(Arrays.asList("firstName", "lastName", "email")).where(Filters.eq("id", 1)).build().query();
 
         assertEquals("UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?", sql);
 
@@ -3438,7 +3438,7 @@ public class SqlBuilderTest extends TestBase {
             SqlBuilder sb = Dsl.SCSB.update("account");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status", "'ACTIVE'").where(Filters.eq("id", 1)).build().query();
+            String sql = sb.set("status", "ACTIVE").where(Filters.eq("id", 1)).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE"));
             Assertions.assertTrue(sql.contains("account"));
@@ -3449,7 +3449,7 @@ public class SqlBuilderTest extends TestBase {
             SqlBuilder sb = Dsl.SCSB.update("account", Account.class);
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status", "'ACTIVE'").where(Filters.eq("id", 1)).build().query();
+            String sql = sb.set("status", "ACTIVE").where(Filters.eq("id", 1)).build().query();
             Assertions.assertNotNull(sql);
         }
 
@@ -4016,7 +4016,7 @@ public class SqlBuilderTest extends TestBase {
             SqlBuilder sb = Dsl.ACSB.update("users");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status", "'ACTIVE'").where(Filters.eq("id", 1)).build().query();
+            String sql = sb.set("status", "ACTIVE").where(Filters.eq("id", 1)).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE"));
         }
@@ -4594,7 +4594,7 @@ public class SqlBuilderTest extends TestBase {
             SqlBuilder sb = Dsl.LCSB.update("customers");
             Assertions.assertNotNull(sb);
 
-            String sql = sb.set("status", "'PREMIUM'").where(Filters.gt("totalPurchases", 1000)).build().query();
+            String sql = sb.set("status", "PREMIUM").where(Filters.gt("totalPurchases", 1000)).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE"));
         }
@@ -4935,8 +4935,8 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testUpdateWithMultipleSet() {
             SqlBuilder sb = Dsl.LCSB.update("customers")
-                    .set("status", "'INACTIVE'")
-                    .set("lastModified", "CURRENT_TIMESTAMP")
+                    .set("status", "INACTIVE")
+                    .set("lastModified", SqlExpression.of("CURRENT_TIMESTAMP"))
                     .where(Filters.lt("lastLoginDate", "2020-01-01"));
 
             Assertions.assertNotNull(sb);
@@ -7202,7 +7202,7 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testUpdate() {
-            String sql = Dsl.NSB.update("users").set("last_login", "status").where(Filters.eq("id", 1)).build().query();
+            String sql = Dsl.NSB.update("users").set(Arrays.asList("last_login", "status")).where(Filters.eq("id", 1)).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -7223,7 +7223,7 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testUpdateEntityClass() {
-            String sql = Dsl.NSB.update(User.class).set("firstName", "email").where(Filters.eq("id", 1)).build().query();
+            String sql = Dsl.NSB.update(User.class).set(Arrays.asList("firstName", "email")).where(Filters.eq("id", 1)).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE test_user"));
             Assertions.assertTrue(sql.contains("SET"));
@@ -7234,7 +7234,7 @@ public class SqlBuilderTest extends TestBase {
         @Test
         public void testUpdateEntityClassWithExclusions() {
             Set<String> exclude = N.asSet("password", "createdDate");
-            String sql = Dsl.NSB.update(User.class, exclude).set("firstName", "email").where(Filters.eq("id", 1)).build().query();
+            String sql = Dsl.NSB.update(User.class, exclude).set(Arrays.asList("firstName", "email")).where(Filters.eq("id", 1)).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE test_user"));
             // Should be able to update non-excluded fields
@@ -7617,7 +7617,7 @@ public class SqlBuilderTest extends TestBase {
             Assertions.assertTrue(sql.contains("status"));
 
             // Test update with multiple sets
-            sql = Dsl.NSB.update("users").set("firstName", "John").set("lastName", "Doe").set(Map.of("age", 30)).where(Filters.eq("id", 1)).build().query();
+            sql = Dsl.NSB.update("users").set("firstName", "John", "lastName", "Doe").set(Map.of("age", 30)).where(Filters.eq("id", 1)).build().query();
 
             Assertions.assertTrue(sql.contains("firstName"));
             Assertions.assertTrue(sql.contains("lastName"));
@@ -8140,7 +8140,7 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testUpdateEntityClass() {
-            String sql = Dsl.NSC.update(User.class).set("firstName", "email").where(Filters.eq("id", 1)).build().query();
+            String sql = Dsl.NSC.update(User.class).set(Arrays.asList("firstName", "email")).where(Filters.eq("id", 1)).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("first_name"));
@@ -8842,7 +8842,7 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testUpdateEntityClass() {
-            String sql = Dsl.NAC.update(Account.class).set("firstName", "lastName").where(Filters.eq("id", 1)).build().query();
+            String sql = Dsl.NAC.update(Account.class).set(Arrays.asList("firstName", "lastName")).where(Filters.eq("id", 1)).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE ACCOUNT"));
             Assertions.assertTrue(sql.contains("FIRST_NAME"));
@@ -9629,7 +9629,7 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testUpdateEntityClass() {
-            String sql = Dsl.NLC.update(Account.class).set("firstName", "lastName").where(Filters.eq("id", 1)).build().query();
+            String sql = Dsl.NLC.update(Account.class).set(Arrays.asList("firstName", "lastName")).where(Filters.eq("id", 1)).build().query();
             Assertions.assertNotNull(sql);
             Assertions.assertTrue(sql.contains("UPDATE account"));
             Assertions.assertTrue(sql.contains("firstName"));
@@ -10510,7 +10510,7 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testUpdateTable() {
-            String sql = Dsl.MSB.update("users").set("status", "lastModified").where(Filters.eq("id", 123)).build().query();
+            String sql = Dsl.MSB.update("users").set(Arrays.asList("status", "lastModified")).where(Filters.eq("id", 123)).build().query();
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("SET"));
             Assertions.assertTrue(sql.contains("status = #{status}"));
@@ -10867,7 +10867,7 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testUpdateTable() {
-            String sql = Dsl.MSC.update("users").set("firstName", "lastName").where(Filters.eq("userId", 123)).build().query();
+            String sql = Dsl.MSC.update("users").set(Arrays.asList("firstName", "lastName")).where(Filters.eq("userId", 123)).build().query();
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("SET"));
             Assertions.assertTrue(sql.contains("first_name = #{firstName}"));
@@ -10878,7 +10878,7 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testUpdateTableWithEntityClass() {
-            String sql = Dsl.MSC.update("users", User.class).set("firstName", "lastName").where(Filters.eq("id", 1)).build().query();
+            String sql = Dsl.MSC.update("users", User.class).set(Arrays.asList("firstName", "lastName")).where(Filters.eq("id", 1)).build().query();
             Assertions.assertTrue(sql.contains("UPDATE users"));
             Assertions.assertTrue(sql.contains("first_name = #{firstName}"));
             Assertions.assertTrue(sql.contains("last_name = #{lastName}"));
@@ -11825,7 +11825,7 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testUpdateTableWithEntityClass() {
-            String sql = Dsl.MLC.update("account", Account.class).set("firstName", "John").set("lastName", "Doe").where(Filters.eq("id", 1)).build().query();
+            String sql = Dsl.MLC.update("account", Account.class).set("firstName", "John", "lastName", "Doe").where(Filters.eq("id", 1)).build().query();
             Assertions.assertTrue(sql.contains("UPDATE account"));
             Assertions.assertTrue(sql.contains("firstName = #{firstName}"));
             Assertions.assertTrue(sql.contains("lastName = #{lastName}"));
@@ -12170,7 +12170,7 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testSqlBuilder_PSC_updateWithConditions() {
-        String sql = Dsl.PSC.update("account").set("name", "status").where(Filters.eq("id", 1)).build().query();
+        String sql = Dsl.PSC.update("account").set(Arrays.asList("name", "status")).where(Filters.eq("id", 1)).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("UPDATE account"));
         assertTrue(sql.contains("SET"));
@@ -13779,12 +13779,12 @@ public class SqlBuilderTest extends TestBase {
     public void testSetEntityRejectsAnEmptyUpdatableProjectionWithoutChangingMapping() {
         final SqlBuilder builder = Dsl.PSC.update("users");
 
-        assertThrows(IllegalArgumentException.class, () -> builder.setEntity(AllNullBatchEntity.class, Collections.singleton("value")));
+        assertThrows(IllegalArgumentException.class, () -> builder.set(AllNullBatchEntity.class, Collections.singleton("value")));
         assertNull(builder._entityClass);
         assertEquals("UPDATE users SET name = ?", builder.set("name").build().query());
 
         final SqlBuilder objectBuilder = Dsl.PSC.update("users");
-        assertThrows(IllegalArgumentException.class, () -> objectBuilder.setEntity(new AllNullBatchEntity(), Collections.singleton("value")));
+        assertThrows(IllegalArgumentException.class, () -> objectBuilder.set(new AllNullBatchEntity(), Collections.singleton("value")));
         assertNull(objectBuilder._entityClass);
         assertEquals("UPDATE users SET name = ?", objectBuilder.set("name").build().query());
     }

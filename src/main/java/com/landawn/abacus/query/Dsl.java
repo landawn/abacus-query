@@ -751,15 +751,15 @@ public final class Dsl {
     /**
      * Creates an UPDATE statement for a table.
      *
-     * <p>This method starts building an UPDATE statement. Use the {@code set(String...)} method
-     * to specify which columns to update (each column gets a {@code ?} placeholder), or use
+     * <p>This method starts building an UPDATE statement. Use {@code set(String)} for one column or
+     * {@code set(Collection)} for multiple columns (each column gets a placeholder), or use
      * {@code set(Map)} to specify column names together with their values. Property names are
      * rendered according to this DSL's naming policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.update("account")
-     *                 .set("firstName", "lastName")
+     *                 .set(List.of("firstName", "lastName"))
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * // Output: UPDATE account SET first_name = ?, last_name = ? WHERE id = ?
@@ -785,14 +785,14 @@ public final class Dsl {
      *
      * <p>This method creates an UPDATE statement where the entity class provides property-to-column
      * name mapping information. This ensures property names are rendered according to this DSL's
-     * naming policy in the update operation. Use {@code set(String...)} to specify the column names to
-     * update (each gets a {@code ?} placeholder), or {@code set(Map)} to supply names and values
+     * naming policy in the update operation. Use {@code set(String)} for one column or
+     * {@code set(Collection)} for multiple columns (each gets a placeholder), or {@code set(Map)} to supply names and values
      * together.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.update("account", Account.class)
-     *                 .set("firstName", "lastModified")
+     *                 .set(List.of("firstName", "lastModified"))
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * // Output: UPDATE account SET first_name = ?, last_modified = ? WHERE id = ?
@@ -852,8 +852,8 @@ public final class Dsl {
      * those automatically excluded by annotations ({@code @ReadOnly}, {@code @ReadOnlyId},
      * {@code @NonUpdatable}).
      * The remaining properties are already staged as the generated {@code SET} template; calling
-     * {@code setEntity(entity)} afterward would start a new SET list and would not apply this method's
-     * exclusions. To capture values from an entity, use {@code update(tableName).setEntity(entity,
+     * {@code set(entity)} afterward would start a new SET list and would not apply this method's
+     * exclusions. To capture values from an entity, use {@code update(tableName).set(entity,
      * excludedPropNames)} instead.</p>
      *
      * <p><b>Usage Examples:</b></p>

@@ -21,6 +21,7 @@ import static com.landawn.abacus.util.SK._SPACE;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -118,7 +119,7 @@ import com.landawn.abacus.util.stream.Stream;
  *
  * // UPDATE with conditions
  * String sql3 = PSC.update("account")
- *                  .set("name", "status")
+ *                  .set(Arrays.asList("name", "status"))
  *                  .where(Filters.equal("id", 1))
  *                  .build().query();
  * }</pre>
@@ -1228,6 +1229,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
+    /** Validates a query captured for a builder-backed derived table or condition subquery. */
+    private void checkSubQuerySnapshot(final String query) {
+        checkSqlFragmentNotBlank(query, "query");
+
+        if (!isSubQuery(_tokenizer, query) || !_tokenizer.isReadOnlyQuery(query)) {
+            throw new IllegalArgumentException("A builder-backed subquery must be a complete, read-only SELECT query, but was: \"" + query + "\"");
+        }
+    }
+
     /**
      * Maps a set-operation SQL keyword to the builder method that accepts a column list, so the remediation
      * hint in {@link #checkSetOperationSubQuery(String, String)} names a method that actually exists
@@ -1514,6 +1524,47 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Adds PostgreSQL-style {@code DISTINCT ON (expressions)} to the SELECT statement.
+     * A {@code null}, empty, or blank expression falls back to plain {@link #distinct()}.
+     * The expression is trusted SQL and the target database must support this syntax.
+     *
+     * <p><b>Usage Example:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("department")
+     *                 .distinctOn("department")
+     *                 .from("employees")
+     *                 .build().query();
+     * // Output: SELECT DISTINCT ON (department) department FROM employees
+     * }</pre>
+     *
+     * @param expressions the expressions inside {@code DISTINCT ON (...)}; blank means plain {@code DISTINCT}
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if this builder is closed, does not represent a SELECT query, or a select
+     *                               modifier has already been set for the current SELECT segment
+     */
+    public This distinctOn(final String expressions) {
+        return Strings.isBlank(expressions) ? distinct() : selectModifier(DISTINCT + " ON (" + expressions + ")");
+    }
+
+    /**
+     * Adds the MySQL-style {@code DISTINCTROW} modifier to the SELECT statement.
+     * The target database must support this syntax.
+     *
+     * <p><b>Usage Example:</b></p>
+     * <pre>{@code
+     * String sql = PSC.select("department").distinctRow().from("employees").build().query();
+     * // Output: SELECT DISTINCTROW department FROM employees
+     * }</pre>
+     *
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalStateException if this builder is closed, does not represent a SELECT query, or a select
+     *                               modifier has already been set for the current SELECT segment
+     */
+    public This distinctRow() {
+        return selectModifier(SK.DISTINCTROW);
+    }
+
+    /**
      * Adds a pre-select modifier to the SELECT statement.
      * <p>For better performance, this method should be called before {@code from}.
      * A {@code null} or empty value is silently ignored; a non-empty but blank value is rejected.</p>
@@ -1635,7 +1686,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         final String localTableName = normalizedTableNames.get(0);
-        return from(localTableName, Strings.join(normalizedTableNames, SK.COMMA_SPACE));
+        return appendFromClause(localTableName, Strings.join(normalizedTableNames, SK.COMMA_SPACE));
     }
 
     /**
@@ -1669,7 +1720,50 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final int separatorIdx = findFirstTopLevelFromSeparator(trimmedExpr, _dialectFamily == DialectFamily.SQL_SERVER);
         final String localTableName = separatorIdx > 0 ? trimmedExpr.substring(0, separatorIdx) : trimmedExpr;
 
-        return from(localTableName.trim(), trimmedExpr);
+        return appendFromClause(localTableName.trim(), trimmedExpr);
+    }
+
+    /**
+     * Uses a complete SELECT built by another builder as a derived table in this query's {@code FROM}
+     * clause. After argument, parent-state, and SQL-policy prevalidation succeeds, the child builder is
+     * finalized and consumed. A failure during the preceding prevalidation leaves the child reusable;
+     * a failure while finalizing or validating the child's built SQL consumes it. Child parameters are
+     * merged before parameters from subsequent outer clauses, and generated named parameters are renamed
+     * when necessary to avoid collisions with the parent query.
+     *
+     * <p><b>Usage Example:</b></p>
+     * <pre>{@code
+     * SqlBuilder activeUsers = PSC.select("id").from("users").where(Filters.eq("active", true));
+     * String sql = PSC.select("*").from(activeUsers, "u").build().query();
+     * // Output: SELECT * FROM (SELECT id FROM users WHERE active = ?) u
+     * }</pre>
+     *
+     * @param sqlBuilder the child builder supplying a complete, read-only SELECT query; consumed once child finalization begins
+     * @param alias the derived-table alias, emitted as trusted SQL
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this builder, does not build a
+     *                                  complete read-only SELECT, uses an incompatible parameter policy, or
+     *                                  {@code alias} is {@code null}, empty, or blank
+     * @throws IllegalStateException if this builder is closed, is not building a SELECT, has no projection,
+     *                               or already has a FROM clause, or if the child is incomplete or was already consumed
+     */
+    public This from(final This sqlBuilder, final String alias) {
+        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
+        N.checkArgument(sqlBuilder != this, "A builder cannot use itself as a derived table");
+        checkSqlFragmentNotBlank(alias, "alias");
+        checkCanAppendFrom();
+        N.checkArgument(_sqlPolicy == sqlBuilder._sqlPolicy || !sqlBuilder._hasGeneratedParameterPlaceholder,
+                "A derived-table child with generated parameter placeholders must use the parent's SQL policy: parent=" + _sqlPolicy + ", child="
+                        + sqlBuilder._sqlPolicy);
+
+        final String normalizedAlias = alias.trim();
+        final SubQuerySnapshot subQuery = sqlBuilder.buildSubQuery();
+
+        return mutateAtomically(() -> {
+            final String query = prepareSubQuerySnapshot(subQuery);
+            final String fromClause = "(" + query + ") " + normalizedAlias;
+            appendSelectListAndFromClause(fromClause, fromClause);
+        });
     }
 
     /**
@@ -1891,6 +1985,53 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Compatibility bridge for subclasses compiled against the former two-string protected helper.
+     * A legacy helper call supplies a primary table reference followed by a complete FROM body that
+     * begins with that same reference; such calls retain their original behavior. Otherwise the two
+     * arguments are treated as two table expressions, matching the public {@link #from(String...)} API.
+     * New subclass code should call the public FROM overloads rather than this internal bridge.
+     *
+     * @param tableName the legacy primary table reference, or the first table expression
+     * @param fromClause the legacy complete FROM body, or the second table expression
+     * @return this builder instance for method chaining
+     * @deprecated retained for source and binary compatibility with subclasses; use a public {@code from(...)} overload
+     */
+    @Deprecated
+    protected This from(final String tableName, final String fromClause) {
+        if (isLegacyPrimaryTableAndFromClause(tableName, fromClause)) {
+            return appendFromClause(tableName, fromClause);
+        }
+
+        return from(Arrays.asList(tableName, fromClause));
+    }
+
+    /**
+     * Returns whether the pair has the shape accepted by the former protected helper: the complete
+     * FROM body starts with the supplied primary table reference and then ends or continues at a SQL
+     * token boundary. The boundary check avoids mistaking two tables such as {@code users} and
+     * {@code users_archive} for a legacy helper call.
+     */
+    private static boolean isLegacyPrimaryTableAndFromClause(final String tableName, final String fromClause) {
+        if (Strings.isBlank(tableName) || Strings.isBlank(fromClause)) {
+            return false;
+        }
+
+        final String primary = tableName.trim();
+        final String body = fromClause.trim();
+
+        if (!body.regionMatches(true, 0, primary, 0, primary.length())) {
+            return false;
+        }
+
+        if (body.length() == primary.length()) {
+            return true;
+        }
+
+        final char boundary = body.charAt(primary.length());
+        return Character.isWhitespace(boundary) || boundary == ',' || boundary == ')' || boundary == ';';
+    }
+
+    /**
      * Sets the FROM clause using a separate primary table name and a complete FROM-body expression.
      * <p>{@code tableName} is parsed to extract the optional alias and used to set the builder's
      * {@code _tableName}/{@code _tableAlias} state, while {@code fromClause} is appended verbatim
@@ -1900,12 +2041,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param fromClause the full text emitted after {@code FROM} (e.g. {@code "users u, orders o"})
      * @return this builder instance for method chaining
      */
-    protected This from(final String tableName, final String fromClause) {
+    private This appendFromClause(final String tableName, final String fromClause) {
         return mutateAtomically(() -> appendSelectListAndFromClause(tableName, fromClause));
     }
 
     /**
-     * Renders the SELECT list and FROM clause after {@link #from(String, String)} has installed its
+     * Renders the SELECT list and FROM clause after {@link #appendFromClause(String, String)} has installed its
      * mutation checkpoint. Rendering a staged select column can still reject an unsafe fragment after
      * the SELECT prefix has been emitted, so this must run transactionally to keep a failed
      * {@code from(...)} from leaving a partial SELECT behind.
@@ -5828,7 +5969,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         final Set<String> childParameterNames = new HashSet<>(sqlBuilder._generatedNamedParameterNames);
         final Map<String, String> childParameterTokens = new HashMap<>(sqlBuilder._renderedNamedParameterTokens);
-        final String sql = uniquifySetOperationNamedParameters(sp.query(), sqlBuilder._namedParameterNameOccurrences, parentOccurrences, childParameterNames,
+        final String sql = uniquifyChildNamedParameters(sp.query(), sqlBuilder._namedParameterNameOccurrences, parentOccurrences, childParameterNames,
                 childParameterTokens, sqlBuilder._sqlPolicy);
 
         // A custom named-parameter handler can make the rewritten operand structurally different
@@ -5888,7 +6029,44 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Rewrites the named parameters of a set-operation operand so they cannot collide with names already
+     * Rewrites and merges a previously built child SELECT into this builder. The caller's mutation
+     * checkpoint, when needed, is responsible for rolling back these metadata changes together with
+     * any surrounding SQL text.
+     */
+    private String prepareSubQuerySnapshot(final SubQuerySnapshot subQuery) {
+        N.checkArgument(_sqlPolicy == subQuery.sqlPolicy || !subQuery.hasGeneratedParameterPlaceholder,
+                "A builder-backed subquery with generated parameter placeholders must use the parent's SQL policy: parent=" + _sqlPolicy + ", child="
+                        + subQuery.sqlPolicy);
+
+        final Map<String, Integer> parentOccurrences = N.isEmpty(_namedParameterNameOccurrences) ? Collections.emptyMap()
+                : new HashMap<>(_namedParameterNameOccurrences);
+        final Set<String> childParameterNames = new HashSet<>(subQuery.generatedNamedParameterNames);
+        final Map<String, String> childParameterTokens = new HashMap<>(subQuery.renderedNamedParameterTokens);
+        final String sql = uniquifyChildNamedParameters(subQuery.rawSql(), subQuery.namedParameterNameOccurrences, parentOccurrences, childParameterNames,
+                childParameterTokens, subQuery.sqlPolicy);
+
+        checkSubQuerySnapshot(sql);
+
+        mergeNamedParameterOccurrences(subQuery.namedParameterNameOccurrences);
+        _generatedNamedParameterNames.addAll(childParameterNames);
+        _renderedNamedParameterTokens.putAll(childParameterTokens);
+
+        if (N.notEmpty(subQuery.parameters)) {
+            _parameters.addAll(subQuery.parameters);
+        }
+
+        _hasGeneratedParameterPlaceholder |= subQuery.hasGeneratedParameterPlaceholder;
+
+        return sql;
+    }
+
+    /** Appends a builder-backed condition subquery and merges its parameters and placeholder metadata. */
+    final void appendSubQuerySnapshot(final SubQuerySnapshot subQuery) {
+        _sb.append(prepareSubQuerySnapshot(subQuery));
+    }
+
+    /**
+     * Rewrites a child query's named parameters so they cannot collide with names already
      * generated on this (the parent) builder: colliding {@code <base>_<n>} names are shifted to unused
      * suffixes and the operand's placeholder tokens are replaced outside SQL quoted regions and comments.
      * {@code childParameterNames} and {@code childParameterTokens} are updated in place to the final names
@@ -5903,23 +6081,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return the operand query with collision-free parameter names (may be the unchanged {@code sql})
      * @throws IllegalArgumentException if the child generated named parameters under a different SQL policy
      */
-    private String uniquifySetOperationNamedParameters(final String sql, final Map<String, Integer> childOccurrences,
-            final Map<String, Integer> parentOccurrences, final Set<String> childParameterNames, final Map<String, String> childParameterTokens,
-            final SqlPolicy childSqlPolicy) {
+    private String uniquifyChildNamedParameters(final String sql, final Map<String, Integer> childOccurrences, final Map<String, Integer> parentOccurrences,
+            final Set<String> childParameterNames, final Map<String, String> childParameterTokens, final SqlPolicy childSqlPolicy) {
         if (N.isEmpty(childOccurrences)) {
             return sql;
         }
 
         if (_sqlPolicy != childSqlPolicy) {
             throw new IllegalArgumentException(
-                    "Set-operation builders with generated named parameters must use the same SQL policy: parent=" + _sqlPolicy + ", child=" + childSqlPolicy);
+                    "Child builders with generated named parameters must use the same SQL policy: parent=" + _sqlPolicy + ", child=" + childSqlPolicy);
         }
 
         if (_sqlPolicy != SqlPolicy.NAMED_SQL && _sqlPolicy != SqlPolicy.IBATIS_SQL) {
             return sql;
         }
 
-        // The compound query executes on this (the parent) builder's target server: on SQL Server a
+        // The combined query executes on this (the parent) builder's target server: on SQL Server a
         // #name/##name temporary-table identifier is a data token, never a MySQL hash comment, so the
         // token-replacement scanners must not skip the rest of the line after one.
         final boolean sqlServerTempIdentifiers = _dialectFamily == DialectFamily.SQL_SERVER;
@@ -6322,30 +6499,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Sets columns for UPDATE operation.
-     * <p>Generates parameterized placeholders ({@code ?}, {@code :name}, or {@code #{name}}) based on the SQL policy.
-     * If a column name already contains an {@code =} sign, it is treated as a raw SET expression and no placeholder is appended.</p>
-     *
-     * <p><b>Usage Examples:</b></p>
-     * <pre>{@code
-     * String sql = PSC.update("users")
-     *                 .set("firstName", "lastName", "email")
-     *                 .where(Filters.equal("id", 1))
-     *                 .build().query();
-     * // Output: UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?
-     * }</pre>
-     *
-     * @param propOrColumnNames the columns to update
-     * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
-     *                               or a post-SET clause such as {@code WHERE} has already been emitted
-     */
-    public This set(final String... propOrColumnNames) {
-        return set(Array.asList(propOrColumnNames));
-    }
-
-    /**
      * Sets columns for UPDATE operation with a collection of property or column names.
      * Generates parameterized placeholders ({@code ?}, {@code :name}, or {@code #{name}}) based on the SQL policy.
      * If a column name already contains an {@code =} sign, it is treated as a raw SET expression and no placeholder is appended.
@@ -6487,6 +6640,79 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return mutateAtomically(() -> appendSetProperties(propsSnapshot));
     }
 
+    /**
+     * Sets one UPDATE column to a supplied value. Ordinary values are rendered according to this
+     * builder's SQL policy (bound for parameterized/named policies and inlined for raw SQL), while
+     * a {@link SqlExpression} is embedded as an expression.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * PSC.update("users").set("status", "INACTIVE");
+     * // UPDATE users SET status = ?
+     *
+     * PSC.update("users").set("loginCount", SqlExpression.of("login_count + 1"));
+     * // UPDATE users SET login_count = login_count + 1
+     * }</pre>
+     *
+     * @param propOrColumnName the property or column to assign
+     * @param value the value to render according to the SQL policy, or a {@link SqlExpression} to embed
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
+     * @throws IllegalStateException if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted
+     */
+    public This set(final String propOrColumnName, final Object value) {
+        return set(Collections.singletonMap(propOrColumnName, value));
+    }
+
+    /**
+     * Sets two UPDATE columns to supplied values in argument order. Each ordinary value is rendered
+     * according to this builder's SQL policy; a {@link SqlExpression} is embedded as an expression.
+     *
+     * <p><b>Usage Example:</b></p>
+     * <pre>{@code
+     * PSC.update("users").set("firstName", "Ada", "status", "ACTIVE");
+     * // UPDATE users SET first_name = ?, status = ?
+     * }</pre>
+     *
+     * @param propOrColumnName1 the first property or column to assign
+     * @param value1 the first value to render, or a {@link SqlExpression} to embed
+     * @param propOrColumnName2 the second property or column to assign
+     * @param value2 the second value to render, or a {@link SqlExpression} to embed
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if either property or column name is {@code null}, empty, or blank
+     * @throws IllegalStateException if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted
+     */
+    public This set(final String propOrColumnName1, final Object value1, final String propOrColumnName2, final Object value2) {
+        return set(N.asMap(propOrColumnName1, value1, propOrColumnName2, value2));
+    }
+
+    /**
+     * Sets three UPDATE columns to supplied values in argument order. Each ordinary value is rendered
+     * according to this builder's SQL policy; a {@link SqlExpression} is embedded as an expression.
+     * For more assignments, use {@link #set(Map)} with a {@link LinkedHashMap} to preserve order.
+     *
+     * <p><b>Usage Example:</b></p>
+     * <pre>{@code
+     * PSC.update("users").set("firstName", "Ada", "status", "ACTIVE",
+     *         "updatedAt", SqlExpression.of("CURRENT_TIMESTAMP"));
+     * // UPDATE users SET first_name = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+     * }</pre>
+     *
+     * @param propOrColumnName1 the first property or column to assign
+     * @param value1 the first value to render, or a {@link SqlExpression} to embed
+     * @param propOrColumnName2 the second property or column to assign
+     * @param value2 the second value to render, or a {@link SqlExpression} to embed
+     * @param propOrColumnName3 the third property or column to assign
+     * @param value3 the third value to render, or a {@link SqlExpression} to embed
+     * @return this SqlBuilder instance for method chaining
+     * @throws IllegalArgumentException if any property or column name is {@code null}, empty, or blank
+     * @throws IllegalStateException if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted
+     */
+    public This set(final String propOrColumnName1, final Object value1, final String propOrColumnName2, final Object value2, final String propOrColumnName3,
+            final Object value3) {
+        return set(N.asMap(propOrColumnName1, value1, propOrColumnName2, value2, propOrColumnName3, value3));
+    }
+
     /** Renders a validated SET property map after the public entry point has installed its checkpoint. */
     private void appendSetProperties(final Map<String, Object> propsSnapshot) {
         init(false);
@@ -6588,10 +6814,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * For bean entities, properties annotated as {@code @NonUpdatable}, {@code @ReadOnly}, {@code @ReadOnlyId},
      * or {@code @Transient} are automatically excluded.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
      * String sql = PSC.update("account")
-     *                 .setEntity(accountEntity)
+     *                 .set(accountEntity)
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * }</pre>
@@ -6599,28 +6825,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entity} is {@code null}, if a bean has no updatable property,
-     *         or if {@code entity} is a {@code Collection} or array (use {@link #set(Collection)} or
-     *         {@link #set(String...)} for column lists)
+     *         or if {@code entity} is a {@code Collection} or array (use {@link #set(Collection)} for column lists)
      * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
      *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
-    public This setEntity(final Object entity) {
-        return setEntity(entity, null);
-    }
-
-    /**
-     * Sets properties to update from an entity object, a {@code Map}, or a single column-name {@code String}.
-     *
-     * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
-     * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entity} is {@code null}, if a bean has no updatable property,
-     *         or if {@code entity} is a {@code Collection} or array (use {@link #set(Collection)} or
-     *         {@link #set(String...)} for column lists)
-     * @deprecated use {@link #setEntity(Object)}
-     */
-    @Deprecated
     public This set(final Object entity) {
-        return setEntity(entity, null);
+        return set(entity, null);
     }
 
     /**
@@ -6630,11 +6840,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Entity metadata selection, bean-property extraction, and SET rendering are atomic: if a getter or
      * parameter renderer fails, this builder is restored to the state it had before this call.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
      * Set<String> excluded = N.asSet("createdDate", "version");
      * String sql = PSC.update("account")
-     *                 .setEntity(accountEntity, excluded)
+     *                 .set(accountEntity, excluded)
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
      * }</pre>
@@ -6643,12 +6853,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param excludedPropNames property names to exclude from the update (may be {@code null})
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entity} is {@code null}, if {@code entity} is a {@code Collection} or array
-     *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists), or if a bean {@code entity}
+     *         (use {@link #set(Collection)} for column lists), or if a bean {@code entity}
      *         has no updatable property remaining after exclusions are applied
      * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
      *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
-    public This setEntity(final Object entity, final Set<String> excludedPropNames) {
+    public This set(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, "entity");
         checkUpdateOperation();
 
@@ -6672,7 +6882,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (entity instanceof Collection || entity.getClass().isArray()) {
                 throw new IllegalArgumentException(
-                        "A Collection or array is not a valid entity for setEntity(...). Use set(Collection<String>) or set(String...) for column lists.");
+                        "A Collection or array is not a valid entity for set(Object, Set). Use set(Collection<String>) for column lists.");
             }
 
             final Class<?> entityClass = entity.getClass();
@@ -6690,33 +6900,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Sets properties to update from an entity object, a {@code Map}, or a single column-name {@code String},
-     * excluding the specified properties.
-     *
-     * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
-     * @param excludedPropNames property names to exclude from the update (may be {@code null})
-     * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entity} is {@code null}, if {@code entity} is a {@code Collection} or array
-     *         (use {@link #set(Collection)} or {@link #set(String...)} for column lists), or if a bean {@code entity}
-     *         has no updatable property remaining after exclusions are applied
-     * @deprecated use {@link #setEntity(Object, Set)}
-     */
-    @Deprecated
-    public This set(final Object entity, final Set<String> excludedPropNames) {
-        return setEntity(entity, excludedPropNames);
-    }
-
-    /**
      * Sets all updatable properties from an entity class for UPDATE operation.
      * Properties marked with {@code @NonUpdatable}, {@code @ReadOnly}, {@code @ReadOnlyId}, or {@code @Transient} annotations are excluded.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
      * String sql = PSC.update("account")
-     *                 .setEntity(Account.class)
+     *                 .set(Account.class)
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
-     * // Output: UPDATE account SET id = ?, gui = ?, email_address = ?, first_name = ?, middle_name = ?, last_name = ?, birth_date = ?, status = ?, last_update_time = ?, create_time = ?, contact = ? WHERE id = ?
      * }</pre>
      *
      * @param entityClass the entity class to get properties from
@@ -6725,37 +6917,39 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
      *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
-    public This setEntity(final Class<?> entityClass) {
-        return setEntity(entityClass, (Set<String>) null);
+    public This set(final Class<?> entityClass) {
+        return set(entityClass, (Set<String>) null);
     }
 
-    /**
-     * Sets all updatable properties from an entity class for UPDATE operation.
-     *
-     * @param entityClass the entity class to get properties from
-     * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or declares no updatable property
-     * @deprecated use {@link #setEntity(Class)}
-     */
-    @Deprecated
-    public This set(final Class<?> entityClass) {
-        return setEntity(entityClass);
+    /** Ensures that a SET assignment API is used only in the SET-list portion of a live UPDATE builder. */
+    private void checkUpdateOperation() {
+        assertNotClosed();
+
+        if (_op != OperationType.UPDATE) {
+            throw new IllegalStateException("set() requires an UPDATE builder, but current operation is: " + _op);
+        }
+
+        final String laterClause = firstCalledClause(SK.WHERE, SK.GROUP_BY, SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT,
+                SK.FOR_UPDATE);
+
+        if (laterClause != null) {
+            throw new IllegalStateException("set() must be called before the '" + laterClause + "' clause");
+        }
     }
 
     /**
      * Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.
-     * Properties marked with {@code @NonUpdatable}, {@code @ReadOnly}, {@code @ReadOnlyId}, or {@code @Transient} annotations are automatically excluded.
-     * Entity metadata selection and SET rendering are atomic: if parameter rendering fails, this builder
-     * is restored to the state it had before this call.
+     * Properties marked with {@code @NonUpdatable}, {@code @ReadOnly}, {@code @ReadOnlyId}, or
+     * {@code @Transient} are automatically excluded. Entity metadata selection and SET rendering are
+     * atomic: if parameter rendering fails, this builder is restored to its state before this call.
      *
-     * <p><b>Usage Examples:</b></p>
+     * <p><b>Usage Example:</b></p>
      * <pre>{@code
      * Set<String> excluded = N.asSet("lastUpdateTime");
      * String sql = PSC.update("account")
-     *                 .setEntity(Account.class, excluded)
+     *                 .set(Account.class, excluded)
      *                 .where(Filters.equal("id", 1))
      *                 .build().query();
-     * // Output: UPDATE account SET id = ?, gui = ?, email_address = ?, first_name = ?, middle_name = ?, last_name = ?, birth_date = ?, status = ?, create_time = ?, contact = ? WHERE id = ?
      * }</pre>
      *
      * @param entityClass the entity class to get properties from
@@ -6765,7 +6959,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
      *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
-    public This setEntity(final Class<?> entityClass, final Set<String> excludedPropNames) {
+    public This set(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, "entityClass");
         checkUpdateOperation();
         final Collection<String> propNames = QueryUtil.updatePropNames(entityClass, excludedPropNames);
@@ -6775,36 +6969,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             setEntityClass(entityClass);
             validateAndAppendSetColumns(propNames);
         });
-    }
-
-    /** Ensures that a SET assignment API is used only in the SET-list portion of a live UPDATE builder. */
-    private void checkUpdateOperation() {
-        assertNotClosed();
-
-        if (_op != OperationType.UPDATE) {
-            throw new IllegalStateException("set()/setEntity() requires an UPDATE builder, but current operation is: " + _op);
-        }
-
-        final String laterClause = firstCalledClause(SK.WHERE, SK.GROUP_BY, SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT,
-                SK.FOR_UPDATE);
-
-        if (laterClause != null) {
-            throw new IllegalStateException("set()/setEntity() must be called before the '" + laterClause + "' clause");
-        }
-    }
-
-    /**
-     * Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.
-     *
-     * @param entityClass the entity class to get properties from
-     * @param excludedPropNames additional properties to exclude from the update
-     * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or no updatable property remains after exclusions are applied
-     * @deprecated use {@link #setEntity(Class, Set)}
-     */
-    @Deprecated
-    public This set(final Class<?> entityClass, final Set<String> excludedPropNames) {
-        return setEntity(entityClass, excludedPropNames);
     }
 
     /**
@@ -6819,6 +6983,28 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected List<Object> parameters() {
         return Collections.unmodifiableList(_parameters);
+    }
+
+    /**
+     * Finalizes and consumes this builder, validates that the resulting statement is a complete,
+     * read-only SELECT, and captures it for use as a condition or derived-table subquery.
+     *
+     * <p>{@link #build()} runs before SELECT validation, so once finalization begins this builder is
+     * consumed even if the completed SQL is subsequently rejected. The returned snapshot receives the
+     * parameter list already stabilized by {@link SP}; the source builder's generated-placeholder maps
+     * and set are retained by reference as ownership-transferred metadata and must be treated as read-only.
+     * Parent builders create working copies for collision rewriting, so the snapshot can be reused.</p>
+     *
+     * @return a reusable internal snapshot containing the SQL, parameters, SQL policy, and generated-placeholder metadata
+     * @throws IllegalArgumentException if the built statement is blank, is not a complete SELECT, or is not read-only
+     * @throws IllegalStateException if this builder is incomplete or was already consumed
+     */
+    final SubQuerySnapshot buildSubQuery() {
+        final SP sp = build();
+        checkSubQuerySnapshot(sp.query());
+
+        return new SubQuerySnapshot(sp.query(), sp.parameters(), _sqlPolicy, _hasGeneratedParameterPlaceholder, _namedParameterNameOccurrences,
+                _generatedNamedParameterNames, _renderedNamedParameterTokens);
     }
 
     /**

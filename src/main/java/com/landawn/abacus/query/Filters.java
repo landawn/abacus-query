@@ -102,9 +102,9 @@ import com.landawn.abacus.util.SK;
  *       alias for {@code between} was removed)</li>
  *   <li><b>Pattern Matching:</b> {@code like}, {@code notLike}, {@code contains}, {@code notContains},
  *       {@code startsWith}, {@code notStartsWith}, {@code endsWith}, {@code notEndsWith}</li>
- *   <li><b>Null Checks:</b> {@code isNull}, {@code isNotNull}</li>
+ *   <li><b>Null/Boolean Checks:</b> {@code isNull}, {@code isNotNull}, {@code isTrue}, {@code isFalse}</li>
  *   <li><b>Logical:</b> {@code and}, {@code or}, {@code not}</li>
- *   <li><b>Subquery:</b> {@code exists}, {@code notExists}, {@code in(String, SubQuery)}, {@code notIn(String, SubQuery)}</li>
+ *   <li><b>Subquery:</b> {@code subQuery}, {@code exists}, {@code notExists}, {@code in(String, SubQuery)}, {@code notIn(String, SubQuery)}</li>
  *   <li><b>Joins:</b> {@code join}, {@code leftJoin}, {@code rightJoin}, {@code innerJoin},
  *       {@code fullJoin}, {@code crossJoin}, {@code naturalJoin}</li>
  *   <li><b>Clauses:</b> {@code where}, {@code having}, {@code groupBy}, {@code orderBy},
@@ -156,6 +156,10 @@ public final class Filters {
 
     /** A SQL expression representing {@code "1 > 2"} which always evaluates to {@code false}. */
     private static final SqlExpression ALWAYS_FALSE = SqlExpression.of("1 > 2");
+
+    /** SQL boolean literals used by {@link #isTrue(String)} and {@link #isFalse(String)}. */
+    private static final SqlExpression SQL_TRUE = SqlExpression.of("TRUE");
+    private static final SqlExpression SQL_FALSE = SqlExpression.of("FALSE");
 
     /**
      * Prevents instantiation of this utility class; all members are static.
@@ -2086,6 +2090,30 @@ public final class Filters {
      */
     public static Is is(final String propName, final Object propValue) {
         return new Is(propName, propValue);
+    }
+
+    /**
+     * Creates an {@code IS TRUE} predicate without turning the boolean literal into a bind parameter.
+     * The target database must support SQL boolean literals and the {@code IS TRUE} predicate.
+     *
+     * @param propName the property or column to test
+     * @return an {@link Is} condition rendering {@code propName IS true}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     */
+    public static Is isTrue(final String propName) {
+        return is(propName, SQL_TRUE);
+    }
+
+    /**
+     * Creates an {@code IS FALSE} predicate without turning the boolean literal into a bind parameter.
+     * The target database must support SQL boolean literals and the {@code IS FALSE} predicate.
+     *
+     * @param propName the property or column to test
+     * @return an {@link Is} condition rendering {@code propName IS false}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
+     */
+    public static Is isFalse(final String propName) {
+        return is(propName, SQL_FALSE);
     }
 
     /**
@@ -4325,6 +4353,34 @@ public final class Filters {
      */
     public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final String expr) {
         return new SubQuery(entityName, propNames, expr(expr));
+    }
+
+    /**
+     * Finalizes and consumes a {@link SqlBuilder}, validates that its result is a complete, read-only
+     * SELECT, and captures it as a reusable subquery. The snapshot retains the rendered SQL, parameter
+     * values, SQL policy, and generated-placeholder metadata so an enclosing builder can preserve
+     * binding order and safely rename colliding named parameters without modifying the snapshot.
+     *
+     * <p>After the {@code null} check succeeds, finalization begins before SELECT validation. The source
+     * builder is therefore consumed whether snapshot creation succeeds or its built SQL is rejected.
+     * If the captured SQL contains generated placeholders, a parent builder must use the same SQL policy;
+     * that compatibility is checked when the snapshot is composed into the parent.</p>
+     *
+     * <p><b>Usage Example:</b></p>
+     * <pre>{@code
+     * SubQuery paidOrders = Filters.subQuery(
+     *     Dsl.PSC.select("userId").from("orders").where(Filters.gt("total", 100)));
+     * }</pre>
+     *
+     * @param sqlBuilder the builder to finalize and capture; consumed once finalization begins
+     * @return a reusable builder-backed subquery snapshot
+     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, or its built statement is blank,
+     *                                  is not a complete SELECT, or is not read-only
+     * @throws IllegalStateException if the builder is incomplete or was already consumed
+     */
+    public static SubQuery subQuery(final SqlBuilder sqlBuilder) {
+        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
+        return sqlBuilder.buildSubQuery();
     }
 
     /**

@@ -34,6 +34,7 @@ import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.condition.Operator;
+import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Union;
 import com.landawn.abacus.query.entity.Account;
@@ -253,8 +254,23 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertThrows(IllegalStateException.class, () -> delete.set(Collections.singletonMap("name", "x")));
         assertEquals("DELETE FROM users", delete.build().query());
 
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").setEntity(Account.class));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("users").setEntity((Class<?>) null));
+        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").set(Account.class));
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("users").set((Class<?>) null));
+    }
+
+    @Test
+    public void testRemovedSetOverloadsAreAbsent() throws NoSuchMethodException {
+        assertThrows(NoSuchMethodException.class, () -> AbstractQueryBuilder.class.getDeclaredMethod("set", String[].class));
+        assertThrows(NoSuchMethodException.class, () -> AbstractQueryBuilder.class.getDeclaredMethod("setValue", String.class, Object.class));
+        assertThrows(NoSuchMethodException.class, () -> AbstractQueryBuilder.class.getDeclaredMethod("setEntity", Object.class));
+        assertThrows(NoSuchMethodException.class, () -> AbstractQueryBuilder.class.getDeclaredMethod("setEntity", Object.class, Set.class));
+        assertThrows(NoSuchMethodException.class, () -> AbstractQueryBuilder.class.getDeclaredMethod("setEntity", Class.class));
+        assertThrows(NoSuchMethodException.class, () -> AbstractQueryBuilder.class.getDeclaredMethod("setEntity", Class.class, Set.class));
+
+        assertNotNull(AbstractQueryBuilder.class.getDeclaredMethod("set", String.class, Object.class));
+        assertNotNull(AbstractQueryBuilder.class.getDeclaredMethod("set", Object.class, Set.class));
+        assertNotNull(AbstractQueryBuilder.class.getDeclaredMethod("set", String.class, Object.class, String.class, Object.class));
+        assertNotNull(AbstractQueryBuilder.class.getDeclaredMethod("set", String.class, Object.class, String.class, Object.class, String.class, Object.class));
     }
 
     @Test
@@ -389,12 +405,12 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
-    public void testSetEntityGetterAndRendererFailuresRestoreAllBuilderMetadata() {
+    public void testEntitySetGetterAndRendererFailuresRestoreAllBuilderMetadata() {
         final SqlBuilder getterFailure = Dsl.PSC.update("users");
         final Class<?> initialGetterEntityClass = getterFailure._entityClass;
         final Object initialGetterEntityInfo = getterFailure._entityInfo;
         final Object initialGetterColumnMap = getterFailure._propColumnNameMap;
-        assertThrows(RuntimeException.class, () -> getterFailure.setEntity(new ThrowingUpdateEntity()));
+        assertThrows(RuntimeException.class, () -> getterFailure.set(new ThrowingUpdateEntity()));
         assertSame(initialGetterEntityClass, getterFailure._entityClass);
         assertSame(initialGetterEntityInfo, getterFailure._entityInfo);
         assertSame(initialGetterColumnMap, getterFailure._propColumnNameMap);
@@ -413,7 +429,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         final Class<?> initialRendererEntityClass = rendererFailure._entityClass;
         final Object initialRendererEntityInfo = rendererFailure._entityInfo;
         final Object initialRendererColumnMap = rendererFailure._propColumnNameMap;
-        assertThrows(IllegalStateException.class, () -> rendererFailure.setEntity(Account.class));
+        assertThrows(IllegalStateException.class, () -> rendererFailure.set(Account.class));
         assertSame(initialRendererEntityClass, rendererFailure._entityClass);
         assertSame(initialRendererEntityInfo, rendererFailure._entityInfo);
         assertSame(initialRendererColumnMap, rendererFailure._propColumnNameMap);
@@ -919,7 +935,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testUpdateWithSet() {
-        String sql = Dsl.PSC.update("accounts").set("status", "inactive").set("updated_at", "NOW()").where(Filters.eq("id", 1)).build().query();
+        String sql = Dsl.PSC.update("accounts").set("status", "inactive", "updated_at", SqlExpression.of("NOW()")).where(Filters.eq("id", 1)).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("SET"));
     }
@@ -1321,24 +1337,20 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
-    public void testSetEntityClass() {
-        String sql = Dsl.PSC.update("account").setEntity(Account.class).where(Filters.eq("id", 1)).build().query();
-        String deprecatedSql = Dsl.PSC.update("account").set(Account.class).where(Filters.eq("id", 1)).build().query();
+    public void testSetWithEntityClass() {
+        String sql = Dsl.PSC.update("account").set(Account.class).where(Filters.eq("id", 1)).build().query();
 
-        assertTrue(sql.contains("UPDATE account SET"), "setEntity(Class) must render an UPDATE ... SET: " + sql);
-        assertTrue(sql.contains("first_name = ?"), "setEntity(Class) must include updatable properties: " + sql);
-        assertEquals(deprecatedSql, sql, "deprecated set(Class) must delegate to setEntity(Class)");
+        assertTrue(sql.contains("UPDATE account SET"), "set(Class) must render an UPDATE ... SET: " + sql);
+        assertTrue(sql.contains("first_name = ?"), "set(Class) must include updatable properties: " + sql);
     }
 
     @Test
-    public void testSetEntityClassWithExcludedPropNames() {
+    public void testSetWithEntityClassAndExcludedPropNames() {
         Set<String> excluded = Collections.singleton("firstName");
-        String sql = Dsl.PSC.update("account").setEntity(Account.class, excluded).where(Filters.eq("id", 1)).build().query();
-        String deprecatedSql = Dsl.PSC.update("account").set(Account.class, excluded).where(Filters.eq("id", 1)).build().query();
+        String sql = Dsl.PSC.update("account").set(Account.class, excluded).where(Filters.eq("id", 1)).build().query();
 
         assertFalse(sql.contains("first_name = ?"), "excluded property must not be updated: " + sql);
         assertTrue(sql.contains("last_name = ?"), "non-excluded property must be updated: " + sql);
-        assertEquals(deprecatedSql, sql, "deprecated set(Class, Set) must delegate to setEntity(Class, Set)");
     }
 
     @Test
@@ -1762,39 +1774,37 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
-    public void testSetEntity_equivalentToDeprecatedSet() {
+    public void testSetWithEntityObject() {
         final Account a = new Account();
         a.setFirstName("F");
         a.setLastName("L");
 
-        final String viaSetEntity = Dsl.PSC.update("account").setEntity(a).where(Filters.eq("id", 1)).build().query();
-        final String viaSet = Dsl.PSC.update("account").set(a).where(Filters.eq("id", 1)).build().query();
+        final String sql = Dsl.PSC.update("account").set(a).where(Filters.eq("id", 1)).build().query();
 
-        assertEquals(viaSet, viaSetEntity);
-        assertTrue(viaSetEntity.contains("first_name = ?"));
+        assertTrue(sql.contains("first_name = ?"));
     }
 
     @Test
-    public void testSetEntity_excludedPropNames() {
+    public void testSetWithEntityObjectAndExcludedPropNames() {
         final Account a = new Account();
         a.setFirstName("F");
         a.setLastName("L");
 
         final Set<String> excluded = java.util.Set.of("lastName");
-        final String sql = Dsl.PSC.update("account").setEntity(a, excluded).where(Filters.eq("id", 1)).build().query();
+        final String sql = Dsl.PSC.update("account").set(a, excluded).where(Filters.eq("id", 1)).build().query();
 
         assertTrue(sql.contains("first_name = ?"));
         assertFalse(sql.contains("last_name = ?"));
     }
 
     @Test
-    public void testSetEntity_rejectsCollection() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("account").setEntity(Arrays.asList("firstName", "lastName")));
+    public void testSetObjectOverloadRejectsCollection() {
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("account").set((Object) Arrays.asList("firstName", "lastName")));
     }
 
     @Test
-    public void testSetEntity_rejectsArray() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("account").setEntity(new String[] { "firstName", "lastName" }));
+    public void testSetObjectOverloadRejectsArray() {
+        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("account").set((Object) new String[] { "firstName", "lastName" }));
     }
 
     @Test
@@ -2184,7 +2194,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     // declared property order. The fix swaps to LinkedHashMap so column order is deterministic.
 
     @Test
-    public void testFix_setEntity_preservesPropertyOrder() {
+    public void testFix_setWithEntityObjectPreservesPropertyOrder() {
         Account a = new Account();
         a.setGUI("g");
         a.setEmailAddress("e@e.com");
@@ -2280,7 +2290,7 @@ public class AbstractQueryBuilderTest extends TestBase {
      * a raw {@link NullPointerException} from {@code entity.getClass()}.
      */
     @Test
-    public void testSetEntityNull_throwsIllegalArgumentException() {
+    public void testSetWithEntityObjectNullThrowsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("account").set((Object) null));
         assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("account").set((Object) null, null));
     }

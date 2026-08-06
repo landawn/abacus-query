@@ -2,10 +2,10 @@
   "library": {
     "name": "abacus-query",
     "version": "4.9.1",
-    "generated_at": "2026-08-04",
+    "generated_at": "2026-08-05",
     "java_target": "17",
     "source": {
-      "git_sha": "1711cf92c11b1cacb2138a1f2909885e773cdd9e"
+      "git_sha": "120ef99b5f8bce2cb754407087f3ed510df36692"
     }
   },
   "packages": [
@@ -189,6 +189,63 @@
               "see_also": []
             },
             {
+              "name": "distinctOn",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public This distinctOn(final String expressions)",
+              "return_type": "This",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "expressions",
+                  "type": "String",
+                  "javadoc": "the expressions inside DISTINCT ON (...); blank means plain DISTINCT",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this builder is closed, does not represent a SELECT query, or a select modifier has already been set for the current SELECT segment"
+                }
+              ],
+              "javadoc_summary": "Adds PostgreSQL-style DISTINCT ON (expressions) to the SELECT statement.",
+              "contract": [
+                "The expression is trusted SQL and the target database must support this syntax."
+              ],
+              "examples": [
+                "String sql = PSC.select(\"department\")\n                .distinctOn(\"department\")\n                .from(\"employees\")\n                .build().query();\n// Output: SELECT DISTINCT ON (department) department FROM employees"
+              ],
+              "see_also": []
+            },
+            {
+              "name": "distinctRow",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public This distinctRow()",
+              "return_type": "This",
+              "type_params": [],
+              "params": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this builder is closed, does not represent a SELECT query, or a select modifier has already been set for the current SELECT segment"
+                }
+              ],
+              "javadoc_summary": "Adds the MySQL-style DISTINCTROW modifier to the SELECT statement.",
+              "contract": [
+                "The target database must support this syntax."
+              ],
+              "examples": [
+                "String sql = PSC.select(\"department\").distinctRow().from(\"employees\").build().query();\n// Output: SELECT DISTINCTROW department FROM employees"
+              ],
+              "see_also": []
+            },
+            {
               "name": "selectModifier",
               "kind": "instance",
               "modifiers": [
@@ -323,6 +380,48 @@
               "contract": [],
               "examples": [
                 "String sql = PSC.select(\"*\").from(\"users u\").build().query();\n// Output: SELECT * FROM users u\n\nString sql2 = PSC.select(\"*\").from(\"(SELECT * FROM users) t\").build().query();\n// Output: SELECT * FROM (SELECT * FROM users) t"
+              ],
+              "see_also": []
+            },
+            {
+              "name": "from",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public This from(final This sqlBuilder, final String alias)",
+              "return_type": "This",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sqlBuilder",
+                  "type": "This",
+                  "javadoc": "the child builder supplying a complete, read-only SELECT query; consumed once child finalization begins",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "alias",
+                  "type": "String",
+                  "javadoc": "the derived-table alias, emitted as trusted SQL",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if sqlBuilder is null, is this builder, does not build a complete read-only SELECT, uses an incompatible parameter policy, or alias is null, empty, or blank"
+                },
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this builder is closed, is not building a SELECT, has no projection, or already has a FROM clause, or if the child is incomplete or was already consumed"
+                }
+              ],
+              "javadoc_summary": "Uses a complete SELECT built by another builder as a derived table in this query's FROM clause.",
+              "contract": [
+                "Child parameters are merged before parameters from subsequent outer clauses, and generated named parameters are renamed when necessary to avoid collisions with the parent query."
+              ],
+              "examples": [
+                "SqlBuilder activeUsers = PSC.select(\"id\").from(\"users\").where(Filters.eq(\"active\", true));\nString sql = PSC.select(\"*\").from(activeUsers, \"u\").build().query();\n// Output: SELECT * FROM (SELECT id FROM users WHERE active = ?) u"
               ],
               "see_also": []
             },
@@ -2403,12 +2502,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if count is negative"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this builder has already been closed by #build(), or if LIMIT has already been set on this builder, or on a FETCH-style dialect if FETCH FIRST/FETCH NEXT has already been set, or if OFFSET was already emitted on a limit-style dialect where LIMIT must precede OFFSET, or for SQL Server if ORDER BY has not been set"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if LIMIT has already been set on this builder, or on a FETCH-style dialect if FETCH FIRST/FETCH NEXT has already been set, or if OFFSET was already emitted on a limit-style dialect where LIMIT must precede OFFSET, or for SQL Server if ORDER BY has not been set"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if count is negative"
                 }
               ],
               "javadoc_summary": "Adds a row-count restriction to the query, rendered in the dialect's pagination syntax.",
@@ -2668,12 +2767,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
-                },
-                {
                   "type": "java.lang.IllegalStateException",
                   "condition": "if this builder has already been closed by #build(), or if the statement prefix cannot be rendered yet (an INSERT with no into(...) table, an UPDATE with no set(...) columns, or a SELECT segment not completed by from(...))"
+                },
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if expr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Appends a string expression to the SQL statement.",
@@ -2711,12 +2810,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if b is true and condition is null"
-                },
-                {
                   "type": "java.lang.IllegalStateException",
                   "condition": "if this builder has already been closed by #build(), or if b is true and a clause emitted by condition has already been set"
+                },
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if b is true and condition is null"
                 }
               ],
               "javadoc_summary": "Conditionally appends a condition to the SQL statement.",
@@ -2751,12 +2850,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if b is true and expr is null, empty, or blank"
-                },
-                {
                   "type": "java.lang.IllegalStateException",
                   "condition": "if this builder has already been closed by #build()"
+                },
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if b is true and expr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Conditionally appends a string expression to the SQL statement.",
@@ -3433,42 +3532,6 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "public This set(final String... propOrColumnNames)",
-              "return_type": "This",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "propOrColumnNames",
-                  "type": "String[]",
-                  "javadoc": "the columns to update",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [
-                {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnNames is null or empty, or contains a null, empty, or blank element"
-                },
-                {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted"
-                }
-              ],
-              "javadoc_summary": "Sets columns for UPDATE operation.",
-              "contract": [
-                "If a column name already contains an = sign, it is treated as a raw SET expression and no placeholder is appended."
-              ],
-              "examples": [
-                "String sql = PSC.update(\"users\")\n                .set(\"firstName\", \"lastName\", \"email\")\n                .where(Filters.equal(\"id\", 1))\n                .build().query();\n// Output: UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?"
-              ],
-              "see_also": []
-            },
-            {
-              "name": "set",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
               "signature": "public This set(final Collection<String> propOrColumnNames)",
               "return_type": "This",
               "type_params": [],
@@ -3534,36 +3597,42 @@
               "see_also": []
             },
             {
-              "name": "setEntity",
+              "name": "set",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public This setEntity(final Object entity)",
+              "signature": "public This set(final String propOrColumnName, final Object value)",
               "return_type": "This",
               "type_params": [],
               "params": [
                 {
-                  "name": "entity",
+                  "name": "propOrColumnName",
+                  "type": "String",
+                  "javadoc": "the property or column to assign",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "value",
                   "type": "Object",
-                  "javadoc": "the entity object, Map<String, Object>, or column-name String containing properties to set",
+                  "javadoc": "the value to render according to the SQL policy, or a SqlExpression to embed",
                   "nullability": "unspecified"
                 }
               ],
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entity is null, if a bean has no updatable property, or if entity is a Collection or array (use #set(Collection) or #set(String...) for column lists)"
+                  "condition": "if propOrColumnName is null, empty, or blank"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted"
+                  "condition": "if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted"
                 }
               ],
-              "javadoc_summary": "Sets properties to update from an entity object, a Map, or a single column-name String.",
+              "javadoc_summary": "Sets one UPDATE column to a supplied value.",
               "contract": [],
               "examples": [
-                "String sql = PSC.update(\"account\")\n                .setEntity(accountEntity)\n                .where(Filters.equal(\"id\", 1))\n                .build().query();"
+                "PSC.update(\"users\").set(\"status\", \"INACTIVE\");\n// UPDATE users SET status = ?\n\nPSC.update(\"users\").set(\"loginCount\", SqlExpression.of(\"login_count + 1\"));\n// UPDATE users SET login_count = login_count + 1"
               ],
               "see_also": []
             },
@@ -3573,7 +3642,123 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "@Deprecated public This set(final Object entity)",
+              "signature": "public This set(final String propOrColumnName1, final Object value1, final String propOrColumnName2, final Object value2)",
+              "return_type": "This",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "propOrColumnName1",
+                  "type": "String",
+                  "javadoc": "the first property or column to assign",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "value1",
+                  "type": "Object",
+                  "javadoc": "the first value to render, or a SqlExpression to embed",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "propOrColumnName2",
+                  "type": "String",
+                  "javadoc": "the second property or column to assign",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "value2",
+                  "type": "Object",
+                  "javadoc": "the second value to render, or a SqlExpression to embed",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if either property or column name is null, empty, or blank"
+                },
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted"
+                }
+              ],
+              "javadoc_summary": "Sets two UPDATE columns to supplied values in argument order.",
+              "contract": [],
+              "examples": [
+                "PSC.update(\"users\").set(\"firstName\", \"Ada\", \"status\", \"ACTIVE\");\n// UPDATE users SET first_name = ?, status = ?"
+              ],
+              "see_also": []
+            },
+            {
+              "name": "set",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public This set(final String propOrColumnName1, final Object value1, final String propOrColumnName2, final Object value2, final String propOrColumnName3, final Object value3)",
+              "return_type": "This",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "propOrColumnName1",
+                  "type": "String",
+                  "javadoc": "the first property or column to assign",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "value1",
+                  "type": "Object",
+                  "javadoc": "the first value to render, or a SqlExpression to embed",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "propOrColumnName2",
+                  "type": "String",
+                  "javadoc": "the second property or column to assign",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "value2",
+                  "type": "Object",
+                  "javadoc": "the second value to render, or a SqlExpression to embed",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "propOrColumnName3",
+                  "type": "String",
+                  "javadoc": "the third property or column to assign",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "value3",
+                  "type": "Object",
+                  "javadoc": "the third value to render, or a SqlExpression to embed",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if any property or column name is null, empty, or blank"
+                },
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted"
+                }
+              ],
+              "javadoc_summary": "Sets three UPDATE columns to supplied values in argument order.",
+              "contract": [],
+              "examples": [
+                "PSC.update(\"users\").set(\"firstName\", \"Ada\", \"status\", \"ACTIVE\",\n        \"updatedAt\", SqlExpression.of(\"CURRENT_TIMESTAMP\"));\n// UPDATE users SET first_name = ?, status = ?, updated_at = CURRENT_TIMESTAMP"
+              ],
+              "see_also": []
+            },
+            {
+              "name": "set",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public This set(final Object entity)",
               "return_type": "This",
               "type_params": [],
               "params": [
@@ -3587,26 +3772,27 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entity is null, if a bean has no updatable property, or if entity is a Collection or array (use #set(Collection) or #set(String...) for column lists)"
+                  "condition": "if entity is null, if a bean has no updatable property, or if entity is a Collection or array (use #set(Collection) for column lists)"
+                },
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted"
                 }
               ],
-              "deprecated": {
-                "is_deprecated": true,
-                "message": "use #setEntity(Object)",
-                "for_removal": false
-              },
               "javadoc_summary": "Sets properties to update from an entity object, a Map, or a single column-name String.",
               "contract": [],
-              "examples": [],
+              "examples": [
+                "String sql = PSC.update(\"account\")\n                .set(accountEntity)\n                .where(Filters.equal(\"id\", 1))\n                .build().query();"
+              ],
               "see_also": []
             },
             {
-              "name": "setEntity",
+              "name": "set",
               "kind": "instance",
               "modifiers": [
                 "public"
               ],
-              "signature": "public This setEntity(final Object entity, final Set<String> excludedPropNames)",
+              "signature": "public This set(final Object entity, final Set<String> excludedPropNames)",
               "return_type": "This",
               "type_params": [],
               "params": [
@@ -3626,7 +3812,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entity is null, if entity is a Collection or array (use #set(Collection) or #set(String...) for column lists), or if a bean entity has no updatable property remaining after exclusions are applied"
+                  "condition": "if entity is null, if entity is a Collection or array (use #set(Collection) for column lists), or if a bean entity has no updatable property remaining after exclusions are applied"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -3638,7 +3824,7 @@
                 "Entity metadata selection, bean-property extraction, and SET rendering are atomic: if a getter or parameter renderer fails, this builder is restored to the state it had before this call."
               ],
               "examples": [
-                "Set<String> excluded = N.asSet(\"createdDate\", \"version\");\nString sql = PSC.update(\"account\")\n                .setEntity(accountEntity, excluded)\n                .where(Filters.equal(\"id\", 1))\n                .build().query();"
+                "Set<String> excluded = N.asSet(\"createdDate\", \"version\");\nString sql = PSC.update(\"account\")\n                .set(accountEntity, excluded)\n                .where(Filters.equal(\"id\", 1))\n                .build().query();"
               ],
               "see_also": []
             },
@@ -3648,46 +3834,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "@Deprecated public This set(final Object entity, final Set<String> excludedPropNames)",
-              "return_type": "This",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "entity",
-                  "type": "Object",
-                  "javadoc": "the entity object, Map<String, Object>, or column-name String containing properties to set",
-                  "nullability": "unspecified"
-                },
-                {
-                  "name": "excludedPropNames",
-                  "type": "Set<String>",
-                  "javadoc": "property names to exclude from the update (may be null)",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [
-                {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entity is null, if entity is a Collection or array (use #set(Collection) or #set(String...) for column lists), or if a bean entity has no updatable property remaining after exclusions are applied"
-                }
-              ],
-              "deprecated": {
-                "is_deprecated": true,
-                "message": "use #setEntity(Object, Set)",
-                "for_removal": false
-              },
-              "javadoc_summary": "Sets properties to update from an entity object, a Map, or a single column-name String, excluding the specified properties.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "setEntity",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "public This setEntity(final Class<?> entityClass)",
+              "signature": "public This set(final Class<?> entityClass)",
               "return_type": "This",
               "type_params": [],
               "params": [
@@ -3711,7 +3858,7 @@
               "javadoc_summary": "Sets all updatable properties from an entity class for UPDATE operation.",
               "contract": [],
               "examples": [
-                "String sql = PSC.update(\"account\")\n                .setEntity(Account.class)\n                .where(Filters.equal(\"id\", 1))\n                .build().query();\n// Output: UPDATE account SET id = ?, gui = ?, email_address = ?, first_name = ?, middle_name = ?, last_name = ?, birth_date = ?, status = ?, last_update_time = ?, create_time = ?, contact = ? WHERE id = ?"
+                "String sql = PSC.update(\"account\")\n                .set(Account.class)\n                .where(Filters.equal(\"id\", 1))\n                .build().query();"
               ],
               "see_also": []
             },
@@ -3721,40 +3868,7 @@
               "modifiers": [
                 "public"
               ],
-              "signature": "@Deprecated public This set(final Class<?> entityClass)",
-              "return_type": "This",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "entityClass",
-                  "type": "Class<?>",
-                  "javadoc": "the entity class to get properties from",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [
-                {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or declares no updatable property"
-                }
-              ],
-              "deprecated": {
-                "is_deprecated": true,
-                "message": "use #setEntity(Class)",
-                "for_removal": false
-              },
-              "javadoc_summary": "Sets all updatable properties from an entity class for UPDATE operation.",
-              "contract": [],
-              "examples": [],
-              "see_also": []
-            },
-            {
-              "name": "setEntity",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "public This setEntity(final Class<?> entityClass, final Set<String> excludedPropNames)",
+              "signature": "public This set(final Class<?> entityClass, final Set<String> excludedPropNames)",
               "return_type": "This",
               "type_params": [],
               "params": [
@@ -3783,50 +3897,11 @@
               ],
               "javadoc_summary": "Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.",
               "contract": [
-                "Entity metadata selection and SET rendering are atomic: if parameter rendering fails, this builder is restored to the state it had before this call."
+                "Entity metadata selection and SET rendering are atomic: if parameter rendering fails, this builder is restored to its state before this call."
               ],
               "examples": [
-                "Set<String> excluded = N.asSet(\"lastUpdateTime\");\nString sql = PSC.update(\"account\")\n                .setEntity(Account.class, excluded)\n                .where(Filters.equal(\"id\", 1))\n                .build().query();\n// Output: UPDATE account SET id = ?, gui = ?, email_address = ?, first_name = ?, middle_name = ?, last_name = ?, birth_date = ?, status = ?, create_time = ?, contact = ? WHERE id = ?"
+                "Set<String> excluded = N.asSet(\"lastUpdateTime\");\nString sql = PSC.update(\"account\")\n                .set(Account.class, excluded)\n                .where(Filters.equal(\"id\", 1))\n                .build().query();"
               ],
-              "see_also": []
-            },
-            {
-              "name": "set",
-              "kind": "instance",
-              "modifiers": [
-                "public"
-              ],
-              "signature": "@Deprecated public This set(final Class<?> entityClass, final Set<String> excludedPropNames)",
-              "return_type": "This",
-              "type_params": [],
-              "params": [
-                {
-                  "name": "entityClass",
-                  "type": "Class<?>",
-                  "javadoc": "the entity class to get properties from",
-                  "nullability": "unspecified"
-                },
-                {
-                  "name": "excludedPropNames",
-                  "type": "Set<String>",
-                  "javadoc": "additional properties to exclude from the update",
-                  "nullability": "unspecified"
-                }
-              ],
-              "throws": [
-                {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or no updatable property remains after exclusions are applied"
-                }
-              ],
-              "deprecated": {
-                "is_deprecated": true,
-                "message": "use #setEntity(Class, Set)",
-                "for_removal": false
-              },
-              "javadoc_summary": "Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.",
-              "contract": [],
-              "examples": [],
               "see_also": []
             },
             {
@@ -4617,7 +4692,7 @@
               "javadoc_summary": "Creates an UPDATE statement for a table.",
               "contract": [],
               "examples": [
-                "String sql = PSC.update(\"account\")\n                .set(\"firstName\", \"lastName\")\n                .where(Filters.equal(\"id\", 1))\n                .build().query();\n// Output: UPDATE account SET first_name = ?, last_name = ? WHERE id = ?"
+                "String sql = PSC.update(\"account\")\n                .set(List.of(\"firstName\", \"lastName\"))\n                .where(Filters.equal(\"id\", 1))\n                .build().query();\n// Output: UPDATE account SET first_name = ?, last_name = ? WHERE id = ?"
               ],
               "see_also": []
             },
@@ -4653,7 +4728,7 @@
               "javadoc_summary": "Creates an UPDATE statement for a table with entity class mapping.",
               "contract": [],
               "examples": [
-                "String sql = PSC.update(\"account\", Account.class)\n                .set(\"firstName\", \"lastModified\")\n                .where(Filters.equal(\"id\", 1))\n                .build().query();\n// Output: UPDATE account SET first_name = ?, last_modified = ? WHERE id = ?"
+                "String sql = PSC.update(\"account\", Account.class)\n                .set(List.of(\"firstName\", \"lastModified\"))\n                .where(Filters.equal(\"id\", 1))\n                .build().query();\n// Output: UPDATE account SET first_name = ?, last_modified = ? WHERE id = ?"
               ],
               "see_also": []
             },
@@ -6894,6 +6969,10 @@
               ],
               "throws": [
                 {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
+                {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if column is null, empty, or blank"
                 }
@@ -6930,6 +7009,10 @@
               ],
               "throws": [
                 {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
+                {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if column or alias is null, empty, or blank"
                 }
@@ -6959,6 +7042,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if a non-empty input yields an empty snapshot, or any snapshotted element is null, empty, or blank"
@@ -6992,6 +7079,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if a non-empty input yields an empty snapshot, or any snapshotted key or value is null, empty, or blank"
@@ -7031,6 +7122,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if b is true and textToAppend is null, empty, or blank"
@@ -7075,6 +7170,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank"
@@ -7123,6 +7222,10 @@
               ],
               "throws": [
                 {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
+                {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if table is null, empty, or blank"
                 }
@@ -7159,6 +7262,10 @@
               ],
               "throws": [
                 {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
+                {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if table or alias is null, empty, or blank"
                 }
@@ -7188,6 +7295,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if a non-empty input yields an empty snapshot, or any snapshotted element is null, empty, or blank"
@@ -7227,12 +7338,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr or expr is null, empty, or blank"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if joinExpr or expr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Adds a JOIN clause (implicit INNER JOIN) with the specified table and join condition.",
@@ -7267,12 +7378,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr or expr is null, empty, or blank"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if joinExpr or expr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Adds an INNER JOIN clause with the specified table and join condition.",
@@ -7307,12 +7418,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr or expr is null, empty, or blank"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if joinExpr or expr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Adds a LEFT JOIN clause with the specified table and join condition.",
@@ -7347,12 +7458,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr or expr is null, empty, or blank"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if joinExpr or expr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Adds a RIGHT JOIN clause with the specified table and join condition.",
@@ -7387,12 +7498,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr or expr is null, empty, or blank"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if joinExpr or expr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Adds a FULL JOIN clause with the specified table and join condition.",
@@ -7421,12 +7532,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if joinExpr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Adds a JOIN clause (implicit INNER JOIN) with the specified table and no separate connector step.",
@@ -7457,12 +7568,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if joinExpr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Adds an INNER JOIN clause with the specified table and no separate connector step.",
@@ -7493,12 +7604,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if joinExpr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Adds a LEFT JOIN clause with the specified table and no separate connector step.",
@@ -7529,12 +7640,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if joinExpr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Adds a RIGHT JOIN clause with the specified table and no separate connector step.",
@@ -7565,12 +7676,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if joinExpr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Adds a FULL JOIN clause with the specified table and no separate connector step.",
@@ -7601,12 +7712,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if joinExpr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Adds a CROSS JOIN clause with the specified table.",
@@ -7635,12 +7746,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if joinExpr is null, empty, or blank"
                 }
               ],
               "javadoc_summary": "Adds a NATURAL JOIN clause with the specified table.",
@@ -7674,6 +7785,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if b is true and textToAppend is null, empty, or blank"
@@ -7718,6 +7833,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank"
@@ -7766,6 +7885,10 @@
               ],
               "throws": [
                 {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
+                {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if expr is null, empty, or blank"
                 }
@@ -7798,12 +7921,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if placeholderCount is negative"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the WHERE clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the WHERE clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if placeholderCount is negative"
                 }
               ],
               "javadoc_summary": "Appends question mark placeholders for parameterized queries.",
@@ -7847,12 +7970,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if placeholderCount is negative, or if prefix or postfix is null"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the WHERE clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the WHERE clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if placeholderCount is negative, or if prefix or postfix is null"
                 }
               ],
               "javadoc_summary": "Appends question mark placeholders surrounded by prefix and postfix.",
@@ -7882,6 +8005,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if expr is null, empty, or blank"
@@ -7914,6 +8041,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if expr is null, empty, or blank"
@@ -7952,6 +8083,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if b is true and textToAppend is null, empty, or blank"
@@ -7996,6 +8131,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank"
@@ -8044,6 +8183,10 @@
               ],
               "throws": [
                 {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
+                {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if propOrColumnName is null, empty, or blank"
                 }
@@ -8073,6 +8216,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if a non-empty input yields an empty snapshot, or any snapshotted element is null, empty, or blank"
@@ -8111,6 +8258,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if b is true and textToAppend is null, empty, or blank"
@@ -8155,6 +8306,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank"
@@ -8203,6 +8358,10 @@
               ],
               "throws": [
                 {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
+                {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if expr is null, empty, or blank"
                 }
@@ -8235,12 +8394,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if placeholderCount is negative"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the HAVING clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the HAVING clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if placeholderCount is negative"
                 }
               ],
               "javadoc_summary": "Appends question mark placeholders for parameterized queries.",
@@ -8284,12 +8443,12 @@
               ],
               "throws": [
                 {
-                  "type": "java.lang.IllegalArgumentException",
-                  "condition": "if placeholderCount is negative, or if prefix or postfix is null"
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build(), or if the HAVING clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...))"
                 },
                 {
-                  "type": "java.lang.IllegalStateException",
-                  "condition": "if the HAVING clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...)), or if this clause builder has already been closed by build()"
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if placeholderCount is negative, or if prefix or postfix is null"
                 }
               ],
               "javadoc_summary": "Appends question mark placeholders surrounded by prefix and postfix.",
@@ -8319,6 +8478,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if expr is null, empty, or blank"
@@ -8351,6 +8514,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if expr is null, empty, or blank"
@@ -8389,6 +8556,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if b is true and textToAppend is null, empty, or blank"
@@ -8433,6 +8604,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank"
@@ -8481,6 +8656,10 @@
               ],
               "throws": [
                 {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
+                {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if propOrColumnName is null, empty, or blank"
                 }
@@ -8510,6 +8689,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if a non-empty input yields an empty snapshot, or any snapshotted element is null, empty, or blank"
@@ -8548,6 +8731,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if b is true and textToAppend is null, empty, or blank"
@@ -8592,6 +8779,10 @@
                 }
               ],
               "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this clause builder has already been closed by build()"
+                },
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank"
@@ -11571,6 +11762,68 @@
               "examples": [
                 "Is condition = Filters.is(\"status\", Filters.expr(\"UNKNOWN\"));\n// SQL fragment: status IS UNKNOWN"
               ],
+              "see_also": []
+            },
+            {
+              "name": "isTrue",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static Is isTrue(final String propName)",
+              "return_type": "Is",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "propName",
+                  "type": "String",
+                  "javadoc": "the property or column to test",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if propName is null, empty, or blank"
+                }
+              ],
+              "javadoc_summary": "Creates an IS TRUE predicate without turning the boolean literal into a bind parameter.",
+              "contract": [
+                "The target database must support SQL boolean literals and the IS TRUE predicate."
+              ],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "isFalse",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static Is isFalse(final String propName)",
+              "return_type": "Is",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "propName",
+                  "type": "String",
+                  "javadoc": "the property or column to test",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if propName is null, empty, or blank"
+                }
+              ],
+              "javadoc_summary": "Creates an IS FALSE predicate without turning the boolean literal into a bind parameter.",
+              "contract": [
+                "The target database must support SQL boolean literals and the IS FALSE predicate."
+              ],
+              "examples": [],
               "see_also": []
             },
             {
@@ -15358,6 +15611,43 @@
               ],
               "examples": [
                 "SubQuery subQuery = Filters.subQuery(\"products\",\n    Arrays.asList(\"id\", \"price\"),\n    \"category = 'electronics' AND in_stock = true\");\n// Generates: SELECT id, price FROM products WHERE category = 'electronics' AND in_stock = true"
+              ],
+              "see_also": []
+            },
+            {
+              "name": "subQuery",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static SubQuery subQuery(final SqlBuilder sqlBuilder)",
+              "return_type": "SubQuery",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sqlBuilder",
+                  "type": "SqlBuilder",
+                  "javadoc": "the builder to finalize and capture; consumed once finalization begins",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if sqlBuilder is null, or its built statement is blank, is not a complete SELECT, or is not read-only"
+                },
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if the builder is incomplete or was already consumed"
+                }
+              ],
+              "javadoc_summary": "Finalizes and consumes a SqlBuilder, validates that its result is a complete, read-only SELECT, and captures it as a reusable subquery.",
+              "contract": [
+                "If the captured SQL contains generated placeholders, a parent builder must use the same SQL policy; that compatibility is checked when the snapshot is composed into the parent."
+              ],
+              "examples": [
+                "SubQuery paidOrders = Filters.subQuery(\n    Dsl.PSC.select(\"userId\").from(\"orders\").where(Filters.gt(\"total\", 100)));"
               ],
               "see_also": []
             },
@@ -30975,7 +31265,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents raw query-expression text or a structured SELECT used within SQL conditions.",
+          "javadoc_summary": "Represents a complete or structured SELECT used within SQL conditions.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -31124,10 +31414,10 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Returns the raw query-expression text if this is a raw SQL subquery.",
+              "javadoc_summary": "Returns the stored complete query text if this is a raw SQL subquery or builder-backed snapshot.",
               "contract": [],
               "examples": [
-                "// Raw SQL subquery\nSubQuery rawQuery = new SubQuery(\"SELECT id FROM users WHERE status = 'active'\");\nString sql = rawQuery.rawSql();\n// Returns: \"SELECT id FROM users WHERE status = 'active'\"\n\n// Structured subquery returns null for rawSql()\nSubQuery structured = new SubQuery(\"users\", Arrays.asList(\"id\"), Filters.equal(\"status\", \"active\"));\nString structuredSql = structured.rawSql();\n// Returns: null"
+                "// Raw SQL subquery\nSubQuery rawQuery = new SubQuery(\"SELECT id FROM users WHERE status = 'active'\");\nString sql = rawQuery.rawSql();\n// Returns: \"SELECT id FROM users WHERE status = 'active'\"\n\n// Structured subquery returns null for rawSql()\nSubQuery structured = new SubQuery(\"users\", Arrays.asList(\"id\"), Filters.equal(\"status\", \"active\"));\nString structuredSql = structured.rawSql();\n// Returns: null\n\n// Builder-backed snapshot returns the SQL rendered by its source builder\nSubQuery built = Filters.subQuery(Dsl.PSC.select(\"id\").from(\"users\"));\nString builtSql = built.rawSql();\n// Returns: \"SELECT id FROM users\""
               ],
               "see_also": []
             },
@@ -31214,13 +31504,12 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Returns the list of parameter values from the condition.",
+              "javadoc_summary": "Returns this subquery's parameter values.",
               "contract": [
-                "These are the parameter values that will be bound to the prepared statement placeholders when the query is executed.",
-                "&#9888;&#65039; For raw SQL subqueries this returns an empty list even when the raw text contains placeholders; raw bindings are managed by the caller."
+                "&#9888;&#65039; For raw SQL subqueries constructed from text this returns an empty list even when that text contains placeholders; raw bindings are managed by the caller."
               ],
               "examples": [
-                "// Structured subquery: parameters are collected from the condition (in order)\nCondition cond = Filters.and(Filters.equal(\"status\", \"active\"), Filters.between(\"age\", 18, 65));\nSubQuery structured = Filters.subQuery(\"users\", Arrays.asList(\"id\"), cond);\nList<Object> params = structured.parameters();\n// returns [\"active\", 18, 65]\n\n// Raw SQL subquery: no bound parameters\nSubQuery raw = Filters.subQuery(\"SELECT * FROM users\");\nList<Object> rawParams = raw.parameters();\n// returns [] (empty immutable list)\n\n// Structured subquery without a condition: also empty\nSubQuery noCond = Filters.subQuery(\"users\", Arrays.asList(\"id\"), (Condition) null);\nList<Object> noCondParams = noCond.parameters();\n// returns [] (empty immutable list)"
+                "// Structured subquery: parameters are collected from the condition (in order)\nCondition cond = Filters.and(Filters.equal(\"status\", \"active\"), Filters.between(\"age\", 18, 65));\nSubQuery structured = Filters.subQuery(\"users\", Arrays.asList(\"id\"), cond);\nList<Object> params = structured.parameters();\n// returns [\"active\", 18, 65]\n\n// Raw SQL subquery: no bound parameters\nSubQuery raw = Filters.subQuery(\"SELECT * FROM users\");\nList<Object> rawParams = raw.parameters();\n// returns [] (empty immutable list)\n\n// Structured subquery without a condition: also empty\nSubQuery noCond = Filters.subQuery(\"users\", Arrays.asList(\"id\"), (Condition) null);\nList<Object> noCondParams = noCond.parameters();\n// returns [] (empty immutable list)\n\n// Builder-backed snapshot: parameters from the source builder are retained\nSubQuery built = Filters.subQuery(\n    Dsl.PSC.select(\"id\").from(\"users\").where(Filters.equal(\"status\", \"active\")));\nList<Object> builtParams = built.parameters();\n// returns [\"active\"]"
               ],
               "see_also": []
             },
@@ -31287,7 +31576,7 @@
               "throws": [],
               "javadoc_summary": "Checks if this subquery is equal to another object.",
               "contract": [
-                "Two subqueries are equal only when they have the exact same runtime class and all of their identity fields are equal: the entity name, the entity class, the selected properties, the raw SQL string, and the condition.",
+                "Two subqueries are equal only when they have the exact same runtime class and all of their identity fields are equal: the entity name, the entity class, the selected properties, the stored SQL string, and the condition.",
                 "The entity name participates even for raw-SQL subqueries, so two raw subqueries are equal only when both their SQL and their entity name match."
               ],
               "examples": [

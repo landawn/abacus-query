@@ -101,7 +101,7 @@ PSC.insert(account).into("account").build();
 
 // UPDATE
 PSC.update("account")
-   .set("status", "lastModified")
+   .set(List.of("status", "lastModified"))
    .where(Filters.eq("id", id))
    .build();
 

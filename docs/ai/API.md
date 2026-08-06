@@ -1,7 +1,7 @@
 # abacus-query API Index (v4.9.1)
-- Build: 1711cf92c11b1cacb2138a1f2909885e773cdd9e
+- Build: 120ef99b5f8bce2cb754407087f3ed510df36692
 - Java: 17
-- Generated: 2026-08-04
+- Generated: 2026-08-05
 
 ## Packages
 - com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
@@ -43,7 +43,7 @@ Base class for fluent SQL builders.
   - ```java
     String insertSql = PSC.insert("firstName", "lastName").into("account").build().query();
     // Output: INSERT INTO account (first_name, last_name) VALUES (?, ?)
-    
+
     String insertSelectSql = PSC.select("firstName").into("account_backup").from("account").build().query();
     // Output: INSERT INTO account_backup (first_name) SELECT first_name AS "firstName" FROM account
     ```
@@ -90,6 +90,39 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("name").distinct().from("account").build().query();
     // Output: SELECT DISTINCT name FROM account
+    ```
+##### distinctOn(...) -> This
+- **Signature:** `public This distinctOn(final String expressions)`
+- **Summary:** Adds PostgreSQL-style DISTINCT ON (expressions) to the SELECT statement.
+- **Contract:**
+  - The expression is trusted SQL and the target database must support this syntax.
+- **Parameters:**
+  - `expressions` (`String`) — the expressions inside DISTINCT ON (...); blank means plain DISTINCT
+- **Returns:** this SqlBuilder instance for method chaining
+- **Throws:**
+  - `java.lang.IllegalStateException` — if this builder is closed, does not represent a SELECT query, or a select modifier has already been set for the current SELECT segment
+- **Examples:**
+  - ```java
+    String sql = PSC.select("department")
+                    .distinctOn("department")
+                    .from("employees")
+                    .build().query();
+    // Output: SELECT DISTINCT ON (department) department FROM employees
+    ```
+##### distinctRow(...) -> This
+- **Signature:** `public This distinctRow()`
+- **Summary:** Adds the MySQL-style DISTINCTROW modifier to the SELECT statement.
+- **Contract:**
+  - The target database must support this syntax.
+- **Parameters:**
+  - (none)
+- **Returns:** this SqlBuilder instance for method chaining
+- **Throws:**
+  - `java.lang.IllegalStateException` — if this builder is closed, does not represent a SELECT query, or a select modifier has already been set for the current SELECT segment
+- **Examples:**
+  - ```java
+    String sql = PSC.select("department").distinctRow().from("employees").build().query();
+    // Output: SELECT DISTINCTROW department FROM employees
     ```
 ##### selectModifier(...) -> This
 - **Signature:** `public This selectModifier(final String selectModifier)`
@@ -147,9 +180,26 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from("users u").build().query();
     // Output: SELECT * FROM users u
-    
+
     String sql2 = PSC.select("*").from("(SELECT * FROM users) t").build().query();
     // Output: SELECT * FROM (SELECT * FROM users) t
+    ```
+- **Signature:** `public This from(final This sqlBuilder, final String alias)`
+- **Summary:** Uses a complete SELECT built by another builder as a derived table in this query's FROM clause.
+- **Contract:**
+  - Child parameters are merged before parameters from subsequent outer clauses, and generated named parameters are renamed when necessary to avoid collisions with the parent query.
+- **Parameters:**
+  - `sqlBuilder` (`This`) — the child builder supplying a complete, read-only SELECT query; consumed once child finalization begins
+  - `alias` (`String`) — the derived-table alias, emitted as trusted SQL
+- **Returns:** this SqlBuilder instance for method chaining
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this builder, does not build a complete read-only SELECT, uses an incompatible parameter policy, or alias is null, empty, or blank
+  - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT, has no projection, or already has a FROM clause, or if the child is incomplete or was already consumed
+- **Examples:**
+  - ```java
+    SqlBuilder activeUsers = PSC.select("id").from("users").where(Filters.eq("active", true));
+    String sql = PSC.select("*").from(activeUsers, "u").build().query();
+    // Output: SELECT * FROM (SELECT id FROM users WHERE active = ?) u
     ```
 - **Signature:** `public This from(final String expr, final Class<?> entityClass)`
 - **Summary:** Sets the FROM clause with an expression and associates it with an entity class.
@@ -1132,8 +1182,8 @@ Base class for fluent SQL builders.
   - `count` (`int`) — the maximum number of rows to return
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if LIMIT has already been set on this builder, or on a FETCH-style dialect if FETCH FIRST/FETCH NEXT has already been set, or if OFFSET was already emitted on a limit-style dialect where LIMIT must precede OFFSET, or for SQL Server if ORDER BY has not been set
   - `java.lang.IllegalArgumentException` — if count is negative
-  - `java.lang.IllegalStateException` — if LIMIT has already been set on this builder, or on a FETCH-style dialect if FETCH FIRST/FETCH NEXT has already been set, or if OFFSET was already emitted on a limit-style dialect where LIMIT must precede OFFSET, or for SQL Server if ORDER BY has not been set
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -1141,7 +1191,7 @@ Base class for fluent SQL builders.
                     .limit(10)
                     .build().query();
     // Output: SELECT * FROM users LIMIT 10
-    
+
     Dsl oracleDsl = Dsl.forDialect(SqlDialect.builder()
             .sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL)
             .productInfo(SqlDialect.ProductInfo.of("Oracle"))
@@ -1285,8 +1335,8 @@ Base class for fluent SQL builders.
   - `expr` (`String`) — the expression to append
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
   - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if the statement prefix cannot be rendered yet (an INSERT with no into(...) table, an UPDATE with no set(...) columns, or a SELECT segment not completed by from(...))
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -1303,8 +1353,8 @@ Base class for fluent SQL builders.
   - `condition` (`Condition`) — the condition to append
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if b is true and condition is null
   - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if b is true and a clause emitted by condition has already been set
+  - `java.lang.IllegalArgumentException` — if b is true and condition is null
 - **Examples:**
   - ```java
     boolean includeAgeFilter = true;
@@ -1321,8 +1371,8 @@ Base class for fluent SQL builders.
   - `expr` (`String`) — the expression to append
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if b is true and expr is null, empty, or blank
   - `java.lang.IllegalStateException` — if this builder has already been closed by #build()
+  - `java.lang.IllegalArgumentException` — if b is true and expr is null, empty, or blank
 - **Examples:**
   - ```java
     boolean includeForUpdate = true;
@@ -1670,24 +1720,6 @@ Base class for fluent SQL builders.
                      .build().query();
     // Output: UPDATE users SET status = ? WHERE id = ?
     ```
-- **Signature:** `public This set(final String... propOrColumnNames)`
-- **Summary:** Sets columns for UPDATE operation.
-- **Contract:**
-  - If a column name already contains an = sign, it is treated as a raw SET expression and no placeholder is appended.
-- **Parameters:**
-  - `propOrColumnNames` (`String[]`) — the columns to update
-- **Returns:** this SqlBuilder instance for method chaining
-- **Throws:**
-  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted
-- **Examples:**
-  - ```java
-    String sql = PSC.update("users")
-                    .set("firstName", "lastName", "email")
-                    .where(Filters.equal("id", 1))
-                    .build().query();
-    // Output: UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?
-    ```
 - **Signature:** `public This set(final Collection<String> propOrColumnNames)`
 - **Summary:** Sets columns for UPDATE operation with a collection of property or column names.
 - **Contract:**
@@ -1726,53 +1758,74 @@ Base class for fluent SQL builders.
                     .build().query();
     // Output: UPDATE users SET first_name = ?, last_name = ? WHERE id = ?
     ```
-- **Signature:** `@Deprecated public This set(final Object entity)`
+- **Signature:** `public This set(final String propOrColumnName, final Object value)`
+- **Summary:** Sets one UPDATE column to a supplied value.
+- **Parameters:**
+  - `propOrColumnName` (`String`) — the property or column to assign
+  - `value` (`Object`) — the value to render according to the SQL policy, or a SqlExpression to embed
+- **Returns:** this SqlBuilder instance for method chaining
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank
+  - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted
+- **Examples:**
+  - ```java
+    PSC.update("users").set("status", "INACTIVE");
+    // UPDATE users SET status = ?
+
+    PSC.update("users").set("loginCount", SqlExpression.of("login_count + 1"));
+    // UPDATE users SET login_count = login_count + 1
+    ```
+- **Signature:** `public This set(final String propOrColumnName1, final Object value1, final String propOrColumnName2, final Object value2)`
+- **Summary:** Sets two UPDATE columns to supplied values in argument order.
+- **Parameters:**
+  - `propOrColumnName1` (`String`) — the first property or column to assign
+  - `value1` (`Object`) — the first value to render, or a SqlExpression to embed
+  - `propOrColumnName2` (`String`) — the second property or column to assign
+  - `value2` (`Object`) — the second value to render, or a SqlExpression to embed
+- **Returns:** this SqlBuilder instance for method chaining
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if either property or column name is null, empty, or blank
+  - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted
+- **Examples:**
+  - ```java
+    PSC.update("users").set("firstName", "Ada", "status", "ACTIVE");
+    // UPDATE users SET first_name = ?, status = ?
+    ```
+- **Signature:** `public This set(final String propOrColumnName1, final Object value1, final String propOrColumnName2, final Object value2, final String propOrColumnName3, final Object value3)`
+- **Summary:** Sets three UPDATE columns to supplied values in argument order.
+- **Parameters:**
+  - `propOrColumnName1` (`String`) — the first property or column to assign
+  - `value1` (`Object`) — the first value to render, or a SqlExpression to embed
+  - `propOrColumnName2` (`String`) — the second property or column to assign
+  - `value2` (`Object`) — the second value to render, or a SqlExpression to embed
+  - `propOrColumnName3` (`String`) — the third property or column to assign
+  - `value3` (`Object`) — the third value to render, or a SqlExpression to embed
+- **Returns:** this SqlBuilder instance for method chaining
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if any property or column name is null, empty, or blank
+  - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted
+- **Examples:**
+  - ```java
+    PSC.update("users").set("firstName", "Ada", "status", "ACTIVE",
+            "updatedAt", SqlExpression.of("CURRENT_TIMESTAMP"));
+    // UPDATE users SET first_name = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+    ```
+- **Signature:** `public This set(final Object entity)`
 - **Summary:** Sets properties to update from an entity object, a Map, or a single column-name String.
 - **Parameters:**
   - `entity` (`Object`) — the entity object, Map<String, Object>, or column-name String containing properties to set
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entity is null, if a bean has no updatable property, or if entity is a Collection or array (use #set(Collection) or #set(String...) for column lists)
-- **Signature:** `@Deprecated public This set(final Object entity, final Set<String> excludedPropNames)`
-- **Summary:** Sets properties to update from an entity object, a Map, or a single column-name String, excluding the specified properties.
-- **Parameters:**
-  - `entity` (`Object`) — the entity object, Map<String, Object>, or column-name String containing properties to set
-  - `excludedPropNames` (`Set<String>`) — property names to exclude from the update (may be null)
-- **Returns:** this SqlBuilder instance for method chaining
-- **Throws:**
-  - `java.lang.IllegalArgumentException` — if entity is null, if entity is a Collection or array (use #set(Collection) or #set(String...) for column lists), or if a bean entity has no updatable property remaining after exclusions are applied
-- **Signature:** `@Deprecated public This set(final Class<?> entityClass)`
-- **Summary:** Sets all updatable properties from an entity class for UPDATE operation.
-- **Parameters:**
-  - `entityClass` (`Class<?>`) — the entity class to get properties from
-- **Returns:** this SqlBuilder instance for method chaining
-- **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null or declares no updatable property
-- **Signature:** `@Deprecated public This set(final Class<?> entityClass, final Set<String> excludedPropNames)`
-- **Summary:** Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.
-- **Parameters:**
-  - `entityClass` (`Class<?>`) — the entity class to get properties from
-  - `excludedPropNames` (`Set<String>`) — additional properties to exclude from the update
-- **Returns:** this SqlBuilder instance for method chaining
-- **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null or no updatable property remains after exclusions are applied
-##### setEntity(...) -> This
-- **Signature:** `public This setEntity(final Object entity)`
-- **Summary:** Sets properties to update from an entity object, a Map, or a single column-name String.
-- **Parameters:**
-  - `entity` (`Object`) — the entity object, Map<String, Object>, or column-name String containing properties to set
-- **Returns:** this SqlBuilder instance for method chaining
-- **Throws:**
-  - `java.lang.IllegalArgumentException` — if entity is null, if a bean has no updatable property, or if entity is a Collection or array (use #set(Collection) or #set(String...) for column lists)
+  - `java.lang.IllegalArgumentException` — if entity is null, if a bean has no updatable property, or if entity is a Collection or array (use #set(Collection) for column lists)
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted
 - **Examples:**
   - ```java
     String sql = PSC.update("account")
-                    .setEntity(accountEntity)
+                    .set(accountEntity)
                     .where(Filters.equal("id", 1))
                     .build().query();
     ```
-- **Signature:** `public This setEntity(final Object entity, final Set<String> excludedPropNames)`
+- **Signature:** `public This set(final Object entity, final Set<String> excludedPropNames)`
 - **Summary:** Sets properties to update from an entity object, a Map, or a single column-name String, excluding the specified properties.
 - **Contract:**
   - Entity metadata selection, bean-property extraction, and SET rendering are atomic: if a getter or parameter renderer fails, this builder is restored to the state it had before this call.
@@ -1781,17 +1834,17 @@ Base class for fluent SQL builders.
   - `excludedPropNames` (`Set<String>`) — property names to exclude from the update (may be null)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entity is null, if entity is a Collection or array (use #set(Collection) or #set(String...) for column lists), or if a bean entity has no updatable property remaining after exclusions are applied
+  - `java.lang.IllegalArgumentException` — if entity is null, if entity is a Collection or array (use #set(Collection) for column lists), or if a bean entity has no updatable property remaining after exclusions are applied
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted
 - **Examples:**
   - ```java
     Set<String> excluded = N.asSet("createdDate", "version");
     String sql = PSC.update("account")
-                    .setEntity(accountEntity, excluded)
+                    .set(accountEntity, excluded)
                     .where(Filters.equal("id", 1))
                     .build().query();
     ```
-- **Signature:** `public This setEntity(final Class<?> entityClass)`
+- **Signature:** `public This set(final Class<?> entityClass)`
 - **Summary:** Sets all updatable properties from an entity class for UPDATE operation.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to get properties from
@@ -1802,15 +1855,14 @@ Base class for fluent SQL builders.
 - **Examples:**
   - ```java
     String sql = PSC.update("account")
-                    .setEntity(Account.class)
+                    .set(Account.class)
                     .where(Filters.equal("id", 1))
                     .build().query();
-    // Output: UPDATE account SET id = ?, gui = ?, email_address = ?, first_name = ?, middle_name = ?, last_name = ?, birth_date = ?, status = ?, last_update_time = ?, create_time = ?, contact = ? WHERE id = ?
     ```
-- **Signature:** `public This setEntity(final Class<?> entityClass, final Set<String> excludedPropNames)`
+- **Signature:** `public This set(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Sets updatable properties from an entity class for UPDATE operation, excluding specified properties.
 - **Contract:**
-  - Entity metadata selection and SET rendering are atomic: if parameter rendering fails, this builder is restored to the state it had before this call.
+  - Entity metadata selection and SET rendering are atomic: if parameter rendering fails, this builder is restored to its state before this call.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to get properties from
   - `excludedPropNames` (`Set<String>`) — additional properties to exclude from the update
@@ -1822,10 +1874,9 @@ Base class for fluent SQL builders.
   - ```java
     Set<String> excluded = N.asSet("lastUpdateTime");
     String sql = PSC.update("account")
-                    .setEntity(Account.class, excluded)
+                    .set(Account.class, excluded)
                     .where(Filters.equal("id", 1))
                     .build().query();
-    // Output: UPDATE account SET id = ?, gui = ?, email_address = ?, first_name = ?, middle_name = ?, last_name = ?, birth_date = ?, status = ?, create_time = ?, contact = ? WHERE id = ?
     ```
 ##### build(...) -> SP
 - **Signature:** `public SP build()`
@@ -2186,7 +2237,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Examples:**
   - ```java
     String sql = PSC.update("account")
-                    .set("firstName", "lastName")
+                    .set(List.of("firstName", "lastName"))
                     .where(Filters.equal("id", 1))
                     .build().query();
     // Output: UPDATE account SET first_name = ?, last_name = ? WHERE id = ?
@@ -2202,7 +2253,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Examples:**
   - ```java
     String sql = PSC.update("account", Account.class)
-                    .set("firstName", "lastModified")
+                    .set(List.of("firstName", "lastModified"))
                     .where(Filters.equal("id", 1))
                     .build().query();
     // Output: UPDATE account SET first_name = ?, last_modified = ? WHERE id = ?
@@ -3188,6 +3239,7 @@ Builder class for constructing the SELECT clause of a SQL query.
   - `column` (`String`) — the column name to select (must not be null, empty, or blank)
 - **Returns:** this SelectClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if column is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3201,6 +3253,7 @@ Builder class for constructing the SELECT clause of a SQL query.
   - `alias` (`String`) — the alias for the column (must not be null, empty, or blank)
 - **Returns:** this SelectClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if column or alias is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3216,6 +3269,7 @@ Builder class for constructing the SELECT clause of a SQL query.
   - `columns` (`Collection<String>`) — collection of column names to select (may be null or empty; individual elements must not be null, empty, or blank)
 - **Returns:** this SelectClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if a non-empty input yields an empty snapshot, or any snapshotted element is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3231,6 +3285,7 @@ Builder class for constructing the SELECT clause of a SQL query.
   - `columnAliases` (`Map<String, String>`) — map where keys are column names and values are aliases (may be null or empty; individual keys and values must not be null, empty, or blank)
 - **Returns:** this SelectClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if a non-empty input yields an empty snapshot, or any snapshotted key or value is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3250,6 +3305,7 @@ Builder class for constructing the SELECT clause of a SQL query.
   - `textToAppend` (`String`) — the string to append if condition is true (must not be null, empty, or blank when b is true)
 - **Returns:** this SelectClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if b is true and textToAppend is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3265,6 +3321,7 @@ Builder class for constructing the SELECT clause of a SQL query.
   - `textToAppendWhenFalse` (`String`) — the string to append if condition is false (must not be null, empty, or blank)
 - **Returns:** this SelectClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3293,6 +3350,7 @@ Builder class for constructing the FROM clause of a SQL query.
   - `table` (`String`) — the table name to add (must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if table is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3306,6 +3364,7 @@ Builder class for constructing the FROM clause of a SQL query.
   - `alias` (`String`) — the alias for the table (must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if table or alias is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3320,6 +3379,7 @@ Builder class for constructing the FROM clause of a SQL query.
   - `tables` (`Collection<String>`) — collection of table names to add (may be null or empty; individual elements must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if a non-empty input yields an empty snapshot, or any snapshotted element is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3334,8 +3394,8 @@ Builder class for constructing the FROM clause of a SQL query.
   - `expr` (`String`) — the join condition (must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
   - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     from.append("users u").join("orders o", "u.id = o.user_id");
@@ -3349,8 +3409,8 @@ Builder class for constructing the FROM clause of a SQL query.
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     from.append("users u").join("orders o USING (user_id)");
@@ -3364,8 +3424,8 @@ Builder class for constructing the FROM clause of a SQL query.
   - `expr` (`String`) — the join condition (must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
   - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     from.append("users u").innerJoin("orders o", "u.id = o.user_id");
@@ -3379,8 +3439,8 @@ Builder class for constructing the FROM clause of a SQL query.
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     from.append("users u").innerJoin("orders o USING (user_id)");
@@ -3394,8 +3454,8 @@ Builder class for constructing the FROM clause of a SQL query.
   - `expr` (`String`) — the join condition (must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
   - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     from.append("users u").leftJoin("orders o", "u.id = o.user_id");
@@ -3409,8 +3469,8 @@ Builder class for constructing the FROM clause of a SQL query.
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     from.append("users u").leftJoin("orders o USING (user_id)");
@@ -3424,8 +3484,8 @@ Builder class for constructing the FROM clause of a SQL query.
   - `expr` (`String`) — the join condition (must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
   - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     from.append("orders o").rightJoin("users u", "o.user_id = u.id");
@@ -3439,8 +3499,8 @@ Builder class for constructing the FROM clause of a SQL query.
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     from.append("orders o").rightJoin("users u USING (user_id)");
@@ -3454,8 +3514,8 @@ Builder class for constructing the FROM clause of a SQL query.
   - `expr` (`String`) — the join condition (must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
   - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     from.append("employees e").fullJoin("departments d", "e.dept_id = d.id");
@@ -3469,8 +3529,8 @@ Builder class for constructing the FROM clause of a SQL query.
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     from.append("employees e").fullJoin("departments d USING (dept_id)");
@@ -3483,8 +3543,8 @@ Builder class for constructing the FROM clause of a SQL query.
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     from.append("users u").crossJoin("colors c");
@@ -3497,8 +3557,8 @@ Builder class for constructing the FROM clause of a SQL query.
   - `joinExpr` (`String`) — the table or entity to join (can include alias; must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     from.append("users u").naturalJoin("user_profiles");
@@ -3514,6 +3574,7 @@ Builder class for constructing the FROM clause of a SQL query.
   - `textToAppend` (`String`) — the string to append if condition is true (must not be null, empty, or blank when b is true)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if b is true and textToAppend is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3528,6 +3589,7 @@ Builder class for constructing the FROM clause of a SQL query.
   - `textToAppendWhenFalse` (`String`) — the string to append if condition is false (must not be null, empty, or blank)
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3556,6 +3618,7 @@ Builder class for constructing the WHERE clause of a SQL query.
   - `expr` (`String`) — the SQL expression to append (must not be null, empty, or blank)
 - **Returns:** this WhereClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3572,8 +3635,8 @@ Builder class for constructing the WHERE clause of a SQL query.
   - `placeholderCount` (`int`) — the number of question marks to append (must not be negative)
 - **Returns:** this WhereClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the WHERE clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...))
   - `java.lang.IllegalArgumentException` — if placeholderCount is negative
-  - `java.lang.IllegalStateException` — if the WHERE clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     where.append("id IN (").appendPlaceholders(3).append(")");
@@ -3592,8 +3655,8 @@ Builder class for constructing the WHERE clause of a SQL query.
   - `postfix` (`String`) — the string to add after the question marks (must not be null)
 - **Returns:** this WhereClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the WHERE clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...))
   - `java.lang.IllegalArgumentException` — if placeholderCount is negative, or if prefix or postfix is null
-  - `java.lang.IllegalStateException` — if the WHERE clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     where.append("status IN ").appendPlaceholders(3, "(", ")");
@@ -3608,6 +3671,7 @@ Builder class for constructing the WHERE clause of a SQL query.
   - `expr` (`String`) — the SQL expression to add with AND (must not be null, empty, or blank)
 - **Returns:** this WhereClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3623,6 +3687,7 @@ Builder class for constructing the WHERE clause of a SQL query.
   - `expr` (`String`) — the SQL expression to add with OR (must not be null, empty, or blank)
 - **Returns:** this WhereClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3639,6 +3704,7 @@ Builder class for constructing the WHERE clause of a SQL query.
   - `textToAppend` (`String`) — the string to append if condition is true (must not be null, empty, or blank when b is true)
 - **Returns:** this WhereClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if b is true and textToAppend is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3654,6 +3720,7 @@ Builder class for constructing the WHERE clause of a SQL query.
   - `textToAppendWhenFalse` (`String`) — the string to append if condition is false (must not be null, empty, or blank)
 - **Returns:** this WhereClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3682,6 +3749,7 @@ Builder class for constructing the GROUP BY clause of a SQL query.
   - `propOrColumnName` (`String`) — the property or column name to group by (must not be null, empty, or blank)
 - **Returns:** this GroupByClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3696,6 +3764,7 @@ Builder class for constructing the GROUP BY clause of a SQL query.
   - `columns` (`Collection<String>`) — collection of column names to group by (may be null or empty; individual elements must not be null, empty, or blank)
 - **Returns:** this GroupByClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if a non-empty input yields an empty snapshot, or any snapshotted element is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3712,6 +3781,7 @@ Builder class for constructing the GROUP BY clause of a SQL query.
   - `textToAppend` (`String`) — the string to append if condition is true (must not be null, empty, or blank when b is true)
 - **Returns:** this GroupByClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if b is true and textToAppend is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3727,6 +3797,7 @@ Builder class for constructing the GROUP BY clause of a SQL query.
   - `textToAppendWhenFalse` (`String`) — the string to append if condition is false (must not be null, empty, or blank)
 - **Returns:** this GroupByClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3757,6 +3828,7 @@ Builder class for constructing the HAVING clause of a SQL query.
   - `expr` (`String`) — the SQL expression to append (must not be null, empty, or blank)
 - **Returns:** this HavingClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3773,8 +3845,8 @@ Builder class for constructing the HAVING clause of a SQL query.
   - `placeholderCount` (`int`) — the number of question marks to append (must not be negative)
 - **Returns:** this HavingClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the HAVING clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...))
   - `java.lang.IllegalArgumentException` — if placeholderCount is negative
-  - `java.lang.IllegalStateException` — if the HAVING clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     having.append("MAX(score) IN (").appendPlaceholders(3).append(")");
@@ -3793,8 +3865,8 @@ Builder class for constructing the HAVING clause of a SQL query.
   - `postfix` (`String`) — the string to add after the question marks (must not be null)
 - **Returns:** this HavingClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the HAVING clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...))
   - `java.lang.IllegalArgumentException` — if placeholderCount is negative, or if prefix or postfix is null
-  - `java.lang.IllegalStateException` — if the HAVING clause has not been initialized by a prior call that actually appended a condition (e.g. append(...), and(...), or or(...)), or if this clause builder has already been closed by build()
 - **Examples:**
   - ```java
     having.append("MAX(score) IN ").appendPlaceholders(3, "(", ")");
@@ -3809,6 +3881,7 @@ Builder class for constructing the HAVING clause of a SQL query.
   - `expr` (`String`) — the SQL expression to add with AND (must not be null, empty, or blank)
 - **Returns:** this HavingClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3824,6 +3897,7 @@ Builder class for constructing the HAVING clause of a SQL query.
   - `expr` (`String`) — the SQL expression to add with OR (must not be null, empty, or blank)
 - **Returns:** this HavingClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3840,6 +3914,7 @@ Builder class for constructing the HAVING clause of a SQL query.
   - `textToAppend` (`String`) — the string to append if condition is true (must not be null, empty, or blank when b is true)
 - **Returns:** this HavingClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if b is true and textToAppend is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3855,6 +3930,7 @@ Builder class for constructing the HAVING clause of a SQL query.
   - `textToAppendWhenFalse` (`String`) — the string to append if condition is false (must not be null, empty, or blank)
 - **Returns:** this HavingClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3883,6 +3959,7 @@ Builder class for constructing the ORDER BY clause of a SQL query.
   - `propOrColumnName` (`String`) — the property or column name with optional ASC/DESC (must not be null, empty, or blank)
 - **Returns:** this OrderByClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3897,6 +3974,7 @@ Builder class for constructing the ORDER BY clause of a SQL query.
   - `columns` (`Collection<String>`) — collection of column names with optional sort directions (may be null or empty; individual elements must not be null, empty, or blank)
 - **Returns:** this OrderByClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if a non-empty input yields an empty snapshot, or any snapshotted element is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3913,6 +3991,7 @@ Builder class for constructing the ORDER BY clause of a SQL query.
   - `textToAppend` (`String`) — the string to append if condition is true (must not be null, empty, or blank when b is true)
 - **Returns:** this OrderByClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if b is true and textToAppend is null, empty, or blank
 - **Examples:**
   - ```java
@@ -3928,6 +4007,7 @@ Builder class for constructing the ORDER BY clause of a SQL query.
   - `textToAppendWhenFalse` (`String`) — the string to append if condition is false (must not be null, empty, or blank)
 - **Returns:** this OrderByClause instance for method chaining
 - **Throws:**
+  - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
   - `java.lang.IllegalArgumentException` — if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank
 - **Examples:**
   - ```java
@@ -5109,6 +5189,26 @@ Factory class for creating SQL Condition objects used in query construction.
     Is condition = Filters.is("status", Filters.expr("UNKNOWN"));
     // SQL fragment: status IS UNKNOWN
     ```
+##### isTrue(...) -> Is
+- **Signature:** `public static Is isTrue(final String propName)`
+- **Summary:** Creates an IS TRUE predicate without turning the boolean literal into a bind parameter.
+- **Contract:**
+  - The target database must support SQL boolean literals and the IS TRUE predicate.
+- **Parameters:**
+  - `propName` (`String`) — the property or column to test
+- **Returns:** an Is condition rendering propName IS true
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank
+##### isFalse(...) -> Is
+- **Signature:** `public static Is isFalse(final String propName)`
+- **Summary:** Creates an IS FALSE predicate without turning the boolean literal into a bind parameter.
+- **Contract:**
+  - The target database must support SQL boolean literals and the IS FALSE predicate.
+- **Parameters:**
+  - `propName` (`String`) — the property or column to test
+- **Returns:** an Is condition rendering propName IS false
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank
 ##### isNot(...) -> IsNot
 - **Signature:** `public static IsNot isNot(final String propName, final Object propValue)`
 - **Summary:** Creates an IsNot condition (SQL IS NOT predicate) for the specified property and value.
@@ -6622,6 +6722,21 @@ Factory class for creating SQL Condition objects used in query construction.
         Arrays.asList("id", "price"),
         "category = 'electronics' AND in_stock = true");
     // Generates: SELECT id, price FROM products WHERE category = 'electronics' AND in_stock = true
+    ```
+- **Signature:** `public static SubQuery subQuery(final SqlBuilder sqlBuilder)`
+- **Summary:** Finalizes and consumes a SqlBuilder, validates that its result is a complete, read-only SELECT, and captures it as a reusable subquery.
+- **Contract:**
+  - If the captured SQL contains generated placeholders, a parent builder must use the same SQL policy; that compatibility is checked when the snapshot is composed into the parent.
+- **Parameters:**
+  - `sqlBuilder` (`SqlBuilder`) — the builder to finalize and capture; consumed once finalization begins
+- **Returns:** a reusable builder-backed subquery snapshot
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, or its built statement is blank, is not a complete SELECT, or is not read-only
+  - `java.lang.IllegalStateException` — if the builder is incomplete or was already consumed
+- **Examples:**
+  - ```java
+    SubQuery paidOrders = Filters.subQuery(
+        Dsl.PSC.select("userId").from("orders").where(Filters.gt("total", 100)));
     ```
 - **Signature:** `@Deprecated public static SubQuery subQuery(final String entityName, final String sql)`
 - **Summary:** Creates a SubQuery from an entity name and raw SQL.
@@ -14146,7 +14261,7 @@ Represents a raw SQL expression that can be used in queries.
     ```
 
 ### Class SubQuery (com.landawn.abacus.query.condition.SubQuery)
-Represents raw query-expression text or a structured SELECT used within SQL conditions.
+Represents a complete or structured SELECT used within SQL conditions.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -14165,10 +14280,10 @@ Represents raw query-expression text or a structured SELECT used within SQL cond
 #### Public Instance Methods
 ##### rawSql(...) -> String
 - **Signature:** `public String rawSql()`
-- **Summary:** Returns the raw query-expression text if this is a raw SQL subquery.
+- **Summary:** Returns the stored complete query text if this is a raw SQL subquery or builder-backed snapshot.
 - **Parameters:**
   - (none)
-- **Returns:** the raw query-expression text, or null if this is a structured subquery
+- **Returns:** the stored complete query text, or null if this is a structured subquery
 - **Examples:**
   - ```java
     // Raw SQL subquery
@@ -14180,13 +14295,18 @@ Represents raw query-expression text or a structured SELECT used within SQL cond
     SubQuery structured = new SubQuery("users", Arrays.asList("id"), Filters.equal("status", "active"));
     String structuredSql = structured.rawSql();
     // Returns: null
+
+    // Builder-backed snapshot returns the SQL rendered by its source builder
+    SubQuery built = Filters.subQuery(Dsl.PSC.select("id").from("users"));
+    String builtSql = built.rawSql();
+    // Returns: "SELECT id FROM users"
     ```
 ##### entityName(...) -> String
 - **Signature:** `public String entityName()`
 - **Summary:** Returns the entity/table name for this subquery.
 - **Parameters:**
   - (none)
-- **Returns:** the entity/table name; an empty string for an initialized raw subquery without an associated entity, or null only for an uninitialized serialization-framework instance
+- **Returns:** the entity/table name; an empty string for an initialized unnamed raw or builder-backed subquery, or null only for an uninitialized serialization-framework instance
 - **Examples:**
   - ```java
     // Structured subquery with entity name
@@ -14209,7 +14329,7 @@ Represents raw query-expression text or a structured SELECT used within SQL cond
 - **Summary:** Returns the entity class if this subquery was created with a class reference.
 - **Parameters:**
   - (none)
-- **Returns:** the entity class, or null if created with an entity name string or raw SQL
+- **Returns:** the entity class, or null if created with an entity name string, raw SQL, or a builder snapshot
 - **Examples:**
   - ```java
     // Subquery created with entity class
@@ -14227,7 +14347,7 @@ Represents raw query-expression text or a structured SELECT used within SQL cond
 - **Summary:** Returns the collection of property names to select in this subquery.
 - **Parameters:**
   - (none)
-- **Returns:** immutable list of property names to select, or null for raw SQL subqueries
+- **Returns:** immutable list of property names to select, or null for raw SQL and builder-backed subqueries
 - **Examples:**
   - ```java
     // Structured subquery with selected properties
@@ -14245,7 +14365,7 @@ Represents raw query-expression text or a structured SELECT used within SQL cond
 - **Summary:** Returns the trailing condition or clause for this structured subquery.
 - **Parameters:**
   - (none)
-- **Returns:** the normalized condition/clause, or null if none or for a raw SQL subquery
+- **Returns:** the normalized condition/clause, or null if none or for a raw SQL or builder-backed subquery
 - **Examples:**
   - ```java
     // Structured subquery with condition
@@ -14261,13 +14381,12 @@ Represents raw query-expression text or a structured SELECT used within SQL cond
     ```
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
-- **Summary:** Returns the list of parameter values from the condition.
+- **Summary:** Returns this subquery's parameter values.
 - **Contract:**
-  - These are the parameter values that will be bound to the prepared statement placeholders when the query is executed.
-  - &#9888;&#65039; For raw SQL subqueries this returns an empty list even when the raw text contains placeholders; raw bindings are managed by the caller.
+  - &#9888;&#65039; For raw SQL subqueries constructed from text this returns an empty list even when that text contains placeholders; raw bindings are managed by the caller.
 - **Parameters:**
   - (none)
-- **Returns:** an immutable list of parameter values, or an empty immutable list if no condition or raw SQL subquery
+- **Returns:** an immutable list of parameter values, or an empty immutable list when none were captured
 - **Examples:**
   - ```java
     // Structured subquery: parameters are collected from the condition (in order)
@@ -14285,6 +14404,12 @@ Represents raw query-expression text or a structured SELECT used within SQL cond
     SubQuery noCond = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
     List<Object> noCondParams = noCond.parameters();
     // returns [] (empty immutable list)
+
+    // Builder-backed snapshot: parameters from the source builder are retained
+    SubQuery built = Filters.subQuery(
+        Dsl.PSC.select("id").from("users").where(Filters.equal("status", "active")));
+    List<Object> builtParams = built.parameters();
+    // returns ["active"]
     ```
 ##### toSql(...) -> String
 - **Signature:** `@Override public String toSql(final NamingPolicy namingPolicy)`
@@ -14333,7 +14458,7 @@ Represents raw query-expression text or a structured SELECT used within SQL cond
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this subquery is equal to another object.
 - **Contract:**
-  - Two subqueries are equal only when they have the exact same runtime class and all of their identity fields are equal: the entity name, the entity class, the selected properties, the raw SQL string, and the condition.
+  - Two subqueries are equal only when they have the exact same runtime class and all of their identity fields are equal: the entity name, the entity class, the selected properties, the stored SQL string, and the condition.
   - The entity name participates even for raw-SQL subqueries, so two raw subqueries are equal only when both their SQL and their entity name match.
 - **Parameters:**
   - `obj` (`Object`) — the object to compare with
@@ -14474,4 +14599,3 @@ Represents a WHERE clause in SQL queries.
 
 #### Public Instance Methods
 - (none)
-
