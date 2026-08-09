@@ -150,25 +150,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected static final Logger logger = LoggerFactory.getLogger(AbstractQueryBuilder.class);
 
     /** Constant for the {@code ALL} select modifier (the SQL default; opposite of {@code DISTINCT}). */
-    public static final String ALL = SK.ALL;
+    protected static final String ALL = SK.ALL;
 
     /** Constant for the {@code TOP} select modifier (e.g. {@code TOP 10}). */
-    public static final String TOP = SK.TOP;
+    protected static final String TOP = SK.TOP;
 
     /** Constant for the {@code UNIQUE} select modifier. */
-    public static final String UNIQUE = SK.UNIQUE;
+    protected static final String UNIQUE = SK.UNIQUE;
 
     /** Constant for the {@code DISTINCT} select modifier (opposite of {@code ALL}). */
-    public static final String DISTINCT = SK.DISTINCT;
+    protected static final String DISTINCT = SK.DISTINCT;
 
     /** Constant for the {@code DISTINCTROW} select modifier. */
-    public static final String DISTINCTROW = SK.DISTINCTROW;
+    protected static final String DISTINCTROW = SK.DISTINCTROW;
 
     /** Constant for the asterisk (*) wildcard in SQL queries. */
-    public static final String ASTERISK = SK.ASTERISK;
+    protected static final String ASTERISK = SK.ASTERISK;
 
     /** Constant for the COUNT(*) aggregate function. */
-    public static final String COUNT_ALL = "count(*)";
+    protected static final String COUNT_ALL = "count(*)";
 
     /** Immutable single-element list holding {@link #COUNT_ALL}, for selecting {@code COUNT(*)}. */
     protected static final List<String> COUNT_ALL_LIST = ImmutableList.of(COUNT_ALL);
@@ -1012,7 +1012,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param namingPolicy the naming policy for table name conversion
      * @return a list of table name expressions, or an empty list if there are no sub-entity properties
      */
-    protected static List<String> getSelectTableNames(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames,
+    protected static List<String> buildFromTableRefs(final Class<?> entityClass, final String alias, final Set<String> excludedPropNames,
             final NamingPolicy namingPolicy) {
         final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 
@@ -1211,7 +1211,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Validates the complete-sub-query argument of a set-operation overload
      * ({@code union}/{@code unionAll}/{@code intersect}/{@code except}/{@code minus} taking a single query
      * string, or the SQL built by the sibling-builder overloads). These overloads are dedicated to appending
-     * a complete sub-query, so the argument must satisfy the {@link #isSubQuery(String...)} heuristic.
+     * a complete sub-query, so the argument must satisfy the {@link #isInlineQuery(String...)} heuristic.
      * The same validation is applied to every set-operation operand carried by a {@link Criteria}.
      *
      * @param query the query string to validate
@@ -1221,7 +1221,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private void checkSetOperationSubQuery(final String query, final String operationName) {
         checkSqlFragmentNotBlank(query, "query");
 
-        if (!isSubQuery(_tokenizer, query) || !_tokenizer.isReadOnlyQuery(query)) {
+        if (!isInlineQuery(_tokenizer, query) || !_tokenizer.isReadOnlyQuery(query)) {
             throw new IllegalArgumentException("The query argument to " + operationName
                     + " must be a complete SELECT sub-query (starting with 'SELECT', optionally wrapped in balanced parentheses, or containing 'SELECT ... FROM'), but was: \""
                     + query + "\". To start a new SELECT from a column list, use " + setOperationMethodName(operationName)
@@ -1233,7 +1233,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private void checkSubQuerySnapshot(final String query) {
         checkSqlFragmentNotBlank(query, "query");
 
-        if (!isSubQuery(_tokenizer, query) || !_tokenizer.isReadOnlyQuery(query)) {
+        if (!isInlineQuery(_tokenizer, query) || !_tokenizer.isReadOnlyQuery(query)) {
             throw new IllegalArgumentException("A builder-backed subquery must be a complete, read-only SELECT query, but was: \"" + query + "\"");
         }
     }
@@ -1248,11 +1248,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     private static String setOperationMethodName(final String operationName) {
         return switch (operationName) {
-            case SK.UNION -> "union";
-            case SK.UNION_ALL -> "unionAll";
-            case SK.INTERSECT -> "intersect";
-            case SK.EXCEPT -> "except";
-            case SK.EXCEPT_MINUS -> "minus";
+            case SK.UNION -> "unionSelect";
+            case SK.UNION_ALL -> "unionAllSelect";
+            case SK.INTERSECT -> "intersectSelect";
+            case SK.EXCEPT -> "exceptSelect";
+            case SK.EXCEPT_MINUS -> "minusSelect";
             default -> operationName;
         };
     }
@@ -5489,7 +5489,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a UNION clause with a SQL query string.
      * UNION combines result sets from two queries and removes duplicates.
-     * This overload always treats its argument as a complete query; use {@link #union(Collection)}
+     * This overload always treats its argument as a complete query; use {@link #unionSelect(Collection)}
      * to generate the right-hand {@code SELECT} from property or column names.
      *
      * <p><b>Usage Examples:</b></p>
@@ -5520,7 +5520,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * List<String> columns = Arrays.asList("id", "name");
      * String sql = PSC.select("id", "name")
      *                 .from("users")
-     *                 .union(columns)
+     *                 .unionSelect(columns)
      *                 .from("customers")
      *                 .build().query();
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
@@ -5532,7 +5532,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
-    public This union(final Collection<String> propOrColumnNames) {
+    public This unionSelect(final Collection<String> propOrColumnNames) {
         return appendSetOperation(_SPACE_UNION_SPACE, propOrColumnNames);
     }
 
@@ -5566,7 +5566,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a UNION ALL clause with a SQL query string.
      * UNION ALL combines result sets from two queries and keeps all duplicates.
-     * This overload always treats its argument as a complete query; use {@link #unionAll(Collection)}
+     * This overload always treats its argument as a complete query; use {@link #unionAllSelect(Collection)}
      * to generate the right-hand {@code SELECT} from property or column names.
      *
      * <p><b>Usage Examples:</b></p>
@@ -5597,7 +5597,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * List<String> columns = Arrays.asList("id", "name");
      * String sql = PSC.select("id", "name")
      *                 .from("users")
-     *                 .unionAll(columns)
+     *                 .unionAllSelect(columns)
      *                 .from("customers")
      *                 .build().query();
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
@@ -5609,7 +5609,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
-    public This unionAll(final Collection<String> propOrColumnNames) {
+    public This unionAllSelect(final Collection<String> propOrColumnNames) {
         return appendSetOperation(_SPACE_UNION_ALL_SPACE, propOrColumnNames);
     }
 
@@ -5643,7 +5643,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds an INTERSECT clause with a SQL query string.
      * INTERSECT returns only rows that appear in both result sets.
-     * This overload always treats its argument as a complete query; use {@link #intersect(Collection)}
+     * This overload always treats its argument as a complete query; use {@link #intersectSelect(Collection)}
      * to generate the right-hand {@code SELECT} from property or column names.
      *
      * <p><b>Usage Examples:</b></p>
@@ -5674,7 +5674,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * List<String> columns = Arrays.asList("id", "name");
      * String sql = PSC.select("id", "name")
      *                 .from("users")
-     *                 .intersect(columns)
+     *                 .intersectSelect(columns)
      *                 .from("premium_users")
      *                 .build().query();
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
@@ -5686,7 +5686,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
-    public This intersect(final Collection<String> propOrColumnNames) {
+    public This intersectSelect(final Collection<String> propOrColumnNames) {
         return appendSetOperation(_SPACE_INTERSECT_SPACE, propOrColumnNames);
     }
 
@@ -5720,7 +5720,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds an EXCEPT clause with a SQL query string.
      * EXCEPT returns rows from the first query that don't appear in the second query.
-     * This overload always treats its argument as a complete query; use {@link #except(Collection)}
+     * This overload always treats its argument as a complete query; use {@link #exceptSelect(Collection)}
      * to generate the right-hand {@code SELECT} from property or column names.
      *
      * <p><b>Usage Examples:</b></p>
@@ -5751,7 +5751,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * List<String> columns = Arrays.asList("id", "name");
      * String sql = PSC.select("id", "name")
      *                 .from("users")
-     *                 .except(columns)
+     *                 .exceptSelect(columns)
      *                 .from("inactive_users")
      *                 .build().query();
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
@@ -5763,7 +5763,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
-    public This except(final Collection<String> propOrColumnNames) {
+    public This exceptSelect(final Collection<String> propOrColumnNames) {
         return appendSetOperation(_SPACE_EXCEPT_SPACE, propOrColumnNames);
     }
 
@@ -5798,7 +5798,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a MINUS clause with a SQL query string (Oracle syntax).
      * MINUS is Oracle's equivalent to EXCEPT - returns rows from the first query that don't appear in the second.
-     * This overload always treats its argument as a complete query; use {@link #minus(Collection)}
+     * This overload always treats its argument as a complete query; use {@link #minusSelect(Collection)}
      * to generate the right-hand {@code SELECT} from property or column names.
      *
      * <p><b>Usage Examples:</b></p>
@@ -5829,7 +5829,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * List<String> columns = Arrays.asList("id", "name");
      * String sql = PSC.select("id", "name")
      *                 .from("users")
-     *                 .minus(columns)
+     *                 .minusSelect(columns)
      *                 .from("inactive_users")
      *                 .build().query();
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
@@ -5841,7 +5841,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
-    public This minus(final Collection<String> propOrColumnNames) {
+    public This minusSelect(final Collection<String> propOrColumnNames) {
         return appendSetOperation(_SPACE_EXCEPT_MINUS_SPACE, propOrColumnNames);
     }
 
@@ -5908,7 +5908,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Shared implementation for the collection set-operation starters
-     * ({@code union}/{@code unionAll}/{@code intersect}/{@code except}/{@code minus}): resets the
+     * ({@code unionSelect}/{@code unionAllSelect}/{@code intersectSelect}/{@code exceptSelect}/{@code minusSelect}): resets the
      * builder to a fresh QUERY using the given columns and appends the set-operation keyword.
      *
      * @param keyword the set-operation keyword token (e.g. {@link #_SPACE_UNION_SPACE})
@@ -6734,7 +6734,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     _sb.append(_SPACE_EQUAL_SPACE);
 
-                    setParameterForRawSQL(entry.getValue());
+                    setParameterForRawSql(entry.getValue());
                 }
 
                 break;
@@ -6986,28 +6986,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Finalizes and consumes this builder, validates that the resulting statement is a complete,
-     * read-only SELECT, and captures it for use as a condition or derived-table subquery.
-     *
-     * <p>{@link #build()} runs before SELECT validation, so once finalization begins this builder is
-     * consumed even if the completed SQL is subsequently rejected. The returned snapshot receives the
-     * parameter list already stabilized by {@link SP}; the source builder's generated-placeholder maps
-     * and set are retained by reference as ownership-transferred metadata and must be treated as read-only.
-     * Parent builders create working copies for collision rewriting, so the snapshot can be reused.</p>
-     *
-     * @return a reusable internal snapshot containing the SQL, parameters, SQL policy, and generated-placeholder metadata
-     * @throws IllegalArgumentException if the built statement is blank, is not a complete SELECT, or is not read-only
-     * @throws IllegalStateException if this builder is incomplete or was already consumed
-     */
-    final SubQuerySnapshot buildSubQuery() {
-        final SP sp = build();
-        checkSubQuerySnapshot(sp.query());
-
-        return new SubQuerySnapshot(sp.query(), sp.parameters(), _sqlPolicy, _hasGeneratedParameterPlaceholder, _namedParameterNameOccurrences,
-                _generatedNamedParameterNames, _renderedNamedParameterTokens);
-    }
-
-    /**
      * Generates the final SQL string and its parameters as an {@link SP} pair, then releases resources.
      * This is the canonical method for obtaining the SQL output from a builder.
      * The builder cannot be reused after calling this method.
@@ -7180,6 +7158,61 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Finalizes and consumes this builder, validates that the resulting statement is a complete,
+     * read-only SELECT, and captures it for use as a condition or derived-table subquery.
+     *
+     * <p>{@link #build()} runs before SELECT validation, so once finalization begins this builder is
+     * consumed even if the completed SQL is subsequently rejected. The returned snapshot receives the
+     * parameter list already stabilized by {@link SP}; the source builder's generated-placeholder maps
+     * and set are retained by reference as ownership-transferred metadata and must be treated as read-only.
+     * Parent builders create working copies for collision rewriting, so the snapshot can be reused.</p>
+     *
+     * @return a reusable internal snapshot containing the SQL, parameters, SQL policy, and generated-placeholder metadata
+     * @throws IllegalArgumentException if the built statement is blank, is not a complete SELECT, or is not read-only
+     * @throws IllegalStateException if this builder is incomplete or was already consumed
+     */
+    final SubQuerySnapshot buildSubQuery() {
+        final SP sp = build();
+        checkSubQuerySnapshot(sp.query());
+
+        return new SubQuerySnapshot(sp.query(), sp.parameters(), _sqlPolicy, _hasGeneratedParameterPlaceholder, _namedParameterNameOccurrences,
+                _generatedNamedParameterNames, _renderedNamedParameterTokens);
+    }
+
+    /**
+     * Finalizes and consumes this builder, validates that the resulting statement is a complete,
+     * read-only SELECT, and captures it as a reusable {@link SubQuery}. The returned snapshot retains
+     * the rendered SQL, parameter values, SQL policy, and generated-placeholder metadata so it can be
+     * safely composed into an enclosing builder without losing binding order.
+     *
+     * <p>Finalization begins before SELECT validation, so this builder is consumed whether snapshot
+     * creation succeeds or the built SQL is rejected. If the captured SQL contains generated
+     * placeholders, an enclosing builder must use the same SQL policy; compatibility is checked when
+     * the snapshot is composed.</p>
+     *
+     * <p><b>Usage Example:</b></p>
+     * <pre>{@code
+     * SubQuery paidOrders = PSC.select("userId")
+     *     .from("orders")
+     *     .where(Filters.gt("total", 100))
+     *     .toSubQuery();
+     *
+     * SP result = PSC.select("*")
+     *     .from("users")
+     *     .where(Filters.in("id", paidOrders))
+     *     .build();
+     * }</pre>
+     *
+     * @return a reusable builder-backed subquery snapshot
+     * @throws IllegalArgumentException if the built statement is blank, is not a complete SELECT, or is not read-only
+     * @throws IllegalStateException if this builder is incomplete or was already consumed
+     */
+    @Beta
+    public SubQuery toSubQuery() {
+        return buildSubQuery();
+    }
+
+    /**
      * Builds the SQL and prints the resulting query string to standard output.
      * This finalizes the builder (it cannot be reused after this call) and is intended for
      * debugging and development.
@@ -7316,7 +7349,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propValue the value to render into the SQL string
      */
-    protected void setParameterForRawSQL(final Object propValue) {
+    protected void setParameterForRawSql(final Object propValue) {
         if (Filters.QME.equals(propValue)) {
             _hasGeneratedParameterPlaceholder = true;
             _sb.append(SK._QUESTION_MARK);
@@ -7543,7 +7576,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected void setParameter(final String propName, final Object propValue) {
         switch (_sqlPolicy) {
             case RAW_SQL: {
-                setParameterForRawSQL(propValue);
+                setParameterForRawSql(propValue);
 
                 break;
             }
@@ -7607,7 +7640,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     }
 
                     final Object propValue = props.get(propName);
-                    setParameterForRawSQL(propValue);
+                    setParameterForRawSql(propValue);
                 }
 
                 break;
@@ -7728,7 +7761,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
         }
 
-        final List<String> words = _tokenizer.parse(expr);
+        final List<String> words = _tokenizer.tokenize(expr);
 
         String word = null;
         for (int i = 0, len = words.size(); i < len; i++) {
@@ -8151,16 +8184,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames array of property or column names to check
      * @return {@code true} if the array contains a single inline query, {@code false} otherwise
      */
-    protected static boolean isSubQuery(final String... propOrColumnNames) {
-        return isSubQuery(SqlParser.tokenizer(), propOrColumnNames);
+    protected static boolean isInlineQuery(final String... propOrColumnNames) {
+        return isInlineQuery(SqlParser.tokenizer(), propOrColumnNames);
     }
 
     /**
      * Tokenizer-aware implementation used by builders whose dialect supplies a custom tokenizer
-     * configuration. Keeping the public-to-subclasses {@link #isSubQuery(String...)} helper static
+     * configuration. Keeping the public-to-subclasses {@link #isInlineQuery(String...)} helper static
      * preserves its existing source and binary contract.
      */
-    private static boolean isSubQuery(final SqlParser.Tokenizer tokenizer, final String... propOrColumnNames) {
+    private static boolean isInlineQuery(final SqlParser.Tokenizer tokenizer, final String... propOrColumnNames) {
         if (propOrColumnNames.length == 1) {
             final String query = propOrColumnNames[0].trim();
             int index = tokenizer.indexOfToken(query, SK.SELECT, 0, false);

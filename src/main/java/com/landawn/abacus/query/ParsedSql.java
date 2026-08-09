@@ -119,7 +119,7 @@ public final class ParsedSql {
         this.sql = sql.trim();
         hashCode = this.sql.hashCode();
 
-        final List<String> words = SqlParser.parse(this.sql);
+        final List<String> words = SqlParser.tokenize(this.sql);
         final String firstOpWord = resolveFirstOpWord(words);
         final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && isOpSqlPrefixWord(firstOpWord);
 

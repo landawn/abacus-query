@@ -432,6 +432,36 @@ public class Join extends AbstractCondition {
     }
 
     /**
+     * Returns whether this join has a condition.
+     * Returns {@code true} if a condition was supplied at construction time, {@code false}
+     * otherwise. Unlike {@link #condition()}, which requires a {@code null} check on its
+     * result, this method gives a direct boolean answer &mdash; useful for conditionless joins
+     * such as {@link CrossJoin} and {@link NaturalJoin}, and for simple joins constructed
+     * without an {@code ON}/{@code USING} clause.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * // Join with ON condition
+     * Join join = new Join("orders o", new On("customers.id", "o.customer_id"));
+     * join.hasCondition();    // returns true
+     *
+     * // Join without condition
+     * Join simpleJoin = new Join("products");
+     * simpleJoin.hasCondition();   // returns false
+     *
+     * // Typical use: guard before unwrapping the condition
+     * if (join.hasCondition()) {
+     *     Condition c = join.condition();   // never null here
+     * }
+     * }</pre>
+     *
+     * @return {@code true} if this join has a condition, {@code false} otherwise
+     */
+    public boolean hasCondition() {
+        return condition != null;
+    }
+
+    /**
      * Returns all parameters from the join condition.
      * Returns any bound parameters used in the join condition. Returns an empty
      * list if there's no condition or the condition has no parameters.

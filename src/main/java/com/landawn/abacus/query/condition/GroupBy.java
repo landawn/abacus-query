@@ -138,7 +138,7 @@ public class GroupBy extends Clause {
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
     public GroupBy(final String... propNames) {
-        this(Filters.expr(AbstractCondition.createSortExpression(propNames)));
+        this(Filters.expr(AbstractCondition.createSortSpec(propNames)));
     }
 
     /**
@@ -192,7 +192,7 @@ public class GroupBy extends Clause {
      * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      */
     public GroupBy(final String propOrColumnName, final SortDirection direction) {
-        this(Filters.expr(AbstractCondition.createSortExpression(propOrColumnName, direction)));
+        this(Filters.expr(AbstractCondition.createSortSpec(propOrColumnName, direction)));
     }
 
     /**
@@ -219,7 +219,7 @@ public class GroupBy extends Clause {
      *                                  or if {@code direction} is {@code null}
      */
     public GroupBy(final Collection<String> propNames, final SortDirection direction) {
-        this(Filters.expr(AbstractCondition.createSortExpression(propNames, direction)));
+        this(Filters.expr(AbstractCondition.createSortSpec(propNames, direction)));
     }
 
     /**
@@ -254,6 +254,6 @@ public class GroupBy extends Clause {
      *                                  or {@code null} values
      */
     public GroupBy(final Map<String, SortDirection> groupings) {
-        this(Filters.expr(AbstractCondition.createSortExpression(groupings)));
+        this(Filters.expr(AbstractCondition.createSortSpec(groupings)));
     }
 }

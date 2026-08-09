@@ -92,6 +92,12 @@ public class Limit extends Clause {
      *
      * <p>A count of zero is valid and renders as {@code LIMIT 0}.</p>
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Limit firstTen = new Limit(10);
+     * String sql = firstTen.toSql(NamingPolicy.NO_CHANGE);   // LIMIT 10
+     * }</pre>
+     *
      * @param count maximum number of rows to return; must be non-negative
      * @throws IllegalArgumentException if {@code count} is negative
      */
@@ -103,6 +109,15 @@ public class Limit extends Clause {
      * Creates {@code LIMIT count OFFSET offset}.
      *
      * <p>When {@code offset} is zero, the {@code OFFSET} portion is omitted.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Limit page = new Limit(10, 20);
+     * String sql = page.toSql(NamingPolicy.NO_CHANGE);   // LIMIT 10 OFFSET 20
+     *
+     * Limit zeroOffset = new Limit(10, 0);
+     * String sql2 = zeroOffset.toSql(NamingPolicy.NO_CHANGE);   // LIMIT 10
+     * }</pre>
      *
      * @param count maximum number of rows to return; must be non-negative
      * @param offset number of rows to skip; must be non-negative
@@ -136,7 +151,7 @@ public class Limit extends Clause {
      *
      * <pre>{@code
      * new Limit("10 OFFSET 20");                         // LIMIT 10 OFFSET 20
-     * new Limit("20, 10");                              // LIMIT 20, 10
+     * new Limit("20, 10");                               // LIMIT 20, 10
      * new Limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY");
      * new Limit("? OFFSET ?");                          // unresolved
      * }</pre>

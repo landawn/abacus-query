@@ -131,7 +131,10 @@ public final class ApiDocGenerator {
         List<String> modifiers = new ArrayList<>();
         String type;
         String value;
+        String since;
+        DeprecatedInfo deprecated;
         String javadocSummary;
+        String nullability = "unspecified";
     }
 
     private static final class TypeInfo {
@@ -338,13 +341,16 @@ public final class ApiDocGenerator {
                 field.name = varTree.getName().toString();
                 field.type = normalize(varTree.getType() == null ? "" : varTree.getType().toString());
                 field.modifiers = sortedModifiers(varTree.getModifiers(), null);
+                field.nullability = inferNullability(varTree.getModifiers().getAnnotations(), field.type);
                 if (varTree.getInitializer() != null) {
                     field.value = normalize(varTree.getInitializer().toString());
                 }
                 final DocInfo fieldDoc = readDoc(docTrees, new TreePath(typePath, varTree));
                 if (fieldDoc != null) {
                     field.javadocSummary = fieldDoc.summary;
+                    field.since = fieldDoc.since;
                 }
+                field.deprecated = readDeprecated(varTree.getModifiers(), fieldDoc);
                 type.fields.add(field);
             } else if (member instanceof MethodTree methodTree) {
                 if (isConstructor(methodTree)) {
@@ -1033,19 +1039,29 @@ public final class ApiDocGenerator {
                 if (!isBlank(t.since)) {
                     sb.append("**Since:** ").append(md(t.since)).append('\n');
                 }
+                appendDeprecatedMarkdown(sb, t.deprecated, "**Deprecated:** ");
                 sb.append("**Thread-safety:** ").append(md(t.threadSafety)).append('\n');
                 sb.append("**Nullability:** ").append(md(t.nullability)).append("\n\n");
+
+                sb.append("#### Public Fields\n");
+                appendFieldsMarkdown(sb, t.fields);
+                sb.append('\n');
 
                 sb.append("#### Public Constructors\n");
                 if (t.constructors.isEmpty()) {
                     sb.append("- (none)\n\n");
                 } else {
                     for (final ConstructorInfo c : t.constructors) {
-                        sb.append("- `").append(c.signature).append('`');
+                        sb.append("- **Signature:** `").append(c.signature).append("`\n");
                         if (!isBlank(c.javadocSummary)) {
-                            sb.append(" — ").append(md(c.javadocSummary));
+                            sb.append("- **Summary:** ").append(md(c.javadocSummary)).append('\n');
                         }
-                        sb.append('\n');
+                        if (!isBlank(c.since)) {
+                            sb.append("- **Since:** ").append(md(c.since)).append('\n');
+                        }
+                        appendDeprecatedMarkdown(sb, c.deprecated, "- **Deprecated:** ");
+                        appendParametersMarkdown(sb, c.params);
+                        appendThrowsMarkdown(sb, c.throwsList);
                     }
                     sb.append('\n');
                 }
@@ -1060,6 +1076,78 @@ public final class ApiDocGenerator {
             }
         }
         return sb.toString();
+    }
+
+    private static void appendFieldsMarkdown(final StringBuilder sb, final List<FieldInfo> fields) {
+        if (fields.isEmpty()) {
+            sb.append("- (none)\n");
+            return;
+        }
+
+        for (final FieldInfo field : fields) {
+            sb.append("- **Declaration:** `");
+            if (!field.modifiers.isEmpty()) {
+                sb.append(String.join(" ", field.modifiers)).append(' ');
+            }
+            if (!isBlank(field.type)) {
+                sb.append(field.type).append(' ');
+            }
+            sb.append(field.name).append("`\n");
+            if (!isBlank(field.javadocSummary)) {
+                sb.append("  - **Summary:** ").append(md(field.javadocSummary)).append('\n');
+            }
+            if (!isBlank(field.since)) {
+                sb.append("  - **Since:** ").append(md(field.since)).append('\n');
+            }
+            appendDeprecatedMarkdown(sb, field.deprecated, "  - **Deprecated:** ");
+            sb.append("  - **Nullability:** ").append(md(field.nullability)).append('\n');
+        }
+    }
+
+    private static void appendDeprecatedMarkdown(final StringBuilder sb, final DeprecatedInfo deprecated, final String prefix) {
+        if (deprecated == null) {
+            return;
+        }
+
+        sb.append(prefix).append(isBlank(deprecated.message) ? "yes" : md(deprecated.message));
+        if (!isBlank(deprecated.since)) {
+            sb.append(" (since ").append(md(deprecated.since)).append(')');
+        }
+        if (deprecated.forRemoval) {
+            sb.append(" (for removal)");
+        }
+        sb.append('\n');
+    }
+
+    private static void appendParametersMarkdown(final StringBuilder sb, final List<ParamInfo> params) {
+        sb.append("- **Parameters:**\n");
+        if (params.isEmpty()) {
+            sb.append("  - (none)\n");
+            return;
+        }
+
+        for (final ParamInfo param : params) {
+            sb.append("  - `").append(param.name).append("` (`").append(param.type).append("`)");
+            if (!isBlank(param.javadoc)) {
+                sb.append(" — ").append(md(param.javadoc));
+            }
+            sb.append('\n');
+        }
+    }
+
+    private static void appendThrowsMarkdown(final StringBuilder sb, final List<ThrowInfo> throwsList) {
+        if (throwsList.isEmpty()) {
+            return;
+        }
+
+        sb.append("- **Throws:**\n");
+        for (final ThrowInfo thrown : throwsList) {
+            sb.append("  - `").append(thrown.type).append('`');
+            if (!isBlank(thrown.condition)) {
+                sb.append(" — ").append(md(thrown.condition));
+            }
+            sb.append('\n');
+        }
     }
 
     private static void appendMethodGroupsMarkdown(final StringBuilder sb, final List<MethodInfo> methods, final String kind) {
@@ -1080,37 +1168,21 @@ public final class ApiDocGenerator {
                 if (!isBlank(m.javadocSummary)) {
                     sb.append("- **Summary:** ").append(md(m.javadocSummary)).append('\n');
                 }
+                if (!isBlank(m.since)) {
+                    sb.append("- **Since:** ").append(md(m.since)).append('\n');
+                }
+                appendDeprecatedMarkdown(sb, m.deprecated, "- **Deprecated:** ");
                 if (!m.contract.isEmpty()) {
                     sb.append("- **Contract:**\n");
                     for (final String c : m.contract) {
                         sb.append("  - ").append(md(c)).append('\n');
                     }
                 }
-                sb.append("- **Parameters:**\n");
-                if (m.params.isEmpty()) {
-                    sb.append("  - (none)\n");
-                } else {
-                    for (final ParamInfo p : m.params) {
-                        sb.append("  - `").append(p.name).append("` (`").append(p.type).append("`)");
-                        if (!isBlank(p.javadoc)) {
-                            sb.append(" — ").append(md(p.javadoc));
-                        }
-                        sb.append('\n');
-                    }
-                }
+                appendParametersMarkdown(sb, m.params);
                 if (!"void".equals(m.returnType)) {
                     sb.append("- **Returns:** ").append(isBlank(m.returns) ? "unspecified" : md(m.returns)).append('\n');
                 }
-                if (!m.throwsList.isEmpty()) {
-                    sb.append("- **Throws:**\n");
-                    for (final ThrowInfo t : m.throwsList) {
-                        sb.append("  - `").append(t.type).append('`');
-                        if (!isBlank(t.condition)) {
-                            sb.append(" — ").append(md(t.condition));
-                        }
-                        sb.append('\n');
-                    }
-                }
+                appendThrowsMarkdown(sb, m.throwsList);
                 if (!isBlank(m.performance)) {
                     sb.append("- **Performance:** ").append(md(m.performance)).append('\n');
                 }
@@ -1201,6 +1273,7 @@ public final class ApiDocGenerator {
             out.put("deprecated", deprecatedJson(value.deprecated));
         }
         out.put("params", value.params.stream().map(ApiDocGenerator::paramJson).collect(Collectors.toList()));
+        out.put("throws", value.throwsList.stream().map(ApiDocGenerator::throwJson).collect(Collectors.toList()));
         return out;
     }
 
@@ -1222,6 +1295,9 @@ public final class ApiDocGenerator {
         }
         if (!isBlank(value.javadocSummary)) {
             out.put("javadoc_summary", value.javadocSummary);
+        }
+        if (!isBlank(value.returns)) {
+            out.put("returns", value.returns);
         }
         out.put("contract", value.contract == null ? List.of() : value.contract);
         if (!isBlank(value.performance)) {
@@ -1263,6 +1339,13 @@ public final class ApiDocGenerator {
         if (!isBlank(value.javadocSummary)) {
             out.put("javadoc_summary", value.javadocSummary);
         }
+        if (!isBlank(value.since)) {
+            out.put("since", value.since);
+        }
+        if (value.deprecated != null) {
+            out.put("deprecated", deprecatedJson(value.deprecated));
+        }
+        out.put("nullability", value.nullability);
         return out;
     }
 

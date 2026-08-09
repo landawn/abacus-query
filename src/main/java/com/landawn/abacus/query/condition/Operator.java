@@ -423,7 +423,7 @@ public enum Operator {
      * Operator like = Operator.of("LIKE");  // Operator.LIKE
      *
      * // Enum constant names are also accepted (case-insensitive)
-     * Operator eq2 = Operator.of("EQUAL");          // Operator.EQUAL
+     * Operator eq2 = Operator.of("EQUAL");           // Operator.EQUAL
      * Operator gt2 = Operator.of("greater_than");    // Operator.GREATER_THAN
      *
      * // Edge cases

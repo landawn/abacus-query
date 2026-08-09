@@ -6,7 +6,7 @@
 | SELECT modifier (TOP/ALL/UNIQUE) | `SELECT TOP 10 * FROM account` | `PSC.select("*").selectModifier("TOP 10").from("account").build()` |
 | Column alias | `SELECT first_name AS "fn" FROM users` | `PSC.select(Map.of("firstName", "fn")).from("users").build()` |
 | Aggregate expression | `SELECT department, COUNT(*) FROM employees GROUP BY department` | `PSC.select("department", "COUNT(*)").from("employees").groupBy("department").build()` |
-| COUNT(*) convenience | `SELECT count(*) FROM account WHERE email IS NOT NULL` | `PSC.count(Account.class).where(Filters.isNotNull("email")).build()` |
+| COUNT(*) convenience | `SELECT count(*) FROM account WHERE email IS NOT NULL` | `PSC.selectCountFrom(Account.class).where(Filters.isNotNull("email")).build()` |
 | Entity-based SELECT | `SELECT id, first_name, ... FROM users u` | `PSC.selectFrom(User.class, "u").where(Filters.eq("id", id)).build()` |
 | Derived table in FROM | `SELECT * FROM (SELECT id FROM orders WHERE amount > 100) t` | `PSC.select("*").from("(SELECT id FROM orders WHERE amount > 100) t").build()` |
 | Multi-table FROM | `SELECT * FROM users, orders, items` | `PSC.select("*").from("users", "orders", "items").build()` |

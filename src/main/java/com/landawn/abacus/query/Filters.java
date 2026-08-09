@@ -3025,12 +3025,8 @@ public final class Filters {
      * @param columnNames the column names used for joining
      * @return a {@link Using} clause
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank element, a qualified (dotted) column name, or a name containing {@code ,}, {@code (}, or {@code )}
-     * @deprecated It's recommended to use {@link #on(java.util.Map)} (a join takes a single {@code ON}
-     *             condition; the map form combines multiple column pairs with {@code AND}) instead of
-     *             {@code Using} for better portability and clarity. Replace {@code using("col1", "col2")} with explicit
-     *             {@code on(N.asMap("table1.col1", "table2.col1", "table1.col2", "table2.col2"))}.
      */
-    @Deprecated
+    @Beta
     public static Using using(final String... columnNames) {
         return new Using(columnNames);
     }
@@ -3048,12 +3044,8 @@ public final class Filters {
      * @param columnNames collection of column names used for joining
      * @return a {@link Using} clause
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty, or blank element, a qualified (dotted) column name, or a name containing {@code ,}, {@code (}, or {@code )}
-     * @deprecated It's recommended to use {@link #on(java.util.Map)} (a join takes a single {@code ON}
-     *             condition; the map form combines multiple column pairs with {@code AND}) instead of
-     *             {@code Using} for better portability and clarity. Replace {@code using(columnList)}
-     *             with an explicit {@code on(Map)} condition that specifies the full column names with table prefixes.
      */
-    @Deprecated
+    @Beta
     public static Using using(final Collection<String> columnNames) {
         return new Using(columnNames);
     }
@@ -4356,34 +4348,6 @@ public final class Filters {
     }
 
     /**
-     * Finalizes and consumes a {@link SqlBuilder}, validates that its result is a complete, read-only
-     * SELECT, and captures it as a reusable subquery. The snapshot retains the rendered SQL, parameter
-     * values, SQL policy, and generated-placeholder metadata so an enclosing builder can preserve
-     * binding order and safely rename colliding named parameters without modifying the snapshot.
-     *
-     * <p>After the {@code null} check succeeds, finalization begins before SELECT validation. The source
-     * builder is therefore consumed whether snapshot creation succeeds or its built SQL is rejected.
-     * If the captured SQL contains generated placeholders, a parent builder must use the same SQL policy;
-     * that compatibility is checked when the snapshot is composed into the parent.</p>
-     *
-     * <p><b>Usage Example:</b></p>
-     * <pre>{@code
-     * SubQuery paidOrders = Filters.subQuery(
-     *     Dsl.PSC.select("userId").from("orders").where(Filters.gt("total", 100)));
-     * }</pre>
-     *
-     * @param sqlBuilder the builder to finalize and capture; consumed once finalization begins
-     * @return a reusable builder-backed subquery snapshot
-     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, or its built statement is blank,
-     *                                  is not a complete SELECT, or is not read-only
-     * @throws IllegalStateException if the builder is incomplete or was already consumed
-     */
-    public static SubQuery subQuery(final SqlBuilder sqlBuilder) {
-        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
-        return sqlBuilder.buildSubQuery();
-    }
-
-    /**
      * Creates a SubQuery from an entity name and raw SQL.
      * This method allows for complete control over the subquery SQL.
      *
@@ -4430,6 +4394,34 @@ public final class Filters {
     public static SubQuery subQuery(final String sql) {
         return new SubQuery(sql);
     }
+
+    //    /**
+    //     * Finalizes and consumes a {@link SqlBuilder}, validates that its result is a complete, read-only
+    //     * SELECT, and captures it as a reusable subquery. The snapshot retains the rendered SQL, parameter
+    //     * values, SQL policy, and generated-placeholder metadata so an enclosing builder can preserve
+    //     * binding order and safely rename colliding named parameters without modifying the snapshot.
+    //     *
+    //     * <p>After the {@code null} check succeeds, finalization begins before SELECT validation. The source
+    //     * builder is therefore consumed whether snapshot creation succeeds or its built SQL is rejected.
+    //     * If the captured SQL contains generated placeholders, a parent builder must use the same SQL policy;
+    //     * that compatibility is checked when the snapshot is composed into the parent.</p>
+    //     *
+    //     * <p><b>Usage Example:</b></p>
+    //     * <pre>{@code
+    //     * SubQuery paidOrders = Filters.subQuery(
+    //     *     PSC.select("userId").from("orders").where(Filters.gt("total", 100)));
+    //     * }</pre>
+    //     *
+    //     * @param sqlBuilder the builder to finalize and capture; consumed once finalization begins
+    //     * @return a reusable builder-backed subquery snapshot
+    //     * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, or its built statement is blank,
+    //     *                                  is not a complete SELECT, or is not read-only
+    //     * @throws IllegalStateException if the builder is incomplete or was already consumed
+    //     */
+    //    public static SubQuery subQuery(final SqlBuilder sqlBuilder) {
+    //        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
+    //        return sqlBuilder.buildSubQuery();
+    //    }
 
     /**
      * Creates a {@link Limit} clause to restrict the number of rows returned.

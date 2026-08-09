@@ -153,11 +153,11 @@ public final class Dsl {
 
     static {
         dslCache.put(Dsl.PSB.sqlDialect, Dsl.PSB);
-        dslCache.put(Dsl.PSC.sqlDialect, Dsl.PSC);
+        dslCache.put(PSC.sqlDialect, Dsl.PSC);
         dslCache.put(Dsl.PAC.sqlDialect, Dsl.PAC);
         dslCache.put(Dsl.PLC.sqlDialect, Dsl.PLC);
         dslCache.put(Dsl.NSB.sqlDialect, Dsl.NSB);
-        dslCache.put(Dsl.NSC.sqlDialect, Dsl.NSC);
+        dslCache.put(NSC.sqlDialect, Dsl.NSC);
         dslCache.put(Dsl.NAC.sqlDialect, Dsl.NAC);
         dslCache.put(Dsl.NLC.sqlDialect, Dsl.NLC);
         dslCache.put(Dsl.SCSB.sqlDialect, Dsl.SCSB);
@@ -1466,7 +1466,7 @@ public final class Dsl {
         final Set<String> excludedPropNameSnapshot = N.isEmpty(excludedPropNames) ? null : new HashSet<>(excludedPropNames);
         final boolean includesSubEntityTables = SqlBuilder.hasSubEntityToInclude(entityClass, includeSubEntityProperties);
         final List<String> selectTableNames = includesSubEntityTables
-                ? SqlBuilder.getSelectTableNames(entityClass, tableAlias, excludedPropNameSnapshot, namingPolicy)
+                ? SqlBuilder.buildFromTableRefs(entityClass, tableAlias, excludedPropNameSnapshot, namingPolicy)
                 : null;
         final SqlBuilder builder = select(entityClass, includeSubEntityProperties, excludedPropNameSnapshot);
 
@@ -1789,7 +1789,7 @@ public final class Dsl {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.count("account")
+     * String sql = PSC.selectCountFrom("account")
      *                 .where(Filters.equal("status", "active"))
      *                 .build().query();
      * // Output: SELECT count(*) FROM account WHERE status = ?
@@ -1798,13 +1798,13 @@ public final class Dsl {
      * <p><b>Note:</b> unlike {@code insert(String)}, whose String argument is a column name, and
      * {@code select(String)}, whose String argument is a select expression, the argument here is a
      * <em>table name</em> and a {@code FROM} clause is emitted immediately &mdash;
-     * {@code count("id")} would generate {@code SELECT count(*) FROM id}.</p>
+     * {@code selectCountFrom("id")} would generate {@code SELECT count(*) FROM id}.</p>
      *
      * @param tableName the table to count rows from
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank
      */
-    public SqlBuilder count(final String tableName) {
+    public SqlBuilder selectCountFrom(final String tableName) {
         // Validate before select(...) allocates a builder backed by a pooled StringBuilder. If from(...)
         // were left to reject a blank name, that newly allocated builder would never be returned to the
         // caller and could therefore never be released through build().
@@ -1829,7 +1829,7 @@ public final class Dsl {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String sql = PSC.count(Account.class)
+     * String sql = PSC.selectCountFrom(Account.class)
      *                 .where(Filters.isNotNull("email"))
      *                 .build().query();
      * // Output: SELECT count(*) FROM account WHERE email IS NOT NULL
@@ -1840,7 +1840,7 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class,
      *                                  or resolves to a blank mapped table name
      */
-    public SqlBuilder count(final Class<?> entityClass) {
+    public SqlBuilder selectCountFrom(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, SqlBuilder.SELECTION_PART_MSG);
 
         final SqlBuilder builder = select(SqlBuilder.COUNT_ALL_LIST);

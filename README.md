@@ -1,7 +1,7 @@
 # abacus-query
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.landawn.abacus/abacus-query.svg)](https://central.sonatype.com/artifact/com.landawn.abacus/abacus-query)
-[![Javadocs](https://img.shields.io/badge/javadoc-4.9.0-brightgreen.svg)](https://www.javadoc.io/doc/com.landawn.abacus/abacus-query/4.9.0/index.html)
+[![Javadocs](https://img.shields.io/badge/javadoc-4.9.1-brightgreen.svg)](https://www.javadoc.io/doc/com.landawn.abacus/abacus-query/4.9.1/index.html)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 
 A lightweight, dependency-light **Java 17+ SQL toolkit** — build, compose, and parse SQL without an ORM.
@@ -52,14 +52,14 @@ Requires **JDK 17 or above**.
 <dependency>
     <groupId>com.landawn.abacus</groupId>
     <artifactId>abacus-query</artifactId>
-    <version>4.9.0</version>
+    <version>4.9.1</version>
 </dependency>
 ```
 
 **Gradle**
 
 ```groovy
-implementation 'com.landawn.abacus:abacus-query:4.9.0'
+implementation 'com.landawn.abacus:abacus-query:4.9.1'
 ```
 
 ---
@@ -253,7 +253,7 @@ operators (`>=`, `<>`, `->>`, …). Extensible with custom separators.
 ```java
 import com.landawn.abacus.query.SqlParser;
 
-List<String> tokens = SqlParser.parse("SELECT a, b FROM t WHERE a >= 1");
+List<String> tokens = SqlParser.tokenize("SELECT a, b FROM t WHERE a >= 1");
 // keywords, identifiers, ",", and the ">=" operator each come back as their own token
 // (whitespace runs collapse into single " " tokens)
 ```
@@ -352,7 +352,7 @@ clauses, joins, quantifiers, and set operations listed [above](#the-condition-mo
 ## Documentation
 
 - **User guide / Wiki** — https://github.com/landawn/abacus-query/wiki
-- **API docs (Javadoc)** — https://www.javadoc.io/doc/com.landawn.abacus/abacus-query/4.9.0/index.html
+- **API docs (Javadoc)** — https://www.javadoc.io/doc/com.landawn.abacus/abacus-query/4.9.1/index.html
 - **Changelog** — [CHANGES.md](./CHANGES.md)
 
 ## Related projects

@@ -868,7 +868,7 @@ public abstract class AbstractCondition implements Condition {
      * @return a comma-separated string of property names suitable for use in a sort/grouping clause
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
-    protected static String createSortExpression(final String... propNames) {
+    protected static String createSortSpec(final String... propNames) {
         N.checkArgNotEmpty(propNames, "propNames");
 
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -904,7 +904,7 @@ public abstract class AbstractCondition implements Condition {
      * @return a string of the form {@code "propName direction"} suitable for a sort/grouping clause
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or {@code direction} is {@code null}
      */
-    protected static String createSortExpression(final String propName, final SortDirection direction) {
+    protected static String createSortSpec(final String propName, final SortDirection direction) {
         checkPropName(propName);
 
         if (direction == null) {
@@ -927,7 +927,7 @@ public abstract class AbstractCondition implements Condition {
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, {@code direction} is {@code null},
      *                                  or {@code propNames} contains {@code null}, empty, or blank elements
      */
-    protected static String createSortExpression(final Collection<String> propNames, final SortDirection direction) {
+    protected static String createSortSpec(final Collection<String> propNames, final SortDirection direction) {
         N.checkArgNotEmpty(propNames, "propNames");
 
         if (direction == null) {
@@ -971,7 +971,7 @@ public abstract class AbstractCondition implements Condition {
      * @throws IllegalArgumentException if {@code orders} is {@code null}/empty, or contains {@code null}, empty, or blank keys
      *                                  or {@code null} values
      */
-    protected static String createSortExpression(final Map<String, SortDirection> orders) {
+    protected static String createSortSpec(final Map<String, SortDirection> orders) {
         N.checkArgNotEmpty(orders, "orders");
 
         final StringBuilder sb = Objectory.createStringBuilder();

@@ -1,7 +1,7 @@
 # abacus-query API Index (v4.9.1)
-- Build: 120ef99b5f8bce2cb754407087f3ed510df36692
+- Build: 3511978c18e32ee1900931eb7c80c2df8bd3d5c5
 - Java: 17
-- Generated: 2026-08-05
+- Generated: 2026-08-09
 
 ## Packages
 - com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
@@ -13,6 +13,9 @@ Base class for fluent SQL builders.
 
 **Thread-safety:** not-thread-safe
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -43,7 +46,7 @@ Base class for fluent SQL builders.
   - ```java
     String insertSql = PSC.insert("firstName", "lastName").into("account").build().query();
     // Output: INSERT INTO account (first_name, last_name) VALUES (?, ?)
-
+    
     String insertSelectSql = PSC.select("firstName").into("account_backup").from("account").build().query();
     // Output: INSERT INTO account_backup (first_name) SELECT first_name AS "firstName" FROM account
     ```
@@ -180,7 +183,7 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from("users u").build().query();
     // Output: SELECT * FROM users u
-
+    
     String sql2 = PSC.select("*").from("(SELECT * FROM users) t").build().query();
     // Output: SELECT * FROM (SELECT * FROM users) t
     ```
@@ -1191,7 +1194,7 @@ Base class for fluent SQL builders.
                     .limit(10)
                     .build().query();
     // Output: SELECT * FROM users LIMIT 10
-
+    
     Dsl oracleDsl = Dsl.forDialect(SqlDialect.builder()
             .sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL)
             .productInfo(SqlDialect.ProductInfo.of("Oracle"))
@@ -1458,7 +1461,8 @@ Base class for fluent SQL builders.
                     .build().query();
     // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
     ```
-- **Signature:** `public This union(final Collection<String> propOrColumnNames)`
+##### unionSelect(...) -> This
+- **Signature:** `public This unionSelect(final Collection<String> propOrColumnNames)`
 - **Summary:** Starts a new SELECT query for UNION operation with a collection of columns.
 - **Parameters:**
   - `propOrColumnNames` (`Collection<String>`) — the collection of columns for the union query
@@ -1471,7 +1475,7 @@ Base class for fluent SQL builders.
     List<String> columns = Arrays.asList("id", "name");
     String sql = PSC.select("id", "name")
                     .from("users")
-                    .union(columns)
+                    .unionSelect(columns)
                     .from("customers")
                     .build().query();
     // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
@@ -1508,7 +1512,8 @@ Base class for fluent SQL builders.
                     .build().query();
     // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
     ```
-- **Signature:** `public This unionAll(final Collection<String> propOrColumnNames)`
+##### unionAllSelect(...) -> This
+- **Signature:** `public This unionAllSelect(final Collection<String> propOrColumnNames)`
 - **Summary:** Starts a new SELECT query for UNION ALL operation with a collection of columns.
 - **Parameters:**
   - `propOrColumnNames` (`Collection<String>`) — the collection of columns for the union all query
@@ -1521,7 +1526,7 @@ Base class for fluent SQL builders.
     List<String> columns = Arrays.asList("id", "name");
     String sql = PSC.select("id", "name")
                     .from("users")
-                    .unionAll(columns)
+                    .unionAllSelect(columns)
                     .from("customers")
                     .build().query();
     // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
@@ -1558,7 +1563,8 @@ Base class for fluent SQL builders.
                     .build().query();
     // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
     ```
-- **Signature:** `public This intersect(final Collection<String> propOrColumnNames)`
+##### intersectSelect(...) -> This
+- **Signature:** `public This intersectSelect(final Collection<String> propOrColumnNames)`
 - **Summary:** Starts a new SELECT query for INTERSECT operation with a collection of columns.
 - **Parameters:**
   - `propOrColumnNames` (`Collection<String>`) — the collection of columns for the intersect query
@@ -1571,7 +1577,7 @@ Base class for fluent SQL builders.
     List<String> columns = Arrays.asList("id", "name");
     String sql = PSC.select("id", "name")
                     .from("users")
-                    .intersect(columns)
+                    .intersectSelect(columns)
                     .from("premium_users")
                     .build().query();
     // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
@@ -1608,7 +1614,8 @@ Base class for fluent SQL builders.
                     .build().query();
     // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
     ```
-- **Signature:** `public This except(final Collection<String> propOrColumnNames)`
+##### exceptSelect(...) -> This
+- **Signature:** `public This exceptSelect(final Collection<String> propOrColumnNames)`
 - **Summary:** Starts a new SELECT query for EXCEPT operation with a collection of columns.
 - **Parameters:**
   - `propOrColumnNames` (`Collection<String>`) — the collection of columns for the except query
@@ -1621,7 +1628,7 @@ Base class for fluent SQL builders.
     List<String> columns = Arrays.asList("id", "name");
     String sql = PSC.select("id", "name")
                     .from("users")
-                    .except(columns)
+                    .exceptSelect(columns)
                     .from("inactive_users")
                     .build().query();
     // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
@@ -1658,7 +1665,8 @@ Base class for fluent SQL builders.
                     .build().query();
     // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
     ```
-- **Signature:** `public This minus(final Collection<String> propOrColumnNames)`
+##### minusSelect(...) -> This
+- **Signature:** `public This minusSelect(final Collection<String> propOrColumnNames)`
 - **Summary:** Starts a new SELECT query for MINUS operation with a collection of columns (Oracle syntax).
 - **Parameters:**
   - `propOrColumnNames` (`Collection<String>`) — the collection of columns for the minus query
@@ -1671,7 +1679,7 @@ Base class for fluent SQL builders.
     List<String> columns = Arrays.asList("id", "name");
     String sql = PSC.select("id", "name")
                     .from("users")
-                    .minus(columns)
+                    .minusSelect(columns)
                     .from("inactive_users")
                     .build().query();
     // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
@@ -1771,7 +1779,7 @@ Base class for fluent SQL builders.
   - ```java
     PSC.update("users").set("status", "INACTIVE");
     // UPDATE users SET status = ?
-
+    
     PSC.update("users").set("loginCount", SqlExpression.of("login_count + 1"));
     // UPDATE users SET login_count = login_count + 1
     ```
@@ -1977,6 +1985,29 @@ Base class for fluent SQL builders.
            jdbcTemplate.update(sql, params.toArray());
        });
     ```
+##### toSubQuery(...) -> SubQuery
+- **Signature:** `@Beta public SubQuery toSubQuery()`
+- **Summary:** Finalizes and consumes this builder, validates that the resulting statement is a complete, read-only SELECT, and captures it as a reusable SubQuery.
+- **Contract:**
+  - If the captured SQL contains generated placeholders, an enclosing builder must use the same SQL policy; compatibility is checked when the snapshot is composed.
+- **Parameters:**
+  - (none)
+- **Returns:** a reusable builder-backed subquery snapshot
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if the built statement is blank, is not a complete SELECT, or is not read-only
+  - `java.lang.IllegalStateException` — if this builder is incomplete or was already consumed
+- **Examples:**
+  - ```java
+    SubQuery paidOrders = PSC.select("userId")
+        .from("orders")
+        .where(Filters.gt("total", 100))
+        .toSubQuery();
+    
+    SP result = PSC.select("*")
+        .from("users")
+        .where(Filters.in("id", paidOrders))
+        .build();
+    ```
 ##### debugPrint(...) -> void
 - **Signature:** `@Beta public void debugPrint()`
 - **Summary:** Builds the SQL and prints the resulting query string to standard output.
@@ -1999,8 +2030,17 @@ Represents a SQL string and its associated parameters.
 **Thread-safety:** thread-safe
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public SP` — Creates an immutable SQL/parameter pair.
+- **Signature:** `public SP`
+- **Summary:** Creates an immutable SQL/parameter pair.
+- **Parameters:**
+  - `query` (`String`)
+  - `parameters` (`ImmutableList<Object>`)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if query or parameters is null
 
 #### Public Static Methods
 - (none)
@@ -2013,6 +2053,60 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 
 **Thread-safety:** thread-safe
 **Nullability:** unspecified
+
+#### Public Fields
+- **Declaration:** `public static final Dsl PSB`
+  - **Summary:** Parameterized-SQL DSL (? placeholders) that leaves property/column names unchanged.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl PSC`
+  - **Summary:** Parameterized-SQL DSL (? placeholders) with snake_case naming.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl PAC`
+  - **Summary:** Parameterized-SQL DSL (? placeholders) with SCREAMING_SNAKE_CASE (UPPER_CASE_WITH_UNDERSCORE) naming.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl PLC`
+  - **Summary:** Parameterized-SQL DSL (? placeholders) with lowerCamelCase naming.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl NSB`
+  - **Summary:** Named-SQL DSL (:name placeholders) that leaves property/column names unchanged.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl NSC`
+  - **Summary:** Named-SQL DSL (:name placeholders) with snake_case naming.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl NAC`
+  - **Summary:** Named-SQL DSL (:name placeholders) with SCREAMING_SNAKE_CASE (UPPER_CASE_WITH_UNDERSCORE) naming.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl NLC`
+  - **Summary:** Named-SQL DSL (:name placeholders) with lowerCamelCase naming.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl SCSB`
+  - **Summary:** Raw-SQL DSL with snake_case naming; values are inlined as SQL literals rather than parameterized.
+  - **Deprecated:** #PSC or #NSC is preferred for better security and performance. Un-parameterized SQL is vulnerable to SQL injection attacks.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl ACSB`
+  - **Summary:** Raw-SQL DSL with SCREAMING_SNAKE_CASE (UPPER_CASE_WITH_UNDERSCORE) naming; values are inlined as SQL literals rather than parameterized.
+  - **Deprecated:** #PAC or #NAC is preferred for better security and performance. Un-parameterized SQL is vulnerable to SQL injection attacks.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl LCSB`
+  - **Summary:** Raw-SQL DSL with lowerCamelCase naming; values are inlined as SQL literals rather than parameterized.
+  - **Deprecated:** #PLC or #NLC is preferred for better security and performance. Un-parameterized SQL is vulnerable to SQL injection attacks.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl MSB`
+  - **Summary:** iBATIS/MyBatis-SQL DSL (#{name} placeholders) that leaves property/column names unchanged.
+  - **Deprecated:** Use #NSB instead. Note: Switching from MSB to NSB changes the parameter style from iBATIS (#{param}) to named (:param).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl MSC`
+  - **Summary:** iBATIS/MyBatis-SQL DSL (#{name} placeholders) with snake_case naming.
+  - **Deprecated:** Use #NSC instead. Note: Switching from MSC to NSC changes the parameter style from iBATIS (#{param}) to named (:param).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl MAC`
+  - **Summary:** iBATIS/MyBatis-SQL DSL (#{name} placeholders) with SCREAMING_SNAKE_CASE (UPPER_CASE_WITH_UNDERSCORE) naming.
+  - **Deprecated:** Use #NAC instead. Note: Switching from MAC to NAC changes the parameter style from iBATIS (#{param}) to named (:param).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Dsl MLC`
+  - **Summary:** iBATIS/MyBatis-SQL DSL (#{name} placeholders) with lowerCamelCase naming.
+  - **Deprecated:** Use #NLC instead. Note: Switching from MLC to NLC changes the parameter style from iBATIS (#{param}) to named (:param).
+  - **Nullability:** unspecified
 
 #### Public Constructors
 - (none)
@@ -2483,6 +2577,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     ```
 - **Signature:** `@Deprecated public SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB)`
 - **Summary:** Creates a SELECT statement for multiple entity classes (for joins).
+- **Deprecated:** hard to read at the call site (positional arguments) and limited to exactly two entities. Build a Selection per table (e.g. with Selection.builder(Entity.class)) and pass them to #select(List), which is self-documenting and supports any number of tables.
 - **Parameters:**
   - `entityClassA` (`Class<?>`) — first entity class
   - `tableAliasA` (`String`) — table alias for first entity
@@ -2505,6 +2600,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     ```
 - **Signature:** `@Deprecated public SqlBuilder select(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB)`
 - **Summary:** Creates a SELECT statement for multiple entity classes with exclusions.
+- **Deprecated:** hard to read at the call site (positional arguments) and limited to exactly two entities. Build a Selection per table (e.g. with Selection.builder(Entity.class)) and pass them to #select(List), which is self-documenting and supports any number of tables.
 - **Parameters:**
   - `entityClassA` (`Class<?>`) — first entity class
   - `tableAliasA` (`String`) — table alias for first entity
@@ -2702,6 +2798,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     ```
 - **Signature:** `@Deprecated public SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB)`
 - **Summary:** Creates a SELECT FROM statement for multiple entity classes.
+- **Deprecated:** hard to read at the call site (positional arguments) and limited to exactly two entities. Build a Selection per table (e.g. with Selection.builder(Entity.class)) and pass them to #selectFrom(List), which is self-documenting and supports any number of tables.
 - **Parameters:**
   - `entityClassA` (`Class<?>`) — first entity class
   - `tableAliasA` (`String`) — table alias for first entity
@@ -2722,6 +2819,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     ```
 - **Signature:** `@Deprecated public SqlBuilder selectFrom(final Class<?> entityClassA, final String tableAliasA, final String classAliasA, final Set<String> excludedPropNamesA, final Class<?> entityClassB, final String tableAliasB, final String classAliasB, final Set<String> excludedPropNamesB)`
 - **Summary:** Creates a SELECT FROM statement for multiple entity classes with exclusions.
+- **Deprecated:** hard to read at the call site (positional arguments) and limited to exactly two entities. Build a Selection per table (e.g. with Selection.builder(Entity.class)) and pass them to #selectFrom(List), which is self-documenting and supports any number of tables.
 - **Parameters:**
   - `entityClassA` (`Class<?>`) — first entity class
   - `tableAliasA` (`String`) — table alias for first entity
@@ -2781,8 +2879,8 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
                     .where(Filters.equal("a.status", "active"))
                     .build().query();
     ```
-##### count(...) -> SqlBuilder
-- **Signature:** `public SqlBuilder count(final String tableName)`
+##### selectCountFrom(...) -> SqlBuilder
+- **Signature:** `public SqlBuilder selectCountFrom(final String tableName)`
 - **Summary:** Creates a COUNT(*) query for a table.
 - **Parameters:**
   - `tableName` (`String`) — the table to count rows from
@@ -2791,12 +2889,12 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank
 - **Examples:**
   - ```java
-    String sql = PSC.count("account")
+    String sql = PSC.selectCountFrom("account")
                     .where(Filters.equal("status", "active"))
                     .build().query();
     // Output: SELECT count(*) FROM account WHERE status = ?
     ```
-- **Signature:** `public SqlBuilder count(final Class<?> entityClass)`
+- **Signature:** `public SqlBuilder selectCountFrom(final Class<?> entityClass)`
 - **Summary:** Creates a COUNT(*) query for an entity class.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to count
@@ -2805,7 +2903,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or resolves to a blank mapped table name
 - **Examples:**
   - ```java
-    String sql = PSC.count(Account.class)
+    String sql = PSC.selectCountFrom(Account.class)
                     .where(Filters.isNotNull("email"))
                     .build().query();
     // Output: SELECT count(*) FROM account WHERE email IS NOT NULL
@@ -2849,6 +2947,9 @@ Entry point for fluently creating dynamic SQL queries programmatically.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -2880,6 +2981,9 @@ Builder for constructing dynamic SQL queries clause by clause.
 
 **Thread-safety:** not-thread-safe
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -3225,6 +3329,9 @@ Builder class for constructing the SELECT clause of a SQL query.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -3335,6 +3442,9 @@ Builder class for constructing the FROM clause of a SQL query.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -3602,6 +3712,9 @@ Builder class for constructing the WHERE clause of a SQL query.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -3735,6 +3848,9 @@ Builder class for constructing the GROUP BY clause of a SQL query.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -3811,6 +3927,9 @@ Builder class for constructing the HAVING clause of a SQL query.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -3945,6 +4064,9 @@ Builder class for constructing the ORDER BY clause of a SQL query.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -4022,6 +4144,11 @@ Factory class for creating SQL Condition objects used in query construction.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- **Declaration:** `public static final SqlExpression QME`
+  - **Summary:** A SQL expression representing a question mark literal (?) for use in parameterized SQL queries.
+  - **Nullability:** unspecified
+
 #### Public Constructors
 - (none)
 
@@ -4029,6 +4156,7 @@ Factory class for creating SQL Condition objects used in query construction.
 ##### alwaysTrue(...) -> SqlExpression
 - **Signature:** `@Deprecated public static SqlExpression alwaysTrue()`
 - **Summary:** Returns a condition that always evaluates to true.
+- **Deprecated:** dangerous; could silently bypass all filtering, returning all rows. Avoid using this method; restructure the conditional logic instead.
 - **Parameters:**
   - (none)
 - **Returns:** an SqlExpression that always evaluates to true (1 &lt; 2)
@@ -4041,6 +4169,7 @@ Factory class for creating SQL Condition objects used in query construction.
 ##### alwaysFalse(...) -> SqlExpression
 - **Signature:** `@Deprecated public static SqlExpression alwaysFalse()`
 - **Summary:** Returns a condition that always evaluates to false.
+- **Deprecated:** dangerous; could silently return zero rows. Avoid using this method; restructure the conditional logic instead.
 - **Parameters:**
   - (none)
 - **Returns:** an SqlExpression that always evaluates to false (1 &gt; 2)
@@ -4540,6 +4669,7 @@ Factory class for creating SQL Condition objects used in query construction.
 ##### id2Cond(...) -> And
 - **Signature:** `@Deprecated public static And id2Cond(final EntityId entityId)`
 - **Summary:** Converts an EntityId to an And condition where each key-value pair becomes an equality check.
+- **Deprecated:** the digit-abbreviation name is inconsistent with this class's spelled-out naming convention; use #idToCond(EntityId) instead
 - **Parameters:**
   - `entityId` (`EntityId`) — the EntityId containing key-value pairs (must not be null)
 - **Returns:** an And condition
@@ -4547,6 +4677,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `java.lang.IllegalArgumentException` — if entityId is null or contains no keys
 - **Signature:** `@Deprecated public static Or id2Cond(final Collection<? extends EntityId> entityIds)`
 - **Summary:** Converts a collection of EntityIds to an Or condition where each EntityId becomes an And condition.
+- **Deprecated:** the digit-abbreviation name is inconsistent with this class's spelled-out naming convention; use #idToCond(Collection) instead
 - **Parameters:**
   - `entityIds` (`Collection<? extends EntityId>`) — collection of EntityIds (must not be null, empty, or contain null)
 - **Returns:** an Or condition
@@ -5829,7 +5960,7 @@ Factory class for creating SQL Condition objects used in query construction.
     // Generates: ON ((orders.user_id = users.id) AND (orders.product_id = products.id))
     ```
 ##### using(...) -> Using
-- **Signature:** `@Deprecated public static Using using(final String... columnNames)`
+- **Signature:** `@Beta public static Using using(final String... columnNames)`
 - **Summary:** Creates a USING clause for JOIN operations with the specified columns.
 - **Contract:**
   - USING is an alternative to ON when joining tables on columns with the same name.
@@ -5843,7 +5974,7 @@ Factory class for creating SQL Condition objects used in query construction.
     Using usingClause = Filters.using("user_id", "department_id");
     // Results in SQL like: USING (user_id, department_id)
     ```
-- **Signature:** `@Deprecated public static Using using(final Collection<String> columnNames)`
+- **Signature:** `@Beta public static Using using(final Collection<String> columnNames)`
 - **Summary:** Creates a USING clause from a collection of column names for JOIN operations.
 - **Parameters:**
   - `columnNames` (`Collection<String>`) — collection of column names used for joining
@@ -6723,23 +6854,9 @@ Factory class for creating SQL Condition objects used in query construction.
         "category = 'electronics' AND in_stock = true");
     // Generates: SELECT id, price FROM products WHERE category = 'electronics' AND in_stock = true
     ```
-- **Signature:** `public static SubQuery subQuery(final SqlBuilder sqlBuilder)`
-- **Summary:** Finalizes and consumes a SqlBuilder, validates that its result is a complete, read-only SELECT, and captures it as a reusable subquery.
-- **Contract:**
-  - If the captured SQL contains generated placeholders, a parent builder must use the same SQL policy; that compatibility is checked when the snapshot is composed into the parent.
-- **Parameters:**
-  - `sqlBuilder` (`SqlBuilder`) — the builder to finalize and capture; consumed once finalization begins
-- **Returns:** a reusable builder-backed subquery snapshot
-- **Throws:**
-  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, or its built statement is blank, is not a complete SELECT, or is not read-only
-  - `java.lang.IllegalStateException` — if the builder is incomplete or was already consumed
-- **Examples:**
-  - ```java
-    SubQuery paidOrders = Filters.subQuery(
-        Dsl.PSC.select("userId").from("orders").where(Filters.gt("total", 100)));
-    ```
 - **Signature:** `@Deprecated public static SubQuery subQuery(final String entityName, final String sql)`
 - **Summary:** Creates a SubQuery from an entity name and raw SQL.
+- **Deprecated:** when the full SQL is supplied, entityName is not used to build the subquery; use #subQuery(String) instead.
 - **Parameters:**
   - `entityName` (`String`) — the entity/table name (not used to build the subquery when the full SQL is supplied; may be null or empty)
   - `sql` (`String`) — the complete SQL for the subquery (must not be null, empty, or blank)
@@ -6821,6 +6938,9 @@ Represents a parsed SQL statement with support for named parameters and paramete
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -6964,6 +7084,11 @@ Utility class for handling database query operations, entity-column mappings, an
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- **Declaration:** `public static final Pattern SIMPLE_COLUMN_NAME_PATTERN`
+  - **Summary:** Regular expression pattern for validating simple column names.
+  - **Nullability:** unspecified
 
 #### Public Constructors
 - (none)
@@ -7316,6 +7441,9 @@ Describes the database column associated with a property or column lookup key.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -7330,6 +7458,9 @@ Immutable selection specification for SQL queries, particularly useful for compl
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -7383,25 +7514,33 @@ Immutable selection specification for SQL queries, particularly useful for compl
 - **Returns:** the immutable excluded property names; null or an empty set means no properties are excluded
 ##### hashCode(...) -> int
 - **Signature:** `@Override public int hashCode()`
+- **Summary:** Returns the hash code of this selection.
 - **Parameters:**
   - (none)
-- **Returns:** unspecified
+- **Returns:** a hash code consistent with #equals(Object)
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
+- **Summary:** Compares this selection with another object for equality.
+- **Contract:**
+  - Two selections are equal only when every attribute is equal: the entity class, table alias, class alias, included property names, the sub-entity-properties flag, and excluded property names.
 - **Parameters:**
-  - `obj` (`Object`)
-- **Returns:** unspecified
+  - `obj` (`Object`) — the object to compare with
+- **Returns:** true if obj is a Selection with equal attributes, false otherwise
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString()`
+- **Summary:** Returns a string representation of this selection listing all its attributes.
 - **Parameters:**
   - (none)
-- **Returns:** unspecified
+- **Returns:** a string of the form "Selection(entityClass=..., tableAlias=..., classAlias=..., ...)"
 
 ### Class SelectionBuilder (com.landawn.abacus.query.Selection.SelectionBuilder)
 Builder for immutable Selection instances.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -7452,6 +7591,14 @@ Enumeration representing the sort direction for database queries and collections
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- **Declaration:** `public static final SortDirection ASC`
+  - **Summary:** Ascending sort order (A to Z, 0 to 9, oldest to newest).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SortDirection DESC`
+  - **Summary:** Descending sort order (Z to A, 9 to 0, newest to oldest).
+  - **Nullability:** unspecified
 
 #### Public Constructors
 - (none)
@@ -7512,6 +7659,9 @@ A fluent SQL builder that extends AbstractQueryBuilder with concrete SQL generat
 **Thread-safety:** not-thread-safe
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -7526,6 +7676,11 @@ Immutable configuration object used by Dsl to render generated SQL.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- **Declaration:** `public static final BiConsumer<StringBuilder, String> DEFAULT_NAMED_PARAMETER_HANDLER`
+  - **Summary:** Default renderer for SqlPolicy#NAMED_SQL placeholders.
+  - **Nullability:** unspecified
 
 #### Public Constructors
 - (none)
@@ -7542,6 +7697,14 @@ Identifier quoting style used by SQL builders.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- **Declaration:** `public static final IdentifierQuote DOUBLE_QUOTE`
+  - **Summary:** ANSI/standard SQL double quote (").
+  - **Nullability:** unspecified
+- **Declaration:** `public static final IdentifierQuote BACKTICK`
+  - **Summary:** MySQL/MariaDB-style backtick (`).
+  - **Nullability:** unspecified
+
 #### Public Constructors
 - (none)
 
@@ -7556,6 +7719,20 @@ Defines how values supplied to query builders are represented in generated SQL.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- **Declaration:** `public static final SqlPolicy RAW_SQL`
+  - **Summary:** Inline values directly into the SQL string as literals.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlPolicy PARAMETERIZED_SQL`
+  - **Summary:** Render each value as a positional ? placeholder and collect parameter values in order.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlPolicy NAMED_SQL`
+  - **Summary:** Render values as named placeholders, such as :id or :firstName.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlPolicy IBATIS_SQL`
+  - **Summary:** Render values as iBATIS/MyBatis-style named placeholders, such as #{id}.
+  - **Nullability:** unspecified
 
 #### Public Constructors
 - (none)
@@ -7572,8 +7749,17 @@ Immutable descriptor of a database product, holding the product name and version
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public ProductInfo` — Canonical constructor that requires a nonblank product name and normalizes a null version to an empty string, so #version() never returns null and an absent version has a single canonical representation.
+- **Signature:** `public ProductInfo`
+- **Summary:** Canonical constructor that requires a nonblank product name and normalizes a null version to an empty string, so #version() never returns null and an absent version has a single canonical representation.
+- **Parameters:**
+  - `name` (`String`)
+  - `version` (`String`)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if name is null, empty, or blank
 
 #### Public Static Methods
 ##### of(...) -> ProductInfo
@@ -7584,6 +7770,11 @@ Immutable descriptor of a database product, holding the product name and version
 - **Returns:** a new ProductInfo with the given name and an empty ("") version
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if name is null, empty, or blank
+- **Examples:**
+  - ```java
+    ProductInfo mysql = ProductInfo.of("MySQL");
+    boolean isMySql = mysql.isMySQL();   // true
+    ```
 - **Signature:** `public static ProductInfo of(final String name, final String version)`
 - **Summary:** Creates a ProductInfo with the given product name and version.
 - **Parameters:**
@@ -7650,6 +7841,12 @@ Immutable descriptor of a database product, holding the product name and version
 - **Parameters:**
   - `minVersion` (`String`) — the minimum version to compare against, such as "8.0" or "19"
 - **Returns:** true if this product's version parses and is greater than or equal to minVersion; false otherwise, including when either version is not comparable
+- **Examples:**
+  - ```java
+    ProductInfo mysql = ProductInfo.of("MySQL", "8.0.32");
+    boolean atLeast80 = mysql.isVersionAtLeast("8.0");   // true
+    boolean atLeast81 = mysql.isVersionAtLeast("8.1");   // false
+    ```
 - **See also:** #isVersionAtMost(String)
 ##### isVersionAtMost(...) -> boolean
 - **Signature:** `public boolean isVersionAtMost(final String maxVersion)`
@@ -7667,8 +7864,40 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 **Thread-safety:** not-thread-safe
 **Nullability:** unspecified
 
+#### Public Fields
+- **Declaration:** `public static final String SQL_MAPPER`
+  - **Summary:** XML element name for the root sqlMapper element.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final String SQL`
+  - **Summary:** XML element name for individual sql elements.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final String ID`
+  - **Summary:** XML attribute name for the SQL identifier.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final String BATCH_SIZE`
+  - **Summary:** XML attribute name for batch size configuration.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final String FETCH_SIZE`
+  - **Summary:** XML attribute name for JDBC fetch size configuration.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final String RESULT_SET_TYPE`
+  - **Summary:** XML attribute name for JDBC result set type configuration.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final ImmutableMap<String, Integer> RESULT_SET_TYPE_MAP`
+  - **Summary:** Mapping of result set type names to their JDBC constant values.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final String TIMEOUT`
+  - **Summary:** XML attribute name for query timeout configuration.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final int MAX_ID_LENGTH`
+  - **Summary:** Maximum allowed length for SQL identifiers ({@value}).
+  - **Nullability:** unspecified
+
 #### Public Constructors
-- `public SqlMapper()` — Creates an empty SqlMapper instance.
+- **Signature:** `public SqlMapper()`
+- **Summary:** Creates an empty SqlMapper instance.
+- **Parameters:**
+  - (none)
 
 #### Public Static Methods
 ##### loadFrom(...) -> SqlMapper
@@ -7701,6 +7930,10 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
   - `java.lang.IllegalArgumentException` — if either argument is null, if the first path or any additional path is empty, if a path cannot be found, if a loaded SQL definition is invalid or duplicated, if a SQL body is one that ParsedSql#parse(String) rejects (blank, mixed parameter styles, or a malformed #{...} marker), or if a <sql> attribute has a name that is not a valid non-namespace XML name or a null value
   - `com.landawn.abacus.exception.UncheckedIOException` — if an I/O error occurs while reading a file
   - `com.landawn.abacus.exception.ParsingException` — if any XML document is invalid or does not have <sqlMapper> as its root element
+- **Examples:**
+  - ```java
+    SqlMapper mapper = SqlMapper.loadFrom("sql/users.xml", "sql/orders.xml");
+    ```
 - **Signature:** `public static SqlMapper loadFrom(final File... files)`
 - **Summary:** Creates a SqlMapper instance by loading SQL definitions from one or more XML files.
 - **Contract:**
@@ -7929,6 +8162,12 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
   - `java.lang.IllegalArgumentException` — if filePath is null or empty
   - `com.landawn.abacus.exception.UncheckedIOException` — if an I/O error occurs while creating or writing the file
   - `com.landawn.abacus.exception.UncheckedException` — if a stored SQL body or identifier contains a character that is not legal in XML
+- **Examples:**
+  - ```java
+    SqlMapper mapper = new SqlMapper();
+    mapper.add("findUser", "select * from users where id = ?");
+    mapper.saveTo("sql/queries.xml");
+    ```
 - **Signature:** `public void saveTo(final OutputStream outputStream)`
 - **Summary:** Writes all SQL definitions in this mapper to the supplied output stream as XML.
 - **Contract:**
@@ -8031,6 +8270,59 @@ Enumeration representing SQL operation types.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- **Declaration:** `public static final SqlOperation SELECT`
+  - **Summary:** SELECT operation for data retrieval.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation INSERT`
+  - **Summary:** INSERT operation for adding new records.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation UPDATE`
+  - **Summary:** UPDATE operation for modifying existing records.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation DELETE`
+  - **Summary:** DELETE operation for removing records.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation MERGE`
+  - **Summary:** MERGE operation for upserting (inserting or updating) records.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation CREATE`
+  - **Summary:** CREATE operation for creating database objects.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation DROP`
+  - **Summary:** DROP operation for removing database objects.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation ALTER`
+  - **Summary:** ALTER operation for modifying database object structure.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation SHOW`
+  - **Summary:** SHOW operation for displaying database information.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation DESCRIBE`
+  - **Summary:** DESCRIBE operation for showing table structure.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation USE`
+  - **Summary:** USE operation for selecting a database.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation RENAME`
+  - **Summary:** RENAME operation for renaming database objects.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation BEGIN_TRANSACTION`
+  - **Summary:** BEGIN TRANSACTION operation for starting a transaction.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation COMMIT`
+  - **Summary:** COMMIT operation for committing a transaction.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation ROLLBACK`
+  - **Summary:** ROLLBACK operation for rolling back a transaction.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation CALL`
+  - **Summary:** CALL operation for executing stored procedures.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final SqlOperation UNKNOWN`
+  - **Summary:** UNKNOWN operation for unrecognized SQL commands.
+  - **Nullability:** unspecified
+
 #### Public Constructors
 - (none)
 
@@ -8110,6 +8402,9 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -8117,6 +8412,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 ##### tokenizerConfigBuilder(...) -> TokenizerConfig.Builder
 - **Signature:** `@Deprecated public static TokenizerConfig.Builder tokenizerConfigBuilder()`
 - **Summary:** Starts a configuration builder initialized with the built-in SQL separators.
+- **Deprecated:** use TokenizerConfig#builder(); builder creation belongs to the type being built
 - **Parameters:**
   - (none)
 - **Returns:** a builder initialized with the default separators
@@ -8139,17 +8435,17 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 - **Returns:** a tokenizer bound to the supplied configuration
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if tokenizerConfig is null
-##### parse(...) -> List<String>
-- **Signature:** `public static List<String> parse(final String sql)`
-- **Summary:** Parses a SQL statement into a list of lexical SQL tokens.
+##### tokenize(...) -> List<String>
+- **Signature:** `public static List<String> tokenize(final String sql)`
+- **Summary:** Tokenizes a SQL statement into a list of lexical SQL tokens.
 - **Parameters:**
-  - `sql` (`String`) — the SQL statement to parse (must not be null)
-- **Returns:** a list of tokens representing the parsed SQL statement
+  - `sql` (`String`) — the SQL statement to tokenize (must not be null)
+- **Returns:** a list of tokens representing the tokenized SQL statement
 - **Throws:**
   - `java.lang.NullPointerException` — if sql is null
 - **Examples:**
   - ```java
-    List<String> tokens = SqlParser.parse("SELECT name, age FROM users WHERE age >= 18");
+    List<String> tokens = SqlParser.tokenize("SELECT name, age FROM users WHERE age >= 18");
     // Result: ["SELECT", " ", "name", ",", " ", "age", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">=", " ", "18"]
     ```
 ##### indexOfToken(...) -> int
@@ -8244,14 +8540,14 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 - **Contract:**
   - A token is considered a function name if it is followed by the opening parenthesis token, either immediately or after whitespace.
 - **Parameters:**
-  - `tokens` (`List<String>`) — the parsed SQL tokens (typically the result of #parse(String))
+  - `tokens` (`List<String>`) — the parsed SQL tokens (typically the result of #tokenize(String))
   - `index` (`int`) — the index of the token to check; invalid indices return false
 - **Returns:** true if the token at index is followed (after zero or more space tokens) by the "(" token; false otherwise
 - **Throws:**
   - `java.lang.NullPointerException` — if tokens is null
 - **Examples:**
   - ```java
-    List<String> tokens = SqlParser.parse("SELECT COUNT(*) FROM users");
+    List<String> tokens = SqlParser.tokenize("SELECT COUNT(*) FROM users");
     boolean isFunc = SqlParser.isFunctionName(tokens, 2);   // true for "COUNT"
     boolean notFunc = SqlParser.isFunctionName(tokens, 0);  // false for "SELECT"
     ```
@@ -8391,13 +8687,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
 - **Returns:** true for an accepted read or plain/safe insert; false otherwise, including for a null or empty statement
-- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String), #isNoUpdateQuery(String)
-##### isNoUpdateQuery(...) -> boolean
-- **Signature:** `@Deprecated public static boolean isNoUpdateQuery(final String sql)`
-- **Summary:** Compatibility alias for the original public API name.
-- **Parameters:**
-  - `sql` (`String`) — the SQL statement to check; may be empty or null
-- **Returns:** the result of #isReadOrInsertQuery(String)
+- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String)
 
 #### Public Instance Methods
 - (none)
@@ -8407,6 +8697,9 @@ Immutable separator configuration for Tokenizer.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -8434,25 +8727,33 @@ Immutable separator configuration for Tokenizer.
 - **Returns:** the configured separators
 ##### hashCode(...) -> int
 - **Signature:** `@Override public int hashCode()`
+- **Summary:** Returns the hash code of this configuration.
 - **Parameters:**
   - (none)
-- **Returns:** unspecified
+- **Returns:** a hash code consistent with #equals(Object)
 ##### equals(...) -> boolean
 - **Signature:** `@Override public boolean equals(final Object obj)`
+- **Summary:** Compares this configuration with another object for equality.
+- **Contract:**
+  - Two configurations are equal when they hold equal separator sets; the order in which separators were added does not affect equality.
 - **Parameters:**
-  - `obj` (`Object`)
-- **Returns:** unspecified
+  - `obj` (`Object`) — the object to compare with
+- **Returns:** true if obj is a TokenizerConfig with the same separators, false otherwise
 ##### toString(...) -> String
 - **Signature:** `@Override public String toString()`
+- **Summary:** Returns a string representation of this configuration listing its separators.
 - **Parameters:**
   - (none)
-- **Returns:** unspecified
+- **Returns:** a string of the form "TokenizerConfig{separators=\[...\]}"
 
 ### Class Builder (com.landawn.abacus.query.SqlParser.TokenizerConfig.Builder)
 Builder for immutable TokenizerConfig instances.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -8500,6 +8801,9 @@ Instance-scoped, thread-safe SQL tokenizer.
 **Thread-safety:** thread-safe
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -8513,15 +8817,21 @@ Instance-scoped, thread-safe SQL tokenizer.
 - **Parameters:**
   - (none)
 - **Returns:** this tokenizer's configuration
-##### parse(...) -> List<String>
-- **Signature:** `public List<String> parse(final String sql)`
-- **Summary:** Parses a SQL statement with this tokenizer's separator configuration.
+##### tokenize(...) -> List<String>
+- **Signature:** `public List<String> tokenize(final String sql)`
+- **Summary:** Tokenizes a SQL statement with this tokenizer's separator configuration.
 - **Parameters:**
-  - `sql` (`String`) — the SQL statement to parse; must not be null
+  - `sql` (`String`) — the SQL statement to tokenize; must not be null
 - **Returns:** the lexical SQL tokens
 - **Throws:**
   - `java.lang.NullPointerException` — if sql is null
-- **See also:** SqlParser#parse(String)
+- **Examples:**
+  - ```java
+    SqlParser.Tokenizer tokenizer = SqlParser.tokenizer();
+    List<String> tokens = tokenizer.tokenize("select id from orders");
+    // Result: ["select", " ", "id", " ", "from", " ", "orders"]
+    ```
+- **See also:** SqlParser#tokenize(String)
 ##### indexOfToken(...) -> int
 - **Signature:** `public int indexOfToken(final String sql, final String token)`
 - **Summary:** Finds a token from the beginning using case-insensitive matching.
@@ -8587,6 +8897,9 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -8718,6 +9031,9 @@ Abstract base class for all condition implementations.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -8760,6 +9076,9 @@ Abstract base class for IN and NOT IN conditions in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -8903,6 +9222,9 @@ Abstract base class for IN and NOT IN subquery conditions in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -9035,8 +9357,16 @@ Represents the SQL ALL operator for use with subqueries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public All(final SubQuery subQuery)` — Creates a new ALL condition with the specified subquery.
+- **Signature:** `public All(final SubQuery subQuery)`
+- **Summary:** Creates a new ALL condition with the specified subquery.
+- **Parameters:**
+  - `subQuery` (`SubQuery`) — the subquery that returns values to compare against (must not be null); a structured subquery with an explicit, non-wildcard projection must select exactly one property
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if subQuery is null, or if it is a structured subquery with a known, non-wildcard projection arity other than one
 
 #### Public Static Methods
 - (none)
@@ -9067,9 +9397,22 @@ Represents a composable AND condition that combines multiple conditions.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public And(final Condition... conditions)` — Creates a new AND condition with the specified conditions.
-- `public And(final Collection<? extends Condition> conditions)` — Creates a new AND condition with the specified collection of conditions.
+- **Signature:** `public And(final Condition... conditions)`
+- **Summary:** Creates a new AND condition with the specified conditions.
+- **Parameters:**
+  - `conditions` (`Condition[]`) — the conditions to combine with AND logic; may be null or empty
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+- **Signature:** `public And(final Collection<? extends Condition> conditions)`
+- **Summary:** Creates a new AND condition with the specified collection of conditions.
+- **Parameters:**
+  - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine with AND logic; may be null or empty
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
 #### Public Static Methods
 - (none)
@@ -9105,8 +9448,16 @@ Represents the SQL ANY operator for use with subqueries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Any(final SubQuery subQuery)` — Creates a new ANY condition with the specified subquery.
+- **Signature:** `public Any(final SubQuery subQuery)`
+- **Summary:** Creates a new ANY condition with the specified subquery.
+- **Parameters:**
+  - `subQuery` (`SubQuery`) — the subquery that returns values to compare against (must not be null); a structured subquery with an explicit, non-wildcard projection must select exactly one property
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if subQuery is null, or if it is a structured subquery with a known, non-wildcard projection arity other than one
 
 #### Public Static Methods
 - (none)
@@ -9137,8 +9488,18 @@ Represents a BETWEEN condition in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Between(final String propName, final Object minValue, final Object maxValue)` — Creates a new BETWEEN condition.
+- **Signature:** `public Between(final String propName, final Object minValue, final Object maxValue)`
+- **Summary:** Creates a new BETWEEN condition.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `minValue` (`Object`) — the minimum value (inclusive); may be a literal value, SqlExpression, SubQuery, or another non-structural, non-quantified Condition (may be null)
+  - `maxValue` (`Object`) — the maximum value (inclusive); may be a literal value, SqlExpression, SubQuery, or another non-structural, non-quantified Condition (may be null)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if either condition-valued bound is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
 
 #### Public Static Methods
 - (none)
@@ -9152,8 +9513,19 @@ Base class for binary conditions that compare a property with a value.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Binary(final String propName, final Operator operator, final Object propValue)` — Creates a new Binary condition.
+- **Signature:** `public Binary(final String propName, final Operator operator, final Object propValue)`
+- **Summary:** Creates a new Binary condition.
+- **Parameters:**
+  - `propName` (`String`) — the property name to compare (must not be null, empty, or blank)
+  - `operator` (`Operator`) — the comparison operator (must not be null); must be an operator valid for a binary propName OP value condition, i.e. one of Operator#EQUAL, Operator#NOT_EQUAL, Operator#NOT_EQUAL_ANSI, Operator#GREATER_THAN, Operator#GREATER_THAN_OR_EQUAL, Operator#LESS_THAN, Operator#LESS_THAN_OR_EQUAL, Operator#LIKE, Operator#NOT_LIKE, Operator#IS, Operator#IS_NOT, Operator#IN, or Operator#NOT_IN
+  - `propValue` (`Object`) — the value to compare against; may be a literal value, null (for equality operators, renders as IS NULL / IS NOT NULL), or a non-structural Condition such as a SqlExpression or SubQuery. An All, Any, or Some operand is accepted only as the direct right-hand side of =, !=, <>, <, <=, >, or >=. For an IN/NOT_IN operator, a Collection or array value is copied defensively and must be non-empty; condition-valued elements are subject to the same structural restriction.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank; if operator is not one of the operators listed above; or if, for an IN/NOT_IN operator, propValue is not a non-empty Collection, a non-empty array, or a Condition; or if a condition-valued operand is or contains a Criteria, SQL clause, JOIN, or ON/USING connector; or if an All/Any/Some operand is used anywhere other than the direct RHS of a compatible scalar comparison
+  - `java.lang.NullPointerException` — if operator is null
 
 #### Public Static Methods
 - (none)
@@ -9190,6 +9562,11 @@ Base class for binary conditions that compare a property with a value.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if valueType is null
   - `java.lang.ClassCastException` — if the stored value is not assignable to valueType
+- **Examples:**
+  - ```java
+    Equal cond = new Equal("status", "active");
+    String status = cond.propValueAs(String.class);   // "active"
+    ```
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Returns the parameters for this condition.
@@ -9288,6 +9665,9 @@ Represents a condition cell that wraps another condition with an operator.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -9406,6 +9786,9 @@ Abstract base class for SQL clause conditions.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -9420,6 +9803,9 @@ A composable variant of Cell that supports logical composition via AND/OR/NOT/XO
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -9540,6 +9926,9 @@ A Condition that supports logical composition via and(), or(), not(), and xor().
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -9624,6 +10013,9 @@ The base interface for all query conditions.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
 - (none)
 
@@ -9690,6 +10082,9 @@ A container representing a complete SQL query structure composed of multiple cla
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -9918,6 +10313,9 @@ A mutable builder for constructing Criteria instances with a fluent API.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- (none)
 
 #### Public Constructors
 - (none)
@@ -11133,9 +11531,22 @@ Represents a CROSS JOIN clause in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public CrossJoin(final String joinEntity)` — Creates a CROSS JOIN clause for the specified table or entity.
-- `public CrossJoin(final Collection<String> joinEntities)` — Creates a CROSS JOIN clause with multiple tables/entities and no join condition.
+- **Signature:** `public CrossJoin(final String joinEntity)`
+- **Summary:** Creates a CROSS JOIN clause for the specified table or entity.
+- **Parameters:**
+  - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+- **Signature:** `public CrossJoin(final Collection<String> joinEntities)`
+- **Summary:** Creates a CROSS JOIN clause with multiple tables/entities and no join condition.
+- **Parameters:**
+  - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements
 
 #### Public Static Methods
 - (none)
@@ -11149,8 +11560,17 @@ Represents an equality (=) condition in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Equal(final String propName, final Object propValue)` — Creates a new Equal condition.
+- **Signature:** `public Equal(final String propName, final Object propValue)`
+- **Summary:** Creates a new Equal condition.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `propValue` (`Object`) — the value to compare against; may be null (renders as IS NULL), a literal value, or a non-structural Condition such as a SubQuery or SqlExpression. A direct All, Any, or Some right-hand operand is also supported
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
 
 #### Public Static Methods
 - (none)
@@ -11164,8 +11584,16 @@ Represents an EXCEPT set operation in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Except(final SubQuery subQuery)` — Creates a new EXCEPT clause with the specified subquery.
+- **Signature:** `public Except(final SubQuery subQuery)`
+- **Summary:** Creates a new EXCEPT clause with the specified subquery.
+- **Parameters:**
+  - `subQuery` (`SubQuery`) — the subquery to perform the EXCEPT operation with (must not be null). The subquery must have the same number of columns with compatible types as the main query.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if subQuery is null
 
 #### Public Static Methods
 - (none)
@@ -11196,8 +11624,16 @@ Represents the SQL EXISTS operator for use with subqueries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Exists(final SubQuery subQuery)` — Creates a new EXISTS condition with the specified subquery.
+- **Signature:** `public Exists(final SubQuery subQuery)`
+- **Summary:** Creates a new EXISTS condition with the specified subquery.
+- **Parameters:**
+  - `subQuery` (`SubQuery`) — the subquery to check for existence of rows (must not be null)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if subQuery is null
 
 #### Public Static Methods
 - (none)
@@ -11228,10 +11664,30 @@ Represents a FULL JOIN clause in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public FullJoin(final String joinEntity)` — Creates a FULL JOIN clause for the specified table or entity without a join condition.
-- `public FullJoin(final String joinEntity, final Condition joinCondition)` — Creates a FULL JOIN clause with a join condition.
-- `public FullJoin(final Collection<String> joinEntities, final Condition joinCondition)` — Creates a FULL JOIN clause with multiple tables/entities and a join condition.
+- **Signature:** `public FullJoin(final String joinEntity)`
+- **Summary:** Creates a FULL JOIN clause for the specified table or entity without a join condition.
+- **Parameters:**
+  - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+- **Signature:** `public FullJoin(final String joinEntity, final Condition joinCondition)`
+- **Summary:** Creates a FULL JOIN clause with a join condition.
+- **Parameters:**
+  - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+- **Signature:** `public FullJoin(final Collection<String> joinEntities, final Condition joinCondition)`
+- **Summary:** Creates a FULL JOIN clause with multiple tables/entities and a join condition.
+- **Parameters:**
+  - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
 #### Public Static Methods
 - (none)
@@ -11245,8 +11701,17 @@ Represents a greater-than (&gt;) comparison condition in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public GreaterThan(final String propName, final Object propValue)` — Creates a new GreaterThan condition.
+- **Signature:** `public GreaterThan(final String propName, final Object propValue)`
+- **Summary:** Creates a new GreaterThan condition.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `propValue` (`Object`) — the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop > null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is also supported
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
 
 #### Public Static Methods
 - (none)
@@ -11260,8 +11725,17 @@ Represents a greater-than-or-equal-to (&gt;=) comparison condition in SQL querie
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public GreaterThanOrEqual(final String propName, final Object propValue)` — Creates a new GreaterThanOrEqual condition.
+- **Signature:** `public GreaterThanOrEqual(final String propName, final Object propValue)`
+- **Summary:** Creates a new GreaterThanOrEqual condition.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `propValue` (`Object`) — the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop >= null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is also supported
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
 
 #### Public Static Methods
 - (none)
@@ -11275,13 +11749,48 @@ Represents a GROUP BY clause in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public GroupBy(final Condition condition)` — Creates a new GROUP BY clause with the specified condition.
-- `public GroupBy(final String... propNames)` — Creates a new GROUP BY clause with the specified property names.
-- `public GroupBy(final Collection<String> propNames)` — Creates a new GROUP BY clause with the property names supplied as a collection.
-- `public GroupBy(final String propOrColumnName, final SortDirection direction)` — Creates a new GROUP BY clause with a single property and sort direction.
-- `public GroupBy(final Collection<String> propNames, final SortDirection direction)` — Creates a new GROUP BY clause with multiple properties and a single sort direction.
-- `public GroupBy(final Map<String, SortDirection> groupings)` — Creates a new GROUP BY clause with custom sort directions for each property.
+- **Signature:** `public GroupBy(final Condition condition)`
+- **Summary:** Creates a new GROUP BY clause with the specified condition.
+- **Parameters:**
+  - `condition` (`Condition`) — the grouping condition or expression. Must not be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is an empty predicate (a blank SqlExpression or empty Junction) — none of which can be nested inside a clause
+- **Signature:** `public GroupBy(final String... propNames)`
+- **Summary:** Creates a new GROUP BY clause with the specified property names.
+- **Parameters:**
+  - `propNames` (`String[]`) — the property names to group by, in order. Must not be null or empty and must not contain null, empty, or blank elements.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propNames is null, empty, or contains null, empty, or blank elements
+- **Signature:** `public GroupBy(final Collection<String> propNames)`
+- **Summary:** Creates a new GROUP BY clause with the property names supplied as a collection.
+- **Parameters:**
+  - `propNames` (`Collection<String>`) — the collection of property names to group by, in iteration order. Must not be null or empty and must not contain null, empty, or blank elements.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propNames is null, empty, or contains null, empty, or blank elements
+- **Signature:** `public GroupBy(final String propOrColumnName, final SortDirection direction)`
+- **Summary:** Creates a new GROUP BY clause with a single property and sort direction.
+- **Parameters:**
+  - `propOrColumnName` (`String`) — the property or column name to group by. Must not be null, empty, or blank.
+  - `direction` (`SortDirection`) — the sort direction (ASC or DESC). Must not be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank, or if direction is null
+- **Signature:** `public GroupBy(final Collection<String> propNames, final SortDirection direction)`
+- **Summary:** Creates a new GROUP BY clause with multiple properties and a single sort direction.
+- **Parameters:**
+  - `propNames` (`Collection<String>`) — the collection of property names to group by. Must not be null or empty and must not contain null, empty, or blank elements.
+  - `direction` (`SortDirection`) — the sort direction to apply to all properties. Must not be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propNames is null, empty, or contains null, empty, or blank elements, or if direction is null
+- **Signature:** `public GroupBy(final Map<String, SortDirection> groupings)`
+- **Summary:** Creates a new GROUP BY clause with custom sort directions for each property.
+- **Parameters:**
+  - `groupings` (`Map<String, SortDirection>`) — a map of property names to their sort directions. Should be a LinkedHashMap to maintain order. Must not be null or empty; keys must not be null, empty, or blank and values must not be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if groupings is null, empty, or contains null, empty, or blank keys or null values
 
 #### Public Static Methods
 - (none)
@@ -11295,8 +11804,16 @@ Represents a HAVING clause in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Having(final Condition condition)` — Creates a new HAVING clause with the specified condition.
+- **Signature:** `public Having(final Condition condition)`
+- **Summary:** Creates a new HAVING clause with the specified condition.
+- **Parameters:**
+  - `condition` (`Condition`) — the condition to apply in the HAVING clause. Must not be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is an empty predicate (a blank SqlExpression or empty Junction) — none of which can be nested inside a clause
 
 #### Public Static Methods
 - (none)
@@ -11310,9 +11827,24 @@ Represents an IN condition in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public In(final String propName, final Collection<?> values)` — Creates a new IN condition for the specified property and collection of values.
-- `public In(final Collection<String> propNames, final Collection<?> valueRows)` — Creates a new row value constructor IN condition.
+- **Signature:** `public In(final String propName, final Collection<?> values)`
+- **Summary:** Creates a new IN condition for the specified property and collection of values.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `values` (`Collection<?>`) — the collection of values to check against (must not be null or empty); the collection is copied internally to prevent external modifications. A condition-valued element must not be query-structural or quantified
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null/empty/blank, if values is null/empty, or if a condition-valued element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+- **Signature:** `public In(final Collection<String> propNames, final Collection<?> valueRows)`
+- **Summary:** Creates a new row value constructor IN condition.
+- **Parameters:**
+  - `propNames` (`Collection<String>`) — the property/column names (must not be null or empty and must not contain null, empty, or blank names)
+  - `valueRows` (`Collection<?>`) — the collection of value rows (must not be null or empty); each row must be non-null and resolve to exactly propNames.size() values. A row may be a Collection, Iterable, object array, Map or bean. A missing property-name key in a map contributes null; condition-valued elements must not be query-structural or quantified
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propNames is null/empty or contains any null, empty, or blank name, if valueRows is null/empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), or if a bean row does not expose a requested property, or if a condition-valued row element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
 
 #### Public Static Methods
 - (none)
@@ -11326,9 +11858,24 @@ Represents an IN subquery condition in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public InSubQuery(final String propName, final SubQuery subQuery)` — Creates an IN subquery condition for a single property.
-- `public InSubQuery(final Collection<String> propNames, final SubQuery subQuery)` — Creates an IN subquery condition for multiple properties.
+- **Signature:** `public InSubQuery(final String propName, final SubQuery subQuery)`
+- **Summary:** Creates an IN subquery condition for a single property.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `subQuery` (`SubQuery`) — the subquery that returns the values to check against (must not be null); if it has an explicit structured projection without * or qualifier.*, it must select exactly one column; raw SQL and wildcard projections cannot be arity-checked here
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if subQuery is null, or if the subquery has a known, non-wildcard structured projection whose column count is not 1
+- **Signature:** `public InSubQuery(final Collection<String> propNames, final SubQuery subQuery)`
+- **Summary:** Creates an IN subquery condition for multiple properties.
+- **Parameters:**
+  - `propNames` (`Collection<String>`) — the property/column names to check (must not be null or empty and must not contain null, empty, or blank elements). Their order must match the column order in the subquery.
+  - `subQuery` (`SubQuery`) — the subquery that returns the values to check against (must not be null). If it has an explicit structured projection without * or qualifier.*, it must select exactly propNames.size() columns. Raw SQL and wildcard projections cannot be arity-checked here.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propNames is null/empty, if any element is null, empty, or blank, if subQuery is null, or if the subquery has a known, non-wildcard structured projection whose number of selected columns does not match propNames.size()
 
 #### Public Static Methods
 - (none)
@@ -11342,10 +11889,30 @@ Represents an INNER JOIN clause in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public InnerJoin(final String joinEntity)` — Creates an INNER JOIN clause for the specified table or entity without a join condition.
-- `public InnerJoin(final String joinEntity, final Condition joinCondition)` — Creates an INNER JOIN clause with a join condition.
-- `public InnerJoin(final Collection<String> joinEntities, final Condition joinCondition)` — Creates an INNER JOIN clause with multiple tables/entities and a join condition.
+- **Signature:** `public InnerJoin(final String joinEntity)`
+- **Summary:** Creates an INNER JOIN clause for the specified table or entity without a join condition.
+- **Parameters:**
+  - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+- **Signature:** `public InnerJoin(final String joinEntity, final Condition joinCondition)`
+- **Summary:** Creates an INNER JOIN clause with a join condition.
+- **Parameters:**
+  - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+- **Signature:** `public InnerJoin(final Collection<String> joinEntities, final Condition joinCondition)`
+- **Summary:** Creates an INNER JOIN clause with multiple tables/entities and a join condition.
+- **Parameters:**
+  - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
 #### Public Static Methods
 - (none)
@@ -11359,8 +11926,16 @@ Represents an INTERSECT clause in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Intersect(final SubQuery subQuery)` — Creates a new INTERSECT clause with the specified subquery.
+- **Signature:** `public Intersect(final SubQuery subQuery)`
+- **Summary:** Creates a new INTERSECT clause with the specified subquery.
+- **Parameters:**
+  - `subQuery` (`SubQuery`) — the subquery to perform the INTERSECT operation with (must not be null). The subquery must have the same number of columns with compatible types as the main query.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if subQuery is null
 
 #### Public Static Methods
 - (none)
@@ -11391,8 +11966,17 @@ Represents an SQL IS predicate (e.g. IS NULL).
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Is(final String propName, final Object propValue)` — Creates a new IS condition with the specified property name and right-hand value.
+- **Signature:** `public Is(final String propName, final Object propValue)`
+- **Summary:** Creates a new IS condition with the specified property name and right-hand value.
+- **Parameters:**
+  - `propName` (`String`) — the name of the property/column to check (must not be null, empty, or blank)
+  - `propValue` (`Object`) — the right-hand value of the IS predicate; may be null (renders as IS NULL), an SqlExpression for a SQL keyword, or another non-structural value rendered by Binary; whether that value is valid with IS is dialect-specific
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
 
 #### Public Static Methods
 - (none)
@@ -11406,8 +11990,16 @@ Represents a condition that checks if a numeric property value is infinite.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public IsInfinite(final String propName)` — Creates a new IsInfinite condition for the specified property.
+- **Signature:** `public IsInfinite(final String propName)`
+- **Summary:** Creates a new IsInfinite condition for the specified property.
+- **Parameters:**
+  - `propName` (`String`) — the name of the property/column to check (must not be null, empty, or blank)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank
 
 #### Public Static Methods
 - (none)
@@ -11421,8 +12013,16 @@ Represents a condition that checks if a numeric property value is NaN (Not a Num
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public IsNaN(final String propName)` — Creates a new IsNaN condition for the specified property.
+- **Signature:** `public IsNaN(final String propName)`
+- **Summary:** Creates a new IsNaN condition for the specified property.
+- **Parameters:**
+  - `propName` (`String`) — the name of the property/column to check (must not be null, empty, or blank)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank
 
 #### Public Static Methods
 - (none)
@@ -11436,8 +12036,17 @@ Represents an SQL IS NOT predicate (e.g. IS NOT NULL).
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public IsNot(final String propName, final Object propValue)` — Creates a new IS NOT condition with the specified property name and right-hand value.
+- **Signature:** `public IsNot(final String propName, final Object propValue)`
+- **Summary:** Creates a new IS NOT condition with the specified property name and right-hand value.
+- **Parameters:**
+  - `propName` (`String`) — the name of the property/column to check (must not be null, empty, or blank)
+  - `propValue` (`Object`) — the right-hand value of the IS NOT predicate; may be null (renders as IS NOT NULL), an SqlExpression for a SQL keyword, or another non-structural value rendered by Binary; whether that value is valid with IS NOT is dialect-specific
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
 
 #### Public Static Methods
 - (none)
@@ -11451,8 +12060,16 @@ Represents a condition that checks if a numeric property value is NOT infinite.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public IsNotInfinite(final String propName)` — Creates a new IsNotInfinite condition for the specified property.
+- **Signature:** `public IsNotInfinite(final String propName)`
+- **Summary:** Creates a new IsNotInfinite condition for the specified property.
+- **Parameters:**
+  - `propName` (`String`) — the name of the property/column to check (must not be null, empty, or blank)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank
 
 #### Public Static Methods
 - (none)
@@ -11466,8 +12083,16 @@ Represents a condition that checks if a numeric property value is NOT NaN (Not a
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public IsNotNaN(final String propName)` — Creates a new IsNotNaN condition for the specified property.
+- **Signature:** `public IsNotNaN(final String propName)`
+- **Summary:** Creates a new IsNotNaN condition for the specified property.
+- **Parameters:**
+  - `propName` (`String`) — the name of the property/column to check (must not be null, empty, or blank)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank
 
 #### Public Static Methods
 - (none)
@@ -11481,8 +12106,16 @@ Represents a condition that checks if a property value is NOT NULL.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public IsNotNull(final String propName)` — Creates a new IsNotNull condition for the specified property.
+- **Signature:** `public IsNotNull(final String propName)`
+- **Summary:** Creates a new IsNotNull condition for the specified property.
+- **Parameters:**
+  - `propName` (`String`) — the name of the property/column to check (must not be null, empty, or blank)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank
 
 #### Public Static Methods
 - (none)
@@ -11496,8 +12129,16 @@ Represents a condition that checks if a property value is NULL.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public IsNull(final String propName)` — Creates a new IsNull condition for the specified property.
+- **Signature:** `public IsNull(final String propName)`
+- **Summary:** Creates a new IsNull condition for the specified property.
+- **Parameters:**
+  - `propName` (`String`) — the name of the property/column to check (must not be null, empty, or blank)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank
 
 #### Public Static Methods
 - (none)
@@ -11511,10 +12152,30 @@ Base class for SQL JOIN operations.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Join(final String joinEntity)` — Creates a simple JOIN clause for the specified table or entity.
-- `public Join(final String joinEntity, final Condition joinCondition)` — Creates a JOIN clause with a condition.
-- `public Join(final Collection<String> joinEntities, final Condition joinCondition)` — Creates a JOIN clause with multiple tables or entities and a condition.
+- **Signature:** `public Join(final String joinEntity)`
+- **Summary:** Creates a simple JOIN clause for the specified table or entity.
+- **Parameters:**
+  - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+- **Signature:** `public Join(final String joinEntity, final Condition joinCondition)`
+- **Summary:** Creates a JOIN clause with a condition.
+- **Parameters:**
+  - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
+  - `joinCondition` (`Condition`) — the join condition. A plain predicate is rendered with an ON prefix; an explicit On or deprecated Using supplies its own keyword. May be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+- **Signature:** `public Join(final Collection<String> joinEntities, final Condition joinCondition)`
+- **Summary:** Creates a JOIN clause with multiple tables or entities and a condition.
+- **Parameters:**
+  - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
+  - `joinCondition` (`Condition`) — the join condition. A plain predicate is rendered with an ON prefix; an explicit On or deprecated Using supplies its own keyword. May be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
 #### Public Static Methods
 - (none)
@@ -11566,6 +12227,29 @@ Base class for SQL JOIN operations.
     
     // Edge: the condition is returned as-is; an incompatible cast fails
     Using bad = (Using) join.condition();   // throws ClassCastException
+    ```
+##### hasCondition(...) -> boolean
+- **Signature:** `public boolean hasCondition()`
+- **Summary:** Returns whether this join has a condition.
+- **Contract:**
+  - Returns true if a condition was supplied at construction time, false otherwise.
+- **Parameters:**
+  - (none)
+- **Returns:** true if this join has a condition, false otherwise
+- **Examples:**
+  - ```java
+    // Join with ON condition
+    Join join = new Join("orders o", new On("customers.id", "o.customer_id"));
+    join.hasCondition();    // returns true
+    
+    // Join without condition
+    Join simpleJoin = new Join("products");
+    simpleJoin.hasCondition();   // returns false
+    
+    // Typical use: guard before unwrapping the condition
+    if (join.hasCondition()) {
+        Condition c = join.condition();   // never null here
+    }
     ```
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
@@ -11651,9 +12335,26 @@ Base class for composable junction conditions that combine multiple conditions.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Junction(final Operator operator, final Condition... conditions)` — Creates a new Junction with the specified operator and conditions.
-- `public Junction(final Operator operator, final Collection<? extends Condition> conditions)` — Creates a new Junction with the specified operator and collection of conditions.
+- **Signature:** `public Junction(final Operator operator, final Condition... conditions)`
+- **Summary:** Creates a new Junction with the specified operator and conditions.
+- **Parameters:**
+  - `operator` (`Operator`) — the composable operator to use; must be Operator#AND or Operator#OR
+  - `conditions` (`Condition[]`) — the conditions to combine; may be null or empty (treated as no conditions)
+- **Throws:**
+  - `java.lang.NullPointerException` — if operator is null
+  - `java.lang.IllegalArgumentException` — if operator is not Operator#AND or Operator#OR, or if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+- **Signature:** `public Junction(final Operator operator, final Collection<? extends Condition> conditions)`
+- **Summary:** Creates a new Junction with the specified operator and collection of conditions.
+- **Parameters:**
+  - `operator` (`Operator`) — the composable operator to use; must be Operator#AND or Operator#OR
+  - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine; may be null or empty (treated as no conditions)
+- **Throws:**
+  - `java.lang.NullPointerException` — if operator is null
+  - `java.lang.IllegalArgumentException` — if operator is not Operator#AND or Operator#OR, or if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
 #### Public Static Methods
 - (none)
@@ -11773,10 +12474,30 @@ Represents a LEFT JOIN clause in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public LeftJoin(final String joinEntity)` — Creates a LEFT JOIN clause for the specified table or entity without a join condition.
-- `public LeftJoin(final String joinEntity, final Condition joinCondition)` — Creates a LEFT JOIN clause with a join condition.
-- `public LeftJoin(final Collection<String> joinEntities, final Condition joinCondition)` — Creates a LEFT JOIN clause with multiple tables/entities and a join condition.
+- **Signature:** `public LeftJoin(final String joinEntity)`
+- **Summary:** Creates a LEFT JOIN clause for the specified table or entity without a join condition.
+- **Parameters:**
+  - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+- **Signature:** `public LeftJoin(final String joinEntity, final Condition joinCondition)`
+- **Summary:** Creates a LEFT JOIN clause with a join condition.
+- **Parameters:**
+  - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+- **Signature:** `public LeftJoin(final Collection<String> joinEntities, final Condition joinCondition)`
+- **Summary:** Creates a LEFT JOIN clause with multiple tables/entities and a join condition.
+- **Parameters:**
+  - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
 #### Public Static Methods
 - (none)
@@ -11790,8 +12511,17 @@ Represents a less-than (&lt;) comparison condition in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public LessThan(final String propName, final Object propValue)` — Creates a new LessThan condition.
+- **Signature:** `public LessThan(final String propName, final Object propValue)`
+- **Summary:** Creates a new LessThan condition.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `propValue` (`Object`) — the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop < null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is also supported
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
 
 #### Public Static Methods
 - (none)
@@ -11805,8 +12535,17 @@ Represents a less-than-or-equal-to (&lt;=) comparison condition in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public LessThanOrEqual(final String propName, final Object propValue)` — Creates a new LessThanOrEqual condition.
+- **Signature:** `public LessThanOrEqual(final String propName, final Object propValue)`
+- **Summary:** Creates a new LessThanOrEqual condition.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `propValue` (`Object`) — the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop <= null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is also supported
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
 
 #### Public Static Methods
 - (none)
@@ -11820,8 +12559,17 @@ Represents a LIKE condition in SQL queries for pattern matching.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Like(final String propName, final Object propValue)` — Creates a new LIKE condition with the specified property name and pattern.
+- **Signature:** `public Like(final String propName, final Object propValue)`
+- **Summary:** Creates a new LIKE condition with the specified property name and pattern.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `propValue` (`Object`) — the pattern to match (typically a String containing % and/or _ wildcards; may also be a SubQuery, an SqlExpression, or another non-structural Condition). Use % to match any sequence of characters and _ to match a single character. Passing null renders as prop LIKE null, which is not a meaningful SQL comparison; do not pass null to this operator.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
 
 #### Public Static Methods
 - (none)
@@ -11835,10 +12583,29 @@ Models a SQL row-limiting clause.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Limit(final int count)` — Creates LIMIT count with no offset.
-- `public Limit(final int count, final int offset)` — Creates LIMIT count OFFSET offset.
-- `public Limit(final String expr)` — Creates a row-limiting clause from a validated SQL expression.
+- **Signature:** `public Limit(final int count)`
+- **Summary:** Creates LIMIT count with no offset.
+- **Parameters:**
+  - `count` (`int`) — maximum number of rows to return; must be non-negative
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if count is negative
+- **Signature:** `public Limit(final int count, final int offset)`
+- **Summary:** Creates LIMIT count OFFSET offset.
+- **Parameters:**
+  - `count` (`int`) — maximum number of rows to return; must be non-negative
+  - `offset` (`int`) — number of rows to skip; must be non-negative
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if count or offset is negative
+- **Signature:** `public Limit(final String expr)`
+- **Summary:** Creates a row-limiting clause from a validated SQL expression.
+- **Parameters:**
+  - `expr` (`String`) — the row-limiting expression. Must not be null, empty, or blank, and must match a supported form.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or is not a supported limit form
 
 #### Public Static Methods
 - (none)
@@ -11927,8 +12694,16 @@ Represents a MINUS clause in SQL queries (also known as EXCEPT in some databases
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Minus(final SubQuery subQuery)` — Creates a new MINUS clause with the specified subquery.
+- **Signature:** `public Minus(final SubQuery subQuery)`
+- **Summary:** Creates a new MINUS clause with the specified subquery.
+- **Parameters:**
+  - `subQuery` (`SubQuery`) — the subquery to perform the MINUS operation with (must not be null). The subquery must have the same number of columns with compatible types as the main query.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if subQuery is null
 
 #### Public Static Methods
 - (none)
@@ -11959,8 +12734,16 @@ A utility class that provides a fluent API for creating SQL conditions based on 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public NamedProperty(final String propName)` — Creates a NamedProperty with the specified property name.
+- **Signature:** `public NamedProperty(final String propName)`
+- **Summary:** Creates a NamedProperty with the specified property name.
+- **Parameters:**
+  - `propName` (`String`) — the property name; must not be null, empty, or blank
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank (whitespace-only)
 
 #### Public Static Methods
 ##### of(...) -> NamedProperty
@@ -12904,9 +13687,22 @@ Represents a NATURAL JOIN clause in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public NaturalJoin(final String joinEntity)` — Creates a NATURAL JOIN clause for the specified table or entity.
-- `public NaturalJoin(final Collection<String> joinEntities)` — Creates a NATURAL JOIN clause with multiple tables/entities.
+- **Signature:** `public NaturalJoin(final String joinEntity)`
+- **Summary:** Creates a NATURAL JOIN clause for the specified table or entity.
+- **Parameters:**
+  - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+- **Signature:** `public NaturalJoin(final Collection<String> joinEntities)`
+- **Summary:** Creates a NATURAL JOIN clause with multiple tables/entities.
+- **Parameters:**
+  - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements
 
 #### Public Static Methods
 - (none)
@@ -12920,8 +13716,16 @@ Represents a logical NOT condition in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Not(final Condition condition)` — Creates a new NOT condition that negates the specified condition.
+- **Signature:** `public Not(final Condition condition)`
+- **Summary:** Creates a new NOT condition that negates the specified condition.
+- **Parameters:**
+  - `condition` (`Condition`) — the condition to be negated; must not be null. May be any composable condition, including simple comparisons, logical junctions (And, Or), or subquery predicates such as Exists, NotExists, or InSubQuery. It should not be a clause condition (such as Where or Having), since those are not meant to be composed.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if condition is null, or if condition is non-composable — a Criteria, a Clause condition (for example Where, Having, or OrderBy), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
 #### Public Static Methods
 - (none)
@@ -12935,8 +13739,18 @@ Represents a NOT BETWEEN condition in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public NotBetween(final String propName, final Object minValue, final Object maxValue)` — Creates a new NOT BETWEEN condition.
+- **Signature:** `public NotBetween(final String propName, final Object minValue, final Object maxValue)`
+- **Summary:** Creates a new NOT BETWEEN condition.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `minValue` (`Object`) — the lower bound of the range to exclude; may be a literal value, a SqlExpression, a SubQuery, or another non-structural, non-quantified Condition (may be null)
+  - `maxValue` (`Object`) — the upper bound of the range to exclude; may be a literal value, a SqlExpression, a SubQuery, or another non-structural, non-quantified Condition (may be null)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if either condition-valued bound is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
 
 #### Public Static Methods
 - (none)
@@ -12950,8 +13764,17 @@ Represents a NOT EQUAL (!= or &lt;&gt;) condition in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public NotEqual(final String propName, final Object propValue)` — Creates a new NotEqual condition.
+- **Signature:** `public NotEqual(final String propName, final Object propValue)`
+- **Summary:** Creates a new NotEqual condition.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `propValue` (`Object`) — the value to compare against; may be null (renders as IS NOT NULL), a literal value, or a non-structural Condition such as a SubQuery or SqlExpression. A direct All, Any, or Some right-hand operand is also supported
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
 
 #### Public Static Methods
 - (none)
@@ -12965,8 +13788,16 @@ Represents the SQL NOT EXISTS operator for use with subqueries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public NotExists(final SubQuery subQuery)` — Creates a new NOT EXISTS condition with the specified subquery.
+- **Signature:** `public NotExists(final SubQuery subQuery)`
+- **Summary:** Creates a new NOT EXISTS condition with the specified subquery.
+- **Parameters:**
+  - `subQuery` (`SubQuery`) — the subquery to check for the absence of rows (must not be null)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if subQuery is null
 
 #### Public Static Methods
 - (none)
@@ -12997,9 +13828,24 @@ Represents a NOT IN condition in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public NotIn(final String propName, final Collection<?> values)` — Creates a new NOT IN condition for the specified property and collection of values.
-- `public NotIn(final Collection<String> propNames, final Collection<?> valueRows)` — Creates a new row value constructor NOT IN condition.
+- **Signature:** `public NotIn(final String propName, final Collection<?> values)`
+- **Summary:** Creates a new NOT IN condition for the specified property and collection of values.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `values` (`Collection<?>`) — the collection of values that the property should NOT match (must not be null or empty); the collection is copied internally to prevent external modifications. A condition-valued element must not be query-structural or quantified
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null/empty/blank, if values is null/empty, or if a condition-valued element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+- **Signature:** `public NotIn(final Collection<String> propNames, final Collection<?> valueRows)`
+- **Summary:** Creates a new row value constructor NOT IN condition.
+- **Parameters:**
+  - `propNames` (`Collection<String>`) — the property/column names (must not be null or empty and must not contain null, empty, or blank names)
+  - `valueRows` (`Collection<?>`) — the collection of value rows (must not be null or empty); each row must be non-null and resolve to exactly propNames.size() values. A row may be a Collection, Iterable, object array, Map or bean. A missing property-name key in a map contributes null; condition-valued elements must not be query-structural or quantified
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propNames is null/empty or contains any null, empty, or blank name, if valueRows is null/empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a bean row does not expose a requested property, or if a condition-valued row element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
 
 #### Public Static Methods
 - (none)
@@ -13013,9 +13859,24 @@ Represents a NOT IN subquery condition in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public NotInSubQuery(final String propName, final SubQuery subQuery)` — Creates a NOT IN subquery condition for a single property.
-- `public NotInSubQuery(final Collection<String> propNames, final SubQuery subQuery)` — Creates a NOT IN subquery condition for multiple properties.
+- **Signature:** `public NotInSubQuery(final String propName, final SubQuery subQuery)`
+- **Summary:** Creates a NOT IN subquery condition for a single property.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `subQuery` (`SubQuery`) — the subquery that returns the values to check against (must not be null); if it has an explicit structured projection without * or qualifier.*, it must select exactly one column; raw SQL and wildcard projections cannot be arity-checked here
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if subQuery is null, or if the subquery has a known, non-wildcard structured projection whose column count is not 1
+- **Signature:** `public NotInSubQuery(final Collection<String> propNames, final SubQuery subQuery)`
+- **Summary:** Creates a NOT IN subquery condition for multiple properties.
+- **Parameters:**
+  - `propNames` (`Collection<String>`) — the property/column names to check (must not be null or empty and must not contain null, empty, or blank elements). Their order must match the column order in the subquery.
+  - `subQuery` (`SubQuery`) — the subquery that returns the values to check against (must not be null). If it has an explicit structured projection without * or qualifier.*, it must select exactly propNames.size() columns. Raw SQL and wildcard projections cannot be arity-checked here.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propNames is null/empty, if any element is null, empty, or blank, if subQuery is null, or if the subquery has a known, non-wildcard structured projection whose number of selected columns does not match propNames.size()
 
 #### Public Static Methods
 - (none)
@@ -13029,8 +13890,17 @@ Represents a NOT LIKE condition in SQL queries for pattern exclusion.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public NotLike(final String propName, final Object propValue)` — Creates a new NOT LIKE condition for the specified property and pattern.
+- **Signature:** `public NotLike(final String propName, final Object propValue)`
+- **Summary:** Creates a new NOT LIKE condition for the specified property and pattern.
+- **Parameters:**
+  - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
+  - `propValue` (`Object`) — the pattern to match against (typically a String containing % and/or _ wildcards; may also be a SubQuery, an SqlExpression, or another non-structural Condition). Use % to match any sequence of characters and _ to match a single character. Passing null renders as prop NOT LIKE null, which is not a meaningful SQL comparison; do not pass null to this operator.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
 
 #### Public Static Methods
 - (none)
@@ -13044,10 +13914,29 @@ Represents an ON clause used in SQL JOIN operations.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public On(final Condition condition)` — Creates an ON clause with a custom condition.
-- `public On(final String leftPropName, final String rightPropName)` — Creates an ON clause for simple column equality between tables.
-- `public On(final Map<String, String> propNamePairs)` — Creates an ON clause with multiple column equality conditions.
+- **Signature:** `public On(final Condition condition)`
+- **Summary:** Creates an ON clause with a custom condition.
+- **Parameters:**
+  - `condition` (`Condition`) — the join condition. Any non-clause, non-null predicate is allowed, including SqlExpression, Equal, And, Or, or Between. Must not be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if condition is null, or is or contains a Criteria, a null operator, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+- **Signature:** `public On(final String leftPropName, final String rightPropName)`
+- **Summary:** Creates an ON clause for simple column equality between tables.
+- **Parameters:**
+  - `leftPropName` (`String`) — the column name from the first table (can include table name/alias)
+  - `rightPropName` (`String`) — the column name from the second table (can include table name/alias). Treated as a column expression rather than a string literal.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if leftPropName or rightPropName is null, empty, or blank
+- **Signature:** `public On(final Map<String, String> propNamePairs)`
+- **Summary:** Creates an ON clause with multiple column equality conditions.
+- **Parameters:**
+  - `propNamePairs` (`Map<String, String>`) — map of column pairs where the key is from the first table and the value is from the second table. The entries are validated and snapshotted in one iteration. Order is preserved if a LinkedHashMap is used.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propNamePairs is null, empty, or contains a null entry or null, empty, or blank keys or values
 
 #### Public Static Methods
 - (none)
@@ -13060,6 +13949,155 @@ Enumeration of SQL operators supported by the condition framework.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
+
+#### Public Fields
+- **Declaration:** `public static final Operator EQUAL`
+  - **Summary:** Equal operator (=).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator NOT_EQUAL`
+  - **Summary:** Not-equal operator (!=).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator NOT_EQUAL_ANSI`
+  - **Summary:** ANSI standard not equal operator (<>).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator NOT`
+  - **Summary:** NOT operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator NOT_OP`
+  - **Summary:** NOT operator symbol (!).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator XOR`
+  - **Summary:** XOR (exclusive OR) operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator LIKE`
+  - **Summary:** LIKE operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator NOT_LIKE`
+  - **Summary:** NOT LIKE operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator AND`
+  - **Summary:** AND operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator AND_OP`
+  - **Summary:** AND operator symbol (&&).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator OR`
+  - **Summary:** OR operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator OR_OP`
+  - **Summary:** OR operator symbol (||).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator GREATER_THAN`
+  - **Summary:** Greater than operator (>).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator GREATER_THAN_OR_EQUAL`
+  - **Summary:** Greater than or equal operator (>=).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator LESS_THAN`
+  - **Summary:** Less than operator (<).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator LESS_THAN_OR_EQUAL`
+  - **Summary:** Less than or equal operator (<=).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator BETWEEN`
+  - **Summary:** BETWEEN operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator NOT_BETWEEN`
+  - **Summary:** NOT BETWEEN operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator IS`
+  - **Summary:** IS operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator IS_NOT`
+  - **Summary:** IS NOT operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator EXISTS`
+  - **Summary:** EXISTS operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator NOT_EXISTS`
+  - **Summary:** NOT EXISTS operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator IN`
+  - **Summary:** IN operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator NOT_IN`
+  - **Summary:** NOT IN operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator ANY`
+  - **Summary:** ANY operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator SOME`
+  - **Summary:** SOME operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator ALL`
+  - **Summary:** ALL operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator ON`
+  - **Summary:** ON operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator USING`
+  - **Summary:** USING operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator JOIN`
+  - **Summary:** Basic JOIN operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator LEFT_JOIN`
+  - **Summary:** LEFT JOIN operator (LEFT OUTER JOIN).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator RIGHT_JOIN`
+  - **Summary:** RIGHT JOIN operator (RIGHT OUTER JOIN).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator FULL_JOIN`
+  - **Summary:** FULL JOIN operator (FULL OUTER JOIN).
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator CROSS_JOIN`
+  - **Summary:** CROSS JOIN operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator INNER_JOIN`
+  - **Summary:** INNER JOIN operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator NATURAL_JOIN`
+  - **Summary:** NATURAL JOIN operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator WHERE`
+  - **Summary:** WHERE clause operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator HAVING`
+  - **Summary:** HAVING clause operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator GROUP_BY`
+  - **Summary:** GROUP BY clause operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator ORDER_BY`
+  - **Summary:** ORDER BY clause operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator LIMIT`
+  - **Summary:** LIMIT clause operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator OFFSET`
+  - **Summary:** OFFSET clause operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator FOR_UPDATE`
+  - **Summary:** FOR UPDATE clause operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator UNION`
+  - **Summary:** UNION operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator UNION_ALL`
+  - **Summary:** UNION ALL operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator INTERSECT`
+  - **Summary:** INTERSECT operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator EXCEPT`
+  - **Summary:** EXCEPT operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator MINUS`
+  - **Summary:** MINUS operator.
+  - **Nullability:** unspecified
+- **Declaration:** `public static final Operator EMPTY`
+  - **Summary:** Empty operator (renders as an empty string).
+  - **Nullability:** unspecified
 
 #### Public Constructors
 - (none)
@@ -13084,7 +14122,7 @@ Enumeration of SQL operators supported by the condition framework.
     Operator like = Operator.of("LIKE");  // Operator.LIKE
     
     // Enum constant names are also accepted (case-insensitive)
-    Operator eq2 = Operator.of("EQUAL");          // Operator.EQUAL
+    Operator eq2 = Operator.of("EQUAL");           // Operator.EQUAL
     Operator gt2 = Operator.of("greater_than");    // Operator.GREATER_THAN
     
     // Edge cases
@@ -13133,9 +14171,22 @@ Represents a composable OR condition that combines multiple conditions.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Or(final Condition... conditions)` — Creates a new OR condition with the specified conditions.
-- `public Or(final Collection<? extends Condition> conditions)` — Creates a new OR condition with a collection of conditions.
+- **Signature:** `public Or(final Condition... conditions)`
+- **Summary:** Creates a new OR condition with the specified conditions.
+- **Parameters:**
+  - `conditions` (`Condition[]`) — the conditions to combine with OR logic; may be null or empty
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+- **Signature:** `public Or(final Collection<? extends Condition> conditions)`
+- **Summary:** Creates a new OR condition with a collection of conditions.
+- **Parameters:**
+  - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine with OR logic; may be null or empty
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
 #### Public Static Methods
 - (none)
@@ -13177,13 +14228,48 @@ Represents an ORDER BY clause in SQL queries, used to specify the sort order of 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public OrderBy(final Condition condition)` — Creates an ORDER BY clause with a custom condition.
-- `public OrderBy(final String... propNames)` — Creates an ORDER BY clause with multiple property names.
-- `public OrderBy(final Collection<String> propNames)` — Creates an ORDER BY clause with multiple property names supplied as a collection.
-- `public OrderBy(final String propOrColumnName, final SortDirection direction)` — Creates an ORDER BY clause with a single property and sort direction.
-- `public OrderBy(final Collection<String> propNames, final SortDirection direction)` — Creates an ORDER BY clause with multiple properties and a single sort direction.
-- `public OrderBy(final Map<String, SortDirection> orders)` — Creates an ORDER BY clause with properties having different sort directions.
+- **Signature:** `public OrderBy(final Condition condition)`
+- **Summary:** Creates an ORDER BY clause with a custom condition.
+- **Parameters:**
+  - `condition` (`Condition`) — the ordering condition. Must not be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is an empty predicate (a blank SqlExpression or empty Junction) — none of which can be nested inside a clause
+- **Signature:** `public OrderBy(final String... propNames)`
+- **Summary:** Creates an ORDER BY clause with multiple property names.
+- **Parameters:**
+  - `propNames` (`String[]`) — variable number of property names to sort by. Must not be null or empty and must not contain null, empty, or blank elements.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propNames is null, empty, or contains null, empty, or blank elements
+- **Signature:** `public OrderBy(final Collection<String> propNames)`
+- **Summary:** Creates an ORDER BY clause with multiple property names supplied as a collection.
+- **Parameters:**
+  - `propNames` (`Collection<String>`) — the collection of property names to sort by, in iteration order. Must not be null or empty and must not contain null, empty, or blank elements.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propNames is null, empty, or contains null, empty, or blank elements
+- **Signature:** `public OrderBy(final String propOrColumnName, final SortDirection direction)`
+- **Summary:** Creates an ORDER BY clause with a single property and sort direction.
+- **Parameters:**
+  - `propOrColumnName` (`String`) — the property or column name to sort by. Must not be null, empty, or blank.
+  - `direction` (`SortDirection`) — the sort direction (ASC or DESC). Must not be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank, or if direction is null
+- **Signature:** `public OrderBy(final Collection<String> propNames, final SortDirection direction)`
+- **Summary:** Creates an ORDER BY clause with multiple properties and a single sort direction.
+- **Parameters:**
+  - `propNames` (`Collection<String>`) — collection of property names to sort by. Must not be null or empty and must not contain null, empty, or blank elements.
+  - `direction` (`SortDirection`) — the sort direction to apply to all properties. Must not be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if propNames is null, empty, or contains null, empty, or blank elements, or if direction is null
+- **Signature:** `public OrderBy(final Map<String, SortDirection> orders)`
+- **Summary:** Creates an ORDER BY clause with properties having different sort directions.
+- **Parameters:**
+  - `orders` (`Map<String, SortDirection>`) — a map of property names to their respective sort directions; should be a LinkedHashMap (or another order-preserving map) so that the sort priority matches insertion order. Must not be null or empty; keys must not be null, empty, or blank and values must not be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if orders is null, empty, or contains null, empty, or blank keys or null values
 
 #### Public Static Methods
 - (none)
@@ -13197,10 +14283,30 @@ Represents a RIGHT JOIN clause in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public RightJoin(final String joinEntity)` — Creates a RIGHT JOIN clause for the specified table or entity without a join condition.
-- `public RightJoin(final String joinEntity, final Condition joinCondition)` — Creates a RIGHT JOIN clause with a join condition.
-- `public RightJoin(final Collection<String> joinEntities, final Condition joinCondition)` — Creates a RIGHT JOIN clause with multiple tables/entities and a join condition.
+- **Signature:** `public RightJoin(final String joinEntity)`
+- **Summary:** Creates a RIGHT JOIN clause for the specified table or entity without a join condition.
+- **Parameters:**
+  - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+- **Signature:** `public RightJoin(final String joinEntity, final Condition joinCondition)`
+- **Summary:** Creates a RIGHT JOIN clause with a join condition.
+- **Parameters:**
+  - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+- **Signature:** `public RightJoin(final Collection<String> joinEntities, final Condition joinCondition)`
+- **Summary:** Creates a RIGHT JOIN clause with multiple tables/entities and a join condition.
+- **Parameters:**
+  - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
 #### Public Static Methods
 - (none)
@@ -13214,8 +14320,16 @@ Represents the SQL SOME operator for use with subqueries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Some(final SubQuery subQuery)` — Creates a new SOME condition with the specified subquery.
+- **Signature:** `public Some(final SubQuery subQuery)`
+- **Summary:** Creates a new SOME condition with the specified subquery.
+- **Parameters:**
+  - `subQuery` (`SubQuery`) — the subquery that returns values to compare against (must not be null); a structured subquery with an explicit, non-wildcard projection must select exactly one property
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if subQuery is null, or if it is a structured subquery with a known, non-wildcard projection arity other than one
 
 #### Public Static Methods
 - (none)
@@ -13246,8 +14360,16 @@ Represents a raw SQL expression that can be used in queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public SqlExpression(final String literal)` — Constructs a new SqlExpression with the specified raw SQL expression text.
+- **Signature:** `public SqlExpression(final String literal)`
+- **Summary:** Constructs a new SqlExpression with the specified raw SQL expression text.
+- **Parameters:**
+  - `literal` (`String`) — the raw SQL expression text (must not be null)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if literal is null
 
 #### Public Static Methods
 ##### of(...) -> SqlExpression
@@ -13635,6 +14757,7 @@ Represents a raw SQL expression that can be used in queries.
 ##### minus(...) -> String
 - **Signature:** `@Deprecated public static String minus(final Object... operands)`
 - **Summary:** Creates a subtraction expression for the given objects.
+- **Deprecated:** Use #subtract(Object...) instead to avoid confusion with the SQL MINUS set operation.
 - **Parameters:**
   - `operands` (`Object[]`) — the values to subtract; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the subtraction expression, or an empty string if no operands are supplied
@@ -13792,16 +14915,16 @@ Represents a raw SQL expression that can be used in queries.
   - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite (these have no portable SQL literal form; use IsNaN/IsInfinite instead), or a Number whose text is not a valid numeric literal
 - **Examples:**
   - ```java
-    SqlExpression.renderValue("text");                      // returns "'text'"
-    SqlExpression.renderValue("O'Brien");                   // returns "'O\'Brien'" (single quote backslash-escaped)
-    SqlExpression.renderValue("say \"hi\"");                // returns "'say \"hi\"'" (double quote backslash-escaped)
-    SqlExpression.renderValue(123);                         // returns "123"
-    SqlExpression.renderValue(45.67);                       // returns "45.67"
-    SqlExpression.renderValue(null);                        // returns "null"
-    SqlExpression.renderValue(true);                        // returns "true"
-    SqlExpression.renderValue(false);                       // returns "false"
+    SqlExpression.renderValue("text");                         // returns "'text'"
+    SqlExpression.renderValue("O'Brien");                      // returns "'O\'Brien'" (single quote backslash-escaped)
+    SqlExpression.renderValue("say \"hi\"");                   // returns "'say \"hi\"'" (double quote backslash-escaped)
+    SqlExpression.renderValue(123);                            // returns "123"
+    SqlExpression.renderValue(45.67);                          // returns "45.67"
+    SqlExpression.renderValue(null);                           // returns "null"
+    SqlExpression.renderValue(true);                           // returns "true"
+    SqlExpression.renderValue(false);                          // returns "false"
     SqlExpression.renderValue(new SqlExpression("COUNT(*)"));  // returns "COUNT(*)" (the expression's literal)
-    SqlExpression.renderValue(Double.NaN);                  // throws IllegalArgumentException
+    SqlExpression.renderValue(Double.NaN);                     // throws IllegalArgumentException
     ```
 ##### count(...) -> String
 - **Signature:** `public static String count(final String expr)`
@@ -14241,7 +15364,7 @@ Represents a raw SQL expression that can be used in queries.
 - **Returns:** the hash code of the literal, or 0 if the literal is null (only possible for an uninitialized instance produced by the package-private default constructor, e.g., during Kryo deserialization)
 - **Examples:**
   - ```java
-    new SqlExpression("price * quantity").hashCode();                            // returns "price * quantity".hashCode()
+    new SqlExpression("price * quantity").hashCode();                               // returns "price * quantity".hashCode()
     SqlExpression.of("a + b").hashCode() == SqlExpression.of("a + b").hashCode();   // true (same literal)
     ```
 ##### equals(...) -> boolean
@@ -14257,7 +15380,7 @@ Represents a raw SQL expression that can be used in queries.
     new SqlExpression("a + b").equals(new SqlExpression("a + b"));   // returns true (same literal)
     SqlExpression.of("a + b").equals(SqlExpression.of("a + b"));     // returns true (cached, same instance)
     new SqlExpression("a + b").equals(new SqlExpression("a - b"));   // returns false (different literal)
-    new SqlExpression("a + b").equals("a + b");                   // returns false (not an SqlExpression)
+    new SqlExpression("a + b").equals("a + b");                      // returns false (not an SqlExpression)
     ```
 
 ### Class SubQuery (com.landawn.abacus.query.condition.SubQuery)
@@ -14266,13 +15389,56 @@ Represents a complete or structured SELECT used within SQL conditions.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public SubQuery(final String sql)` — Creates a subquery with raw SQL.
-- `@Deprecated public SubQuery(final String entityName, final String sql)` — Creates a subquery with an entity name and raw SQL.
-- `public SubQuery(final String entityName, final String propName, final Condition condition)` — Creates a structured single-property subquery for an entity name.
-- `public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition)` — Creates a structured subquery with entity name, selected properties, and condition.
-- `public SubQuery(final Class<?> entityClass, final String propName, final Condition condition)` — Creates a structured single-property subquery for an entity class.
-- `public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition)` — Creates a structured subquery with entity class, selected properties, and condition.
+- **Signature:** `public SubQuery(final String sql)`
+- **Summary:** Creates a subquery with raw SQL.
+- **Parameters:**
+  - `sql` (`String`) — complete raw query-expression text (must not be null, empty, or blank)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank
+- **Signature:** `@Deprecated public SubQuery(final String entityName, final String sql)`
+- **Summary:** Creates a subquery with an entity name and raw SQL.
+- **Deprecated:** the entity name is unused when rendering raw query-expression text; it is only exposed by #entityName() and participates in #equals(Object)/#hashCode(). Use #SubQuery(String) for raw text, or #SubQuery(String, java.util.Collection, Condition) when an entity-name-based structured subquery is actually wanted.
+- **Parameters:**
+  - `entityName` (`String`) — the entity/table name; may be null or empty, in which case it is stored as the empty string
+  - `sql` (`String`) — complete raw query-expression text (must not be null, empty, or blank)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank
+- **Signature:** `public SubQuery(final String entityName, final String propName, final Condition condition)`
+- **Summary:** Creates a structured single-property subquery for an entity name.
+- **Parameters:**
+  - `entityName` (`String`) — the entity/table name (must not be null, empty, or blank)
+  - `propName` (`String`) — the property to select (must not be null, empty, or blank)
+  - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, an empty Junction, or an empty Criteria adds no clause.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if entityName or propName is null, empty, or blank, if condition uses an ON/USING operator, is not a complete predicate (for example a standalone SubQuery or quantified operand), or is a Criteria that carries a SELECT modifier (e.g. DISTINCT) — none of which are valid here
+- **Signature:** `public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition)`
+- **Summary:** Creates a structured subquery with entity name, selected properties, and condition.
+- **Parameters:**
+  - `entityName` (`String`) — the entity/table name (must not be null, empty, or blank)
+  - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty and must not contain null, empty, or blank names)
+  - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, an empty Junction, or an empty Criteria adds no clause.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if entityName is null, empty, or blank, if propNames is null or empty, if propNames contains null, empty, or blank names, if condition uses an ON/USING operator, is not a complete predicate (for example a standalone SubQuery or quantified operand), or is a Criteria that carries a SELECT modifier (e.g. DISTINCT) — none of which are valid here
+- **Signature:** `public SubQuery(final Class<?> entityClass, final String propName, final Condition condition)`
+- **Summary:** Creates a structured single-property subquery for an entity class.
+- **Parameters:**
+  - `entityClass` (`Class<?>`) — the entity class (must not be null)
+  - `propName` (`String`) — the property to select (must not be null, empty, or blank)
+  - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, an empty Junction, or an empty Criteria adds no clause.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if entityClass is null, if propName is null, empty, or blank, if condition uses an ON/USING operator, is not a complete predicate (for example a standalone SubQuery or quantified operand), or is a Criteria that carries a SELECT modifier (e.g. DISTINCT) — none of which are valid here
+- **Signature:** `public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition)`
+- **Summary:** Creates a structured subquery with entity class, selected properties, and condition.
+- **Parameters:**
+  - `entityClass` (`Class<?>`) — the entity class (must not be null)
+  - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty and must not contain null, empty, or blank names)
+  - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, an empty Junction, or an empty Criteria adds no clause.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if entityClass is null, if propNames is null or empty, if propNames contains null, empty, or blank names, if condition uses an ON/USING operator, is not a complete predicate (for example a standalone SubQuery or quantified operand), or is a Criteria that carries a SELECT modifier (e.g. DISTINCT) — none of which are valid here
 
 #### Public Static Methods
 - (none)
@@ -14295,9 +15461,9 @@ Represents a complete or structured SELECT used within SQL conditions.
     SubQuery structured = new SubQuery("users", Arrays.asList("id"), Filters.equal("status", "active"));
     String structuredSql = structured.rawSql();
     // Returns: null
-
+    
     // Builder-backed snapshot returns the SQL rendered by its source builder
-    SubQuery built = Filters.subQuery(Dsl.PSC.select("id").from("users"));
+    SubQuery built = PSC.select("id").from("users").toSubQuery();
     String builtSql = built.rawSql();
     // Returns: "SELECT id FROM users"
     ```
@@ -14404,10 +15570,12 @@ Represents a complete or structured SELECT used within SQL conditions.
     SubQuery noCond = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
     List<Object> noCondParams = noCond.parameters();
     // returns [] (empty immutable list)
-
+    
     // Builder-backed snapshot: parameters from the source builder are retained
-    SubQuery built = Filters.subQuery(
-        Dsl.PSC.select("id").from("users").where(Filters.equal("status", "active")));
+    SubQuery built = PSC.select("id")
+        .from("users")
+        .where(Filters.equal("status", "active"))
+        .toSubQuery();
     List<Object> builtParams = built.parameters();
     // returns ["active"]
     ```
@@ -14494,8 +15662,16 @@ Represents a UNION clause in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Union(final SubQuery subQuery)` — Creates a new UNION clause with the specified subquery.
+- **Signature:** `public Union(final SubQuery subQuery)`
+- **Summary:** Creates a new UNION clause with the specified subquery.
+- **Parameters:**
+  - `subQuery` (`SubQuery`) — the subquery to perform the UNION operation with (must not be null). The subquery must have the same number of columns with compatible types as the main query.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if subQuery is null
 
 #### Public Static Methods
 - (none)
@@ -14526,8 +15702,16 @@ Represents a UNION ALL clause in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public UnionAll(final SubQuery subQuery)` — Creates a new UNION ALL clause with the specified subquery.
+- **Signature:** `public UnionAll(final SubQuery subQuery)`
+- **Summary:** Creates a new UNION ALL clause with the specified subquery.
+- **Parameters:**
+  - `subQuery` (`SubQuery`) — the subquery to perform the UNION ALL operation with (must not be null). The subquery must have the same number of columns with compatible types as the main query.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if subQuery is null
 
 #### Public Static Methods
 - (none)
@@ -14558,9 +15742,22 @@ Represents a USING clause in SQL JOIN operations.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `@Deprecated public Using(final String... columnNames)` — Creates a USING clause with the specified column names.
-- `@Deprecated public Using(final Collection<String> columnNames)` — Creates a USING clause with a collection of column names.
+- **Signature:** `@Beta public Using(final String... columnNames)`
+- **Summary:** Creates a USING clause with the specified column names.
+- **Parameters:**
+  - `columnNames` (`String[]`) — variable number of column names to join on. All columns must exist in both tables with identical names. Must not be null or empty, and individual names must not be null, empty, or blank. Names must be unqualified (cannot contain a .) and must each be a single column name (cannot contain ,, (, or )).
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if columnNames is null, empty, contains a null, empty, or blank entry, a qualified (dotted) column name, or a name containing ,, (, or )
+- **Signature:** `@Beta public Using(final Collection<String> columnNames)`
+- **Summary:** Creates a USING clause with a collection of column names.
+- **Parameters:**
+  - `columnNames` (`Collection<String>`) — collection of column names to join on. Must not be null or empty, and individual names must not be null, empty, or blank. Names must be unqualified (cannot contain a .) and must each be a single column name (cannot contain ,, (, or )). The collection is read once and snapshotted. Order matters for some databases; use a LinkedHashSet or List to preserve insertion order.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if columnNames is null, empty, contains a null, empty, or blank entry, a qualified (dotted) column name, or a name containing ,, (, or )
 
 #### Public Static Methods
 - (none)
@@ -14591,11 +15788,20 @@ Represents a WHERE clause in SQL queries.
 **Thread-safety:** unspecified
 **Nullability:** unspecified
 
+#### Public Fields
+- (none)
+
 #### Public Constructors
-- `public Where(final Condition condition)` — Creates a WHERE clause with the specified condition.
+- **Signature:** `public Where(final Condition condition)`
+- **Summary:** Creates a WHERE clause with the specified condition.
+- **Parameters:**
+  - `condition` (`Condition`) — the condition to apply in the WHERE clause. Must not be null.
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is an empty predicate (a blank SqlExpression or empty Junction) — none of which can be nested inside a clause
 
 #### Public Static Methods
 - (none)
 
 #### Public Instance Methods
 - (none)
+

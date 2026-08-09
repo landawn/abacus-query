@@ -97,7 +97,7 @@ public class OrderByTest extends TestBase {
 
     @Test
     public void testStaticCreateConditionWithStrings() {
-        String result = AbstractCondition.createSortExpression("name", "age", "city");
+        String result = AbstractCondition.createSortSpec("name", "age", "city");
 
         assertTrue(result.contains("name"));
         assertTrue(result.contains("age"));
@@ -109,15 +109,15 @@ public class OrderByTest extends TestBase {
         Map<String, SortDirection> orders = new LinkedHashMap<>();
         orders.put("   ", SortDirection.ASC);
 
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression("   "));
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression("   ", SortDirection.ASC));
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(Arrays.asList("name", "   "), SortDirection.ASC));
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(orders));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec("   "));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec("   ", SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(Arrays.asList("name", "   "), SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(orders));
     }
 
     @Test
     public void testStaticCreateConditionWithDirection() {
-        String result = AbstractCondition.createSortExpression("price", SortDirection.DESC);
+        String result = AbstractCondition.createSortSpec("price", SortDirection.DESC);
 
         assertTrue(result.contains("price"));
         assertTrue(result.contains("DESC"));
@@ -126,7 +126,7 @@ public class OrderByTest extends TestBase {
     @Test
     public void testStaticCreateConditionWithCollection() {
         List<String> props = Arrays.asList("col1", "col2");
-        String result = AbstractCondition.createSortExpression(props, SortDirection.ASC);
+        String result = AbstractCondition.createSortSpec(props, SortDirection.ASC);
 
         assertTrue(result.contains("col1"));
         assertTrue(result.contains("col2"));
@@ -139,7 +139,7 @@ public class OrderByTest extends TestBase {
         orders.put("first", SortDirection.DESC);
         orders.put("second", SortDirection.ASC);
 
-        String result = AbstractCondition.createSortExpression(orders);
+        String result = AbstractCondition.createSortSpec(orders);
 
         assertTrue(result.contains("first"));
         assertTrue(result.contains("second"));
@@ -289,7 +289,7 @@ public class OrderByTest extends TestBase {
 
     @Test
     public void testCreateConditionStaticMethod() {
-        String result = AbstractCondition.createSortExpression("a", "b", "c");
+        String result = AbstractCondition.createSortSpec("a", "b", "c");
 
         assertTrue(result.contains("a"));
         assertTrue(result.contains("b"));
@@ -332,7 +332,7 @@ public class OrderByTest extends TestBase {
 
     @Test
     public void testStaticCreateConditionWithSingleProperty() {
-        String result = AbstractCondition.createSortExpression("name");
+        String result = AbstractCondition.createSortSpec("name");
         assertTrue(result.contains("name"));
     }
 
@@ -340,7 +340,7 @@ public class OrderByTest extends TestBase {
     public void testStaticCreateConditionWithEmptyMap() {
         Map<String, SortDirection> orders = new LinkedHashMap<>();
         assertThrows(IllegalArgumentException.class, () -> {
-            AbstractCondition.createSortExpression(orders);
+            AbstractCondition.createSortSpec(orders);
         });
     }
 
@@ -373,32 +373,32 @@ public class OrderByTest extends TestBase {
 
     @Test
     public void testCreateConditionWithVarArgs() {
-        String result = AbstractCondition.createSortExpression("col1", "col2", "col3");
+        String result = AbstractCondition.createSortSpec("col1", "col2", "col3");
         Assertions.assertEquals("col1, col2, col3", result);
     }
 
     @Test
     public void testCreateConditionWithEmptyVarArgs() {
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression());
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec());
     }
 
     @Test
     public void testCreateConditionWithSinglePropertyAndDirection() {
-        String result = AbstractCondition.createSortExpression("salary", SortDirection.DESC);
+        String result = AbstractCondition.createSortSpec("salary", SortDirection.DESC);
         Assertions.assertEquals("salary DESC", result);
     }
 
     @Test
     public void testCreateConditionWithCollectionAndDirection() {
         List<String> props = Arrays.asList("year", "month", "day");
-        String result = AbstractCondition.createSortExpression(props, SortDirection.ASC);
+        String result = AbstractCondition.createSortSpec(props, SortDirection.ASC);
         Assertions.assertEquals("year ASC, month ASC, day ASC", result);
     }
 
     @Test
     public void testCreateConditionWithEmptyCollection() {
         List<String> emptyList = Arrays.asList();
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(emptyList, SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(emptyList, SortDirection.ASC));
     }
 
     @Test
@@ -407,14 +407,14 @@ public class OrderByTest extends TestBase {
         orders.put("col1", SortDirection.ASC);
         orders.put("col2", SortDirection.DESC);
 
-        String result = AbstractCondition.createSortExpression(orders);
+        String result = AbstractCondition.createSortSpec(orders);
         Assertions.assertEquals("col1 ASC, col2 DESC", result);
     }
 
     @Test
     public void testCreateConditionWithEmptyMap() {
         Map<String, SortDirection> emptyMap = new LinkedHashMap<>();
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(emptyMap));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(emptyMap));
     }
 
     @Test

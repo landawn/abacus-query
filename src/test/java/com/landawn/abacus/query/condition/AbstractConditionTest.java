@@ -516,23 +516,23 @@ public class AbstractConditionTest extends TestBase {
 
     @Test
     public void testCreateSortExpression_StringArrayRejectsEmptyProperty() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression("id", ""));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec("id", ""));
     }
 
     @Test
     public void testCreateSortExpression_SinglePropertyRejectsNullDirection() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression("id", null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec("id", null));
     }
 
     @Test
     public void testCreateSortExpression_CollectionRejectsNullDirection() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(Arrays.asList("id"), null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(Arrays.asList("id"), null));
     }
 
     @Test
     public void testCreateSortExpression_CollectionRejectsEmptyProperty() {
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> AbstractCondition.createSortExpression(Arrays.asList("id", ""), com.landawn.abacus.query.SortDirection.ASC));
+                () -> AbstractCondition.createSortSpec(Arrays.asList("id", ""), com.landawn.abacus.query.SortDirection.ASC));
     }
 
     @Test
@@ -540,7 +540,7 @@ public class AbstractConditionTest extends TestBase {
         java.util.Map<String, com.landawn.abacus.query.SortDirection> orders = new java.util.LinkedHashMap<>();
         orders.put("", com.landawn.abacus.query.SortDirection.ASC);
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(orders));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(orders));
     }
 
     @Test
@@ -548,7 +548,7 @@ public class AbstractConditionTest extends TestBase {
         java.util.Map<String, com.landawn.abacus.query.SortDirection> orders = new java.util.LinkedHashMap<>();
         orders.put("id", null);
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortExpression(orders));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(orders));
     }
 
     // ---------------------------------------------------------------------

@@ -13,6 +13,7 @@
  */
 package com.landawn.abacus.query;
 
+import static com.landawn.abacus.query.Dsl.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -162,7 +163,7 @@ public class SelectionTest extends TestBase {
     @Test
     public void testDslSelectFromSingleSelection() {
         final Selection selection = Selection.builder(Account.class).tableAlias("a").classAlias("account").build();
-        final String sql = Dsl.PSC.selectFrom(selection).build().query();
+        final String sql = PSC.selectFrom(selection).build().query();
 
         assertNotNull(sql);
         assertTrue(sql.startsWith("SELECT"));
@@ -172,7 +173,7 @@ public class SelectionTest extends TestBase {
     @Test
     public void testDslSelectSingleSelectionThenFrom() {
         final Selection selection = Selection.builder(Account.class).tableAlias("a").classAlias("account").build();
-        final String sql = Dsl.PSC.select(selection).from("account a").build().query();
+        final String sql = PSC.select(selection).from("account a").build().query();
 
         assertNotNull(sql);
         assertTrue(sql.startsWith("SELECT"));
@@ -182,7 +183,7 @@ public class SelectionTest extends TestBase {
     public void testDslSelectFromMultipleSelections() {
         final List<Selection> selections = List.of(Selection.builder(Account.class).tableAlias("a").classAlias("account").build(),
                 Selection.builder(Account.class).tableAlias("b").classAlias("account2").build());
-        final String sql = Dsl.PSC.selectFrom(selections).build().query();
+        final String sql = PSC.selectFrom(selections).build().query();
 
         assertNotNull(sql);
         assertTrue(sql.startsWith("SELECT"));
@@ -194,9 +195,8 @@ public class SelectionTest extends TestBase {
         final Selection firstPass = Selection.builder(Account.class).tableAlias("a").classAlias("account").includedPropNames(List.of("id")).build();
         final Selection laterPass = Selection.builder(Account.class).tableAlias("a").classAlias("account").includedPropNames(List.of("firstName")).build();
 
-        assertEquals("SELECT a.id AS \"account.id\" FROM account a",
-                Dsl.PSC.select(changingSelectionList(firstPass, laterPass)).from("account a").build().query());
-        assertEquals("SELECT a.id AS \"account.id\" FROM account a", Dsl.PSC.selectFrom(changingSelectionList(firstPass, laterPass)).build().query());
+        assertEquals("SELECT a.id AS \"account.id\" FROM account a", PSC.select(changingSelectionList(firstPass, laterPass)).from("account a").build().query());
+        assertEquals("SELECT a.id AS \"account.id\" FROM account a", PSC.selectFrom(changingSelectionList(firstPass, laterPass)).build().query());
     }
 
     private static List<Selection> changingSelectionList(final Selection firstPass, final Selection laterPass) {
@@ -226,21 +226,21 @@ public class SelectionTest extends TestBase {
 
     @Test
     public void testDslSelectNullSelectionThrows() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select((Selection) null));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.selectFrom((Selection) null));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select((Selection) null));
+        assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom((Selection) null));
     }
 
     @SuppressWarnings("deprecation")
     @Test
     public void testDeprecatedTwoEntitySelectionValidatesBothEntityClassesConsistently() {
         final IllegalArgumentException selectFirst = assertThrows(IllegalArgumentException.class,
-                () -> Dsl.PSC.select(null, "a", "first", null, Account.class, "b", "second", null));
+                () -> PSC.select(null, "a", "first", null, Account.class, "b", "second", null));
         final IllegalArgumentException selectSecond = assertThrows(IllegalArgumentException.class,
-                () -> Dsl.PSC.select(Account.class, "a", "first", null, null, "b", "second", null));
+                () -> PSC.select(Account.class, "a", "first", null, null, "b", "second", null));
         final IllegalArgumentException selectFromFirst = assertThrows(IllegalArgumentException.class,
-                () -> Dsl.PSC.selectFrom(null, "a", "first", null, Account.class, "b", "second", null));
+                () -> PSC.selectFrom(null, "a", "first", null, Account.class, "b", "second", null));
         final IllegalArgumentException selectFromSecond = assertThrows(IllegalArgumentException.class,
-                () -> Dsl.PSC.selectFrom(Account.class, "a", "first", null, null, "b", "second", null));
+                () -> PSC.selectFrom(Account.class, "a", "first", null, null, "b", "second", null));
 
         assertEquals(selectFirst.getMessage(), selectSecond.getMessage());
         assertEquals(selectFirst.getMessage(), selectFromFirst.getMessage());

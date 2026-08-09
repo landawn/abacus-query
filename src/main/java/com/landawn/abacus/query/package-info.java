@@ -105,7 +105,7 @@
  *
  * <h2>Usage example</h2>
  * <pre>{@code
- * SP sp = Dsl.PSC.select("firstName", "lastName")
+ * SP sp = PSC.select("firstName", "lastName")
  *         .from("account")
  *         .where(Filters.and(Filters.eq("status", "ACTIVE"), Filters.gt("age", 18)))
  *         .orderBy("lastName")
@@ -117,7 +117,7 @@
  * sp.parameters();   // [ACTIVE, 18]
  *
  * // Named parameters instead of positional ones:
- * Dsl.NSC.update("account").set("firstName").where(Filters.eq("id", 1)).build().query();
+ * NSC.update("account").set("firstName").where(Filters.eq("id", 1)).build().query();
  * // UPDATE account SET first_name = :firstName WHERE id = :id
  * }</pre>
  *

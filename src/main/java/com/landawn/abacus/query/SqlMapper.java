@@ -244,6 +244,11 @@ public final class SqlMapper {
     /**
      * Creates a SqlMapper by loading separately supplied file paths.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SqlMapper mapper = SqlMapper.loadFrom("sql/users.xml", "sql/orders.xml");
+     * }</pre>
+     *
      * @param firstFilePath the first XML mapper path; must not be {@code null} or empty
      * @param additionalFilePaths additional XML mapper paths; no element may be {@code null} or empty
      * @return a new mapper containing definitions from every supplied path
@@ -832,6 +837,13 @@ public final class SqlMapper {
 
     /**
      * Writes this mapper to the specified file path.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * SqlMapper mapper = new SqlMapper();
+     * mapper.add("findUser", "select * from users where id = ?");
+     * mapper.saveTo("sql/queries.xml");
+     * }</pre>
      *
      * @param filePath the target file path; must not be {@code null} or empty
      * @throws IllegalArgumentException if {@code filePath} is {@code null} or empty

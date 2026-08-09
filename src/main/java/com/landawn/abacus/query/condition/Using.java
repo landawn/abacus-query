@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -142,11 +143,8 @@ public class Using extends Cell {
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
      *                                  or blank entry, a qualified (dotted) column name, or a name containing
      *                                  {@code ,}, {@code (}, or {@code )}
-     * @deprecated It's recommended to use {@link Filters#on(java.util.Map)} instead of {@code Using} for better
-     *             portability and clarity. Replace {@code new Using("col1", "col2")} with explicit
-     *             {@code Filters.on(N.asMap("table1.col1", "table2.col1", "table1.col2", "table2.col2"))}.
      */
-    @Deprecated
+    @Beta
     public Using(final String... columnNames) {
         this(prepare(columnNames));
     }
@@ -188,11 +186,8 @@ public class Using extends Cell {
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
      *                                  or blank entry, a qualified (dotted) column name, or a name containing
      *                                  {@code ,}, {@code (}, or {@code )}
-     * @deprecated It's recommended to use {@link Filters#on(java.util.Map)} instead of {@code Using} for better
-     *             portability and clarity. Replace {@code new Using(columnList)} with an explicit
-     *             {@code Filters.on(Map)} condition that specifies the full column names with table prefixes.
      */
-    @Deprecated
+    @Beta
     public Using(final Collection<String> columnNames) {
         this(prepare(columnNames));
     }

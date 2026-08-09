@@ -41,7 +41,7 @@ import com.landawn.abacus.util.Strings;
  *   <li><b>Raw subqueries</b> - complete text accepted without SQL syntax validation</li>
  *   <li><b>Structured subqueries</b> - generated from entity names/classes, property names, and conditions</li>
  *   <li><b>Builder-backed snapshots</b> - complete, validated SELECT statements captured through
- *       {@link Filters#subQuery(SqlBuilder)}, retaining parameters and placeholder metadata for safe
+ *       {@link SqlBuilder#toSubQuery()}, retaining parameters and placeholder metadata for safe
  *       composition into another builder</li>
  * </ul>
  *
@@ -71,8 +71,10 @@ import com.landawn.abacus.util.Strings;
  * //  for the selected properties is also applied when available)
  *
  * // Builder-backed snapshot with retained parameters
- * SubQuery subQuery4 = Filters.subQuery(
- *    PSC.select("userId").from("orders").where(Filters.greaterThan("total", 100)));
+ * SubQuery subQuery4 = PSC.select("userId")
+ *    .from("orders")
+ *    .where(Filters.greaterThan("total", 100))
+ *    .toSubQuery();
  * // SQL: SELECT user_id FROM orders WHERE total > ?
  * // parameters: [100]
  *
@@ -360,7 +362,7 @@ public class SubQuery extends AbstractCondition {
      * // Returns: null
      *
      * // Builder-backed snapshot returns the SQL rendered by its source builder
-     * SubQuery built = Filters.subQuery(Dsl.PSC.select("id").from("users"));
+     * SubQuery built = PSC.select("id").from("users").toSubQuery();
      * String builtSql = built.rawSql();
      * // Returns: "SELECT id FROM users"
      * }</pre>
@@ -570,8 +572,10 @@ public class SubQuery extends AbstractCondition {
      * // returns [] (empty immutable list)
      *
      * // Builder-backed snapshot: parameters from the source builder are retained
-     * SubQuery built = Filters.subQuery(
-     *     Dsl.PSC.select("id").from("users").where(Filters.equal("status", "active")));
+     * SubQuery built = PSC.select("id")
+     *     .from("users")
+     *     .where(Filters.equal("status", "active"))
+     *     .toSubQuery();
      * List<Object> builtParams = built.parameters();
      * // returns ["active"]
      * }</pre>

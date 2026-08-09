@@ -1,5 +1,6 @@
 package com.landawn.abacus.query;
 
+import static com.landawn.abacus.query.Dsl.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -493,7 +494,7 @@ public class QueryUtilTest extends TestBase {
         assertEquals(new QueryUtil.ColumnInfo("source.value", false), map.get("value"));
         assertEquals(new QueryUtil.ColumnInfo("source.value", false), map.get("source.value"));
 
-        String sql = Dsl.PSC.selectFrom(QualifiedColumnEntity.class).build().query();
+        String sql = PSC.selectFrom(QualifiedColumnEntity.class).build().query();
         assertEquals("SELECT source.value AS \"value\" FROM qualified_column_entity q", sql);
         assertFalse(sql.contains("q.source.value"));
     }
@@ -936,7 +937,7 @@ public class QueryUtilTest extends TestBase {
 
     @Test
     public void testSqlBuilder_FromSelfReferentialEntityDoesNotFail() {
-        String sql = Dsl.PSC.select("id").from(SelfReferentialEntity.class).where(Filters.eq("id", 1L)).build().query();
+        String sql = PSC.select("id").from(SelfReferentialEntity.class).where(Filters.eq("id", 1L)).build().query();
 
         assertTrue(sql.contains("FROM self_referential_entity"));
         assertTrue(sql.contains("WHERE id = ?"));
@@ -1176,7 +1177,7 @@ public class QueryUtilTest extends TestBase {
 
         assertEquals(Collections.singletonList("id"), names);
 
-        String sql = Dsl.PSC.selectFrom(ParentWithFilteredChild.class, true, excluded).build().query();
+        String sql = PSC.selectFrom(ParentWithFilteredChild.class, true, excluded).build().query();
         assertEquals("SELECT id AS \"id\" FROM parent_with_filtered_child", sql);
     }
 

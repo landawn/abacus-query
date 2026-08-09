@@ -345,7 +345,7 @@
       }
     ],
     "similarity": 0.634,
-    "sample_body": "public void testInsert_Collection() {\n            List<String> columns = Arrays.asList(\"firstName\", \"lastName\", \"email\");\n            SqlBuilder builder = Dsl.PSC.insert(columns);\n            assertNotNull(builder);\n\n            String sql = builder.into(\"account\").build().query();\n            assertTrue(sql.contains(\"first_name\"));\n            assertTrue(sql.contains(\"last_name\"));\n            as"
+    "sample_body": "public void testInsert_Collection() {\n            List<String> columns = Arrays.asList(\"firstName\", \"lastName\", \"email\");\n            SqlBuilder builder = PSC.insert(columns);\n            assertNotNull(builder);\n\n            String sql = builder.into(\"account\").build().query();\n            assertTrue(sql.contains(\"first_name\"));\n            assertTrue(sql.contains(\"last_name\"));\n            as"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -377,7 +377,7 @@
       }
     ],
     "similarity": 0.625,
-    "sample_body": "public void testInsert_ClassWithExcludedProps() {\n            Set<String> excludedProps = new HashSet<>(Arrays.asList(\"email\", \"status\"));\n            SqlBuilder builder = Dsl.PSC.insert(Account.class, excludedProps);\n            assertNotNull(builder);\n\n            String sql = builder.into(\"account\").build().query();\n            assertTrue(sql.contains(\"first_name\"));\n            assertTrue(sql."
+    "sample_body": "public void testInsert_ClassWithExcludedProps() {\n            Set<String> excludedProps = new HashSet<>(Arrays.asList(\"email\", \"status\"));\n            SqlBuilder builder = PSC.insert(Account.class, excludedProps);\n            assertNotNull(builder);\n\n            String sql = builder.into(\"account\").build().query();\n            assertTrue(sql.contains(\"first_name\"));\n            assertTrue(sql."
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/condition/NamedPropertyTest.java",
@@ -773,7 +773,7 @@
       }
     ],
     "similarity": 0.509,
-    "sample_body": "public void testSelectFrom() {\n            String sql = Dsl.NSC.selectFrom(User.class).build().query();\n            Assertions.assertNotNull(sql);\n            Assertions.assertTrue(sql.contains(\"SELECT\"));\n            Assertions.assertTrue(sql.contains(\"FROM users\"));\n        }"
+    "sample_body": "public void testSelectFrom() {\n            String sql = NSC.selectFrom(User.class).build().query();\n            Assertions.assertNotNull(sql);\n            Assertions.assertTrue(sql.contains(\"SELECT\"));\n            Assertions.assertTrue(sql.contains(\"FROM users\"));\n        }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/FiltersTest.java",
@@ -1537,7 +1537,7 @@
       }
     ],
     "similarity": 0.386,
-    "sample_body": "public void testSelectFromWithExclusions() {\n            Set<String> excluded = Set.of(\"status\");\n            String sql = Dsl.NSC.selectFrom(User.class, excluded).build().query();\n            Assertions.assertNotNull(sql);\n            Assertions.assertFalse(sql.contains(\"status\"));\n        }"
+    "sample_body": "public void testSelectFromWithExclusions() {\n            Set<String> excluded = Set.of(\"status\");\n            String sql = NSC.selectFrom(User.class, excluded).build().query();\n            Assertions.assertNotNull(sql);\n            Assertions.assertFalse(sql.contains(\"status\"));\n        }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/FiltersTest.java",
@@ -1585,7 +1585,7 @@
       }
     ],
     "similarity": 0.38,
-    "sample_body": "public void testDeleteFromWithEntityClass() {\n            String sql = Dsl.NSC.deleteFrom(\"users\", User.class).where(Filters.eq(\"status\", \"INACTIVE\")).build().query();\n            Assertions.assertNotNull(sql);\n            Assertions.assertTrue(sql.contains(\"DELETE FROM users\"));\n            Assertions.assertTrue(sql.contains(\"status = :status\"));\n        }"
+    "sample_body": "public void testDeleteFromWithEntityClass() {\n            String sql = NSC.deleteFrom(\"users\", User.class).where(Filters.eq(\"status\", \"INACTIVE\")).build().query();\n            Assertions.assertNotNull(sql);\n            Assertions.assertTrue(sql.contains(\"DELETE FROM users\"));\n            Assertions.assertTrue(sql.contains(\"status = :status\"));\n        }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/FiltersTest.java",
@@ -1753,7 +1753,7 @@
       }
     ],
     "similarity": 0.36,
-    "sample_body": "public void testUnion_SingleNonSubQueryStringRejected() {\n        // union(String) is reserved for a complete SELECT sub-query; a bare column name is rejected up front\n        // instead of silently becoming a column list that fails later with an unrelated \"from() must be called\" error.\n        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(\"i"
+    "sample_body": "public void testUnion_SingleNonSubQueryStringRejected() {\n        // union(String) is reserved for a complete SELECT sub-query; a bare column name is rejected up front\n        // instead of silently becoming a column list that fails later with an unrelated \"from() must be called\" error.\n        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> PSC.select(\"i"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/FiltersTest.java",
@@ -2565,7 +2565,7 @@
       }
     ],
     "similarity": 0.259,
-    "sample_body": "public void testUnion_Collection() {\n        final String sql = Dsl.PSC.select(\"id\").from(\"users\").union(Collections.singletonList(\"id\")).from(\"admins\").build().query();\n\n        assertTrue(sql.contains(\"UNION SELECT id FROM admins\"));\n    }"
+    "sample_body": "public void testUnion_Collection() {\n        final String sql = PSC.select(\"id\").from(\"users\").union(Collections.singletonList(\"id\")).from(\"admins\").build().query();\n\n        assertTrue(sql.contains(\"UNION SELECT id FROM admins\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/ParsedSqlTest.java",
@@ -2645,7 +2645,7 @@
       }
     ],
     "similarity": 0.255,
-    "sample_body": "public void testPSCWithJoin() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").join(\"orders\").on(\"users.id = orders.user_id\").build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"JOIN\"));\n    }"
+    "sample_body": "public void testPSCWithJoin() {\n        String sql = PSC.select(\"*\").from(\"users\").join(\"orders\").on(\"users.id = orders.user_id\").build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"JOIN\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/DynamicQueryTest.java",
@@ -2817,7 +2817,7 @@
       }
     ],
     "similarity": 0.244,
-    "sample_body": "public void testUnion_SqlBuilder() {\n        final AbstractQueryBuilder.SP sp = Dsl.PSC.select(\"id\")\n                .from(\"users\")\n                .where(Filters.eq(\"type\", \"USER\"))\n                .union(Dsl.PSC.select(\"id\").from(\"admins\").where(Filters.eq(\"type\", \"ADMIN\")))\n                .build();\n\n        assertTrue(sp.query().contains(\"UNION\"));\n        assertEquals(Arrays.asList(\"USER\", \"A"
+    "sample_body": "public void testUnion_SqlBuilder() {\n        final AbstractQueryBuilder.SP sp = PSC.select(\"id\")\n                .from(\"users\")\n                .where(Filters.eq(\"type\", \"USER\"))\n                .union(PSC.select(\"id\").from(\"admins\").where(Filters.eq(\"type\", \"ADMIN\")))\n                .build();\n\n        assertTrue(sp.query().contains(\"UNION\"));\n        assertEquals(Arrays.asList(\"USER\", \"A"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -2929,7 +2929,7 @@
       }
     ],
     "similarity": 0.235,
-    "sample_body": "public void testUnion_Query() {\n        final String sql = Dsl.PSC.select(\"id\").from(\"users\").union(\"SELECT id FROM admins\").build().query();\n\n        assertTrue(sql.contains(\"UNION SELECT id FROM admins\"));\n    }"
+    "sample_body": "public void testUnion_Query() {\n        final String sql = PSC.select(\"id\").from(\"users\").union(\"SELECT id FROM admins\").build().query();\n\n        assertTrue(sql.contains(\"UNION SELECT id FROM admins\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -3361,7 +3361,7 @@
       }
     ],
     "similarity": 0.208,
-    "sample_body": "public void testPSCWithLimit() {\n        String sql = Dsl.PSC.select(\"*\").from(Account.class).limit(10).build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"LIMIT\"));\n    }"
+    "sample_body": "public void testPSCWithLimit() {\n        String sql = PSC.select(\"*\").from(Account.class).limit(10).build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"LIMIT\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/DynamicQueryTest.java",
@@ -3893,7 +3893,7 @@
       }
     ],
     "similarity": 0.14,
-    "sample_body": "public void testOrderByAsc() {\n        String sql = Dsl.PSC.select(\"*\").from(Account.class).orderBy(\"firstName\", SortDirection.ASC).build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"ORDER BY\"));\n    }"
+    "sample_body": "public void testOrderByAsc() {\n        String sql = PSC.select(\"*\").from(Account.class).orderBy(\"firstName\", SortDirection.ASC).build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"ORDER BY\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/condition/CriteriaTest.java",
@@ -4013,7 +4013,7 @@
       }
     ],
     "similarity": 0.127,
-    "sample_body": "public void testCriteriaCondition() {\n        Criteria criteria = Criteria.builder()\n                .where(Filters.gt(\"age\", 18))\n                .groupBy(\"status\")\n                .having(Filters.gt(\"COUNT(*)\", 5))\n                .orderBy(\"status\")\n                .limit(10)\n                .build();\n\n        String sql = Dsl.PSC.select(\"status\", \"COUNT(*)\").from(\"users\").append(criteria).build"
+    "sample_body": "public void testCriteriaCondition() {\n        Criteria criteria = Criteria.builder()\n                .where(Filters.gt(\"age\", 18))\n                .groupBy(\"status\")\n                .having(Filters.gt(\"COUNT(*)\", 5))\n                .orderBy(\"status\")\n                .limit(10)\n                .build();\n\n        String sql = PSC.select(\"status\", \"COUNT(*)\").from(\"users\").append(criteria).build"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
@@ -4185,7 +4185,7 @@
       }
     ],
     "similarity": 0.116,
-    "sample_body": "public void testSqlBuilder_PSC_selectWithJoin() {\n        String sql = Dsl.PSC.select(\"u.id\", \"u.name\", \"o.total\").from(\"users u\").leftJoin(\"orders o\").on(\"u.id = o.user_id\").build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"LEFT JOIN\"));\n    }"
+    "sample_body": "public void testSqlBuilder_PSC_selectWithJoin() {\n        String sql = PSC.select(\"u.id\", \"u.name\", \"o.total\").from(\"users u\").leftJoin(\"orders o\").on(\"u.id = o.user_id\").build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"LEFT JOIN\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
@@ -4217,7 +4217,7 @@
       }
     ],
     "similarity": 0.115,
-    "sample_body": "public void testSqlBuilder_PSC_simpleSelect() {\n        String sql = Dsl.PSC.select(\"id\", \"name\").from(\"account\").where(Filters.eq(\"id\", 1)).build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"SELECT\"));\n        assertTrue(sql.contains(\"FROM account\"));\n    }"
+    "sample_body": "public void testSqlBuilder_PSC_simpleSelect() {\n        String sql = PSC.select(\"id\", \"name\").from(\"account\").where(Filters.eq(\"id\", 1)).build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"SELECT\"));\n        assertTrue(sql.contains(\"FROM account\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4233,7 +4233,7 @@
       }
     ],
     "similarity": 0.115,
-    "sample_body": "public void testSqlBuilder_PSC_selectWithGroupBy() {\n        String sql = Dsl.PSC.select(\"department\", \"COUNT(*) AS cnt\").from(\"employees\").groupBy(\"department\").build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"GROUP BY\"));\n    }"
+    "sample_body": "public void testSqlBuilder_PSC_selectWithGroupBy() {\n        String sql = PSC.select(\"department\", \"COUNT(*) AS cnt\").from(\"employees\").groupBy(\"department\").build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"GROUP BY\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4249,7 +4249,7 @@
       }
     ],
     "similarity": 0.114,
-    "sample_body": "public void testSqlBuilder_PSC_selectWithUnion() {\n        String sql = Dsl.PSC.select(\"id\", \"name\").from(\"active_users\").union(Dsl.PSC.select(\"id\", \"name\").from(\"archived_users\")).build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"UNION\"));\n    }"
+    "sample_body": "public void testSqlBuilder_PSC_selectWithUnion() {\n        String sql = PSC.select(\"id\", \"name\").from(\"active_users\").union(PSC.select(\"id\", \"name\").from(\"archived_users\")).build().query();\n        assertNotNull(sql);\n        assertTrue(sql.contains(\"UNION\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4413,7 +4413,7 @@
       }
     ],
     "similarity": 0.1,
-    "sample_body": "public void testWhereIsWithNullValue() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").where(Filters.is(\"deleted_at\", null)).build().query();\n        assertTrue(sql.contains(\"IS NULL\"));\n        assertFalse(sql.contains(\"IS ?\"));\n    }"
+    "sample_body": "public void testWhereIsWithNullValue() {\n        String sql = PSC.select(\"*\").from(\"users\").where(Filters.is(\"deleted_at\", null)).build().query();\n        assertTrue(sql.contains(\"IS NULL\"));\n        assertFalse(sql.contains(\"IS ?\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4429,7 +4429,7 @@
       }
     ],
     "similarity": 0.099,
-    "sample_body": "public void testOrderByAsc() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").orderBy(\"name\", SortDirection.ASC).build().query();\n        assertTrue(sql.contains(\"ORDER BY\"));\n        assertTrue(sql.contains(\"ASC\"));\n    }"
+    "sample_body": "public void testOrderByAsc() {\n        String sql = PSC.select(\"*\").from(\"users\").orderBy(\"name\", SortDirection.ASC).build().query();\n        assertTrue(sql.contains(\"ORDER BY\"));\n        assertTrue(sql.contains(\"ASC\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java",
@@ -4497,7 +4497,7 @@
       }
     ],
     "similarity": 0.095,
-    "sample_body": "public void testFix_setEntity_preservesPropertyOrder() {\n        Account a = new Account();\n        a.setGUI(\"g\");\n        a.setEmailAddress(\"e@e.com\");\n        a.setFirstName(\"F\");\n        a.setMiddleName(\"M\");\n        a.setLastName(\"L\");\n        a.setStatus(1);\n\n        String sql = Dsl.PSC.update(\"account\").set(a).where(Filters.eq(\"id\", 1)).build().query();\n\n        // Property order in Account"
+    "sample_body": "public void testFix_setEntity_preservesPropertyOrder() {\n        Account a = new Account();\n        a.setGUI(\"g\");\n        a.setEmailAddress(\"e@e.com\");\n        a.setFirstName(\"F\");\n        a.setMiddleName(\"M\");\n        a.setLastName(\"L\");\n        a.setStatus(1);\n\n        String sql = PSC.update(\"account\").set(a).where(Filters.eq(\"id\", 1)).build().query();\n\n        // Property order in Account"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4513,7 +4513,7 @@
       }
     ],
     "similarity": 0.095,
-    "sample_body": "public void testSelectWithAlias() {\n        String sql = Dsl.PSC.select(\"first_name AS fname\").from(\"users\").build().query();\n        assertTrue(sql.contains(\"AS fname\"));\n    }"
+    "sample_body": "public void testSelectWithAlias() {\n        String sql = PSC.select(\"first_name AS fname\").from(\"users\").build().query();\n        assertTrue(sql.contains(\"AS fname\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/condition/ComposableCellTest.java",
@@ -4545,7 +4545,7 @@
       }
     ],
     "similarity": 0.093,
-    "sample_body": "public void testInCondition() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").where(Filters.in(\"status\", Arrays.asList(\"ACTIVE\", \"PENDING\", \"APPROVED\"))).build().query();\n\n        assertEquals(\"SELECT * FROM users WHERE status IN (?, ?, ?)\", sql);\n    }"
+    "sample_body": "public void testInCondition() {\n        String sql = PSC.select(\"*\").from(\"users\").where(Filters.in(\"status\", Arrays.asList(\"ACTIVE\", \"PENDING\", \"APPROVED\"))).build().query();\n\n        assertEquals(\"SELECT * FROM users WHERE status IN (?, ?, ?)\", sql);\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4561,7 +4561,7 @@
       }
     ],
     "similarity": 0.092,
-    "sample_body": "public void testSelectAll() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").build().query();\n        assertEquals(\"SELECT * FROM users\", sql);\n    }"
+    "sample_body": "public void testSelectAll() {\n        String sql = PSC.select(\"*\").from(\"users\").build().query();\n        assertEquals(\"SELECT * FROM users\", sql);\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4577,7 +4577,7 @@
       }
     ],
     "similarity": 0.092,
-    "sample_body": "public void testWhereEqual() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").where(Filters.eq(\"id\", 1)).build().query();\n        assertTrue(sql.contains(\"WHERE\"));\n    }"
+    "sample_body": "public void testWhereEqual() {\n        String sql = PSC.select(\"*\").from(\"users\").where(Filters.eq(\"id\", 1)).build().query();\n        assertTrue(sql.contains(\"WHERE\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4609,7 +4609,7 @@
       }
     ],
     "similarity": 0.091,
-    "sample_body": "public void testCount() {\n        String sql = Dsl.PSC.select(\"COUNT(*)\").from(\"users\").build().query();\n        assertTrue(sql.contains(\"COUNT(*)\"));\n    }"
+    "sample_body": "public void testCount() {\n        String sql = PSC.select(\"COUNT(*)\").from(\"users\").build().query();\n        assertTrue(sql.contains(\"COUNT(*)\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4625,7 +4625,7 @@
       }
     ],
     "similarity": 0.091,
-    "sample_body": "public void testIsNullCondition() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").where(Filters.isNull(\"deletedDate\")).build().query();\n\n        assertEquals(\"SELECT * FROM users WHERE deleted_date IS NULL\", sql);\n    }"
+    "sample_body": "public void testIsNullCondition() {\n        String sql = PSC.select(\"*\").from(\"users\").where(Filters.isNull(\"deletedDate\")).build().query();\n\n        assertEquals(\"SELECT * FROM users WHERE deleted_date IS NULL\", sql);\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/condition/AbstractInTest.java",
@@ -4661,7 +4661,7 @@
       }
     ],
     "similarity": 0.089,
-    "sample_body": "public void testLeftJoin() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").leftJoin(\"orders\").on(\"users.id = orders.user_id\").build().query();\n        assertTrue(sql.contains(\"LEFT JOIN\"));\n    }"
+    "sample_body": "public void testLeftJoin() {\n        String sql = PSC.select(\"*\").from(\"users\").leftJoin(\"orders\").on(\"users.id = orders.user_id\").build().query();\n        assertTrue(sql.contains(\"LEFT JOIN\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/condition/UsingTest.java",
@@ -4693,7 +4693,7 @@
       }
     ],
     "similarity": 0.088,
-    "sample_body": "public void testOrderBy() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").orderBy(\"name\").build().query();\n        assertTrue(sql.contains(\"ORDER BY name\"));\n    }"
+    "sample_body": "public void testOrderBy() {\n        String sql = PSC.select(\"*\").from(\"users\").orderBy(\"name\").build().query();\n        assertTrue(sql.contains(\"ORDER BY name\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4709,7 +4709,7 @@
       }
     ],
     "similarity": 0.088,
-    "sample_body": "public void testSelectWithLowerCaseUnderscore() {\n        String sql = Dsl.PSC.select(Account.class).from(Account.class).build().query();\n        assertNotNull(sql);\n    }"
+    "sample_body": "public void testSelectWithLowerCaseUnderscore() {\n        String sql = PSC.select(Account.class).from(Account.class).build().query();\n        assertNotNull(sql);\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4725,7 +4725,7 @@
       }
     ],
     "similarity": 0.088,
-    "sample_body": "public void testLikeCondition() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").where(Filters.like(\"name\", \"%John%\")).build().query();\n\n        assertEquals(\"SELECT * FROM users WHERE name LIKE ?\", sql);\n    }"
+    "sample_body": "public void testLikeCondition() {\n        String sql = PSC.select(\"*\").from(\"users\").where(Filters.like(\"name\", \"%John%\")).build().query();\n\n        assertEquals(\"SELECT * FROM users WHERE name LIKE ?\", sql);\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4741,7 +4741,7 @@
       }
     ],
     "similarity": 0.087,
-    "sample_body": "public void testAppendIf_StringTrue() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").appendIf(true, \" FOR UPDATE\").build().query();\n        assertEquals(\"SELECT * FROM users FOR UPDATE\", sql);\n    }"
+    "sample_body": "public void testAppendIf_StringTrue() {\n        String sql = PSC.select(\"*\").from(\"users\").appendIf(true, \" FOR UPDATE\").build().query();\n        assertEquals(\"SELECT * FROM users FOR UPDATE\", sql);\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4757,7 +4757,7 @@
       }
     ],
     "similarity": 0.086,
-    "sample_body": "public void testWhereIsNull() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").where(Filters.isNull(\"deleted_at\")).build().query();\n        assertTrue(sql.contains(\"IS NULL\"));\n    }"
+    "sample_body": "public void testWhereIsNull() {\n        String sql = PSC.select(\"*\").from(\"users\").where(Filters.isNull(\"deleted_at\")).build().query();\n        assertTrue(sql.contains(\"IS NULL\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4777,7 +4777,7 @@
       }
     ],
     "similarity": 0.086,
-    "sample_body": "public void testWhereGreaterThan() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").where(Filters.gt(\"age\", 18)).build().query();\n        assertTrue(sql.contains(\">\"));\n    }"
+    "sample_body": "public void testWhereGreaterThan() {\n        String sql = PSC.select(\"*\").from(\"users\").where(Filters.gt(\"age\", 18)).build().query();\n        assertTrue(sql.contains(\">\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4793,7 +4793,7 @@
       }
     ],
     "similarity": 0.085,
-    "sample_body": "public void testIntersect_CollectionOverload() {\n        String sql = Dsl.PSC.select(\"id\", \"name\").from(\"users\").intersect(Arrays.asList(\"id\", \"name\")).from(\"customers\").build().query();\n        assertEquals(\"SELECT id, name FROM users INTERSECT SELECT id, name FROM customers\", sql);\n    }"
+    "sample_body": "public void testIntersect_CollectionOverload() {\n        String sql = PSC.select(\"id\", \"name\").from(\"users\").intersect(Arrays.asList(\"id\", \"name\")).from(\"customers\").build().query();\n        assertEquals(\"SELECT id, name FROM users INTERSECT SELECT id, name FROM customers\", sql);\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4809,7 +4809,7 @@
       }
     ],
     "similarity": 0.085,
-    "sample_body": "public void testOrderBy_CollectionWithDirection() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").orderBy(Arrays.asList(\"lastName\", \"firstName\"), SortDirection.DESC).build().query();\n        assertEquals(\"SELECT * FROM users ORDER BY last_name DESC, first_name DESC\", sql);\n    }"
+    "sample_body": "public void testOrderBy_CollectionWithDirection() {\n        String sql = PSC.select(\"*\").from(\"users\").orderBy(Arrays.asList(\"lastName\", \"firstName\"), SortDirection.DESC).build().query();\n        assertEquals(\"SELECT * FROM users ORDER BY last_name DESC, first_name DESC\", sql);\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4825,7 +4825,7 @@
       }
     ],
     "similarity": 0.085,
-    "sample_body": "public void testAppendIfOrElse_StringTrue() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").appendIfOrElse(true, \" ORDER BY name ASC\", \" ORDER BY name DESC\").build().query();\n        assertEquals(\"SELECT * FROM users ORDER BY name ASC\", sql);\n    }"
+    "sample_body": "public void testAppendIfOrElse_StringTrue() {\n        String sql = PSC.select(\"*\").from(\"users\").appendIfOrElse(true, \" ORDER BY name ASC\", \" ORDER BY name DESC\").build().query();\n        assertEquals(\"SELECT * FROM users ORDER BY name ASC\", sql);\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/condition/AbstractInSubQueryTest.java",
@@ -4857,7 +4857,7 @@
       }
     ],
     "similarity": 0.083,
-    "sample_body": "public void testWhereBetween() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").where(Filters.between(\"age\", 18, 65)).build().query();\n        assertTrue(sql.contains(\"BETWEEN\"));\n    }"
+    "sample_body": "public void testWhereBetween() {\n        String sql = PSC.select(\"*\").from(\"users\").where(Filters.between(\"age\", 18, 65)).build().query();\n        assertTrue(sql.contains(\"BETWEEN\"));\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4873,7 +4873,7 @@
       }
     ],
     "similarity": 0.083,
-    "sample_body": "public void testAppendIf_ConditionTrue() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").appendIf(true, Filters.gt(\"age\", 18)).build().query();\n        assertEquals(\"SELECT * FROM users WHERE age > ?\", sql);\n    }"
+    "sample_body": "public void testAppendIf_ConditionTrue() {\n        String sql = PSC.select(\"*\").from(\"users\").appendIf(true, Filters.gt(\"age\", 18)).build().query();\n        assertEquals(\"SELECT * FROM users WHERE age > ?\", sql);\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/condition/JunctionTest.java",
@@ -4905,7 +4905,7 @@
       }
     ],
     "similarity": 0.079,
-    "sample_body": "public void testBetweenCondition() {\n        String sql = Dsl.PSC.select(\"*\").from(\"users\").where(Filters.between(\"age\", 18, 65)).build().query();\n\n        assertEquals(\"SELECT * FROM users WHERE age BETWEEN ? AND ?\", sql);\n    }"
+    "sample_body": "public void testBetweenCondition() {\n        String sql = PSC.select(\"*\").from(\"users\").where(Filters.between(\"age\", 18, 65)).build().query();\n\n        assertEquals(\"SELECT * FROM users WHERE age BETWEEN ? AND ?\", sql);\n    }"
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
@@ -4957,7 +4957,7 @@
       }
     ],
     "similarity": 0.069,
-    "sample_body": "public void testGroupByAsc() {\n        String sql = Dsl.PSC.select(\"category\", \"COUNT(*)\").from(\"products\").groupByAsc(\"category\").build().query();\n\n        assertEquals(\"SELECT category, COUNT(*) FROM products GROUP BY category ASC\", sql);\n\n        sql = Dsl.PSC.select(\"category\", \"brand\", \"COUNT(*)\").from(\"products\").groupByAsc(\"category\", \"brand\").build().query();\n\n        assertEquals(\"SELECT "
+    "sample_body": "public void testGroupByAsc() {\n        String sql = PSC.select(\"category\", \"COUNT(*)\").from(\"products\").groupByAsc(\"category\").build().query();\n\n        assertEquals(\"SELECT category, COUNT(*) FROM products GROUP BY category ASC\", sql);\n\n        sql = PSC.select(\"category\", \"brand\", \"COUNT(*)\").from(\"products\").groupByAsc(\"category\", \"brand\").build().query();\n\n        assertEquals(\"SELECT "
   },
   {
     "file": "src/test/java/com/landawn/abacus/query/condition/ExpressionTest.java",

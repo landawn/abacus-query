@@ -91,6 +91,12 @@ final class SubQuerySnapshot extends SubQuery {
         return parameters;
     }
 
+    /**
+     * Returns the hash code of this snapshot, combining the superclass hash code with the
+     * parameters, SQL policy, generated-placeholder flag, and the placeholder metadata collections.
+     *
+     * @return a hash code consistent with {@link #equals(Object)}
+     */
     @Override
     public int hashCode() {
         int result = super.hashCode();
@@ -103,6 +109,14 @@ final class SubQuerySnapshot extends SubQuery {
         return result;
     }
 
+    /**
+     * Compares this snapshot with another object for equality. Two snapshots are equal when the
+     * superclass state, the parameters, the SQL policy, the generated-placeholder flag, and all
+     * placeholder metadata collections are equal.
+     *
+     * @param obj the object to compare with
+     * @return {@code true} if {@code obj} is a {@code SubQuerySnapshot} with equal state, {@code false} otherwise
+     */
     @Override
     public boolean equals(final Object obj) {
         if (!super.equals(obj)) {

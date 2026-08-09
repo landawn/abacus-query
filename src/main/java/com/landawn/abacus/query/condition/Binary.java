@@ -206,6 +206,12 @@ public class Binary extends ComposableCondition {
      * Returns the property value cast to the supplied runtime type.
      * This is the type-safe companion to {@link #propValue()} when the expected value type is known.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Equal cond = new Equal("status", "active");
+     * String status = cond.propValueAs(String.class);   // "active"
+     * }</pre>
+     *
      * @param <T> the requested value type
      * @param valueType the requested value type; must not be {@code null}
      * @return the property value cast to {@code valueType}, or {@code null} when the stored value is {@code null}

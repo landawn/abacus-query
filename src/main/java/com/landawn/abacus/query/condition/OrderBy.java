@@ -131,7 +131,7 @@ public class OrderBy extends Clause {
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
     public OrderBy(final String... propNames) {
-        this(Filters.expr(AbstractCondition.createSortExpression(propNames)));
+        this(Filters.expr(AbstractCondition.createSortSpec(propNames)));
     }
 
     /**
@@ -184,7 +184,7 @@ public class OrderBy extends Clause {
      * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
      */
     public OrderBy(final String propOrColumnName, final SortDirection direction) {
-        this(Filters.expr(AbstractCondition.createSortExpression(propOrColumnName, direction)));
+        this(Filters.expr(AbstractCondition.createSortSpec(propOrColumnName, direction)));
     }
 
     /**
@@ -213,7 +213,7 @@ public class OrderBy extends Clause {
      *                                  or if {@code direction} is {@code null}
      */
     public OrderBy(final Collection<String> propNames, final SortDirection direction) {
-        this(Filters.expr(AbstractCondition.createSortExpression(propNames, direction)));
+        this(Filters.expr(AbstractCondition.createSortSpec(propNames, direction)));
     }
 
     /**
@@ -242,6 +242,6 @@ public class OrderBy extends Clause {
      *                                  or {@code null} values
      */
     public OrderBy(final Map<String, SortDirection> orders) {
-        this(Filters.expr(AbstractCondition.createSortExpression(orders)));
+        this(Filters.expr(AbstractCondition.createSortSpec(orders)));
     }
 }

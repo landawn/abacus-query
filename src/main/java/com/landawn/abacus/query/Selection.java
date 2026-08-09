@@ -57,7 +57,7 @@ import com.landawn.abacus.util.N;
  *     Selection.builder(User.class).tableAlias("u").classAlias("user")
  *         .includedPropNames(Arrays.asList("id", "name")).build(),
  *     Selection.builder(Order.class).tableAlias("o").classAlias("order").build());
- * // ... then pass to Dsl.PSC.select(selections) / selectFrom(selections)
+ * // ... then pass to PSC.select(selections) / selectFrom(selections)
  * }</pre>
  *
  * <p>The entity class is required when the builder is created, so every built instance is complete.
@@ -168,11 +168,28 @@ public final class Selection {
         return new SelectionBuilder(entityClass);
     }
 
+    /**
+     * Returns the hash code of this selection.
+     * The hash code is computed from all selection attributes: the entity class, table alias,
+     * class alias, included property names, the sub-entity-properties flag, and excluded
+     * property names.
+     *
+     * @return a hash code consistent with {@link #equals(Object)}
+     */
     @Override
     public int hashCode() {
         return Objects.hash(entityClass, tableAlias, classAlias, includedPropNames, includeSubEntityProperties, excludedPropNames);
     }
 
+    /**
+     * Compares this selection with another object for equality.
+     * Two selections are equal only when every attribute is equal: the entity class, table alias,
+     * class alias, included property names, the sub-entity-properties flag, and excluded
+     * property names.
+     *
+     * @param obj the object to compare with
+     * @return {@code true} if {@code obj} is a {@code Selection} with equal attributes, {@code false} otherwise
+     */
     @Override
     public boolean equals(final Object obj) {
         if (obj == this) {
@@ -188,6 +205,11 @@ public final class Selection {
                 && Objects.equals(includedPropNames, other.includedPropNames) && Objects.equals(excludedPropNames, other.excludedPropNames);
     }
 
+    /**
+     * Returns a string representation of this selection listing all its attributes.
+     *
+     * @return a string of the form {@code "Selection(entityClass=..., tableAlias=..., classAlias=..., ...)"}
+     */
     @Override
     public String toString() {
         return "Selection(entityClass=" + entityClass + ", tableAlias=" + tableAlias + ", classAlias=" + classAlias + ", includedPropNames=" + includedPropNames

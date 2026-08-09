@@ -191,7 +191,7 @@ public class SqlExpression extends ComposableCondition {
      */
     final String literal;
 
-    /** Lazily memoized {@link SqlParser#parse(String)} result for {@link #literal} (performance only). */
+    /** Lazily memoized {@link SqlParser#tokenize(String)} result for {@link #literal} (performance only). */
     private transient volatile List<String> cachedParsedLiteral;
 
     /**
@@ -1157,16 +1157,16 @@ public class SqlExpression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * SqlExpression.renderValue("text");                      // returns "'text'"
-     * SqlExpression.renderValue("O'Brien");                   // returns "'O\'Brien'" (single quote backslash-escaped)
-     * SqlExpression.renderValue("say \"hi\"");                // returns "'say \"hi\"'" (double quote backslash-escaped)
-     * SqlExpression.renderValue(123);                         // returns "123"
-     * SqlExpression.renderValue(45.67);                       // returns "45.67"
-     * SqlExpression.renderValue(null);                        // returns "null"
-     * SqlExpression.renderValue(true);                        // returns "true"
-     * SqlExpression.renderValue(false);                       // returns "false"
+     * SqlExpression.renderValue("text");                         // returns "'text'"
+     * SqlExpression.renderValue("O'Brien");                      // returns "'O\'Brien'" (single quote backslash-escaped)
+     * SqlExpression.renderValue("say \"hi\"");                   // returns "'say \"hi\"'" (double quote backslash-escaped)
+     * SqlExpression.renderValue(123);                            // returns "123"
+     * SqlExpression.renderValue(45.67);                          // returns "45.67"
+     * SqlExpression.renderValue(null);                           // returns "null"
+     * SqlExpression.renderValue(true);                           // returns "true"
+     * SqlExpression.renderValue(false);                          // returns "false"
      * SqlExpression.renderValue(new SqlExpression("COUNT(*)"));  // returns "COUNT(*)" (the expression's literal)
-     * SqlExpression.renderValue(Double.NaN);                  // throws IllegalArgumentException
+     * SqlExpression.renderValue(Double.NaN);                     // throws IllegalArgumentException
      * }</pre>
      *
      * @param value the value to render
@@ -1884,7 +1884,7 @@ public class SqlExpression extends ComposableCondition {
      * keyword tokens are also left unchanged when written in their canonical upper-case form
      * (for example {@code CURRENT_DATE}); a lower-case token is treated as an identifier and
      * converted. A literal that is not a single simple identifier is tokenized by
-     * {@link SqlParser#parse(String)} and reassembled from its tokens, which normalizes the text:
+     * {@link SqlParser#tokenize(String)} and reassembled from its tokens, which normalizes the text:
      * runs of whitespace collapse to a single space and SQL comments are stripped.
      *
      * <p><b>Usage Examples:</b></p>
@@ -1930,7 +1930,7 @@ public class SqlExpression extends ComposableCondition {
         List<String> words = cachedParsedLiteral;
 
         if (words == null) {
-            words = SqlParser.parse(literal);
+            words = SqlParser.tokenize(literal);
             cachedParsedLiteral = words;
         }
 
@@ -1998,7 +1998,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * new SqlExpression("price * quantity").hashCode();                            // returns "price * quantity".hashCode()
+     * new SqlExpression("price * quantity").hashCode();                               // returns "price * quantity".hashCode()
      * SqlExpression.of("a + b").hashCode() == SqlExpression.of("a + b").hashCode();   // true (same literal)
      * }</pre>
      *
@@ -2020,7 +2020,7 @@ public class SqlExpression extends ComposableCondition {
      * new SqlExpression("a + b").equals(new SqlExpression("a + b"));   // returns true (same literal)
      * SqlExpression.of("a + b").equals(SqlExpression.of("a + b"));     // returns true (cached, same instance)
      * new SqlExpression("a + b").equals(new SqlExpression("a - b"));   // returns false (different literal)
-     * new SqlExpression("a + b").equals("a + b");                   // returns false (not an SqlExpression)
+     * new SqlExpression("a + b").equals("a + b");                      // returns false (not an SqlExpression)
      * }</pre>
      *
      * @param obj the object to compare with

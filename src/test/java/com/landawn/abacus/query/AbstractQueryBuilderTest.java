@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import static com.landawn.abacus.query.Dsl.*;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
@@ -127,7 +128,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testPSCSelectFrom() {
-        String sql = Dsl.PSC.select("id", "firstName", "lastName").from(Account.class).build().query();
+        String sql = PSC.select("id", "firstName", "lastName").from(Account.class).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("SELECT"));
         assertTrue(sql.contains("FROM"));
@@ -135,7 +136,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testToSql() {
-        String sql = Dsl.PSC.select("id", "firstName").from(Account.class).where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.select("id", "firstName").from(Account.class).where(Filters.eq("id", 1)).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("SELECT"));
         assertTrue(sql.contains("WHERE"));
@@ -143,7 +144,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testBuild() {
-        AbstractQueryBuilder.SP sqlPair = Dsl.PSC.select("id").from(Account.class).where(Filters.eq("id", 1)).build();
+        AbstractQueryBuilder.SP sqlPair = PSC.select("id").from(Account.class).where(Filters.eq("id", 1)).build();
         assertNotNull(sqlPair);
         assertTrue(sqlPair.query().contains("WHERE"));
         assertEquals(1, sqlPair.parameters().size());
@@ -151,7 +152,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testBuildSnapshotsProtectedParameterBuffer() {
-        final SqlBuilder builder = Dsl.PSC.select("id").from(Account.class).where(Filters.eq("id", 1));
+        final SqlBuilder builder = PSC.select("id").from(Account.class).where(Filters.eq("id", 1));
         final AbstractQueryBuilder.SP sqlPair = builder.build();
 
         builder._parameters.add(2);
@@ -174,88 +175,88 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testEmptySelectModifierRemainsNoOpAfterModifierWasSet() {
-        final SqlBuilder builder = Dsl.PSC.select("id").distinct();
+        final SqlBuilder builder = PSC.select("id").distinct();
 
         builder.selectModifier(null).selectModifier("");
 
         assertEquals("SELECT DISTINCT id FROM users", builder.from("users").build().query());
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").distinct().selectModifier("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id").distinct().selectModifier("   "));
     }
 
     @Test
     public void testSelectModifierRejectsNonSelectBuildersWithoutChangingThem() {
-        final SqlBuilder update = Dsl.PSC.update("users");
+        final SqlBuilder update = PSC.update("users");
         assertThrows(IllegalStateException.class, () -> update.selectModifier("DISTINCT"));
         assertEquals("UPDATE users SET name = ?", update.set("name").build().query());
 
-        final SqlBuilder delete = Dsl.PSC.deleteFrom("users");
+        final SqlBuilder delete = PSC.deleteFrom("users");
         assertThrows(IllegalStateException.class, () -> delete.distinct());
         assertEquals("DELETE FROM users", delete.build().query());
     }
 
     @Test
     public void testClosedBuilderMutationApisConsistentlyThrowIllegalStateException() {
-        final SqlBuilder rawAppend = Dsl.PSC.select("id").from("users");
+        final SqlBuilder rawAppend = PSC.select("id").from("users");
         rawAppend.build();
         assertThrows(IllegalStateException.class, () -> rawAppend.append("FOR UPDATE"));
         // Lifecycle errors take precedence over argument validation after the builder is closed.
         assertThrows(IllegalStateException.class, () -> rawAppend.append((String) null));
         assertThrows(IllegalStateException.class, () -> rawAppend.append("   "));
 
-        final SqlBuilder modifier = Dsl.PSC.select("id").from("users");
+        final SqlBuilder modifier = PSC.select("id").from("users");
         modifier.build();
         assertThrows(IllegalStateException.class, () -> modifier.selectModifier("DISTINCT"));
         assertThrows(IllegalStateException.class, () -> modifier.selectModifier(null));
         assertThrows(IllegalStateException.class, () -> modifier.selectModifier(""));
 
-        final SqlBuilder condition = Dsl.PSC.select("id").from("users");
+        final SqlBuilder condition = PSC.select("id").from("users");
         condition.build();
         assertThrows(IllegalStateException.class, () -> condition.append(Filters.eq("id", 1)));
         assertThrows(IllegalStateException.class, () -> condition.appendIf(false, Filters.eq("id", 1)));
         assertThrows(IllegalStateException.class, () -> condition.appendIf(false, (Condition) null));
         assertThrows(IllegalStateException.class, () -> condition.appendIf(true, (Condition) null));
 
-        final SqlBuilder pagination = Dsl.PSC.select("id").from("users");
+        final SqlBuilder pagination = PSC.select("id").from("users");
         pagination.build();
         assertThrows(IllegalStateException.class, () -> pagination.limit(-1));
         assertThrows(IllegalStateException.class, () -> pagination.limit(10));
 
-        final SqlBuilder setOperation = Dsl.PSC.select("id").from("users");
+        final SqlBuilder setOperation = PSC.select("id").from("users");
         setOperation.build();
         assertThrows(IllegalStateException.class, () -> setOperation.union("SELECT id FROM archived_users"));
     }
 
     @Test
     public void testRejectedEntityOverloadsPreserveExistingMappingState() {
-        final SqlBuilder query = Dsl.PSC.select("id").from(Account.class);
+        final SqlBuilder query = PSC.select("id").from(Account.class);
         assertSame(Account.class, query._entityClass);
         assertThrows(IllegalStateException.class, () -> query.from(String.class, "s"));
         assertSame(Account.class, query._entityClass);
         assertEquals("SELECT acc.id AS \"id\" FROM account acc", query.build().query());
 
-        final SqlBuilder update = Dsl.PSC.update("users", Account.class);
+        final SqlBuilder update = PSC.update("users", Account.class);
         assertSame(Account.class, update._entityClass);
         assertThrows(IllegalStateException.class, () -> update.into(String.class));
         assertSame(Account.class, update._entityClass);
         assertEquals("UPDATE users SET first_name = ?", update.set("firstName").build().query());
 
-        final SqlBuilder joined = Dsl.PSC.select("id").from("users");
+        final SqlBuilder joined = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> joined.join((Class<?>) null, "n"));
         assertEquals("SELECT id FROM users", joined.build().query());
     }
 
     @Test
     public void testSetApisRejectNonUpdateBuildersWithoutCorruptingThem() {
-        final SqlBuilder query = Dsl.PSC.select("id").from("users");
+        final SqlBuilder query = PSC.select("id").from("users");
         assertThrows(IllegalStateException.class, () -> query.set("name"));
         assertEquals("SELECT id FROM users", query.build().query());
 
-        final SqlBuilder delete = Dsl.PSC.deleteFrom("users");
+        final SqlBuilder delete = PSC.deleteFrom("users");
         assertThrows(IllegalStateException.class, () -> delete.set(Collections.singletonMap("name", "x")));
         assertEquals("DELETE FROM users", delete.build().query());
 
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").set(Account.class));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("users").set((Class<?>) null));
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("users").set(Account.class));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("users").set((Class<?>) null));
     }
 
     @Test
@@ -275,32 +276,32 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testLazyDmlInitializationPrecedesClauseReservation() {
-        final SqlBuilder incompleteUpdate = Dsl.PSC.update("users");
+        final SqlBuilder incompleteUpdate = PSC.update("users");
         assertThrows(IllegalStateException.class, () -> incompleteUpdate.where("id = 1"));
         assertEquals("UPDATE users SET name = ? WHERE id = 1", incompleteUpdate.set("name").where("id = 1").build().query());
 
-        assertEquals("DELETE FROM users ORDER BY id LIMIT 1", Dsl.PSC.deleteFrom("users").orderBy("id").limit(1).build().query());
+        assertEquals("DELETE FROM users ORDER BY id LIMIT 1", PSC.deleteFrom("users").orderBy("id").limit(1).build().query());
 
-        final SqlBuilder insert = Dsl.PSC.insert("name").into("users");
+        final SqlBuilder insert = PSC.insert("name").into("users");
         assertThrows(IllegalStateException.class, () -> insert.where("id = 1"));
         assertEquals("INSERT INTO users (name) VALUES (?)", insert.build().query());
     }
 
     @Test
     public void testOperationSpecificClausesRejectInvalidDmlWithoutChangingTheBuilder() {
-        final SqlBuilder update = Dsl.PSC.update("users");
+        final SqlBuilder update = PSC.update("users");
         assertThrows(IllegalStateException.class, () -> update.groupBy("id"));
         assertEquals("UPDATE users SET name = ?", update.set("name").build().query());
 
-        final SqlBuilder deleteWithHaving = Dsl.PSC.deleteFrom("users");
+        final SqlBuilder deleteWithHaving = PSC.deleteFrom("users");
         assertThrows(IllegalStateException.class, () -> deleteWithHaving.having("COUNT(*) > 0"));
         assertEquals("DELETE FROM users", deleteWithHaving.build().query());
 
-        final SqlBuilder deleteWithOffset = Dsl.PSC.deleteFrom("users");
+        final SqlBuilder deleteWithOffset = PSC.deleteFrom("users");
         assertThrows(IllegalStateException.class, () -> deleteWithOffset.offset(1));
         assertEquals("DELETE FROM users", deleteWithOffset.build().query());
 
-        final Dsl sqlServerDsl = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+        final Dsl sqlServerDsl = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
         final SqlBuilder sqlServerUpdate = sqlServerDsl.update("users");
         assertThrows(IllegalStateException.class, () -> sqlServerUpdate.limit(1));
         assertEquals("UPDATE users SET name = ?", sqlServerUpdate.set("name").build().query());
@@ -308,7 +309,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testSqlServerPaginationRequiresOrderByAndUsesValidOffsetFetchGrammar() {
-        final Dsl sqlServerDsl = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+        final Dsl sqlServerDsl = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
 
         final SqlBuilder countOnly = sqlServerDsl.select("id").from("users");
         assertThrows(IllegalStateException.class, () -> countOnly.limit(10));
@@ -339,20 +340,20 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY",
                 unresolvedFetch.orderBy("id").append(new Limit("FETCH FIRST ? ROWS ONLY")).build().query());
 
-        final Dsl oracleDsl = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Oracle")).build());
+        final Dsl oracleDsl = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Oracle")).build());
         assertEquals("SELECT id FROM users FETCH FIRST 2 ROWS ONLY", oracleDsl.select("id").from("users").limit(2).build().query());
 
-        final Dsl db2Dsl = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("DB2")).build());
+        final Dsl db2Dsl = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("DB2")).build());
         assertEquals("SELECT id FROM users FETCH FIRST 2 ROWS ONLY", db2Dsl.select("id").from("users").limit(2).build().query());
     }
 
     @Test
     public void testStructuredClauseRenderingFailuresAreAtomic() {
-        final SqlBuilder grouped = Dsl.PSC.select("id").from("users");
+        final SqlBuilder grouped = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> grouped.groupBy("id -- unsafe"));
         assertEquals("SELECT id FROM users GROUP BY id", grouped.groupBy("id").build().query());
 
-        final SqlBuilder ordered = Dsl.PSC.select("id").from("users");
+        final SqlBuilder ordered = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> ordered.orderBy("id", "name /* unsafe */"));
         assertEquals("SELECT id FROM users ORDER BY id", ordered.orderBy("id").build().query());
 
@@ -373,30 +374,30 @@ public class AbstractQueryBuilderTest extends TestBase {
             }
         };
 
-        final SqlBuilder filtered = Dsl.PSC.select("id").from("users");
+        final SqlBuilder filtered = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> filtered.where(unsupported));
         assertEquals("SELECT id FROM users WHERE id = 1", filtered.where("id = 1").build().query());
 
-        final SqlBuilder joined = Dsl.PSC.select("u.id").from("users u").join("accounts a");
+        final SqlBuilder joined = PSC.select("u.id").from("users u").join("accounts a");
         assertThrows(IllegalArgumentException.class, () -> joined.using(Arrays.asList("id", "tenant_id -- unsafe")));
         assertEquals("SELECT u.id FROM users u JOIN accounts a USING (id)", joined.using("id").build().query());
 
-        final SqlBuilder joinedWithCondition = Dsl.PSC.select("u.id").from("users u").join("accounts a");
+        final SqlBuilder joinedWithCondition = PSC.select("u.id").from("users u").join("accounts a");
         assertThrows(IllegalArgumentException.class, () -> joinedWithCondition.on(unsupported));
         assertEquals("SELECT u.id FROM users u JOIN accounts a ON u.id = a.id", joinedWithCondition.on("u.id = a.id").build().query());
     }
 
     @Test
     public void testSetRenderingFailuresAndLateSetCallsAreAtomic() {
-        final SqlBuilder partialSet = Dsl.PSC.update("users");
+        final SqlBuilder partialSet = PSC.update("users");
         assertThrows(IllegalArgumentException.class, () -> partialSet.set(Arrays.asList("name", "age -- unsafe")));
         assertEquals("UPDATE users SET name = ?", partialSet.set("name").build().query());
 
-        final SqlBuilder lateSet = Dsl.PSC.update("users").set("name").where("id = 1");
+        final SqlBuilder lateSet = PSC.update("users").set("name").where("id = 1");
         assertThrows(IllegalStateException.class, () -> lateSet.set("age"));
         assertEquals("UPDATE users SET name = ? WHERE id = 1", lateSet.build().query());
 
-        final Dsl sqlServerDsl = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+        final Dsl sqlServerDsl = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
         final SqlBuilder stagedUpdate = sqlServerDsl.update(Account.class);
         final Collection<String> stagedPropNames = stagedUpdate._propOrColumnNames;
         assertThrows(IllegalArgumentException.class, () -> stagedUpdate.where("#stage.id /* unsafe */ = 1"));
@@ -406,7 +407,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testEntitySetGetterAndRendererFailuresRestoreAllBuilderMetadata() {
-        final SqlBuilder getterFailure = Dsl.PSC.update("users");
+        final SqlBuilder getterFailure = PSC.update("users");
         final Class<?> initialGetterEntityClass = getterFailure._entityClass;
         final Object initialGetterEntityInfo = getterFailure._entityInfo;
         final Object initialGetterColumnMap = getterFailure._propColumnNameMap;
@@ -417,7 +418,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals("UPDATE users SET value = ?", getterFailure.set(Collections.singletonMap("value", "ok")).build().query());
 
         final boolean[] failFirstRender = { true };
-        final Dsl throwingNamedDsl = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+        final Dsl throwingNamedDsl = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
             if (failFirstRender[0]) {
                 failFirstRender[0] = false;
                 throw new IllegalStateException("named renderer failed");
@@ -444,7 +445,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         // A comment-token column is rejected while the INSERT text is being emitted; the failed into()
         // must not leave a partial "INSERT INTO account (first_name, " behind nor keep _tableName set,
         // otherwise a later build() would silently return the truncated statement.
-        final SqlBuilder unsafeInsert = Dsl.PSC.insert("firstName", "bad--name");
+        final SqlBuilder unsafeInsert = PSC.insert("firstName", "bad--name");
         assertThrows(IllegalArgumentException.class, () -> unsafeInsert.into("account"));
         assertNull(unsafeInsert._tableName);
         assertEquals(0, unsafeInsert._sb.length());
@@ -453,7 +454,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         // The NAMED_SQL VALUES path also mutates the named-parameter registries; a failed render must
         // restore them so a retried into() behaves as if the first call never happened.
         final boolean[] failFirstRender = { true };
-        final Dsl throwingNamedDsl = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+        final Dsl throwingNamedDsl = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
             if (failFirstRender[0]) {
                 failFirstRender[0] = false;
                 throw new IllegalStateException("named renderer failed");
@@ -472,7 +473,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         // Entity-aware overloads used to install their mapping before opening the rendering
         // transaction, so a rejected column left metadata from a failed into(...) attempt behind.
-        final SqlBuilder entityInsert = Dsl.PSC.insert("bad--name");
+        final SqlBuilder entityInsert = PSC.insert("bad--name");
         assertThrows(IllegalArgumentException.class, () -> entityInsert.into("account", Account.class));
         assertNull(entityInsert._entityClass);
         assertNull(entityInsert._entityInfo);
@@ -480,7 +481,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertNull(entityInsert._tableName);
         assertEquals(0, entityInsert._sb.length());
 
-        final SqlBuilder classEntityInsert = Dsl.PSC.insert("bad--name");
+        final SqlBuilder classEntityInsert = PSC.insert("bad--name");
         assertThrows(IllegalArgumentException.class, () -> classEntityInsert.into(Account.class));
         assertNull(classEntityInsert._entityClass);
         assertNull(classEntityInsert._entityInfo);
@@ -493,7 +494,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testFromRenderingFailuresAreAtomic() {
         // Rendering the staged select list is part of from(); a rejected column must roll back the
         // emitted SELECT prefix so a retried from() cannot emit a second "SELECT ..." fragment.
-        final SqlBuilder unsafeSelect = Dsl.PSC.select("name", "a--b");
+        final SqlBuilder unsafeSelect = PSC.select("name", "a--b");
         assertThrows(IllegalArgumentException.class, () -> unsafeSelect.from("t"));
         assertEquals(0, unsafeSelect._sb.length());
         assertFalse(unsafeSelect._hasFromBeenSet);
@@ -506,7 +507,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         // The entity association is part of from(...), so it must be rolled back along with the SQL
         // when rendering a staged select expression fails.
-        final SqlBuilder entitySelect = Dsl.PSC.select("bad--name");
+        final SqlBuilder entitySelect = PSC.select("bad--name");
         assertThrows(IllegalArgumentException.class, () -> entitySelect.from("account", Account.class));
         assertNull(entitySelect._entityClass);
         assertNull(entitySelect._entityInfo);
@@ -515,7 +516,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertFalse(entitySelect._hasFromBeenSet);
         assertEquals(0, entitySelect._sb.length());
 
-        final SqlBuilder classEntitySelect = Dsl.PSC.select("bad--name");
+        final SqlBuilder classEntitySelect = PSC.select("bad--name");
         assertThrows(IllegalArgumentException.class, () -> classEntitySelect.from(Account.class, "acc"));
         assertNull(classEntitySelect._entityClass);
         assertNull(classEntitySelect._entityInfo);
@@ -524,7 +525,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertFalse(classEntitySelect._hasFromBeenSet);
         assertEquals(0, classEntitySelect._sb.length());
 
-        final SqlBuilder collectionEntitySelect = Dsl.PSC.select("bad--name");
+        final SqlBuilder collectionEntitySelect = PSC.select("bad--name");
         assertThrows(IllegalArgumentException.class, () -> collectionEntitySelect.from(Account.class, Collections.singletonList("account")));
         assertNull(collectionEntitySelect._entityClass);
         assertNull(collectionEntitySelect._entityInfo);
@@ -536,67 +537,67 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testJoinApisRequireFromAndPrecedeLaterClauses() {
-        final SqlBuilder stagedSelect = Dsl.PSC.select("id");
+        final SqlBuilder stagedSelect = PSC.select("id");
         assertThrows(IllegalStateException.class, () -> stagedSelect.join("orders"));
         assertEquals("SELECT id FROM users", stagedSelect.from("users").build().query());
 
-        final SqlBuilder filteredSelect = Dsl.PSC.select("id").from("users").where(Filters.eq("active", true));
+        final SqlBuilder filteredSelect = PSC.select("id").from("users").where(Filters.eq("active", true));
         assertThrows(IllegalStateException.class, () -> filteredSelect.leftJoin("orders"));
         assertEquals("SELECT id FROM users WHERE active = ?", filteredSelect.build().query());
 
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.update("users").join("orders"));
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").orderBy("id").innerJoin(Account.class));
+        assertThrows(IllegalStateException.class, () -> PSC.update("users").join("orders"));
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("users").orderBy("id").innerJoin(Account.class));
     }
 
     @Test
     public void testStandaloneClausesRequireFromAndPreserveSqlClauseOrder() {
-        final SqlBuilder stagedSelect = Dsl.PSC.select("id");
+        final SqlBuilder stagedSelect = PSC.select("id");
         assertThrows(IllegalStateException.class, () -> stagedSelect.where("active = 1"));
         assertEquals("SELECT id FROM users WHERE active = 1", stagedSelect.from("users").where("active = 1").build().query());
 
-        final SqlBuilder ordered = Dsl.PSC.select("id").from("users").orderBy("id");
+        final SqlBuilder ordered = PSC.select("id").from("users").orderBy("id");
         assertThrows(IllegalStateException.class, () -> ordered.where("active = 1"));
         assertEquals("SELECT id FROM users ORDER BY id", ordered.build().query());
 
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").groupBy("id"));
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").having("COUNT(*) > 0").groupBy("id"));
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").orderBy("id").having("COUNT(*) > 0"));
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").limit(5).orderBy("id"));
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").forUpdate().limit(5));
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").forUpdate().fetchFirstRows(5));
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.update("users").set("active = true").forUpdate());
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").groupBy("id"));
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("users").having("COUNT(*) > 0").groupBy("id"));
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("users").orderBy("id").having("COUNT(*) > 0"));
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("users").limit(5).orderBy("id"));
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("users").forUpdate().limit(5));
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("users").forUpdate().fetchFirstRows(5));
+        assertThrows(IllegalStateException.class, () -> PSC.update("users").set("active = true").forUpdate());
 
         // Pagination before the terminal locking clause is valid for the supported LIMIT-style syntax.
-        assertEquals("SELECT id FROM users LIMIT 5 FOR UPDATE", Dsl.PSC.select("id").from("users").limit(5).forUpdate().build().query());
+        assertEquals("SELECT id FROM users LIMIT 5 FOR UPDATE", PSC.select("id").from("users").limit(5).forUpdate().build().query());
     }
 
     @Test
     public void testTopLevelTableAliasDetectionIgnoresNonAliasSyntaxAndTrailingComments() {
-        final SqlBuilder tableFunction = Dsl.PSC.select("firstName").from("unnest (items)", Account.class);
+        final SqlBuilder tableFunction = PSC.select("firstName").from("unnest (items)", Account.class);
         assertNull(tableFunction._tableAlias);
         assertFalse(tableFunction.build().query().contains("(items).first_name"));
 
-        final SqlBuilder spacedQualification = Dsl.PSC.select("firstName").from("catalog . account", Account.class);
+        final SqlBuilder spacedQualification = PSC.select("firstName").from("catalog . account", Account.class);
         assertNull(spacedQualification._tableAlias);
         assertFalse(spacedQualification.build().query().contains("account.first_name"));
 
-        final SqlBuilder tableHint = Dsl.PSC.select("firstName").from("account WITH (NOLOCK)", Account.class);
+        final SqlBuilder tableHint = PSC.select("firstName").from("account WITH (NOLOCK)", Account.class);
         assertNull(tableHint._tableAlias);
         assertFalse(tableHint.build().query().contains("(NOLOCK).first_name"));
 
-        final SqlBuilder implicitAlias = Dsl.PSC.select("firstName").from("account a /* shard hint */", Account.class);
+        final SqlBuilder implicitAlias = PSC.select("firstName").from("account a /* shard hint */", Account.class);
         assertEquals("a", implicitAlias._tableAlias);
         final String implicitSql = implicitAlias.build().query();
         assertTrue(implicitSql.contains("a.first_name"));
         assertTrue(implicitSql.endsWith("FROM account a /* shard hint */"));
 
-        final SqlBuilder explicitAlias = Dsl.PSC.select("firstName").from("account AS a /* shard hint */", Account.class);
+        final SqlBuilder explicitAlias = PSC.select("firstName").from("account AS a /* shard hint */", Account.class);
         assertEquals("a", explicitAlias._tableAlias);
         final String explicitSql = explicitAlias.build().query();
         assertTrue(explicitSql.contains("a.first_name"));
         assertTrue(explicitSql.endsWith("FROM account AS a /* shard hint */"));
 
-        final SqlBuilder temporalAlias = Dsl.PSC.select("firstName").from("account FOR SYSTEM_TIME AS OF '2026-01-01' AS a", Account.class);
+        final SqlBuilder temporalAlias = PSC.select("firstName").from("account FOR SYSTEM_TIME AS OF '2026-01-01' AS a", Account.class);
         assertEquals("a", temporalAlias._tableAlias);
         assertTrue(temporalAlias.build().query().contains("a.first_name"));
     }
@@ -606,142 +607,142 @@ public class AbstractQueryBuilderTest extends TestBase {
         // A backslash before the closing quote of a double-quoted or backtick-quoted identifier does NOT
         // escape that quote (backslash escaping applies only inside single-quoted string literals), so the
         // identifier ends at that quote and the trailing token is a real top-level table alias.
-        final SqlBuilder doubleQuoted = Dsl.PSC.select("firstName").from("\"a\\\" t", Account.class);
+        final SqlBuilder doubleQuoted = PSC.select("firstName").from("\"a\\\" t", Account.class);
         assertEquals("t", doubleQuoted._tableAlias);
         final String doubleQuotedSql = doubleQuoted.build().query();
         assertTrue(doubleQuotedSql.contains("t.first_name"), doubleQuotedSql);
         assertTrue(doubleQuotedSql.endsWith("FROM \"a\\\" t"), doubleQuotedSql);
 
-        final SqlBuilder backtickQuoted = Dsl.PSC.select("firstName").from("`a\\` t", Account.class);
+        final SqlBuilder backtickQuoted = PSC.select("firstName").from("`a\\` t", Account.class);
         assertEquals("t", backtickQuoted._tableAlias);
         assertTrue(backtickQuoted.build().query().contains("t.first_name"));
     }
 
     @Test
     public void testOnAndUsingRequireCompatibleUnconnectedJoin() {
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").on("users.id = orders.user_id"));
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").using("id"));
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").crossJoin("orders").on("users.id = orders.user_id"));
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("users").naturalJoin("orders").using("id"));
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("users").on("users.id = orders.user_id"));
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("users").using("id"));
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("users").crossJoin("orders").on("users.id = orders.user_id"));
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("users").naturalJoin("orders").using("id"));
 
-        final SqlBuilder joined = Dsl.PSC.select("id").from("users").join("orders").on("users.id = orders.user_id");
+        final SqlBuilder joined = PSC.select("id").from("users").join("orders").on("users.id = orders.user_id");
         assertThrows(IllegalStateException.class, () -> joined.using("id"));
         assertEquals("SELECT id FROM users JOIN orders ON users.id = orders.user_id", joined.build().query());
     }
 
     @Test
     public void testRawJoinWithInlineConnectorClosesConnectorSlot() {
-        final SqlBuilder inlineOn = Dsl.PSC.select("*").from("users u").join("orders o ON u.id = o.user_id");
+        final SqlBuilder inlineOn = PSC.select("*").from("users u").join("orders o ON u.id = o.user_id");
         assertThrows(IllegalStateException.class, () -> inlineOn.on("o.active = 1"));
         assertThrows(IllegalStateException.class, () -> inlineOn.using("id"));
         assertEquals("SELECT * FROM users u JOIN orders o ON u.id = o.user_id", inlineOn.build().query());
 
-        final SqlBuilder inlineUsing = Dsl.PSC.select("*").from("users u").leftJoin("orders o USING (user_id)");
+        final SqlBuilder inlineUsing = PSC.select("*").from("users u").leftJoin("orders o USING (user_id)");
         assertThrows(IllegalStateException.class, () -> inlineUsing.on("u.id = o.user_id"));
         assertEquals("SELECT * FROM users u LEFT JOIN orders o USING (user_id)", inlineUsing.build().query());
 
         final String nestedJoin = "(SELECT o.id FROM orders o JOIN order_items i ON o.id = i.order_id WHERE o.note = 'USING') nested /* ON USING */";
         assertEquals("SELECT * FROM users u JOIN " + nestedJoin + " ON u.id = nested.id",
-                Dsl.PSC.select("*").from("users u").join(nestedJoin).on("u.id = nested.id").build().query());
+                PSC.select("*").from("users u").join(nestedJoin).on("u.id = nested.id").build().query());
 
         assertEquals("SELECT * FROM users u INNER JOIN orders \"ON\" ON u.id = \"ON\".user_id",
-                Dsl.PSC.select("*").from("users u").innerJoin("orders \"ON\"").on("u.id = \"ON\".user_id").build().query());
+                PSC.select("*").from("users u").innerJoin("orders \"ON\"").on("u.id = \"ON\".user_id").build().query());
     }
 
     @Test
     public void testPSCWithWhere() {
-        String sql = Dsl.PSC.select("id", "firstName").from(Account.class).where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.select("id", "firstName").from(Account.class).where(Filters.eq("id", 1)).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("WHERE"));
     }
 
     @Test
     public void testPSCWithMultipleConditions() {
-        String sql = Dsl.PSC.select("*").from(Account.class).where(Filters.eq("status", "active").and(Filters.gt("age", 18))).build().query();
+        String sql = PSC.select("*").from(Account.class).where(Filters.eq("status", "active").and(Filters.gt("age", 18))).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("AND"));
     }
 
     @Test
     public void testPSCWithOrderBy() {
-        String sql = Dsl.PSC.select("*").from(Account.class).orderBy("firstName").build().query();
+        String sql = PSC.select("*").from(Account.class).orderBy("firstName").build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("ORDER BY"));
     }
 
     @Test
     public void testPSCWithLimit() {
-        String sql = Dsl.PSC.select("*").from(Account.class).limit(10).build().query();
+        String sql = PSC.select("*").from(Account.class).limit(10).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("LIMIT"));
     }
 
     @Test
     public void testPSCWithJoin() {
-        String sql = Dsl.PSC.select("*").from("users").join("orders").on("users.id = orders.user_id").build().query();
+        String sql = PSC.select("*").from("users").join("orders").on("users.id = orders.user_id").build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("JOIN"));
     }
 
     @Test
     public void testPSCWithLeftJoin() {
-        String sql = Dsl.PSC.select("*").from("users").leftJoin("orders").on("users.id = orders.user_id").build().query();
+        String sql = PSC.select("*").from("users").leftJoin("orders").on("users.id = orders.user_id").build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("LEFT JOIN"));
     }
 
     @Test
     public void testPSCWithInnerJoin() {
-        String sql = Dsl.PSC.select("*").from("users").innerJoin("orders").on("users.id = orders.user_id").build().query();
+        String sql = PSC.select("*").from("users").innerJoin("orders").on("users.id = orders.user_id").build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("INNER JOIN"));
     }
 
     @Test
     public void testPSCWithRightJoin() {
-        String sql = Dsl.PSC.select("*").from("users").rightJoin("orders").on("users.id = orders.user_id").build().query();
+        String sql = PSC.select("*").from("users").rightJoin("orders").on("users.id = orders.user_id").build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("RIGHT JOIN"));
     }
 
     @Test
     public void testPSCWithFullJoin() {
-        String sql = Dsl.PSC.select("*").from("users").fullJoin("departments").on("users.dept_id = departments.id").build().query();
+        String sql = PSC.select("*").from("users").fullJoin("departments").on("users.dept_id = departments.id").build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("FULL JOIN"));
     }
 
     @Test
     public void testPSCWithCrossJoin() {
-        String sql = Dsl.PSC.select("*").from("users").crossJoin("roles").build().query();
+        String sql = PSC.select("*").from("users").crossJoin("roles").build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("CROSS JOIN"));
     }
 
     @Test
     public void testPSCWithGroupBy() {
-        String sql = Dsl.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").build().query();
+        String sql = PSC.select("department", "COUNT(*)").from("employees").groupBy("department").build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("GROUP BY"));
     }
 
     @Test
     public void testPSCWithHaving() {
-        String sql = Dsl.PSC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).build().query();
+        String sql = PSC.select("department", "COUNT(*)").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("HAVING"));
     }
 
     @Test
     public void testPSCWithDistinct() {
-        String sql = Dsl.PSC.select("status").from(Account.class).distinct().build().query();
+        String sql = PSC.select("status").from(Account.class).distinct().build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("DISTINCT"));
     }
 
     @Test
     public void testPSCComplexQuery() {
-        String sql = Dsl.PSC.select("u.id", "u.firstName", "COUNT(o.id) as order_count")
+        String sql = PSC.select("u.id", "u.firstName", "COUNT(o.id) as order_count")
                 .from("users u")
                 .leftJoin("orders o")
                 .on("u.id = o.user_id")
@@ -764,14 +765,14 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testInsertInto() {
-        String sql = Dsl.PSC.insertInto(Account.class).build().query();
+        String sql = PSC.insertInto(Account.class).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("INSERT INTO"));
     }
 
     @Test
     public void testUpdate() {
-        String sql = Dsl.PSC.update(Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.update(Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("UPDATE"));
         assertTrue(sql.contains("SET"));
@@ -779,41 +780,41 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testDeleteFrom() {
-        String sql = Dsl.PSC.deleteFrom(Account.class).where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.deleteFrom(Account.class).where(Filters.eq("id", 1)).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("DELETE FROM"));
     }
 
     @Test
     public void testSelectWithAlias() {
-        String sql = Dsl.PSC.select("firstName AS fname", "lastName AS lname").from(Account.class).build().query();
+        String sql = PSC.select("firstName AS fname", "lastName AS lname").from(Account.class).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("AS"));
     }
 
     @Test
     public void testSelectWithMultipleTables() {
-        String sql = Dsl.PSC.select("*").from("users", "orders").build().query();
+        String sql = PSC.select("*").from("users", "orders").build().query();
         assertNotNull(sql);
     }
 
     @Test
     public void testWhereWithOr() {
-        String sql = Dsl.PSC.select("*").from(Account.class).where(Filters.eq("status", "active").or(Filters.eq("status", "pending"))).build().query();
+        String sql = PSC.select("*").from(Account.class).where(Filters.eq("status", "active").or(Filters.eq("status", "pending"))).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("OR"));
     }
 
     @Test
     public void testMultipleOrderBy() {
-        String sql = Dsl.PSC.select("*").from(Account.class).orderBy("lastName", "firstName").build().query();
+        String sql = PSC.select("*").from(Account.class).orderBy("lastName", "firstName").build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("ORDER BY"));
     }
 
     @Test
     public void testOrderByRejectsCommentToken() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy("id--").build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").orderBy("id--").build().query());
     }
 
     @Test
@@ -860,11 +861,11 @@ public class AbstractQueryBuilderTest extends TestBase {
         // A backslash before the closing quote of a double-quoted or backtick-quoted identifier does NOT escape
         // that quote (backslash escaping applies only inside single-quoted string literals), so the closing quote
         // terminates the identifier and the trailing "--" is a real SQL comment token that must be rejected.
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").join("orders").using("\"a\\\" -- x"));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").join("orders").using("`a\\` -- x"));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").join("orders").using("\"a\\\" -- x"));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").join("orders").using("`a\\` -- x"));
 
         // A comment-like token that is genuinely inside a quoted identifier is still allowed.
-        final String sql = Dsl.PSC.select("*").from("users").join("orders").using("\"a--b\"").build().query();
+        final String sql = PSC.select("*").from("users").join("orders").using("\"a--b\"").build().query();
         assertTrue(sql.contains("a--b"));
     }
 
@@ -874,95 +875,95 @@ public class AbstractQueryBuilderTest extends TestBase {
         // quote closes the string and a trailing comment token (-- or /* */) must be rejected.
         // Regression: the scanner previously misread "\''" as a doubled-quote ('') escape and stayed "inside"
         // the string, hiding the trailing comment token from the guard.
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("note = '\\'' -- x").from("docs").build().query());
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("note = '\\'' /* x */").from("docs").build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("note = '\\'' -- x").from("docs").build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("note = '\\'' /* x */").from("docs").build().query());
 
         // The backslash-escaped-quote literal on its own (no trailing comment) is still accepted.
-        final String okSql = Dsl.PSC.select("note = '\\''").from("docs").build().query();
+        final String okSql = PSC.select("note = '\\''").from("docs").build().query();
         assertNotNull(okSql);
     }
 
     @Test
     public void testOrderByRejectsEmptyInputs() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy().build().query());
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy(Collections.emptyList()).build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").orderBy().build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").orderBy(Collections.emptyList()).build().query());
     }
 
     @Test
     public void testOrderByAsc() {
-        String sql = Dsl.PSC.select("*").from(Account.class).orderBy("firstName", SortDirection.ASC).build().query();
+        String sql = PSC.select("*").from(Account.class).orderBy("firstName", SortDirection.ASC).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("ORDER BY"));
     }
 
     @Test
     public void testOrderByDesc() {
-        String sql = Dsl.PSC.select("*").from(Account.class).orderBy("createdTime", SortDirection.DESC).build().query();
+        String sql = PSC.select("*").from(Account.class).orderBy("createdTime", SortDirection.DESC).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("ORDER BY"));
     }
 
     @Test
     public void testLimitWithOffset() {
-        String sql = Dsl.PSC.select("*").from(Account.class).limit(20, 10).build().query();
+        String sql = PSC.select("*").from(Account.class).limit(20, 10).build().query();
         assertNotNull(sql);
     }
 
     @Test
     public void testFromWithEntityClass() {
-        String sql = Dsl.PSC.select("*").from(Account.class).build().query();
+        String sql = PSC.select("*").from(Account.class).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("FROM"));
     }
 
     @Test
     public void testJoinWithEntityClass() {
-        String sql = Dsl.PSC.select("*").from(Account.class).join(Account.class).on("a.id = b.parent_id").build().query();
+        String sql = PSC.select("*").from(Account.class).join(Account.class).on("a.id = b.parent_id").build().query();
         assertNotNull(sql);
     }
 
     @Test
     public void testIntoWithTableName() {
-        String sql = Dsl.PSC.insert("id", "name").into("accounts").build().query();
+        String sql = PSC.insert("id", "name").into("accounts").build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("INSERT INTO"));
     }
 
     @Test
     public void testIntoRejectsEmptyTableName() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert("id").into("").build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert("id").into("").build().query());
     }
 
     @Test
     public void testUpdateWithSet() {
-        String sql = Dsl.PSC.update("accounts").set("status", "inactive", "updated_at", SqlExpression.of("NOW()")).where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.update("accounts").set("status", "inactive", "updated_at", SqlExpression.of("NOW()")).where(Filters.eq("id", 1)).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("SET"));
     }
 
     @Test
     public void testDeleteFromWithTable() {
-        String sql = Dsl.PSC.deleteFrom("accounts").where(Filters.eq("status", "deleted")).build().query();
+        String sql = PSC.deleteFrom("accounts").where(Filters.eq("status", "deleted")).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("DELETE FROM"));
     }
 
     @Test
     public void testSelectCount() {
-        String sql = Dsl.PSC.select(AbstractQueryBuilder.COUNT_ALL).from(Account.class).build().query();
+        String sql = PSC.select(AbstractQueryBuilder.COUNT_ALL).from(Account.class).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("count(*)"));
     }
 
     @Test
     public void testSelectAll() {
-        String sql = Dsl.PSC.select(AbstractQueryBuilder.ALL).from(Account.class).build().query();
+        String sql = PSC.select(AbstractQueryBuilder.ALL).from(Account.class).build().query();
         assertNotNull(sql);
     }
 
     @Test
     public void testChainedAndOr() {
-        String sql = Dsl.PSC.select("*")
+        String sql = PSC.select("*")
                 .from(Account.class)
                 .where(Filters.eq("status", "active").and(Filters.gt("age", 18)).or(Filters.eq("role", "admin")))
                 .build()
@@ -974,7 +975,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testMultipleJoins() {
-        String sql = Dsl.PSC.select("*")
+        String sql = PSC.select("*")
                 .from("users u")
                 .innerJoin("orders o")
                 .on("u.id = o.user_id")
@@ -989,44 +990,44 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testLimitWithOffsetRejectsSecondOffset() {
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("*").from("users").limit(10, 5).offset(2));
+        assertThrows(IllegalStateException.class, () -> PSC.select("*").from("users").limit(10, 5).offset(2));
     }
 
     @Test
     public void testAppendLimitConditionWithExpression() {
-        String sql = Dsl.PSC.select("*").from("users").append(new Limit("10 OFFSET 20")).build().query();
+        String sql = PSC.select("*").from("users").append(new Limit("10 OFFSET 20")).build().query();
         assertTrue(sql.endsWith("LIMIT 10 OFFSET 20"));
     }
 
     @Test
     public void testAppendConditionAfterWhereThrowsDuplicateWhere() {
         assertThrows(IllegalStateException.class,
-                () -> Dsl.PSC.select("*").from("users").where(Filters.eq("id", 1)).append(Filters.eq("name", "Alice")).build().query());
+                () -> PSC.select("*").from("users").where(Filters.eq("id", 1)).append(Filters.eq("name", "Alice")).build().query());
     }
 
     @Test
     public void testAppendWhereClauseAfterWhereThrows() {
         assertThrows(IllegalStateException.class,
-                () -> Dsl.PSC.select("*").from("users").where(Filters.eq("id", 1)).append(Filters.where(Filters.eq("name", "Alice"))).build().query());
+                () -> PSC.select("*").from("users").where(Filters.eq("id", 1)).append(Filters.where(Filters.eq("name", "Alice"))).build().query());
     }
 
     @Test
     public void testAppendCriteriaAfterWhereThrowsWhenCriteriaHasWhere() {
         Criteria criteria = Criteria.builder().where(Filters.eq("name", "Alice")).build();
 
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("*").from("users").where(Filters.eq("id", 1)).append(criteria).build().query());
+        assertThrows(IllegalStateException.class, () -> PSC.select("*").from("users").where(Filters.eq("id", 1)).append(criteria).build().query());
     }
 
     @Test
     public void testAppendCriteriaPreflightsJoinAndSetOperationPlacement() {
         final Criteria joinCriteria = Criteria.builder().join("orders", Filters.expr("users.id = orders.user_id")).build();
-        final SqlBuilder filtered = Dsl.PSC.select("id").from("users").where(Filters.eq("active", true));
+        final SqlBuilder filtered = PSC.select("id").from("users").where(Filters.eq("active", true));
 
         assertThrows(IllegalStateException.class, () -> filtered.append(joinCriteria));
         assertEquals("SELECT id FROM users WHERE active = ?", filtered.build().query());
 
         final Criteria unionCriteria = Criteria.builder().union(Filters.subQuery("SELECT id FROM archived_users")).build();
-        final SqlBuilder ordered = Dsl.PSC.select("id").from("users").orderBy("id");
+        final SqlBuilder ordered = PSC.select("id").from("users").orderBy("id");
 
         assertThrows(IllegalStateException.class, () -> ordered.append(unionCriteria));
         assertEquals("SELECT id FROM users ORDER BY id", ordered.build().query());
@@ -1034,38 +1035,37 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testAppendCriteriaPreflightsRelativeClauseOrderWithoutMutation() {
-        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, Dsl.PSC.select("department").from("users").groupBy("department"),
+        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, PSC.select("department").from("users").groupBy("department"),
                 Criteria.builder().where(Filters.eq("active", true)).build(), "SELECT department FROM users GROUP BY department");
-        assertCriteriaRejectedWithoutMutation(IllegalStateException.class,
-                Dsl.PSC.select("department").from("users").groupBy("department").having("COUNT(*) > 1"), Criteria.builder().groupBy("region").build(),
-                "SELECT department FROM users GROUP BY department HAVING COUNT(*) > 1");
-        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, Dsl.PSC.select("id").from("users").orderBy("id"),
+        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, PSC.select("department").from("users").groupBy("department").having("COUNT(*) > 1"),
+                Criteria.builder().groupBy("region").build(), "SELECT department FROM users GROUP BY department HAVING COUNT(*) > 1");
+        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, PSC.select("id").from("users").orderBy("id"),
                 Criteria.builder().having(Filters.gt("COUNT(*)", 1)).build(), "SELECT id FROM users ORDER BY id");
-        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, Dsl.PSC.select("id").from("users").limit(10),
-                Criteria.builder().orderBy("id").build(), "SELECT id FROM users LIMIT 10");
-        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, Dsl.PSC.select("id").from("users").forUpdate(), Criteria.builder().limit(10).build(),
+        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, PSC.select("id").from("users").limit(10), Criteria.builder().orderBy("id").build(),
+                "SELECT id FROM users LIMIT 10");
+        assertCriteriaRejectedWithoutMutation(IllegalStateException.class, PSC.select("id").from("users").forUpdate(), Criteria.builder().limit(10).build(),
                 "SELECT id FROM users FOR UPDATE");
     }
 
     @Test
     public void testAppendCriteriaValidatesEverySetOperationOperandWithoutMutation() {
         final Criteria unsafe = Criteria.builder().union(Filters.subQuery("UPDATE archived_users SET active = false")).build();
-        assertCriteriaRejectedWithoutMutation(IllegalArgumentException.class, Dsl.PSC.select("id").from("users"), unsafe, "SELECT id FROM users");
+        assertCriteriaRejectedWithoutMutation(IllegalArgumentException.class, PSC.select("id").from("users"), unsafe, "SELECT id FROM users");
 
         final Criteria incomplete = Criteria.builder().union(Filters.subQuery("archived_users")).build();
-        assertCriteriaRejectedWithoutMutation(IllegalArgumentException.class, Dsl.PSC.select("id").from("users"), incomplete, "SELECT id FROM users");
+        assertCriteriaRejectedWithoutMutation(IllegalArgumentException.class, PSC.select("id").from("users"), incomplete, "SELECT id FROM users");
 
         final Criteria unsafeSecondOperand = Criteria.builder()
                 .union(Filters.subQuery("SELECT id FROM archived_users"))
                 .unionAll(Filters.subQuery("SELECT id FROM deleted_users; DELETE FROM deleted_users"))
                 .build();
-        assertCriteriaRejectedWithoutMutation(IllegalArgumentException.class, Dsl.PSC.select("id").from("users"), unsafeSecondOperand, "SELECT id FROM users");
+        assertCriteriaRejectedWithoutMutation(IllegalArgumentException.class, PSC.select("id").from("users"), unsafeSecondOperand, "SELECT id FROM users");
     }
 
     @Test
     public void testCompletedCriteriaSetOperationAllowsOnlyCompoundResultClauses() {
         final Criteria union = Criteria.builder().union(Filters.subQuery("SELECT id FROM archived_users")).build();
-        final SqlBuilder compound = Dsl.PSC.select("id").from("users").append(union);
+        final SqlBuilder compound = PSC.select("id").from("users").append(union);
 
         assertThrows(IllegalStateException.class, () -> compound.where(Filters.eq("active", true)));
         assertThrows(IllegalStateException.class, () -> compound.groupBy("id"));
@@ -1085,23 +1085,23 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testAppendStandaloneSetOperationClauseValidatesLikeSetOperationMethods() {
         // The operand must be a complete read-only SELECT sub-query, exactly as on the
         // union(String)/union(builder)/Criteria set-operation routes.
-        final SqlBuilder unsafeOperand = Dsl.PSC.select("id").from("users");
+        final SqlBuilder unsafeOperand = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> unsafeOperand.append(new Union(Filters.subQuery("UPDATE archived_users SET active = false"))));
         assertEquals("SELECT id FROM users", unsafeOperand.build().query());
 
         // Position rules: a set operator cannot follow ORDER BY (or pagination/FOR UPDATE) ...
-        final SqlBuilder ordered = Dsl.PSC.select("id").from("users").orderBy("id");
+        final SqlBuilder ordered = PSC.select("id").from("users").orderBy("id");
         assertThrows(IllegalStateException.class, () -> ordered.append(new Union(Filters.subQuery("SELECT id FROM archived_users"))));
         assertEquals("SELECT id FROM users ORDER BY id", ordered.build().query());
 
         // ... and requires a SELECT segment completed by from(...) on its left-hand side.
-        final SqlBuilder staged = Dsl.PSC.select("id");
+        final SqlBuilder staged = PSC.select("id");
         assertThrows(IllegalStateException.class, () -> staged.append(new Union(Filters.subQuery("SELECT id FROM archived_users"))));
         assertEquals("SELECT id FROM users", staged.from("users").build().query());
 
         // A valid standalone Union still renders and completes the set operation: WHERE may no longer
         // follow, exactly as on the other set-operation routes.
-        final SqlBuilder compound = Dsl.PSC.select("id").from("users").append(new Union(Filters.subQuery("SELECT id FROM archived_users")));
+        final SqlBuilder compound = PSC.select("id").from("users").append(new Union(Filters.subQuery("SELECT id FROM archived_users")));
         assertThrows(IllegalStateException.class, () -> compound.where(Filters.eq("active", true)));
         assertEquals("SELECT id FROM users UNION SELECT id FROM archived_users", compound.build().query());
     }
@@ -1110,7 +1110,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testAppendCriteriaJoinTracksFollowUpOnUsingEligibility() {
         // A criteria join that carries its own ON condition closes the connector slot, even though the
         // preceding standalone join had left it open: a follow-up on() must not emit a second ON.
-        final SqlBuilder conditionedJoin = Dsl.PSC.select("u.id")
+        final SqlBuilder conditionedJoin = PSC.select("u.id")
                 .from("users u")
                 .join("orders o")
                 .append(Criteria.builder().join("payments p", Filters.expr("p.order_id = o.id")).build());
@@ -1118,7 +1118,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals("SELECT u.id FROM users u JOIN orders o JOIN payments p ON p.order_id = o.id", conditionedJoin.build().query());
 
         // A condition-less criteria join re-opens the slot: a follow-up on() is accepted and renders.
-        final String openJoinSql = Dsl.PSC.select("u.id")
+        final String openJoinSql = PSC.select("u.id")
                 .from("users u")
                 .join("orders o")
                 .on("u.id = o.user_id")
@@ -1129,12 +1129,12 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals("SELECT u.id FROM users u JOIN orders o ON u.id = o.user_id JOIN payments p ON p.order_id = o.id", openJoinSql);
 
         // A single raw criteria join entity that already supplies its ON inline closes the slot too.
-        final SqlBuilder inlineOnJoin = Dsl.PSC.select("u.id").from("users u").append(Criteria.builder().join("payments p ON p.user_id = u.id").build());
+        final SqlBuilder inlineOnJoin = PSC.select("u.id").from("users u").append(Criteria.builder().join("payments p ON p.user_id = u.id").build());
         assertThrows(IllegalStateException.class, () -> inlineOnJoin.on("p.status = 'OPEN'"));
         assertEquals("SELECT u.id FROM users u JOIN payments p ON p.user_id = u.id", inlineOnJoin.build().query());
 
         // A CROSS JOIN never accepts a connector, no matter how it is appended.
-        final SqlBuilder crossJoined = Dsl.PSC.select("u.id").from("users u").append(Criteria.builder().join(Filters.crossJoin("payments")).build());
+        final SqlBuilder crossJoined = PSC.select("u.id").from("users u").append(Criteria.builder().join(Filters.crossJoin("payments")).build());
         assertThrows(IllegalStateException.class, () -> crossJoined.on("payments.user_id = u.id"));
         assertEquals("SELECT u.id FROM users u CROSS JOIN payments", crossJoined.build().query());
     }
@@ -1142,158 +1142,158 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testCollectionAndMapArgumentsRenderTheirValidatedSnapshots() {
         assertEquals("SELECT * FROM users",
-                Dsl.PSC.select("*").from(new ChangingCollection<>(Collections.singletonList("users"), Collections.singletonList(" "))).build().query());
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from(new NominallyNonEmptyCollection<>()));
+                PSC.select("*").from(new ChangingCollection<>(Collections.singletonList("users"), Collections.singletonList(" "))).build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from(new NominallyNonEmptyCollection<>()));
 
         assertEquals("SELECT * FROM users JOIN orders USING (user_id)",
-                Dsl.PSC.select("*")
+                PSC.select("*")
                         .from("users")
                         .join("orders")
                         .using(new ChangingCollection<>(Collections.singletonList("user_id"), Collections.singletonList(" ")))
                         .build()
                         .query());
         assertEquals("SELECT category FROM products GROUP BY category",
-                Dsl.PSC.select("category")
+                PSC.select("category")
                         .from("products")
                         .groupBy(new ChangingCollection<>(Collections.singletonList("category"), Collections.singletonList(" ")))
                         .build()
                         .query());
         assertEquals("SELECT id FROM users ORDER BY id",
-                Dsl.PSC.select("id")
+                PSC.select("id")
                         .from("users")
                         .orderBy(new ChangingCollection<>(Collections.singletonList("id"), Collections.singletonList(" ")))
                         .build()
                         .query());
         assertEquals("SELECT id FROM users UNION SELECT id FROM admins",
-                Dsl.PSC.select("id")
+                PSC.select("id")
                         .from("users")
-                        .union(new ChangingCollection<>(Collections.singletonList("id"), Collections.singletonList(" ")))
+                        .unionSelect(new ChangingCollection<>(Collections.singletonList("id"), Collections.singletonList(" ")))
                         .from("admins")
                         .build()
                         .query());
 
         assertEquals("SELECT category FROM products GROUP BY category ASC",
-                Dsl.PSC.select("category").from("products").groupBy(new ChangingMap<>("category", SortDirection.ASC, " ", SortDirection.DESC)).build().query());
+                PSC.select("category").from("products").groupBy(new ChangingMap<>("category", SortDirection.ASC, " ", SortDirection.DESC)).build().query());
         assertEquals("SELECT id FROM users ORDER BY id DESC",
-                Dsl.PSC.select("id").from("users").orderBy(new ChangingMap<>("id", SortDirection.DESC, " ", SortDirection.ASC)).build().query());
+                PSC.select("id").from("users").orderBy(new ChangingMap<>("id", SortDirection.DESC, " ", SortDirection.ASC)).build().query());
 
-        final AbstractQueryBuilder.SP update = Dsl.PSC.update("users").set(new ChangingMap<>("name", "Alice", " ", "corrupted")).build();
+        final AbstractQueryBuilder.SP update = PSC.update("users").set(new ChangingMap<>("name", "Alice", " ", "corrupted")).build();
         assertEquals("UPDATE users SET name = ?", update.query());
         assertEquals(Collections.singletonList("Alice"), update.parameters());
     }
 
     @Test
     public void testAppendLimitExpressionAfterLimitThrows() {
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("*").from("users").limit(10).append(new Limit("5")).build().query());
+        assertThrows(IllegalStateException.class, () -> PSC.select("*").from("users").limit(10).append(new Limit("5")).build().query());
     }
 
     @Test
     public void testSelectAllowsHashJsonOperators() {
-        String sql = Dsl.PSC.select("payload #>> '{meta,status}'").from("docs").build().query();
+        String sql = PSC.select("payload #>> '{meta,status}'").from("docs").build().query();
         assertTrue(sql.contains("#>>"));
     }
 
     @Test
     public void testSelectAllowsCommentLikeTokenInsideQuotedLiteral() {
-        String sql = Dsl.PSC.select("CASE WHEN note = '--literal' THEN 1 ELSE 0 END").from("docs").build().query();
+        String sql = PSC.select("CASE WHEN note = '--literal' THEN 1 ELSE 0 END").from("docs").build().query();
         assertTrue(sql.contains("'--literal'"));
     }
 
     @Test
     public void testUpdateAllowsIbatisPlaceholderExpression() {
-        String sql = Dsl.PSC.update("users").set("name = #{name}").where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.update("users").set("name = #{name}").where(Filters.eq("id", 1)).build().query();
         assertTrue(sql.contains("#{name}"));
     }
 
     @Test
     public void testGroupByRejectsEmptyInputs() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy().build().query());
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy(Collections.emptyList()).build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").groupBy().build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").groupBy(Collections.emptyList()).build().query());
     }
 
     @Test
     public void testWhereRejectsNullStringExpression() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").where((String) null));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").where((String) null));
     }
 
     @Test
     public void testClauseBuildersRejectBlankStringFragments() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").join("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").join("orders").on("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").join("orders").using("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").where("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy(Arrays.asList("id", "   ")));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy(Collections.singletonMap("   ", SortDirection.ASC)));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy("id").having("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy(Arrays.asList("id", "   ")));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy(Collections.singletonMap("   ", SortDirection.ASC)));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").append("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").join("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").join("orders").on("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").join("orders").using("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").where("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").groupBy("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").groupBy(Arrays.asList("id", "   ")));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").groupBy(Collections.singletonMap("   ", SortDirection.ASC)));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").groupBy("id").having("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").orderBy("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").orderBy(Arrays.asList("id", "   ")));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").orderBy(Collections.singletonMap("   ", SortDirection.ASC)));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").append("   "));
     }
 
     @Test
     public void testInsertAndUpdateRejectBlankTableAndSetFragments() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert("id").into("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("users").set("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("users").set(Arrays.asList("name", "   ")));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("users").set(Collections.emptyList()));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("users").set(Collections.emptyMap()));
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert("id").into("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("users").set("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("users").set(Arrays.asList("name", "   ")));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("users").set(Collections.emptyList()));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("users").set(Collections.emptyMap()));
     }
 
     @Test
     public void testDslSelectAndInsertRejectBlankColumnFragments() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id", "   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(Arrays.asList("id", "   ")));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select(Collections.singletonMap("   ", "alias")));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id", "   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select(Arrays.asList("id", "   ")));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select(Collections.singletonMap("   ", "alias")));
 
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert("id", "   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert(Arrays.asList("id", "   ")));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert(Collections.singletonMap("   ", 1)));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert((Object) "   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert("id", "   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert(Arrays.asList("id", "   ")));
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert(Collections.singletonMap("   ", 1)));
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert((Object) "   "));
 
         Map<String, Object> props = Collections.singletonMap("id", 1);
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert((Object) props, Collections.singleton("id")));
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert((Object) props, Collections.singleton("id")));
 
         Map<String, Object> blankProps = Collections.singletonMap("   ", 1);
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert((Object) blankProps, Collections.singleton("   ")));
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert((Object) blankProps, Collections.singleton("   ")));
 
         Map<Object, Object> nonStringProps = Collections.singletonMap(1, "invalid column");
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.insert((Object) nonStringProps));
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert((Object) nonStringProps));
     }
 
     @Test
     public void testSetOperationsAndDirectionsRejectInvalidInputs() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").union("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").unionAll("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").intersect("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").except("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").minus("   "));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy("id", null));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy("id", null));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").union("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").unionAll("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").intersect("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").except("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").minus("   "));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").groupBy("id", null));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").orderBy("id", null));
     }
 
     @Test
     public void testFetchNextRowsAndFetchFirstRowsAreMutuallyExclusive() {
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("*").from("users").orderBy("id").fetchNextRows(10).fetchFirstRows(5).build().query());
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).fetchNextRows(5).build().query());
+        assertThrows(IllegalStateException.class, () -> PSC.select("*").from("users").orderBy("id").fetchNextRows(10).fetchFirstRows(5).build().query());
+        assertThrows(IllegalStateException.class, () -> PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).fetchNextRows(5).build().query());
     }
 
     @Test
     public void testRowLimitApisRejectNegativeValues() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").limit(-1));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").limit(10, -1));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").offset(-1));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").offsetRows(-1));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").fetchNextRows(-1));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").fetchFirstRows(-1));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").limit(-1));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").limit(10, -1));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").offset(-1));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").offsetRows(-1));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").fetchNextRows(-1));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").fetchFirstRows(-1));
     }
 
     @Test
     public void testChainedSetCollectionCallsIncludeComma() {
-        String sql = Dsl.PSC.update("users").set("firstName").set("lastName").where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.update("users").set("firstName").set("lastName").where(Filters.eq("id", 1)).build().query();
         assertTrue(sql.contains("first_name = ?"), "first_name assignment missing: " + sql);
         assertTrue(sql.contains("last_name = ?"), "last_name assignment missing: " + sql);
         int firstIdx = sql.indexOf("first_name");
@@ -1306,7 +1306,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testChainedSetMapCallsIncludeComma() {
         java.util.Map<String, Object> m1 = java.util.Collections.singletonMap("firstName", "John");
         java.util.Map<String, Object> m2 = java.util.Collections.singletonMap("lastName", "Doe");
-        String sql = Dsl.PSC.update("users").set(m1).set(m2).where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.update("users").set(m1).set(m2).where(Filters.eq("id", 1)).build().query();
         int firstIdx = sql.indexOf("first_name");
         int commaIdx = sql.indexOf(',', firstIdx);
         int secondIdx = sql.indexOf("last_name");
@@ -1331,14 +1331,14 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testDoubleHashNotTreatedAsSqlCommentInExpressions() {
         // ## is a whitelisted two-char token; the second # must not be re-examined as lone #
-        String sql = Dsl.PSC.select("*").from("users").where(Filters.expr("status = '##ACTIVE##'")).build().query();
+        String sql = PSC.select("*").from("users").where(Filters.expr("status = '##ACTIVE##'")).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("##ACTIVE##"), "## inside value must not be rejected as SQL comment");
     }
 
     @Test
     public void testSetWithEntityClass() {
-        String sql = Dsl.PSC.update("account").set(Account.class).where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.update("account").set(Account.class).where(Filters.eq("id", 1)).build().query();
 
         assertTrue(sql.contains("UPDATE account SET"), "set(Class) must render an UPDATE ... SET: " + sql);
         assertTrue(sql.contains("first_name = ?"), "set(Class) must include updatable properties: " + sql);
@@ -1347,7 +1347,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testSetWithEntityClassAndExcludedPropNames() {
         Set<String> excluded = Collections.singleton("firstName");
-        String sql = Dsl.PSC.update("account").set(Account.class, excluded).where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.update("account").set(Account.class, excluded).where(Filters.eq("id", 1)).build().query();
 
         assertFalse(sql.contains("first_name = ?"), "excluded property must not be updated: " + sql);
         assertTrue(sql.contains("last_name = ?"), "non-excluded property must be updated: " + sql);
@@ -1356,20 +1356,20 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testNamedParameterHandlerOnDialect() {
         final Dsl dsl = Dsl
-                .forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, propName) -> sb.append("#{").append(propName).append("}")).build());
+                .forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, propName) -> sb.append("#{").append(propName).append("}")).build());
         final String sql = dsl.select("name").from("users").where(Filters.eq("id", 1)).build().query();
 
         assertTrue(sql.contains("#{id}"));
-        assertTrue(Dsl.NSC.select("name").from("users").where(Filters.eq("id", 1)).build().query().contains(":id"));
+        assertTrue(NSC.select("name").from("users").where(Filters.eq("id", 1)).build().query().contains(":id"));
     }
 
     @Test
     public void testNamedParameterHandlerIsScopedAcrossInterleavedBuilders() {
         final Dsl myBatisStyle = Dsl
-                .forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, propName) -> sb.append("#{").append(propName).append("}")).build());
+                .forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, propName) -> sb.append("#{").append(propName).append("}")).build());
 
         final SqlBuilder customBuilder = myBatisStyle.select("name").from("users");
-        final SqlBuilder defaultBuilder = Dsl.NSC.select("name").from("users");
+        final SqlBuilder defaultBuilder = NSC.select("name").from("users");
 
         assertTrue(customBuilder.where(Filters.eq("id", 1)).build().query().contains("#{id}"));
         assertTrue(defaultBuilder.where(Filters.eq("id", 1)).build().query().contains(":id"));
@@ -1409,7 +1409,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testDialectScopedConfigurationSurvivesToBuilder() {
         final BiConsumer<StringBuilder, String> handler = (sb, name) -> sb.append("${").append(name).append('}');
         final SqlParser.TokenizerConfig tokenizerConfig = SqlParser.tokenizerConfigBuilder().withSeparator("::").build();
-        final SqlDialect dialect = Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler(handler).tokenizerConfig(tokenizerConfig).build();
+        final SqlDialect dialect = NSC.sqlDialect().toBuilder().namedParameterHandler(handler).tokenizerConfig(tokenizerConfig).build();
         final SqlDialect copy = dialect.toBuilder().build();
 
         assertSame(handler, copy.namedParameterHandler());
@@ -1420,7 +1420,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testNullTokenizerConfigUsesImmutableDefault() {
-        final SqlBuilder builder = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().tokenizerConfig(null).build()).select("id").from("users");
+        final SqlBuilder builder = Dsl.forDialect(NSC.sqlDialect().toBuilder().tokenizerConfig(null).build()).select("id").from("users");
 
         assertSame(SqlParser.defaultTokenizerConfig(), builder._tokenizer.tokenizerConfig());
     }
@@ -1428,11 +1428,11 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testNamedParameterHandlersRemainIsolatedDuringParallelUse() {
         final Dsl customDsl = Dsl
-                .forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append("${").append(name).append('}')).build());
+                .forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append("${").append(name).append('}')).build());
         final List<String> statements = IntStream.range(0, 128)
                 .parallel()
                 .mapToObj(i -> (i & 1) == 0 ? customDsl.select("id").from("users").where(Filters.eq("id", i)).build().query()
-                        : Dsl.NSC.select("id").from("users").where(Filters.eq("id", i)).build().query())
+                        : NSC.select("id").from("users").where(Filters.eq("id", i)).build().query())
                 .toList();
 
         for (int i = 0; i < statements.size(); i++) {
@@ -1442,21 +1442,21 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testSelectModifier() {
-        final String sql = Dsl.PSC.select("*").selectModifier("TOP 5").from("users").build().query();
+        final String sql = PSC.select("*").selectModifier("TOP 5").from("users").build().query();
 
         assertTrue(sql.contains("SELECT TOP 5"));
     }
 
     @Test
     public void testNaturalJoin_String() {
-        final String sql = Dsl.PSC.select("*").from("users").naturalJoin("orders").build().query();
+        final String sql = PSC.select("*").from("users").naturalJoin("orders").build().query();
 
         assertTrue(sql.contains("NATURAL JOIN orders"));
     }
 
     @Test
     public void testNaturalJoin_EntityClass() {
-        final String sql = Dsl.PSC.select("*").from(Account.class).naturalJoin(Account.class).build().query();
+        final String sql = PSC.select("*").from(Account.class).naturalJoin(Account.class).build().query();
 
         assertTrue(sql.contains("NATURAL JOIN"));
         assertTrue(sql.toLowerCase().contains("account"));
@@ -1464,7 +1464,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testNaturalJoin_EntityClassAlias() {
-        final String sql = Dsl.PSC.select("*").from(Account.class, "a").naturalJoin(Account.class, "b").build().query();
+        final String sql = PSC.select("*").from(Account.class, "a").naturalJoin(Account.class, "b").build().query();
 
         assertTrue(sql.contains("NATURAL JOIN"));
         assertTrue(sql.contains(" b"));
@@ -1472,36 +1472,36 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testUsing() {
-        final String sql = Dsl.PSC.select("*").from("users").join("orders").using("user_id").build().query();
+        final String sql = PSC.select("*").from("users").join("orders").using("user_id").build().query();
 
         assertTrue(sql.contains("USING (user_id)"));
     }
 
     @Test
     public void testOffsetRows() {
-        final String sql = Dsl.PSC.select("*").from("users").orderBy("id").offsetRows(20).build().query();
+        final String sql = PSC.select("*").from("users").orderBy("id").offsetRows(20).build().query();
 
         assertTrue(sql.contains("OFFSET 20 ROWS"));
     }
 
     @Test
     public void testFetchNextRows() {
-        final String sql = Dsl.PSC.select("*").from("users").orderBy("id").offsetRows(0).fetchNextRows(10).build().query();
+        final String sql = PSC.select("*").from("users").orderBy("id").offsetRows(0).fetchNextRows(10).build().query();
 
         assertTrue(sql.contains("FETCH NEXT 10 ROWS ONLY"));
     }
 
     @Test
     public void testFetchFirstRows() {
-        final String sql = Dsl.PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).build().query();
+        final String sql = PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).build().query();
 
         assertTrue(sql.contains("FETCH FIRST 10 ROWS ONLY"));
     }
 
     @Test
     public void testAppendIf_Condition() {
-        final String withCondition = Dsl.PSC.select("*").from("users").appendIf(true, Filters.eq("status", "ACTIVE")).build().query();
-        final String withoutCondition = Dsl.PSC.select("*").from("users").appendIf(false, Filters.eq("status", "ACTIVE")).build().query();
+        final String withCondition = PSC.select("*").from("users").appendIf(true, Filters.eq("status", "ACTIVE")).build().query();
+        final String withoutCondition = PSC.select("*").from("users").appendIf(false, Filters.eq("status", "ACTIVE")).build().query();
 
         assertTrue(withCondition.contains("status"));
         assertTrue(!withoutCondition.contains("status"));
@@ -1509,8 +1509,8 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testAppendIf_String() {
-        final String withExpression = Dsl.PSC.select("*").from("users").where(Filters.eq("id", 1)).appendIf(true, " FOR UPDATE").build().query();
-        final String withoutExpression = Dsl.PSC.select("*").from("users").where(Filters.eq("id", 1)).appendIf(false, " FOR UPDATE").build().query();
+        final String withExpression = PSC.select("*").from("users").where(Filters.eq("id", 1)).appendIf(true, " FOR UPDATE").build().query();
+        final String withoutExpression = PSC.select("*").from("users").where(Filters.eq("id", 1)).appendIf(false, " FOR UPDATE").build().query();
 
         assertTrue(withExpression.contains("FOR UPDATE"));
         assertTrue(!withoutExpression.contains("FOR UPDATE"));
@@ -1518,11 +1518,11 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testAppendIfOrElse_Condition() {
-        final AbstractQueryBuilder.SP trueBranch = Dsl.PSC.select("*")
+        final AbstractQueryBuilder.SP trueBranch = PSC.select("*")
                 .from("users")
                 .appendIfOrElse(true, Filters.eq("status", "ACTIVE"), Filters.eq("status", "INACTIVE"))
                 .build();
-        final AbstractQueryBuilder.SP falseBranch = Dsl.PSC.select("*")
+        final AbstractQueryBuilder.SP falseBranch = PSC.select("*")
                 .from("users")
                 .appendIfOrElse(false, Filters.eq("status", "ACTIVE"), Filters.eq("status", "INACTIVE"))
                 .build();
@@ -1535,8 +1535,8 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testAppendIfOrElse_String() {
-        final String asc = Dsl.PSC.select("*").from("users").appendIfOrElse(true, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
-        final String desc = Dsl.PSC.select("*").from("users").appendIfOrElse(false, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
+        final String asc = PSC.select("*").from("users").appendIfOrElse(true, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
+        final String desc = PSC.select("*").from("users").appendIfOrElse(false, " ORDER BY name ASC", " ORDER BY name DESC").build().query();
 
         assertTrue(asc.contains("ORDER BY name ASC"));
         assertTrue(desc.contains("ORDER BY name DESC"));
@@ -1544,10 +1544,10 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testUnion_SqlBuilder() {
-        final AbstractQueryBuilder.SP sp = Dsl.PSC.select("id")
+        final AbstractQueryBuilder.SP sp = PSC.select("id")
                 .from("users")
                 .where(Filters.eq("type", "USER"))
-                .union(Dsl.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
+                .union(PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
                 .build();
 
         assertTrue(sp.query().contains("UNION"));
@@ -1557,7 +1557,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testRejectedRewrittenSetOperationOperandLeavesParentMetadataReusable() {
         final boolean[] poisonRenamedToken = { true };
-        final Dsl dsl = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+        final Dsl dsl = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
             if (poisonRenamedToken[0] && "id_2".equals(name)) {
                 sb.append(":id_2; DELETE FROM audit_log");
             } else {
@@ -1578,7 +1578,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testUnion_Query() {
-        final String sql = Dsl.PSC.select("id").from("users").union("SELECT id FROM admins").build().query();
+        final String sql = PSC.select("id").from("users").union("SELECT id FROM admins").build().query();
 
         assertTrue(sql.contains("UNION SELECT id FROM admins"));
     }
@@ -1587,7 +1587,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testUnion_SingleNonSubQueryStringRejected() {
         // union(String) is reserved for a complete SELECT sub-query; a bare column name is rejected up front
         // instead of silently becoming a column list that fails later with an unrelated "from() must be called" error.
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").union("id"));
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").union("id"));
         assertTrue(ex.getMessage().contains("SELECT sub-query"));
     }
 
@@ -1595,49 +1595,48 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testUnion_ParenthesizedFromLessQueryAccepted() {
         // "UNION (SELECT 1)" is valid SQL: a FROM-less query wrapped in balanced parentheses is as
         // complete an operand as the already-accepted unparenthesized union("SELECT 1").
-        assertEquals("SELECT id FROM users UNION (SELECT 1)", Dsl.PSC.select("id").from("users").union("(SELECT 1)").build().query());
-        assertEquals("SELECT id FROM users UNION ((SELECT 1))", Dsl.PSC.select("id").from("users").union("((SELECT 1))").build().query());
-        assertEquals("SELECT id FROM users UNION (SELECT 1) /* operand */",
-                Dsl.PSC.select("id").from("users").union("(SELECT 1) /* operand */").build().query());
+        assertEquals("SELECT id FROM users UNION (SELECT 1)", PSC.select("id").from("users").union("(SELECT 1)").build().query());
+        assertEquals("SELECT id FROM users UNION ((SELECT 1))", PSC.select("id").from("users").union("((SELECT 1))").build().query());
+        assertEquals("SELECT id FROM users UNION (SELECT 1) /* operand */", PSC.select("id").from("users").union("(SELECT 1) /* operand */").build().query());
 
         // All five set operations (union/unionAll/intersect/except/minus) share the same operand check
         // (checkSetOperationSubQuery -> isSubQuery), so a second operation pins the shared path.
-        assertEquals("SELECT id FROM users INTERSECT (SELECT id FROM t)", Dsl.PSC.select("id").from("users").intersect("(SELECT id FROM t)").build().query());
+        assertEquals("SELECT id FROM users INTERSECT (SELECT id FROM t)", PSC.select("id").from("users").intersect("(SELECT id FROM t)").build().query());
     }
 
     @Test
     public void testUnion_ParenthesizedNonSelectStillRejected() {
         // A parenthesized column list, an unbalanced non-SELECT fragment, and an unbalanced
         // parenthesized SELECT all remain rejected with the pointed message.
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").union("(id, name)"));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").union("(id, name)"));
         assertTrue(ex.getMessage().contains("SELECT sub-query"));
 
-        ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").union("(name"));
+        ex = assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").union("(name"));
         assertTrue(ex.getMessage().contains("SELECT sub-query"));
 
-        ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").union("(SELECT 1"));
+        ex = assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").union("(SELECT 1"));
         assertTrue(ex.getMessage().contains("SELECT sub-query"));
 
-        ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").union("(SELECT 1) + 2"));
+        ex = assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").union("(SELECT 1) + 2"));
         assertTrue(ex.getMessage().contains("SELECT sub-query"));
-        assertFalse(AbstractQueryBuilder.isSubQuery("(SELECT 1) + 2"));
-        assertFalse(AbstractQueryBuilder.isSubQuery("(SELECT 1) 'not trivia'"));
-        assertFalse(AbstractQueryBuilder.isSubQuery("(SELECT 1) /* unterminated"));
+        assertFalse(AbstractQueryBuilder.isInlineQuery("(SELECT 1) + 2"));
+        assertFalse(AbstractQueryBuilder.isInlineQuery("(SELECT 1) 'not trivia'"));
+        assertFalse(AbstractQueryBuilder.isInlineQuery("(SELECT 1) /* unterminated"));
     }
 
     @Test
     public void testUnion_Collection() {
-        final String sql = Dsl.PSC.select("id").from("users").union(Collections.singletonList("id")).from("admins").build().query();
+        final String sql = PSC.select("id").from("users").unionSelect(Collections.singletonList("id")).from("admins").build().query();
 
         assertTrue(sql.contains("UNION SELECT id FROM admins"));
     }
 
     @Test
     public void testUnionAll_SqlBuilder() {
-        final AbstractQueryBuilder.SP sp = Dsl.PSC.select("id")
+        final AbstractQueryBuilder.SP sp = PSC.select("id")
                 .from("users")
                 .where(Filters.eq("type", "USER"))
-                .unionAll(Dsl.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
+                .unionAll(PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
                 .build();
 
         assertTrue(sp.query().contains("UNION ALL"));
@@ -1646,30 +1645,30 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testUnionAll_Query() {
-        final String sql = Dsl.PSC.select("id").from("users").unionAll("SELECT id FROM admins").build().query();
+        final String sql = PSC.select("id").from("users").unionAll("SELECT id FROM admins").build().query();
 
         assertTrue(sql.contains("UNION ALL SELECT id FROM admins"));
     }
 
     @Test
     public void testUnionAll_SingleNonSubQueryStringRejected() {
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").unionAll("id"));
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").unionAll("id"));
         assertTrue(ex.getMessage().contains("SELECT sub-query"));
     }
 
     @Test
     public void testUnionAll_Collection() {
-        final String sql = Dsl.PSC.select("id").from("users").unionAll(Collections.singletonList("id")).from("admins").build().query();
+        final String sql = PSC.select("id").from("users").unionAllSelect(Collections.singletonList("id")).from("admins").build().query();
 
         assertTrue(sql.contains("UNION ALL SELECT id FROM admins"));
     }
 
     @Test
     public void testIntersect_SqlBuilder() {
-        final AbstractQueryBuilder.SP sp = Dsl.PSC.select("id")
+        final AbstractQueryBuilder.SP sp = PSC.select("id")
                 .from("users")
                 .where(Filters.eq("type", "USER"))
-                .intersect(Dsl.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
+                .intersect(PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
                 .build();
 
         assertTrue(sp.query().contains("INTERSECT"));
@@ -1678,30 +1677,30 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testIntersect_Query() {
-        final String sql = Dsl.PSC.select("id").from("users").intersect("SELECT id FROM admins").build().query();
+        final String sql = PSC.select("id").from("users").intersect("SELECT id FROM admins").build().query();
 
         assertTrue(sql.contains("INTERSECT SELECT id FROM admins"));
     }
 
     @Test
     public void testIntersect_SingleNonSubQueryStringRejected() {
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").intersect("id"));
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").intersect("id"));
         assertTrue(ex.getMessage().contains("SELECT sub-query"));
     }
 
     @Test
     public void testIntersect_Collection() {
-        final String sql = Dsl.PSC.select("id").from("users").intersect(Collections.singletonList("id")).from("admins").build().query();
+        final String sql = PSC.select("id").from("users").intersectSelect(Collections.singletonList("id")).from("admins").build().query();
 
         assertTrue(sql.contains("INTERSECT SELECT id FROM admins"));
     }
 
     @Test
     public void testExcept_SqlBuilder() {
-        final AbstractQueryBuilder.SP sp = Dsl.PSC.select("id")
+        final AbstractQueryBuilder.SP sp = PSC.select("id")
                 .from("users")
                 .where(Filters.eq("type", "USER"))
-                .except(Dsl.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
+                .except(PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
                 .build();
 
         assertTrue(sp.query().contains("EXCEPT"));
@@ -1710,30 +1709,30 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testExcept_Query() {
-        final String sql = Dsl.PSC.select("id").from("users").except("SELECT id FROM admins").build().query();
+        final String sql = PSC.select("id").from("users").except("SELECT id FROM admins").build().query();
 
         assertTrue(sql.contains("EXCEPT SELECT id FROM admins"));
     }
 
     @Test
     public void testExcept_SingleNonSubQueryStringRejected() {
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").except("id"));
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").except("id"));
         assertTrue(ex.getMessage().contains("SELECT sub-query"));
     }
 
     @Test
     public void testExcept_Collection() {
-        final String sql = Dsl.PSC.select("id").from("users").except(Collections.singletonList("id")).from("admins").build().query();
+        final String sql = PSC.select("id").from("users").exceptSelect(Collections.singletonList("id")).from("admins").build().query();
 
         assertTrue(sql.contains("EXCEPT SELECT id FROM admins"));
     }
 
     @Test
     public void testMinus_SqlBuilder() {
-        final AbstractQueryBuilder.SP sp = Dsl.PSC.select("id")
+        final AbstractQueryBuilder.SP sp = PSC.select("id")
                 .from("users")
                 .where(Filters.eq("type", "USER"))
-                .minus(Dsl.PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
+                .minus(PSC.select("id").from("admins").where(Filters.eq("type", "ADMIN")))
                 .build();
 
         assertTrue(sp.query().contains("MINUS"));
@@ -1742,27 +1741,27 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testMinus_Query() {
-        final String sql = Dsl.PSC.select("id").from("users").minus("SELECT id FROM admins").build().query();
+        final String sql = PSC.select("id").from("users").minus("SELECT id FROM admins").build().query();
 
         assertTrue(sql.contains("MINUS SELECT id FROM admins"));
     }
 
     @Test
     public void testMinus_SingleNonSubQueryStringRejected() {
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("users").minus("id"));
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("users").minus("id"));
         assertTrue(ex.getMessage().contains("SELECT sub-query"));
     }
 
     @Test
     public void testMinus_Collection() {
-        final String sql = Dsl.PSC.select("id").from("users").minus(Collections.singletonList("id")).from("admins").build().query();
+        final String sql = PSC.select("id").from("users").minusSelect(Collections.singletonList("id")).from("admins").build().query();
 
         assertTrue(sql.contains("MINUS SELECT id FROM admins"));
     }
 
     @Test
     public void testForUpdate() {
-        final String sql = Dsl.PSC.select("*").from("users").forUpdate().build().query();
+        final String sql = PSC.select("*").from("users").forUpdate().build().query();
 
         assertTrue(sql.contains("FOR UPDATE"));
     }
@@ -1770,7 +1769,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testForUpdate_idempotencyGuard() {
         // Calling forUpdate() twice must not produce "FOR UPDATE FOR UPDATE".
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("*").from("users").forUpdate().forUpdate());
+        assertThrows(IllegalStateException.class, () -> PSC.select("*").from("users").forUpdate().forUpdate());
     }
 
     @Test
@@ -1779,7 +1778,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         a.setFirstName("F");
         a.setLastName("L");
 
-        final String sql = Dsl.PSC.update("account").set(a).where(Filters.eq("id", 1)).build().query();
+        final String sql = PSC.update("account").set(a).where(Filters.eq("id", 1)).build().query();
 
         assertTrue(sql.contains("first_name = ?"));
     }
@@ -1791,7 +1790,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         a.setLastName("L");
 
         final Set<String> excluded = java.util.Set.of("lastName");
-        final String sql = Dsl.PSC.update("account").set(a, excluded).where(Filters.eq("id", 1)).build().query();
+        final String sql = PSC.update("account").set(a, excluded).where(Filters.eq("id", 1)).build().query();
 
         assertTrue(sql.contains("first_name = ?"));
         assertFalse(sql.contains("last_name = ?"));
@@ -1799,18 +1798,18 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testSetObjectOverloadRejectsCollection() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("account").set((Object) Arrays.asList("firstName", "lastName")));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set((Object) Arrays.asList("firstName", "lastName")));
     }
 
     @Test
     public void testSetObjectOverloadRejectsArray() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("account").set((Object) new String[] { "firstName", "lastName" }));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set((Object) new String[] { "firstName", "lastName" }));
     }
 
     @Test
     public void testIntoClass_alwaysSetsEntityClass() {
         // into(Class) should map property names to columns (entity class always set), matching from(...).
-        final String sql = Dsl.PSC.insert("firstName", "lastName").into(Account.class).build().query();
+        final String sql = PSC.insert("firstName", "lastName").into(Account.class).build().query();
 
         assertTrue(sql.contains("first_name"));
         assertTrue(sql.contains("last_name"));
@@ -1818,21 +1817,21 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testUsing_varargs() {
-        final String sql = Dsl.PSC.select("*").from("orders").join("order_items").using("order_id", "tenant_id").build().query();
+        final String sql = PSC.select("*").from("orders").join("order_items").using("order_id", "tenant_id").build().query();
 
         assertTrue(sql.contains("USING (order_id, tenant_id)"), sql);
     }
 
     @Test
     public void testUsing_collection() {
-        final String sql = Dsl.PSC.select("*").from("orders").join("order_items").using(Arrays.asList("order_id", "tenant_id")).build().query();
+        final String sql = PSC.select("*").from("orders").join("order_items").using(Arrays.asList("order_id", "tenant_id")).build().query();
 
         assertTrue(sql.contains("USING (order_id, tenant_id)"), sql);
     }
 
     @Test
     public void testOn_varargsComposite() {
-        final String sql = Dsl.PSC.select("*").from("users u").join("orders o").on("u.id = o.user_id", "u.tenant_id = o.tenant_id").build().query();
+        final String sql = PSC.select("*").from("users u").join("orders o").on("u.id = o.user_id", "u.tenant_id = o.tenant_id").build().query();
 
         assertTrue(sql.contains("ON u.id = o.user_id AND u.tenant_id = o.tenant_id"), sql);
     }
@@ -1843,7 +1842,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         groupings.put("category", SortDirection.ASC);
         groupings.put("brand", SortDirection.DESC);
 
-        final String sql = Dsl.PSC.select("category", "brand").from("products").groupBy(groupings).build().query();
+        final String sql = PSC.select("category", "brand").from("products").groupBy(groupings).build().query();
 
         assertTrue(sql.indexOf("category ASC") < sql.indexOf("brand DESC"), sql);
     }
@@ -1854,17 +1853,14 @@ public class AbstractQueryBuilderTest extends TestBase {
         orders.put("lastName", SortDirection.ASC);
         orders.put("firstName", SortDirection.DESC);
 
-        final String sql = Dsl.PSC.select("*").from("users").orderBy(orders).build().query();
+        final String sql = PSC.select("*").from("users").orderBy(orders).build().query();
 
         assertTrue(sql.indexOf("ASC") < sql.indexOf("DESC"), sql);
     }
 
     @Test
     public void testApply_SPFunction() throws Exception {
-        final List<Object> result = Dsl.PSC.select("id")
-                .from("users")
-                .where(Filters.eq("id", 1))
-                .apply(sp -> Arrays.asList(sp.query(), sp.parameters().size()));
+        final List<Object> result = PSC.select("id").from("users").where(Filters.eq("id", 1)).apply(sp -> Arrays.asList(sp.query(), sp.parameters().size()));
 
         assertTrue(result.get(0).toString().contains("WHERE"));
         assertEquals(1, result.get(1));
@@ -1872,7 +1868,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testApply_SqlAndParams() throws Exception {
-        final String result = Dsl.PSC.select("id").from("users").where(Filters.eq("id", 1)).apply((sql, params) -> sql + " / " + params.size());
+        final String result = PSC.select("id").from("users").where(Filters.eq("id", 1)).apply((sql, params) -> sql + " / " + params.size());
 
         assertTrue(result.contains("WHERE"));
         assertTrue(result.endsWith("/ 1"));
@@ -1883,7 +1879,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         final String[] sqlHolder = new String[1];
         final int[] paramCount = new int[1];
 
-        Dsl.PSC.select("id").from("users").where(Filters.eq("id", 1)).accept(sp -> {
+        PSC.select("id").from("users").where(Filters.eq("id", 1)).accept(sp -> {
             sqlHolder[0] = sp.query();
             paramCount[0] = sp.parameters().size();
         });
@@ -1897,7 +1893,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         final String[] sqlHolder = new String[1];
         final int[] paramCount = new int[1];
 
-        Dsl.PSC.select("id").from("users").where(Filters.eq("id", 1)).accept((sql, params) -> {
+        PSC.select("id").from("users").where(Filters.eq("id", 1)).accept((sql, params) -> {
             sqlHolder[0] = sql;
             paramCount[0] = params.size();
         });
@@ -1908,25 +1904,25 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testNullTerminalCallbacksDoNotConsumeBuilder() {
-        final SqlBuilder applySp = Dsl.PSC.select("id").from("users");
+        final SqlBuilder applySp = PSC.select("id").from("users");
         final IllegalArgumentException applySpError = assertThrows(IllegalArgumentException.class,
                 () -> applySp.apply((Throwables.Function<AbstractQueryBuilder.SP, Object, RuntimeException>) null));
         assertTrue(applySpError.getMessage().contains("function"));
         assertEquals("SELECT id FROM users", applySp.build().query());
 
-        final SqlBuilder applySqlAndParams = Dsl.PSC.select("id").from("users");
+        final SqlBuilder applySqlAndParams = PSC.select("id").from("users");
         final IllegalArgumentException applySqlAndParamsError = assertThrows(IllegalArgumentException.class,
                 () -> applySqlAndParams.apply((Throwables.BiFunction<String, List<Object>, Object, RuntimeException>) null));
         assertTrue(applySqlAndParamsError.getMessage().contains("function"));
         assertEquals("SELECT id FROM users", applySqlAndParams.build().query());
 
-        final SqlBuilder acceptSp = Dsl.PSC.select("id").from("users");
+        final SqlBuilder acceptSp = PSC.select("id").from("users");
         final IllegalArgumentException acceptSpError = assertThrows(IllegalArgumentException.class,
                 () -> acceptSp.accept((Throwables.Consumer<AbstractQueryBuilder.SP, RuntimeException>) null));
         assertTrue(acceptSpError.getMessage().contains("consumer"));
         assertEquals("SELECT id FROM users", acceptSp.build().query());
 
-        final SqlBuilder acceptSqlAndParams = Dsl.PSC.select("id").from("users");
+        final SqlBuilder acceptSqlAndParams = PSC.select("id").from("users");
         final IllegalArgumentException acceptSqlAndParamsError = assertThrows(IllegalArgumentException.class,
                 () -> acceptSqlAndParams.accept((Throwables.BiConsumer<String, List<Object>, RuntimeException>) null));
         assertTrue(acceptSqlAndParamsError.getMessage().contains("consumer"));
@@ -1936,7 +1932,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     // Cover select-into and entity-class join overloads that inject aliases directly.
     @Test
     public void testSelectIntoFromEntityClass() {
-        final String sql = Dsl.PSC.select("id", "firstName").into("account_archive").from(Account.class).build().query();
+        final String sql = PSC.select("id", "firstName").into("account_archive").from(Account.class).build().query();
 
         assertTrue(sql.startsWith("INSERT INTO account_archive"));
         assertTrue(sql.contains("SELECT"));
@@ -1945,11 +1941,11 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testEntityJoinOverloadsWithAlias() {
-        final String innerJoinSql = Dsl.PSC.select("*").from(Account.class, "a").innerJoin(Account.class, "a2").on("a.id = a2.id").build().query();
-        final String leftJoinSql = Dsl.PSC.select("*").from(Account.class, "a").leftJoin(Account.class, "a2").on("a.id = a2.id").build().query();
-        final String rightJoinSql = Dsl.PSC.select("*").from(Account.class, "a").rightJoin(Account.class, "a2").on("a.id = a2.id").build().query();
-        final String fullJoinSql = Dsl.PSC.select("*").from(Account.class, "a").fullJoin(Account.class, "a2").on("a.id = a2.id").build().query();
-        final String crossJoinSql = Dsl.PSC.select("*").from(Account.class, "a").crossJoin(Account.class, "a2").build().query();
+        final String innerJoinSql = PSC.select("*").from(Account.class, "a").innerJoin(Account.class, "a2").on("a.id = a2.id").build().query();
+        final String leftJoinSql = PSC.select("*").from(Account.class, "a").leftJoin(Account.class, "a2").on("a.id = a2.id").build().query();
+        final String rightJoinSql = PSC.select("*").from(Account.class, "a").rightJoin(Account.class, "a2").on("a.id = a2.id").build().query();
+        final String fullJoinSql = PSC.select("*").from(Account.class, "a").fullJoin(Account.class, "a2").on("a.id = a2.id").build().query();
+        final String crossJoinSql = PSC.select("*").from(Account.class, "a").crossJoin(Account.class, "a2").build().query();
 
         assertTrue(innerJoinSql.contains("INNER JOIN account a2"));
         assertTrue(leftJoinSql.contains("LEFT JOIN account a2"));
@@ -1960,8 +1956,8 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testOrderByRejectsBlockAndHashCommentTokens() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy("id/*comment*/").build().query());
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").orderBy("id#comment").build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").orderBy("id/*comment*/").build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").orderBy("id#comment").build().query());
     }
 
     @Test
@@ -1971,7 +1967,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         try {
             System.setOut(new PrintStream(output));
-            Dsl.PSC.select("id").from("users").debugPrint();
+            PSC.select("id").from("users").debugPrint();
         } finally {
             System.setOut(originalOut);
         }
@@ -2017,7 +2013,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testSet_ObjectStringDelegatesToColumnSet() {
-        String sql = Dsl.PSC.update("account").set((Object) "firstName").where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.update("account").set((Object) "firstName").where(Filters.eq("id", 1)).build().query();
 
         assertTrue(sql.contains("SET"));
         assertTrue(sql.contains("first_name = ?"));
@@ -2029,7 +2025,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         props.put("firstName", "John");
         props.put("lastName", "Doe");
 
-        String sql = Dsl.PSC.update("account").set(props, Collections.singleton("lastName")).where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.update("account").set(props, Collections.singleton("lastName")).where(Filters.eq("id", 1)).build().query();
 
         assertTrue(sql.contains("first_name = ?"));
         assertTrue(!sql.contains("last_name = ?"));
@@ -2042,7 +2038,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         account.setFirstName("John");
         account.setLastName(null);
 
-        String sql = Dsl.PSC.insert(account).into("account").build().query();
+        String sql = PSC.insert(account).into("account").build().query();
 
         assertTrue(sql.contains("first_name"));
         assertTrue(!sql.contains("last_name"));
@@ -2120,7 +2116,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         entity.setMyKey(new java.math.BigDecimal("0.5"));
         entity.setMyName("Alice");
 
-        String sql = Dsl.PSC.insert(entity).into("frac_tbl").build().query();
+        String sql = PSC.insert(entity).into("frac_tbl").build().query();
 
         assertTrue(sql.contains("my_name"), "my_name should be included: " + sql);
         assertTrue(sql.contains("my_key"), "Fractional BigDecimal id 0.5 must not be skipped as default: " + sql);
@@ -2133,7 +2129,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         entity.setLocalId(0);
         entity.setName("Alice");
 
-        AbstractQueryBuilder.SP sp = Dsl.PSC.insert(entity).into("composite_id_tbl").build();
+        AbstractQueryBuilder.SP sp = PSC.insert(entity).into("composite_id_tbl").build();
         String sql = sp.query();
 
         assertTrue(sql.contains("tenant_id"), "assigned id should be included: " + sql);
@@ -2147,7 +2143,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         CompositeIdEntity first = new CompositeIdEntity().setTenantId(7).setLocalId(0).setName("Alice");
         CompositeIdEntity second = new CompositeIdEntity().setTenantId(8).setLocalId(0).setName("Bob");
 
-        AbstractQueryBuilder.SP sp = Dsl.PSC.batchInsert(Arrays.asList(first, second)).into("composite_id_tbl").build();
+        AbstractQueryBuilder.SP sp = PSC.batchInsert(Arrays.asList(first, second)).into("composite_id_tbl").build();
 
         assertEquals("INSERT INTO composite_id_tbl (tenant_id, local_id, name) VALUES (?, ?, ?), (?, ?, ?)", sp.query());
         assertEquals(Arrays.asList(7L, 0L, "Alice", 8L, 0L, "Bob"), sp.parameters());
@@ -2155,7 +2151,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testFix_setColumnNamesNamedSqlDeduplicatesPlaceholders() {
-        AbstractQueryBuilder.SP sp = Dsl.NSC.update("users").set("status").where(Filters.eq("status", "OLD")).build();
+        AbstractQueryBuilder.SP sp = NSC.update("users").set("status").where(Filters.eq("status", "OLD")).build();
 
         assertEquals("UPDATE users SET status = :status WHERE status = :status_2", sp.query());
         assertEquals(Arrays.asList("OLD"), sp.parameters());
@@ -2183,7 +2179,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         e2.setMyKey(new java.math.BigDecimal("0.7"));
         e2.setMyName("Bob");
 
-        String sql = Dsl.PSC.batchInsert(java.util.Arrays.asList(e1, e2)).into("frac_tbl").build().query();
+        String sql = PSC.batchInsert(java.util.Arrays.asList(e1, e2)).into("frac_tbl").build().query();
 
         assertTrue(sql.contains("my_name"), "my_name should be included: " + sql);
         assertTrue(sql.contains("my_key"), "Fractional BigDecimal ids must not be removed as all-zero: " + sql);
@@ -2203,7 +2199,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         a.setLastName("L");
         a.setStatus(1);
 
-        String sql = Dsl.PSC.update("account").set(a).where(Filters.eq("id", 1)).build().query();
+        String sql = PSC.update("account").set(a).where(Filters.eq("id", 1)).build().query();
 
         // Property order in Account.java is: gui, emailAddress, firstName, middleName, lastName, status, ...
         // The SET clause must therefore list those columns in that order.
@@ -2232,7 +2228,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         a.setLastName("L");
         a.setStatus(1);
 
-        String sql = Dsl.PSC.insert(a).into("account").build().query();
+        String sql = PSC.insert(a).into("account").build().query();
 
         int gui = sql.indexOf("gui");
         int email = sql.indexOf("email_address");
@@ -2267,7 +2263,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         a2.setLastName("L2");
         a2.setStatus(2);
 
-        String sql = Dsl.PSC.batchInsert(java.util.Arrays.asList(a1, a2)).into("account").build().query();
+        String sql = PSC.batchInsert(java.util.Arrays.asList(a1, a2)).into("account").build().query();
 
         int gui = sql.indexOf("gui");
         int email = sql.indexOf("email_address");
@@ -2291,8 +2287,8 @@ public class AbstractQueryBuilderTest extends TestBase {
      */
     @Test
     public void testSetWithEntityObjectNullThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("account").set((Object) null));
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.update("account").set((Object) null, null));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set((Object) null));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set((Object) null, null));
     }
 
     /**
@@ -2361,7 +2357,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testSelectWithSubEntities_DoesNotThrow_Pass2() {
         // Force the include-sub-entities select path. Using PSC.selectFrom(Class, boolean)
         // exercises both helpers that previously dereferenced propInfo without a null check.
-        String sql = Dsl.PSC.selectFrom(Account.class, true).build().query();
+        String sql = PSC.selectFrom(Account.class, true).build().query();
         assertNotNull(sql);
         assertTrue(sql.contains("SELECT"), "Should produce a SELECT");
         assertTrue(sql.contains("FROM"), "Should produce a FROM");
@@ -2382,7 +2378,7 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testManyBuildersDoNotLeakOrThrow_Pass2() {
         for (int i = 0; i < 32; i++) {
-            String sql = Dsl.PSC.select("id").from(Account.class).where(Filters.eq("id", i)).build().query();
+            String sql = PSC.select("id").from(Account.class).where(Filters.eq("id", i)).build().query();
             assertNotNull(sql);
         }
     }
@@ -2396,10 +2392,10 @@ public class AbstractQueryBuilderTest extends TestBase {
      */
     @Test
     public void testWhereHavingOnAppendRejectNullCondition() {
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").where((Condition) null).build().query());
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").groupBy("id").having((Condition) null).build().query());
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users u").join("orders o").on((Condition) null).build().query());
-        assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("*").from("users").append((Condition) null).build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").where((Condition) null).build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").groupBy("id").having((Condition) null).build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users u").join("orders o").on((Condition) null).build().query());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").append((Condition) null).build().query());
     }
 
     @com.landawn.abacus.annotation.Table(name = "profile")
@@ -2440,7 +2436,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         final List<Selection> selections = Arrays.asList(Selection.builder(DivergentColumnProfile.class).build(),
                 Selection.builder(Account.class).tableAlias("o").build());
 
-        final String sql = Dsl.PSC.select(selections).from("profile a, account o").where(Filters.eq("a.fullName", "X")).build().query();
+        final String sql = PSC.select(selections).from("profile a, account o").where(Filters.eq("a.fullName", "X")).build().query();
 
         assertTrue(sql.contains("WHERE a.f_name = ?"), "aliased @Column name must resolve via the main-table registration: " + sql);
         assertFalse(sql.contains("a.full_name"), "naming-policy fallback indicates the main-table alias registration was dropped: " + sql);
@@ -2456,7 +2452,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         for (final String expr : new String[] { "_firstName = otherValue", "@firstName + columnName", "N'camelCase' = firstName",
                 "_utf8mb4'camelCase' = firstName", "firstName = lastName", "@@version = firstName", "price  *  2", "aB-cD" }) {
             final String viaCondition = Filters.expr(expr).toSql(NamingPolicy.SNAKE_CASE);
-            final String builtSql = Dsl.PSC.select("id").from("t").where(Filters.expr(expr)).build().query();
+            final String builtSql = PSC.select("id").from("t").where(Filters.expr(expr)).build().query();
             final String viaBuilder = builtSql.substring(builtSql.indexOf("WHERE ") + 6);
 
             assertEquals(viaCondition, viaBuilder, "rendering paths diverged for: " + expr);
@@ -2474,10 +2470,10 @@ public class AbstractQueryBuilderTest extends TestBase {
         // Mirrors the single-string comma form: from("users u, orders o"). A bare two-String call from
         // this package binds to the protected from(tableName, fromClause) overload instead of the public
         // varargs, so an explicit array is required to exercise the path production callers get.
-        assertEquals("SELECT * FROM users u, orders o", Dsl.PSC.select("*").from(new String[] { "users u", "orders o" }).build().query());
+        assertEquals("SELECT * FROM users u, orders o", PSC.select("*").from(new String[] { "users u", "orders o" }).build().query());
 
         // The first element carries the primary table alias used for entity-property resolution.
-        final SqlBuilder aliased = Dsl.PSC.select(Account.class).from(new String[] { "account u", "orders o" });
+        final SqlBuilder aliased = PSC.select(Account.class).from(new String[] { "account u", "orders o" });
         assertEquals("u", aliased._tableAlias);
         final String sql = aliased.build().query();
         assertTrue(sql.contains("u.first_name"), "properties must resolve against the first element's inline alias: " + sql);
@@ -2489,18 +2485,18 @@ public class AbstractQueryBuilderTest extends TestBase {
     // build() returned the bare fragment as the whole statement.
     @Test
     public void testAppendStringAsFirstWriteStillEmitsTheStatementPrefix() {
-        assertEquals("DELETE FROM account WHERE id = 1", Dsl.PSC.deleteFrom("account").append("WHERE id = 1").build().query());
-        assertEquals("DELETE FROM account WHERE id = 1", Dsl.PSC.deleteFrom("account").appendIf(true, "WHERE id = 1").build().query());
-        assertEquals("DELETE FROM account WHERE id = 1", Dsl.PSC.deleteFrom("account").appendIfOrElse(true, "WHERE id = 1", "WHERE id = 2").build().query());
-        assertEquals("DELETE FROM account WHERE id = 2", Dsl.PSC.deleteFrom("account").appendIfOrElse(false, "WHERE id = 1", "WHERE id = 2").build().query());
+        assertEquals("DELETE FROM account WHERE id = 1", PSC.deleteFrom("account").append("WHERE id = 1").build().query());
+        assertEquals("DELETE FROM account WHERE id = 1", PSC.deleteFrom("account").appendIf(true, "WHERE id = 1").build().query());
+        assertEquals("DELETE FROM account WHERE id = 1", PSC.deleteFrom("account").appendIfOrElse(true, "WHERE id = 1", "WHERE id = 2").build().query());
+        assertEquals("DELETE FROM account WHERE id = 2", PSC.deleteFrom("account").appendIfOrElse(false, "WHERE id = 1", "WHERE id = 2").build().query());
 
         // An UPDATE whose SET list is already staged by update(Class, ...) renders it before the fragment.
-        final String updateSql = Dsl.PSC.update(Account.class).append("WHERE id = 1").build().query();
+        final String updateSql = PSC.update(Account.class).append("WHERE id = 1").build().query();
         assertTrue(updateSql.startsWith("UPDATE account SET id = ?, gui = ?, "), updateSql);
         assertTrue(updateSql.endsWith(" WHERE id = 1"), updateSql);
 
         // An UPDATE with nothing staged fails fast rather than silently dropping "UPDATE t SET ".
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.update("account").append("WHERE id = 1").build());
+        assertThrows(IllegalStateException.class, () -> PSC.update("account").append("WHERE id = 1").build());
     }
 
     // append(Condition) emitted set operations without the per-segment reset that union(...)/intersect(...)
@@ -2508,24 +2504,19 @@ public class AbstractQueryBuilderTest extends TestBase {
     // set-operation result) and a later distinct() was spliced retro-actively into that operand.
     @Test
     public void testAppendedSetOperationClosesTheSegmentLikeTheUnionMethods() {
-        final String viaAppend = Dsl.PSC.select("firstName")
+        final String viaAppend = PSC.select("firstName")
                 .from(Account.class, "acc")
                 .append(new Union(Filters.subQuery("SELECT first_name FROM archive")))
                 .orderBy("firstName")
                 .build()
                 .query();
-        final String viaUnion = Dsl.PSC.select("firstName")
-                .from(Account.class, "acc")
-                .union("SELECT first_name FROM archive")
-                .orderBy("firstName")
-                .build()
-                .query();
+        final String viaUnion = PSC.select("firstName").from(Account.class, "acc").union("SELECT first_name FROM archive").orderBy("firstName").build().query();
 
         assertEquals(viaUnion, viaAppend);
         assertTrue(viaAppend.endsWith("ORDER BY first_name"), "ORDER BY after a set operation must not be alias-qualified: " + viaAppend);
 
         // Same reset for the Criteria-carried set-operation path.
-        final String viaCriteria = Dsl.PSC.select("firstName")
+        final String viaCriteria = PSC.select("firstName")
                 .from(Account.class, "acc")
                 .append(Criteria.builder().union(Filters.subQuery("SELECT first_name FROM archive")).orderBy("firstName").build())
                 .build()
@@ -2534,9 +2525,8 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         // A select modifier can no longer be spliced into the already-finished left operand; the staged
         // modifier is now rejected at build() exactly as it is after union(String).
-        assertThrows(IllegalStateException.class,
-                () -> Dsl.PSC.select("id").from("t").append(new Union(Filters.subQuery("SELECT id FROM u"))).distinct().build());
-        assertThrows(IllegalStateException.class, () -> Dsl.PSC.select("id").from("t").union("SELECT id FROM u").distinct().build());
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("t").append(new Union(Filters.subQuery("SELECT id FROM u"))).distinct().build());
+        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("t").union("SELECT id FROM u").distinct().build());
     }
 
     // A Criteria carrying both a select modifier and a set operation lost the modifier: it was applied
@@ -2545,12 +2535,12 @@ public class AbstractQueryBuilderTest extends TestBase {
     // it was validated against, exactly like selectModifier("DISTINCT") called before union(...).
     @Test
     public void testCriteriaSelectModifierWithCriteriaSetOperation() {
-        final String viaCriteria = Dsl.PSC.select("id")
+        final String viaCriteria = PSC.select("id")
                 .from("t")
                 .append(Criteria.builder().selectModifier("DISTINCT").union(Filters.subQuery("SELECT id FROM u")).build())
                 .build()
                 .query();
-        final String viaMethods = Dsl.PSC.select("id").from("t").selectModifier("DISTINCT").union("SELECT id FROM u").build().query();
+        final String viaMethods = PSC.select("id").from("t").selectModifier("DISTINCT").union("SELECT id FROM u").build().query();
 
         assertEquals("SELECT DISTINCT id FROM t UNION SELECT id FROM u", viaCriteria);
         assertEquals(viaMethods, viaCriteria);
@@ -2561,13 +2551,13 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testOnConditionDoesNotDuplicateTheConnectorKeyword() {
         assertEquals("SELECT id FROM t INNER JOIN dept ON (t.dept_id = dept.id)",
-                Dsl.PSC.select("id").from("t").innerJoin("dept").on(Filters.on("t.deptId", "dept.id")).build().query());
+                PSC.select("id").from("t").innerJoin("dept").on(Filters.on("t.deptId", "dept.id")).build().query());
         assertEquals("SELECT id FROM t INNER JOIN dept USING (dept_id)",
-                Dsl.PSC.select("id").from("t").innerJoin("dept").on(Filters.using("deptId")).build().query());
+                PSC.select("id").from("t").innerJoin("dept").on(Filters.using("deptId")).build().query());
 
         // A plain predicate still gets the ON keyword supplied by the builder.
         assertEquals("SELECT id FROM t INNER JOIN dept ON t.dept_id = dept.id",
-                Dsl.PSC.select("id").from("t").innerJoin("dept").on(Filters.expr("t.deptId = dept.id")).build().query());
+                PSC.select("id").from("t").innerJoin("dept").on(Filters.expr("t.deptId = dept.id")).build().query());
     }
 
     @Test
@@ -2589,20 +2579,20 @@ public class AbstractQueryBuilderTest extends TestBase {
             }
         };
 
-        final SqlBuilder where = Dsl.PSC.select("id").from("users");
+        final SqlBuilder where = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> where.where(Criteria.builder().where(Filters.eq("active", true)).build()));
         assertThrows(IllegalArgumentException.class, () -> where.where(Filters.subQuery("SELECT id FROM archived_users")));
         assertThrows(IllegalArgumentException.class, () -> where.where(Filters.where(Filters.eq("active", true))));
         assertThrows(IllegalArgumentException.class, () -> where.where(Filters.on("users.id", "accounts.user_id")));
         assertEquals("SELECT id FROM users WHERE active = ?", where.where(Filters.eq("active", true)).build().query());
 
-        final SqlBuilder having = Dsl.PSC.select("department").from("users").groupBy("department");
+        final SqlBuilder having = PSC.select("department").from("users").groupBy("department");
         assertThrows(IllegalArgumentException.class, () -> having.having(Filters.innerJoin("accounts")));
         assertThrows(IllegalArgumentException.class, () -> having.having(Filters.any(Filters.subQuery("SELECT user_id FROM archived_users"))));
         assertThrows(IllegalArgumentException.class, () -> having.having(Filters.using("department")));
         assertEquals("SELECT department FROM users GROUP BY department HAVING COUNT(*) > 1", having.having(Filters.expr("COUNT(*) > 1")).build().query());
 
-        final SqlBuilder on = Dsl.PSC.select("id").from("users").innerJoin("accounts");
+        final SqlBuilder on = PSC.select("id").from("users").innerJoin("accounts");
         assertThrows(IllegalArgumentException.class, () -> on.on(Filters.expr(" ")));
         assertThrows(IllegalArgumentException.class, () -> on.on(Filters.and()));
         assertThrows(IllegalArgumentException.class, () -> on.on(nullOperator));
@@ -2612,7 +2602,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testAppendRejectsStructuralImplicitWhereOperandsWithoutMutation() {
-        final SqlBuilder builder = Dsl.PSC.select("id").from("users");
+        final SqlBuilder builder = PSC.select("id").from("users");
         final SubQuery subQuery = Filters.subQuery("SELECT user_id FROM archived_users");
 
         assertThrows(IllegalArgumentException.class, () -> builder.append(subQuery));
@@ -2621,13 +2611,13 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> builder.append(Filters.innerJoin("accounts")));
         assertEquals("SELECT id FROM users WHERE active = ?", builder.append(Filters.eq("active", true)).build().query());
 
-        assertEquals("ANY (SELECT user_id FROM archived_users)", Dsl.PSC.renderCondition(Filters.any(subQuery)).build().query());
+        assertEquals("ANY (SELECT user_id FROM archived_users)", PSC.renderCondition(Filters.any(subQuery)).build().query());
     }
 
     @Test
     public void testAppendRejectsGenericClausesThatRequireDedicatedBuilderState() {
         for (final Operator operator : Arrays.asList(Operator.LIMIT, Operator.OFFSET, Operator.FOR_UPDATE)) {
-            final SqlBuilder builder = Dsl.PSC.select("id").from("users");
+            final SqlBuilder builder = PSC.select("id").from("users");
 
             assertThrows(IllegalArgumentException.class, () -> builder.append(new TestClause(operator, Filters.expr("10"))));
             assertEquals("SELECT id FROM users WHERE active = ?", builder.where(Filters.eq("active", true)).build().query());
@@ -2636,18 +2626,18 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testCrossAndNaturalJoinRejectOnlyTopLevelConnectorsWithoutMutation() {
-        final SqlBuilder cross = Dsl.PSC.select("id").from("users");
+        final SqlBuilder cross = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> cross.crossJoin("orders o ON o.user_id = users.id"));
         assertEquals("SELECT id FROM users CROSS JOIN orders o", cross.crossJoin("orders o").build().query());
 
-        final SqlBuilder natural = Dsl.PSC.select("id").from("users");
+        final SqlBuilder natural = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> natural.naturalJoin("orders o USING (user_id)"));
         assertEquals("SELECT id FROM users NATURAL JOIN orders o", natural.naturalJoin("orders o").build().query());
 
         assertEquals("SELECT id FROM users CROSS JOIN (SELECT a.id FROM a JOIN b ON a.id = b.id) nested_orders",
-                Dsl.PSC.select("id").from("users").crossJoin("(SELECT a.id FROM a JOIN b ON a.id = b.id) nested_orders").build().query());
+                PSC.select("id").from("users").crossJoin("(SELECT a.id FROM a JOIN b ON a.id = b.id) nested_orders").build().query());
         assertEquals("SELECT id FROM users NATURAL JOIN (SELECT id FROM a JOIN b USING (id)) nested_orders",
-                Dsl.PSC.select("id").from("users").naturalJoin("(SELECT id FROM a JOIN b USING (id)) nested_orders").build().query());
+                PSC.select("id").from("users").naturalJoin("(SELECT id FROM a JOIN b USING (id)) nested_orders").build().query());
     }
 
     // sqlKeyWords is built only from SK, which does not carry the underscore-bearing niladic keyword

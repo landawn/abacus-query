@@ -1,6 +1,7 @@
 package com.landawn.abacus.query.condition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -68,6 +69,26 @@ public class JoinTest extends TestBase {
     public void testGetCondition_Null() {
         Join join = new Join("orders");
         assertNull(join.condition());
+    }
+
+    @Test
+    public void testHasCondition_WithCondition() {
+        Join join = new Join("orders o", new Equal("customers.id", "o.customer_id"));
+        assertTrue(join.hasCondition());
+        assertNotNull(join.condition());
+    }
+
+    @Test
+    public void testHasCondition_WithoutCondition() {
+        Join join = new Join("orders");
+        assertFalse(join.hasCondition());
+        assertNull(join.condition());
+    }
+
+    @Test
+    public void testHasCondition_NullConditionPassedExplicitly() {
+        Join join = new Join(Arrays.asList("table1", "table2"), null);
+        assertFalse(join.hasCondition());
     }
 
     @Test

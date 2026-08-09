@@ -215,6 +215,12 @@ public class SqlDialect {
         /**
          * Creates a {@code ProductInfo} with the given product name and no version (an empty {@link #version()}).
          *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * ProductInfo mysql = ProductInfo.of("MySQL");
+         * boolean isMySql = mysql.isMySQL();   // true
+         * }</pre>
+         *
          * @param name the database product name, such as {@code "Oracle"} or {@code "MySQL"}
          * @return a new {@code ProductInfo} with the given name and an empty ({@code ""}) version
          * @throws IllegalArgumentException if {@code name} is {@code null}, empty, or blank
@@ -331,6 +337,13 @@ public class SqlDialect {
          * is {@code null}, blank, does not begin with an integer component, or has an empty or unparseable
          * component (for example {@code "8."} or {@code "8..0"}). This makes the method safe for
          * feature-gating: an unknown or unparseable version simply fails the check.</p>
+         *
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * ProductInfo mysql = ProductInfo.of("MySQL", "8.0.32");
+         * boolean atLeast80 = mysql.isVersionAtLeast("8.0");   // true
+         * boolean atLeast81 = mysql.isVersionAtLeast("8.1");   // false
+         * }</pre>
          *
          * @param minVersion the minimum version to compare against, such as {@code "8.0"} or {@code "19"}
          * @return {@code true} if this product's version parses and is greater than or equal to {@code minVersion};

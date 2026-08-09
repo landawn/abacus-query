@@ -72,12 +72,12 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * String sql = "SELECT * FROM users WHERE age > 25 ORDER BY name";
- * List<String> tokens = SqlParser.parse(sql);
+ * List<String> tokens = SqlParser.tokenize(sql);
  * // Result: ["SELECT", " ", "*", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">", " ", "25", " ", "ORDER", " ", "BY", " ", "name"]
  *
  * SqlParser.Tokenizer postgresTokenizer = SqlParser.tokenizer(
  *         SqlParser.TokenizerConfig.builder().withSeparator("::").build());
- * List<String> postgresTokens = postgresTokenizer.parse("payload::jsonb");
+ * List<String> postgresTokens = postgresTokenizer.tokenize("payload::jsonb");
  * // Result: ["payload", "::", "jsonb"]
  * }</pre>
  *
@@ -468,16 +468,36 @@ public final class SqlParser {
             return ch < 128 ? asciiSeparators[ch] : nonAsciiSingleCharSeparators.contains(ch);
         }
 
+        /**
+         * Returns the hash code of this configuration.
+         * The hash code is derived from the configured separator set, so configurations with
+         * equal separators have equal hash codes.
+         *
+         * @return a hash code consistent with {@link #equals(Object)}
+         */
         @Override
         public int hashCode() {
             return separators.hashCode();
         }
 
+        /**
+         * Compares this configuration with another object for equality.
+         * Two configurations are equal when they hold equal separator sets; the order in which
+         * separators were added does not affect equality.
+         *
+         * @param obj the object to compare with
+         * @return {@code true} if {@code obj} is a {@code TokenizerConfig} with the same separators, {@code false} otherwise
+         */
         @Override
         public boolean equals(final Object obj) {
             return obj == this || obj instanceof final TokenizerConfig other && separators.equals(other.separators);
         }
 
+        /**
+         * Returns a string representation of this configuration listing its separators.
+         *
+         * @return a string of the form {@code "TokenizerConfig{separators=[...]}"}
+         */
         @Override
         public String toString() {
             return "TokenizerConfig{" + "separators=" + separators + '}';
@@ -574,15 +594,22 @@ public final class SqlParser {
         }
 
         /**
-         * Parses a SQL statement with this tokenizer's separator configuration.
+         * Tokenizes a SQL statement with this tokenizer's separator configuration.
          *
-         * @param sql the SQL statement to parse; must not be {@code null}
+         * <p><b>Usage Examples:</b></p>
+         * <pre>{@code
+         * SqlParser.Tokenizer tokenizer = SqlParser.tokenizer();
+         * List<String> tokens = tokenizer.tokenize("select id from orders");
+         * // Result: ["select", " ", "id", " ", "from", " ", "orders"]
+         * }</pre>
+         *
+         * @param sql the SQL statement to tokenize; must not be {@code null}
          * @return the lexical SQL tokens
          * @throws NullPointerException if {@code sql} is {@code null}
-         * @see SqlParser#parse(String)
+         * @see SqlParser#tokenize(String)
          */
-        public List<String> parse(final String sql) {
-            return SqlParser.parse(sql, tokenizerConfig);
+        public List<String> tokenize(final String sql) {
+            return SqlParser.tokenize(sql, tokenizerConfig);
         }
 
         /**
@@ -668,8 +695,8 @@ public final class SqlParser {
     }
 
     /**
-     * Parses a SQL statement into a list of lexical SQL tokens.
-     * This method tokenizes the SQL string while preserving the semantic meaning
+     * Tokenizes a SQL statement into a list of lexical SQL tokens.
+     * This method preserves the semantic meaning
      * of SQL constructs such as keywords, operators, identifiers, and literals.
      *
      * <p>Comments are stripped (line and hash comments are always stripped; block comments are
@@ -682,19 +709,19 @@ public final class SqlParser {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<String> tokens = SqlParser.parse("SELECT name, age FROM users WHERE age >= 18");
+     * List<String> tokens = SqlParser.tokenize("SELECT name, age FROM users WHERE age >= 18");
      * // Result: ["SELECT", " ", "name", ",", " ", "age", " ", "FROM", " ", "users", " ", "WHERE", " ", "age", " ", ">=", " ", "18"]
      * }</pre>
      *
-     * @param sql the SQL statement to parse (must not be {@code null})
-     * @return a list of tokens representing the parsed SQL statement
+     * @param sql the SQL statement to tokenize (must not be {@code null})
+     * @return a list of tokens representing the tokenized SQL statement
      * @throws NullPointerException if {@code sql} is {@code null}
      */
-    public static List<String> parse(final String sql) {
-        return parse(sql, DEFAULT_TOKENIZER_CONFIG);
+    public static List<String> tokenize(final String sql) {
+        return tokenize(sql, DEFAULT_TOKENIZER_CONFIG);
     }
 
-    private static List<String> parse(final String sql, final TokenizerConfig tokenizerConfig) {
+    private static List<String> tokenize(final String sql, final TokenizerConfig tokenizerConfig) {
         final int sqlLength = sql.length();
         final StringBuilder sb = Objectory.createStringBuilder();
 
@@ -1018,7 +1045,7 @@ public final class SqlParser {
                 final int startIndex = Math.max(0, fromIndex);
                 String temp = "";
                 char quoteChar = 0;
-                // Forward-running backslash parity (see parse()): true if the char at the current
+                // Forward-running backslash parity (see tokenize()): true if the char at the current
                 // `index` is preceded by an ODD number of consecutive backslashes.
                 boolean bsEscaped = false;
 
@@ -1258,7 +1285,7 @@ public final class SqlParser {
         try {
             String temp = "";
             char quoteChar = 0;
-            // Forward-running backslash parity (see parse()): true if the char at the current
+            // Forward-running backslash parity (see tokenize()): true if the char at the current
             // `index` is preceded by an ODD number of consecutive backslashes.
             boolean bsEscaped = false;
 
@@ -1405,7 +1432,7 @@ public final class SqlParser {
         // accumulated yet (the analogue of nextToken's `!sb.isEmpty()` guard).
         boolean started = false;
         char quoteChar = 0;
-        // Forward-running backslash parity (see parse()): true if the char at the current
+        // Forward-running backslash parity (see tokenize()): true if the char at the current
         // `index` is preceded by an ODD number of consecutive backslashes.
         boolean bsEscaped = false;
 
@@ -2331,12 +2358,12 @@ public final class SqlParser {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * List<String> tokens = SqlParser.parse("SELECT COUNT(*) FROM users");
+     * List<String> tokens = SqlParser.tokenize("SELECT COUNT(*) FROM users");
      * boolean isFunc = SqlParser.isFunctionName(tokens, 2);   // true for "COUNT"
      * boolean notFunc = SqlParser.isFunctionName(tokens, 0);  // false for "SELECT"
      * }</pre>
      *
-     * @param tokens the parsed SQL tokens (typically the result of {@link #parse(String)})
+     * @param tokens the parsed SQL tokens (typically the result of {@link #tokenize(String)})
      * @param index the index of the token to check; invalid indices return {@code false}
      * @return {@code true} if the token at {@code index} is followed (after zero or more space tokens)
      *         by the {@code "("} token; {@code false} otherwise
@@ -2741,7 +2768,6 @@ public final class SqlParser {
      * @see #isDeleteQuery(String)
      * @see #isInsertOrReplaceQuery(String)
      * @see #isReadOnlyQuery(String)
-     * @see #isNoUpdateQuery(String)
      */
     public static boolean isReadOrInsertQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
@@ -2941,19 +2967,6 @@ public final class SqlParser {
     /** MySQL/MariaDB recognize {@code --} as a comment only before ASCII whitespace/control or end-of-input. */
     private static boolean isMySqlDashCommentStart(final String sql, final int len, final int index) {
         return index + 2 >= len || sql.charAt(index + 2) <= ' ' || sql.charAt(index + 2) == '\u007F';
-    }
-
-    /**
-     * Compatibility alias for the original public API name. Despite its historical name, this
-     * predicate accepts both reads and plain/safe inserts.
-     *
-     * @param sql the SQL statement to check; may be empty or {@code null}
-     * @return the result of {@link #isReadOrInsertQuery(String)}
-     * @deprecated use {@link #isReadOrInsertQuery(String)}, whose name describes the accepted statement kinds
-     */
-    @Deprecated
-    public static boolean isNoUpdateQuery(final String sql) {
-        return isReadOrInsertQuery(sql);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.landawn.abacus.query;
 
+import static com.landawn.abacus.query.Dsl.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -265,7 +266,7 @@ public class SqlDialectPaginationTest extends TestBase {
         assertEquals("SELECT * FROM users LIMIT 10", sql);
 
         // Predefined DSL constants carry no product info and are unchanged.
-        sql = Dsl.PSC.select("*").from("users").limit(10).offset(20).build().query();
+        sql = PSC.select("*").from("users").limit(10).offset(20).build().query();
         assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
 
         assertThrows(IllegalArgumentException.class, () -> dslFor(" "));
