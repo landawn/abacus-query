@@ -217,6 +217,23 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
+    public void testEqualsAndHashCode_InMembershipArrayUsesContentEquality() {
+        Binary cond1 = new Binary("payload", Operator.IN, java.util.List.of(new byte[] { 1, 2 }));
+        Binary cond2 = new Binary("payload", Operator.IN, java.util.List.of(new byte[] { 1, 2 }));
+
+        assertEquals(cond1, cond2);
+        assertEquals(cond1.hashCode(), cond2.hashCode());
+    }
+
+    @Test
+    public void testEquals_InMembershipArrayDifferentContent() {
+        Binary cond1 = new Binary("payload", Operator.IN, java.util.List.of(new byte[] { 1, 2 }));
+        Binary cond2 = new Binary("payload", Operator.IN, java.util.List.of(new byte[] { 9, 2 }));
+
+        assertNotEquals(cond1, cond2);
+    }
+
+    @Test
     public void testHashCodeTracksMutableArrayValue() {
         final byte[] value = { 1, 2 };
         final Binary condition = new Binary("payload", Operator.EQUAL, value);

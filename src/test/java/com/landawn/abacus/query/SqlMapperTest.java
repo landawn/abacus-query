@@ -795,6 +795,16 @@ public class SqlMapperTest extends TestBase {
     }
 
     @Test
+    public void testLoadFromVarargs_DirectoryPathThrowsIae() {
+        // A path that resolves to a directory is not a loadable file; the varargs overload must
+        // reject it with IllegalArgumentException just like loadFrom(String) does.
+        File directoryPath = tempDir;
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> SqlMapper.loadFrom(directoryPath.getAbsolutePath(), new String[0]));
+        assertTrue(e.getMessage().contains(directoryPath.getAbsolutePath()));
+    }
+
+    @Test
     public void testLoad_MalformedXmlWrapsParsingException() throws IOException {
         File malformed = new File(tempDir, "malformed-sql-mapper.xml");
 

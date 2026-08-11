@@ -519,6 +519,22 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
+    public void testIsTrue() {
+        Is isTrue = Filters.isTrue("active");
+        assertNotNull(isTrue);
+        assertEquals(Operator.IS, isTrue.operator());
+        assertEquals("active IS TRUE", isTrue.toString());
+    }
+
+    @Test
+    public void testIsFalse() {
+        Is isFalse = Filters.isFalse("active");
+        assertNotNull(isFalse);
+        assertEquals(Operator.IS, isFalse.operator());
+        assertEquals("active IS FALSE", isFalse.toString());
+    }
+
+    @Test
     public void testIsNot() {
         IsNot isNot = Filters.isNot("status", "deleted");
         assertNotNull(isNot);

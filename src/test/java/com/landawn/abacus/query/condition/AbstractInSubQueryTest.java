@@ -220,6 +220,23 @@ public class AbstractInSubQueryTest extends TestBase {
     }
 
     @Test
+    public void testValidateSubQuerySelectArity_NullProjectionNameDoesNotNpe() {
+        // A projection containing null is not a wildcard; arity is still checked without NPE.
+        final SubQuery withNullProp = new SubQuery("SELECT 1") {
+            @Override
+            public com.landawn.abacus.util.ImmutableList<String> selectPropNames() {
+                final java.util.List<String> props = new java.util.ArrayList<>();
+                props.add(null);
+                props.add("id");
+                return com.landawn.abacus.util.ImmutableList.wrap(props);
+            }
+        };
+
+        assertDoesNotThrow(() -> AbstractInSubQuery.validateSubQuerySelectArity(2, withNullProp));
+        assertThrows(IllegalArgumentException.class, () -> AbstractInSubQuery.validateSubQuerySelectArity(1, withNullProp));
+    }
+
+    @Test
     @Tag("2025")
     public void testConstructor_RejectsBlankPropertyNames() {
         final SubQuery subQuery = Filters.subQuery("SELECT id FROM users");

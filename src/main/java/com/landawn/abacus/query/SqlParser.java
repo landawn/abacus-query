@@ -1070,7 +1070,10 @@ public final class SqlParser {
                                 // Even count (including 0) of preceding backslashes -> NOT escaped.
                                 temp = sb.toString();
 
-                                final int matchStart = index - searchToken.length() + 1;
+                                // Anchor the start index on the scanned token (temp) rather than the
+                                // search string, so the reported position is the true start of the
+                                // matched text independent of how the comparison below is evaluated.
+                                final int matchStart = index - temp.length() + 1;
 
                                 if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                                     result = matchStart;
@@ -1092,7 +1095,7 @@ public final class SqlParser {
                         // Skip single-line comment (-- ...)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            final int matchStart = index - searchToken.length();
+                            final int matchStart = index - temp.length();
 
                             if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                                 result = matchStart;
@@ -1110,7 +1113,7 @@ public final class SqlParser {
                         // Skip MySQL single-line comment (# ...)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            final int matchStart = index - searchToken.length();
+                            final int matchStart = index - temp.length();
 
                             if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                                 result = matchStart;
@@ -1128,7 +1131,7 @@ public final class SqlParser {
                         // Skip block comment (/* ... */)
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            final int matchStart = index - searchToken.length();
+                            final int matchStart = index - temp.length();
 
                             if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                                 result = matchStart;
@@ -1155,7 +1158,7 @@ public final class SqlParser {
                     } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig)) {
                         if (!sb.isEmpty()) {
                             temp = sb.toString();
-                            final int matchStart = index - searchToken.length();
+                            final int matchStart = index - temp.length();
 
                             if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                                 result = matchStart;
@@ -1192,7 +1195,7 @@ public final class SqlParser {
 
                 if (result < 0 && !sb.isEmpty()) {
                     temp = sb.toString();
-                    final int matchStart = sqlLength - searchToken.length();
+                    final int matchStart = sqlLength - temp.length();
 
                     if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
                         result = matchStart;

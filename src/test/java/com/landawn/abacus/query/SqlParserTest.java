@@ -291,6 +291,17 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
+    public void testIndexOfToken_MatchStartUsesMatchedTokenLength() {
+        // Match-start is derived from the token found in the SQL (temp.length()), not only from the
+        // search string length, so the returned index is the true start of that token.
+        final String sql = "SELECT * FROM users WHERE age > 18";
+        final int index = SqlParser.indexOfToken(sql, "where", 0, false);
+
+        assertEquals(sql.indexOf("WHERE"), index);
+        assertEquals("WHERE", sql.substring(index, index + 5));
+    }
+
+    @Test
     public void testIndexOfTokenCaseSensitive() {
         String sql = "SELECT * FROM users WHERE age > 18";
         int index = SqlParser.indexOfToken(sql, "where", 0, true);

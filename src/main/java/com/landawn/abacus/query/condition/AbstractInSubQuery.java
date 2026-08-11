@@ -234,6 +234,12 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      */
     private static boolean hasWildcardProjection(final Collection<String> selectPropNames) {
         for (final String selectPropName : selectPropNames) {
+            if (selectPropName == null) {
+                // Null projection names are not wildcards; treat them as ordinary columns so callers
+                // get a clear arity IllegalArgumentException rather than an NPE on trim().
+                continue;
+            }
+
             final String trimmed = selectPropName.trim();
 
             if ("*".equals(trimmed) || trimmed.endsWith(".*")) {

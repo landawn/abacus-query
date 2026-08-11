@@ -184,7 +184,7 @@ public class Join extends AbstractCondition {
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
-     *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
+     *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. May be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
@@ -213,7 +213,7 @@ public class Join extends AbstractCondition {
      * @param operator the join operator
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
-     *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
+     *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. May be {@code null}.
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code operator} is
      *                                  {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} and
@@ -252,7 +252,7 @@ public class Join extends AbstractCondition {
      *
      * @param joinEntities the collection of tables or entities to join with.
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
-     *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
+     *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. May be {@code null}.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins
@@ -282,7 +282,7 @@ public class Join extends AbstractCondition {
      * @param operator the join operator
      * @param joinEntities the collection of tables or entities to join with.
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
-     *            {@link On} or deprecated {@link Using} supplies its own keyword. May be {@code null}.
+     *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. May be {@code null}.
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code joinEntities} is
      *                                  {@code null} or empty, or contains {@code null}, empty, or blank elements; or

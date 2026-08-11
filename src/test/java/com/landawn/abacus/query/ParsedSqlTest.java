@@ -329,6 +329,43 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
+    public void testParse_JdbcCallEscape_NamedParameters() {
+        ParsedSql parsed = ParsedSql.parse("{call refresh_user(:userId, :mode)}");
+        assertEquals("{call refresh_user(?, ?)}", parsed.parameterizedSql());
+        assertEquals(2, parsed.parameterCount());
+        assertEquals(Arrays.asList("userId", "mode"), parsed.namedParameters());
+    }
+
+    @Test
+    public void testParse_JdbcCallEscape_SpacedCall() {
+        ParsedSql parsed = ParsedSql.parse("{ CALL proc(?) }");
+        assertEquals("{ CALL proc(?) }", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertTrue(parsed.namedParameters().isEmpty());
+    }
+
+    @Test
+    public void testParse_JdbcCallEscape_ReturnParameterForm_PositionalOnly() {
+        ParsedSql parsed = ParsedSql.parse("{? = call get_val(?)}");
+        assertEquals("{? = call get_val(?)}", parsed.parameterizedSql());
+        assertEquals(2, parsed.parameterCount());
+        assertTrue(parsed.namedParameters().isEmpty());
+    }
+
+    @Test
+    public void testParse_JdbcCallEscape_IbatisNamedParameter() {
+        ParsedSql parsed = ParsedSql.parse("{call proc(#{id})}");
+        assertEquals("{call proc(?)}", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertEquals("id", parsed.namedParameters().get(0));
+    }
+
+    @Test
+    public void testParse_JdbcCallEscape_RejectsMixedParameterStyles() {
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("{? = call get_val(:id)}"));
+    }
+
+    @Test
     public void testParse_ReplaceStatement() {
         ParsedSql parsed = ParsedSql.parse("REPLACE INTO users (id, name) VALUES (:id, :name)");
         assertEquals("REPLACE INTO users (id, name) VALUES (?, ?)", parsed.parameterizedSql());

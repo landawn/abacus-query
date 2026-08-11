@@ -46,8 +46,8 @@ import com.landawn.abacus.util.Strings;
  *   <li>Less flexible than ON for complex join conditions</li>
  * </ul>
  *
- * <p><b>Deprecation status:</b> both public {@code Using} constructors (and the corresponding
- * {@code Filters.using(...)} factory methods) are deprecated. Prefer an {@link On} condition created via
+ * <p><b>API status:</b> both public {@code Using} constructors (and the corresponding
+ * {@code Filters.using(...)} factory methods) are annotated {@code @Beta}. Prefer an {@link On} condition created via
  * {@link Filters#on(java.util.Map)}, which spells out fully qualified column pairs and is more portable.
  *
  * <p><b>Usage Examples:</b></p>

@@ -2097,7 +2097,7 @@ public final class Filters {
      * The target database must support SQL boolean literals and the {@code IS TRUE} predicate.
      *
      * @param propName the property or column to test
-     * @return an {@link Is} condition rendering {@code propName IS true}
+     * @return an {@link Is} condition rendering {@code propName IS TRUE}
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static Is isTrue(final String propName) {
@@ -2109,7 +2109,7 @@ public final class Filters {
      * The target database must support SQL boolean literals and the {@code IS FALSE} predicate.
      *
      * @param propName the property or column to test
-     * @return an {@link Is} condition rendering {@code propName IS false}
+     * @return an {@link Is} condition rendering {@code propName IS FALSE}
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
      */
     public static Is isFalse(final String propName) {

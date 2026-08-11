@@ -212,6 +212,34 @@ public class AbstractInTest extends TestBase {
     }
 
     @Test
+    public void testEqualsAndHashCode_ArrayMembershipUsesContentEquality() {
+        final TestAbstractIn left = new TestAbstractIn("payload", Arrays.asList(new byte[] { 1, 2 }));
+        final TestAbstractIn right = new TestAbstractIn("payload", Arrays.asList(new byte[] { 1, 2 }));
+
+        assertEquals(left, right);
+        assertEquals(left.hashCode(), right.hashCode());
+    }
+
+    @Test
+    public void testEquals_ArrayMembershipDifferentContent() {
+        final TestAbstractIn left = new TestAbstractIn("payload", Arrays.asList(new byte[] { 1, 2 }));
+        final TestAbstractIn right = new TestAbstractIn("payload", Arrays.asList(new byte[] { 1, 3 }));
+
+        assertNotEquals(left, right);
+    }
+
+    @Test
+    public void testEqualsAndHashCode_RowValueArrayMembershipUsesContentEquality() {
+        final TestRowAbstractIn left = new TestRowAbstractIn(Arrays.asList("a", "b"),
+                Arrays.asList(Arrays.asList(new byte[] { 1 }, new byte[] { 2 })));
+        final TestRowAbstractIn right = new TestRowAbstractIn(Arrays.asList("a", "b"),
+                Arrays.asList(Arrays.asList(new byte[] { 1 }, new byte[] { 2 })));
+
+        assertEquals(left, right);
+        assertEquals(left.hashCode(), right.hashCode());
+    }
+
+    @Test
     public void testDefaultConstructor_EmptyState_Batch2() {
         final EmptyAbstractIn left = new EmptyAbstractIn();
         final EmptyAbstractIn right = new EmptyAbstractIn();

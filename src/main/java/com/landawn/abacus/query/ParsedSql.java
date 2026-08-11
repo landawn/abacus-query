@@ -48,7 +48,9 @@ import com.landawn.abacus.util.Strings;
  * <p>Parameter detection and conversion is only performed when the SQL is recognized as a
  * data operation statement (one whose first non-comment / non-parenthesis token is
  * {@code SELECT}, {@code INSERT}, {@code UPDATE}, {@code DELETE}, {@code WITH}, {@code MERGE},
- * {@code CALL}, {@code VALUES}, {@code EXPLAIN} or {@code REPLACE}). For an {@code EXPLAIN}
+ * {@code CALL}, {@code VALUES}, {@code EXPLAIN} or {@code REPLACE}). JDBC call escapes
+ * (<code>{call ...}</code> and <code>{? = call ...}</code>) are recognized as {@code CALL}, including
+ * when the tokenizer emits a glued <code>{call</code> opener token. For an {@code EXPLAIN}
  * statement, the first recognized keyword that follows is used to classify it (for example,
  * {@code EXPLAIN SELECT ...} is treated as a {@code SELECT}); if no such keyword follows,
  * {@code EXPLAIN} itself is used. For any other SQL, no parameter substitution is performed
@@ -467,6 +469,14 @@ public final class ParsedSql {
             nextIndex = nestedIndex + 1;
         }
 
+        // JDBC escape forms: "{call ...}" / "{? = call ...}". The tokenizer may emit a single
+        // "{call" token when there is no whitespace after '{'; otherwise '{' is its own token.
+        final String jdbcCallOp = resolveJdbcCallOpWord(opWord, words, nextIndex);
+
+        if (jdbcCallOp != null) {
+            return jdbcCallOp;
+        }
+
         if ("EXPLAIN".equalsIgnoreCase(opWord)) {
             int explainedIndex = nextNonCommentWord(words, nextIndex);
 
@@ -482,6 +492,53 @@ public final class ParsedSql {
         }
 
         return opWord;
+    }
+
+    /**
+     * Returns {@code "CALL"} when {@code opWord} (at the current statement head) introduces a JDBC
+     * call escape, otherwise {@code null}. Recognizes a glued <code>{call</code> token and the
+     * multi-token forms <code>{ call ...}</code> and <code>{? = call ...}</code>.
+     */
+    private static String resolveJdbcCallOpWord(final String opWord, final List<String> words, final int nextIndex) {
+        if (Strings.isEmpty(opWord)) {
+            return null;
+        }
+
+        // Glued form: tokenizer emits "{call" / "{CALL" as one word.
+        if (opWord.length() > 1 && opWord.charAt(0) == '{' && "CALL".equalsIgnoreCase(opWord.substring(1))) {
+            return "CALL";
+        }
+
+        if (!"{".equals(opWord)) {
+            return null;
+        }
+
+        int idx = nextNonCommentWord(words, nextIndex);
+
+        if (idx < 0) {
+            return null;
+        }
+
+        String next = words.get(idx);
+
+        // Optional return-parameter form: {? = call ...}
+        if (SK.QUESTION_MARK.equals(next)) {
+            idx = nextNonCommentWord(words, idx + 1);
+
+            if (idx < 0 || !"=".equals(words.get(idx))) {
+                return null;
+            }
+
+            idx = nextNonCommentWord(words, idx + 1);
+
+            if (idx < 0) {
+                return null;
+            }
+
+            next = words.get(idx);
+        }
+
+        return "CALL".equalsIgnoreCase(next) ? "CALL" : null;
     }
 
     private static int findNamedParameterEndIndex(final String token, final int fromIndex) {

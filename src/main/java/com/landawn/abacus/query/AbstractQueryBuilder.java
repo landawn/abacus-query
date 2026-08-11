@@ -168,7 +168,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected static final String ASTERISK = SK.ASTERISK;
 
     /** Constant for the COUNT(*) aggregate function. */
-    protected static final String COUNT_ALL = "count(*)";
+    protected static final String COUNT_ALL = SK.COUNT_ALL;
 
     /** Immutable single-element list holding {@link #COUNT_ALL}, for selecting {@code COUNT(*)}. */
     protected static final List<String> COUNT_ALL_LIST = ImmutableList.of(COUNT_ALL);

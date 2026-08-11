@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -503,7 +504,8 @@ public class Binary extends ComposableCondition {
         int h = 17;
         h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
         h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        h = (h * 31) + N.deepHashCode(propValue);
+        // Membership lists deep-walk array elements so IN content-equality matches scalar arrays.
+        h = (h * 31) + deepPropValueHashCode(propValue);
 
         return h == 0 ? 1 : h;
     }
@@ -514,6 +516,9 @@ public class Binary extends ComposableCondition {
      * property name, operator, and value. The runtime class is part of the equality contract, so an
      * instance of one concrete subclass is never equal to an instance of a different subclass (or to
      * a raw {@code Binary}), even when their property name, operator, and value all match.
+     *
+     * <p>For {@code IN}/{@code NOT IN} membership lists, array elements are compared by content
+     * (the same contract as a scalar array RHS) rather than by {@link List#equals(Object)} identity.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -543,6 +548,60 @@ public class Binary extends ComposableCondition {
         }
 
         final Binary other = (Binary) obj;
-        return N.equals(propName, other.propName) && N.equals(operator, other.operator) && N.equals(propValue, other.propValue);
+        return N.equals(propName, other.propName) && N.equals(operator, other.operator) && deepPropValueEquals(propValue, other.propValue);
+    }
+
+    /**
+     * Deep equality for the RHS value. Collections (IN membership lists) are compared element-wise
+     * so array members use content equality via {@link N#equals(Object, Object)}.
+     */
+    private static boolean deepPropValueEquals(final Object left, final Object right) {
+        if (left == right) {
+            return true;
+        }
+
+        if (left == null || right == null) {
+            return false;
+        }
+
+        if (left instanceof final Collection<?> leftValues && right instanceof final Collection<?> rightValues) {
+            if (leftValues.size() != rightValues.size()) {
+                return false;
+            }
+
+            final Iterator<?> leftIter = leftValues.iterator();
+            final Iterator<?> rightIter = rightValues.iterator();
+
+            while (leftIter.hasNext()) {
+                if (!deepPropValueEquals(leftIter.next(), rightIter.next())) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return N.equals(left, right);
+    }
+
+    /**
+     * Deep hash for the RHS value, aligned with {@link #deepPropValueEquals}.
+     */
+    private static int deepPropValueHashCode(final Object value) {
+        if (value == null) {
+            return 0;
+        }
+
+        if (value instanceof final Collection<?> values) {
+            int h = 1;
+
+            for (final Object element : values) {
+                h = (31 * h) + deepPropValueHashCode(element);
+            }
+
+            return h;
+        }
+
+        return N.deepHashCode(value);
     }
 }

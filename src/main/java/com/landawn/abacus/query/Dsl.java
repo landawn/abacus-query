@@ -49,7 +49,7 @@ import com.landawn.abacus.util.u.Optional;
  *
  * <p>Each predefined constant on this class (e.g. {@link #PSC}, {@link #NSC}, {@link #SCSB}) is a
  * {@code Dsl} bound to a specific dialect. Call one of the statement methods &mdash; {@code insert},
- * {@code select}, {@code update}, {@code deleteFrom}, {@code count}, etc. &mdash; to obtain a fresh
+ * {@code select}, {@code update}, {@code deleteFrom}, {@code selectCountFrom}, etc. &mdash; to obtain a fresh
  * {@link SqlBuilder} configured for that operation. Dsl instances are immutable and thread-safe when
  * any custom named-parameter handler configured on their {@link SqlDialect} is safe for concurrent invocation; the
  * {@link SqlBuilder} instances they produce are not.</p>

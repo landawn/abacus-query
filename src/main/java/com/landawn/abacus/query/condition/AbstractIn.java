@@ -17,6 +17,7 @@ package com.landawn.abacus.query.condition;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -115,7 +116,9 @@ public abstract class AbstractIn extends ComposableCondition {
 
         this.propNames = ImmutableList.wrap(Collections.singletonList(propName));
         this.rowValueConstructor = false;
-        this.values = valuesCopy;
+        // Freeze the list like Binary.IN and the row-value path so a future internal mutator
+        // cannot desync memoized parameters() / values() from the stored membership list.
+        this.values = Collections.unmodifiableList(valuesCopy);
     }
 
     /**
@@ -524,7 +527,9 @@ public abstract class AbstractIn extends ComposableCondition {
         h = (h * 31) + N.hashCode(propNames);
         h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
         h = (h * 31) + (rowValueConstructor ? 1231 : 1237);
-        h = (h * 31) + ((values == null) ? 0 : values.hashCode());
+        // Deep-walk membership values so array (and nested collection) elements match Binary's
+        // scalar array contract rather than List.equals identity semantics for array elements.
+        h = (h * 31) + deepMembershipHashCode(values);
 
         return h == 0 ? 1 : h;
     }
@@ -533,6 +538,10 @@ public abstract class AbstractIn extends ComposableCondition {
      * Checks if this condition is equal to another object.
      * Two conditions are equal if they have the exact same runtime class, property name(s),
      * operator, row-value mode, and values list.
+     *
+     * <p>Membership values are compared deeply: array elements use content equality (the same
+     * contract as a scalar array RHS on {@link Binary}), and nested collections (row-value tuples)
+     * are walked element-wise.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -565,6 +574,61 @@ public abstract class AbstractIn extends ComposableCondition {
 
         final AbstractIn other = (AbstractIn) obj;
         return rowValueConstructor == other.rowValueConstructor && N.equals(propNames, other.propNames) && N.equals(operator, other.operator)
-                && N.equals(values, other.values);
+                && deepMembershipEquals(values, other.values);
+    }
+
+    /**
+     * Deep equality for membership values / row tuples. Collections are compared element-wise so
+     * array members use content equality ({@link N#equals(Object, Object)}) rather than reference
+     * identity from {@link List#equals(Object)}.
+     */
+    private static boolean deepMembershipEquals(final Object left, final Object right) {
+        if (left == right) {
+            return true;
+        }
+
+        if (left == null || right == null) {
+            return false;
+        }
+
+        if (left instanceof final Collection<?> leftValues && right instanceof final Collection<?> rightValues) {
+            if (leftValues.size() != rightValues.size()) {
+                return false;
+            }
+
+            final Iterator<?> leftIter = leftValues.iterator();
+            final Iterator<?> rightIter = rightValues.iterator();
+
+            while (leftIter.hasNext()) {
+                if (!deepMembershipEquals(leftIter.next(), rightIter.next())) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return N.equals(left, right);
+    }
+
+    /**
+     * Deep hash for membership values / row tuples, aligned with {@link #deepMembershipEquals}.
+     */
+    private static int deepMembershipHashCode(final Object value) {
+        if (value == null) {
+            return 0;
+        }
+
+        if (value instanceof final Collection<?> values) {
+            int h = 1;
+
+            for (final Object element : values) {
+                h = (31 * h) + deepMembershipHashCode(element);
+            }
+
+            return h;
+        }
+
+        return N.deepHashCode(value);
     }
 }

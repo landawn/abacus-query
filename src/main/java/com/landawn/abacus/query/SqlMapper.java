@@ -231,7 +231,8 @@ public final class SqlMapper {
 
             // findFile returns null when the path exists neither literally nor in the common
             // configuration directories; without this check formatPath would throw a bare NPE.
-            if (foundFile == null) {
+            // It can also resolve to a directory, which is not a loadable file.
+            if (foundFile == null || !foundFile.isFile()) {
                 throw new IllegalArgumentException("No file found for path: " + subFilePath);
             }
 
@@ -288,7 +289,7 @@ public final class SqlMapper {
     private static void loadPath(final SqlMapper sqlMapper, final String filePath) {
         final File foundFile = PropertiesUtil.findFile(filePath);
 
-        if (foundFile == null) {
+        if (foundFile == null || !foundFile.isFile()) {
             throw new IllegalArgumentException("No file found for path: " + filePath);
         }
 
