@@ -1,7 +1,7 @@
-# abacus-query API Index (v4.9.1)
-- Build: 3511978c18e32ee1900931eb7c80c2df8bd3d5c5
+# abacus-query API Index (v4.9.2)
+- Build: 965f6afef86d928fbff63589fb3d59edc322574e
 - Java: 17
-- Generated: 2026-08-09
+- Generated: 2026-08-10
 
 ## Packages
 - com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
@@ -5327,7 +5327,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - The target database must support SQL boolean literals and the IS TRUE predicate.
 - **Parameters:**
   - `propName` (`String`) — the property or column to test
-- **Returns:** an Is condition rendering propName IS true
+- **Returns:** an Is condition rendering propName IS TRUE
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank
 ##### isFalse(...) -> Is
@@ -5337,7 +5337,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - The target database must support SQL boolean literals and the IS FALSE predicate.
 - **Parameters:**
   - `propName` (`String`) — the property or column to test
-- **Returns:** an Is condition rendering propName IS false
+- **Returns:** an Is condition rendering propName IS FALSE
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank
 ##### isNot(...) -> IsNot
@@ -11678,14 +11678,14 @@ Represents a FULL JOIN clause in SQL queries.
 - **Summary:** Creates a FULL JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 - **Signature:** `public FullJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a FULL JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
@@ -11903,14 +11903,14 @@ Represents an INNER JOIN clause in SQL queries.
 - **Summary:** Creates an INNER JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 - **Signature:** `public InnerJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates an INNER JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
@@ -12166,14 +12166,14 @@ Base class for SQL JOIN operations.
 - **Summary:** Creates a JOIN clause with a condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
-  - `joinCondition` (`Condition`) — the join condition. A plain predicate is rendered with an ON prefix; an explicit On or deprecated Using supplies its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition. A plain predicate is rendered with an ON prefix; an explicit On or @Beta Using supplies its own keyword. May be null.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 - **Signature:** `public Join(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a JOIN clause with multiple tables or entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `joinCondition` (`Condition`) — the join condition. A plain predicate is rendered with an ON prefix; an explicit On or deprecated Using supplies its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition. A plain predicate is rendered with an ON prefix; an explicit On or @Beta Using supplies its own keyword. May be null.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
@@ -12488,14 +12488,14 @@ Represents a LEFT JOIN clause in SQL queries.
 - **Summary:** Creates a LEFT JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 - **Signature:** `public LeftJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a LEFT JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 
@@ -14297,14 +14297,14 @@ Represents a RIGHT JOIN clause in SQL queries.
 - **Summary:** Creates a RIGHT JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 - **Signature:** `public RightJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a RIGHT JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
 

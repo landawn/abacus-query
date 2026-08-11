@@ -1,11 +1,11 @@
 {
   "library": {
     "name": "abacus-query",
-    "version": "4.9.1",
-    "generated_at": "2026-08-09",
+    "version": "4.9.2",
+    "generated_at": "2026-08-10",
     "java_target": "17",
     "source": {
-      "git_sha": "3511978c18e32ee1900931eb7c80c2df8bd3d5c5"
+      "git_sha": "965f6afef86d928fbff63589fb3d59edc322574e"
     }
   },
   "packages": [
@@ -12105,7 +12105,7 @@
                 }
               ],
               "javadoc_summary": "Creates an IS TRUE predicate without turning the boolean literal into a bind parameter.",
-              "returns": "an Is condition rendering propName IS true",
+              "returns": "an Is condition rendering propName IS TRUE",
               "contract": [
                 "The target database must support SQL boolean literals and the IS TRUE predicate."
               ],
@@ -12137,7 +12137,7 @@
                 }
               ],
               "javadoc_summary": "Creates an IS FALSE predicate without turning the boolean literal into a bind parameter.",
-              "returns": "an Is condition rendering propName IS false",
+              "returns": "an Is condition rendering propName IS FALSE",
               "contract": [
                 "The target database must support SQL boolean literals and the IS FALSE predicate."
               ],
@@ -24914,7 +24914,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ],
@@ -24938,7 +24938,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ],
@@ -25374,7 +25374,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ],
@@ -25398,7 +25398,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ],
@@ -25794,7 +25794,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition. A plain predicate is rendered with an ON prefix; an explicit On or deprecated Using supplies its own keyword. May be null.",
+                  "javadoc": "the join condition. A plain predicate is rendered with an ON prefix; an explicit On or @Beta Using supplies its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ],
@@ -25818,7 +25818,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition. A plain predicate is rendered with an ON prefix; an explicit On or deprecated Using supplies its own keyword. May be null.",
+                  "javadoc": "the join condition. A plain predicate is rendered with an ON prefix; an explicit On or @Beta Using supplies its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ],
@@ -26219,7 +26219,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ],
@@ -26243,7 +26243,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ],
@@ -30254,7 +30254,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ],
@@ -30278,7 +30278,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or deprecated Using) renders its own keyword. May be null.",
+                  "javadoc": "the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.",
                   "nullability": "unspecified"
                 }
               ],
