@@ -814,13 +814,72 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
-    public void testOffsetZeroIsNoOp() {
+    public void testPlainOffsetZeroIsOmitted() {
         Builder builder = DynamicQuery.builder();
         builder.select().append("*");
         builder.from().append("users");
-        builder.offset(0).offsetRows(0);
+        builder.offset(0);
         String sql = builder.build();
         assertEquals("SELECT * FROM users", sql);
+    }
+
+    @Test
+    public void testOffsetRowsZeroIsRendered() {
+        Builder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.offsetRows(0).fetchNextRows(10);
+
+        assertEquals("SELECT * FROM users OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", builder.build());
+    }
+
+    @Test
+    public void testTypedPaginationUsesGrammarOrderRegardlessOfCallOrder() {
+        Builder limitBuilder = DynamicQuery.builder();
+        limitBuilder.select().append("*");
+        limitBuilder.from().append("users");
+        limitBuilder.offset(20).limit(10);
+        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", limitBuilder.build());
+
+        Builder fetchBuilder = DynamicQuery.builder();
+        fetchBuilder.select().append("*");
+        fetchBuilder.from().append("users");
+        fetchBuilder.fetchNextRows(10).offsetRows(20);
+        assertEquals("SELECT * FROM users OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", fetchBuilder.build());
+    }
+
+    @Test
+    public void testTypedPaginationRejectsDuplicateAndMixedClauses() {
+        Builder duplicateLimit = DynamicQuery.builder();
+        duplicateLimit.limit(10);
+        assertThrows(IllegalStateException.class, () -> duplicateLimit.limit(20));
+
+        Builder duplicateOffset = DynamicQuery.builder();
+        duplicateOffset.offset(10);
+        assertThrows(IllegalStateException.class, () -> duplicateOffset.offset(20));
+
+        Builder duplicateFetch = DynamicQuery.builder();
+        duplicateFetch.fetchFirstRows(10);
+        assertThrows(IllegalStateException.class, () -> duplicateFetch.fetchNextRows(20));
+
+        Builder limitThenFetch = DynamicQuery.builder();
+        limitThenFetch.limit(10);
+        assertThrows(IllegalStateException.class, () -> limitThenFetch.offsetRows(20));
+
+        Builder fetchThenLimit = DynamicQuery.builder();
+        fetchThenLimit.offsetRows(20);
+        assertThrows(IllegalStateException.class, () -> fetchThenLimit.offset(10));
+    }
+
+    @Test
+    public void testTypedPaginationPrecedesRawTailRegardlessOfCallOrder() {
+        Builder builder = DynamicQuery.builder();
+        builder.append("FOR UPDATE");
+        builder.limit(10);
+        builder.select().append("*");
+        builder.from().append("users");
+
+        assertEquals("SELECT * FROM users LIMIT 10 FOR UPDATE", builder.build());
     }
 
     @Test

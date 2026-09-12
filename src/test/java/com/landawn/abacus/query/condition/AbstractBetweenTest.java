@@ -44,6 +44,8 @@ public class AbstractBetweenTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("x", 1, criteria));
         assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("x", new On("a", "b"), 10));
         assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("x", 1, new OrderBy("y")));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("x", Filters.eq("y", 1), 10));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("x", 1, Filters.exists(Filters.subQuery("SELECT 1"))));
     }
 
     @Test
@@ -144,18 +146,26 @@ public class AbstractBetweenTest extends TestBase {
 
     @Test
     @Tag("2025")
-    public void testHashCodeTracksMutableArrayBounds() {
+    public void testMutableArrayBoundsAreSnapshottedAndDefensivelyExposed() {
         final byte[] min = { 1 };
         final byte[] max = { 2 };
         final TestAbstractBetween condition = new TestAbstractBetween("payload", min, max);
+        final int hash = condition.hashCode();
 
-        condition.hashCode(); // Populate the old memoized implementation before mutating its exposed values.
         min[0] = 3;
         max[0] = 4;
+        ((byte[]) condition.minValue())[0] = 5;
+        ((byte[]) condition.maxValue())[0] = 6;
+        ((byte[]) condition.parameters().get(0))[0] = 7;
+        ((byte[]) condition.parameters().get(1))[0] = 8;
 
-        final TestAbstractBetween equalAfterMutation = new TestAbstractBetween("payload", new byte[] { 3 }, new byte[] { 4 });
-        assertEquals(condition, equalAfterMutation);
-        assertEquals(condition.hashCode(), equalAfterMutation.hashCode());
+        final TestAbstractBetween originalSnapshot = new TestAbstractBetween("payload", new byte[] { 1 }, new byte[] { 2 });
+        assertEquals(originalSnapshot, condition);
+        assertEquals(hash, condition.hashCode());
+        assertEquals(1, ((byte[]) condition.minValue())[0]);
+        assertEquals(2, ((byte[]) condition.maxValue())[0]);
+        assertEquals(1, ((byte[]) condition.parameters().get(0))[0]);
+        assertEquals(2, ((byte[]) condition.parameters().get(1))[0]);
     }
 
     @Test
@@ -205,6 +215,30 @@ public class AbstractBetweenTest extends TestBase {
         assertTrue(sql.contains("score BETWEEN"));
         assertTrue(sql.contains("(SELECT MIN(score) FROM results)"));
         assertTrue(sql.contains("(SELECT MAX(score) FROM results)"));
+    }
+
+    @Test
+    public void testConstructorRejectsNullBounds() {
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("score", null, 100));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("score", 0, null));
+    }
+
+    @Test
+    public void testMutableDateBoundsAreSnapshottedAndDefensivelyExposed() {
+        final java.util.Date min = new java.util.Date(0L);
+        final java.util.Date max = new java.util.Date(1_000L);
+        final TestAbstractBetween condition = new TestAbstractBetween("createdAt", min, max);
+        final int hash = condition.hashCode();
+
+        min.setTime(2_000L);
+        max.setTime(3_000L);
+        ((java.util.Date) condition.minValue()).setTime(4_000L);
+        ((java.util.Date) condition.parameters().get(1)).setTime(5_000L);
+
+        assertEquals(new TestAbstractBetween("createdAt", new java.util.Date(0L), new java.util.Date(1_000L)), condition);
+        assertEquals(hash, condition.hashCode());
+        assertEquals(0L, ((java.util.Date) condition.minValue()).getTime());
+        assertEquals(1_000L, ((java.util.Date) condition.parameters().get(1)).getTime());
     }
 
     @Test

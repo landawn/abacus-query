@@ -33,9 +33,9 @@ import com.landawn.abacus.util.Strings;
  * <p>The {@link Builder} follows a fluent interface pattern where each method returns the builder
  * instance, allowing method chaining. The main SQL components are built in grammar order regardless
  * of the order in which their typed clause builders are requested: SELECT → FROM → WHERE →
- * GROUP BY → HAVING → set operations → ORDER BY → pagination/raw trailing fragments.
- * Pagination methods and raw trailing fragments share the final buffer and therefore retain their
- * relative invocation order.</p>
+ * GROUP BY → HAVING → set operations → ORDER BY → pagination → raw trailing fragments.
+ * Typed pagination is modeled as a clause, so its SQL grammar order does not depend on method-call
+ * order. Raw trailing fragments are always emitted after typed pagination.</p>
  *
  * <p><b>Important:</b> Always call {@link Builder#build()} to generate the final SQL string and
  * release resources. The builder uses object pooling internally for performance optimization.</p>
@@ -213,6 +213,25 @@ public final class DynamicQuery {
         /** The {@link StringBuilder} for additional SQL parts. */
         private StringBuilder moreParts = null;
 
+        /** Mutually exclusive SQL pagination families supported by the typed methods. */
+        private enum PaginationSyntax {
+            NONE,
+            LIMIT,
+            FETCH
+        }
+
+        private PaginationSyntax paginationSyntax = PaginationSyntax.NONE;
+
+        private Integer limitCount;
+
+        private Integer plainOffset;
+
+        private Integer rowsOffset;
+
+        private Integer fetchCount;
+
+        private boolean fetchFirst;
+
         /**
          * Private constructor; obtain an instance via {@link DynamicQuery#builder()}.
          */
@@ -372,13 +391,16 @@ public final class DynamicQuery {
          * @param count the maximum number of rows to return (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code count} is negative
-         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalStateException if a limit count was already specified, SQL:2008 pagination was selected,
+         *         or this builder has already been closed by a prior call to {@link #build()}
          */
         public Builder limit(final int count) {
             checkNotBuilt();
             N.checkArgNotNegative(count, "count");
 
-            getStringBuilderForMoreParts().append(" LIMIT ").append(count);
+            selectPaginationSyntax(PaginationSyntax.LIMIT);
+            checkPaginationPartUnset(limitCount, "LIMIT count");
+            limitCount = count;
 
             return this;
         }
@@ -401,7 +423,8 @@ public final class DynamicQuery {
          * @param offset the number of rows to skip (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
-         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalStateException if a limit or plain offset was already specified, SQL:2008 pagination
+         *         was selected, or this builder has already been closed by a prior call to {@link #build()}
          * @see #offsetRows(int)
          * @see #fetchNextRows(int)
          * @see #fetchFirstRows(int)
@@ -411,11 +434,11 @@ public final class DynamicQuery {
             N.checkArgNotNegative(count, "count");
             N.checkArgNotNegative(offset, "offset");
 
-            if (offset > 0) {
-                getStringBuilderForMoreParts().append(" LIMIT ").append(count).append(" OFFSET ").append(offset);
-            } else {
-                getStringBuilderForMoreParts().append(" LIMIT ").append(count);
-            }
+            selectPaginationSyntax(PaginationSyntax.LIMIT);
+            checkPaginationPartUnset(limitCount, "LIMIT count");
+            checkPaginationPartUnset(plainOffset, "plain OFFSET");
+            limitCount = count;
+            plainOffset = offset;
 
             return this;
         }
@@ -423,7 +446,7 @@ public final class DynamicQuery {
         /**
          * Adds a plain {@code OFFSET} clause to skip the given number of leading rows.
          * Generates: {@code OFFSET n} (without the trailing {@code ROWS} keyword). When {@code offset}
-         * is {@code 0}, nothing is appended.
+         * is {@code 0}, the offset remains semantically specified but is omitted from the generated SQL.
          *
          * <p>Use {@link #offsetRows(int)} instead when you need the SQL:2008 {@code OFFSET n ROWS}
          * form (typically paired with {@link #fetchNextRows(int)} or {@link #fetchFirstRows(int)}).</p>
@@ -437,16 +460,17 @@ public final class DynamicQuery {
          * @param offset the number of rows to skip (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code offset} is negative
-         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalStateException if a plain offset was already specified, SQL:2008 pagination was selected,
+         *         or this builder has already been closed by a prior call to {@link #build()}
          * @see #offsetRows(int)
          */
         public Builder offset(final int offset) {
             checkNotBuilt();
             N.checkArgNotNegative(offset, "offset");
 
-            if (offset > 0) {
-                getStringBuilderForMoreParts().append(" OFFSET ").append(offset);
-            }
+            selectPaginationSyntax(PaginationSyntax.LIMIT);
+            checkPaginationPartUnset(plainOffset, "plain OFFSET");
+            plainOffset = offset;
 
             return this;
         }
@@ -454,7 +478,8 @@ public final class DynamicQuery {
         /**
          * Adds an {@code OFFSET} clause for SQL:2008 standard pagination.
          * Typically used with {@link #fetchNextRows(int)} or {@link #fetchFirstRows(int)}.
-         * When {@code offset} is {@code 0}, nothing is appended.
+         * An explicitly supplied zero is rendered as {@code OFFSET 0 ROWS}; this is useful when the
+         * target dialect requires an offset before {@code FETCH NEXT}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -465,15 +490,16 @@ public final class DynamicQuery {
          * @param offset the number of rows to skip (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code offset} is negative
-         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalStateException if an {@code OFFSET ... ROWS} value was already specified, LIMIT-style
+         *         pagination was selected, or this builder has already been closed by a prior call to {@link #build()}
          */
         public Builder offsetRows(final int offset) {
             checkNotBuilt();
             N.checkArgNotNegative(offset, "offset");
 
-            if (offset > 0) {
-                getStringBuilderForMoreParts().append(" OFFSET ").append(offset).append(" ROWS");
-            }
+            selectPaginationSyntax(PaginationSyntax.FETCH);
+            checkPaginationPartUnset(rowsOffset, "OFFSET ... ROWS");
+            rowsOffset = offset;
 
             return this;
         }
@@ -491,13 +517,17 @@ public final class DynamicQuery {
          * @param count the number of rows to fetch (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code count} is negative
-         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalStateException if a fetch count was already specified, LIMIT-style pagination was selected,
+         *         or this builder has already been closed by a prior call to {@link #build()}
          */
         public Builder fetchNextRows(final int count) {
             checkNotBuilt();
             N.checkArgNotNegative(count, "count");
 
-            getStringBuilderForMoreParts().append(" FETCH NEXT ").append(count).append(" ROWS ONLY");
+            selectPaginationSyntax(PaginationSyntax.FETCH);
+            checkPaginationPartUnset(fetchCount, "FETCH count");
+            fetchCount = count;
+            fetchFirst = false;
 
             return this;
         }
@@ -516,14 +546,18 @@ public final class DynamicQuery {
          * @param count the number of rows to fetch (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code count} is negative
-         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalStateException if a fetch count was already specified, LIMIT-style pagination was selected,
+         *         or this builder has already been closed by a prior call to {@link #build()}
          * @see #offsetRows(int)
          */
         public Builder fetchFirstRows(final int count) {
             checkNotBuilt();
             N.checkArgNotNegative(count, "count");
 
-            getStringBuilderForMoreParts().append(" FETCH FIRST ").append(count).append(" ROWS ONLY");
+            selectPaginationSyntax(PaginationSyntax.FETCH);
+            checkPaginationPartUnset(fetchCount, "FETCH count");
+            fetchCount = count;
+            fetchFirst = true;
 
             return this;
         }
@@ -707,8 +741,8 @@ public final class DynamicQuery {
          * appends after the typed {@link #orderBy()} clause regardless of invocation order. Set operations
          * use a separate buffer and are emitted before both typed ordering and this raw tail. Consequently,
          * either {@code orderBy().append(...)} or a trailing {@code append("ORDER BY ...")} can order a
-         * combined set-operation result; prefer the typed form when it is sufficient. Multiple raw and
-         * pagination fragments retain their relative invocation order.</p>
+         * combined set-operation result; prefer the typed form when it is sufficient. Multiple raw fragments
+         * retain their relative invocation order, while typed pagination is emitted before all raw fragments.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -794,6 +828,59 @@ public final class DynamicQuery {
         }
 
         /**
+         * Selects a typed pagination family and rejects attempts to combine grammatically incompatible
+         * {@code LIMIT/OFFSET} and {@code OFFSET ... ROWS/FETCH} clauses.
+         */
+        private void selectPaginationSyntax(final PaginationSyntax requested) {
+            if (paginationSyntax != PaginationSyntax.NONE && paginationSyntax != requested) {
+                throw new IllegalStateException("Cannot combine " + requested + " pagination with " + paginationSyntax + " pagination");
+            }
+
+            paginationSyntax = requested;
+        }
+
+        /** Rejects duplicate typed pagination components before any state is changed. */
+        private static void checkPaginationPartUnset(final Integer currentValue, final String partName) {
+            if (currentValue != null) {
+                throw new IllegalStateException(partName + " has already been specified");
+            }
+        }
+
+        /**
+         * Renders typed pagination once, in SQL grammar order. Keeping values as state instead of appending
+         * fragments eagerly prevents call order from producing clauses such as {@code OFFSET ... LIMIT ...}.
+         */
+        private void appendPagination(final StringBuilder sb) {
+            if (paginationSyntax == PaginationSyntax.LIMIT) {
+                if (limitCount != null) {
+                    appendSpaceIfNeeded(sb);
+                    sb.append("LIMIT ").append(limitCount);
+                }
+
+                if (plainOffset != null && plainOffset > 0) {
+                    appendSpaceIfNeeded(sb);
+                    sb.append("OFFSET ").append(plainOffset);
+                }
+            } else if (paginationSyntax == PaginationSyntax.FETCH) {
+                if (rowsOffset != null) {
+                    appendSpaceIfNeeded(sb);
+                    sb.append("OFFSET ").append(rowsOffset).append(" ROWS");
+                }
+
+                if (fetchCount != null) {
+                    appendSpaceIfNeeded(sb);
+                    sb.append(fetchFirst ? "FETCH FIRST " : "FETCH NEXT ").append(fetchCount).append(" ROWS ONLY");
+                }
+            }
+        }
+
+        private static void appendSpaceIfNeeded(final StringBuilder sb) {
+            if (!sb.isEmpty() && sb.charAt(sb.length() - 1) != ' ') {
+                sb.append(' ');
+            }
+        }
+
+        /**
          * Appends {@code rawClause} verbatim to the trailing "more parts" buffer, inserting a single
          * separating space only when the buffer does not already end with a space and {@code rawClause}
          * does not already begin with one. An empty buffer is treated as needing a leading space, since
@@ -815,10 +902,10 @@ public final class DynamicQuery {
 
         /**
          * Returns the trailing "more parts" buffer, creating it from the object pool on first use.
-         * Holds the pagination fragments ({@code LIMIT}/{@code OFFSET}/{@code FETCH}) and the raw
-         * fragments appended by {@link #append(String)}-style methods, in relative invocation order.
+         * Holds only raw fragments appended by {@link #append(String)}-style methods, in relative invocation
+         * order. Typed pagination is stored as structured state and rendered before this buffer.
          *
-         * @return the trailing buffer for pagination and raw fragments
+         * @return the trailing buffer for raw fragments
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         private StringBuilder getStringBuilderForMoreParts() {
@@ -870,8 +957,8 @@ public final class DynamicQuery {
          * After calling {@code build()}, this builder is closed and must not be reused: any subsequent
          * call to a builder method (including {@code build()} itself) throws {@link IllegalStateException}.
          *
-         * <p>The method combines the primary clauses, set operations, final {@code ORDER BY}, and
-         * trailing pagination/raw fragments in SQL grammar order and returns the complete statement.
+         * <p>The method combines the primary clauses, set operations, the final {@code ORDER BY},
+         * typed pagination, and raw trailing fragments in SQL grammar order and returns the complete statement.
          * Internal {@link StringBuilder} objects are recycled to the object pool for performance
          * optimization.</p>
          *
@@ -939,6 +1026,8 @@ public final class DynamicQuery {
 
                     selectClause.sb.append(orderByClause.sb);
                 }
+
+                appendPagination(selectClause.sb);
 
                 if (moreParts != null) {
                     if (selectClause.sb.isEmpty() && !moreParts.isEmpty() && moreParts.charAt(0) == ' ') {

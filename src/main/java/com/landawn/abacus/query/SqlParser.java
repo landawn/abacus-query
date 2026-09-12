@@ -83,10 +83,10 @@ import com.landawn.abacus.util.Strings;
  *
  * <p id="query-classification"><b>Query classification:</b> the {@link #isSelectQuery(String)},
  * {@link #isInsertQuery(String)}, {@link #isUpdateQuery(String)}, {@link #isDeleteQuery(String)},
- * {@link #isInsertOrReplaceQuery(String)}, {@link #isReadOnlyQuery(String)} and
+ * {@link #isInsertOrReplaceQuery(String)}, {@link #isSyntacticallyReadQuery(String)} and
  * {@link #isReadOrInsertQuery(String)} predicates classify a statement as summarized below. Each cell shows
  * whether the predicate in that column returns {@code true} (Y) or {@code false} (N) for the statement
- * kind in that row. Every read-only statement also qualifies as read-or-insert, but not vice versa.</p>
+ * kind in that row. Every syntactically read statement also qualifies as read-or-insert, but not vice versa.</p>
  * <table border="1">
  * <caption>{@code SqlParser} query-classification predicates by statement kind</caption>
  * <tr>
@@ -96,7 +96,7 @@ import com.landawn.abacus.util.Strings;
  *   <th>{@code isUpdateQuery}</th>
  *   <th>{@code isDeleteQuery}</th>
  *   <th>{@code isInsertOrReplaceQuery}</th>
- *   <th>{@code isReadOnlyQuery}</th>
+ *   <th>{@code isSyntacticallyReadQuery}</th>
  *   <th>{@code isReadOrInsertQuery}</th>
  * </tr>
  * <tr><td>{@code SELECT}</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td><td>Y</td><td>Y</td></tr>
@@ -112,6 +112,11 @@ import com.landawn.abacus.util.Strings;
  * <tr><td>{@code MERGE} / {@code REPLACE} / {@code TRUNCATE} / {@code CREATE} / {@code ALTER} / {@code DROP}</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
  * <tr><td>{@code CALL} / JDBC {@code {call ...}} / {@code EXEC} / {@code EXECUTE}</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
  * </table>
+ *
+ * <p>Classification methods inspect SQL text only. They do not resolve functions, triggers,
+ * permissions, transaction state, or vendor-specific semantics and therefore are not a security
+ * boundary or a guarantee that executing accepted SQL cannot change database state. Enforce such
+ * guarantees with database privileges and read-only transactions or connections.</p>
  *
  */
 public final class SqlParser {
@@ -681,16 +686,31 @@ public final class SqlParser {
         }
 
         /**
-         * Checks whether the statement is a read-only SELECT using this tokenizer's configured
+         * Lexically classifies the statement as SELECT-only using this tokenizer's configured
          * separator rules. In particular, configured hash-prefixed operators are not mistaken for
-         * MySQL hash comments while scanning later statements.
+         * MySQL hash comments while scanning later statements. This method does not resolve functions,
+         * triggers, locking clauses, or other database semantics and must not be used as a security boundary.
          *
          * @param sql the SQL statement to classify; may be empty or {@code null}
-         * @return {@code true} if the SQL is a read-only SELECT query, {@code false} otherwise
-         * @see SqlParser#isReadOnlyQuery(String)
+         * @return {@code true} if the SQL text has an accepted SELECT-only shape, {@code false} otherwise
+         * @see SqlParser#isSyntacticallyReadQuery(String)
          */
+        public boolean isSyntacticallyReadQuery(final String sql) {
+            return SqlParser.isSyntacticallyReadQuery(sql, tokenizerConfig);
+        }
+
+        /**
+         * Legacy alias for {@link #isSyntacticallyReadQuery(String)}.
+         *
+         * @param sql the SQL statement to classify; may be empty or {@code null}
+         * @return the lexical SELECT-only classification
+         * @deprecated The name overstates what lexical SQL inspection can prove. Use
+         *             {@link #isSyntacticallyReadQuery(String)} and enforce actual read-only behavior
+         *             with database privileges and transaction settings.
+         */
+        @Deprecated
         public boolean isReadOnlyQuery(final String sql) {
-            return SqlParser.isReadOnlyQuery(sql, tokenizerConfig);
+            return isSyntacticallyReadQuery(sql);
         }
     }
 
@@ -1832,7 +1852,7 @@ public final class SqlParser {
                     // A derived table may be the element before the comma: "FROM (SELECT ...) d,
                     // #tmp". Consume its balanced parenthesized body as the name unit after the
                     // alias; otherwise the walk stops at ')' and misclassifies #tmp as a comment,
-                    // potentially hiding a later statement from the read-only safety checks.
+                    // potentially hiding a later statement from the lexical classification checks.
                     final int openingParenthesis = findMatchingOpeningParenthesis(str, left, tokenizerConfig);
 
                     if (openingParenthesis < 0) {
@@ -2436,7 +2456,7 @@ public final class SqlParser {
      * @see #isUpdateQuery(String)
      * @see #isDeleteQuery(String)
      * @see #isInsertOrReplaceQuery(String)
-     * @see #isReadOnlyQuery(String)
+     * @see #isSyntacticallyReadQuery(String)
      * @see #isReadOrInsertQuery(String)
      */
     public static boolean isSelectQuery(final String sql) {
@@ -2448,11 +2468,10 @@ public final class SqlParser {
     }
 
     /**
-     * Checks whether the given SQL statement is read-only, i.e. a SELECT that performs no data
-     * mutation. This is the kind of gate a read-only DAO can use to reject any statement that could
-     * modify data.
+     * Lexically classifies whether the given SQL text consists only of accepted SELECT-shaped
+     * statements. This is an advisory syntax classifier, not proof that execution is read-only.
      * <p>
-     * A statement is considered read-only only if its leading keyword is {@code SELECT}
+     * A statement is accepted only if its leading keyword is {@code SELECT}
      * (see {@link #isSelectQuery(String)}) <i>and</i> it contains no top-level mutation, DDL, or procedure-invocation keyword
      * ({@code INSERT}, {@code UPDATE}, {@code DELETE}, {@code MERGE}, {@code REPLACE}, {@code TRUNCATE},
      * {@code CREATE}, {@code ALTER} or {@code DROP}), no procedure invocation ({@code CALL}, JDBC
@@ -2462,44 +2481,64 @@ public final class SqlParser {
      * such as {@code t.into} do not count as {@code SELECT ... INTO}. Keyword matching ignores
      * occurrences inside quoted string literals, quoted identifiers, SQL comments and larger
      * identifier tokens, so a SELECT that merely returns the literal text {@code 'DELETE'} or a
-     * column named {@code into$} is still treated as read-only, whereas a data-changing CTE such as
+     * column named {@code into$} is still accepted, whereas a data-changing CTE such as
      * {@code WITH t AS (...) DELETE ...} is not. For multi-statement SQL, a later statement is
      * permitted only when it also resolves to a {@code SELECT}; a later statement with any other
-     * leading verb (including an unrecognized or vendor-specific command) makes the SQL non-read-only.
+     * leading verb (including an unrecognized or vendor-specific command) is rejected.
      * This includes statements that start with a {@code WITH} clause or leading parentheses. The
      * mutation-keyword scan matches only statement-start positions, so the
      * {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL <i>functions</i> inside a SELECT do not
      * affect the classification. The complete SQL is checked under both backslash-escaped and
      * doubled-quote-only string rules, independently combined with standard and MySQL {@code --}
      * line-comment rules. Hash-comment/operator treatment follows the active tokenizer configuration.
-     * Every lexically valid interpretation must be read-only, so an ambiguous quote or comment cannot
+     * Every lexically valid interpretation must have the accepted shape, so an ambiguous quote or comment cannot
      * hide a mutation clause. MySQL/MariaDB executable comments are rejected because their apparent
      * comment body may run.
      * </p>
+     *
+     * <p>A {@code true} result does not account for side effects in functions, sequences, triggers,
+     * vendor extensions, or locking clauses such as {@code SELECT ... FOR UPDATE}. Do not use this
+     * method for authorization or as a read-only enforcement boundary; use restricted database
+     * credentials and read-only transaction/connection settings for that purpose.</p>
      *
      * <p><b>Comparison with related methods:</b> see the
      * <a href="#query-classification">query-classification table</a> in the class documentation for how
      * this predicate relates to the other {@code is...Query} methods.</p>
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
-     * @return {@code true} if the SQL is a read-only SELECT query, {@code false} otherwise
+     * @return {@code true} if the SQL text has an accepted SELECT-only shape, {@code false} otherwise
      * @see #isSelectQuery(String)
      * @see #isInsertQuery(String)
      * @see #isUpdateQuery(String)
      * @see #isDeleteQuery(String)
      * @see #isInsertOrReplaceQuery(String)
      * @see #isReadOrInsertQuery(String)
+     * @see #isReadOnlyQuery(String)
      */
-    public static boolean isReadOnlyQuery(final String sql) {
-        return isReadOnlyQuery(sql, DEFAULT_TOKENIZER_CONFIG);
+    public static boolean isSyntacticallyReadQuery(final String sql) {
+        return isSyntacticallyReadQuery(sql, DEFAULT_TOKENIZER_CONFIG);
     }
 
-    private static boolean isReadOnlyQuery(final String sql, final TokenizerConfig tokenizerConfig) {
+    private static boolean isSyntacticallyReadQuery(final String sql, final TokenizerConfig tokenizerConfig) {
         if (Strings.isEmpty(sql)) {
             return false;
         }
 
-        return isSafeQueryUnderEveryLexicalMode(sql, tokenizerConfig, false);
+        return isAcceptedQueryUnderEveryLexicalMode(sql, tokenizerConfig, false);
+    }
+
+    /**
+     * Legacy alias for {@link #isSyntacticallyReadQuery(String)}.
+     *
+     * @param sql the SQL statement to classify; may be empty or {@code null}
+     * @return the lexical SELECT-only classification
+     * @deprecated The name overstates what lexical SQL inspection can prove. Use
+     *             {@link #isSyntacticallyReadQuery(String)} and enforce actual read-only behavior
+     *             with database privileges and transaction settings.
+     */
+    @Deprecated
+    public static boolean isReadOnlyQuery(final String sql) {
+        return isSyntacticallyReadQuery(sql);
     }
 
     /**
@@ -2542,7 +2581,7 @@ public final class SqlParser {
      * @see #isUpdateQuery(String)
      * @see #isDeleteQuery(String)
      * @see #isInsertOrReplaceQuery(String)
-     * @see #isReadOnlyQuery(String)
+     * @see #isSyntacticallyReadQuery(String)
      * @see #isReadOrInsertQuery(String)
      */
     public static boolean isInsertQuery(final String sql) {
@@ -2590,7 +2629,7 @@ public final class SqlParser {
      * @see #isInsertQuery(String)
      * @see #isDeleteQuery(String)
      * @see #isInsertOrReplaceQuery(String)
-     * @see #isReadOnlyQuery(String)
+     * @see #isSyntacticallyReadQuery(String)
      * @see #isReadOrInsertQuery(String)
      */
     public static boolean isUpdateQuery(final String sql) {
@@ -2638,7 +2677,7 @@ public final class SqlParser {
      * @see #isInsertQuery(String)
      * @see #isUpdateQuery(String)
      * @see #isInsertOrReplaceQuery(String)
-     * @see #isReadOnlyQuery(String)
+     * @see #isSyntacticallyReadQuery(String)
      * @see #isReadOrInsertQuery(String)
      */
     public static boolean isDeleteQuery(final String sql) {
@@ -2682,7 +2721,7 @@ public final class SqlParser {
      * @see #isInsertQuery(String)
      * @see #isUpdateQuery(String)
      * @see #isDeleteQuery(String)
-     * @see #isReadOnlyQuery(String)
+     * @see #isSyntacticallyReadQuery(String)
      * @see #isReadOrInsertQuery(String)
      */
     public static boolean isInsertOrReplaceQuery(final String sql) {
@@ -2715,8 +2754,10 @@ public final class SqlParser {
     }
 
     /**
-     * Checks whether the given SQL statement is a read or a plain/safe insert. This method permits
-     * reads and inserts of new rows but rejects statements that can mutate existing data.
+     * Lexically classifies whether the given SQL text consists only of SELECT-shaped statements or
+     * plain INSERT-shaped statements without a recognized overwrite/upsert clause.
+     * This is an advisory syntax classifier: functions and triggers can still mutate data, so a
+     * {@code true} result is not a security or read-only guarantee.
      * <p>
      * A statement qualifies as read-or-insert only if its leading keyword is {@code SELECT} or
      * {@code INSERT} <i>and</i> it contains none of the following (matching outside of quoted string
@@ -2738,7 +2779,7 @@ public final class SqlParser {
      * </ul>
      * <p>
      * A plain {@code INSERT}, and an {@code INSERT ... ON CONFLICT ... DO NOTHING}, are therefore
-     * accepted, since they never overwrite existing rows. Clause and keyword scans use token
+     * accepted because their SQL text contains no recognized overwrite clause. Clause and keyword scans use token
      * boundaries, so identifiers such as {@code into$}, qualified names such as {@code t.into},
      * {@code update_time} or bracket/quoted identifiers named like keywords are ignored. A
      * {@code null} or empty statement does not lead with {@code SELECT} or {@code INSERT}, so it
@@ -2753,7 +2794,7 @@ public final class SqlParser {
      * <i>functions</i> do not affect the classification. The complete SQL is checked under both
      * backslash-escaped and doubled-quote-only string rules, independently combined with standard
      * and MySQL {@code --} line-comment rules. Hash-comment/operator treatment follows the active
-     * tokenizer configuration. Every lexically valid interpretation must be safe, so an ambiguous
+     * tokenizer configuration. Every lexically valid interpretation must have the accepted shape, so an ambiguous
      * quote or comment cannot hide an upsert or overwrite clause. MySQL/MariaDB executable comments
      * are rejected because their apparent comment body may run.
      * </p>
@@ -2763,30 +2804,30 @@ public final class SqlParser {
      * this predicate relates to the other {@code is...Query} methods.</p>
      *
      * @param sql the SQL statement to check; may be empty or {@code null}
-     * @return {@code true} for an accepted read or plain/safe insert; {@code false} otherwise,
+     * @return {@code true} for an accepted SELECT/plain-INSERT lexical shape; {@code false} otherwise,
      *         including for a {@code null} or empty statement
      * @see #isSelectQuery(String)
      * @see #isInsertQuery(String)
      * @see #isUpdateQuery(String)
      * @see #isDeleteQuery(String)
      * @see #isInsertOrReplaceQuery(String)
-     * @see #isReadOnlyQuery(String)
+     * @see #isSyntacticallyReadQuery(String)
      */
     public static boolean isReadOrInsertQuery(final String sql) {
         if (Strings.isEmpty(sql)) {
             return false;
         }
 
-        return isSafeQueryUnderEveryLexicalMode(sql, DEFAULT_TOKENIZER_CONFIG, true);
+        return isAcceptedQueryUnderEveryLexicalMode(sql, DEFAULT_TOKENIZER_CONFIG, true);
     }
 
     /**
-     * Applies a safety classification under every lexically complete combination of supported quote
+     * Applies the statement-shape classification under every lexically complete combination of supported quote
      * and {@code --} line-comment conventions. These choices are independent: MySQL with
      * {@code NO_BACKSLASH_ESCAPES}, for example, combines doubled-quote-only strings with MySQL's
      * whitespace requirement after {@code --}.
      */
-    private static boolean isSafeQueryUnderEveryLexicalMode(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert) {
+    private static boolean isAcceptedQueryUnderEveryLexicalMode(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert) {
         boolean hasValidMode = false;
 
         for (int quoteMode = 0; quoteMode < 2; quoteMode++) {
@@ -2794,12 +2835,12 @@ public final class SqlParser {
 
             for (int commentMode = 0; commentMode < 2; commentMode++) {
                 final boolean mysqlCommentRules = commentMode == 0;
-                final String maskedSql = maskQuotedRegionsForSafety(sql, tokenizerConfig, backslashEscapes, mysqlCommentRules);
+                final String maskedSql = maskQuotedRegionsForClassification(sql, tokenizerConfig, backslashEscapes, mysqlCommentRules);
 
                 if (maskedSql != null) {
                     hasValidMode = true;
 
-                    if (!isSafeMaskedQuery(maskedSql, tokenizerConfig, allowInsert, mysqlCommentRules)) {
+                    if (!isAcceptedMaskedQuery(maskedSql, tokenizerConfig, allowInsert, mysqlCommentRules)) {
                         return false;
                     }
                 }
@@ -2811,9 +2852,9 @@ public final class SqlParser {
 
     /**
      * Classifies SQL whose quoted regions have already been replaced by whitespace. Keeping all
-     * safety scanners on the same masked text prevents them from choosing inconsistent quote modes.
+     * classification scanners on the same masked text prevents them from choosing inconsistent quote modes.
      */
-    private static boolean isSafeMaskedQuery(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert,
+    private static boolean isAcceptedMaskedQuery(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert,
             final boolean mysqlCommentRules) {
         final String leadingKeyword = getLeadingQueryKeyword(sql, tokenizerConfig);
 
@@ -2844,7 +2885,7 @@ public final class SqlParser {
      *
      * @return the masked SQL, or {@code null} if a quoted region or block comment is unterminated
      */
-    private static String maskQuotedRegionsForSafety(final String sql, final TokenizerConfig tokenizerConfig, final boolean backslashEscapes,
+    private static String maskQuotedRegionsForClassification(final String sql, final TokenizerConfig tokenizerConfig, final boolean backslashEscapes,
             final boolean mysqlCommentRules) {
         final char[] masked = sql.toCharArray();
         final int len = masked.length;
@@ -3508,7 +3549,7 @@ public final class SqlParser {
 
             for (int commentMode = 0; commentMode < 2; commentMode++) {
                 final boolean mysqlCommentRules = commentMode == 0;
-                final String maskedSql = maskQuotedRegionsForSafety(sql, tokenizerConfig, backslashEscapes, mysqlCommentRules);
+                final String maskedSql = maskQuotedRegionsForClassification(sql, tokenizerConfig, backslashEscapes, mysqlCommentRules);
 
                 if (maskedSql == null) {
                     continue;

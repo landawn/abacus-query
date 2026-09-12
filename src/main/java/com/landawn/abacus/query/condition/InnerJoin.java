@@ -181,7 +181,7 @@ public class InnerJoin extends Join {
      * List<String> tables = Arrays.asList("orders o", "customers c");
      * InnerJoin multiJoin = new InnerJoin(tables,
      *     new On("o.customer_id", "c.id"));
-     * // SQL: INNER JOIN (orders o, customers c) ON o.customer_id = c.id
+     * // SQL: INNER JOIN (orders o CROSS JOIN customers c) ON o.customer_id = c.id
      *
      * // Complex multi-table join with multiple predicates
      * List<String> entities = Arrays.asList("products p", "categories cat", "suppliers s");
@@ -190,12 +190,12 @@ public class InnerJoin extends Join {
      *         Filters.expr("p.category_id = cat.id"),
      *         Filters.expr("p.supplier_id = s.id")
      *     ));
-     * // SQL: INNER JOIN (products p, categories cat, suppliers s) ON ((p.category_id = cat.id) AND (p.supplier_id = s.id))
+     * // SQL: INNER JOIN (products p CROSS JOIN categories cat CROSS JOIN suppliers s) ON ((p.category_id = cat.id) AND (p.supplier_id = s.id))
      *
      * // Using SqlExpression for multiple tables
      * InnerJoin exprMulti = new InnerJoin(tables,
      *     Filters.expr("o.customer_id = c.id AND o.status = 'active'"));
-     * // SQL: INNER JOIN (orders o, customers c) ON o.customer_id = c.id AND o.status = 'active'
+     * // SQL: INNER JOIN (orders o CROSS JOIN customers c) ON o.customer_id = c.id AND o.status = 'active'
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

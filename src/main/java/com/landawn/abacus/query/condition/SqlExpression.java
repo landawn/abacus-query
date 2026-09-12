@@ -62,9 +62,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
@@ -83,9 +81,9 @@ import com.landawn.abacus.util.Strings;
  * in query conditions. It also provides utility methods for building SQL expressions
  * and mathematical/string functions.
  *
- * <p>Expressions created through {@link #of(String)} are cached for performance optimization. The same expression text
- * returns the same {@code SqlExpression} instance when created through that factory.
- * This helps reduce memory usage and improves performance for frequently used expressions.</p>
+ * <p>Each call to {@link #of(String)} creates an independent instance. Expressions are deliberately
+ * not interned: raw expression text is often generated dynamically, and retaining every distinct
+ * value in a process-wide cache would cause unbounded memory growth.</p>
  *
  * <p>The class provides numerous static helper methods for creating common SQL expression
  * strings, including arithmetic operations, string functions, mathematical functions, and
@@ -128,12 +126,6 @@ public class SqlExpression extends ComposableCondition {
 
     /** SQL keyword rendered as the right-hand side of {@code IS NULL} / {@code IS NOT NULL}. */
     private static final String NULL_KEYWORD = "NULL";
-
-    /** Framework-specific sentinel rendered as the right-hand side of {@code IS BLANK} / {@code IS NOT BLANK}. */
-    private static final String BLANK_KEYWORD = "BLANK";
-
-    /** Unbounded cache backing {@link #of(String)}: maps each literal text to its shared {@code SqlExpression} instance. */
-    private static final Map<String, SqlExpression> cachedExpression = new ConcurrentHashMap<>();
 
     /** Recognized SQL keywords (canonical upper-case forms) that {@link #toSql(NamingPolicy)} must not rewrite as identifiers. */
     private static final Set<String> SQL_KEY_WORDS = N.newHashSet(1024);
@@ -208,10 +200,6 @@ public class SqlExpression extends ComposableCondition {
      * The text can contain any valid SQL expression, including functions, operators,
      * column references, and complex expressions.
      *
-     * <p>For a fixed expression that is reused, {@link #of(String)} can avoid repeated allocation by
-     * returning a cached instance. Prefer this constructor for one-off or dynamically generated
-     * literals because factory entries are retained for the lifetime of the class loader.</p>
-     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SqlExpression expr1 = new SqlExpression("CURRENT_TIMESTAMP");
@@ -255,25 +243,22 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates or retrieves a cached {@code SqlExpression} instance for the given expression text.
-     * This method uses caching to ensure that expressions with the same literal
-     * share the same instance, improving memory efficiency and performance.
-     *
-     * <p>Note: the cache is unbounded and retains every distinct literal for the lifetime of the
-     * JVM, so prefer the {@link #SqlExpression(String) constructor} for dynamically-generated literals.</p>
+     * Creates a {@code SqlExpression} instance for the given expression text.
+     * The factory is equivalent to invoking {@link #SqlExpression(String)} and does not intern
+     * instances or retain expression text in a global cache.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SqlExpression expr1 = SqlExpression.of("CURRENT_DATE");
      * SqlExpression expr2 = SqlExpression.of("CURRENT_DATE");
-     * // expr1 == expr2 (same instance due to caching)
+     * // expr1.equals(expr2), but expr1 != expr2
      * 
      * SqlExpression calc = SqlExpression.of("price * 1.1");
      * // Reuse the same expression in multiple places
      * }</pre>
      *
      * @param literal the raw SQL expression text (must not be {@code null})
-     * @return a cached or newly created {@code SqlExpression} instance for the given text
+     * @return a new {@code SqlExpression} instance for the given text
      * @throws IllegalArgumentException if {@code literal} is {@code null}
      */
     public static SqlExpression of(final String literal) {
@@ -281,7 +266,7 @@ public class SqlExpression extends ComposableCondition {
             throw new IllegalArgumentException("literal must not be null");
         }
 
-        return cachedExpression.computeIfAbsent(literal, SqlExpression::new);
+        return new SqlExpression(literal);
     }
 
     /**
@@ -657,41 +642,47 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Creates a framework-specific {@code IS BLANK} expression for the specified expression,
-     * which the query engine interprets as a combined null-or-empty check.
-     * This is not standard SQL; the generated string uses the token {@code "BLANK"}
-     * as a special sentinel understood by this framework's SQL parser.
+     * Creates a SQL expression that tests whether the specified string expression is either
+     * {@code NULL} or the empty string.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = SqlExpression.isNullOrEmpty("description");   // Returns: "description IS BLANK"
-     * String expr2 = SqlExpression.isNullOrEmpty("address");      // Returns: "address IS BLANK"
+     * String expr = SqlExpression.isNullOrEmpty("description");
+     * // Returns: "(description IS NULL OR description = '')"
      * }</pre>
      *
      * @param expr the column reference or expression to check
-     * @return a framework-specific {@code IS BLANK} expression string
+     * @return a parenthesized {@code IS NULL OR = ''} expression
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public static String isNullOrEmpty(final String expr) {
-        return link2(Operator.IS, expr, BLANK_KEYWORD);
+        if (Strings.isBlank(expr)) {
+            throw new IllegalArgumentException("expr must not be null or blank");
+        }
+
+        return "(" + expr + " IS NULL OR " + expr + " = '')";
     }
 
     /**
-     * Creates a framework-specific {@code IS NOT BLANK} expression for the specified expression,
-     * which the query engine interprets as a combined not-null-and-not-empty check.
-     * This is not standard SQL; the generated string uses the token {@code "BLANK"}
-     * as a special sentinel understood by this framework's SQL parser.
+     * Creates a SQL expression that tests whether the specified string expression is both
+     * non-{@code NULL} and different from the empty string.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * String expr = SqlExpression.isNotNullAndNotEmpty("name");       // Returns: "name IS NOT BLANK"
-     * String expr2 = SqlExpression.isNotNullAndNotEmpty("comment");   // Returns: "comment IS NOT BLANK"
+     * String expr = SqlExpression.isNotNullAndNotEmpty("name");
+     * // Returns: "(name IS NOT NULL AND name &lt;&gt; '')"
      * }</pre>
      *
      * @param expr the column reference or expression to check
-     * @return a framework-specific {@code IS NOT BLANK} expression string
+     * @return a parenthesized {@code IS NOT NULL AND &lt;&gt; ''} expression
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
      */
     public static String isNotNullAndNotEmpty(final String expr) {
-        return link2(Operator.IS_NOT, expr, BLANK_KEYWORD);
+        if (Strings.isBlank(expr)) {
+            throw new IllegalArgumentException("expr must not be null or blank");
+        }
+
+        return "(" + expr + " IS NOT NULL AND " + expr + " <> '')";
     }
 
     /**
@@ -701,14 +692,15 @@ public class SqlExpression extends ComposableCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String expr = SqlExpression.and("active = true", "age > 18", "status = 'APPROVED'");
-     * // Returns: "active = true AND age > 18 AND status = 'APPROVED'"
+     * // Returns: "(active = true) AND (age > 18) AND (status = 'APPROVED')"
      * 
      * String expr2 = SqlExpression.and("verified = 1", "email IS NOT NULL");
-     * // Returns: "verified = 1 AND email IS NOT NULL"
+     * // Returns: "(verified = 1) AND (email IS NOT NULL)"
      * }</pre>
      *
      * @param exprs the expressions to combine with AND; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the AND expression, or an empty string if no expressions are supplied
+     * @throws IllegalArgumentException if an element is {@code null}, empty, or blank
      */
     public static String and(final String... exprs) {
         return link2(Operator.AND, exprs);
@@ -721,11 +713,12 @@ public class SqlExpression extends ComposableCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String expr = SqlExpression.or("status = 'active'", "status = 'pending'", "priority = 1");
-     * // Returns: "status = 'active' OR status = 'pending' OR priority = 1"
+     * // Returns: "(status = 'active') OR (status = 'pending') OR (priority = 1)"
      * }</pre>
      *
      * @param exprs the expressions to combine with OR; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the OR expression, or an empty string if no expressions are supplied
+     * @throws IllegalArgumentException if an element is {@code null}, empty, or blank
      */
     public static String or(final String... exprs) {
         return link2(Operator.OR, exprs);
@@ -1041,9 +1034,8 @@ public class SqlExpression extends ComposableCondition {
 
     /**
      * Renders an expression of the form {@code "literal <op> postfix"} with the postfix
-     * appended verbatim (no quoting or escaping). Used to build {@code IS NULL},
-     * {@code IS NOT NULL}, {@code IS BLANK}, and {@code IS NOT BLANK} expressions where
-     * the right-hand side is a SQL keyword rather than a value.
+     * appended verbatim (no quoting or escaping). Used to build {@code IS NULL} and
+     * {@code IS NOT NULL} expressions where the right-hand side is a SQL keyword rather than a value.
      *
      * @param operator the operator whose {@link Operator#sqlToken() sqlToken} appears between the literal and the postfix
      * @param literal the left-hand side literal
@@ -1068,9 +1060,9 @@ public class SqlExpression extends ComposableCondition {
 
     /**
      * Joins multiple literals using the specified operator's SQL token as the separator.
-     * Each separator is surrounded by spaces (e.g. {@code " AND "}). If {@code literals}
-     * contains a single element, that element is returned with no operator appended; a
-     * {@code null} or empty array yields an empty string.
+     * Each separator is surrounded by spaces (e.g. {@code " AND "}). Every literal is
+     * parenthesized so an operand containing a lower-precedence operator retains its meaning.
+     * A {@code null} or empty array yields an empty string.
      *
      * @param operator the operator whose {@link Operator#sqlToken() sqlToken} is used as the separator
      * @param literals the literals to join
@@ -1085,13 +1077,21 @@ public class SqlExpression extends ComposableCondition {
 
         try {
             for (int i = 0; i < literals.length; i++) {
+                if (Strings.isBlank(literals[i])) {
+                    throw new IllegalArgumentException("literals[" + i + "] must not be null or blank");
+                }
+
                 if (i > 0) {
                     sb.append(SK._SPACE);
                     sb.append(operator.sqlToken());
                     sb.append(SK._SPACE);
                 }
 
+                // Parenthesizing each operand preserves its internal precedence when callers
+                // nest OR inside AND (or vice versa) without requiring an expression parser here.
+                sb.append('(');
                 sb.append(literals[i]);
+                sb.append(')');
             }
 
             return sb.toString();
@@ -1143,10 +1143,9 @@ public class SqlExpression extends ComposableCondition {
      * <ul>
      *   <li>{@code null} values become the string {@code "null"}</li>
      *   <li>Strings are wrapped in single quotes and escaped via {@link AbstractCondition#escapeStringLiteral(String)}:
-     *       embedded unescaped single and double quotes are backslash-escaped ({@code '} becomes {@code \'}, {@code "} becomes {@code \"});
-     *       a backslash shields the character that follows it, so any existing {@code \x} pair — including an
-     *       already-escaped quote such as {@code \'} — is copied verbatim rather than escaped again, plus a defensive
-     *       guard that appends one extra backslash when the body would otherwise end in an unescaped trailing backslash</li>
+     *       each embedded single quote is doubled ({@code '} becomes {@code ''}) per the SQL standard; double quotes
+     *       and backslashes are ordinary characters inside a single-quoted literal and are copied verbatim (a backslash
+     *       does not shield a following quote, so {@code a\'b} renders as {@code 'a\''b'})</li>
      *   <li>{@link Number} values must render as decimal, integer, or scientific-notation literals;
      *       {@code NaN}/infinite {@link Float}/{@link Double} values and non-numeric custom text are rejected.
      *       {@link Boolean} values are converted via {@code toString()} without quoting.</li>
@@ -1158,8 +1157,8 @@ public class SqlExpression extends ComposableCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SqlExpression.renderValue("text");                         // returns "'text'"
-     * SqlExpression.renderValue("O'Brien");                      // returns "'O\'Brien'" (single quote backslash-escaped)
-     * SqlExpression.renderValue("say \"hi\"");                   // returns "'say \"hi\"'" (double quote backslash-escaped)
+     * SqlExpression.renderValue("O'Brien");                      // returns "'O''Brien'" (single quote doubled)
+     * SqlExpression.renderValue("say \"hi\"");                   // returns "'say \"hi\"'" (double quote left as-is)
      * SqlExpression.renderValue(123);                            // returns "123"
      * SqlExpression.renderValue(45.67);                          // returns "45.67"
      * SqlExpression.renderValue(null);                           // returns "null"
@@ -2018,7 +2017,7 @@ public class SqlExpression extends ComposableCondition {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * new SqlExpression("a + b").equals(new SqlExpression("a + b"));   // returns true (same literal)
-     * SqlExpression.of("a + b").equals(SqlExpression.of("a + b"));     // returns true (cached, same instance)
+     * SqlExpression.of("a + b").equals(SqlExpression.of("a + b"));     // returns true (same literal)
      * new SqlExpression("a + b").equals(new SqlExpression("a - b"));   // returns false (different literal)
      * new SqlExpression("a + b").equals("a + b");                      // returns false (not an SqlExpression)
      * }</pre>

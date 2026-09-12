@@ -35,7 +35,6 @@ import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
 import com.landawn.abacus.type.Type;
-import com.landawn.abacus.util.ClassUtil;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.InternalUtil;
@@ -790,10 +789,12 @@ public final class QueryUtil {
     /**
      * Returns the ID property names for the specified entity class.
      * ID properties are those annotated with {@code @Id} or {@code @ReadOnlyId}; when the class declares
-     * neither annotation, a property named exactly {@code "id"} is treated as the ID by convention.
+     * neither annotation, a property named exactly {@code "id"} whose type is {@code int}/{@code Integer},
+     * {@code long}/{@code Long}, {@code String}, {@code java.sql.Timestamp} or {@code java.util.UUID}
+     * is treated as the ID by convention.
      *
-     * <p>For entities that declare no ID annotation and have no property named {@code "id"},
-     * an empty list is returned.</p>
+     * <p>For entities that declare no ID annotation and have no conventionally-typed property named
+     * {@code "id"}, an empty list is returned.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -807,7 +808,7 @@ public final class QueryUtil {
      *
      * // Entity without @Id returns empty list
      * List<String> noIds = QueryUtil.idPropNames(LogEntry.class);
-     * // Returns: [] (no @Id/@ReadOnlyId and no property named "id")
+     * // Returns: [] (no @Id/@ReadOnlyId and no conventionally-typed property named "id")
      * }</pre>
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
@@ -1027,7 +1028,9 @@ public final class QueryUtil {
      * policy. The alias comes from {@link Table#alias()} and is appended after a space when present.
      *
      * <p>Annotated names are used directly without any transformation; the naming policy is only applied
-     * to a class-name-derived table name.</p>
+     * to a class-name-derived table name, and exactly as the query builders apply it: the class name is
+     * converted for {@code SNAKE_CASE}, {@code SCREAMING_SNAKE_CASE} and {@code CAMEL_CASE}, and kept
+     * unchanged for every other policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1052,17 +1055,14 @@ public final class QueryUtil {
     @Internal
     public static String tableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         N.checkArgNotNull(entityClass, ENTITY_CLASS);
-        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
 
-        // Resolve the annotated table name the same way the query builders do: BeanInfo.tableName honors
-        // @Table.name(), its deprecated @Table.value() alias, and the javax/jakarta persistence @Table
-        // annotations, so this helper cannot diverge from the FROM clause rendered for the same class.
-        final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
+        // Delegate to the query builders' own resolver so this helper cannot diverge from the FROM clause
+        // rendered for the same class. Applying NamingPolicy.convert() here directly used to diverge for
+        // KEBAB_CASE and (acronym-bearing names under) UPPER_CAMEL_CASE, because the builders convert the
+        // class name only for SNAKE_CASE / SCREAMING_SNAKE_CASE / CAMEL_CASE and otherwise keep it as-is.
+        final String tableName = SqlBuilder.getTableName(entityClass, namingPolicy);
         final Table anno = entityClass.getAnnotation(Table.class);
         final String alias = anno == null ? null : anno.alias();
-
-        final String tableName = entityInfo.tableName.isPresent() ? entityInfo.tableName.get()
-                : effectiveNamingPolicy.convert(ClassUtil.getSimpleClassName(entityClass));
 
         return Strings.isEmpty(alias) ? tableName : Strings.concat(tableName, SK.SPACE, alias);
     }

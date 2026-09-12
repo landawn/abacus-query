@@ -335,10 +335,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertThrows(IllegalStateException.class, () -> explicitFirst.fetchFirstRows(4));
         assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 4 ROWS ONLY", explicitFirst.orderBy("id").fetchFirstRows(4).build().query());
 
-        final SqlBuilder unresolvedFetch = sqlServerDsl.select("id").from("users");
-        assertThrows(IllegalStateException.class, () -> unresolvedFetch.append(new Limit("FETCH FIRST ? ROWS ONLY")));
-        assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY",
-                unresolvedFetch.orderBy("id").append(new Limit("FETCH FIRST ? ROWS ONLY")).build().query());
+        assertThrows(IllegalArgumentException.class, () -> new Limit("FETCH FIRST ? ROWS ONLY"));
 
         final Dsl oracleDsl = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Oracle")).build());
         assertEquals("SELECT id FROM users FETCH FIRST 2 ROWS ONLY", oracleDsl.select("id").from("users").limit(2).build().query());
@@ -628,6 +625,19 @@ public class AbstractQueryBuilderTest extends TestBase {
         final SqlBuilder joined = PSC.select("id").from("users").join("orders").on("users.id = orders.user_id");
         assertThrows(IllegalStateException.class, () -> joined.using("id"));
         assertEquals("SELECT id FROM users JOIN orders ON users.id = orders.user_id", joined.build().query());
+    }
+
+    @Test
+    public void testQualifiedJoinMustBeCompletedBeforeStatementCanAdvance() {
+        final SqlBuilder builder = PSC.select("u.id").from("users u").join("orders o");
+
+        assertThrows(IllegalStateException.class, builder::build);
+        assertThrows(IllegalStateException.class, () -> builder.where(Filters.eq("u.active", true)));
+        assertThrows(IllegalStateException.class, () -> builder.join("payments p"));
+        assertThrows(IllegalStateException.class, () -> builder.union("SELECT id FROM archived_users"));
+
+        // Every rejection is side-effect free; the original join can still be completed and built.
+        assertEquals("SELECT u.id FROM users u JOIN orders o ON u.id = o.user_id", builder.on("u.id = o.user_id").build().query());
     }
 
     @Test
@@ -2465,6 +2475,40 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals("a_b-c_d", Filters.expr("aB-cD").toSql(NamingPolicy.SNAKE_CASE));
     }
 
+    // SqlExpression.toSql and the builder's own tokenizer path both pass a digit-leading token through;
+    // the builder's short-literal fast path used to be the only path that naming-converted it.
+    @Test
+    public void testDigitLeadingShortTokenIsNotConvertedByTheBuilderFastPath() {
+        for (final String expr : new String[] { "2faCode", "3dModel", "0x1F" }) {
+            final String viaCondition = Filters.expr(expr).toSql(NamingPolicy.SNAKE_CASE);
+            final String builtSql = PSC.select("id").from("t").where(Filters.expr(expr)).build().query();
+
+            assertEquals(viaCondition, builtSql.substring(builtSql.indexOf("WHERE ") + 6), "rendering paths diverged for: " + expr);
+        }
+
+        assertEquals("SELECT id FROM t WHERE 2faCode", PSC.select("id").from("t").where(Filters.expr("2faCode")).build().query());
+        assertEquals("SELECT id FROM t WHERE 2faCode = 1", PSC.select("id").from("t").where(Filters.expr("2faCode = 1")).build().query());
+        // Column-name callers share the fast path.
+        assertEquals("SELECT 2faCode FROM t", PSC.select("2faCode").from("t").build().query());
+        assertEquals("SELECT id FROM t ORDER BY 2faCode", PSC.select("id").from("t").orderBy("2faCode").build().query());
+    }
+
+    // Under CAMEL_CASE the builder used Beans.normalizePropName, whose Java-keyword map rewrote the
+    // identifier "class" to "clazz" while SqlExpression.toSql (plain NamingPolicy.convert) did not.
+    @Test
+    public void testCamelCasePolicyRendersClassIdentifierIdenticallyThroughBothPaths() {
+        for (final String expr : new String[] { "class = 1", "CLASS = 1", "class = 1 AND other_col = 2" }) {
+            final String viaCondition = Filters.expr(expr).toSql(NamingPolicy.CAMEL_CASE);
+            final String builtSql = PLC.select("id").from("t").where(Filters.expr(expr)).build().query();
+
+            assertEquals(viaCondition, builtSql.substring(builtSql.indexOf("WHERE ") + 6), "rendering paths diverged for: " + expr);
+        }
+
+        assertEquals("SELECT class FROM t", PLC.select("class").from("t").build().query());
+        assertEquals("SELECT id FROM t WHERE class = ?", PLC.select("id").from("t").where(Filters.eq("class", 1)).build().query());
+        assertEquals("class", AbstractQueryBuilder.normalizeColumnName("class", NamingPolicy.CAMEL_CASE));
+    }
+
     @Test
     public void testFromVarargsMultiTableKeepsInlineAliasesFromFirstElement() {
         // Mirrors the single-string comma form: from("users u, orders o"). A bare two-String call from
@@ -2661,5 +2705,26 @@ public class AbstractQueryBuilderTest extends TestBase {
         // A column genuinely named like a keyword, in lower case, must still be converted: the registry is
         // deliberately upper-case only.
         assertEquals("SELECT id FROM t WHERE x = currentUser", Dsl.PLC.select("id").from("t").where(Filters.expr("x = current_user")).build().query());
+    }
+
+    // Both registries must agree on the lower-case forms too: SqlExpression deliberately registers only
+    // the as-is and UPPER-case keyword forms so a column genuinely named "order"/"count"/"rownum" is
+    // still converted, whereas sqlKeyWords also registered every SK keyword in lower case, so the same
+    // fragment rendered "X = ROWNUM" via toSql() but "X = rownum" via the builder under SCREAMING_SNAKE_CASE.
+    @Test
+    public void testLowerCaseKeywordLikeColumnRendersIdenticallyThroughBothPathsUnderScreamingSnakeCase() {
+        for (final String expr : new String[] { "x = rownum", "x = order", "x = count", "id desc", "x = current_date" }) {
+            final String viaCondition = Filters.expr(expr).toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
+            final String builtSql = PAC.select("id").from("t").where(Filters.expr(expr)).build().query();
+
+            assertEquals(viaCondition, builtSql.substring(builtSql.indexOf("WHERE ") + 6), "rendering paths diverged for: " + expr);
+        }
+
+        assertEquals("SELECT ID AS \"id\" FROM t WHERE X = ROWNUM", PAC.select("id").from("t").where(Filters.expr("x = rownum")).build().query());
+        // Non-expression consumers share the same registry: plain column names, ORDER BY and SET columns.
+        assertEquals("SELECT COUNT AS \"count\" FROM t ORDER BY ORDER", PAC.select("count").from("t").orderBy("order").build().query());
+        assertEquals("UPDATE t SET COUNT = ? WHERE ORDER = ?", PAC.update("t").set("count").where(Filters.eq("order", 1)).build().query());
+        // The canonical upper-case keyword form is still left untouched.
+        assertEquals("SELECT id FROM t WHERE x = CURRENT_DATE", PLC.select("id").from("t").where(Filters.expr("x = CURRENT_DATE")).build().query());
     }
 }

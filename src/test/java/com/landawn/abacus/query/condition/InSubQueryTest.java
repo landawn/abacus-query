@@ -369,12 +369,12 @@ public class InSubQueryTest extends TestBase {
 
     @Test
     public void testParametersWithMultipleValues() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM products WHERE price BETWEEN ? AND ?");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM products WHERE price BETWEEN ? AND ?", Arrays.asList(10, 20));
         InSubQuery condition = new InSubQuery("product_id", subQuery);
 
         List<Object> params = condition.parameters();
 
-        Assertions.assertNotNull(params);
+        Assertions.assertEquals(Arrays.asList(10, 20), params);
     }
 
     @Test

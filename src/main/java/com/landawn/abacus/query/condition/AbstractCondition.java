@@ -17,7 +17,11 @@ package com.landawn.abacus.query.condition;
 import static com.landawn.abacus.util.SK.COMMA_SPACE;
 import static com.landawn.abacus.util.SK.SPACE;
 
+import java.lang.reflect.Array;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -279,15 +283,16 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Checks whether the given condition is a quantified-subquery operand, i.e. its operator is
-     * {@code ANY}, {@code ALL}, or {@code SOME}.
+     * Checks whether the given condition is one of the explicit quantified-subquery operand types
+     * ({@link Any}, {@link All}, or {@link Some}) with its matching operator.
      *
      * @param cond the condition to check (may be {@code null})
      * @return {@code true} if {@code cond} has an {@code ANY}/{@code ALL}/{@code SOME} operator,
      *         {@code false} otherwise (including for a {@code null} {@code cond})
      */
     protected static boolean isQuantifiedSubQueryOperand(final Condition cond) {
-        return cond != null && isQuantifiedSubQueryOperator(cond.operator());
+        return cond != null && ((cond instanceof All && cond.operator() == Operator.ALL) || (cond instanceof Any && cond.operator() == Operator.ANY)
+                || (cond instanceof Some && cond.operator() == Operator.SOME));
     }
 
     /**
@@ -404,30 +409,28 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Validates a value that will be rendered in a scalar/value position. Query-structural conditions
-     * ({@link Criteria}, clauses, joins, and {@code ON}/{@code USING} connectors) cannot be used as
-     * comparison values, range bounds, or members of an {@code IN} value list: rendering one there
-     * would produce malformed SQL such as {@code x = WHERE y = 1}.
+     * Validates a value that will be rendered in a scalar/value position. Ordinary predicates and
+     * query-structural conditions cannot be used as scalar values: rendering one there would produce
+     * malformed or ambiguously grouped SQL such as {@code x > y = 1}.
      *
-     * <p>This check is deliberately a structural blacklist rather than a concrete-class whitelist.
-     * It therefore preserves explicit {@link SqlExpression} escape hatches, {@link SubQuery} values,
-     * the shared special-value sentinels, boolean-valued predicates, and custom non-structural
-     * {@link Condition} implementations. Quantified {@link All}/{@link Any}/{@link Some} operands
-     * require additional context-specific validation by the caller. A raw
-     * {@code SqlExpression} is accepted verbatim even if its text resembles a clause; callers choosing
-     * the raw-expression escape hatch remain responsible for that SQL.</p>
+     * <p>The only condition objects accepted here are the explicit scalar escape hatch
+     * {@link SqlExpression}, a scalar {@link SubQuery}, and a direct quantified
+     * {@link All}/{@link Any}/{@link Some} operand. Quantified operands require additional
+     * context-specific validation by the caller. A raw {@code SqlExpression} is accepted verbatim;
+     * callers choosing that escape hatch remain responsible for its SQL.</p>
      *
      * @param <T> the operand type
      * @param operand the value-position operand to validate; may be {@code null} or a non-condition value
      * @param argumentName the argument name used in an exception message
      * @return {@code operand}, unchanged
-     * @throws IllegalArgumentException if the operand is or recursively contains a query-structural condition
+     * @throws IllegalArgumentException if a condition operand is not a supported scalar SQL expression
      */
     protected static <T> T validateValueOperand(final T operand, final String argumentName) {
-        if (operand instanceof Condition && containsStructuralQueryComponent((Condition) operand)) {
+        if (operand instanceof Condition && !(operand instanceof SqlExpression) && !(operand instanceof SubQuery)
+                && !isQuantifiedSubQueryOperand((Condition) operand)) {
             final Condition condition = (Condition) operand;
-            throw new IllegalArgumentException(
-                    argumentName + " must not be or contain Criteria, a SQL clause, a JOIN, or an ON/USING connector: " + condition.getClass().getName());
+            throw new IllegalArgumentException(argumentName + " must be a literal value, SqlExpression, scalar SubQuery, or a directly supported "
+                    + "ALL/ANY/SOME operand, not a predicate or query clause: " + condition.getClass().getName());
         }
 
         return operand;
@@ -443,14 +446,14 @@ public abstract class AbstractCondition implements Condition {
      * @param operand the operand to validate
      * @param argumentName the argument name used in an exception message
      * @return {@code operand}, unchanged
-     * @throws IllegalArgumentException if the operand is query-structural or is/contains a quantified operand
+     * @throws IllegalArgumentException if the operand is an unsupported condition or a quantified operand
      */
     protected static <T> T validateNonQuantifiedValueOperand(final T operand, final String argumentName) {
         validateValueOperand(operand, argumentName);
 
-        if (operand instanceof Condition && containsQuantifiedSubQueryOperand((Condition) operand)) {
+        if (operand instanceof Condition && isQuantifiedSubQueryOperand((Condition) operand)) {
             throw new IllegalArgumentException(
-                    argumentName + " must not be or contain an ALL/ANY/SOME operand; quantified operands require a direct scalar-comparison RHS");
+                    argumentName + " must not be an ALL/ANY/SOME operand; quantified operands require a direct scalar-comparison RHS");
         }
 
         return operand;
@@ -466,7 +469,7 @@ public abstract class AbstractCondition implements Condition {
      * @param values the value-position operands to validate; must not be {@code null}, though individual
      *               elements may be {@code null}
      * @param argumentName the argument name used as the prefix in an exception message
-     * @throws IllegalArgumentException if any element is query-structural or is/contains a quantified operand
+     * @throws IllegalArgumentException if any element is an unsupported condition or a quantified operand
      */
     protected static void validateNonQuantifiedValueOperands(final Collection<?> values, final String argumentName) {
         int index = 0;
@@ -477,85 +480,69 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Checks whether the given condition is, or recursively contains, an {@code ALL}/{@code ANY}/{@code SOME}
-     * quantified-subquery operand. The search descends into the children of a {@link Junction} and into the
-     * wrapped condition of a {@link Cell} or {@link ComposableCell}; {@link SqlExpression} and {@link SubQuery}
-     * instances are opaque to this check and never match.
+     * Snapshots mutable JDK value types whose later mutation would otherwise change a condition's
+     * rendering, equality, or hash code. Object arrays are copied recursively so nested primitive
+     * arrays, dates, and calendars are protected as well. Other application-defined objects are
+     * retained by reference because this layer has no reliable general-purpose copy contract for them.
      *
-     * @param cond the condition to check (may be {@code null})
-     * @return {@code true} if {@code cond} is or contains a quantified-subquery operand, {@code false}
-     *         otherwise (including for a {@code null} {@code cond})
+     * @param value the value to snapshot; may be {@code null}
+     * @return a defensive copy for an array, {@link Date}, or {@link Calendar}; otherwise {@code value}
+     * @throws IllegalArgumentException if an object array contains a direct or indirect cycle
      */
-    private static boolean containsQuantifiedSubQueryOperand(final Condition cond) {
-        if (cond == null || cond instanceof SqlExpression || cond instanceof SubQuery) {
-            return false;
+    protected static Object snapshotMutableValue(final Object value) {
+        return snapshotMutableValue(value, new IdentityHashMap<>());
+    }
+
+    private static Object snapshotMutableValue(final Object value, final IdentityHashMap<Object, Boolean> arraysBeingCopied) {
+        if (value == null) {
+            return null;
         }
 
-        if (isQuantifiedSubQueryOperand(cond)) {
-            return true;
-        }
+        final Class<?> valueClass = value.getClass();
 
-        if (cond instanceof Junction) {
-            for (final Condition child : ((Junction) cond).conditions()) {
-                if (containsQuantifiedSubQueryOperand(child)) {
-                    return true;
-                }
+        if (valueClass.isArray()) {
+            if (arraysBeingCopied.put(value, Boolean.TRUE) != null) {
+                throw new IllegalArgumentException("Cyclic object arrays are not supported as condition values");
             }
 
-            return false;
+            final int length = Array.getLength(value);
+            final Class<?> componentType = valueClass.getComponentType();
+            final Object copy = Array.newInstance(componentType, length);
+
+            try {
+                if (componentType.isPrimitive()) {
+                    System.arraycopy(value, 0, copy, 0, length);
+                } else {
+                    for (int i = 0; i < length; i++) {
+                        Array.set(copy, i, snapshotMutableValue(Array.get(value, i), arraysBeingCopied));
+                    }
+                }
+            } finally {
+                arraysBeingCopied.remove(value);
+            }
+
+            return copy;
         }
 
-        if (cond instanceof Cell) {
-            return containsQuantifiedSubQueryOperand(((Cell) cond).condition());
+        if (value instanceof Date) {
+            return ((Date) value).clone();
         }
 
-        if (cond instanceof ComposableCell) {
-            return containsQuantifiedSubQueryOperand(((ComposableCell) cond).condition());
+        if (value instanceof Calendar) {
+            return ((Calendar) value).clone();
         }
 
-        return false;
+        return value;
     }
 
     /**
-     * Checks whether the given condition is, or recursively contains, a query-structural component:
-     * a {@link Criteria}, a {@link Clause}, a {@link Join}, or a condition whose operator is a clause
-     * operator or an {@code ON}/{@code USING} connector. The search descends into the children of a
-     * {@link Junction} and into the wrapped condition of a {@link Cell} or {@link ComposableCell};
-     * {@link SqlExpression}, {@link SubQuery}, and quantified-subquery operands are not treated as
-     * structural components.
+     * Returns whether {@link #snapshotMutableValue(Object)} produces a defensive copy for the value.
      *
-     * @param cond the condition to check (may be {@code null})
-     * @return {@code true} if {@code cond} is or contains a query-structural component, {@code false}
-     *         otherwise (including for a {@code null} {@code cond})
+     * @param value the value to inspect; may be {@code null}
+     * @return {@code true} for arrays, dates, and calendars
      */
-    private static boolean containsStructuralQueryComponent(final Condition cond) {
-        if (cond == null || cond instanceof SqlExpression || cond instanceof SubQuery || isQuantifiedSubQueryOperand(cond)) {
-            return false;
-        }
-
-        if (cond instanceof Criteria || cond instanceof Clause || cond instanceof Join || isClause(cond.operator()) || isOnOrUsing(cond.operator())) {
-            return true;
-        }
-
-        if (cond instanceof Junction) {
-            for (final Condition child : ((Junction) cond).conditions()) {
-                if (containsStructuralQueryComponent(child)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        if (cond instanceof Cell) {
-            return containsStructuralQueryComponent(((Cell) cond).condition());
-        }
-
-        if (cond instanceof ComposableCell) {
-            return containsStructuralQueryComponent(((ComposableCell) cond).condition());
-        }
-
-        return false;
+    protected static boolean isSnapshotMutableValue(final Object value) {
+        return value != null && (value.getClass().isArray() || value instanceof Date || value instanceof Calendar);
     }
 
     /**
@@ -569,8 +556,9 @@ public abstract class AbstractCondition implements Condition {
      * <p>Formatting rules:</p>
      * <ul>
      *   <li>{@code null} returns {@code null}</li>
-     *   <li>Strings are wrapped in single quotes with embedded single/double quotes escaped via {@link #escapeStringLiteral(String)}
-     *       (e.g., {@code John} -&gt; {@code 'John'}; {@code O'Brien} -&gt; {@code 'O\'Brien'})</li>
+     *   <li>Strings are wrapped in single quotes, with each embedded single quote doubled according
+     *       to the SQL standard (e.g., {@code John} -&gt; {@code 'John'}; {@code O'Brien} -&gt;
+     *       {@code 'O''Brien'}). Double quotes and backslashes are preserved.</li>
      *   <li>{@link Condition} values use the recursive {@link Condition#toSql(NamingPolicy)} rendering; a {@link SubQuery} is additionally
      *       wrapped in parentheses, and the {@code IsNull.NULL}, {@code IsNaN.NAN}, and {@code IsInfinite.INFINITE}
      *       sentinels use their plain {@code toString()}</li>
@@ -578,8 +566,10 @@ public abstract class AbstractCondition implements Condition {
      *       {@code toString()}, and {@link Boolean} values are emitted without quoting.
      *       {@link Float#NaN}/{@link Double#NaN}/infinity values cause an {@link IllegalArgumentException} because
      *       they have no portable SQL literal form; use {@link IsNaN}/{@link IsInfinite} instead.</li>
-     *   <li>Any other object (dates, characters, byte[], etc.) is converted via {@link N#stringOf(Object)} and
-     *       then wrapped in single quotes with escaping applied, yielding a valid SQL string literal.</li>
+     *   <li>Any other object (dates, characters, byte arrays, custom types, etc.) is converted via
+     *       {@link N#stringOf(Object)} and wrapped as a SQL-standard string literal. This guarantees
+     *       syntactically balanced quoting, but not that the target database can convert the resulting
+     *       text to a particular column type.</li>
      * </ul>
      *
      * <p><b>Usage Examples:</b></p>
@@ -635,16 +625,13 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Escapes a string for inclusion as the body of a single-quoted SQL string literal.
-     * Single quotes and double quotes are backslash-escaped via {@link com.landawn.abacus.util.Strings#escapeQuotes(String)},
-     * and a trailing-backslash guard is applied so that the closing {@code '} quote cannot be consumed
-     * as an escape sequence. This is a defense-in-depth helper used by
+     * Escapes a string for inclusion as the body of a single-quoted SQL-standard string literal.
+     * Each embedded single quote is represented by two single quotes. Double quotes and backslashes
+     * are ordinary characters inside a standard single-quoted literal and are preserved. This helper is used by
      * {@link #formatParameter(Object, NamingPolicy)} and by {@link SqlExpression#renderValue(Object)};
      * callers must still emit the surrounding {@code '} quotes.
-     *
-     * <p>Note: this uses backslash-style escaping with an extra trailing-backslash guard, not
-     * SQL-standard quote doubling. Its interpretation therefore depends on the database's string-literal
-     * mode. Use parameterized builders when SQL portability or untrusted input matters.</p>
+     * Parameterized builders remain preferable for runtime values because some database modes assign
+     * non-standard meanings to backslash characters.</p>
      *
      * @param str the raw string contents; {@code null} yields an empty string and an empty string
      *            is returned unchanged
@@ -655,21 +642,8 @@ public abstract class AbstractCondition implements Condition {
             return str == null ? Strings.EMPTY : str;
         }
 
-        final String escaped = Strings.escapeQuotes(str);
-
-        // Defensive guard: if the original ends in an unescaped backslash, the trailing closing
-        // quote would be consumed as an escape in MySQL-style parsing. Count trailing backslashes
-        // in the ESCAPED form and append one more if the count is odd.
-        int trailingBackslashes = 0;
-        for (int i = escaped.length() - 1; i >= 0 && escaped.charAt(i) == '\\'; i--) {
-            trailingBackslashes++;
-        }
-
-        if ((trailingBackslashes & 1) == 1) {
-            return escaped + '\\';
-        }
-
-        return escaped;
+        // SQL quote doubling is independent of backslash-escape modes and does not corrupt double quotes.
+        return str.replace("'", "''");
     }
 
     /**

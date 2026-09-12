@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -49,7 +50,7 @@ public class BinaryTest extends TestBase {
 
         assertThrows(IllegalArgumentException.class, () -> new Equal("x", where));
         assertThrows(IllegalArgumentException.class, () -> new Equal("x", criteria));
-        assertThrows(IllegalArgumentException.class, () -> new Equal("x", new Join("t")));
+        assertThrows(IllegalArgumentException.class, () -> new Equal("x", new Join("t", Filters.expr("1 = 1"))));
         assertThrows(IllegalArgumentException.class, () -> new Equal("x", new On("a", "b")));
         assertThrows(IllegalArgumentException.class, () -> new Binary("x", Operator.IN, new OrderBy("y")));
         assertThrows(IllegalArgumentException.class, () -> new Binary("x", Operator.IN, Arrays.asList(1, criteria)));
@@ -62,7 +63,7 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
-    public void testConstructorPreservesNonStructuralConditionValues() {
+    public void testConstructorAcceptsOnlyExplicitScalarConditionValues() {
         final SubQuery subQuery = Filters.subQuery("SELECT score FROM results");
         final SqlExpression expression = Filters.expr("CURRENT_TIMESTAMP");
         final All quantified = new All(subQuery);
@@ -71,8 +72,11 @@ public class BinaryTest extends TestBase {
         assertEquals(expression, new Equal("createdAt", expression).propValue());
         assertEquals(subQuery, new Equal("score", subQuery).propValue());
         assertEquals(quantified, new GreaterThan("score", quantified).propValue());
-        assertEquals(booleanExpression, new Equal("flag", booleanExpression).propValue());
         assertEquals(IsNull.NULL, new Is("deletedAt", IsNull.NULL).propValue());
+
+        assertThrows(IllegalArgumentException.class, () -> new Equal("flag", booleanExpression));
+        assertThrows(IllegalArgumentException.class, () -> new GreaterThan("x", Filters.eq("y", 1)));
+        assertThrows(IllegalArgumentException.class, () -> new Equal("x", Filters.and(Filters.eq("y", 1), Filters.eq("z", 2))));
     }
 
     @Test
@@ -234,16 +238,68 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
-    public void testHashCodeTracksMutableArrayValue() {
+    public void testMutableArrayValueIsSnapshottedAndDefensivelyExposed() {
         final byte[] value = { 1, 2 };
         final Binary condition = new Binary("payload", Operator.EQUAL, value);
+        final int hash = condition.hashCode();
 
-        condition.hashCode(); // Populate the old memoized implementation before mutating its exposed value.
         value[0] = 9;
+        ((byte[]) condition.propValue())[1] = 9;
+        ((byte[]) condition.parameters().get(0))[0] = 9;
 
-        final Binary equalAfterMutation = new Binary("payload", Operator.EQUAL, new byte[] { 9, 2 });
-        assertEquals(condition, equalAfterMutation);
-        assertEquals(condition.hashCode(), equalAfterMutation.hashCode());
+        final Binary originalSnapshot = new Binary("payload", Operator.EQUAL, new byte[] { 1, 2 });
+        assertEquals(originalSnapshot, condition);
+        assertEquals(hash, condition.hashCode());
+        assertEquals(1, ((byte[]) condition.propValue())[0]);
+        assertEquals(2, ((byte[]) condition.parameters().get(0))[1]);
+    }
+
+    @Test
+    public void testMutableDateValueIsSnapshottedAndDefensivelyExposed() {
+        final java.util.Date value = new java.util.Date(1_000L);
+        final Binary condition = new Binary("createdAt", Operator.EQUAL, value);
+        final int hash = condition.hashCode();
+
+        value.setTime(2_000L);
+        ((java.util.Date) condition.propValue()).setTime(3_000L);
+        ((java.util.Date) condition.parameters().get(0)).setTime(4_000L);
+
+        assertEquals(new Binary("createdAt", Operator.EQUAL, new java.util.Date(1_000L)), condition);
+        assertEquals(hash, condition.hashCode());
+        assertEquals(1_000L, ((java.util.Date) condition.propValue()).getTime());
+        assertEquals(1_000L, ((java.util.Date) condition.parameters().get(0)).getTime());
+    }
+
+    @Test
+    public void testMutableCalendarValueIsSnapshottedAndDefensivelyExposed() {
+        final java.util.Calendar value = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+        value.setTimeInMillis(1_000L);
+        final Binary condition = new Binary("createdAt", Operator.EQUAL, value);
+
+        value.setTimeInMillis(2_000L);
+        ((java.util.Calendar) condition.propValue()).setTimeInMillis(3_000L);
+        ((java.util.Calendar) condition.parameters().get(0)).setTimeInMillis(4_000L);
+
+        assertEquals(1_000L, ((java.util.Calendar) condition.propValue()).getTimeInMillis());
+        assertEquals(1_000L, ((java.util.Calendar) condition.parameters().get(0)).getTimeInMillis());
+    }
+
+    @Test
+    public void testApplicationDefinedMutableValueRetainsBindingIdentity() {
+        final StringBuilder customValue = new StringBuilder("value");
+        final Binary condition = new Binary("custom", Operator.EQUAL, customValue);
+
+        assertSame(customValue, condition.propValue());
+        assertSame(customValue, condition.parameters().get(0));
+    }
+
+    @Test
+    public void testCyclicObjectArrayIsRejectedInsteadOfRecursingIndefinitely() {
+        final Object[] cyclic = new Object[1];
+        cyclic[0] = cyclic;
+
+        assertThrows(IllegalArgumentException.class, () -> new Binary("payload", Operator.EQUAL, cyclic));
+        assertThrows(IllegalArgumentException.class, () -> new Binary("payload", Operator.IN, Collections.singletonList(cyclic)));
     }
 
     @Test
@@ -539,6 +595,22 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
+    public void testInCollectionSnapshotsMutableElementsAndDefensivelyExposesThem() {
+        final byte[] member = { 1, 2 };
+        final Binary in = Filters.binary("payload", Operator.IN, Arrays.asList(member));
+        final int hash = in.hashCode();
+
+        member[0] = 9;
+        ((byte[]) ((List<?>) in.propValue()).get(0))[1] = 9;
+        ((byte[]) in.parameters().get(0))[0] = 9;
+
+        assertEquals(new Binary("payload", Operator.IN, Arrays.asList(new byte[] { 1, 2 })), in);
+        assertEquals(hash, in.hashCode());
+        assertEquals(1, ((byte[]) ((List<?>) in.propValue()).get(0))[0]);
+        assertEquals(2, ((byte[]) in.parameters().get(0))[1]);
+    }
+
+    @Test
     public void testInCollectionValidatesTheDefensiveSnapshotIsNonEmpty() {
         final AbstractCollection<Integer> liveValues = new AbstractCollection<>() {
             @Override
@@ -565,6 +637,9 @@ public class BinaryTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Filters.binary("id", Operator.IN, new int[0]));
         assertThrows(IllegalArgumentException.class, () -> Filters.binary("id", Operator.IN, 1));
         assertThrows(IllegalArgumentException.class, () -> Filters.binary("id", Operator.NOT_IN, null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("id", Operator.IN, Arrays.asList(1, null)));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("id", Operator.NOT_IN, new Object[] { 1, null }));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("id", Operator.IN, Arrays.asList(1, Filters.eq("x", 2))));
     }
 
     @Test
@@ -647,14 +722,25 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
-    public void testToStringWithNullValueAndNonNullOperator() {
-        Binary binary = new Binary("col", Operator.GREATER_THAN, null);
+    public void testNullIsRejectedForNonNullAwareOperators() {
+        final Operator[] operators = { Operator.GREATER_THAN, Operator.GREATER_THAN_OR_EQUAL, Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL,
+                Operator.LIKE, Operator.NOT_LIKE };
 
-        String result = binary.toSql(NamingPolicy.NO_CHANGE);
+        for (final Operator operator : operators) {
+            assertThrows(IllegalArgumentException.class, () -> new Binary("col", operator, null));
+        }
+    }
 
-        Assertions.assertNotNull(result);
-        Assertions.assertTrue(result.contains("col"));
-        Assertions.assertTrue(result.contains(">"));
+    @Test
+    public void testIsOperatorsRestrictRightHandValues() {
+        assertEquals("flag IS true", new Binary("flag", Operator.IS, true).toString());
+        assertEquals("flag IS NOT false", new Binary("flag", Operator.IS_NOT, false).toString());
+        assertEquals("flag IS UNKNOWN", new Binary("flag", Operator.IS, Filters.expr("UNKNOWN")).toString());
+
+        assertThrows(IllegalArgumentException.class, () -> new Binary("flag", Operator.IS, 1));
+        assertThrows(IllegalArgumentException.class, () -> new Binary("flag", Operator.IS_NOT, "UNKNOWN"));
+        assertThrows(IllegalArgumentException.class, () -> new Binary("flag", Operator.IS, Filters.eq("other", true)));
+        assertThrows(IllegalArgumentException.class, () -> new Binary("flag", Operator.IS_NOT, Filters.subQuery("SELECT flag FROM t")));
     }
 
     /**
@@ -739,30 +825,16 @@ public class BinaryTest extends TestBase {
     }
 
     /**
-     * Pass-3 regression: a String value that ends in a single backslash must not produce
-     * {@code WHERE name = 'x\'} (where MySQL-style parsing would consume the closing quote
-     * as an escape, breaking the SQL or enabling injection).
+     * A SQL-standard string literal preserves a backslash rather than introducing a second,
+     * value-changing backslash. Database modes with non-standard backslash escapes require a
+     * dialect-aware renderer or, preferably, a bound parameter.
      */
     @Test
-    public void testToString_TrailingBackslashKeepsLiteralBalanced_Pass3() {
+    public void testToString_TrailingBackslashIsPreserved_Pass3() {
         Binary binary = new Binary("name", Operator.EQUAL, "x" + (char) 92);
         String result = binary.toSql(NamingPolicy.NO_CHANGE);
 
-        // Locate the closing quote of the literal: count quotes to ensure exactly two
-        // (the opening and closing of the string literal). A broken literal would have an
-        // unbalanced backslash before the closing quote.
-        int openQuote = result.indexOf('\'');
-        int closeQuote = result.lastIndexOf('\'');
-        assertTrue(openQuote >= 0 && closeQuote > openQuote, "Expected a literal pair in: " + result);
-
-        // The body between the quotes must end in an even number of backslashes so the
-        // closing quote is not consumed as an escape.
-        String body = result.substring(openQuote + 1, closeQuote);
-        int trailing = 0;
-        for (int i = body.length() - 1; i >= 0 && body.charAt(i) == '\\'; i--) {
-            trailing++;
-        }
-        assertEquals(0, trailing % 2, "Trailing backslash count must be even, got body: " + body);
+        assertEquals("name = 'x\\'", result);
     }
 
     /**
@@ -774,8 +846,7 @@ public class BinaryTest extends TestBase {
         Binary binary = new Binary("c", Operator.EQUAL, '\'');
         String result = binary.toSql(NamingPolicy.NO_CHANGE);
 
-        // Body of the literal must contain an escaped quote (either \' or '').
-        assertTrue(result.contains("\\'") || result.contains("''"), "Single-quote Character must be escaped, got: " + result);
+        assertEquals("c = ''''", result);
     }
 
     /**

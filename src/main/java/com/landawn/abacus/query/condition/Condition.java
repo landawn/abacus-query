@@ -15,13 +15,12 @@
 package com.landawn.abacus.query.condition;
 
 import com.landawn.abacus.query.Filters;
-import com.landawn.abacus.util.Immutable;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
  * The base interface for all query conditions.
- * Standard conditions are structurally immutable objects that represent various types of query criteria,
+ * Standard conditions are structurally stable objects that represent various types of query criteria,
  * such as equality checks, comparisons, composable operations, and SQL clauses.
  *
  * <p>This interface defines the contract that all conditions must follow, providing
@@ -30,9 +29,16 @@ import com.landawn.abacus.util.NamingPolicy;
  * {@link ComposableCondition}. Conditions are designed to be composable, allowing
  * complex queries to be built from simple building blocks.</p>
  *
- * <p>Standard implementations do not expose mutable condition structure after construction. Parameter
- * values and custom {@code Condition} implementations are not deep-copied, however, so callers must not
- * mutate them while the containing condition is in use.</p>
+ * <p><b>Type-system note:</b> {@code Condition} is the legacy umbrella for several different SQL-node
+ * roles: boolean predicates, scalar/raw expressions, quantified operands, subqueries, and whole clauses.
+ * It does not mean “boolean predicate”, and a method accepting this type may support only a documented
+ * subset. New APIs should prefer a role-specific type or a deliberately named raw-SQL escape hatch;
+ * existing APIs validate roles at construction time.</p>
+ *
+ * <p>Standard implementations do not expose mutable condition structure after construction. This interface
+ * intentionally does not claim the general-purpose {@code Immutable} marker: parameter values and custom
+ * {@code Condition} implementations cannot be deep-copied in general, and their state may affect rendering,
+ * equality, or hash codes. Callers must not mutate retained values while a condition is in use.</p>
  *
  * <p>Common implementations include:</p>
  * <ul>
@@ -69,8 +75,7 @@ import com.landawn.abacus.util.NamingPolicy;
  * @see AbstractCondition
  * @see ComposableCondition
  */
-@com.landawn.abacus.annotation.Immutable
-public interface Condition extends Immutable {
+public interface Condition {
     /**
      * Returns the operator associated with this condition.
      * The operator determines the type of comparison or operation performed.

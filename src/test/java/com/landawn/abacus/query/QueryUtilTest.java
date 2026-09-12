@@ -147,6 +147,22 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
+    public void testGetTableNameAndAlias_MatchesBuilderResolverForEveryNamingPolicy() {
+        // Regression: the class-name-derived branch applied NamingPolicy.convert() directly, while the
+        // builders go through SqlBuilder.getTableName(), which keeps the simple class name untouched for
+        // KEBAB_CASE / UPPER_CAMEL_CASE -- so the helper rendered "alias-only-entity ao" where the
+        // FROM clause said "AliasOnlyEntity ao".
+        for (final NamingPolicy np : NamingPolicy.values()) {
+            assertEquals(SqlBuilder.getTableName(AliasOnlyEntity.class, np) + " ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, np), np.name());
+            assertEquals(SqlBuilder.getTableName(Account.class, np) + " " + SqlBuilder.tableAlias(Account.class),
+                    QueryUtil.tableNameAndAlias(Account.class, np), np.name());
+        }
+
+        assertEquals("AliasOnlyEntity ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, NamingPolicy.KEBAB_CASE));
+        assertEquals("alias_only_entity ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
     public void testGetColumn2PropNameMap() {
         ImmutableMap<String, String> map = QueryUtil.columnToPropNameMap(Account.class);
         assertNotNull(map);

@@ -38,12 +38,20 @@ import com.landawn.abacus.util.Strings;
  * performance optimization, so repeated calls to {@link #parse(String)} with the same SQL string
  * typically return the same cached instance (subject to pool eviction after prolonged inactivity). Supported parameter formats include:</p>
  * <ul>
- *   <li>Named parameters: {@code :paramName}</li>
+ *   <li>Named parameters: {@code :paramName} or a dotted property path such as
+ *       {@code :user.address.city}</li>
  *   <li>iBatis/MyBatis style: {@code #{paramName}} (whitespace inside the braces is tolerated,
  *       e.g. {@code #{ paramName }}; the text from the first comma onward is treated as MyBatis
  *       attributes and discarded, so {@code #{ id, jdbcType=BIGINT }} binds {@code id})</li>
  *   <li>Standard JDBC placeholders: {@code ?}</li>
  * </ul>
+ *
+ * <p>A colon-style parameter name follows Unicode identifier grammar. Each dot-separated segment
+ * starts with {@code _} or a Unicode identifier-start code point and continues with {@code _} or
+ * Unicode identifier-part code points. Digits are therefore allowed after the first code point but
+ * not at the start of a segment. Unicode whitespace and punctuation are delimiters rather than name
+ * characters, and an unpaired UTF-16 surrogate in, or immediately before, a prospective parameter name
+ * is rejected.</p>
  *
  * <p>Parameter detection and conversion is only performed when the SQL is recognized as a
  * data operation statement (one whose first non-comment / non-parenthesis token is
@@ -68,6 +76,9 @@ import com.landawn.abacus.util.Strings;
  * remains a quoted identifier. As a consequence, a bracket-quoted identifier whose first character
  * is {@code ':'} (for example the SQL Server column reference {@code SELECT [:identifier] FROM t})
  * is parameterized rather than preserved; qualify it ({@code t.[:identifier]}) to keep it literal.
+ * Likewise a subscript whose content is a positional placeholder ({@code ARRAY[?]}, {@code arr[?, ?]},
+ * or a standalone {@code [?]}) counts its {@code ?} markers as JDBC parameters, while a bracket-quoted
+ * identifier that merely contains {@code ?} elsewhere ({@code [what?]}, {@code t.[what?]}) is preserved.
  * Comments are normally removed by {@link SqlParser} when parameter conversion is applied; markers
  * inside block comments retained by its keep-comments directive are still ignored. For an
  * unrecognized operation the token stream is not used to rebuild the SQL and no parameter
@@ -139,6 +150,20 @@ public final class ParsedSql {
                 String word = words.get(i);
 
                 if (isOpSqlPrefix) {
+                    if (word.indexOf('?') >= 0 && isPositionalSubscriptToken(word)) {
+                        // Positional placeholders embedded in a subscript-shaped token ("ARRAY[?]", "arr[?, ?]",
+                        // standalone "[?]"): the tokenizer keeps the bracket region glued to the preceding
+                        // identifier, so the "?" never surfaces as its own token. Kept independent of the
+                        // marker chain below so a token that also carries a "#{...}" or ":name" marker still
+                        // reaches the mixed-style guard.
+                        final int embedded = countUnquotedQuestionMarks(word, word.indexOf('[') + 1);
+
+                        if (embedded > 0) {
+                            paramCount += embedded;
+                            type |= QUESTION_MARK_TYPE;
+                        }
+                    }
+
                     if (word.equals(SK.QUESTION_MARK)) {
                         if (!isPostgreSqlJsonQuestionOperator(words, i)) {
                             paramCount++;
@@ -305,7 +330,8 @@ public final class ParsedSql {
      * @return a {@code ParsedSql} instance for the given SQL (typically a cached instance)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, if it mixes different
      *         parameter styles ({@code ?}, {@code :propName}, {@code #{propName}}), or if it contains
-     *         a malformed iBatis/MyBatis parameter that is missing its closing brace
+     *         a malformed iBatis/MyBatis parameter that is missing its closing brace, or an unpaired
+     *         UTF-16 surrogate in, or immediately before, a prospective colon-style parameter name
      */
     public static ParsedSql parse(final String sql) {
         if (Strings.isBlank(sql)) {
@@ -412,7 +438,9 @@ public final class ParsedSql {
      * This count includes parameter occurrences of {@code ?}, {@code :paramName}, or {@code #{paramName}},
      * but excludes {@code ?} tokens recognized as PostgreSQL JSON-existence operators. The
      * operator's right operand may be a literal, placeholder, column, or function expression;
-     * SQL ordering/pagination placeholders remain ordinary JDBC parameters.
+     * SQL ordering/pagination placeholders remain ordinary JDBC parameters, and so does a {@code ?}
+     * that directly follows a SQL operator or a value-taking keyword such as {@code INTERVAL},
+     * {@code ILIKE}, {@code SIMILAR TO} or {@code ESCAPE} (for example {@code INTERVAL ? DAY}).
      * Parameters are only counted for recognized data operation statements (see the class-level
      * documentation); for other SQL this returns {@code 0}.
      *
@@ -544,8 +572,40 @@ public final class ParsedSql {
     private static int findNamedParameterEndIndex(final String token, final int fromIndex) {
         int index = fromIndex;
 
-        while (index < token.length() && isValidNamedParameterChar(token.charAt(index))) {
-            index++;
+        if (index >= token.length()) {
+            return index;
+        }
+
+        int codePoint = namedParameterCodePointAt(token, index);
+
+        if (!isNamedParameterIdentifierStart(codePoint)) {
+            return index;
+        }
+
+        index += Character.charCount(codePoint);
+
+        while (index < token.length()) {
+            codePoint = namedParameterCodePointAt(token, index);
+
+            if (codePoint == '.') {
+                final int nextSegmentIndex = index + 1;
+
+                if (nextSegmentIndex >= token.length()) {
+                    break;
+                }
+
+                final int nextCodePoint = namedParameterCodePointAt(token, nextSegmentIndex);
+
+                if (!isNamedParameterIdentifierStart(nextCodePoint)) {
+                    break;
+                }
+
+                index = nextSegmentIndex + Character.charCount(nextCodePoint);
+            } else if (isNamedParameterIdentifierPart(codePoint)) {
+                index += Character.charCount(codePoint);
+            } else {
+                break;
+            }
         }
 
         return index;
@@ -579,19 +639,90 @@ public final class ParsedSql {
     }
 
     /**
+     * Returns {@code true} if the token is a PostgreSQL-style subscript that may hold positional
+     * placeholders: an identifier glued to a bracket region ({@code "arr[?]"}, {@code "ARRAY[?, ?]"}) or a
+     * standalone bracket region whose content starts with a lone {@code '?'} ({@code "[?]"}, {@code "[?, ?]"}).
+     * A bracket that sits inside a quoted literal or quoted identifier ({@code "'$.items[*] ? (...)'"},
+     * {@code "N'a[?]'"}, {@code "\"col[?]\""}), one that follows a qualification dot ({@code "t.[what?]"}),
+     * and a standalone bracket-quoted identifier that merely contains {@code '?'} ({@code "[what?]"},
+     * {@code "[?foo]"}) do not qualify.
+     */
+    private static boolean isPositionalSubscriptToken(final String token) {
+        final int bracketIndex = token.indexOf('[');
+
+        if (bracketIndex < 0 || isCommentOrSpaceToken(token) || precededByQuote(token, bracketIndex, '\'') || precededByQuote(token, bracketIndex, '"')
+                || precededByQuote(token, bracketIndex, '`')) {
+            return false;
+        }
+
+        if (bracketIndex > 0) {
+            return token.charAt(bracketIndex - 1) != '.';
+        }
+
+        // Standalone "[...]": mirrors the "[:name" exception -- a positional subscript only when the first
+        // non-blank character after '[' is a '?' that is not immediately followed by an identifier character.
+        int index = bracketIndex + 1;
+
+        while (index < token.length() && Character.isWhitespace(token.charAt(index))) {
+            index++;
+        }
+
+        if (index >= token.length() || token.charAt(index) != '?') {
+            return false;
+        }
+
+        final int afterMarkerIndex = index + 1;
+
+        return afterMarkerIndex >= token.length() || !isNamedParameterIdentifierPart(namedParameterCodePointAt(token, afterMarkerIndex));
+    }
+
+    private static boolean precededByQuote(final String token, final int bracketIndex, final char quote) {
+        final int quoteIndex = token.indexOf(quote);
+
+        return quoteIndex >= 0 && quoteIndex < bracketIndex;
+    }
+
+    /**
+     * Counts the {@code '?'} characters from {@code fromIndex} that are outside single-, double- or
+     * backtick-quoted regions, so a {@code '?'} inside a literal in a subscript ({@code "ARRAY['a?', ?]"})
+     * is not mistaken for a placeholder.
+     */
+    private static int countUnquotedQuestionMarks(final String token, final int fromIndex) {
+        int count = 0;
+        char quote = 0;
+
+        for (int index = fromIndex, len = token.length(); index < len; index++) {
+            final char ch = token.charAt(index);
+
+            if (quote != 0) {
+                if (ch == quote) {
+                    quote = 0;
+                }
+            } else if (ch == '\'' || ch == '"' || ch == '`') {
+                quote = ch;
+            } else if (ch == '?') {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /**
      * Returns {@code true} if the {@code '['} at {@code bracketIndex} opens a PostgreSQL-style
      * subscript whose content starts with a named binding: the named-parameter prefix {@code ':'}
-     * immediately followed by a valid parameter-name character. Shapes such as {@code "[:]"},
+     * immediately followed by a valid parameter-name start. Shapes such as {@code "[:]"},
      * {@code "[::int]"} or {@code "[column]"} do not qualify and remain bracket-quoted identifiers.
      */
     private static boolean isNamedParameterSubscript(final String token, final int bracketIndex) {
         return bracketIndex + 2 < token.length() && token.charAt(bracketIndex + 1) == _PREFIX_OF_NAMED_PARAMETER
-                && isValidNamedParameterChar(token.charAt(bracketIndex + 2));
+                && isNamedParameterIdentifierStart(namedParameterCodePointAt(token, bracketIndex + 2));
     }
 
     private static int findNextNamedParameterStartIndex(final String token, final int fromIndex) {
         for (int index = fromIndex, len = token.length() - 1; index < len; index++) {
-            if (token.charAt(index) == _PREFIX_OF_NAMED_PARAMETER && isValidNamedParameterChar(token.charAt(index + 1))
+            if (token.charAt(index) == _PREFIX_OF_NAMED_PARAMETER
+                    && isNamedParameterIdentifierStart(namedParameterCodePointAt(token, index + 1))
                     && isNamedParameterStartBoundary(token, index, fromIndex)) {
                 return index;
             }
@@ -605,9 +736,9 @@ public final class ParsedSql {
             return true;
         }
 
-        final char previousChar = token.charAt(parameterStartIndex - 1);
+        final int previousCodePoint = namedParameterCodePointBefore(token, parameterStartIndex);
 
-        return previousChar != _PREFIX_OF_NAMED_PARAMETER && !isValidNamedParameterChar(previousChar);
+        return previousCodePoint != _PREFIX_OF_NAMED_PARAMETER && previousCodePoint != '.' && !isNamedParameterIdentifierPart(previousCodePoint);
     }
 
     private static int nextNonCommentWord(final List<String> words, final int fromIndex) {
@@ -639,16 +770,40 @@ public final class ParsedSql {
     }
 
     private static boolean canPrecedeJsonQuestionOperator(final String word) {
-        if (Strings.isEmpty(word) || "(".equals(word) || ",".equals(word) || "=".equals(word) || "<".equals(word) || ">".equals(word) || "<=".equals(word)
-                || ">=".equals(word) || "<>".equals(word) || "!=".equals(word) || "+".equals(word) || "-".equals(word) || "*".equals(word) || "/".equals(word)
-                || "%".equals(word)) {
+        if (Strings.isEmpty(word)) {
             return false;
         }
 
-        return !isSqlExpressionBoundaryWord(word) && !("SELECT".equalsIgnoreCase(word) || "WHERE".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word)
-                || "ON".equalsIgnoreCase(word) || "AND".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "NOT".equalsIgnoreCase(word)
-                || "IN".equalsIgnoreCase(word) || "VALUES".equalsIgnoreCase(word) || "SET".equalsIgnoreCase(word) || "THEN".equalsIgnoreCase(word)
-                || "ELSE".equalsIgnoreCase(word) || "WHEN".equalsIgnoreCase(word));
+        final char first = word.charAt(0);
+
+        // The left operand of a JSON existence operator is a value: a column reference (optionally cast,
+        // "x::jsonb"), a quoted identifier or literal, a placeholder, or the ")" / "]" closing a
+        // sub-expression. A token that begins with operator punctuation ("=", "<>", "+", "||", "->>",
+        // "~*", "(", ",", ...) is an operator, so the "?" after it is a positional placeholder. Checking
+        // the leading character covers every operator spelling instead of enumerating them.
+        if (!(first == ')' || first == ']' || first == '?' || first == '_' || first == '"' || first == '`' || first == '\'' || first == '$' || first == '.'
+                || first == _PREFIX_OF_NAMED_PARAMETER || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || Character.isUnicodeIdentifierStart(first)
+                || Character.isDigit(first))) {
+            return false;
+        }
+
+        return !isSqlExpressionBoundaryWord(word) && !isPlaceholderLeadingKeyword(word);
+    }
+
+    /**
+     * Returns {@code true} for keywords after which a {@code ?} is always a positional placeholder and never
+     * the left operand of a JSON existence operator: clause openers, CASE parts, and operator-like keywords
+     * that take a value on their right ({@code INTERVAL ? DAY}, {@code ILIKE ? ESCAPE '!'},
+     * {@code SIMILAR TO ? ...}, {@code AT TIME ZONE ?}). Without this list such a {@code ?} followed by an
+     * identifier-like word ({@code DAY}, {@code ESCAPE}, an alias) would be dropped from the parameter count.
+     */
+    private static boolean isPlaceholderLeadingKeyword(final String word) {
+        return "SELECT".equalsIgnoreCase(word) || "WHERE".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word) || "ON".equalsIgnoreCase(word)
+                || "AND".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "NOT".equalsIgnoreCase(word) || "IN".equalsIgnoreCase(word)
+                || "VALUES".equalsIgnoreCase(word) || "SET".equalsIgnoreCase(word) || "THEN".equalsIgnoreCase(word) || "ELSE".equalsIgnoreCase(word)
+                || "WHEN".equalsIgnoreCase(word) || "CASE".equalsIgnoreCase(word) || "INTERVAL".equalsIgnoreCase(word) || "ILIKE".equalsIgnoreCase(word)
+                || "RLIKE".equalsIgnoreCase(word) || "REGEXP".equalsIgnoreCase(word) || "TO".equalsIgnoreCase(word) || "ESCAPE".equalsIgnoreCase(word)
+                || "ZONE".equalsIgnoreCase(word) || "DIV".equalsIgnoreCase(word) || "MOD".equalsIgnoreCase(word);
     }
 
     private static boolean canFollowJsonQuestionOperator(final String word) {
@@ -663,8 +818,9 @@ public final class ParsedSql {
         // a literal/placeholder here misclassifies the operator as a JDBC placeholder and then
         // falsely reports mixed parameter styles when the expression contains a named parameter.
         return word.equals(SK.QUESTION_MARK) || firstChar == '\'' || firstChar == '"' || firstChar == '`' || firstChar == '(' || firstChar == '['
-                || (firstChar == _PREFIX_OF_NAMED_PARAMETER && word.length() >= 2 && isValidNamedParameterChar(word.charAt(1)))
-                || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || isValidNamedParameterChar(firstChar);
+                || (firstChar == _PREFIX_OF_NAMED_PARAMETER && word.length() >= 2
+                        && isNamedParameterIdentifierStart(namedParameterCodePointAt(word, 1)))
+                || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || startsWithSqlExpressionWord(word);
     }
 
     private static boolean isSqlExpressionBoundaryWord(final String word) {
@@ -696,10 +852,65 @@ public final class ParsedSql {
         return (commaIndex >= 0 ? trimmed.substring(0, commaIndex) : trimmed).trim();
     }
 
-    private static boolean isValidNamedParameterChar(final char ch) {
-        // Valid name chars: ASCII letters/digits, '_', '.', plus any non-ASCII char (>= 128).
-        // https://www.cs.cmu.edu/~pattis/15-1XX/common/handouts/ascii.html
-        return ch == '_' || ch == '.' || (ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch >= 128;
+    private static boolean isNamedParameterIdentifierStart(final int codePoint) {
+        return codePoint == '_' || Character.isUnicodeIdentifierStart(codePoint);
+    }
+
+    private static boolean isNamedParameterIdentifierPart(final int codePoint) {
+        return codePoint == '_' || Character.isUnicodeIdentifierPart(codePoint);
+    }
+
+    private static int namedParameterCodePointAt(final String token, final int index) {
+        final char first = token.charAt(index);
+
+        // Character.codePointAt deliberately returns an isolated surrogate as an integer. Reject it
+        // explicitly so malformed UTF-16 cannot become an invisible or unbindable parameter name.
+        if (Character.isHighSurrogate(first)) {
+            if (index + 1 >= token.length() || !Character.isLowSurrogate(token.charAt(index + 1))) {
+                throw new IllegalArgumentException("Malformed named parameter: unpaired high surrogate at token index " + index);
+            }
+
+            return Character.toCodePoint(first, token.charAt(index + 1));
+        }
+
+        if (Character.isLowSurrogate(first)) {
+            throw new IllegalArgumentException("Malformed named parameter: unpaired low surrogate at token index " + index);
+        }
+
+        return first;
+    }
+
+    private static int namedParameterCodePointBefore(final String token, final int index) {
+        final char last = token.charAt(index - 1);
+
+        if (Character.isLowSurrogate(last)) {
+            if (index < 2 || !Character.isHighSurrogate(token.charAt(index - 2))) {
+                throw new IllegalArgumentException("Malformed named parameter boundary: unpaired low surrogate at token index " + (index - 1));
+            }
+
+            return Character.toCodePoint(token.charAt(index - 2), last);
+        }
+
+        if (Character.isHighSurrogate(last)) {
+            throw new IllegalArgumentException("Malformed named parameter boundary: unpaired high surrogate at token index " + (index - 1));
+        }
+
+        return last;
+    }
+
+    private static boolean startsWithSqlExpressionWord(final String word) {
+        final char first = word.charAt(0);
+
+        if (Character.isSurrogate(first)) {
+            if (!Character.isHighSurrogate(first) || word.length() < 2 || !Character.isLowSurrogate(word.charAt(1))) {
+                return false;
+            }
+
+            final int codePoint = Character.toCodePoint(first, word.charAt(1));
+            return Character.isUnicodeIdentifierStart(codePoint) || Character.isDigit(codePoint);
+        }
+
+        return first == '_' || first == '.' || Character.isUnicodeIdentifierStart(first) || Character.isDigit(first);
     }
 
     /**

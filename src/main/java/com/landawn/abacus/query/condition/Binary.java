@@ -36,7 +36,11 @@ import com.landawn.abacus.util.Strings;
  * <p>This class is concrete and can be instantiated directly, but it also serves as the
  * foundation for all comparison operations in queries,
  * providing common functionality for storing the property name, operator, and value.
- * The value can be a literal (String, Number, Date, etc.) or another Condition (for subqueries).</p>
+ * The value can be a literal, an explicit {@link SqlExpression}, or a scalar {@link SubQuery}.</p>
+ *
+ * <p>Arrays, {@link java.util.Date} values, and {@link java.util.Calendar} values are snapshotted
+ * on construction and defensively copied when exposed. Other application-defined mutable values
+ * are retained by reference; callers must not mutate them while the condition is in use.</p>
  *
  * <p>Common subclasses include:</p>
  * <ul>
@@ -102,9 +106,9 @@ public class Binary extends ComposableCondition {
     final String propName;
 
     /**
-     * The value on the right-hand side of this binary condition; may be {@code null} (rendered as
-     * {@code IS NULL} / {@code IS NOT NULL} for the equality operators), a literal, a {@link Condition}
-     * such as a {@link SubQuery}, or an unmodifiable membership list for {@code IN}/{@code NOT IN}.
+     * The value on the right-hand side of this binary condition; may be {@code null} only for
+     * equality and {@code IS}/{@code IS NOT} operators, a literal, an explicit scalar expression,
+     * or an unmodifiable membership list for {@code IN}/{@code NOT IN}.
      */
     private final Object propValue;
 
@@ -144,19 +148,22 @@ public class Binary extends ComposableCondition {
      *                 {@link Operator#GREATER_THAN_OR_EQUAL}, {@link Operator#LESS_THAN},
      *                 {@link Operator#LESS_THAN_OR_EQUAL}, {@link Operator#LIKE}, {@link Operator#NOT_LIKE},
      *                 {@link Operator#IS}, {@link Operator#IS_NOT}, {@link Operator#IN}, or {@link Operator#NOT_IN}
-     * @param propValue the value to compare against; may be a literal value, {@code null}
-     *                  (for equality operators, renders as {@code IS NULL} / {@code IS NOT NULL}),
-     *                  or a non-structural {@link Condition} such as a {@link SqlExpression} or
-     *                  {@link SubQuery}. An {@link All}, {@link Any}, or {@link Some} operand is accepted
+     * @param propValue the value to compare against; may be a literal value, {@code null} only for
+     *                  equality and {@code IS}/{@code IS NOT} operators (rendering as
+     *                  {@code IS NULL} / {@code IS NOT NULL}), an explicit {@link SqlExpression}, or
+     *                  a scalar {@link SubQuery}. An {@link All}, {@link Any}, or {@link Some} operand is accepted
      *                  only as the direct right-hand side of {@code =}, {@code !=}, {@code <>}, {@code <},
      *                  {@code <=}, {@code >}, or {@code >=}. For an {@code IN}/{@code NOT_IN} operator, a
      *                  {@link Collection} or array value is copied defensively and must be non-empty;
-     *                  condition-valued elements are subject to the same structural restriction.
+     *                  elements must be non-null scalar values or explicit scalar expressions.
+     *                  For {@code IS}/{@code IS NOT}, the value must be {@code null}, a Boolean, or
+     *                  an explicit {@link SqlExpression} such as {@code NULL}, {@code TRUE}, or {@code UNKNOWN}.
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if {@code operator}
      *                                  is not one of the operators listed above; or if, for an {@code IN}/{@code NOT_IN}
      *                                  operator, {@code propValue} is not a non-empty {@link Collection}, a non-empty
-     *                                  array, or a {@link Condition}; or if a condition-valued operand is or contains
-     *                                  a {@link Criteria}, SQL clause, JOIN, or {@code ON}/{@code USING} connector;
+     *                                  array, or an explicit scalar SQL expression; if a value that must be non-null is
+     *                                  {@code null}; if {@code IS}/{@code IS NOT} receives an arbitrary literal; if a
+     *                                  condition-valued operand is an ordinary predicate or query clause;
      *                                  or if an {@link All}/{@link Any}/{@link Some} operand is used anywhere
      *                                  other than the direct RHS of a compatible scalar comparison
      * @throws NullPointerException if {@code operator} is {@code null}
@@ -195,12 +202,13 @@ public class Binary extends ComposableCondition {
     }
 
     /**
-     * Returns the property value without an unchecked generic cast.
+     * Returns the property value without an unchecked generic cast. Arrays, dates, calendars, and
+     * mutable values nested in an {@code IN}/{@code NOT IN} membership list are defensively copied.
      *
      * @return the property value, which may be {@code null}
      */
     public Object propValue() {
-        return propValue;
+        return copyPropValueForExposure(propValue);
     }
 
     /**
@@ -215,14 +223,15 @@ public class Binary extends ComposableCondition {
      *
      * @param <T> the requested value type
      * @param valueType the requested value type; must not be {@code null}
-     * @return the property value cast to {@code valueType}, or {@code null} when the stored value is {@code null}
+     * @return the property value cast to {@code valueType}, or {@code null} when the stored value is {@code null};
+     *         known mutable JDK values are returned as defensive copies
      * @throws IllegalArgumentException if {@code valueType} is {@code null}
      * @throws ClassCastException if the stored value is not assignable to {@code valueType}
      */
     public <T> T propValueAs(final Class<T> valueType) {
         N.checkArgNotNull(valueType, "valueType");
 
-        return valueType.cast(propValue);
+        return valueType.cast(copyPropValueForExposure(propValue));
     }
 
     /**
@@ -232,9 +241,6 @@ public class Binary extends ComposableCondition {
      *   <li>If the value is {@code null} and the operator is {@code =}, {@code !=}, {@code <>}, {@code IS}, or
      *       {@code IS NOT}, an empty list is returned because the SQL is rendered as {@code IS NULL} /
      *       {@code IS NOT NULL} with no bind parameter.</li>
-     *   <li>If the value is {@code null} with any other operator (e.g. {@code LIKE}), a single-element list
-     *       containing {@code null} is returned, mirroring the rendered {@code null} literal
-     *       (see {@link #toSql(NamingPolicy)}).</li>
      *   <li>If the operator is {@code null} (only possible for an uninitialized instance), an empty list
      *       is returned.</li>
      *   <li>If the operator is {@code IN} or {@code NOT IN} and the value is a {@link Collection}, each element is
@@ -259,10 +265,15 @@ public class Binary extends ComposableCondition {
      * List<Object> p3 = eqSub.parameters();   // [true] (the subquery's params)
      * }</pre>
      *
-     * @return an immutable list of parameter values; never {@code null}
+     * @return an immutable list of parameter values; known mutable JDK values in the list are defensive
+     *         copies, and the result is never {@code null}
      */
     @Override
     public ImmutableList<Object> parameters() {
+        if (containsSnapshotMutableValue(propValue)) {
+            return computeParameters();
+        }
+
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
@@ -298,7 +309,7 @@ public class Binary extends ComposableCondition {
                 if (value instanceof Condition) {
                     parameters.addAll(((Condition) value).parameters());
                 } else {
-                    parameters.add(value);
+                    parameters.add(snapshotMutableValue(value));
                 }
             }
 
@@ -308,7 +319,7 @@ public class Binary extends ComposableCondition {
         if (propValue instanceof Condition) {
             return ((Condition) propValue).parameters();
         } else {
-            return ImmutableList.of(propValue);
+            return ImmutableList.of(snapshotMutableValue(propValue));
         }
     }
 
@@ -318,10 +329,9 @@ public class Binary extends ComposableCondition {
      * <p>Normally the format is: {@code propertyName OPERATOR value}.
      * When the value is {@code null} and the operator is {@code =} or {@code IS}, the output is
      * {@code propertyName IS NULL}; when the operator is {@code !=}, {@code <>}, or {@code IS NOT},
-     * the output is {@code propertyName IS NOT NULL}. Only those operators collapse to
-     * {@code IS [NOT] NULL}: a {@code null} value with any other operator renders as the bare
-     * literal {@code null} (e.g. {@code new Like("name", null)} renders {@code "name LIKE null"}),
-     * and {@link #parameters()} correspondingly returns a single-element list containing {@code null}.</p>
+     * the output is {@code propertyName IS NOT NULL}. Other operators reject a {@code null} value
+     * during construction because comparisons such as {@code x > NULL} and {@code x LIKE NULL}
+     * cannot evaluate to true under SQL three-valued logic.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -387,8 +397,9 @@ public class Binary extends ComposableCondition {
     /**
      * Validates {@code propValue} against {@code op} and normalizes it for storage. For {@code IN}/
      * {@code NOT IN}, a {@link Collection} or array value is defensively copied into an unmodifiable list
-     * (which must be non-empty) and a {@link Condition} value is accepted as-is; for every other operator
-     * the value is validated as a scalar operand. All condition-valued operands must be non-structural.
+     * (which must be non-empty and contain no nulls), and an explicit scalar SQL expression is accepted
+     * as-is; for every other operator the value is validated as a scalar operand. Ordinary predicates
+     * and query clauses are never scalar operands.
      *
      * @param op the comparison operator; not {@code null}
      * @param propValue the raw right-hand-side value; may be {@code null}
@@ -408,9 +419,18 @@ public class Binary extends ComposableCondition {
         // The copies are wrapped unmodifiable so propValue() cannot leak a mutable view of the
         // internal membership list (mutation would silently desync the memoized parameters/hashCode).
         if (propValue instanceof final Collection<?> values) {
-            final List<?> valuesCopy = new ArrayList<>(values);
+            final List<Object> valuesCopy = new ArrayList<>(values.size());
+
+            int index = 0;
+            for (final Object value : values) {
+                if (value == null) {
+                    throw new IllegalArgumentException("propValue[" + index + "] must not be null for " + op);
+                }
+
+                valuesCopy.add(snapshotMutableValue(validateNonQuantifiedValueOperand(value, "propValue[" + index++ + "]")));
+            }
+
             N.checkArgNotEmpty(valuesCopy, "propValue");
-            validateNonQuantifiedValueOperands(valuesCopy, "propValue");
             return Collections.unmodifiableList(valuesCopy);
         }
 
@@ -424,28 +444,51 @@ public class Binary extends ComposableCondition {
             final List<Object> values = new ArrayList<>(len);
 
             for (int i = 0; i < len; i++) {
-                values.add(validateNonQuantifiedValueOperand(Array.get(propValue, i), "propValue[" + i + "]"));
+                final Object value = Array.get(propValue, i);
+
+                if (value == null) {
+                    throw new IllegalArgumentException("propValue[" + i + "] must not be null for " + op);
+                }
+
+                values.add(snapshotMutableValue(validateNonQuantifiedValueOperand(value, "propValue[" + i + "]")));
             }
 
             return Collections.unmodifiableList(values);
         }
 
-        throw new IllegalArgumentException("IN/NOT IN operator requires a non-empty collection, array, or condition value");
+        throw new IllegalArgumentException("IN/NOT IN operator requires a non-empty collection, array, SqlExpression, or SubQuery value");
     }
 
     /**
      * Validates a scalar (non-{@code IN}/{@code NOT IN}) right-hand operand. An {@link All}/{@link Any}/
      * {@link Some} quantified-subquery operand is accepted only when {@code op} is in
      * {@link #QUANTIFIED_COMPARISON_OPERATORS}; every other operand must be non-quantified and
-     * non-structural.
+     * an explicitly supported scalar expression. Null is accepted only by equality and
+     * {@code IS}/{@code IS NOT} operators.
      *
      * @param op the comparison operator; not {@code null}
      * @param propValue the raw right-hand-side value; may be {@code null}
      * @return the validated value
-     * @throws IllegalArgumentException if a quantified operand is used with an incompatible operator, or
-     *         the operand is or contains a structural condition
+     * @throws IllegalArgumentException if a quantified operand is used with an incompatible operator,
+     *         the operand is an unsupported condition, or a required value is {@code null}
      */
     private static Object validateScalarValueOperand(final Operator op, final Object propValue) {
+        if (propValue == null) {
+            if (op == Operator.EQUAL || op == Operator.NOT_EQUAL || op == Operator.NOT_EQUAL_ANSI || op == Operator.IS || op == Operator.IS_NOT) {
+                return null;
+            }
+
+            throw new IllegalArgumentException("propValue must not be null for " + op + "; use an IS NULL/IS NOT NULL condition instead");
+        }
+
+        if (op == Operator.IS || op == Operator.IS_NOT) {
+            if (propValue instanceof Boolean || propValue instanceof SqlExpression) {
+                return propValue;
+            }
+
+            throw new IllegalArgumentException(op + " requires null, a Boolean, or an explicit SqlExpression right-hand value");
+        }
+
         if (propValue instanceof Condition && isQuantifiedSubQueryOperand((Condition) propValue)) {
             if (!QUANTIFIED_COMPARISON_OPERATORS.contains(op)) {
                 throw new IllegalArgumentException(op + " does not support an ALL/ANY/SOME right-hand operand");
@@ -454,7 +497,39 @@ public class Binary extends ComposableCondition {
             return validateValueOperand(propValue, "propValue");
         }
 
-        return validateNonQuantifiedValueOperand(propValue, "propValue");
+        return snapshotMutableValue(validateNonQuantifiedValueOperand(propValue, "propValue"));
+    }
+
+    /** Returns a safe public view while preserving identity for immutable and application-defined values. */
+    private static Object copyPropValueForExposure(final Object value) {
+        if (value instanceof final Collection<?> values) {
+            final List<Object> copy = new ArrayList<>(values.size());
+
+            for (final Object element : values) {
+                copy.add(snapshotMutableValue(element));
+            }
+
+            return Collections.unmodifiableList(copy);
+        }
+
+        return snapshotMutableValue(value);
+    }
+
+    /** Detects whether returning a memoized parameter list would expose a known mutable value. */
+    private static boolean containsSnapshotMutableValue(final Object value) {
+        if (isSnapshotMutableValue(value)) {
+            return true;
+        }
+
+        if (value instanceof Collection<?>) {
+            for (final Object element : (Collection<?>) value) {
+                if (isSnapshotMutableValue(element)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -463,7 +538,7 @@ public class Binary extends ComposableCondition {
      *
      * @param values the non-empty membership values
      * @param namingPolicy the naming policy applied to condition-valued elements
-     * @return the parenthesized value list (e.g. {@code "(1, 'a', null)"})
+     * @return the parenthesized value list (e.g. {@code "(1, 'a', 3)"})
      */
     private static String formatCollection(final Collection<?> values, final NamingPolicy namingPolicy) {
         final StringBuilder sb = new StringBuilder();
@@ -485,9 +560,9 @@ public class Binary extends ComposableCondition {
     /**
      * Returns the hash code of this Binary condition.
      * The hash code is computed based on the property name, operator, and value.
-     * It is recomputed on every call because scalar values are retained and exposed by
-     * {@link #propValue()}; memoizing a hash derived from a mutable value (for example, an array)
-     * could make two equal conditions report different hash codes after that value is mutated.
+     * It is recomputed on every call because application-defined mutable values are retained by
+     * reference. Arrays, dates, and calendars cannot be mutated through this condition because they
+     * are snapshotted and defensively copied.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

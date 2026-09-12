@@ -20,8 +20,8 @@ import java.util.List;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.ConcurrentCacheMap;
 import com.landawn.abacus.util.N;
-import com.landawn.abacus.util.ObjectPool;
 import com.landawn.abacus.util.Strings;
 
 /**
@@ -87,7 +87,7 @@ import com.landawn.abacus.util.Strings;
 @Beta
 public class NamedProperty {
 
-    private static final ObjectPool<String, NamedProperty> instancePool = new ObjectPool<>(1024);
+    private static final ConcurrentCacheMap<String, NamedProperty> instancePool = new ConcurrentCacheMap<>(1024);
 
     /**
      * The property name this NamedProperty is bound to.
@@ -147,7 +147,7 @@ public class NamedProperty {
             throw new IllegalArgumentException("Property name must not be null, empty, or blank");
         }
 
-        // ObjectPool.putIfAbsent delegates to ConcurrentHashMap.putIfAbsent and is genuinely atomic,
+        // ConcurrentCacheMap.putIfAbsent delegates to ConcurrentHashMap.putIfAbsent and is genuinely atomic,
         // so no external lock is needed: racing first callers all converge on the single pool winner.
         NamedProperty cached = instancePool.get(propName);
 

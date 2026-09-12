@@ -79,7 +79,7 @@ import com.landawn.abacus.util.Strings;
  * // Join multiple tables
  * Join multiJoin = new Join(Arrays.asList("orders o", "order_items oi"),
  *     new On("o.id", "oi.order_id"));
- * // SQL: JOIN (orders o, order_items oi) ON o.id = oi.order_id
+ * // SQL: JOIN (orders o CROSS JOIN order_items oi) ON o.id = oi.order_id
  * }</pre>
  * 
  * @see InnerJoin
@@ -239,7 +239,7 @@ public class Join extends AbstractCondition {
      * List<String> tables = Arrays.asList("orders o", "customers c");
      * Join multiJoin = new Join(tables,
      *     new On("o.customer_id", "c.id"));
-     * // SQL: JOIN (orders o, customers c) ON o.customer_id = c.id
+     * // SQL: JOIN (orders o CROSS JOIN customers c) ON o.customer_id = c.id
      *
      * // Join multiple tables with a compound condition built from SqlExpressions
      * Join exprMultiJoin = new Join(tables,
@@ -247,7 +247,7 @@ public class Join extends AbstractCondition {
      *         Filters.expr("o.customer_id = c.id"),
      *         Filters.expr("o.status = 'active'")
      *     ));
-     * // SQL: JOIN (orders o, customers c) ON ((o.customer_id = c.id) AND (o.status = 'active'))
+     * // SQL: JOIN (orders o CROSS JOIN customers c) ON ((o.customer_id = c.id) AND (o.status = 'active'))
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
@@ -303,6 +303,10 @@ public class Join extends AbstractCondition {
 
         if ((operator == Operator.CROSS_JOIN || operator == Operator.NATURAL_JOIN) && joinCondition != null) {
             throw new IllegalArgumentException(operator + " derives its row combinations without an explicit join condition");
+        }
+
+        if (operator != Operator.CROSS_JOIN && operator != Operator.NATURAL_JOIN && joinCondition == null) {
+            throw new IllegalArgumentException(operator + " requires a non-null ON/USING predicate; use CROSS JOIN for an unconditional join");
         }
 
         this.joinEntities = copyAndValidateJoinEntities(joinEntities);
@@ -499,8 +503,8 @@ public class Join extends AbstractCondition {
      * to the join condition. The output format includes the join operator, the joined entities, and
      * the optional join condition; the join operator keyword and entity strings themselves are emitted
      * verbatim. The condition's SQL representation depends on its type (On, Using, SqlExpression, etc.).
-     * A single join entity is rendered bare while multiple entities are wrapped in parentheses
-     * (e.g. {@code "JOIN (orders o, customers c) ..."}). A non-{@code On}/{@code Using} condition is
+     * A single join entity is rendered bare while multiple entities are combined as a parenthesized
+     * {@code CROSS JOIN} tree (e.g. {@code "JOIN (orders o CROSS JOIN customers c) ..."}). A non-{@code On}/{@code Using} condition is
      * prepended with the {@code ON} keyword before being appended.
      *
      * <p><b>Usage Examples:</b></p>
@@ -525,7 +529,7 @@ public class Join extends AbstractCondition {
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
         final Operator op = operator();
-        final String entities = (joinEntities == null || joinEntities.isEmpty()) ? Strings.EMPTY : concatPropNames(joinEntities);
+        final String entities = renderJoinEntities();
 
         if (op == null && entities.isEmpty()) {
             // Default (Kryo) state: avoid emitting "null " with a trailing space.
@@ -543,6 +547,33 @@ public class Join extends AbstractCondition {
         }
 
         return opStr + entityPart + condPart;
+    }
+
+    /**
+     * Renders a multi-entity operand as a standard joined table. A parenthesized comma list in this
+     * position is a MySQL extension and is rejected by several otherwise-supported SQL dialects.
+     */
+    private String renderJoinEntities() {
+        if (joinEntities == null || joinEntities.isEmpty()) {
+            return Strings.EMPTY;
+        }
+
+        if (joinEntities.size() == 1) {
+            return joinEntities.get(0);
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        sb.append('(');
+
+        for (int i = 0, size = joinEntities.size(); i < size; i++) {
+            if (i > 0) {
+                sb.append(" CROSS JOIN ");
+            }
+
+            sb.append(joinEntities.get(i));
+        }
+
+        return sb.append(')').toString();
     }
 
     /**

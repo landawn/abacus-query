@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
@@ -96,7 +97,7 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testFindCommonElements() {
-        SubQuery activeUsers = Filters.subQuery("SELECT user_id FROM activity WHERE last_login > ?", "2023-01-01");
+        SubQuery activeUsers = Filters.subQuery("SELECT user_id FROM activity WHERE last_login > ?", Arrays.asList("2023-01-01"));
         Intersect intersect = new Intersect(activeUsers);
         assertNotNull(intersect);
         assertEquals(Operator.INTERSECT, intersect.operator());
@@ -155,12 +156,12 @@ public class IntersectTest extends TestBase {
 
     @Test
     public void testParametersWithMultipleValues() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table WHERE value BETWEEN ? AND ?");
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM table WHERE value BETWEEN ? AND ?", Arrays.asList(1, 2));
         Intersect intersect = new Intersect(subQuery);
 
         List<Object> params = intersect.parameters();
 
-        Assertions.assertNotNull(params);
+        Assertions.assertEquals(Arrays.asList(1, 2), params);
     }
 
     @Test

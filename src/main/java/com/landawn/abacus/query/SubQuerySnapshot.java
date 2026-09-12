@@ -75,7 +75,9 @@ final class SubQuerySnapshot extends SubQuery {
     SubQuerySnapshot(final String sql, final List<Object> parameters, final SqlPolicy sqlPolicy, final boolean hasGeneratedParameterPlaceholder,
             final Map<String, Integer> namedParameterNameOccurrences, final Set<String> generatedNamedParameterNames,
             final Map<String, String> renderedNamedParameterTokens) {
-        super(sql);
+        // Builder snapshots already own a validated SQL/parameter pair; bypass only the public raw-SQL
+        // constructor's "no unbound placeholders" guard while retaining all builder metadata below.
+        super(sql, true);
 
         this.parameters = ImmutableList.wrap(parameters);
         this.sqlPolicy = sqlPolicy;

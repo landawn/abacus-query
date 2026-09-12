@@ -53,6 +53,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Fixed after construction — no conditions can be added or removed after creation</li>
  *   <li>Automatic parentheses handling for correct precedence in generated SQL</li>
  *   <li>Parameter collection from all nested conditions</li>
+ *   <li>Boolean identities for empty junctions: empty AND is true and empty OR is false</li>
  * </ul>
  * 
  * <p><b>Usage Examples:</b></p>
@@ -156,9 +157,9 @@ public class Junction extends ComposableCondition {
      *     new Equal("override", true)
      * );
      *
-     * // Edge: no conditions -> renders as an empty string
+     * // Edge: no conditions -> the Boolean identity for AND
      * Junction none = new Junction(Operator.AND);
-     * // none.toString() returns ""
+     * // none.toString() returns "1 = 1"
      *
      * // Edge: a null element is rejected
      * Junction bad = new Junction(Operator.AND, new Equal("a", 1), (Condition) null);   // throws IllegalArgumentException
@@ -171,8 +172,8 @@ public class Junction extends ComposableCondition {
      *             or if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
-     *             (a blank {@link SqlExpression} or empty {@link Junction})
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             or a blank {@link SqlExpression}
      */
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
@@ -201,9 +202,9 @@ public class Junction extends ComposableCondition {
      * // With includeDateCheck == false, junction.toString() returns
      * // "((status = 'active') AND (score > 80))"
      *
-     * // Edge: a null collection is treated as no conditions -> renders as ""
+     * // Edge: a null collection is treated as no conditions -> the Boolean identity for OR
      * Junction empty = new Junction(Operator.OR, (Collection<Condition>) null);
-     * // empty.toString() returns ""
+     * // empty.toString() returns "1 = 0"
      * }</pre>
      *
      * @param operator the composable operator to use; must be {@link Operator#AND} or {@link Operator#OR}
@@ -213,8 +214,8 @@ public class Junction extends ComposableCondition {
      *             or if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
-     *             (a blank {@link SqlExpression} or empty {@link Junction})
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             or a blank {@link SqlExpression}
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);
@@ -291,8 +292,8 @@ public class Junction extends ComposableCondition {
     /**
      * Validates a single constructor operand: it must be non-{@code null} and must not be or contain a
      * non-predicate component (a {@link Criteria}, a clause, an {@code ON}/{@code USING} connector, a
-     * quantified {@code ALL}/{@code ANY}/{@code SOME} operand, a standalone {@link SubQuery}, or an empty
-     * predicate).
+     * quantified {@code ALL}/{@code ANY}/{@code SOME} operand, a standalone {@link SubQuery}, or a blank
+     * {@link SqlExpression}). Empty junctions are complete predicates through their Boolean identities.
      *
      * @param condition the condition to validate
      * @return {@code condition}, unchanged
@@ -357,10 +358,11 @@ public class Junction extends ComposableCondition {
     /**
      * Converts this junction to its SQL representation according to the specified naming policy.
      * Each contained condition is wrapped in parentheses, joined by the junction operator, and the
-     * entire result is itself wrapped in an outer pair of parentheses (e.g.
+     * entire non-empty result is itself wrapped in an outer pair of parentheses (e.g.
      * {@code "((cond1) AND (cond2) AND (cond3))"}). This ensures proper precedence in nested
-     * composable expressions. An empty string is returned if the junction has no conditions. (The
-     * public API rejects {@code null} conditions at construction, so none can appear in the list.)
+     * composable expressions. A junction with no conditions renders its Boolean identity:
+     * {@code 1 = 1} for {@code AND}, or {@code 1 = 0} for {@code OR}. (The public API rejects
+     * {@code null} conditions at construction, so none can appear in the list.)
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -378,19 +380,20 @@ public class Junction extends ComposableCondition {
      * Junction snake = new Junction(Operator.AND, new Equal("firstName", "John"));
      * snake.toSql(NamingPolicy.SNAKE_CASE);   // returns "((first_name = 'John'))"
      *
-     * // Edge: an empty junction renders as an empty string
-     * new Junction(Operator.AND).toSql(NamingPolicy.NO_CHANGE);   // returns ""
+     * // Edge: empty junctions preserve their Boolean identities
+     * new Junction(Operator.AND).toSql(NamingPolicy.NO_CHANGE);   // returns "1 = 1"
+     * new Junction(Operator.OR).toSql(NamingPolicy.NO_CHANGE);    // returns "1 = 0"
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names within each condition;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
-     * @return the SQL representation with proper parentheses and spacing, or an empty string if
-     *         the junction has no conditions
+     * @return the SQL representation with proper parentheses and spacing, or the operator's Boolean
+     *         identity if the junction has no conditions
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
         if (N.isEmpty(conditions)) {
-            return Strings.EMPTY;
+            return identitySql();
         }
 
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -420,7 +423,7 @@ public class Junction extends ComposableCondition {
             }
 
             if (isFirst) {
-                return Strings.EMPTY;
+                return identitySql();
             }
 
             sb.append(_PARENTHESIS_R);
@@ -429,6 +432,23 @@ public class Junction extends ComposableCondition {
         } finally {
             Objectory.recycle(sb);
         }
+    }
+
+    /**
+     * SQL has no universally supported Boolean literal syntax, so numeric equality predicates are
+     * used for the empty-set identities: a conjunction over no operands is true, while a disjunction
+     * over no operands is false. A null operator only occurs on an uninitialized serialization instance.
+     */
+    private String identitySql() {
+        if (operator() == Operator.AND) {
+            return "1 = 1";
+        }
+
+        if (operator() == Operator.OR) {
+            return "1 = 0";
+        }
+
+        return Strings.EMPTY;
     }
 
     /**

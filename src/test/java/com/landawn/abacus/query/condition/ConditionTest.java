@@ -402,8 +402,7 @@ public class ConditionTest extends TestBase {
     // Contract Validation Tests
 
     @Test
-    void testImmutabilityContract() {
-        // Test that conditions are immutable
+    void testCompositionDoesNotMutateOriginalStructure() {
         List<Object> originalParams = simpleCondition.parameters();
         Operator originalOperator = simpleCondition.operator();
 
@@ -418,8 +417,7 @@ public class ConditionTest extends TestBase {
     }
 
     @Test
-    void testThreadSafetyContract() {
-        // Basic thread safety test - conditions should be immutable and thread-safe
+    void testConcurrentCompositionWithImmutableValuesDoesNotMutateOriginal() {
         final ComposableCondition condition = Filters.eq("field", "value");
 
         Thread thread1 = new Thread(() -> {
@@ -447,5 +445,11 @@ public class ConditionTest extends TestBase {
         // Original condition should remain unchanged
         assertNotNull(condition.parameters());
         assertEquals(Operator.EQUAL, condition.operator());
+    }
+
+    @Test
+    void testConditionDoesNotClaimDeepImmutabilityMarker() {
+        assertFalse(com.landawn.abacus.util.Immutable.class.isAssignableFrom(Condition.class));
+        assertFalse(Condition.class.isAnnotationPresent(com.landawn.abacus.annotation.Immutable.class));
     }
 }

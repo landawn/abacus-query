@@ -814,7 +814,7 @@ public final class SqlMapper {
      * @param file the file to write to (will be created if it doesn't exist; parent directories will be created if needed)
      * @throws IllegalArgumentException if {@code file} is {@code null}
      * @throws UncheckedIOException if an I/O error occurs while creating or writing to the file
-     * @throws com.landawn.abacus.exception.UncheckedException if a stored SQL body or identifier contains a character
+     * @throws UncheckedException if a stored SQL body or identifier contains a character
      *         that is not legal in XML
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
@@ -849,7 +849,7 @@ public final class SqlMapper {
      * @param filePath the target file path; must not be {@code null} or empty
      * @throws IllegalArgumentException if {@code filePath} is {@code null} or empty
      * @throws UncheckedIOException if an I/O error occurs while creating or writing the file
-     * @throws com.landawn.abacus.exception.UncheckedException if a stored SQL body or identifier contains a character
+     * @throws UncheckedException if a stored SQL body or identifier contains a character
      *         that is not legal in XML
      */
     public void saveTo(final String filePath) {
@@ -879,7 +879,7 @@ public final class SqlMapper {
      * @param outputStream the output stream to write to (not closed by this method)
      * @throws IllegalArgumentException if {@code outputStream} is {@code null}
      * @throws UncheckedIOException if an I/O error occurs while writing to the stream
-     * @throws com.landawn.abacus.exception.UncheckedException if a stored SQL body or identifier contains a character
+     * @throws UncheckedException if a stored SQL body or identifier contains a character
      *         that is not legal in XML
      */
     public void saveTo(final OutputStream outputStream) {

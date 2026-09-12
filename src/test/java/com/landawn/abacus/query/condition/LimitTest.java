@@ -52,9 +52,9 @@ public class LimitTest extends TestBase {
 
     @Test
     public void testHasLiteral() {
-        // String-expression constructor: literal mode, even when the expression is parsed or opaque.
+        // String-expression constructor retains a validated numeric expression.
         assertTrue(new Limit("10 OFFSET 20").hasExpression());
-        assertTrue(new Limit("? OFFSET ?").hasExpression());
+        assertThrows(IllegalArgumentException.class, () -> new Limit("? OFFSET ?"));
 
         // Numeric constructors: no literal.
         assertFalse(new Limit(10).hasExpression());
@@ -85,13 +85,13 @@ public class LimitTest extends TestBase {
     }
 
     @Test
-    public void testConstructorWithExpression_PlaceholderStaysOpaque() {
-        Limit limit = new Limit("? OFFSET ?");
-
-        // A placeholder-bearing expression cannot be parsed to integers: it stays opaque.
-        assertEquals(SK.LIMIT + SK.SPACE + "? OFFSET ?", limit.expression());
-        assertEquals(Integer.MAX_VALUE, limit.count());
-        assertEquals(0, limit.offset());
+    public void testConstructorWithExpression_RejectsUnboundPlaceholders() {
+        assertThrows(IllegalArgumentException.class, () -> new Limit("?"));
+        assertThrows(IllegalArgumentException.class, () -> new Limit("? OFFSET ?"));
+        assertThrows(IllegalArgumentException.class, () -> new Limit("?, ?"));
+        assertThrows(IllegalArgumentException.class, () -> new Limit("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY"));
+        assertThrows(IllegalArgumentException.class, () -> new Limit(":count"));
+        assertThrows(IllegalArgumentException.class, () -> new Limit("#{count}"));
     }
 
     @Test
@@ -112,35 +112,6 @@ public class LimitTest extends TestBase {
         // Leading/trailing trimmed; internal runs collapsed to a single space.
         assertEquals("LIMIT 10 OFFSET 20", new Limit("   10    OFFSET    20   ").expression());
         assertEquals("FETCH FIRST 5 ROWS ONLY", new Limit("FETCH   FIRST  5   ROWS   ONLY").expression());
-    }
-
-    @Test
-    public void testConstructorWithExpression_PreservesParameterNameCase() {
-        // Keywords are upper-cased, but named-parameter tokens keep their original case.
-        Limit mybatis = new Limit("#{maxRows} offset #{startRow}");
-        assertEquals("LIMIT #{maxRows} OFFSET #{startRow}", mybatis.expression());
-        assertEquals(Integer.MAX_VALUE, mybatis.count());
-
-        Limit named = new Limit(":Cnt");
-        assertEquals("LIMIT :Cnt", named.expression());
-    }
-
-    @Test
-    public void testConstructorWithExpression_PreservesKeywordNamedPlaceholderWithSpaces() {
-        // A #{...} body may contain internal spaces and be spelled like a keyword. Its parameter name must
-        // survive verbatim (not whitespace-collapsed and not upper-cased), while the leading LIMIT keyword
-        // is still normalized. Regression for the placeholder-corruption bug.
-        Limit spacedOffset = new Limit("LIMIT #{ offset }");
-        assertEquals("LIMIT #{ offset }", spacedOffset.expression());
-        assertEquals(Integer.MAX_VALUE, spacedOffset.count());
-        assertEquals(0, spacedOffset.offset());
-
-        Limit spacedPair = new Limit("#{ maxRows } offset #{ startRow }");
-        assertEquals("LIMIT #{ maxRows } OFFSET #{ startRow }", spacedPair.expression());
-
-        // A :name placeholder spelled like a keyword must also be preserved (whole-token, so :offset != OFFSET).
-        Limit namedOffset = new Limit("LIMIT :offset");
-        assertEquals("LIMIT :offset", namedOffset.expression());
     }
 
     @Test
@@ -493,8 +464,7 @@ public class LimitTest extends TestBase {
 
     @Test
     public void testConstructorWithPlaceholderExpression() {
-        Limit limit = Filters.limit("? OFFSET ?");
-        Assertions.assertEquals(SK.LIMIT + SK.SPACE + "? OFFSET ?", limit.expression());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.limit("? OFFSET ?"));
     }
 
     @Test
@@ -585,10 +555,7 @@ public class LimitTest extends TestBase {
 
     @Test
     public void testConstructorWithExpression_MybatisPlaceholder() {
-        Limit limit = new Limit("#{limit} OFFSET #{offset}");
-
-        Assertions.assertEquals("LIMIT #{limit} OFFSET #{offset}", limit.expression());
-        Assertions.assertEquals("#{limit} OFFSET #{offset}", limit.condition().toString());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Limit("#{limit} OFFSET #{offset}"));
     }
 
     @Test
@@ -628,7 +595,7 @@ public class LimitTest extends TestBase {
         Assertions.assertTrue(parsed.isResolved());
         Assertions.assertEquals(Integer.MAX_VALUE, parsed.resolvedCount().orElseThrow());
 
-        Limit opaque = new Limit("? OFFSET ?");
+        Limit opaque = new Limit("2147483648 OFFSET 2147483649");
         Assertions.assertFalse(opaque.isResolved());
         Assertions.assertTrue(opaque.resolvedCount().isEmpty());
         Assertions.assertTrue(opaque.resolvedOffset().isEmpty());

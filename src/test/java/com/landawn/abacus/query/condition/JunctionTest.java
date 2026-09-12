@@ -190,12 +190,9 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testToStringEmpty() {
-        Junction junction = new Junction(Operator.AND);
-
-        String sql = junction.toSql(NamingPolicy.NO_CHANGE);
-
-        assertEquals("", sql);
+    public void testToStringEmptyUsesBooleanIdentities() {
+        assertEquals("1 = 1", new Junction(Operator.AND).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("1 = 0", new Junction(Operator.OR).toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -230,16 +227,16 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testHashCodeTracksMutableValueInChildCondition() {
+    public void testChildConditionSnapshotsMutableArrayValue() {
         final byte[] value = { 1 };
         final Junction junction = new Junction(Operator.AND, Filters.eq("payload", value));
 
         junction.hashCode();
         value[0] = 2;
 
-        final Junction equalAfterMutation = new Junction(Operator.AND, Filters.eq("payload", new byte[] { 2 }));
-        assertEquals(junction, equalAfterMutation);
-        assertEquals(junction.hashCode(), equalAfterMutation.hashCode());
+        final Junction equalToSnapshot = new Junction(Operator.AND, Filters.eq("payload", new byte[] { 1 }));
+        assertEquals(junction, equalToSnapshot);
+        assertEquals(junction.hashCode(), equalToSnapshot.hashCode());
     }
 
     @Test
@@ -408,7 +405,7 @@ public class JunctionTest extends TestBase {
         String result = junction.toSql(NamingPolicy.NO_CHANGE);
 
         assertNotNull(result);
-        assertEquals("", result);
+        assertEquals("1 = 1", result);
     }
 
     @Test
@@ -468,10 +465,8 @@ public class JunctionTest extends TestBase {
 
     @Test
     public void testToStringWithEmptyConditions() {
-        Junction junction = new Junction(Operator.AND);
-        String result = junction.toString();
-
-        Assertions.assertEquals("", result);
+        Assertions.assertEquals("1 = 1", new Junction(Operator.AND).toString());
+        Assertions.assertEquals("1 = 0", new Junction(Operator.OR).toString());
     }
 
     @Test
@@ -510,7 +505,7 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testConstructorRejectsQuantifiedSubqueryAndEmptyPredicates() {
+    public void testConstructorRejectsQuantifiedSubqueryBlankExpressionsAndUninitializedJunctions() {
         SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> new And(Filters.all(subQuery)));
@@ -518,6 +513,15 @@ public class JunctionTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.some(subQuery)));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new And()));
+    }
+
+    @Test
+    public void testInitializedEmptyJunctionsComposeAsPredicates() {
+        Junction junction = new Junction(Operator.OR, Filters.and(), Filters.or());
+
+        assertEquals("((1 = 1) OR (1 = 0))", junction.toSql(NamingPolicy.NO_CHANGE));
+        assertTrue(Filters.and().and(Filters.eq("id", 1)).toSql(NamingPolicy.NO_CHANGE).contains("id = 1"));
+        assertTrue(Filters.or().or(Filters.eq("id", 1)).toSql(NamingPolicy.NO_CHANGE).contains("id = 1"));
     }
 
     @Test

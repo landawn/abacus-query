@@ -57,7 +57,7 @@ import java.util.Collection;
  * // Multiple tables natural join
  * List<String> tables = Arrays.asList("employees", "departments");
  * NaturalJoin multiJoin = new NaturalJoin(tables);
- * // SQL: NATURAL JOIN (employees, departments)
+ * // SQL: NATURAL JOIN (employees CROSS JOIN departments)
  * }</pre>
  *
  * @see Join
@@ -104,7 +104,7 @@ public class NaturalJoin extends Join {
 
     /**
      * Creates a NATURAL JOIN clause with multiple tables/entities.
-     * The rendered SQL is {@code NATURAL JOIN (t1, t2, ...)}; a single-element collection renders
+     * The rendered SQL is {@code NATURAL JOIN (t1 CROSS JOIN t2 ...)}; a single-element collection renders
      * bare, without the parentheses.
      * Because most databases do not accept a comma-separated list after {@code NATURAL JOIN}, this
      * form is rarely directly executable and is provided mainly for symmetry with the other join
@@ -118,7 +118,7 @@ public class NaturalJoin extends Join {
      * // Join customers, orders, and products naturally
      * List<String> tables = Arrays.asList("customers", "orders", "products");
      * NaturalJoin join = new NaturalJoin(tables);
-     * // SQL: NATURAL JOIN (customers, orders, products)
+     * // SQL: NATURAL JOIN (customers CROSS JOIN orders CROSS JOIN products)
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

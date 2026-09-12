@@ -3,7 +3,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -81,12 +80,9 @@ public class BetweenTest extends TestBase {
     }
 
     @Test
-    public void testParameters_WithNullValues() {
-        Between condition = new Between("field", null, null);
-        List<Object> params = condition.parameters();
-        assertEquals(2, params.size());
-        assertNull(params.get(0));
-        assertNull(params.get(1));
+    public void testConstructorRejectsNullBounds() {
+        assertThrows(IllegalArgumentException.class, () -> new Between("field", null, 10));
+        assertThrows(IllegalArgumentException.class, () -> new Between("field", 1, null));
     }
 
     @Test
@@ -205,11 +201,9 @@ public class BetweenTest extends TestBase {
     }
 
     @Test
-    public void testToString_WithNullValues() {
-        Between condition = new Between("value", null, null);
-        String result = condition.toSql(NamingPolicy.NO_CHANGE);
-        assertTrue(result.contains("value"));
-        assertTrue(result.contains("BETWEEN"));
+    public void testPredicateBoundsAreRejected() {
+        assertThrows(IllegalArgumentException.class, () -> new Between("value", Filters.eq("x", 1), 100));
+        assertThrows(IllegalArgumentException.class, () -> new Between("value", 0, Filters.exists(Filters.subQuery("SELECT 1"))));
     }
 
     @Test
@@ -240,10 +234,9 @@ public class BetweenTest extends TestBase {
     }
 
     @Test
-    public void testConstructorWithNullValues() {
-        Between between = Filters.between("value", null, null);
-        Assertions.assertNull(between.minValue());
-        Assertions.assertNull(between.maxValue());
+    public void testFactoryRejectsNullValues() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.between("value", null, 100));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.between("value", 0, null));
     }
 
     @Test
@@ -286,10 +279,8 @@ public class BetweenTest extends TestBase {
     }
 
     @Test
-    public void testToStringWithNulls() {
-        Between between = Filters.between("value", null, 100);
-        String result = between.toString();
-        Assertions.assertEquals("value BETWEEN null AND 100", result);
+    public void testNullBoundsFailBeforeRendering() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.between("value", null, 100));
     }
 
     @Test

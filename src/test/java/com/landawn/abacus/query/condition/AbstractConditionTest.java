@@ -123,10 +123,16 @@ public class AbstractConditionTest extends TestBase {
     }
 
     @Test
-    public void testParameter2String_StringEscapesQuote() {
+    public void testParameter2String_StringUsesSqlStandardQuoteDoubling() {
         Equal condition = new Equal("name", "O'Brien");
         String str = condition.toSql(NamingPolicy.NO_CHANGE);
-        assertTrue(str.contains("O\\'Brien"));
+        assertEquals("name = 'O''Brien'", str);
+    }
+
+    @Test
+    public void testParameter2String_PreservesDoubleQuotesAndBackslashes() {
+        assertEquals("'a\"b\\c'", AbstractCondition.formatParameter("a\"b\\c", NamingPolicy.NO_CHANGE));
+        assertEquals("'x'' OR 1=1 --'", AbstractCondition.formatParameter("x' OR 1=1 --", NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -184,10 +190,8 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testParameter2String_WithCondition() {
         Equal innerCondition = new Equal("id", 100);
-        Equal outerCondition = new Equal("userId", innerCondition);
-        String str = outerCondition.toSql(NamingPolicy.NO_CHANGE);
-        assertTrue(str.contains("userId"));
-        assertTrue(str.contains("id"));
+        String str = AbstractCondition.formatParameter(innerCondition, NamingPolicy.NO_CHANGE);
+        assertEquals("id = 100", str);
     }
 
     @Test
@@ -603,21 +607,12 @@ public class AbstractConditionTest extends TestBase {
     }
 
     @Test
-    public void testFormatParameter_TrailingBackslashClosesLiteralSafely() {
-        // BUG: Strings ending in a single backslash, when emitted as 'x\' inside MySQL-style
-        // parsing, would have the closing quote consumed as an escape, breaking the SQL or
-        // enabling injection. The escape helper must double the trailing backslash.
+    public void testFormatParameter_TrailingBackslashIsPreserved() {
+        // SQL-standard literals do not assign escape semantics to backslash. A renderer for a
+        // non-standard backslash mode must be dialect-aware rather than changing the value here.
         String backslashAtEnd = "x" + (char) 92;
         String result = AbstractCondition.formatParameter(backslashAtEnd, NamingPolicy.NO_CHANGE);
-        Assertions.assertNotNull(result);
-        Assertions.assertTrue(result.startsWith("'") && result.endsWith("'"), "Output must be quoted, got: " + result);
-        // Body between the quotes must end in an even number of backslashes.
-        String body = result.substring(1, result.length() - 1);
-        int trailing = 0;
-        for (int i = body.length() - 1; i >= 0 && body.charAt(i) == '\\'; i--) {
-            trailing++;
-        }
-        Assertions.assertEquals(0, trailing % 2, "Trailing backslash count must be even so the closing quote is not escaped, got body: " + body);
+        Assertions.assertEquals("'x\\'", result);
     }
 
     @Test

@@ -32,6 +32,10 @@ import com.landawn.abacus.util.Strings;
  * ({@code BETWEEN} vs {@code NOT BETWEEN}). All fields, getters, and methods
  * for parameters, string rendering, hashing, and equality are identical.</p>
  *
+ * <p>Arrays, {@link java.util.Date} values, and {@link java.util.Calendar} values are snapshotted
+ * on construction and defensively copied when exposed. Other application-defined mutable bounds
+ * are retained by reference; callers must not mutate them while the condition is in use.</p>
+ *
  * @see Between
  * @see NotBetween
  * @see ComposableCondition
@@ -47,15 +51,15 @@ public abstract class AbstractBetween extends ComposableCondition {
 
     /**
      * The lower bound of the range; inclusive for {@code BETWEEN}, and the lower edge of the
-     * excluded range for {@code NOT_BETWEEN}. May be a literal value, a {@link SqlExpression},
-     * a {@link SubQuery}, another non-structural, non-quantified {@link Condition}, or {@code null}.
+     * excluded range for {@code NOT_BETWEEN}. May be a non-null literal value, a
+     * {@link SqlExpression}, or a scalar {@link SubQuery}.
      */
     private Object minValue;
 
     /**
      * The upper bound of the range; inclusive for {@code BETWEEN}, and the upper edge of the
-     * excluded range for {@code NOT_BETWEEN}. May be a literal value, a {@link SqlExpression},
-     * a {@link SubQuery}, another non-structural, non-quantified {@link Condition}, or {@code null}.
+     * excluded range for {@code NOT_BETWEEN}. May be a non-null literal value, a
+     * {@link SqlExpression}, or a scalar {@link SubQuery}.
      */
     private Object maxValue;
 
@@ -76,19 +80,16 @@ public abstract class AbstractBetween extends ComposableCondition {
      * @param operator the operator ({@link Operator#BETWEEN} or {@link Operator#NOT_BETWEEN})
      * @param minValue the lower bound of the range; inclusive for {@code BETWEEN}, and the lower edge of the
      *                 excluded range for {@code NOT_BETWEEN} (values strictly below it match); may be a
-     *                 literal value, a {@link SqlExpression}, a {@link SubQuery}, or another
-     *                 non-structural, non-quantified {@link Condition} whose parameters will be
-     *                 spliced into {@link #parameters()}; may be {@code null}
+     *                 non-null literal value, an explicit {@link SqlExpression}, or a scalar
+     *                 {@link SubQuery} whose parameters will be spliced into {@link #parameters()}
      * @param maxValue the upper bound of the range; inclusive for {@code BETWEEN}, and the upper edge of the
      *                 excluded range for {@code NOT_BETWEEN} (values strictly above it match); may be a
-     *                 literal value, a {@link SqlExpression}, a {@link SubQuery}, or another
-     *                 non-structural, non-quantified {@link Condition} whose parameters will be
-     *                 spliced into {@link #parameters()}; may be {@code null}
+     *                 non-null literal value, an explicit {@link SqlExpression}, or a scalar
+     *                 {@link SubQuery} whose parameters will be spliced into {@link #parameters()}
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or {@code operator}
      *                                  is neither {@link Operator#BETWEEN} nor {@link Operator#NOT_BETWEEN},
-     *                                  or either condition-valued bound is or contains a {@link Criteria},
-     *                                  SQL clause, JOIN, or {@code ON}/{@code USING} connector, or is/contains
-     *                                  an {@link All}, {@link Any}, or {@link Some} quantified operand
+     *                                  if either bound is {@code null}, an ordinary predicate or query clause,
+     *                                  or an {@link All}, {@link Any}, or {@link Some} quantified operand
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractBetween(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
@@ -97,8 +98,11 @@ public abstract class AbstractBetween extends ComposableCondition {
         checkPropName(propName);
 
         this.propName = propName;
-        this.minValue = validateNonQuantifiedValueOperand(minValue, "minValue");
-        this.maxValue = validateNonQuantifiedValueOperand(maxValue, "maxValue");
+        N.checkArgNotNull(minValue, "minValue");
+        N.checkArgNotNull(maxValue, "maxValue");
+
+        this.minValue = snapshotMutableValue(validateNonQuantifiedValueOperand(minValue, "minValue"));
+        this.maxValue = snapshotMutableValue(validateNonQuantifiedValueOperand(maxValue, "maxValue"));
     }
 
     private static Operator validateOperator(final Operator operator) {
@@ -140,12 +144,13 @@ public abstract class AbstractBetween extends ComposableCondition {
      *
      * @param <T> the expected type of the minimum value (caller-supplied; an unchecked cast is
      *            performed internally and a {@link ClassCastException} may be thrown at the call site)
-     * @return the configured minimum value, which may be a literal, a {@link SqlExpression}, a
-     *         {@link SubQuery}, another non-structural, non-quantified {@link Condition}, or {@code null}
+     * @return the configured minimum value, which may be a literal, a {@link SqlExpression}, or a
+     *         scalar {@link SubQuery}; known mutable JDK values are returned as defensive copies;
+     *         {@code null} is returned only for an uninitialized serialization-framework instance
      */
     @SuppressWarnings("unchecked")
     public <T> T minValue() {
-        return (T) minValue;
+        return (T) snapshotMutableValue(minValue);
     }
 
     /**
@@ -160,12 +165,13 @@ public abstract class AbstractBetween extends ComposableCondition {
      *
      * @param <T> the expected type of the maximum value (caller-supplied; an unchecked cast is
      *            performed internally and a {@link ClassCastException} may be thrown at the call site)
-     * @return the configured maximum value, which may be a literal, a {@link SqlExpression}, a
-     *         {@link SubQuery}, another non-structural, non-quantified {@link Condition}, or {@code null}
+     * @return the configured maximum value, which may be a literal, a {@link SqlExpression}, or a
+     *         scalar {@link SubQuery}; known mutable JDK values are returned as defensive copies;
+     *         {@code null} is returned only for an uninitialized serialization-framework instance
      */
     @SuppressWarnings("unchecked")
     public <T> T maxValue() {
-        return (T) maxValue;
+        return (T) snapshotMutableValue(maxValue);
     }
 
     /**
@@ -180,21 +186,22 @@ public abstract class AbstractBetween extends ComposableCondition {
      * Between between = new Between("age", 18, 65);
      * List<Object> p1 = between.parameters();   // [18, 65]
      *
-     * // Null bounds are kept as-is
-     * Between nullBounds = new Between("age", (Object) null, (Object) null);
-     * List<Object> p2 = nullBounds.parameters();   // [null, null]
-     *
      * // A Condition bound has its parameters spliced in
      * SubQuery sub = Filters.subQuery("config", Arrays.asList("minAge"), Filters.eq("active", true));
      * Between subBound = new Between("age", sub, 65);
-     * List<Object> p3 = subBound.parameters();   // [true, 65]
+     * List<Object> p2 = subBound.parameters();   // [true, 65]
      * }</pre>
      *
      * @return an immutable list containing {@code [minValue, maxValue]}, or their respective
-     *         parameters spliced in where a bound is itself a {@link Condition}
+     *         parameters spliced in where a bound is itself a {@link Condition}; known mutable JDK
+     *         bounds are returned as defensive copies
      */
     @Override
     public ImmutableList<Object> parameters() {
+        if (isSnapshotMutableValue(minValue) || isSnapshotMutableValue(maxValue)) {
+            return computeParameters();
+        }
+
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
@@ -211,13 +218,13 @@ public abstract class AbstractBetween extends ComposableCondition {
         if (minValue instanceof Condition) {
             parameters.addAll(((Condition) minValue).parameters());
         } else {
-            parameters.add(minValue);
+            parameters.add(snapshotMutableValue(minValue));
         }
 
         if (maxValue instanceof Condition) {
             parameters.addAll(((Condition) maxValue).parameters());
         } else {
-            parameters.add(maxValue);
+            parameters.add(snapshotMutableValue(maxValue));
         }
 
         return ImmutableList.wrap(parameters);
@@ -273,9 +280,9 @@ public abstract class AbstractBetween extends ComposableCondition {
 
     /**
      * Returns the hash code of this condition.
-     * The value is recomputed on every call because array and other mutable bounds are retained and
-     * exposed by {@link #minValue()} and {@link #maxValue()}; memoizing it could make two equal
-     * conditions report different hash codes after a bound is mutated.
+     * The value is recomputed on every call because application-defined mutable bounds are retained
+     * by reference. Arrays, dates, and calendars cannot be mutated through this condition because
+     * they are snapshotted and defensively copied.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

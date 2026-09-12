@@ -3,7 +3,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -87,12 +86,9 @@ public class NotBetweenTest extends TestBase {
     }
 
     @Test
-    public void testConstructor_NullValues() {
-        NotBetween condition = new NotBetween("score", null, null);
-
-        assertEquals("score", condition.propName());
-        assertNull(condition.minValue());
-        assertNull(condition.maxValue());
+    public void testConstructorRejectsNullValues() {
+        assertThrows(IllegalArgumentException.class, () -> new NotBetween("score", null, 100));
+        assertThrows(IllegalArgumentException.class, () -> new NotBetween("score", 0, null));
     }
 
     @Test
@@ -134,13 +130,9 @@ public class NotBetweenTest extends TestBase {
     }
 
     @Test
-    public void testParameters_NullValues() {
-        NotBetween condition = new NotBetween("score", null, null);
-        List<Object> params = condition.parameters();
-
-        assertEquals(2, params.size());
-        assertNull(params.get(0));
-        assertNull(params.get(1));
+    public void testPredicateBoundsAreRejected() {
+        assertThrows(IllegalArgumentException.class, () -> new NotBetween("score", Filters.eq("x", 1), 100));
+        assertThrows(IllegalArgumentException.class, () -> new NotBetween("score", 0, Filters.exists(Filters.subQuery("SELECT 1"))));
     }
 
     @Test
@@ -413,15 +405,8 @@ public class NotBetweenTest extends TestBase {
     }
 
     @Test
-    public void testWithNullValues() {
-        NotBetween notBetween = Filters.notBetween("value", null, null);
-
-        Assertions.assertNull(notBetween.minValue());
-        Assertions.assertNull(notBetween.maxValue());
-
-        List<Object> params = notBetween.parameters();
-        Assertions.assertEquals(2, params.size());
-        Assertions.assertNull(params.get(0));
-        Assertions.assertNull(params.get(1));
+    public void testFactoryRejectsNullValues() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.notBetween("value", null, 100));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.notBetween("value", 0, null));
     }
 }

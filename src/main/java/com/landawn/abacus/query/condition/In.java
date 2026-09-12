@@ -32,9 +32,9 @@ import java.util.Map;
  *   <li>Implementing dynamic filters based on user selections</li>
  * </ul>
  *
- * <p><b>&#9888;&#65039;</b> SQL {@code NULL} follows three-valued logic. A {@code NULL} column value does
- * not match, and a nonmatching value compared with a list that contains {@code NULL} evaluates
- * to unknown rather than false.</p>
+ * <p>Membership values must be non-{@code null}. This prevents the surprising three-valued-logic
+ * behavior of an SQL list containing {@code NULL}; use an explicit {@link IsNull} predicate when
+ * null-column semantics are intended.</p>
  *
  * <p>Performance considerations:</p>
  * <ul>
@@ -97,11 +97,11 @@ public class In extends AbstractIn {
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
-     * @param values the collection of values to check against (must not be {@code null} or empty);
+     * @param values the collection of values to check against (must not be {@code null}, empty, or contain {@code null});
      *               the collection is copied internally to prevent external modifications. A
      *               condition-valued element must not be query-structural or quantified
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, if {@code values}
-     *                                  is {@code null}/empty, or if a condition-valued element is or contains
+     *                                  is {@code null}/empty or contains {@code null}, or if a condition-valued element is or contains
      *                                  a {@link Criteria}, SQL clause, JOIN, or {@code ON}/{@code USING} connector,
      *                                  or is/contains an {@link All}, {@link Any}, or {@link Some} quantified operand
      */
@@ -113,8 +113,8 @@ public class In extends AbstractIn {
      * Creates a new row value constructor IN condition. The condition matches records
      * where the tuple of property values matches any of the supplied value rows. Each element of {@code valueRows}
      * must resolve to exactly {@code propNames.size()} values. A row may be supplied as a {@link Collection}
-     * or other {@link Iterable}, an object array, a {@link Map} (looked up by property name, with a
-     * missing key represented as {@code null}) or a bean (read by property name).
+     * or other {@link Iterable}, an object array, a {@link Map} (which must contain every property-name
+     * key) or a bean (read by property name). Every resolved row element must be non-{@code null}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -139,12 +139,13 @@ public class In extends AbstractIn {
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
      * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be
      *               non-{@code null} and resolve to exactly {@code propNames.size()} values. A row may be a
-     *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean. A missing
-     *               property-name key in a map contributes {@code null}; condition-valued elements
+     *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean. Map rows
+     *               must contain every requested property key; condition-valued elements
      *               must not be query-structural or quantified
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
+     *                                  if a map row is missing a requested key, if a row element is {@code null},
      *                                  or if a bean row does not expose a requested property, or if a condition-valued
      *                                  row element is or contains a {@link Criteria}, SQL clause, JOIN, or
      *                                  {@code ON}/{@code USING} connector, or is/contains an {@link All},

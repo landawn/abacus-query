@@ -17,8 +17,9 @@ package com.landawn.abacus.query.condition;
 /**
  * Represents an SQL {@code IS NOT} predicate (e.g. {@code IS NOT NULL}).
  * This class creates conditions that test a property using the SQL {@code IS NOT} operator,
- * which is the negation of the {@code IS} operator and is primarily used for special SQL values
- * like {@code NULL}, {@code NaN}, or {@code INFINITE}.
+ * which is the negation of the {@code IS} operator and is used for {@code NULL}, Boolean truth
+ * values, and explicit database-specific SQL expressions such as {@code UNKNOWN}, {@code NAN},
+ * or {@code INFINITE}.
  *
  * <p>The {@code IS NOT} operator is essential for:</p>
  * <ul>
@@ -30,7 +31,9 @@ package com.landawn.abacus.query.condition;
  *
  * <p>This class serves as the base for more specific {@code IS NOT} conditions like {@link IsNotNull},
  * {@link IsNotNaN}, and {@link IsNotInfinite}. Prefer those subclasses for the well-known values;
- * use {@code IsNot} directly only when supplying a custom right-hand expression.</p>
+ * use {@code IsNot} directly only when supplying a Boolean or custom right-hand expression.
+ * Arbitrary strings and numbers are rejected because forms such as {@code column IS NOT 'value'}
+ * and {@code column IS NOT 5} are not portable SQL predicates.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -67,8 +70,8 @@ public class IsNot extends Binary {
     /**
      * Creates a new {@code IS NOT} condition with the specified property name and right-hand value.
      * The generated SQL takes the form {@code propName IS NOT propValue}, where {@code propValue}
-     * is typically an {@link SqlExpression} representing a special SQL keyword such as {@code NULL}
-     * or a custom expression like {@code UNKNOWN}.
+     * is {@code null}, a Boolean, or an {@link SqlExpression} representing a special SQL keyword
+     * such as {@code NULL}, {@code FALSE}, or {@code UNKNOWN}.
      *
      * <p>If {@code propValue} is the Java {@code null} reference, the generated SQL collapses to
      * {@code propName IS NOT NULL}.</p>
@@ -86,13 +89,11 @@ public class IsNot extends Binary {
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
-     * @param propValue the right-hand value of the IS NOT predicate; may be {@code null} (renders as
-     *            {@code IS NOT NULL}), an {@link SqlExpression} for a SQL keyword, or another non-structural
-     *            value rendered by {@link Binary}; whether that value is valid with {@code IS NOT} is dialect-specific
+     * @param propValue the right-hand value of the IS NOT predicate; must be {@code null} (renders as
+     *            {@code IS NOT NULL}), a Boolean, or an explicit {@link SqlExpression} for a SQL keyword
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
-     *                                  {@code propValue} is or contains a {@link Criteria}, SQL clause,
-     *                                  JOIN, or {@code ON}/{@code USING} connector, or is/contains an
-     *                                  {@link All}, {@link Any}, or {@link Some} quantified operand
+     *                                  {@code propValue} is not {@code null}, a Boolean, or an
+     *                                  {@link SqlExpression}
      */
     public IsNot(final String propName, final Object propValue) {
         super(propName, Operator.IS_NOT, propValue);

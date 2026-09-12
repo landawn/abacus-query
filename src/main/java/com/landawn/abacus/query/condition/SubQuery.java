@@ -19,10 +19,12 @@ import static com.landawn.abacus.util.SK._SPACE;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.ParsedSql;
 import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.SqlBuilder;
 import com.landawn.abacus.util.ClassUtil;
@@ -38,7 +40,8 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>This class supports three types of subqueries:</p>
  * <ul>
- *   <li><b>Raw subqueries</b> - complete text accepted without SQL syntax validation</li>
+ *   <li><b>Raw subqueries</b> - complete text accepted without SQL syntax validation, optionally
+ *       carrying an immutable positional-binding list</li>
  *   <li><b>Structured subqueries</b> - generated from entity names/classes, property names, and conditions</li>
  *   <li><b>Builder-backed snapshots</b> - complete, validated SELECT statements captured through
  *       {@link SqlBuilder#toSubQuery()}, retaining parameters and placeholder metadata for safe
@@ -108,6 +111,9 @@ public class SubQuery extends AbstractCondition {
     /** The complete query text of a raw SQL or builder-backed subquery; {@code null} for structured subqueries. */
     final String sql;
 
+    /** Bindings captured for raw SQL or trusted builder snapshots; empty for structured subqueries. */
+    private final ImmutableList<Object> rawParameters;
+
     /** The trailing condition or clause for a structured subquery; a predicate is normalized to a
      *  {@link Where}. {@code null} for raw SQL, builder-backed snapshots, or structured subqueries without clauses. */
     private Condition condition;
@@ -127,6 +133,7 @@ public class SubQuery extends AbstractCondition {
         entityName = null;
         entityClass = null;
         sql = null;
+        rawParameters = ImmutableList.empty();
     }
 
     /**
@@ -163,11 +170,35 @@ public class SubQuery extends AbstractCondition {
      * {@link com.landawn.abacus.query.Filters#subQuery(String) Filters.subQuery} factories,
      * whose overloads make the distinction explicit.</p>
      *
-     * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
+     * <p>This overload is only for SQL without parameter placeholders. Use
+     * {@link #SubQuery(String, Collection)} when the text contains JDBC {@code ?} placeholders.</p>
+     *
+     * @param sql complete raw query-expression text (must not be {@code null}, empty, blank, or contain a parameter placeholder)
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains a named placeholder;
+     *         or contains a positional placeholder without a corresponding binding
      */
     public SubQuery(final String sql) {
-        this(Strings.EMPTY, sql);
+        this(Strings.EMPTY, sql, Collections.emptyList(), true);
+    }
+
+    /**
+     * Creates a raw subquery with positional JDBC bindings. The SQL is retained verbatim and the
+     * bindings are defensively copied in placeholder encounter order. Markers inside quoted text and
+     * comments, and PostgreSQL JSON {@code ?} operators, are not counted as placeholders.
+     *
+     * <p>Named ({@code :name}) and MyBatis ({@code #{name}}) markers are deliberately rejected because
+     * a raw fragment has no generated-name metadata for collision-safe composition. Use a builder-backed
+     * subquery when named-placeholder policies are required.</p>
+     *
+     * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
+     * @param parameters positional binding values in placeholder encounter order (must not be {@code null});
+     *                   individual binding values may be {@code null}
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; {@code parameters}
+     *         is {@code null}; the SQL contains a named/MyBatis placeholder; or the number of positional
+     *         placeholders differs from the number of bindings
+     */
+    public SubQuery(final String sql, final Collection<?> parameters) {
+        this(Strings.EMPTY, sql, parameters, true);
     }
 
     /**
@@ -187,7 +218,8 @@ public class SubQuery extends AbstractCondition {
      * @param entityName the entity/table name; may be {@code null} or empty, in which case it is
      *            stored as the empty string
      * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains a named placeholder;
+     *         or contains a positional placeholder without a corresponding binding
      * @deprecated the entity name is unused when rendering raw query-expression text; it is only exposed by
      *             {@link #entityName()} and participates in {@link #equals(Object)}/{@link #hashCode()}. Use
      *             {@link #SubQuery(String)} for raw text, or
@@ -196,6 +228,26 @@ public class SubQuery extends AbstractCondition {
      */
     @Deprecated
     public SubQuery(final String entityName, final String sql) {
+        this(entityName, sql, Collections.emptyList(), true);
+    }
+
+    /**
+     * Constructor for builder-backed subclasses whose builders have already validated SQL and own
+     * placeholder-policy metadata that cannot be reconstructed from raw text alone.
+     *
+     * @param sql complete builder-rendered query text
+     * @param builderBackedSnapshot must be {@code true}; distinguishes this trusted path from public raw SQL construction
+     * @throws IllegalArgumentException if {@code builderBackedSnapshot} is {@code false} or {@code sql} is blank
+     */
+    protected SubQuery(final String sql, final boolean builderBackedSnapshot) {
+        this(Strings.EMPTY, sql, Collections.emptyList(), false);
+
+        if (!builderBackedSnapshot) {
+            throw new IllegalArgumentException("builderBackedSnapshot must be true");
+        }
+    }
+
+    private SubQuery(final String entityName, final String sql, final Collection<?> parameters, final boolean validateBindings) {
         super(Operator.EMPTY);
         this.entityName = entityName == null ? Strings.EMPTY : entityName;
         entityClass = null;
@@ -207,6 +259,11 @@ public class SubQuery extends AbstractCondition {
         propNames = null;
         condition = null;
         this.sql = sql;
+        rawParameters = copyRawParameters(parameters);
+
+        if (validateBindings) {
+            validateRawBindings(sql, rawParameters);
+        }
     }
 
     /**
@@ -215,8 +272,8 @@ public class SubQuery extends AbstractCondition {
      * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
      * @param propName the property to select (must not be {@code null}, empty, or blank)
      * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
-     *             {@link Where}; {@code null}, a blank expression, an empty {@link Junction}, or an empty
-     *             {@code Criteria} adds no clause.
+     *             {@link Where}; {@code null}, a blank expression, or an empty {@code Criteria} adds no
+     *             clause. An empty {@link Junction} is preserved as its true/false Boolean identity.
      * @throws IllegalArgumentException if {@code entityName} or {@code propName} is {@code null}, empty, or blank,
      *         if {@code condition} uses an {@link Operator#ON ON}/{@link Operator#USING USING} operator, is not a
      *         complete predicate (for example a standalone {@link SubQuery} or quantified operand), or is a
@@ -249,8 +306,8 @@ public class SubQuery extends AbstractCondition {
      * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
      * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
      * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
-     *             {@link Where}; {@code null}, a blank expression, an empty {@link Junction}, or an empty
-     *             {@code Criteria} adds no clause.
+     *             {@link Where}; {@code null}, a blank expression, or an empty {@code Criteria} adds no
+     *             clause. An empty {@link Junction} is preserved as its true/false Boolean identity.
      * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank, if {@code propNames} is
      *             {@code null} or empty, if {@code propNames} contains {@code null}, empty, or blank names, if {@code condition}
      *             uses an {@link Operator#ON ON}/{@link Operator#USING USING} operator, is not a complete predicate
@@ -270,6 +327,7 @@ public class SubQuery extends AbstractCondition {
         this.condition = normalizeCondition(condition);
 
         sql = null;
+        rawParameters = ImmutableList.empty();
     }
 
     /**
@@ -278,8 +336,8 @@ public class SubQuery extends AbstractCondition {
      * @param entityClass the entity class (must not be {@code null})
      * @param propName the property to select (must not be {@code null}, empty, or blank)
      * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
-     *             {@link Where}; {@code null}, a blank expression, an empty {@link Junction}, or an empty
-     *             {@code Criteria} adds no clause.
+     *             {@link Where}; {@code null}, a blank expression, or an empty {@code Criteria} adds no
+     *             clause. An empty {@link Junction} is preserved as its true/false Boolean identity.
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propName} is
      *         {@code null}, empty, or blank, if {@code condition} uses an
      *         {@link Operator#ON ON}/{@link Operator#USING USING} operator, is not a complete predicate
@@ -322,8 +380,8 @@ public class SubQuery extends AbstractCondition {
      * @param entityClass the entity class (must not be {@code null})
      * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
      * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
-     *             {@link Where}; {@code null}, a blank expression, an empty {@link Junction}, or an empty
-     *             {@code Criteria} adds no clause.
+     *             {@link Where}; {@code null}, a blank expression, or an empty {@code Criteria} adds no
+     *             clause. An empty {@link Junction} is preserved as its true/false Boolean identity.
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propNames} is {@code null}
      *             or empty, if {@code propNames} contains {@code null}, empty, or blank names, if {@code condition} uses an
      *             {@link Operator#ON ON}/{@link Operator#USING USING} operator, is not a complete predicate
@@ -343,6 +401,7 @@ public class SubQuery extends AbstractCondition {
         this.condition = normalizeCondition(condition);
 
         sql = null;
+        rawParameters = ImmutableList.empty();
     }
 
     /**
@@ -491,6 +550,31 @@ public class SubQuery extends AbstractCondition {
         return result;
     }
 
+    private static ImmutableList<Object> copyRawParameters(final Collection<?> parameters) {
+        if (parameters == null) {
+            throw new IllegalArgumentException("Raw subquery parameters must not be null");
+        }
+
+        final List<Object> copy = new ArrayList<>(parameters.size());
+        copy.addAll(parameters);
+        return ImmutableList.wrap(copy);
+    }
+
+    private static void validateRawBindings(final String sql, final Collection<?> parameters) {
+        // ParsedSql supplies the project's quote/comment-aware placeholder scan and also distinguishes
+        // PostgreSQL JSON question-mark operators from JDBC parameters.
+        final ParsedSql parsedSql = ParsedSql.parse(sql);
+
+        if (!parsedSql.namedParameters().isEmpty()) {
+            throw new IllegalArgumentException("Raw subqueries support positional '?' bindings only; named and MyBatis placeholders are not supported");
+        }
+
+        if (parsedSql.parameterCount() != parameters.size()) {
+            throw new IllegalArgumentException("Raw subquery placeholder count (" + parsedSql.parameterCount() + ") does not match binding count ("
+                    + parameters.size() + ")");
+        }
+    }
+
     private static Condition normalizeCondition(final Condition cond) {
         if (cond == null || isClause(cond)) {
             return cond;
@@ -506,10 +590,9 @@ public class SubQuery extends AbstractCondition {
             return criteria.conditions().isEmpty() ? null : criteria;
         }
 
-        // A blank SqlExpression, an empty Criteria (handled above) and an empty Junction are all
-        // "no filter": normalize every empty predicate to no clause instead of rejecting only the
-        // Junction form. isEmptyPredicate() is the shared definition used by the composable guards.
-        if (isEmptyPredicate(cond)) {
+        // Blank raw text carries no predicate. Empty junctions are different: they have explicit
+        // Boolean identities and must survive as WHERE 1 = 1 / WHERE 1 = 0.
+        if (cond instanceof SqlExpression && Strings.isBlank(((SqlExpression) cond).literal())) {
             return null;
         }
 
@@ -548,10 +631,8 @@ public class SubQuery extends AbstractCondition {
 
     /**
      * Returns this subquery's parameter values. Structured subqueries collect them from their condition;
-     * builder-backed snapshots retain the values captured from their source builder.
-     *
-     * <p><b>&#9888;&#65039;</b> For raw SQL subqueries constructed from text this returns an empty list even when
-     * that text contains placeholders; raw bindings are managed by the caller.</p>
+     * raw subqueries return their captured positional bindings, and builder-backed snapshots retain
+     * the values captured from their source builder.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -561,10 +642,10 @@ public class SubQuery extends AbstractCondition {
      * List<Object> params = structured.parameters();
      * // returns ["active", 18, 65]
      *
-     * // Raw SQL subquery: no bound parameters
-     * SubQuery raw = Filters.subQuery("SELECT * FROM users");
+     * // Raw SQL subquery with positional bindings
+     * SubQuery raw = Filters.subQuery("SELECT id FROM users WHERE status = ?", Arrays.asList("active"));
      * List<Object> rawParams = raw.parameters();
-     * // returns [] (empty immutable list)
+     * // returns ["active"] (immutable)
      *
      * // Structured subquery without a condition: also empty
      * SubQuery noCond = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
@@ -587,7 +668,7 @@ public class SubQuery extends AbstractCondition {
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
-            result = condition == null ? ImmutableList.empty() : condition.parameters();
+            result = sql == null ? (condition == null ? ImmutableList.empty() : condition.parameters()) : rawParameters;
             cachedParameters = result;
         }
 
@@ -713,7 +794,7 @@ public class SubQuery extends AbstractCondition {
      * // returns true
      * }</pre>
      *
-     * @return hash code based on sql, entity name/class, properties, and condition
+     * @return hash code based on SQL, entity name/class, properties, condition, and captured raw bindings
      */
     @Override
     public int hashCode() {
@@ -723,6 +804,7 @@ public class SubQuery extends AbstractCondition {
         h = (h * 31) + ((entityClass == null) ? 0 : entityClass.hashCode());
         h = (h * 31) + ((propNames == null) ? 0 : propNames.hashCode());
         h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
+        h = (h * 31) + rawParameters.hashCode();
 
         return h == 0 ? 1 : h;
     }
@@ -731,7 +813,7 @@ public class SubQuery extends AbstractCondition {
      * Checks if this subquery is equal to another object.
      * Two subqueries are equal only when they have the exact same runtime class and all of their identity
      * fields are equal: the entity name, the entity class, the selected properties, the stored SQL string,
-     * and the condition. Builder-backed snapshots additionally compare retained parameters, SQL policy,
+     * the condition, and captured raw bindings. Builder-backed snapshots additionally compare SQL policy,
      * and placeholder metadata. The entity name
      * participates even for raw-SQL subqueries, so two raw subqueries are equal only when both their
      * SQL and their entity name match.
@@ -776,6 +858,6 @@ public class SubQuery extends AbstractCondition {
 
         final SubQuery other = (SubQuery) obj;
         return N.equals(sql, other.sql) && N.equals(entityName, other.entityName) && N.equals(entityClass, other.entityClass)
-                && N.equals(propNames, other.propNames) && N.equals(condition, other.condition);
+                && N.equals(propNames, other.propNames) && N.equals(condition, other.condition) && N.equals(rawParameters, other.rawParameters);
     }
 }

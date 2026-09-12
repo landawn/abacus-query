@@ -1722,13 +1722,18 @@ public class SqlParserTest extends TestBase {
     }
 
     // ----------------------------------------------------------------------------------------------
-    // isReadOnlyQuery(String)
+    // isSyntacticallyReadQuery(String) and its legacy alias
     // ----------------------------------------------------------------------------------------------
 
     @Test
-    public void testIsReadOnlyQuery_plainSelectsAreReadOnly() {
-        assertTrue(SqlParser.isReadOnlyQuery("SELECT * FROM t"));
-        assertTrue(SqlParser.isReadOnlyQuery("SELECT id FROM t WHERE x IN (SELECT max(id) FROM u)"));
+    public void testIsSyntacticallyReadQuery_plainSelectsHaveAcceptedShape() {
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT id FROM t WHERE x IN (SELECT max(id) FROM u)"));
+
+        // Lexical classification deliberately cannot infer database semantics. These SELECT-shaped
+        // statements may have side effects or acquire locks and still have the accepted syntax shape.
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT side_effecting_function()"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM t FOR UPDATE"));
     }
 
     @Test
@@ -1765,14 +1770,17 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
-    public void testTokenizerIsReadOnlyQueryUsesConfiguredHashOperator() throws NoSuchMethodException {
+    @SuppressWarnings("deprecation")
+    public void testTokenizerSyntacticallyReadQueryUsesConfiguredHashOperator() throws NoSuchMethodException {
         final String sql = "SELECT 1 #foo ; UPDATE t SET x=1";
         final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("#foo").build());
 
         // Under the built-in configuration, #foo starts a MySQL line comment and hides the rest
         // of this line. The custom configuration makes it an operator, exposing the later UPDATE.
-        assertTrue(SqlParser.isReadOnlyQuery(sql));
+        assertTrue(SqlParser.isSyntacticallyReadQuery(sql));
+        assertFalse(tokenizer.isSyntacticallyReadQuery(sql));
         assertFalse(tokenizer.isReadOnlyQuery(sql));
+        assertTrue(java.lang.reflect.Modifier.isPublic(SqlParser.Tokenizer.class.getDeclaredMethod("isSyntacticallyReadQuery", String.class).getModifiers()));
         assertTrue(java.lang.reflect.Modifier.isPublic(SqlParser.Tokenizer.class.getDeclaredMethod("isReadOnlyQuery", String.class).getModifiers()));
     }
 
@@ -1786,6 +1794,16 @@ public class SqlParserTest extends TestBase {
     public void testIsReadOnlyQuery_nullAndEmpty() {
         assertFalse(SqlParser.isReadOnlyQuery(null));
         assertFalse(SqlParser.isReadOnlyQuery(""));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testIsReadOnlyQueryIsCompatibilityAliasOnly() {
+        final String[] sqlStatements = { null, "", "SELECT * FROM t", "SELECT side_effecting_function()", "SELECT 1; DELETE FROM t" };
+
+        for (final String sql : sqlStatements) {
+            assertEquals(SqlParser.isSyntacticallyReadQuery(sql), SqlParser.isReadOnlyQuery(sql));
+        }
     }
 
     // ----------------------------------------------------------------------------------------------

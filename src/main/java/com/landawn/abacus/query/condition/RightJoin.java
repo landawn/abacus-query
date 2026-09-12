@@ -168,12 +168,12 @@ public class RightJoin extends Join {
      *         Filters.expr("p.category_id = c.id"),
      *         Filters.expr("p.subcategory_id = sc.id")
      *     ));
-     * // SQL: RIGHT JOIN (categories c, subcategories sc) ON ((p.category_id = c.id) AND (p.subcategory_id = sc.id))
+     * // SQL: RIGHT JOIN (categories c CROSS JOIN subcategories sc) ON ((p.category_id = c.id) AND (p.subcategory_id = sc.id))
      *
      * // Using SqlExpression for multiple tables
      * RightJoin exprJoin = new RightJoin(tables,
      *     Filters.expr("p.category_id = c.id AND p.subcategory_id = sc.id"));
-     * // SQL: RIGHT JOIN (categories c, subcategories sc) ON p.category_id = c.id AND p.subcategory_id = sc.id
+     * // SQL: RIGHT JOIN (categories c CROSS JOIN subcategories sc) ON p.category_id = c.id AND p.subcategory_id = sc.id
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

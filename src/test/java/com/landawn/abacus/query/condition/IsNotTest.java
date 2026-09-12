@@ -2,14 +2,12 @@ package com.landawn.abacus.query.condition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -19,216 +17,87 @@ import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class IsNotTest extends TestBase {
+
     @Test
-    public void testConstructor() {
-        IsNot condition = new IsNot("age", 25);
-        assertEquals("age", condition.propName());
-        assertEquals(25, (int) condition.propValue());
-        assertEquals(Operator.IS_NOT, condition.operator());
+    public void testConstructorAcceptsNullBooleanAndExplicitExpression() {
+        final IsNot nullCondition = new IsNot("deletedAt", null);
+        final IsNot booleanCondition = new IsNot("enabled", false);
+        final SqlExpression unknown = Filters.expr("UNKNOWN");
+        final IsNot expressionCondition = new IsNot("status", unknown);
+
+        assertEquals("deletedAt", nullCondition.propName());
+        assertEquals(Operator.IS_NOT, nullCondition.operator());
+        assertEquals(Boolean.FALSE, booleanCondition.propValue());
+        assertEquals(unknown, expressionCondition.propValue());
     }
 
     @Test
-    public void testConstructor_NullPropertyName() {
-        assertThrows(IllegalArgumentException.class, () -> new IsNot(null, 25));
+    public void testConstructorRejectsInvalidPropertyNames() {
+        assertThrows(IllegalArgumentException.class, () -> new IsNot(null, true));
+        assertThrows(IllegalArgumentException.class, () -> new IsNot("", true));
+        assertThrows(IllegalArgumentException.class, () -> new IsNot("   ", true));
     }
 
     @Test
-    public void testConstructor_EmptyPropertyName() {
-        assertThrows(IllegalArgumentException.class, () -> new IsNot("", 25));
+    public void testConstructorRejectsArbitraryLiteralsAndPredicates() {
+        assertThrows(IllegalArgumentException.class, () -> new IsNot("status", "UNKNOWN"));
+        assertThrows(IllegalArgumentException.class, () -> new IsNot("count", 1));
+        assertThrows(IllegalArgumentException.class, () -> new IsNot("flag", Filters.eq("other", true)));
+        assertThrows(IllegalArgumentException.class, () -> new IsNot("flag", Filters.subQuery("SELECT flag FROM settings")));
+        assertThrows(IllegalArgumentException.class, () -> new IsNot("flag", new All(Filters.subQuery("SELECT flag FROM settings"))));
     }
 
     @Test
-    public void testGetPropName() {
-        IsNot condition = new IsNot("userName", "John");
-        assertEquals("userName", condition.propName());
+    public void testNullRendersKeywordAndHasNoParameter() {
+        final IsNot condition = new IsNot("deletedAt", null);
+
+        assertEquals("deletedAt IS NOT NULL", condition.toString());
+        assertTrue(condition.parameters().isEmpty());
     }
 
     @Test
-    public void testPropValueAs() {
-        IsNot condition = new IsNot("age", 30);
-        Integer value = condition.propValueAs(Integer.class);
-        assertEquals(Integer.valueOf(30), value);
+    public void testBooleanRendersLiteralAndIsReportedAsParameter() {
+        final IsNot condition = new IsNot("enabled", false);
+
+        assertEquals("enabled IS NOT false", condition.toString());
+        assertEquals(List.of(false), condition.parameters());
+        assertEquals(Boolean.FALSE, condition.propValueAs(Boolean.class));
     }
 
     @Test
-    public void testPropValueAs_String() {
-        IsNot condition = new IsNot("name", "Alice");
-        String value = condition.propValueAs(String.class);
-        assertEquals("Alice", value);
+    public void testExplicitExpressionRendersVerbatimWithoutParameter() {
+        final IsNot condition = new IsNot("status", Filters.expr("UNKNOWN"));
+
+        assertEquals("status IS NOT UNKNOWN", condition.toString());
+        assertTrue(condition.parameters().isEmpty());
     }
 
     @Test
-    public void testGetPropValue_Null() {
-        IsNot condition = new IsNot("field", null);
+    public void testNamingPolicy() {
+        assertEquals("first_name IS NOT NULL", new IsNot("firstName", null).toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    public void testEqualityHashCodeAndComposition() {
+        final IsNot left = new IsNot("enabled", false);
+        final IsNot equal = new IsNot("enabled", false);
+        final IsNot different = new IsNot("enabled", true);
+
+        assertEquals(left, equal);
+        assertEquals(left.hashCode(), equal.hashCode());
+        assertNotEquals(left, different);
+        assertNotEquals(left, new Is("enabled", false));
+        assertEquals(2, left.and(new IsNot("verified", false)).conditions().size());
+        assertEquals(2, left.or(new IsNot("verified", true)).conditions().size());
+        assertEquals(Operator.NOT, left.not().operator());
+    }
+
+    @Test
+    public void testDefaultConstructorState() {
+        final IsNot condition = new IsNot();
+
+        assertNull(condition.operator());
+        assertNull(condition.propName());
         assertNull(condition.propValue());
-    }
-
-    @Test
-    public void testGetOperator() {
-        IsNot condition = new IsNot("field", "value");
-        assertEquals(Operator.IS_NOT, condition.operator());
-    }
-
-    @Test
-    public void testParameters() {
-        IsNot condition = new IsNot("status", "active");
-        List<Object> params = condition.parameters();
-        assertEquals(1, params.size());
-        assertEquals("active", params.get(0));
-    }
-
-    @Test
-    public void testParameters_MultipleValues() {
-        IsNot condition = new IsNot("count", 42);
-        List<Object> params = condition.parameters();
-        assertEquals(1, params.size());
-        assertEquals(42, (int) params.get(0));
-    }
-
-    @Test
-    public void testToString_NoChange() {
-        IsNot condition = new IsNot("userName", "Alice");
-        String result = condition.toSql(NamingPolicy.NO_CHANGE);
-        assertTrue(result.contains("userName"));
-        assertTrue(result.contains("Alice"));
-    }
-
-    @Test
-    public void testToString_SnakeCase() {
-        IsNot condition = new IsNot("userName", "Bob");
-        String result = condition.toSql(NamingPolicy.SNAKE_CASE);
-        assertTrue(result.contains("user_name"));
-    }
-
-    @Test
-    public void testHashCode() {
-        IsNot cond1 = new IsNot("age", 25);
-        IsNot cond2 = new IsNot("age", 25);
-        assertEquals(cond1.hashCode(), cond2.hashCode());
-    }
-
-    @Test
-    public void testHashCode_DifferentValues() {
-        IsNot cond1 = new IsNot("age", 25);
-        IsNot cond2 = new IsNot("age", 30);
-        assertNotEquals(cond1.hashCode(), cond2.hashCode());
-    }
-
-    @Test
-    public void testEquals_SameObject() {
-        IsNot condition = new IsNot("field", "value");
-        assertEquals(condition, condition);
-    }
-
-    @Test
-    public void testEquals_EqualObjects() {
-        IsNot cond1 = new IsNot("status", "active");
-        IsNot cond2 = new IsNot("status", "active");
-        assertEquals(cond1, cond2);
-    }
-
-    @Test
-    public void testEquals_DifferentPropName() {
-        IsNot cond1 = new IsNot("field1", "value");
-        IsNot cond2 = new IsNot("field2", "value");
-        assertNotEquals(cond1, cond2);
-    }
-
-    @Test
-    public void testEquals_DifferentPropValue() {
-        IsNot cond1 = new IsNot("field", "value1");
-        IsNot cond2 = new IsNot("field", "value2");
-        assertNotEquals(cond1, cond2);
-    }
-
-    @Test
-    public void testEquals_Null() {
-        IsNot condition = new IsNot("field", "value");
-        assertNotEquals(null, condition);
-    }
-
-    @Test
-    public void testEquals_DifferentClass() {
-        IsNot condition = new IsNot("field", "value");
-        assertNotEquals(condition, "string");
-    }
-
-    @Test
-    public void testAnd() {
-        IsNot cond1 = new IsNot("a", 1);
-        IsNot cond2 = new IsNot("b", 2);
-        And result = cond1.and(cond2);
-        assertEquals(Integer.valueOf(2), result.conditions().size());
-    }
-
-    @Test
-    public void testOr() {
-        IsNot cond1 = new IsNot("a", 1);
-        IsNot cond2 = new IsNot("b", 2);
-        Or result = cond1.or(cond2);
-        assertEquals(Integer.valueOf(2), result.conditions().size());
-    }
-
-    @Test
-    public void testNot() {
-        IsNot condition = new IsNot("field", "value");
-        Not result = condition.not();
-        assertNotNull(result);
-        assertEquals(Operator.NOT, result.operator());
-    }
-
-    @Test
-    public void testConstructorWithPropNameAndValue() {
-        IsNot condition = new IsNot("age", null);
-        Assertions.assertNotNull(condition);
-        Assertions.assertEquals("age", condition.propName());
-        Assertions.assertEquals(Operator.IS_NOT, condition.operator());
-        Assertions.assertNull(condition.propValue());
-    }
-
-    @Test
-    public void testConstructorWithExpression() {
-        IsNot condition = new IsNot("status", Filters.expr("ACTIVE"));
-        Assertions.assertNotNull(condition);
-        Assertions.assertEquals("status", condition.propName());
-        Assertions.assertEquals(Operator.IS_NOT, condition.operator());
-        Assertions.assertNotNull(condition.propValue());
-    }
-
-    @Test
-    public void testParametersWithNull() {
-        IsNot condition = new IsNot("name", null);
-        List<Object> params = condition.parameters();
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(0, params.size());
-    }
-
-    @Test
-    public void testToString() {
-        IsNot condition = new IsNot("status", null);
-        String result = condition.toString();
-        Assertions.assertEquals("status IS NOT NULL", result);
-    }
-
-    @Test
-    public void testToStringWithNamingPolicy() {
-        IsNot condition = new IsNot("firstName", null);
-        String result = condition.toSql(NamingPolicy.CAMEL_CASE);
-        Assertions.assertEquals("firstName IS NOT NULL", result);
-    }
-
-    @Test
-    public void testEquals() {
-        IsNot condition1 = new IsNot("name", "value");
-        IsNot condition2 = new IsNot("name", "value");
-        IsNot condition3 = new IsNot("other", "value");
-        IsNot condition4 = new IsNot("name", "other");
-
-        Assertions.assertEquals(condition1, condition1);
-        Assertions.assertEquals(condition1, condition2);
-        Assertions.assertNotEquals(condition1, condition3);
-        Assertions.assertNotEquals(condition1, condition4);
-        Assertions.assertNotEquals(condition1, null);
-        Assertions.assertNotEquals(condition1, "string");
     }
 }

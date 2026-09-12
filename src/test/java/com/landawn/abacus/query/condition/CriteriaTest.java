@@ -151,12 +151,6 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
-    public void testDistinctRowBy() {
-        Criteria criteria = Criteria.builder().distinctRowBy("id").build();
-        assertNotNull(criteria);
-    }
-
-    @Test
     public void testJoinVarargs() {
         Join join = new LeftJoin("orders", Filters.expr("users.id = orders.user_id"));
         Criteria criteria = Criteria.builder().join(join).build();
@@ -570,24 +564,6 @@ public class CriteriaTest extends TestBase {
     public void testDistinctOnBlankUsesPlainDistinct() {
         Criteria criteria = Criteria.builder().distinctOn("   ").build();
         assertEquals("DISTINCT", criteria.selectModifier());
-    }
-
-    @Test
-    public void testDistinctRowByEmpty() {
-        Criteria criteria = Criteria.builder().distinctRowBy("").build();
-        assertEquals("DISTINCTROW", criteria.selectModifier());
-    }
-
-    @Test
-    public void testDistinctRowByNull() {
-        Criteria criteria = Criteria.builder().distinctRowBy(null).build();
-        assertEquals("DISTINCTROW", criteria.selectModifier());
-    }
-
-    @Test
-    public void testDistinctRowByBlankUsesPlainDistinctRow() {
-        Criteria criteria = Criteria.builder().distinctRowBy("\t ").build();
-        assertEquals("DISTINCTROW", criteria.selectModifier());
     }
 
     @Test

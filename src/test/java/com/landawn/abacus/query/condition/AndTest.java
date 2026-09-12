@@ -103,9 +103,9 @@ public class AndTest extends TestBase {
 
     @Test
     public void testToString_EmptyConditions() {
-        And junction = new And();
+        And junction = Filters.and();
         String result = junction.toSql(NamingPolicy.NO_CHANGE);
-        assertEquals("", result);
+        assertEquals("1 = 1", result);
     }
 
     @Test

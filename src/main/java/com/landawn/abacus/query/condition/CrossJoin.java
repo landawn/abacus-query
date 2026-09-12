@@ -46,7 +46,7 @@ import java.util.Collection;
  * // CROSS JOIN multiple tables
  * List<String> tables = Arrays.asList("sizes", "colors");
  * CrossJoin multiJoin = new CrossJoin(tables);
- * // SQL: CROSS JOIN (sizes, colors)
+ * // SQL: CROSS JOIN (sizes CROSS JOIN colors)
  * // Results in all combinations of products × sizes × colors
  * }</pre>
  * 
@@ -96,7 +96,7 @@ public class CrossJoin extends Join {
     /**
      * Creates a CROSS JOIN clause with multiple tables/entities and no join condition.
      * This produces the Cartesian product of the listed tables. The rendered SQL is
-     * {@code CROSS JOIN (t1, t2, ...)}; a single-element collection renders bare, without the
+     * {@code CROSS JOIN (t1 CROSS JOIN t2 ...)}; a single-element collection renders bare, without the
      * parentheses. The collection is copied by the base class, so later
      * changes to the supplied collection do not affect the join.
      *
@@ -110,7 +110,7 @@ public class CrossJoin extends Join {
      * // All combinations of sizes, colors, and styles
      * List<String> tables = Arrays.asList("sizes s", "colors c", "styles st");
      * CrossJoin join = new CrossJoin(tables);
-     * // SQL: CROSS JOIN (sizes s, colors c, styles st)
+     * // SQL: CROSS JOIN (sizes s CROSS JOIN colors c CROSS JOIN styles st)
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

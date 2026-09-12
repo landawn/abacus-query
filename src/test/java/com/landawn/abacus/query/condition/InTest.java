@@ -119,12 +119,9 @@ public class InTest extends TestBase {
     }
 
     @Test
-    public void testParameters_WithNestedConditionValues() {
+    public void testRejectsNestedPredicateValues() {
         Equal nested = Filters.equal("status", "active");
-        In condition = new In("id", Arrays.asList(nested, 2));
-
-        List<Object> params = condition.parameters();
-        assertEquals(Arrays.asList("active", 2), params);
+        assertThrows(IllegalArgumentException.class, () -> new In("id", Arrays.asList(nested, 2)));
     }
 
     @Test
@@ -406,12 +403,9 @@ public class InTest extends TestBase {
     }
 
     @Test
-    public void testNullValues() {
+    public void testRejectsNullValues() {
         List<String> values = Arrays.asList("A", null, "B");
-        In condition = new In("field", values);
-
-        Assertions.assertEquals(3, condition.values().size());
-        Assertions.assertTrue(condition.values().contains(null));
+        assertThrows(IllegalArgumentException.class, () -> new In("field", values));
     }
 
     // --- Row value constructor IN ---
@@ -549,14 +543,14 @@ public class InTest extends TestBase {
     }
 
     @Test
-    public void testMultiColumn_FromMapRows_MissingKeyYieldsNull() {
+    public void testMultiColumn_FromMapRows_RejectsMissingKey() {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("firstName", "John");
         // "lastName" intentionally absent
 
-        In condition = new In(Arrays.asList("firstName", "lastName"), Arrays.asList(row));
-
-        assertEquals(Arrays.asList("John", null), condition.values().get(0));
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> new In(Arrays.asList("firstName", "lastName"), Arrays.asList(row)));
+        assertTrue(error.getMessage().contains("lastName"));
     }
 
     @Test

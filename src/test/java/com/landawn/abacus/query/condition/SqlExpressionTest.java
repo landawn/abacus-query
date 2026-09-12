@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -73,11 +72,12 @@ public class SqlExpressionTest extends TestBase {
     }
 
     @Test
-    public void testOfMethodCaching() {
+    public void testOfMethodDoesNotInternInstances() {
         SqlExpression expr1 = SqlExpression.of("CURRENT_DATE");
         SqlExpression expr2 = SqlExpression.of("CURRENT_DATE");
 
-        assertSame(expr1, expr2, "Should return cached instance");
+        assertNotSame(expr1, expr2, "Dynamic SQL text must not be retained in a global interning cache");
+        assertEquals(expr1, expr2);
     }
 
     @Test
@@ -262,40 +262,35 @@ public class SqlExpressionTest extends TestBase {
     }
 
     @Test
-    public void testIsEmpty() {
-        String result = SqlExpression.isNullOrEmpty("description");
+    public void testIsNullOrEmptyUsesExecutableSql() {
+        assertEquals("(description IS NULL OR description = '')", SqlExpression.isNullOrEmpty("description"));
 
-        assertTrue(result.contains("description"));
-        assertTrue(result.contains("IS"));
-        assertTrue(result.contains("BLANK"));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNullOrEmpty(null));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNullOrEmpty(""));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNullOrEmpty(" \t"));
     }
 
     @Test
-    public void testIsNotEmpty() {
-        String result = SqlExpression.isNotNullAndNotEmpty("name");
+    public void testIsNotNullAndNotEmptyUsesExecutableSql() {
+        assertEquals("(name IS NOT NULL AND name <> '')", SqlExpression.isNotNullAndNotEmpty("name"));
 
-        assertTrue(result.contains("name"));
-        assertTrue(result.contains("IS NOT"));
-        assertTrue(result.contains("BLANK"));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNotNullAndNotEmpty(null));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNotNullAndNotEmpty(""));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNotNullAndNotEmpty(" \t"));
     }
 
     // Composable operators
     @Test
     public void testAnd() {
-        String result = SqlExpression.and("active = true", "age > 18");
-
-        assertTrue(result.contains("active = true"));
-        assertTrue(result.contains("AND"));
-        assertTrue(result.contains("age > 18"));
+        assertEquals("(active = true) AND (age > 18)", SqlExpression.and("active = true", "age > 18"));
     }
 
     @Test
     public void testOr() {
-        String result = SqlExpression.or("status = 'active'", "status = 'pending'");
+        assertEquals("(status = 'active') OR (status = 'pending')", SqlExpression.or("status = 'active'", "status = 'pending'"));
 
-        assertTrue(result.contains("status = 'active'"));
-        assertTrue(result.contains("OR"));
-        assertTrue(result.contains("status = 'pending'"));
+        assertEquals("(a = 1 OR b = 2) AND (c = 3)", SqlExpression.and("a = 1 OR b = 2", "c = 3"));
+        assertEquals("(a = 1 AND b = 2) OR (c = 3)", SqlExpression.or("a = 1 AND b = 2", "c = 3"));
     }
 
     // Arithmetic operators
@@ -988,7 +983,8 @@ public class SqlExpressionTest extends TestBase {
         SqlExpression expr1 = SqlExpression.of("CURRENT_TIMESTAMP");
         SqlExpression expr2 = SqlExpression.of("CURRENT_TIMESTAMP");
 
-        Assertions.assertSame(expr1, expr2); // Should be cached
+        Assertions.assertNotSame(expr1, expr2);
+        Assertions.assertEquals(expr1, expr2);
         Assertions.assertEquals("CURRENT_TIMESTAMP", expr1.literal());
     }
 
@@ -1133,23 +1129,12 @@ public class SqlExpressionTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> SqlExpression.renderValue(Float.POSITIVE_INFINITY));
     }
 
-    /**
-     * Regression (Pass 3): a string ending in a single backslash must not produce
-     * {@code 'x\'} (where the closing quote is consumed as an escape under MySQL-style
-     * parsing). The escape helper must keep the literal balanced.
-     */
+    /** SQL-standard literal rendering preserves backslashes instead of changing the value. */
     @Test
-    public void testRenderValue_TrailingBackslashStaysBalanced_Pass3() {
+    public void testRenderValue_TrailingBackslashIsPreservedForStandardSql() {
         String input = "x" + (char) 92; // x followed by one backslash
         String result = SqlExpression.renderValue(input);
-        Assertions.assertNotNull(result);
-        Assertions.assertTrue(result.startsWith("'") && result.endsWith("'"), "Output must be quoted, got: " + result);
-        String body = result.substring(1, result.length() - 1);
-        int trailing = 0;
-        for (int i = body.length() - 1; i >= 0 && body.charAt(i) == '\\'; i--) {
-            trailing++;
-        }
-        Assertions.assertEquals(0, trailing % 2, "Trailing backslash count must be even so closing quote is not escaped, got body: " + body);
+        Assertions.assertEquals("'x\\'", result);
     }
 
     /**
@@ -1195,15 +1180,12 @@ public class SqlExpressionTest extends TestBase {
 
     /**
      * {@code toSql(NamingPolicy)} must return the value rendered for the <i>requested</i> policy.
-     * {@link SqlExpression#of} interns instances, so the same object is reused across calls and must answer
-     * each policy correctly even when callers alternate policies on it. (Originally guarded the
-     * since-removed single-slot toString cache; kept because the contract must hold regardless of any
-     * internal memoization.)
+     * A single expression must answer each naming policy correctly when callers alternate policies.
+     * This guards against unsafe per-instance memoization.
      */
     @Test
     public void testToStringReturnsValuePerNamingPolicy() {
         SqlExpression expr = SqlExpression.of("firstName");
-        assertSame(expr, SqlExpression.of("firstName"), "SqlExpression.of must intern instances");
 
         for (int i = 0; i < 1000; i++) {
             assertEquals("firstName", expr.toSql(NamingPolicy.NO_CHANGE));
@@ -1214,7 +1196,7 @@ public class SqlExpressionTest extends TestBase {
     }
 
     /**
-     * {@code toSql(NamingPolicy)} must be thread-safe on a shared interned instance: every call must
+     * {@code toSql(NamingPolicy)} must be thread-safe on a shared instance: every call must
      * return the value for its own policy. (Originally a regression test for a data race in the
      * since-removed single-slot toString cache; kept — with a lighter workload — to catch any future
      * reintroduction of unsafe per-instance memoization.)
@@ -1303,6 +1285,15 @@ public class SqlExpressionTest extends TestBase {
     }
 
     @Test
+    public void testBooleanCombinatorsRejectNullOrBlankOperands() {
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.and("a = 1", null));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.and("a = 1", ""));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.or("a = 1", " \t"));
+        assertEquals("(a = 1)", SqlExpression.and("a = 1"));
+        assertEquals("", SqlExpression.or());
+    }
+
+    @Test
     public void testNamingPolicyConvertsUnderscoreLeadingIdentifiers() {
         assertEquals("_first_name", SqlExpression.of("_firstName").toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("_FIRST_NAME = OTHER_VALUE", SqlExpression.of("_firstName = otherValue").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
@@ -1327,14 +1318,10 @@ public class SqlExpressionTest extends TestBase {
     }
 
     @Test
-    public void testRenderValue_QuoteEscaping() {
-        // Javadoc contract: embedded unescaped single and double quotes are backslash-escaped.
-        assertEquals("'O\\'Brien'", SqlExpression.renderValue("O'Brien"));
-        assertEquals("'say \\\"hi\\\"'", SqlExpression.renderValue("say \"hi\""));
-
-        // An already-escaped quote (backslash shields the char that follows it) is copied
-        // verbatim rather than escaped again.
-        assertEquals("'a\\'b'", SqlExpression.renderValue("a\\'b"));
+    public void testRenderValue_UsesSqlStandardQuoteDoubling() {
+        assertEquals("'O''Brien'", SqlExpression.renderValue("O'Brien"));
+        assertEquals("'say \"hi\"'", SqlExpression.renderValue("say \"hi\""));
+        assertEquals("'a\\''b'", SqlExpression.renderValue("a\\'b"));
     }
 
     @Test

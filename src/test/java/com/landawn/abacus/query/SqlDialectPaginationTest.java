@@ -296,22 +296,6 @@ public class SqlDialectPaginationTest extends TestBase {
         sql = dslFor("Oracle").select("*").from("users").orderBy("id").append(Filters.limit("10 OFFSET 20")).build().query();
         assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
 
-        // Placeholder tokens are carried over into the FETCH syntax.
-        sql = dslFor("Oracle").select("*").from("users").orderBy("id").append(Filters.limit("? OFFSET ?")).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY", sql);
-
-        sql = dslFor("Oracle").select("*").from("users").append(Filters.limit(":count")).build().query();
-        assertEquals("SELECT * FROM users FETCH FIRST :count ROWS ONLY", sql);
-
-        sql = dslFor("Oracle").select("*").from("users").orderBy("id").append(Filters.limit("#{count} OFFSET #{offset}")).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET #{offset} ROWS FETCH NEXT #{count} ROWS ONLY", sql);
-
-        sql = dslFor("Oracle").select("*").from("users").orderBy("id").append(Filters.limit(":offset, :count")).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET :offset ROWS FETCH NEXT :count ROWS ONLY", sql);
-
-        sql = dslFor("DB2").select("*").from("users").orderBy("id").append(Filters.limit("#{offset}, #{count}")).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET #{offset} ROWS FETCH NEXT #{count} ROWS ONLY", sql);
-
         sql = dslFor("Microsoft SQL Server").select("*").from("users").orderBy("id").append(Filters.limit("10")).build().query();
         assertEquals("SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
 
@@ -321,11 +305,10 @@ public class SqlDialectPaginationTest extends TestBase {
     }
 
     @Test
-    public void testOpaqueExpressionLimitStaysVerbatim() {
-        // A truly opaque expression — here a placeholder form on a LIMIT-style dialect — is not parsed
-        // into count/offset and is emitted verbatim.
-        String sql = dslFor("MySQL").select("*").from("users").append(Filters.limit("? OFFSET ?")).build().query();
-        assertEquals("SELECT * FROM users LIMIT ? OFFSET ?", sql);
+    public void testPlaceholderExpressionLimitIsRejectedBeforeDialectRendering() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.limit("? OFFSET ?"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.limit(":count"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.limit("#{count}"));
     }
 
     @Test

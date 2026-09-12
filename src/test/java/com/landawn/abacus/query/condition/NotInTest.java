@@ -47,6 +47,11 @@ public class NotInTest extends TestBase {
     }
 
     @Test
+    public void testConstructor_RejectsNullMember() {
+        assertThrows(IllegalArgumentException.class, () -> new NotIn("status", Arrays.asList("deleted", null)));
+    }
+
+    @Test
     public void testConstructor_BlankPropName() {
         assertThrows(IllegalArgumentException.class, () -> new NotIn("   ", Arrays.asList("active")));
     }

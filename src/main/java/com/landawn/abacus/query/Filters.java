@@ -2161,12 +2161,12 @@ public final class Filters {
      * }</pre>
      *
      * @param conditions the array of conditions to combine with {@code OR}; {@code null} or empty
-     *                   is permitted and yields an empty junction (which renders as an empty string)
+     *                   is permitted and yields the false identity {@code 1 = 0}
      * @return an {@link Or} junction
      * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
      *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
-     *             (a blank {@link SqlExpression} or empty {@link Junction})
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             or a blank {@link SqlExpression}
      */
     public static Or or(final Condition... conditions) {
         return new Or(conditions);
@@ -2187,12 +2187,12 @@ public final class Filters {
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with {@code OR}; {@code null} or
-     *                   empty is permitted and yields an empty junction (which renders as an empty string)
+     *                   empty is permitted and yields the false identity {@code 1 = 0}
      * @return an {@link Or} junction
      * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
      *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
-     *             (a blank {@link SqlExpression} or empty {@link Junction})
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             or a blank {@link SqlExpression}
      */
     public static Or or(final Collection<? extends Condition> conditions) {
         return new Or(conditions);
@@ -2213,12 +2213,12 @@ public final class Filters {
      * }</pre>
      *
      * @param conditions the array of conditions to combine with {@code AND}; {@code null} or
-     *                   empty is permitted and yields an empty junction (which renders as an empty string)
+     *                   empty is permitted and yields the true identity {@code 1 = 1}
      * @return an {@link And} junction
      * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
      *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
-     *             (a blank {@link SqlExpression} or empty {@link Junction})
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             or a blank {@link SqlExpression}
      */
     public static And and(final Condition... conditions) {
         return new And(conditions);
@@ -2239,12 +2239,12 @@ public final class Filters {
      * }</pre>
      *
      * @param conditions the collection of conditions to combine with {@code AND}; {@code null} or
-     *                   empty is permitted and yields an empty junction (which renders as an empty string)
+     *                   empty is permitted and yields the true identity {@code 1 = 1}
      * @return an {@link And} junction
      * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
      *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
-     *             (a blank {@link SqlExpression} or empty {@link Junction})
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             or a blank {@link SqlExpression}
      */
     public static And and(final Collection<? extends Condition> conditions) {
         return new And(conditions);
@@ -2265,15 +2265,15 @@ public final class Filters {
      * }</pre>
      *
      * @param operator the junction operator; must be {@link Operator#AND} or {@link Operator#OR}
-     * @param conditions the array of conditions to combine; {@code null} or empty is permitted and yields an
-     *                   empty junction (which renders as an empty string)
+     * @param conditions the array of conditions to combine; {@code null} or empty is permitted and yields
+     *                   {@code 1 = 1} for AND or {@code 1 = 0} for OR
      * @return a {@link Junction} with the specified operator
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
      *             or if any element of {@code conditions} is {@code null}, or is a Criteria, a clause
      *             (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
-     *             (a blank {@link SqlExpression} or empty {@link Junction})
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             or a blank {@link SqlExpression}
      */
     @Beta
     public static Junction junction(final Operator operator, final Condition... conditions) {
@@ -2293,15 +2293,15 @@ public final class Filters {
      * }</pre>
      *
      * @param operator the junction operator; must be {@link Operator#AND} or {@link Operator#OR}
-     * @param conditions the collection of conditions to combine; {@code null} or empty is permitted and yields an
-     *                   empty junction (which renders as an empty string)
+     * @param conditions the collection of conditions to combine; {@code null} or empty is permitted and yields
+     *                   {@code 1 = 1} for AND or {@code 1 = 0} for OR
      * @return a {@link Junction} with the specified operator
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
      *             or if any element of {@code conditions} is {@code null}, or is a Criteria, a clause
      *             (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
-     *             (a blank {@link SqlExpression} or empty {@link Junction})
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             or a blank {@link SqlExpression}
      */
     @Beta
     public static Junction junction(final Operator operator, final Collection<? extends Condition> conditions) {
@@ -2319,7 +2319,7 @@ public final class Filters {
      *
      * @param condition the condition for the {@code WHERE} clause (must not be {@code null})
      * @return a {@link Where} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is a blank {@link SqlExpression} — none of which can be nested inside a clause
      */
     public static Where where(final Condition condition) {
         return new Where(condition);
@@ -3599,10 +3599,10 @@ public final class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param values array of values
+     * @param values array of non-{@code null} values
      * @return an {@link In} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code values} is
-     *                                  {@code null} or empty, or if a condition-valued element is or contains a
+     *                                  {@code null}, empty, or contains {@code null}, or if a condition-valued element is or contains a
      *                                  Criteria, SQL clause, JOIN, or {@code ON}/{@code USING} connector, or
      *                                  is/contains an {@link All}, {@link Any}, or {@link Some} quantified operand
      */
@@ -3621,10 +3621,10 @@ public final class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param values collection of values
+     * @param values collection of non-{@code null} values
      * @return an {@link In} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code values} is
-     *                                  {@code null} or empty, or if a condition-valued element is or contains a
+     *                                  {@code null}, empty, or contains {@code null}, or if a condition-valued element is or contains a
      *                                  Criteria, SQL clause, JOIN, or {@code ON}/{@code USING} connector, or
      *                                  is/contains an {@link All}, {@link Any}, or {@link Some} quantified operand
      */
@@ -3638,8 +3638,8 @@ public final class Filters {
      *
      * <p>Each element of {@code valueRows} is one row and may be supplied as a {@link Collection} or other
      * {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean (read by
-     * property name). A map contributes {@code null} for an absent property key; a bean must expose every
-     * requested property.</p>
+     * property name). Every requested map key or bean property must exist, and every resolved tuple
+     * element must be non-{@code null}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3653,13 +3653,13 @@ public final class Filters {
      * {@code EXISTS} or a join there).</p>
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}/blank names)
-     * @param valueRows collection of value rows; each row must resolve to exactly {@code propNames.size()} values.
+     * @param valueRows collection of value rows; each row must resolve to exactly {@code propNames.size()} non-{@code null} values.
      *               A row may be a {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @return an {@link In} condition
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
      *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
-     *                                  if a requested property is missing or unreadable on a bean row,
+     *                                  if a map key or bean property is missing/unreadable, or if a row element is {@code null},
      *                                  or if a condition-valued row element is or contains a Criteria, SQL clause, JOIN,
      *                                  or {@code ON}/{@code USING} connector, or is/contains an {@link All}, {@link Any},
      *                                  or {@link Some} quantified operand
@@ -3866,10 +3866,10 @@ public final class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param values array of values to exclude
+     * @param values array of non-{@code null} values to exclude
      * @return a {@link NotIn} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code values} is
-     *                                  {@code null} or empty, or if a condition-valued element is or contains a
+     *                                  {@code null}, empty, or contains {@code null}, or if a condition-valued element is or contains a
      *                                  Criteria, SQL clause, JOIN, or {@code ON}/{@code USING} connector, or
      *                                  is/contains an {@link All}, {@link Any}, or {@link Some} quantified operand
      */
@@ -3888,10 +3888,10 @@ public final class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param values collection of values to exclude
+     * @param values collection of non-{@code null} values to exclude
      * @return a {@link NotIn} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code values} is
-     *                                  {@code null} or empty, or if a condition-valued element is or contains a
+     *                                  {@code null}, empty, or contains {@code null}, or if a condition-valued element is or contains a
      *                                  Criteria, SQL clause, JOIN, or {@code ON}/{@code USING} connector, or
      *                                  is/contains an {@link All}, {@link Any}, or {@link Some} quantified operand
      */
@@ -3905,8 +3905,8 @@ public final class Filters {
      *
      * <p>Each element of {@code valueRows} is one row and may be supplied as a {@link Collection} or other
      * {@link Iterable}, an object array, a {@link Map} (looked up by property name) or a bean (read by
-     * property name). A map contributes {@code null} for an absent property key; a bean must expose every
-     * requested property.</p>
+     * property name). Every requested map key or bean property must exist, and every resolved tuple
+     * element must be non-{@code null}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3921,12 +3921,12 @@ public final class Filters {
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}/blank names)
      * @param valueRows collection of value rows to exclude; each row must resolve to exactly {@code propNames.size()}
-     *               values. A row may be a {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
+     *               non-{@code null} values. A row may be a {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @return a {@link NotIn} condition
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
      *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
-     *                                  if a requested property is missing or unreadable on a bean row,
+     *                                  if a map key or bean property is missing/unreadable, or if a row element is {@code null},
      *                                  or if a condition-valued row element is or contains a Criteria, SQL clause, JOIN,
      *                                  or {@code ON}/{@code USING} connector, or is/contains an {@link All}, {@link Any},
      *                                  or {@link Some} quantified operand
@@ -4193,9 +4193,9 @@ public final class Filters {
      * @param entityClass the entity class representing the table (must not be {@code null})
      * @param propNames collection of property names to select (must not be {@code null} or empty, and must not contain
      *                  {@code null}, empty, or blank elements)
-     * @param condition the WHERE condition for the subquery; may be {@code null} for no WHERE clause
-     *                  (a blank {@link SqlExpression} or empty {@link Junction} condition is likewise
-     *                  treated as no filter condition)
+     * @param condition the WHERE condition for the subquery; may be {@code null} for no WHERE clause.
+     *                  A blank {@link SqlExpression} is likewise treated as no filter; an empty
+     *                  {@link Junction} is preserved as its Boolean identity
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propNames} is
      *         {@code null} or empty, contains a {@code null}, empty, or blank element, if {@code condition}
@@ -4279,9 +4279,9 @@ public final class Filters {
      * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
      * @param propNames collection of property names to select (must not be {@code null} or empty, and must not contain
      *                  {@code null}, empty, or blank elements)
-     * @param condition the WHERE condition for the subquery; may be {@code null} for no WHERE clause
-     *                  (a blank {@link SqlExpression} or empty {@link Junction} condition is likewise
-     *                  treated as no filter condition)
+     * @param condition the WHERE condition for the subquery; may be {@code null} for no WHERE clause.
+     *                  A blank {@link SqlExpression} is likewise treated as no filter; an empty
+     *                  {@link Junction} is preserved as its Boolean identity
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank, if
      *         {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
@@ -4354,15 +4354,15 @@ public final class Filters {
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("orders",
-     *     "SELECT COUNT(*) FROM orders WHERE user_id = ?");
-     * // Generates: SELECT COUNT(*) FROM orders WHERE user_id = ?   (entityName is ignored when full SQL is supplied)
+     *     "SELECT COUNT(*) FROM orders WHERE user_id = 42");
+     * // Generates: SELECT COUNT(*) FROM orders WHERE user_id = 42   (entityName is ignored when full SQL is supplied)
      * }</pre>
      *
      * @param entityName the entity/table name (not used to build the subquery when the full SQL is
      *                   supplied; may be {@code null} or empty)
      * @param sql the complete SQL for the subquery (must not be {@code null}, empty, or blank)
      * @return a {@link SubQuery}
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, or contains an unbound parameter placeholder
      * @see #subQuery(String)
      * @deprecated when the full SQL is supplied, {@code entityName} is not used to build the
      *             subquery; use {@link #subQuery(String)} instead.
@@ -4377,7 +4377,8 @@ public final class Filters {
      * This provides complete control over the subquery content.
      *
      * <p><b>Warning:</b> {@code sql} is included verbatim in the generated query. Do not build it
-     * from untrusted input.</p>
+     * from untrusted input. This overload rejects parameter placeholders; use
+     * {@link #subQuery(String, Collection)} for positional JDBC bindings.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4389,10 +4390,37 @@ public final class Filters {
      *
      * @param sql the complete SQL for the subquery (must not be {@code null}, empty, or blank)
      * @return a {@link SubQuery}
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, or contains an unbound parameter placeholder
      */
     public static SubQuery subQuery(final String sql) {
         return new SubQuery(sql);
+    }
+
+    /**
+     * Creates a raw SubQuery with positional JDBC bindings. The complete SQL is retained verbatim;
+     * {@code parameters} is defensively copied and must have exactly one value for each positional
+     * {@code ?} placeholder in encounter order.
+     *
+     * <p>Named and MyBatis placeholders are not supported by raw bound subqueries because they lack
+     * builder-generated collision metadata. Use {@link SqlBuilder#toSubQuery()} when a named SQL policy
+     * is required. As with every raw SQL API, the SQL structure itself must not come from untrusted input.</p>
+     *
+     * <pre>{@code
+     * SubQuery subQuery = Filters.subQuery(
+     *     "SELECT user_id FROM orders WHERE status = ? AND total > ?",
+     *     Arrays.asList("OPEN", 100));
+     * // parameters(): ["OPEN", 100]
+     * }</pre>
+     *
+     * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
+     * @param parameters positional binding values in placeholder encounter order (must not be {@code null});
+     *                   individual values may be {@code null}
+     * @return a raw {@link SubQuery} carrying an immutable binding snapshot
+     * @throws IllegalArgumentException if the SQL is blank, {@code parameters} is {@code null}, a named/MyBatis
+     *         marker is present, or the placeholder and binding counts differ
+     */
+    public static SubQuery subQuery(final String sql, final Collection<?> parameters) {
+        return new SubQuery(sql, parameters);
     }
 
     //    /**

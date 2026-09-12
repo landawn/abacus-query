@@ -831,24 +831,12 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
-    public void testVerbatimLimitLiteralConsumesOffsetSlot() {
-        // "LIMIT ? OFFSET ?" followed by offset(5) used to emit a second OFFSET clause.
-        assertThrows(IllegalStateException.class, () -> PSC.select("id").from("t").append(Filters.limit("LIMIT ? OFFSET ?")).offset(5));
-
-        // A literal without OFFSET leaves the offset slot available.
-        assertEquals("SELECT id FROM t LIMIT ? OFFSET 5", PSC.select("id").from("t").append(Filters.limit("LIMIT ?")).offset(5).build().query());
-    }
-
-    @Test
-    public void testLimitLiteralPlaceholderNameContainingOffsetKeepsOffsetSlot() {
-        // The raw substring test used to treat the placeholder name as an OFFSET clause,
-        // making the follow-up offset(20) fail with "'OFFSET' has already been set".
-        assertEquals("SELECT id FROM t LIMIT :rowOFFSETCount OFFSET 20",
-                NSC.select("id").from("t").append(Filters.limit("LIMIT :rowOFFSETCount")).offset(20).build().query());
-
-        // Literals that really carry the OFFSET keyword still consume the slot.
-        assertThrows(IllegalStateException.class, () -> NSC.select("id").from("t").append(Filters.limit("LIMIT :count OFFSET :offset")).offset(20));
-        assertThrows(IllegalStateException.class, () -> NSC.select("id").from("t").append(Filters.limit("LIMIT #{count} OFFSET #{offset}")).offset(20));
+    public void testLimitExpressionRejectsUntrackedPlaceholders() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.limit("LIMIT ?"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.limit("LIMIT ? OFFSET ?"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.limit("LIMIT :count"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.limit("LIMIT #{count}"));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().limit("FETCH NEXT ? ROWS ONLY"));
     }
 
     @Test
@@ -1537,38 +1525,6 @@ public class SqlBuilderTest extends TestBase {
         assertThrows(IllegalStateException.class, () -> builder.limit(10, 30));
         assertFalse(builder.calledOpSet.contains("LIMIT"));
         assertEquals("SELECT * FROM users OFFSET 20", builder.build().query());
-    }
-
-    @Test
-    public void testUnresolvedCommaLimitConsumesOffsetSlot() {
-        final SqlBuilder builder = PSC.select("*").from("users").append(new Limit("?, ?"));
-
-        assertThrows(IllegalStateException.class, () -> builder.offset(20));
-        assertEquals("SELECT * FROM users LIMIT ?, ?", builder.build().query());
-    }
-
-    @Test
-    public void testUnresolvedFetchLimitClosesTrailingOffsetSlot() {
-        final SqlBuilder builder = PSC.select("*").from("users").append(new Limit("FETCH FIRST ? ROWS ONLY"));
-
-        assertThrows(IllegalStateException.class, () -> builder.offset(20));
-        assertEquals("SELECT * FROM users FETCH FIRST ? ROWS ONLY", builder.build().query());
-    }
-
-    @Test
-    public void testUnresolvedFetchLimitCanFollowOffsetRows() {
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT ? ROWS ONLY",
-                PSC.select("*").from("users").orderBy("id").offsetRows(20).append(new Limit("FETCH NEXT ? ROWS ONLY")).build().query());
-
-        final Criteria criteria = Criteria.builder().limit("FETCH NEXT ? ROWS ONLY").build();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT ? ROWS ONLY",
-                PSC.select("*").from("users").orderBy("id").offsetRows(20).append(criteria).build().query());
-    }
-
-    @Test
-    public void testUnresolvedLimitPlaceholderNamesDoNotConsumePaginationSlots() {
-        assertEquals("SELECT * FROM users LIMIT :OFFSET OFFSET 20", PSC.select("*").from("users").append(new Limit(":OFFSET")).offset(20).build().query());
-        assertEquals("SELECT * FROM users LIMIT :FETCH OFFSET 20", PSC.select("*").from("users").append(new Limit(":FETCH")).offset(20).build().query());
     }
 
     @Test
@@ -2346,8 +2302,6 @@ public class SqlBuilderTest extends TestBase {
                 PSC.select("department").from("employees").append(Criteria.builder().distinctOn("department").build()).build().query());
         assertEquals("SELECT DISTINCTROW department FROM employees",
                 PSC.select("department").from("employees").append(Criteria.builder().distinctRow().build()).build().query());
-        assertEquals("SELECT DISTINCTROW(department) department FROM employees",
-                PSC.select("department").from("employees").append(Criteria.builder().distinctRowBy("department").build()).build().query());
         assertEquals("SELECT SQL_CALC_FOUND_ROWS department FROM employees",
                 PSC.select("department").from("employees").append(Criteria.builder().selectModifier("SQL_CALC_FOUND_ROWS").build()).build().query());
     }

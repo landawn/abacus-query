@@ -65,13 +65,13 @@ import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.Beans;
 import com.landawn.abacus.util.ClassUtil;
+import com.landawn.abacus.util.ConcurrentCacheMap;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.ImmutableSet;
 import com.landawn.abacus.util.Maps;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.ObjectPool;
 import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.OperationType;
 import com.landawn.abacus.util.SK;
@@ -316,14 +316,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Matches the generic {@code LIMIT count [OFFSET offset]} expressions that reach the builder as an
-     * unparsed {@link Limit#expression()}, where each token is an integer literal or a {@code ?} /
-     * {@code :name} / <code>#{name}</code> parameter placeholder. In practice the integer-only forms are
+     * unresolved {@link Limit#expression()}, where each token is an integer literal. In practice int-range forms are
      * parsed into concrete count/offset by {@link Limit#Limit(String)} and rendered via {@link #limit(int)} /
-     * {@link #limit(int, int)}, so this pattern normally handles the placeholder-bearing forms. Deliberately
-     * product-specific expressions that are not recognized (e.g. a vendor function) do not match and are
-     * emitted verbatim.
+     * {@link #limit(int, int)}, so this pattern normally handles integer literals outside the {@code int} range.
      */
-    private static final String LIMIT_SLOT_PATTERN = "(\\d+|\\?|:\\w+|#\\{[^}]+\\})";
+    private static final String LIMIT_SLOT_PATTERN = "(\\d+)";
     /** Matches a generic {@code LIMIT count [OFFSET offset]} or {@code LIMIT offset, count} expression. */
     private static final Pattern GENERIC_LIMIT_EXPRESSION_PATTERN = Pattern.compile(
             "LIMIT\\s+" + LIMIT_SLOT_PATTERN + "(?:\\s+OFFSET\\s+" + LIMIT_SLOT_PATTERN + "|\\s*,\\s*" + LIMIT_SLOT_PATTERN + ")?", Pattern.CASE_INSENSITIVE);
@@ -410,8 +407,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Registry of SQL keywords and niladic (no-parentheses) keyword functions that naming-policy
      * column-name conversion must leave untouched. Populated from the public {@link SK} string
-     * constants in original, upper, and lower case, plus UPPER-case niladic functions such as
-     * {@code CURRENT_TIMESTAMP}; kept in sync with {@code SqlExpression}'s own registry.
+     * constants in original and upper case (lower-case forms are deliberately not registered, so a
+     * column genuinely named like a keyword, e.g. {@code order} or {@code count}, is still converted),
+     * plus UPPER-case niladic functions such as {@code CURRENT_TIMESTAMP}; kept in sync with
+     * {@code SqlExpression}'s own registry, which follows the same rule.
      */
     protected static final Set<String> sqlKeyWords = N.newHashSet(1024);
 
@@ -429,7 +428,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     for (final String e : Strings.split(value, ' ', true)) {
                         sqlKeyWords.add(e);
                         sqlKeyWords.add(e.toUpperCase(Locale.ROOT));
-                        sqlKeyWords.add(e.toLowerCase(Locale.ROOT));
                     }
                 } catch (final Exception e) {
                     // ignore, should never happen.
@@ -452,10 +450,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /** Cache of the sub-entity property names per entity class; see {@link #getSubEntityPropNames(Class)}. */
-    protected static final Map<Class<?>, ImmutableSet<String>> subEntityPropNamesPool = new ObjectPool<>(QueryUtil.POOL_SIZE);
+    protected static final Map<Class<?>, ImmutableSet<String>> subEntityPropNamesPool = new ConcurrentCacheMap<>(QueryUtil.POOL_SIZE);
 
     /** Cache of the categorized property-name sets per entity class; see {@link #loadPropNamesByClass(Class)}. */
-    protected static final Map<Class<?>, Set<String>[]> defaultPropNamesPool = new ObjectPool<>(QueryUtil.POOL_SIZE);
+    protected static final Map<Class<?>, Set<String>[]> defaultPropNamesPool = new ConcurrentCacheMap<>(QueryUtil.POOL_SIZE);
 
     /** Cache of the fully rendered select part per entity class, per naming policy. */
     protected static final Map<NamingPolicy, Map<Class<?>, String>> fullSelectPartsPool = N.newHashMap(NamingPolicy.values().length);
@@ -1221,7 +1219,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private void checkSetOperationSubQuery(final String query, final String operationName) {
         checkSqlFragmentNotBlank(query, "query");
 
-        if (!isInlineQuery(_tokenizer, query) || !_tokenizer.isReadOnlyQuery(query)) {
+        if (!isInlineQuery(_tokenizer, query) || !_tokenizer.isSyntacticallyReadQuery(query)) {
             throw new IllegalArgumentException("The query argument to " + operationName
                     + " must be a complete SELECT sub-query (starting with 'SELECT', optionally wrapped in balanced parentheses, or containing 'SELECT ... FROM'), but was: \""
                     + query + "\". To start a new SELECT from a column list, use " + setOperationMethodName(operationName)
@@ -1233,8 +1231,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private void checkSubQuerySnapshot(final String query) {
         checkSqlFragmentNotBlank(query, "query");
 
-        if (!isInlineQuery(_tokenizer, query) || !_tokenizer.isReadOnlyQuery(query)) {
-            throw new IllegalArgumentException("A builder-backed subquery must be a complete, read-only SELECT query, but was: \"" + query + "\"");
+        if (!isInlineQuery(_tokenizer, query) || !_tokenizer.isSyntacticallyReadQuery(query)) {
+            throw new IllegalArgumentException("A builder-backed subquery must be a complete syntactic SELECT query candidate, but was: \"" + query + "\"");
         }
     }
 
@@ -4234,7 +4232,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@code OFFSET 0 ROWS FETCH NEXT count ROWS ONLY}, omitting the {@code OFFSET 0 ROWS} prefix when
      * an {@code OFFSET} clause was already emitted. The caller must have consumed the {@code LIMIT} slot.
      *
-     * @param countToken the row count as an integer literal or parameter placeholder
+     * @param countToken the row count as an integer literal
      * @throws IllegalStateException if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set
      */
     private void appendFetchFirst(final String countToken) {
@@ -4262,8 +4260,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * ({@code OFFSET offset ROWS FETCH NEXT count ROWS ONLY}) and consumes the FETCH slots.
      * The caller must have consumed the {@code LIMIT} and {@code OFFSET} slots already.
      *
-     * @param countToken the row count as an integer literal or parameter placeholder
-     * @param offsetToken the offset as an integer literal or parameter placeholder
+     * @param countToken the row count as an integer literal
+     * @param offsetToken the offset as an integer literal
      * @throws IllegalStateException if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set
      */
     private void appendOffsetFetchNext(final String countToken, final String offsetToken) {
@@ -4337,18 +4335,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * or from a string expression that {@link Limit#Limit(String)} parsed into a concrete count/offset
      * (the {@code LIMIT}-family and SQL:2008 {@code FETCH}-family integer forms) — delegates to
      * {@link #limit(int)} / {@link #limit(int, int)} based on the offset, so it is rendered in the dialect's
-     * pagination syntax. An <i>unparsed</i> expression (one carrying a {@code ?} / {@code :name} /
-     * <code>#{name}</code> placeholder, or product-specific syntax not otherwise recognized) is re-rendered
+     * pagination syntax. An unresolved out-of-range numeric expression is re-rendered
      * in the dialect's FETCH pagination syntax when this builder uses one (Oracle, DB2, SQL Server) and the
-     * expression is a generic {@code LIMIT count [OFFSET offset]} form with placeholder tokens; any other
-     * unparsed expression is emitted verbatim.
+     * expression is a generic {@code LIMIT count [OFFSET offset]} form.
      * Shared by the {@link Criteria} and standalone-{@link Limit} branches of {@link #append(Condition)}.
      *
      * @param limit the limit condition to render (must not be {@code null})
      */
     private void appendLimit(final Limit limit) {
-        // An unparsed string expression (placeholder or product-specific/opaque syntax) is signalled by
-        // the sentinel count == MAX_VALUE / offset == 0; render it from its expression. Everything else —
+        // An out-of-int-range string expression is signalled by isResolved() == false; render it from its
+        // validated numeric expression. Everything else —
         // the numeric constructors and string expressions parsed into concrete count/offset — is emitted
         // in the dialect's pagination syntax via limit(int) / limit(int, int).
         if (Strings.isNotEmpty(limit.expression()) && !limit.isResolved()) {
@@ -4361,11 +4357,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 throw new IllegalStateException("'" + SK.LIMIT + "' must be added before '" + SK.OFFSET + "' for this SQL dialect");
             }
 
-            // The verbatim literal may itself carry an OFFSET portion (e.g. "LIMIT ? OFFSET ?"); consume the
+            // The retained numeric literal may itself carry an OFFSET portion; consume the
             // OFFSET slot too so a follow-up offset(...) call is rejected instead of silently emitting a
-            // second OFFSET clause. Limit has already normalized and validated the full expression, so the
-            // grammar's structural slots can be inspected without mistaking placeholder names such as
-            // ":OFFSET" or "#{ offset }" for pagination keywords.
+            // second OFFSET clause. Limit has already normalized and validated the full expression, so its
+            // grammar's structural slots can be inspected directly.
             if (limitExpressionHasOffset(limit.expression())) {
                 claimClauseSlots(SK.LIMIT, SK.OFFSET);
             } else {
@@ -4388,7 +4383,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Attempts to re-render a generic {@code LIMIT count [OFFSET offset]} or {@code LIMIT offset, count}
-     * expression in the dialect's FETCH pagination syntax, consuming the same clause slots as
+     * numeric expression in the dialect's FETCH pagination syntax, consuming the same clause slots as
      * {@link #limit(int)} / {@link #limit(int, int)}. On SQL Server, an unresolved SQL-standard
      * {@code [OFFSET ...] FETCH FIRST|NEXT ...} expression is normalized to the SQL Server-required
      * {@code OFFSET ... FETCH NEXT ...} form as well. Returns {@code false} without emitting anything
@@ -4442,15 +4437,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         // Limit normalizes and validates every accepted expression. The only other family is
         // [OFFSET slot ROWS] FETCH ..., whose semantic offset is therefore unambiguously the prefix.
-        // Do not token-scan the whole expression: an uppercase placeholder such as :OFFSET is data,
-        // not an OFFSET clause.
         return expression.startsWith(SK.OFFSET + SK.SPACE);
     }
 
     /** Returns whether an unresolved pagination literal starts with FETCH FIRST/NEXT syntax. */
     private boolean isFetchLimitExpression(final String expression) {
-        // Expressions with their own leading OFFSET take the offset-aware branch above. Restrict this
-        // check to the normalized FETCH prefix so a placeholder named :FETCH is not mistaken for syntax.
+        // Expressions with their own leading OFFSET take the offset-aware branch above.
         return expression.startsWith("FETCH ");
     }
 
@@ -4628,6 +4620,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     private void checkCanAppendJoin() {
         assertNotClosed();
+
+        if (_joinConditionAllowed) {
+            throw new IllegalStateException("The preceding qualified JOIN must be completed with on(...) or using(...) before another JOIN");
+        }
 
         if (_hasCompletedSetOperation) {
             throw new IllegalStateException("JOIN clauses cannot be added after a completed set-operation operand");
@@ -4854,6 +4850,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private void checkClauseCanBeAppended(final String op, final boolean orderByCarriedByCriteria) {
         assertNotClosed();
 
+        if (_joinConditionAllowed) {
+            throw new IllegalStateException("The preceding qualified JOIN must be completed with on(...) or using(...) before '" + op + "'");
+        }
+
         if (_op == OperationType.ADD) {
             throw new IllegalStateException("'" + op + "' cannot be added to an INSERT VALUES statement");
         }
@@ -5076,7 +5076,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                         for (final String joinTableName : join.joinEntities()) {
                             if (idx++ > 0) {
-                                _sb.append(_COMMA_SPACE);
+                                // A parenthesized comma list here is a MySQL extension. A CROSS JOIN tree
+                                // is a standard joined-table operand and preserves the intended Cartesian input.
+                                _sb.append(_SPACE_CROSS_JOIN_SPACE);
                             }
 
                             _sb.append(joinTableName);
@@ -5226,10 +5228,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (limit != null) {
             checkClauseSlotAvailable(SK.LIMIT);
 
-            final boolean opaqueFetchCanFollowOffsetRows = !limit.isResolved() && Strings.isNotEmpty(limit.expression())
+            final boolean unresolvedFetchCanFollowOffsetRows = !limit.isResolved() && Strings.isNotEmpty(limit.expression())
                     && isFetchLimitExpression(limit.expression()) && calledOpSet.contains(OFFSET_ROWS_SLOT);
 
-            if (!usesFetchPagination() && calledOpSet.contains(SK.OFFSET) && !opaqueFetchCanFollowOffsetRows) {
+            if (!usesFetchPagination() && calledOpSet.contains(SK.OFFSET) && !unresolvedFetchCanFollowOffsetRows) {
                 throw new IllegalStateException("'" + SK.LIMIT + "' must be added before '" + SK.OFFSET + "' for this SQL dialect");
             }
 
@@ -6010,6 +6012,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     private void checkCanAppendSetOperation(final String operationName) {
         assertNotClosed();
+
+        if (_joinConditionAllowed) {
+            throw new IllegalStateException("The preceding qualified JOIN must be completed with on(...) or using(...) before " + operationName);
+        }
 
         if (_op != OperationType.QUERY || _isForConditionOnly) {
             throw new IllegalStateException(operationName + " requires a complete SELECT query on its left-hand side");
@@ -7021,6 +7027,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     public SP build() {
         assertNotClosed();
 
+        if (_joinConditionAllowed) {
+            throw new IllegalStateException("The statement ends with an incomplete qualified JOIN; call on(...) or using(...) before build()");
+        }
+
         String sql = null;
 
         try {
@@ -7747,8 +7757,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             // Although the simple-column pattern permits '-', a hyphen can be the subtraction operator.
             // Let the tokenizer split those expressions so each operand is normalized independently.
             // This mirrors SqlExpression.toSql and prevents a naming policy from treating the complete
-            // expression (for example, "aB-cD") as one identifier.
-            final boolean matched = expr.indexOf('-') < 0 && QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher(expr).matches();
+            // expression (for example, "aB-cD") as one identifier. Digit-leading tokens (for example
+            // "2faCode") also fall through to the tokenizer, which passes them through unconverted, again
+            // mirroring SqlExpression.toSql; the simple-column pattern alone would admit them here.
+            final boolean matched = expr.indexOf('-') < 0 && isIdentifierStart(expr.charAt(0)) && QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher(expr).matches();
 
             if (matched) {
                 if (isFromAppendColumn) {
@@ -8306,8 +8318,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Normalizes a column name according to the specified naming policy.
      * SQL keywords (and any name when the policy is {@code NO_CHANGE}) are returned unchanged.
-     * For the {@code CAMEL_CASE} policy, the name is normalized as a bean property name;
-     * otherwise it is converted using the naming policy.
+     * Otherwise the name is converted with {@link NamingPolicy#convert(String)}, exactly as
+     * {@code SqlExpression.toSql} does, so the two rendering paths agree.
      *
      * @param word the column name to normalize
      * @param namingPolicy the naming policy to apply
@@ -8317,9 +8329,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (sqlKeyWords.contains(word) || namingPolicy == NamingPolicy.NO_CHANGE) {
             return word;
         }
-        if (namingPolicy == NamingPolicy.CAMEL_CASE) {
-            return Beans.normalizePropName(word);
-        }
+
+        // CAMEL_CASE used to go through Beans.normalizePropName, whose Java-keyword map rewrote the
+        // identifier "class" (any case) to "clazz" -- a bean-property convention that has no place in a
+        // SQL column name and that SqlExpression.toSql never applied. Plain conversion keeps both paths equal.
         return namingPolicy.convert(word);
     }
 

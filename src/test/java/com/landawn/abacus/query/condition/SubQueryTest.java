@@ -312,16 +312,16 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
-    public void testHashCodeTracksMutableValueInStructuredCondition() {
+    public void testStructuredConditionSnapshotsMutableArrayValue() {
         final byte[] value = { 1 };
         final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", value));
 
         subQuery.hashCode();
         value[0] = 2;
 
-        final SubQuery equalAfterMutation = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 2 }));
-        assertEquals(subQuery, equalAfterMutation);
-        assertEquals(subQuery.hashCode(), equalAfterMutation.hashCode());
+        final SubQuery equalToSnapshot = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 1 }));
+        assertEquals(subQuery, equalToSnapshot);
+        assertEquals(subQuery.hashCode(), equalToSnapshot.hashCode());
     }
 
     @Test
@@ -569,6 +569,17 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
+    public void testEmptyJunctionsArePreservedAsBooleanIdentityPredicates() {
+        SubQuery allRows = Filters.subQuery("users", Arrays.asList("id"), Filters.and());
+        SubQuery noRows = Filters.subQuery("users", Arrays.asList("id"), Filters.or());
+
+        assertTrue(allRows.condition() instanceof Where);
+        assertTrue(noRows.condition() instanceof Where);
+        assertEquals("SELECT id FROM users WHERE 1 = 1", allRows.toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("SELECT id FROM users WHERE 1 = 0", noRows.toSql(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
     public void testConstructorRejectsCriteriaConditionWithSelectModifier() {
         Criteria criteria = Criteria.builder().distinct().where(Filters.eq("active", true)).build();
 
@@ -608,6 +619,54 @@ public class SubQueryTest extends TestBase {
 
         List<Object> params = subQuery.parameters();
         Assertions.assertTrue(params.isEmpty());
+    }
+
+    @Test
+    public void testRawSqlCapturesPositionalBindingsDefensively() {
+        List<Object> bindings = new ArrayList<>(Arrays.asList("OPEN", 100));
+        SubQuery subQuery = Filters.subQuery("SELECT user_id FROM orders WHERE status = ? AND total > ?", bindings);
+
+        bindings.set(0, "MUTATED");
+        bindings.clear();
+
+        assertEquals(Arrays.asList("OPEN", 100), subQuery.parameters());
+        assertThrows(UnsupportedOperationException.class, () -> subQuery.parameters().add("extra"));
+        assertEquals("SELECT user_id FROM orders WHERE status = ? AND total > ?", subQuery.rawSql());
+    }
+
+    @Test
+    public void testRawSqlBindingValidation() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("SELECT id FROM users WHERE status = ?"));
+        assertThrows(IllegalArgumentException.class,
+                () -> Filters.subQuery("SELECT id FROM users WHERE status = ?", Collections.emptyList()));
+        assertThrows(IllegalArgumentException.class,
+                () -> Filters.subQuery("SELECT id FROM users", Collections.singletonList("extra")));
+        assertThrows(IllegalArgumentException.class,
+                () -> Filters.subQuery("SELECT id FROM users WHERE status = :status", Collections.singletonList("OPEN")));
+        assertThrows(IllegalArgumentException.class,
+                () -> Filters.subQuery("SELECT id FROM users WHERE status = #{status}", Collections.singletonList("OPEN")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("SELECT id FROM users", (Collection<?>) null));
+    }
+
+    @Test
+    public void testRawSqlPlaceholderScannerIgnoresQuotedMarkersAndJsonQuestionOperator() {
+        SubQuery quoted = Filters.subQuery("SELECT '?' AS marker, ':name' AS named_marker");
+        SubQuery json = Filters.subQuery("SELECT payload ? 'key' FROM documents");
+
+        assertTrue(quoted.parameters().isEmpty());
+        assertTrue(json.parameters().isEmpty());
+    }
+
+    @Test
+    public void testRawSqlAllowsNullBindingAndIncludesBindingsInIdentity() {
+        SubQuery left = Filters.subQuery("SELECT id FROM users WHERE tenant_id = ?", Arrays.asList((Object) null));
+        SubQuery equal = Filters.subQuery("SELECT id FROM users WHERE tenant_id = ?", Arrays.asList((Object) null));
+        SubQuery different = Filters.subQuery("SELECT id FROM users WHERE tenant_id = ?", Arrays.asList(7));
+
+        assertEquals(Arrays.asList((Object) null), left.parameters());
+        assertEquals(left, equal);
+        assertEquals(left.hashCode(), equal.hashCode());
+        assertNotEquals(left, different);
     }
 
     @Test
@@ -810,7 +869,8 @@ public class SubQueryTest extends TestBase {
         final Criteria criteria = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").build();
 
         assertEquals("SELECT id FROM users WHERE a = 1 ORDER BY b", new SubQuery("users", Arrays.asList("id"), criteria).toString());
-        assertEquals("SELECT id FROM users JOIN orders", new SubQuery("users", Arrays.asList("id"), Criteria.builder().join("orders").build()).toString());
+        assertEquals("SELECT id FROM users CROSS JOIN orders",
+                new SubQuery("users", Arrays.asList("id"), Criteria.builder().crossJoin("orders").build()).toString());
 
         // The single-clause and plain-predicate forms were already correct and must stay that way.
         assertEquals("SELECT id FROM users WHERE a = 1", new SubQuery("users", Arrays.asList("id"), new Where(Filters.eq("a", 1))).toString());

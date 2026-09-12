@@ -167,12 +167,12 @@ public class FullJoin extends Join {
      *         Filters.expr("d.id = e.dept_id"),
      *         Filters.expr("d.id = c.dept_id")
      *     ));
-     * // SQL: FULL JOIN (employees e, contractors c) ON ((d.id = e.dept_id) AND (d.id = c.dept_id))
+     * // SQL: FULL JOIN (employees e CROSS JOIN contractors c) ON ((d.id = e.dept_id) AND (d.id = c.dept_id))
      *
      * // Using SqlExpression for multiple tables
      * FullJoin exprJoin = new FullJoin(tables,
      *     Filters.expr("d.id = e.dept_id AND d.id = c.dept_id"));
-     * // SQL: FULL JOIN (employees e, contractors c) ON d.id = e.dept_id AND d.id = c.dept_id
+     * // SQL: FULL JOIN (employees e CROSS JOIN contractors c) ON d.id = e.dept_id AND d.id = c.dept_id
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

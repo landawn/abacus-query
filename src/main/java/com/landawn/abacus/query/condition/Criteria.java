@@ -146,7 +146,6 @@ public class Criteria extends AbstractCondition {
      * @see Builder#distinct()
      * @see Builder#distinctOn(String)
      * @see Builder#distinctRow()
-     * @see Builder#distinctRowBy(String)
      * @see Builder#selectModifier(String)
      */
     public String selectModifier() {
@@ -870,32 +869,6 @@ public class Criteria extends AbstractCondition {
          */
         public Builder distinctRow() {
             selectModifier = SK.DISTINCTROW;
-
-            return this;
-        }
-
-        /**
-         * Sets the literal, database-specific {@code DISTINCTROW(columnNames)} modifier.
-         * This builder does not validate the target dialect or assign portable duplicate-removal
-         * semantics to the supplied expressions.
-         * If {@code columnNames} is {@code null}, empty, or blank, a plain {@code DISTINCTROW}
-         * modifier (without parentheses) is used.
-         *
-         * <p><b>Usage Examples:</b></p>
-         * <pre>{@code
-         * Criteria.builder().distinctRowBy("category, subcategory").build().selectModifier();
-         * // returns "DISTINCTROW(category, subcategory)"
-         *
-         * // null, empty, or blank falls back to a plain DISTINCTROW (no parentheses).
-         * Criteria.builder().distinctRowBy(null).build().selectModifier();   // returns "DISTINCTROW"
-         * }</pre>
-         *
-         * @param columnNames the expressions to place inside {@code DISTINCTROW(...)}; if
-         *                    {@code null}, empty, or blank, plain {@code DISTINCTROW} is used
-         * @return this Builder instance for method chaining
-         */
-        public Builder distinctRowBy(final String columnNames) {
-            selectModifier = Strings.isBlank(columnNames) ? SK.DISTINCTROW : SK.DISTINCTROW + "(" + columnNames + ")";
 
             return this;
         }

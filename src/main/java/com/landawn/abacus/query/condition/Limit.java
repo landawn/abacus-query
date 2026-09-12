@@ -40,10 +40,10 @@ import com.landawn.abacus.util.Strings;
  *   <li>SQL:2008 {@code [OFFSET offset ROW[S]] FETCH FIRST|NEXT count ROW[S] ONLY}</li>
  * </ul>
  *
- * <p>A count or offset in an expression may be a non-negative integer, {@code ?}, {@code :name}, or
- * <code>#{name}</code>. Fully numeric expressions expose their parsed values through {@link #count()} and
- * {@link #offset()}. Expressions containing a placeholder, or an integer outside the {@code int} range,
- * remain <em>unresolved</em>; use {@link #isResolved()}, {@link #resolvedCount()}, and
+ * <p>Each count or offset in an expression must be a non-negative integer literal. Placeholder-bearing
+ * expressions are rejected because this condition has no safe way to attach their bindings, and dialect
+ * conversion can change placeholder encounter order. An integer outside the {@code int} range is retained
+ * as an unresolved expression; use {@link #isResolved()}, {@link #resolvedCount()}, and
  * {@link #resolvedOffset()} when the distinction matters.</p>
  *
  * <p>{@link #toSql(NamingPolicy)} returns this object's normalized representation. A query builder may
@@ -60,12 +60,9 @@ import com.landawn.abacus.util.Strings;
  * new Limit(20, 50);                                  // LIMIT 20 OFFSET 50
  * new Limit("OFFSET 50 ROWS FETCH NEXT 20 ROWS ONLY");
  * new Limit("20, 10");                                // MySQL form: toSql() -> "LIMIT 20, 10"; count() -> 10; offset() -> 20
- * new Limit("? OFFSET ?");                            // opaque: count() -> Integer.MAX_VALUE; offset() -> 0
+ * new Limit("? OFFSET ?");                            // throws: raw placeholders cannot carry bindings
  * new Limit("LIMIT 1.0");                             // throws IllegalArgumentException
  * }</pre>
- *
- * <p><b>API note:</b> Placeholders embedded in an expression are not reported by
- * {@link #parameters()}.</p>
  *
  * @see Clause
  */
@@ -138,31 +135,22 @@ public class Limit extends Clause {
      * Creates a row-limiting clause from a validated SQL expression.
      *
      * <p>The accepted forms are listed in the class description. Leading and trailing whitespace is removed,
-     * internal whitespace is collapsed, and pagination keywords are converted to upper case. Placeholder names
-     * retain their original case. An expression beginning with a number or placeholder is interpreted as a
+     * internal whitespace is collapsed, and pagination keywords are converted to upper case. An expression beginning with a number is interpreted as a
      * {@code LIMIT} expression, so {@code "10 OFFSET 20"} becomes {@code "LIMIT 10 OFFSET 20"}.</p>
      *
      * <p>If every slot is an {@code int}-range integer, the count and offset are resolved. Otherwise the
      * normalized expression is retained but its numeric values remain unresolved. Floating-point and negative
-     * numbers, misspelled keywords, and unrelated SQL are rejected. Colon-style placeholders ({@code :name})
-     * are restricted to word characters ({@code [A-Za-z0-9_]}), so dotted or otherwise exotic parameter names
-     * accepted elsewhere (for example, {@code ParsedSql}-style {@code :page.size}) are not valid in that form;
-     * a {@code #{...}} body may contain one or more characters other than {@code }}.</p>
+     * numbers, placeholders, misspelled keywords, and unrelated SQL are rejected.</p>
      *
      * <pre>{@code
      * new Limit("10 OFFSET 20");                         // LIMIT 10 OFFSET 20
      * new Limit("20, 10");                               // LIMIT 20, 10
      * new Limit("OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY");
-     * new Limit("? OFFSET ?");                          // unresolved
+     * new Limit("? OFFSET ?");                          // throws IllegalArgumentException
      * }</pre>
      *
      * <p><b>API note:</b> {@link #toSql(NamingPolicy)} returns the normalized expression. SQL builders may
-     * render a resolved expression using the target dialect's pagination syntax. Opaque expressions are
-     * generally emitted verbatim; generic {@code LIMIT} expressions may be adapted to an
-     * {@code OFFSET}/{@code FETCH} dialect. Note that adapting a placeholder-bearing
-     * {@code LIMIT count OFFSET offset} form to an {@code OFFSET}/{@code FETCH} dialect reverses the
-     * positional order of its {@code ?} placeholders (the offset placeholder is emitted before the count
-     * placeholder); prefer named placeholders when the target dialect may vary.</p>
+     * render it using the target dialect's pagination syntax.</p>
      *
      * @param expr the row-limiting expression. Must not be {@code null}, empty, or blank, and must match a supported form.
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or is not a supported limit form
@@ -208,7 +196,7 @@ public class Limit extends Clause {
         if (slots == null) {
             throw new IllegalArgumentException("Invalid LIMIT expression. Supported forms are"
                     + " 'LIMIT n', 'LIMIT n OFFSET m', 'LIMIT offset, count' and '[OFFSET m ROWS] FETCH FIRST|NEXT n ROWS ONLY',"
-                    + " where each number may be an integer literal or a '?', ':name' or '#{name}' placeholder");
+                    + " where each number is a non-negative integer literal; placeholders are not supported");
         }
 
         final String countToken = slots[0];
@@ -218,9 +206,8 @@ public class Limit extends Clause {
         final Integer count = toInt(countToken);
         final Integer offset = offsetToken == null ? Integer.valueOf(0) : toInt(offsetToken);
 
-        // A placeholder slot (or an integer literal that overflows int) leaves the value unresolved: the
-        // expression is accepted but stays opaque (count == MAX_VALUE, offset == 0), rendered from its
-        // normalized expression.
+        // An integer literal that overflows int remains a validated raw numeric expression. It can still be
+        // rendered without truncation, but cannot be exposed through the int-valued accessors.
         if (count == null || offset == null) {
             return new Prepared(conditionExpr, normalizedExpr, Integer.MAX_VALUE, 0, false);
         }
@@ -281,7 +268,7 @@ public class Limit extends Clause {
      * Tests whether both the count and offset are available as {@code int} values.
      *
      * <p>Numeric constructors and fully numeric expressions are resolved. An expression containing a
-     * placeholder or an out-of-range integer is unresolved.</p>
+     * out-of-range integer is unresolved.</p>
      *
      * @return {@code true} if {@link #resolvedCount()} and {@link #resolvedOffset()} are both present
      */
@@ -309,9 +296,6 @@ public class Limit extends Clause {
 
     /**
      * Returns an empty parameter list.
-     *
-     * <p>Placeholders embedded in an expression are raw SQL text and are not tracked by this condition.
-     * Code that uses such placeholders is responsible for supplying the corresponding bindings.</p>
      *
      * @return an empty immutable list
      */
@@ -402,26 +386,19 @@ public class Limit extends Clause {
         }
     }
 
-    /** SQL keywords upper-cased by {@link #normalizeAndFormat(String)} (parameter names are left untouched). */
+    /** SQL keywords upper-cased by {@link #normalizeAndFormat(String)}. */
     private static final Set<String> KEYWORDS = Set.of("LIMIT", "OFFSET", "FETCH", "FIRST", "NEXT", "ROW", "ROWS", "ONLY");
-
-    /**
-     * Matches a MyBatis-style <code>#{...}</code> parameter placeholder. Its body (a case-sensitive parameter
-     * name that may contain surrounding spaces) is copied verbatim during normalization &mdash; never
-     * whitespace-collapsed and never keyword-upper-cased.
-     */
-    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("#\\{[^}]*\\}");
 
     /** A run of one or more whitespace characters, collapsed to a single space during normalization. */
     private static final Pattern WHITESPACE_RUN = Pattern.compile("\\s+");
 
-    /** A number slot: an integer literal, or a {@code ?} / {@code :name} / <code>#{name}</code> parameter placeholder. */
-    private static final String SLOT = "(?:\\d+|\\?|:\\w+|#\\{[^}]+\\})";
+    /** A non-negative integer-literal slot. */
+    private static final String SLOT = "\\d+";
 
     /**
      * Matches the {@code LIMIT}-family forms: {@code LIMIT count}, {@code LIMIT count OFFSET offset}, and
      * MySQL's {@code LIMIT offset, count}. Group 1 is the leading slot, group 2 the MySQL trailing count
-     * slot, group 3 the {@code OFFSET} slot; each slot is an integer or a placeholder (see {@link #SLOT}).
+     * slot, group 3 the {@code OFFSET} slot; each slot is an integer literal (see {@link #SLOT}).
      */
     private static final Pattern LIMIT_FAMILY_PATTERN = Pattern.compile("LIMIT\\s+(" + SLOT + ")(?:\\s*,\\s*(" + SLOT + ")|\\s+OFFSET\\s+(" + SLOT + "))?",
             Pattern.CASE_INSENSITIVE);
@@ -429,7 +406,7 @@ public class Limit extends Clause {
     /**
      * Matches the SQL:2008 {@code FETCH}-family forms: {@code FETCH FIRST|NEXT count ROW[S] ONLY} optionally
      * preceded by {@code OFFSET offset ROW[S]}. Group 1 is the optional {@code OFFSET} slot, group 2 the
-     * {@code FETCH} count slot; each slot is an integer or a placeholder (see {@link #SLOT}).
+     * {@code FETCH} count slot; each slot is an integer literal (see {@link #SLOT}).
      */
     private static final Pattern FETCH_FAMILY_PATTERN = Pattern
             .compile("(?:OFFSET\\s+(" + SLOT + ")\\s+ROWS?\\s+)?FETCH\\s+(?:FIRST|NEXT)\\s+(" + SLOT + ")\\s+ROWS?\\s+ONLY", Pattern.CASE_INSENSITIVE);
@@ -471,8 +448,8 @@ public class Limit extends Clause {
     }
 
     /**
-     * Parses a slot token as a non-negative {@code int}, or returns {@code null} when it is a parameter
-     * placeholder or an integer literal that overflows {@code int} (in which case the value stays unresolved).
+     * Parses a slot token as a non-negative {@code int}, or returns {@code null} when the integer literal
+     * overflows {@code int} (in which case the value stays unresolved).
      *
      * @param token a non-null count/offset slot token
      * @return the parsed value, or {@code null} if the token is not a resolvable integer
@@ -493,9 +470,8 @@ public class Limit extends Clause {
 
     /**
      * Normalizes and formats a raw limit expression: trims it, collapses internal whitespace runs to a single
-     * space, prepends {@code "LIMIT "} when it starts with a bare number or placeholder, and upper-cases the
-     * SQL keywords ({@code LIMIT}, {@code OFFSET}, {@code FETCH}, {@code FIRST}, {@code NEXT}, {@code ROW[S]},
-     * {@code ONLY}) while leaving parameter names inside {@code #{...}} / after {@code :} untouched.
+     * space, prepends {@code "LIMIT "} when it starts with a bare number, and upper-cases the SQL keywords
+     * ({@code LIMIT}, {@code OFFSET}, {@code FETCH}, {@code FIRST}, {@code NEXT}, {@code ROW[S]}, {@code ONLY}).
      *
      * @param expr the raw expression
      * @return the normalized, formatted expression
@@ -512,44 +488,16 @@ public class Limit extends Clause {
             throw new IllegalArgumentException("Limit expression must not be null, empty, or blank");
         }
 
-        // Collapse whitespace and upper-case keywords only outside #{...} placeholders; a placeholder body
-        // is a case-sensitive parameter name (possibly a keyword like "offset") that must survive verbatim.
-        final String formatted = formatOutsidePlaceholders(trimmed);
+        final String formatted = collapseAndUpperCaseKeywords(trimmed);
 
         return shouldPrefixLimit(formatted) ? SK.LIMIT + _SPACE + formatted : formatted;
     }
 
     /**
-     * Applies {@link #collapseAndUpperCaseKeywords(String)} to every stretch of the expression that lies
-     * outside a {@link #PLACEHOLDER_PATTERN} match, copying each matched <code>#{...}</code> placeholder
-     * through unchanged.
-     *
-     * @param expr the trimmed raw expression
-     * @return the expression with keywords upper-cased and whitespace collapsed, placeholder bodies preserved
-     */
-    private static String formatOutsidePlaceholders(final String expr) {
-        final Matcher placeholderMatcher = PLACEHOLDER_PATTERN.matcher(expr);
-        final StringBuilder sb = new StringBuilder(expr.length());
-        int lastEnd = 0;
-
-        while (placeholderMatcher.find()) {
-            sb.append(collapseAndUpperCaseKeywords(expr.substring(lastEnd, placeholderMatcher.start())));
-            sb.append(placeholderMatcher.group());
-            lastEnd = placeholderMatcher.end();
-        }
-
-        sb.append(collapseAndUpperCaseKeywords(expr.substring(lastEnd)));
-
-        return sb.toString();
-    }
-
-    /**
      * Collapses internal whitespace runs to a single space and upper-cases whole-word SQL keywords in a
-     * placeholder-free segment. Leading/trailing whitespace is preserved as a single space so adjacent
-     * placeholders stay separated. Keyword matching is whole-token, so a {@code :name} placeholder such as
-     * {@code :offset} is left untouched (the token {@code :offset} is not the keyword {@code OFFSET}).
+     * segment. Leading/trailing whitespace is preserved as a single space.
      *
-     * @param segment a stretch of the expression that contains no <code>#{...}</code> placeholder
+     * @param segment the expression segment to normalize
      * @return the collapsed, keyword-upper-cased segment
      */
     private static String collapseAndUpperCaseKeywords(final String segment) {
@@ -586,9 +534,8 @@ public class Limit extends Clause {
     }
 
     /**
-     * Tests whether a formatted expression begins with a bare number slot or placeholder ({@code ?},
-     * {@code :name}, or <code>#{name}</code>), in which case a {@code "LIMIT "} prefix is prepended so the
-     * expression matches the {@code LIMIT}-family grammar.
+     * Tests whether a formatted expression begins with a bare number slot, in which case a
+     * {@code "LIMIT "} prefix is prepended so the expression matches the {@code LIMIT}-family grammar.
      *
      * @param expr the formatted expression; must be non-empty
      * @return {@code true} if a {@code "LIMIT "} prefix should be prepended
@@ -596,6 +543,6 @@ public class Limit extends Clause {
     private static boolean shouldPrefixLimit(final String expr) {
         final char firstChar = expr.charAt(0);
 
-        return Character.isDigit(firstChar) || firstChar == '?' || firstChar == ':' || (firstChar == '#' && expr.length() > 1 && expr.charAt(1) == '{');
+        return Character.isDigit(firstChar);
     }
 }

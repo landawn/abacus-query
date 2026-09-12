@@ -102,9 +102,9 @@ public class OrTest extends TestBase {
 
     @Test
     public void testToString_EmptyConditions() {
-        Or junction = new Or();
+        Or junction = Filters.or();
         String result = junction.toSql(NamingPolicy.NO_CHANGE);
-        assertEquals("", result);
+        assertEquals("1 = 0", result);
     }
 
     @Test

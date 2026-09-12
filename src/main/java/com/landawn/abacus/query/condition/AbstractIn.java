@@ -90,14 +90,16 @@ public abstract class AbstractIn extends ComposableCondition {
     /**
      * Creates a new single-column IN or NOT IN condition. The given values are copied into an internal
      * {@link ArrayList}, so later mutations to the supplied collection do not affect this
-     * condition. Individual elements may be literal values or non-structural, non-quantified
+     * condition. {@code null} elements are rejected because SQL membership predicates do not treat
+     * {@code NULL} as an ordinary value. Individual elements may be literal values or non-structural, non-quantified
      * {@link Condition} instances; the latter have their parameters spliced into {@link #parameters()}.
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
-     * @param values the collection of values to check membership against (must not be {@code null} or empty);
-     *               elements may be {@code null}
-     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, {@code values} is {@code null}/empty,
+     * @param values the collection of values to check membership against (must not be {@code null}, empty,
+     *               or contain {@code null})
+     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, {@code values} is {@code null}/empty
+     *                                  or contains {@code null},
      *                                  or {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
      *                                  or a condition-valued element is or contains a {@link Criteria}, SQL clause,
      *                                  JOIN, or {@code ON}/{@code USING} connector, or is/contains an
@@ -112,6 +114,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
         final List<?> valuesCopy = new ArrayList<>(values);
         N.checkArgNotEmpty(valuesCopy, "values");
+        rejectNullElements(valuesCopy, "values");
         validateNonQuantifiedValueOperands(valuesCopy, "values");
 
         this.propNames = ImmutableList.wrap(Collections.singletonList(propName));
@@ -131,7 +134,7 @@ public abstract class AbstractIn extends ComposableCondition {
      *       taken positionally;</li>
      *   <li>an object array ({@code Object[]}) of exactly {@code propNames.size()} elements, taken
      *       positionally;</li>
-     *   <li>a {@link Map} whose values are looked up by property name (a missing key yields {@code null});
+     *   <li>a {@link Map} containing every property name as a key, whose values are looked up by property name;
      *       or</li>
      *   <li>a bean whose property values are read by property name.</li>
      * </ul>
@@ -140,20 +143,22 @@ public abstract class AbstractIn extends ComposableCondition {
      * non-structural, non-quantified {@link Condition} instances; the latter have their parameters
      * spliced into {@link #parameters()}.
      *
-     * <p><b>&#9888;&#65039;</b> A missing property-name key in a map row is represented as {@code null}; a bean
-     * row that does not expose a requested property is rejected.</p>
+     * <p>Every resolved tuple element must be non-{@code null}. Missing map keys are reported separately
+     * from explicitly mapped {@code null} values so a property-name typo cannot silently change SQL
+     * three-valued-logic behavior. A bean row that does not expose a requested property is rejected.</p>
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain
      *                  {@code null}, empty, or blank names)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be
-     *               non-{@code null} and resolve to exactly {@code propNames.size()} values (which may be
-     *               {@code null}). A row may be a {@link Collection}, {@link Iterable}, object array,
+     *               non-{@code null} and resolve to exactly {@code propNames.size()} non-{@code null} values.
+     *               A row may be a {@link Collection}, {@link Iterable}, object array,
      *               {@link Map} or bean
      * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
      *                                  if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
+     *                                  if a map row is missing a requested key, if a tuple element is {@code null},
      *                                  or if a bean row does not expose a requested property, or if a condition-valued
      *                                  row element is or contains a {@link Criteria}, SQL clause, JOIN, or
      *                                  {@code ON}/{@code USING} connector, or is/contains an {@link All},
@@ -181,7 +186,9 @@ public abstract class AbstractIn extends ComposableCondition {
             // Each tuple is wrapped unmodifiable so values() is immutable in depth, not just at the
             // outer ImmutableList level (a mutated tuple would silently desync the memoized parameters).
             final List<Object> tuple = toRowTuple(row, this.propNames, arity);
-            validateNonQuantifiedValueOperands(tuple, "valueRows[" + rowIndex++ + "]");
+            final String rowPath = "valueRows[" + rowIndex++ + "]";
+            rejectNullElements(tuple, rowPath);
+            validateNonQuantifiedValueOperands(tuple, rowPath);
             copy.add(Collections.unmodifiableList(tuple));
         }
 
@@ -211,6 +218,10 @@ public abstract class AbstractIn extends ComposableCondition {
             final List<Object> tuple = new ArrayList<>(arity);
 
             for (final String propName : propNames) {
+                if (!map.containsKey(propName)) {
+                    throw new IllegalArgumentException("Map value row is missing required property key: " + propName);
+                }
+
                 tuple.add(map.get(propName));
             }
 
@@ -225,9 +236,12 @@ public abstract class AbstractIn extends ComposableCondition {
             return tuple;
         } else if (row instanceof Iterable) {
             final List<Object> tuple = new ArrayList<>(arity);
+            final Iterator<?> iter = ((Iterable<?>) row).iterator();
 
-            for (final Object element : (Iterable<?>) row) {
-                tuple.add(element);
+            // Read at most one element beyond the expected width. This both detects an oversized
+            // tuple and guarantees that an infinite Iterable fails promptly instead of hanging.
+            while (tuple.size() <= arity && iter.hasNext()) {
+                tuple.add(iter.next());
             }
 
             checkRowWidth(tuple.size(), arity);
@@ -249,8 +263,21 @@ public abstract class AbstractIn extends ComposableCondition {
 
     private static void checkRowWidth(final int actual, final int arity) {
         if (actual != arity) {
-            throw new IllegalArgumentException(
-                    "Each value row must have exactly " + arity + " element(s) to match the number of property names, but found " + actual);
+            final String actualDescription = actual > arity ? "at least " + actual : String.valueOf(actual);
+            throw new IllegalArgumentException("Each value row must have exactly " + arity
+                    + " element(s) to match the number of property names, but found " + actualDescription);
+        }
+    }
+
+    private static void rejectNullElements(final Collection<?> values, final String path) {
+        int index = 0;
+
+        for (final Object value : values) {
+            if (value == null) {
+                throw new IllegalArgumentException(path + " must not contain null elements; null found at index " + index);
+            }
+
+            index++;
         }
     }
 

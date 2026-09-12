@@ -27,6 +27,7 @@ import com.landawn.abacus.util.N;
  * <p>The AND condition is one of the fundamental composable operations in query building,
  * allowing you to combine multiple criteria where all must be satisfied. It follows
  * standard boolean algebra rules where the result is true only when all operands are true.</p>
+ * An empty, initialized AND therefore renders as the portable true predicate {@code 1 = 1}.
  * 
  * <p>Key characteristics:</p>
  * <ul>
@@ -109,8 +110,8 @@ public class And extends Junction {
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
-     *             (a blank {@link SqlExpression} or empty {@link Junction})
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             or a blank {@link SqlExpression}
      */
     public And(final Condition... conditions) {
         super(Operator.AND, conditions);
@@ -142,8 +143,8 @@ public class And extends Junction {
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
-     *             (a blank {@link SqlExpression} or empty {@link Junction})
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             or a blank {@link SqlExpression}
      */
     public And(final Collection<? extends Condition> conditions) {
         super(Operator.AND, conditions);
@@ -171,9 +172,8 @@ public class And extends Junction {
      * Each call returns a new AND instance, preserving immutability. The new condition
      * is added to the end of the existing conditions.</p>
      *
-     * <p><b>&#9888;&#65039;</b> Unlike the inherited {@link ComposableCondition#and(Condition)}, which rejects an empty
-     * junction as its target, this override may be invoked on an empty {@code And}; same-type fluent
-     * chaining from an empty junction is deliberately permitted (only the operand is validated).</p>
+     * <p>This override may be invoked on an empty {@code And}; adding the first operand replaces the
+     * practical role of its true identity while preserving the ordinary condition list representation.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -193,12 +193,12 @@ public class And extends Junction {
      *
      * @param condition the condition to add to this AND. Must not be {@code null} and must be
      *             composable (i.e. must not be or contain a {@link Criteria}, a {@link Clause}, an {@code ON}/{@code USING} connector,
-     *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate).
+     *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank expression).
      * @return a new {@link And} condition containing all existing conditions plus the new one
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is or contains a
      *             non-composable component — a {@link Criteria}, a {@link Clause} condition (such as {@link Where} or {@link OrderBy}),
      *             an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *             operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *             operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     @Override
     public And and(final Condition condition) {

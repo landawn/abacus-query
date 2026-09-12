@@ -153,15 +153,15 @@ public class ParsedSqlTest extends TestBase {
         assertEquals(1, standalone.parameterCount());
         assertEquals(List.of("identifier"), standalone.namedParameters());
 
-        // Digits are valid parameter-name characters (Oracle-style ordinal ":2"), so the spaced and
-        // unspaced forms bind consistently.
+        // Colon-style names follow identifier grammar. A digit cannot start a segment, so Oracle-style
+        // ordinal markers are preserved rather than being misreported as named property bindings.
         ParsedSql ordinalSpaced = ParsedSql.parse("SELECT * FROM t WHERE a = arr [:2]");
-        assertEquals("SELECT * FROM t WHERE a = arr [?]", ordinalSpaced.parameterizedSql());
-        assertEquals(List.of("2"), ordinalSpaced.namedParameters());
+        assertEquals("SELECT * FROM t WHERE a = arr [:2]", ordinalSpaced.parameterizedSql());
+        assertEquals(0, ordinalSpaced.parameterCount());
 
         ParsedSql ordinalUnspaced = ParsedSql.parse("SELECT * FROM t WHERE a = arr[:2]");
-        assertEquals("SELECT * FROM t WHERE a = arr[?]", ordinalUnspaced.parameterizedSql());
-        assertEquals(List.of("2"), ordinalUnspaced.namedParameters());
+        assertEquals("SELECT * FROM t WHERE a = arr[:2]", ordinalUnspaced.parameterizedSql());
+        assertEquals(0, ordinalUnspaced.parameterCount());
     }
 
     @Test
@@ -1316,6 +1316,39 @@ public class ParsedSqlTest extends TestBase {
     }
 
     @Test
+    public void testParse_UnicodeIdentifierNamesAndDottedPaths() {
+        final String supplementaryLetter = new String(Character.toChars(0x10400));
+        final ParsedSql parsed = ParsedSql.parse(
+                "SELECT :用户.地址_2, :na\u0301me, :" + supplementaryLetter + "Value FROM users");
+
+        Assertions.assertEquals("SELECT ?, ?, ? FROM users", parsed.parameterizedSql());
+        Assertions.assertEquals(Arrays.asList("用户.地址_2", "na\u0301me", supplementaryLetter + "Value"), parsed.namedParameters());
+        Assertions.assertEquals(3, parsed.parameterCount());
+    }
+
+    @Test
+    public void testParse_InvalidIdentifierStartsAndUnicodePunctuationAreNotSwallowed() {
+        final ParsedSql invalidStarts = ParsedSql.parse("SELECT :1name, :\u0301name, :\u2014name, :\u2003name FROM users");
+
+        Assertions.assertEquals(0, invalidStarts.parameterCount());
+        Assertions.assertTrue(invalidStarts.namedParameters().isEmpty());
+        Assertions.assertTrue(invalidStarts.parameterizedSql().contains(":1name"));
+        Assertions.assertTrue(invalidStarts.parameterizedSql().contains(":\u2014name"));
+
+        final ParsedSql delimited = ParsedSql.parse("SELECT :name\u2014suffix, :user..address, :user.2address FROM users");
+        Assertions.assertEquals("SELECT ?\u2014suffix, ?..address, ?.2address FROM users", delimited.parameterizedSql());
+        Assertions.assertEquals(Arrays.asList("name", "user", "user"), delimited.namedParameters());
+    }
+
+    @Test
+    public void testParse_UnpairedSurrogatesInProspectiveNamedParametersAreRejected() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT :\uD800 FROM users"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT :\uDC00 FROM users"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT :valid\uD800 FROM users"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT arr[:\uD800] FROM users"));
+    }
+
+    @Test
     public void testParse_CachedInstance_ReturnsCorrectParameterCount() {
         // First parse populates the cache; second parse hits the unsynchronized fast path.
         // Both observations of parameterCount must agree (regression guard for unsafe publication).
@@ -1378,6 +1411,57 @@ public class ParsedSqlTest extends TestBase {
 
         Assertions.assertEquals(3, parsed.parameterCount());
         Assertions.assertTrue(parsed.namedParameters().isEmpty());
+    }
+
+    @Test
+    public void testParse_PlaceholderAfterOperatorOrValueTakingKeywordIsNotJsonOperator() {
+        // Regression: a "?" preceded by a value-taking keyword (INTERVAL, ILIKE, SIMILAR TO, ...) or by a
+        // multi-character operator ("||", "->>") and followed by an identifier-like word (DAY, ESCAPE, an
+        // alias) was misclassified as the PostgreSQL JSON "?" operator and dropped from parameterCount().
+        ParsedSql mysql = ParsedSql.parse("SELECT * FROM t WHERE d > DATE_SUB(NOW(), INTERVAL ? DAY) AND id = ?");
+        assertEquals("SELECT * FROM t WHERE d > DATE_SUB(NOW(), INTERVAL ? DAY) AND id = ?", mysql.parameterizedSql());
+        assertEquals(2, mysql.parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT * FROM t WHERE d > NOW() - INTERVAL ? DAY").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT * FROM t WHERE name ILIKE ? ESCAPE '!'").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT * FROM t WHERE name ILIKE ? COLLATE \"C\"").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT * FROM t WHERE name SIMILAR TO ? ESCAPE '!'").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT a || ? b FROM t").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT payload ->> ? val FROM t").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT ts AT TIME ZONE ? local_ts FROM t").parameterCount());
+
+        // A genuine JSON existence operator is still not a parameter.
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE payload ? 'active'").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE p1 ? day").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE x::jsonb ? 'k'").parameterCount());
+    }
+
+    @Test
+    public void testParse_PositionalPlaceholderInsideArraySubscriptIsCounted() {
+        // Regression: the tokenizer glues "[...]" to the preceding identifier, so the "?" inside
+        // "ARRAY[?]" never surfaced as its own token and was silently dropped from parameterCount(),
+        // although the named forms "ARRAY[:ids]" / "ARRAY[#{ids}]" in the same position were bound.
+        ParsedSql unspaced = ParsedSql.parse("SELECT * FROM t WHERE tags @> ARRAY[?] AND id = ?");
+        assertEquals("SELECT * FROM t WHERE tags @> ARRAY[?] AND id = ?", unspaced.parameterizedSql());
+        assertEquals(2, unspaced.parameterCount());
+        assertTrue(unspaced.namedParameters().isEmpty());
+
+        ParsedSql spaced = ParsedSql.parse("SELECT * FROM t WHERE tags @> ARRAY [?, ?]");
+        assertEquals(2, spaced.parameterCount());
+
+        assertEquals(2, ParsedSql.parse("SELECT * FROM t WHERE tags @> ARRAY[?::text, ?::text]").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT arr[?] FROM t").parameterCount());
+
+        // A '?' inside a quoted literal within the subscript is not a placeholder.
+        assertEquals(1, ParsedSql.parse("SELECT * FROM t WHERE tags @> ARRAY['a?', ?]").parameterCount());
+
+        // Bracket-quoted identifiers that merely contain '?' are preserved.
+        assertEquals(1, ParsedSql.parse("SELECT [what?] FROM t WHERE id = ?").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT [?foo] FROM t WHERE id = ?").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT t.[what?] FROM t WHERE id = ?").parameterCount());
+
+        // A positional marker in a subscript still participates in the mixed-style guard.
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE tags @> ARRAY[?] AND name = :n"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE tags @> ARRAY[#{a}, ?]"));
     }
 
     @Test

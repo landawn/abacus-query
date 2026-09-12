@@ -173,12 +173,12 @@ public class LeftJoin extends Join {
      *         Filters.expr("c.id = o.customer_id"),
      *         Filters.expr("o.id = oi.order_id")
      *     ));
-     * // SQL: LEFT JOIN (orders o, order_items oi) ON ((c.id = o.customer_id) AND (o.id = oi.order_id))
+     * // SQL: LEFT JOIN (orders o CROSS JOIN order_items oi) ON ((c.id = o.customer_id) AND (o.id = oi.order_id))
      *
      * // Using SqlExpression for multiple tables
      * LeftJoin exprJoin = new LeftJoin(tables,
      *     Filters.expr("c.id = o.customer_id AND o.id = oi.order_id"));
-     * // SQL: LEFT JOIN (orders o, order_items oi) ON c.id = o.customer_id AND o.id = oi.order_id
+     * // SQL: LEFT JOIN (orders o CROSS JOIN order_items oi) ON c.id = o.customer_id AND o.id = oi.order_id
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.

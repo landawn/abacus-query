@@ -98,15 +98,12 @@ public class NotLike extends Binary {
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param propValue the pattern to match against (typically a {@link String} containing
-     *                  {@code %} and/or {@code _} wildcards; may also be a {@link SubQuery}, an
-     *                  {@link SqlExpression}, or another non-structural {@link Condition}).
-     *                  Use {@code %} to match any sequence of characters and {@code _} to match
-     *                  a single character. Passing {@code null} renders as {@code prop NOT LIKE null},
-     *                  which is not a meaningful SQL comparison; do not pass {@code null} to this operator.
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
-     *                                  {@code propValue} is or contains a {@link Criteria}, SQL clause,
-     *                                  JOIN, or {@code ON}/{@code USING} connector, or is/contains an
-     *                                  {@link All}, {@link Any}, or {@link Some} quantified operand
+     *                  {@code %} and/or {@code _} wildcards; may also be an explicit {@link SqlExpression}
+     *                  or scalar {@link SubQuery}). Use {@code %} to match any sequence of characters and
+     *                  {@code _} to match a single character.
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or
+     *                                  {@code propValue} is {@code null}, an ordinary predicate or query
+     *                                  clause, or a quantified {@link All}/{@link Any}/{@link Some} operand
      */
     public NotLike(final String propName, final Object propValue) {
         super(propName, Operator.NOT_LIKE, propValue);

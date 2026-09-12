@@ -102,14 +102,13 @@ public class NotBetween extends AbstractBetween {
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
-     * @param minValue the lower bound of the range to exclude; may be a literal value, a {@link SqlExpression},
-     *                 a {@link SubQuery}, or another non-structural, non-quantified {@link Condition} (may be {@code null})
-     * @param maxValue the upper bound of the range to exclude; may be a literal value, a {@link SqlExpression},
-     *                 a {@link SubQuery}, or another non-structural, non-quantified {@link Condition} (may be {@code null})
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if either
-     *                                  condition-valued bound is or contains a {@link Criteria}, SQL clause,
-     *                                  JOIN, or {@code ON}/{@code USING} connector, or is/contains an
-     *                                  {@link All}, {@link Any}, or {@link Some} quantified operand
+     * @param minValue the non-{@code null} lower bound to exclude; a literal value, explicit
+     *                 {@link SqlExpression}, or scalar {@link SubQuery}
+     * @param maxValue the non-{@code null} upper bound to exclude; a literal value, explicit
+     *                 {@link SqlExpression}, or scalar {@link SubQuery}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; either bound
+     *                                  is {@code null}; or a bound is another predicate, query clause, JOIN,
+     *                                  ON/USING connector, or quantified {@link All}/{@link Any}/{@link Some} operand
      */
     public NotBetween(final String propName, final Object minValue, final Object maxValue) {
         super(propName, Operator.NOT_BETWEEN, minValue, maxValue);

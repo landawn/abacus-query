@@ -14,7 +14,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -91,6 +93,53 @@ public class AbstractInTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> new TestRowAbstractIn(Arrays.asList("id"), emptySnapshot));
     }
 
+    @Test
+    public void testRejectsNullScalarAndTupleMembers() {
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("status", Arrays.asList("A", null, "B")));
+        assertThrows(IllegalArgumentException.class,
+                () -> new TestRowAbstractIn(Arrays.asList("id", "tenant"), Arrays.asList(Arrays.asList(1, null))));
+    }
+
+    @Test
+    public void testMapRowsDistinguishMissingKeysFromExplicitNullValues() {
+        final Map<String, Object> missing = new LinkedHashMap<>();
+        missing.put("id", 1);
+
+        final IllegalArgumentException missingError = assertThrows(IllegalArgumentException.class,
+                () -> new TestRowAbstractIn(Arrays.asList("id", "tenant"), Arrays.asList(missing)));
+        assertTrue(missingError.getMessage().contains("missing required property key: tenant"));
+
+        final Map<String, Object> explicitNull = new LinkedHashMap<>();
+        explicitNull.put("id", 1);
+        explicitNull.put("tenant", null);
+
+        final IllegalArgumentException nullError = assertThrows(IllegalArgumentException.class,
+                () -> new TestRowAbstractIn(Arrays.asList("id", "tenant"), Arrays.asList(explicitNull)));
+        assertTrue(nullError.getMessage().contains("null found at index 1"));
+    }
+
+    @Test
+    public void testOversizedIterableConsumesOnlyArityPlusOneElements() {
+        final int[] nextCalls = { 0 };
+        final Iterable<Integer> unboundedRow = () -> new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return true;
+            }
+
+            @Override
+            public Integer next() {
+                return nextCalls[0]++;
+            }
+        };
+
+        final IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(unboundedRow)));
+
+        assertEquals(3, nextCalls[0]);
+        assertTrue(error.getMessage().contains("found at least 3"));
+    }
+
     private static final class EmptyAbstractIn extends AbstractIn {
         EmptyAbstractIn() {
             super();
@@ -129,7 +178,7 @@ public class AbstractInTest extends TestBase {
         assertThrows(NoSuchMethodException.class, () -> AbstractIn.class.getMethod("rowValueConstructor"));
     }
 
-    // Verifies direct values and nested condition values are flattened into parameters.
+    // Verifies direct values are exposed as parameters in encounter order.
     @Test
     public void testParameters() {
         final TestAbstractIn condition = new TestAbstractIn("status", Arrays.asList("ACTIVE", "PENDING"));
@@ -138,10 +187,9 @@ public class AbstractInTest extends TestBase {
     }
 
     @Test
-    public void testParameters_ConditionValues() {
-        final TestAbstractIn condition = new TestAbstractIn("id", Arrays.asList(Filters.eq("status", "ACTIVE"), 2));
-
-        assertEquals(Arrays.asList("ACTIVE", 2), condition.parameters());
+    public void testRejectsPredicateValuedMembers() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new TestAbstractIn("id", Arrays.asList(Filters.eq("status", "ACTIVE"), 2)));
     }
 
     @Test

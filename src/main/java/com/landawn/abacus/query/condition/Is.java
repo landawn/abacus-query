@@ -17,8 +17,8 @@ package com.landawn.abacus.query.condition;
 /**
  * Represents an SQL {@code IS} predicate (e.g. {@code IS NULL}).
  * This class is used to create conditions that test a property using the SQL {@code IS} operator,
- * which is primarily used for special SQL values like {@code NULL}, {@code NaN}, or {@code INFINITE}
- * that cannot be tested with the regular equality ({@code =}) operator.
+ * which is used for {@code NULL}, Boolean truth values, and explicit database-specific SQL
+ * expressions such as {@code UNKNOWN}, {@code NAN}, or {@code INFINITE}.
  *
  * <p>The {@code IS} operator differs from the equals ({@code =}) operator in that it properly handles
  * SQL three-valued logic for these special values. The most common use case is checking for
@@ -26,8 +26,9 @@ package com.landawn.abacus.query.condition;
  * support them.</p>
  *
  * <p>Prefer the dedicated subclasses ({@link IsNull}, {@link IsNaN}, {@link IsInfinite}) over
- * {@code Is} directly when checking for those well-known values. Use {@code Is} only when
- * supplying a custom right-hand expression.</p>
+ * {@code Is} directly when checking for those well-known values. Arbitrary strings and numbers
+ * are rejected because forms such as {@code column IS 'value'} and {@code column IS 5} are not
+ * portable SQL predicates; use equality or an explicit {@link SqlExpression} as appropriate.</p>
  *
  * <p>Common use cases:</p>
  * <ul>
@@ -70,8 +71,8 @@ public class Is extends Binary {
     /**
      * Creates a new {@code IS} condition with the specified property name and right-hand value.
      * The generated SQL takes the form {@code propName IS propValue}, where {@code propValue} is
-     * typically an {@link SqlExpression} representing a special SQL keyword such as {@code NULL}
-     * or a custom expression like {@code UNKNOWN}.
+     * {@code null}, a Boolean, or an {@link SqlExpression} representing a special SQL keyword such
+     * as {@code NULL}, {@code TRUE}, or {@code UNKNOWN}.
      *
      * <p>If {@code propValue} is the Java {@code null} reference, the generated SQL collapses to
      * {@code propName IS NULL}.</p>
@@ -89,13 +90,11 @@ public class Is extends Binary {
      * }</pre>
      *
      * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
-     * @param propValue the right-hand value of the IS predicate; may be {@code null} (renders as
-     *            {@code IS NULL}), an {@link SqlExpression} for a SQL keyword, or another non-structural
-     *            value rendered by {@link Binary}; whether that value is valid with {@code IS} is dialect-specific
+     * @param propValue the right-hand value of the IS predicate; must be {@code null} (renders as
+     *            {@code IS NULL}), a Boolean, or an explicit {@link SqlExpression} for a SQL keyword
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
-     *                                  {@code propValue} is or contains a {@link Criteria}, SQL clause,
-     *                                  JOIN, or {@code ON}/{@code USING} connector, or is/contains an
-     *                                  {@link All}, {@link Any}, or {@link Some} quantified operand
+     *                                  {@code propValue} is not {@code null}, a Boolean, or an
+     *                                  {@link SqlExpression}
      */
     public Is(final String propName, final Object propValue) {
         super(propName, Operator.IS, propValue);
